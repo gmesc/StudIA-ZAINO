@@ -1,13 +1,21 @@
 # Handoff — StudIA, 3-5 agosto 2026
 
-Stato consegnato: **568 controlli verdi** (`npm test`), app funzionante, tre progetti nel vault.
+Stato consegnato: **574 controlli verdi** (`npm test`), app funzionante, tre progetti nel vault.
 
-> **PUNTO DI RIPARTENZA (5 agosto, fine sessione).** I corsi di `ai-literacy-anthropic` e
-> `digital-education-outlook-conference-2026-oecd` sono stati **cancellati di proposito**
-> (`CORSI/`, `_piano.json`, `scarti/` → Cestino): l'utente rigenera da zero. **Materiali e schede
-> sono intatti** — 37 e 24 schede già pagate, nulla da rileggere. `TD74-DSA` non è stato toccato.
-> Il primo passo di una sessione nuova è **la proposta dell'indice**, non l'elaborazione.
-> Leggere prima il §7: la ragione per cui i PDF non venivano citati.
+> **PUNTO DI RIPARTENZA (5 agosto, fine sessione).**
+>
+> Il lavoro in corso è il **§9**: Chandra è installato e la rilettura dei PDF funziona fino
+> all'indice, ma le figure **non entrano ancora nel capitolo**. È il pezzo da cui ripartire, ed è
+> descritto in fondo al §9 sotto «Che cosa resta».
+>
+> I corsi di `ai-literacy-anthropic` e `digital-education-outlook-conference-2026-oecd` restano
+> **cancellati di proposito** (`CORSI/`, `_piano.json`, `scarti/` → Cestino): l'utente rigenera da
+> zero. **Materiali e schede sono intatti** — 37 e 24 schede già pagate, nulla da rileggere.
+> `TD74-DSA` non è stato toccato, se non per la riparazione delle etichette del §8.
+> Il primo passo per quei due progetti è **la proposta dell'indice**, non l'elaborazione.
+>
+> Prima di toccare la pipeline, leggere il §7 e il §7-bis: sono due guasti diversi con lo stesso
+> sintomo, ed è facile richiuderne uno credendo di aver chiuso l'altro.
 
 ---
 
@@ -34,7 +42,7 @@ Il `vaultPath` sta in `~/Library/Application Support/studia/config.json` ed è *
 Struttura di un progetto:
 ```
 Progetti/<id>/
-├── MATERIALI/{Video,Audio,PDF,Web,Trascrizioni,Indici-PDF,Indici-Web}
+├── MATERIALI/{Video,Audio,PDF,Web,Trascrizioni,Indici-PDF,Indici-Web,Figure}
 ├── CORSI/<NN-slug>/<NN-slug>.md
 ├── APPUNTI/
 └── _lavorazione/{_piano.json, schede/}
@@ -48,6 +56,20 @@ lingua di scrittura non impostata → **italiano** di default.
 ---
 
 ## 2. Come far girare e verificare
+
+### Controllo di versione (NUOVO, 5 agosto)
+
+Fino a oggi StudIA **non era versionata**: nessun `.git`, nessuna cronologia. Ora c'è, e la radice
+del repository è la cartella dell'app (`StudIA/`), non quella che la contiene.
+
+Il primo commit fotografa l'intera applicazione, lavoro di quel giorno compreso: non esisteva una
+cronologia da cui separarlo. `.gitignore` tiene fuori `node_modules/`, `dist/`, gli ambienti Python
+e — per prudenza, anche se i dati vivono altrove — `Progetti/` e `config.json`, che contiene le
+chiavi API cifrate.
+
+⚠️ **I dati non sono versionati e non devono esserlo**: stanno in `StudIA - file/`, fuori dal
+repository. Un `git clean` o un checkout non li tocca, ma nemmeno li salva: il loro backup è un
+problema a sé.
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA" && npm test
@@ -243,16 +265,23 @@ le varianti esistono, i loro capitoli no, e un menu che si muove senza cambiare 
 
 ## 6. Coda, in ordine di urgenza
 
-1. **Ritentativo sugli errori passeggeri** in `provider.completa` (503/429/timeout). Non esiste **nessun** retry
+1. **Le figure dentro il capitolo** (§9, «Che cosa resta»). È il lavoro in corso, ed è a metà: la
+   rilettura scrive già figure e didascalie nell'indice, ma il capitolo non le può mostrare. Finché
+   non si chiude, le ore di lettura avanzata producono un indice più ricco che nessuno vede.
+2. **Ritentativo sugli errori passeggeri** in `provider.completa` (503/429/timeout). Non esiste **nessun** retry
    in `lib/ai/`: una cascata di 503 di Google ha fatto perdere 7 materiali e un intero indice, e la proposta è
    ricaduta sull'euristica **senza che fosse evidente**. ~25 righe in un punto solo, vale per tutti i fornitori.
-2. **Scrittura dei capitoli per coppia corso+indice** (§5, «Quel che manca»): è ciò che accende il menu delle
+3. **Scrittura dei capitoli per coppia corso+indice** (§5, «Quel che manca»): è ciò che accende il menu delle
    varianti in topbar. La struttura dati e il composer ci sono già.
-3. **Sezione «estendi un corso»** nelle Impostazioni: va riscritta perché dica che cosa comporta estendere un
+4. **Sezione «estendi un corso»** nelle Impostazioni: va riscritta perché dica che cosa comporta estendere un
    corso già strutturato (richiesta esplicita dell'utente, mai affrontata).
-4. **Badge di avanzamento** nel tab Progetti: `materiali 24/24 · analisi 24/24 · indice approvato · capitoli 2/7`.
+5. **Badge di avanzamento** nel tab Progetti: `materiali 24/24 · analisi 24/24 · indice approvato · capitoli 2/7`.
    Da fare **dopo** le varianti, perché andrebbero disegnati sui percorsi e non sul progetto.
-5. `_ARCHIVIO/` (440 KB) e `dist/` (372 MB) nella cartella dell'app: mai valutati, probabilmente eliminabili.
+6. **I 70 capitoli con il riquadro orfano** (§8, in fondo): l'unico rimedio è riscriverli col prompt
+   nuovo, e si paga. Decisione dell'utente, non ancora presa.
+7. `_ARCHIVIO/` (6 MB) e `dist/` (372 MB) nella cartella dell'app: mai valutati. `_ARCHIVIO` è ora
+   versionato — dentro c'è anche il mockup del composer del §5 — mentre `dist/` è escluso dal
+   repository e resta eliminabile senza perdere niente.
 
 ---
 
@@ -536,6 +565,11 @@ del §7.
 - La numerazione dei materiali è per progetto, ma TD74 resta `01–40` e l'OECD `01–24`: **si sovrappongono**.
   Va bene perché il risolutore è scopato per progetto, ma non fidarsi dei numeri fuori dal loro progetto.
 - I 10 GB della copia vecchia di TD74 sono stati liberati (Cestino svuotato dall'utente il 5 agosto).
+- Chandra occupa **~11 GB** sul computer dell'autore: 0,93 GB di ambiente in
+  `~/Library/Application Support/studia/pyenv-ocr` e 9,9 GB di pesi nella cache di Hugging Face.
+  ⚠️ Su quella macchina `~/.cache/huggingface` è un **link** verso
+  `Antigravity/ScriverAI_models_database/huggingface`: i pesi sono fisicamente lì, insieme ad altri
+  modelli. «Rimuovi» nelle Impostazioni cancella l'ambiente ma **non** i pesi, che sono condivisi.
 - I server MCP `plugin:design:*` (asana, atlassian, figma, intercom, linear, notion, slack) risultano non
   autorizzati: vanno collegati dalle impostazioni dei connettori di claude.ai o con `claude mcp` in una
   sessione interattiva. Non servono a questo progetto.
