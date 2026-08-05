@@ -277,7 +277,17 @@ contextBridge.exposeInMainWorld('vault', {
   },
   percorsi: {
     list: (progetto) => ipcRenderer.invoke('percorsi:list', { progetto }),
-    save: (progetto, percorsi) => ipcRenderer.invoke('percorsi:save', { progetto, percorsi })
+    save: (progetto, percorsi) => ipcRenderer.invoke('percorsi:save', { progetto, percorsi }),
+    // le coppie corso+indice: quante sono, quanto è già scritto, quanto costa il resto
+    coppie: (progetto) => ipcRenderer.invoke('percorsi:coppie', { progetto }),
+    // la scrittura vera: una cartella per coppia, `03-delega--per-domande`
+    capitoli: (progetto, opts) => ipcRenderer.send('percorsi:capitoli', Object.assign({ progetto }, opts || {})),
+    // si ferma con lo stesso interruttore della generazione singola: la coda è una sola
+    ferma: (progetto) => ipcRenderer.send('gen:cancel', { progetto }),
+    onCapProgress: (cb) => { const h = (e, d) => cb(d); ipcRenderer.on('percorsi:cap:progress', h); return () => ipcRenderer.removeListener('percorsi:cap:progress', h); },
+    onCapLog: (cb) => { const h = (e, d) => cb(d); ipcRenderer.on('percorsi:cap:log', h); return () => ipcRenderer.removeListener('percorsi:cap:log', h); },
+    onCapDone: (cb) => { const h = (e, d) => cb(d); ipcRenderer.on('percorsi:cap:done', h); return () => ipcRenderer.removeListener('percorsi:cap:done', h); },
+    onCapError: (cb) => { const h = (e, d) => cb(d); ipcRenderer.on('percorsi:cap:error', h); return () => ipcRenderer.removeListener('percorsi:cap:error', h); }
   },
   gen: {
     stima: (progetto, folder, capitoli) => ipcRenderer.invoke('gen:stima', { progetto, folder, capitoli }),

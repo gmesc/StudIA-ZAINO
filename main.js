@@ -811,7 +811,9 @@ async function eseguiPassi(passi, send) {
   for (const p of passi) {
     send('ocr:progress', { msg: p.msg });
     await new Promise((risolvi, rifiuta) => {
-      const pr = spawn(p.cmd, p.args);
+      // `env` dice dove finiscono i pesi: dentro la cartella dell'app, salvo
+      // che non esistano già nel magazzino condiviso del computer
+      const pr = spawn(p.cmd, p.args, { env: Object.assign({}, process.env, p.env || {}) });
       readline.createInterface({ input: pr.stdout }).on('line', (l) => send('ocr:log', l));
       readline.createInterface({ input: pr.stderr }).on('line', (l) => send('ocr:log', l));
       pr.on('error', rifiuta);
@@ -826,9 +828,12 @@ ipcMain.on('ocr:installa', async (e, { conModello } = {}) => {
     const ud = app.getPath('userData');
     const sys = findSystemPython();
     if (!sys) { send('ocr:error', 'Python 3 non trovato sul computer: installalo e riprova.'); return; }
-    const passi = ocrLib.stato(ud).installato ? [] : ocrLib.passiInstallazione(sys, ud);
+    const st = ocrLib.stato(ud);
+    const passi = st.installato ? [] : ocrLib.passiInstallazione(sys, ud);
     // il modello si scarica ora se l'utente lo ha chiesto: altrimenti aspetta il primo documento
-    if (conModello !== false) passi.push(ocrLib.passoScaricaModello(ud));
+    if (conModello !== false) {
+      passi.push(ocrLib.passoScaricaModello(ud, ocrLib.modelloScaricato(ocrLib.MODELLO, ud)));
+    }
     await eseguiPassi(passi, send);
     send('ocr:done', ocrLib.stato(ud));
   } catch (err) {
@@ -879,7 +884,8 @@ ipcMain.on('ocr:leggi', async (e, { progetto, scelte } = {}) => {
       msg: 'Leggo «' + s.file + '»: ' + s.pagine.length + ' pagine' });
     try {
       await new Promise((risolvi, rifiuta) => {
-        const pr = spawn(py, [path.join(__dirname, 'ocr.py'), 'leggi', pdf, s.pagine.join(','), indice, figure]);
+        const pr = spawn(py, [path.join(__dirname, 'ocr.py'), 'leggi', pdf, s.pagine.join(','), indice, figure],
+          { env: Object.assign({}, process.env, ocrLib.stato(ud).ambiente) });
         const riga = (l) => {
           if (l.startsWith('@AVANZ ')) {
             let ev = {}; try { ev = JSON.parse(l.slice(7)); } catch (_) {}
@@ -917,10 +923,10 @@ ipcMain.on('ocr:leggi', async (e, { progetto, scelte } = {}) => {
  */
 ipcMain.handle('ocr:rimuovi', () => {
   try {
-    const d = ocrLib.venvDir(app.getPath('userData'));
-    fs.rmSync(d, { recursive: true, force: true });
-    const m = ocrLib.modelloScaricato();
-    return { ok: true, modelloRestaIn: m.presente ? m.dove : null, modelloGb: m.gb };
+    const ud = app.getPath('userData');
+    const piano = ocrLib.daRimuovere(ud, ocrLib.modelloScaricato(ocrLib.MODELLO, ud));
+    for (const d of piano.cartelle) fs.rmSync(d, { recursive: true, force: true });
+    return { ok: true, tolte: piano.cartelle, modelloRestaIn: piano.restaFuori, modelloGb: piano.gb };
   } catch (e) { return { error: String((e && e.message) || e) }; }
 });
 
@@ -1252,9 +1258,102 @@ ipcMain.handle('percorsi:list', (e, { progetto } = {}) => {
 ipcMain.handle('percorsi:save', (e, { progetto, percorsi } = {}) => {
   const v = vaultDir(); if (!v || !progetto) return { error: 'progetto mancante' };
   if (progettiLib.protetto(v, progetto)) return { error: progettiLib.motivoRifiuto(progetto) };
-  try { return { ok: true, percorsi: percorsiLib.salvaTutti(v, progetto, percorsi || []) }; }
-  catch (err) { return { error: String((err && err.message) || err) }; }
+  try {
+    // la cartella della coppia si calcola qui, dove le scalette ci sono, e resta
+    // scritta nel percorso: il lettore la legge senza dover conoscere le scalette
+    const conCartelle = percorsiLib.conCartelle(percorsi || [], percorsiLib.leggiScalette(v, progetto));
+    return { ok: true, percorsi: percorsiLib.salvaTutti(v, progetto, conCartelle) };
+  } catch (err) { return { error: String((err && err.message) || err) }; }
 });
+
+/** I file .md di capitolo dentro una cartella-corso (la logica sta in lib/, coperta dai test). */
+function capitoliSulDisco(v, progetto, cartella) { return percorsiLib.capitoliSulDisco(v, progetto, cartella); }
+
+/**
+ * Le coppie corso+indice da scrivere, con quanto è già stato scritto e quanto costa il resto.
+ * È ciò che il composer mostra prima di far spendere: quante cartelle, quanti
+ * capitoli, e quali indici sono condivisi fra più percorsi.
+ */
+ipcMain.handle('percorsi:coppie', (e, { progetto } = {}) => {
+  const v = vaultDir(); if (!v || !progetto) return { error: 'progetto mancante' };
+  const piano = propose.leggiPiano(v, progetto);
+  const perCorso = {};
+  for (const c of ((piano && piano.corsi) || [])) perCorso[c.folder] = c;
+  const coppie = percorsiLib.coppieDaScrivere(
+    percorsiLib.leggiTutti(v, progetto), percorsiLib.leggiScalette(v, progetto)
+  ).map((k) => {
+    const scritti = capitoliSulDisco(v, progetto, k.cartella).length;
+    return Object.assign({}, k, {
+      capitoli: k.capitoli.length,
+      titoloCorso: (perCorso[k.folder] && perCorso[k.folder].title) || k.folder,
+      scritti,
+      stato: !scritti ? 'da scrivere' : (scritti >= k.capitoli.length ? 'scritti' : 'parziale')
+    });
+  });
+  const ai = sceltaAi();
+  const daFare = coppie.filter((k) => k.stato !== 'scritti').reduce((s, k) => s + k.capitoli, 0);
+  return {
+    coppie,
+    fornitore: ai && ai.fornitore, modello: ai && ai.modello,
+    // stessa misura empirica di gen:stima: ~9k token in ingresso, ~1,6k in uscita per capitolo
+    costoUsd: providerAi.stimaCosto({ modello: ai && ai.modello, input: daFare * 9000, output: daFare * 1600 })
+  };
+});
+
+/**
+ * Scrive i capitoli delle coppie corso+indice.
+ *
+ * Una cartella per coppia, `03-delega--per-domande`, col suo `_corso.md`. Le
+ * coppie già scritte si saltano se non si chiede `riscrivi`: è la stessa regola
+ * delle scalette — quello che è già stato pagato non si ricompra da solo.
+ *
+ * Riscrivendo, i capitoli vecchi della cartella si cancellano PRIMA: la
+ * cartella appartiene per intero alla coppia, e lasciarli lì significherebbe
+ * ritrovarsi due versioni dello stesso capitolo con numeri uguali e slug
+ * diversi, senza modo di sapere quale sia quella buona.
+ */
+ipcMain.on('percorsi:capitoli', async (ev, { progetto, cartelle, riscrivi } = {}) => {
+  const send = (ch, d) => { try { ev.sender.send(ch, d); } catch (_) {} };
+  const v = vaultDir();
+  if (!v || !progetto) { send('percorsi:cap:error', 'progetto mancante'); return; }
+  if (progettiLib.protetto(v, progetto)) { send('percorsi:cap:error', progettiLib.motivoRifiuto(progetto)); return; }
+  const ai = sceltaAi();
+  if (!ai) { send('percorsi:cap:error', 'Serve una chiave API per scrivere i capitoli.'); return; }
+  const piano = propose.leggiPiano(v, progetto);
+  const perCorso = {};
+  for (const c of ((piano && piano.corsi) || [])) perCorso[c.folder] = c;
+
+  const tutte = percorsiLib.coppieDaScrivere(
+    percorsiLib.leggiTutti(v, progetto), percorsiLib.leggiScalette(v, progetto));
+  const lista = tutte
+    .filter((k) => !cartelle || !cartelle.length || cartelle.indexOf(k.cartella) >= 0)
+    .filter((k) => riscrivi || !capitoliSulDisco(v, progetto, k.cartella).length)
+    .filter((k) => perCorso[k.folder] && k.capitoli.length);
+  if (!lista.length) { send('percorsi:cap:done', { fatte: 0, scritti: 0, scarti: 0, saltate: tutte.length }); return; }
+
+  genFermato.delete(progetto);
+  let scritti = 0, scarti = 0, fatte = 0;
+  try {
+    for (let i = 0; i < lista.length; i++) {
+      if (genFermato.has(progetto)) { send('percorsi:cap:log', 'Fermato su richiesta.'); break; }
+      const k = lista[i];
+      const corso = perCorso[k.folder];
+      send('percorsi:cap:progress', { fase: 'corso', cartella: k.cartella, titoloCorso: corso.title,
+        nome: k.nome, coppia: i + 1, coppie: lista.length, indice: 0, totale: k.capitoli.length });
+      percorsiLib.preparaCartella(v, progetto, corso, k, { riscrivi: !!riscrivi });
+      const r = await scriviCapitoli({
+        v, progetto, corso, cartella: k.cartella, capitoli: k.capitoli, accoda: false, ai,
+        onProgress: (d) => send('percorsi:cap:progress', Object.assign({ fase: 'capitolo', cartella: k.cartella,
+          titoloCorso: corso.title, nome: k.nome, coppia: i + 1, coppie: lista.length }, d)),
+        onLog: (l) => send('percorsi:cap:log', k.cartella + ' · ' + l)
+      });
+      scritti += r.scritti.length; scarti += r.scarti.length; fatte++;
+      if (r.fermato) break;
+    }
+    send('percorsi:cap:done', { fatte, scritti, scarti, saltate: tutte.length - lista.length });
+  } catch (err) { send('percorsi:cap:error', String((err && err.message) || err)); }
+});
+
 
 /**
  * Espansione: che cosa c'è di nuovo da mettere in un progetto già finito.
@@ -1338,6 +1437,72 @@ ipcMain.handle('gen:stima', (e, { progetto, folder, capitoli } = {}) => {
 const genFermato = new Set();
 ipcMain.on('gen:cancel', (e, { progetto } = {}) => { if (progetto) genFermato.add(progetto); });
 
+/**
+ * Scrive i capitoli di un corso dentro `cartella`.
+ *
+ * `cartella` non è sempre `corso.folder`: per le varianti di percorso è
+ * `03-delega--per-domande`, cioè una coppia corso+indice. Il corso da cui si
+ * legge (materiali, titolo, razionale) resta lo stesso — cambia solo dove
+ * atterrano i file. Il resto — ordine, riparazione, quarantena, aggiornamento
+ * di `_corso.md` — è identico, e sta qui in un punto solo perché due copie
+ * della stessa procedura divergono sempre.
+ */
+async function scriviCapitoli({ v, progetto, corso, cartella, capitoli, accoda, ai, onProgress, onLog }) {
+  const log = onLog || (() => {});
+  const avanti = onProgress || (() => {});
+  // espansione: i capitoli nuovi si aggiungono in coda, con i numeri successivi.
+  // Rinumerare quelli già scritti spezzerebbe i rimandi [[NN-slug]] degli altri corsi.
+  const dirCorso = progettiLib.corsoDir(v, progetto, cartella);
+  let filePresenti = []; try { filePresenti = fs.readdirSync(dirCorso); } catch (_) {}
+  const daOrdine = accoda ? espandiLib.prossimoOrdine(filePresenti) : 1;
+  const regole = regoleForma('generazione', progetto);
+  const materiali = corpusLib().digest(v, progetto).materiali;
+  const scritti = [], scarti = [];
+  let uso = null, fermato = false;
+  for (let i = 0; i < capitoli.length; i++) {
+    if (genFermato.has(progetto)) { fermato = true; log('Fermato su richiesta dopo ' + scritti.length + ' capitoli.'); break; }
+    const cap = capitoli[i];
+    const ordine = daOrdine + i;
+    avanti({ indice: i + 1, totale: capitoli.length, titolo: cap.titolo, frazione: i / capitoli.length, ordine });
+    const g = await generaLib.generaCapitolo(v, corso, cap, ordine, daOrdine + capitoli.length - 1, materiali,
+      { fornitore: ai.fornitore, modello: ai.modello, apiKey: ai.apiKey, lingua: ai.lingua },
+      { regoleForma: regole,
+        progetto,                                 // il testo delle fonti si cerca solo dentro questo progetto
+        corsi: corsiDelProgetto(progetto),        // i rimandi devono puntare a corsi che esistono
+        precedente: i > 0 ? capitoli[i - 1].titolo : '',
+        successivo: i + 1 < capitoli.length ? capitoli[i + 1].titolo : '' });
+    uso = generaLib.sommaUso(uso, g.uso);
+    if (g.errori.length || !g.dati) {
+      const nome = g.dati ? generaLib.scriviScarto(v, progetto, cartella, ordine, g.dati, g.errori) : '(nessuna risposta)';
+      scarti.push({ ordine, titolo: cap.titolo, errori: g.errori, scarto: nome });
+      log('✗ ' + cap.titolo + ' — ' + g.errori.join('; '));
+      continue;                                   // un capitolo storto non ferma gli altri
+    }
+    // «fonte» nel frontmatter dice da quale materiale nasce il capitolo, col suo tipo vero
+    const prima = cap.fonti && cap.fonti[0];
+    const mPrima = prima && materiali.find((m) => m.num === prima.materiale);
+    const w = generaLib.scriviCapitolo(v, progetto, cartella, ordine, g.dati,
+      { fonte: mPrima ? { tipo: mPrima.tipo, materiale: mPrima.num } : null });
+    scritti.push({ ordine, titolo: g.dati.title, file: w.file });
+    log('✓ ' + g.dati.title);
+  }
+  if (uso) registraUso(Object.assign({ fornitore: ai.fornitore, modello: ai.modello }, uso), progetto, 'capitoli ' + cartella);
+  // l'ordine dei capitoli nel _corso.md riflette ciò che è stato davvero scritto
+  try {
+    const fileCorso = path.join(dirCorso, '_corso.md');
+    let raw = fs.readFileSync(fileCorso, 'utf-8');
+    // accodando, l'ordine dichiarato dall'autore resta e i nuovi vanno in fondo
+    // «prima» = i capitoli che c'erano quando la generazione è partita (il
+    // frontmatter li tiene come testo, la cartella è la fonte affidabile)
+    const prima = accoda ? espandiLib.capitoliDi(filePresenti) : [];
+    const ordineFinale = espandiLib.ordineAggiornato(prima, scritti.map((x) => x.file));
+    raw = mdser.upsertFmLine(raw, 'ordine_capitoli', 'ordine_capitoli: ' + mdser.yList(ordineFinale));
+    raw = mdser.upsertFmLine(raw, 'status', 'status: ' + mdser.yq(scarti.length ? 'parziale' : 'generato'));
+    writeAtomic(fileCorso, raw);
+  } catch (err) {}
+  return { scritti, scarti, uso, fermato };
+}
+
 ipcMain.on('gen:start', async (e, { progetto, folder, capitoli, accoda } = {}) => {
   const send = (ch, d) => { try { e.sender.send(ch, d); } catch (_) {} };
   const v = vaultDir();
@@ -1352,57 +1517,12 @@ ipcMain.on('gen:start', async (e, { progetto, folder, capitoli, accoda } = {}) =
   if (!lista.length) { send('gen:error', 'nessun capitolo da scrivere'); return; }
 
   genFermato.delete(progetto);
-  // espansione: i capitoli nuovi si aggiungono in coda, con i numeri successivi.
-  // Rinumerare quelli già scritti spezzerebbe i rimandi [[NN-slug]] degli altri corsi.
-  const dirCorso = progettiLib.corsoDir(v, progetto, folder);
-  let filePresenti = []; try { filePresenti = fs.readdirSync(dirCorso); } catch (_) {}
-  const daOrdine = accoda ? espandiLib.prossimoOrdine(filePresenti) : 1;
-  const regole = regoleForma('generazione', progetto);
-  const materiali = corpusLib().digest(v, progetto).materiali;
-  const scritti = [], scarti = [];
-  let uso = null;
   try {
-    for (let i = 0; i < lista.length; i++) {
-      if (genFermato.has(progetto)) { send('gen:log', 'Fermato su richiesta dopo ' + scritti.length + ' capitoli.'); break; }
-      const cap = lista[i];
-      const ordine = daOrdine + i;
-      send('gen:progress', { indice: i + 1, totale: lista.length, titolo: cap.titolo, frazione: i / lista.length, ordine });
-      const g = await generaLib.generaCapitolo(v, corso, cap, ordine, daOrdine + lista.length - 1, materiali,
-        { fornitore: ai.fornitore, modello: ai.modello, apiKey: ai.apiKey, lingua: ai.lingua },
-        { regoleForma: regole,
-          progetto,                                 // il testo delle fonti si cerca solo dentro questo progetto
-          corsi: corsiDelProgetto(progetto),        // i rimandi devono puntare a corsi che esistono
-          precedente: i > 0 ? lista[i - 1].titolo : '',
-          successivo: i + 1 < lista.length ? lista[i + 1].titolo : '' });
-      uso = generaLib.sommaUso(uso, g.uso);
-      if (g.errori.length || !g.dati) {
-        const nome = g.dati ? generaLib.scriviScarto(v, progetto, folder, ordine, g.dati, g.errori) : '(nessuna risposta)';
-        scarti.push({ ordine, titolo: cap.titolo, errori: g.errori, scarto: nome });
-        send('gen:log', '✗ ' + cap.titolo + ' — ' + g.errori.join('; '));
-        continue;                                   // un capitolo storto non ferma gli altri
-      }
-      // «fonte» nel frontmatter dice da quale materiale nasce il capitolo, col suo tipo vero
-      const prima = cap.fonti && cap.fonti[0];
-      const mPrima = prima && materiali.find((m) => m.num === prima.materiale);
-      const w = generaLib.scriviCapitolo(v, progetto, folder, ordine, g.dati,
-        { fonte: mPrima ? { tipo: mPrima.tipo, materiale: mPrima.num } : null });
-      scritti.push({ ordine, titolo: g.dati.title, file: w.file });
-      send('gen:log', '✓ ' + g.dati.title);
-    }
-    if (uso) registraUso(Object.assign({ fornitore: ai.fornitore, modello: ai.modello }, uso), progetto, 'capitoli ' + folder);
-    // l'ordine dei capitoli nel _corso.md riflette ciò che è stato davvero scritto
-    try {
-      const fileCorso = path.join(dirCorso, '_corso.md');
-      let raw = fs.readFileSync(fileCorso, 'utf-8');
-      // accodando, l'ordine dichiarato dall'autore resta e i nuovi vanno in fondo
-      // «prima» = i capitoli che c'erano quando la generazione è partita (il
-      // frontmatter li tiene come testo, la cartella è la fonte affidabile)
-      const prima = accoda ? espandiLib.capitoliDi(filePresenti) : [];
-      const ordineFinale = espandiLib.ordineAggiornato(prima, scritti.map((x) => x.file));
-      raw = mdser.upsertFmLine(raw, 'ordine_capitoli', 'ordine_capitoli: ' + mdser.yList(ordineFinale));
-      raw = mdser.upsertFmLine(raw, 'status', 'status: ' + mdser.yq(scarti.length ? 'parziale' : 'generato'));
-      writeAtomic(fileCorso, raw);
-    } catch (err) {}
+    const { scritti, scarti, uso } = await scriviCapitoli({
+      v, progetto, corso, cartella: folder, capitoli: lista, accoda, ai,
+      onProgress: (d) => send('gen:progress', d),
+      onLog: (l) => send('gen:log', l)
+    });
     const cc = (piano.corsi || []).find((c) => c.folder === folder);
     if (cc) {
       /* Nel piano un capitolo si scrive {file, title}: la generazione lo produce

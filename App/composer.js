@@ -23,7 +23,9 @@
     nomi: {},           // id personaggio → nome dato alla variante
     nCap: null,         // capitoli per corso chiesti al modello (null = lo decide lui)
     nPerCorso: {},      // scostamenti riga per riga
-    stato: 'fermo', prog: null, errore: null, sporco: false
+    stato: 'fermo', prog: null, errore: null, sporco: false,
+    // la scrittura dei capitoli: le coppie vengono dai percorsi SALVATI, non dal tavolo
+    coppie: [], stima: null, scr: { stato: 'fermo', prog: null, log: [], errore: null }
   };
   var $ = function (s) { return document.querySelector(s); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
@@ -42,6 +44,11 @@
     if (!C.progetto) { toast('Scegli prima un progetto', false); return; }
     if (!(window.vault && window.vault.composer)) { toast('Il composer è disponibile solo nell\'app', false); return; }
     C.errore = null; C.prog = null; C.stato = 'fermo'; C.sporco = false;
+    C.coppie = []; C.stima = null;
+    /* Riaprendo si riparte da fermo, ma una scrittura DAVVERO in corso non si
+       azzera: il processo principale continua a scrivere anche a composer
+       chiuso, e perdere lo stato qui vorrebbe dire ignorare il suo «finito». */
+    if (C.scr.stato !== 'in-corso') C.scr = { stato: 'fermo', prog: null, log: [], errore: null };
     try {
       var pr = (window.vault.prefs && window.vault.prefs.read()) || {};
       C.nCap = Number(pr.capitoliPerCorso) || null;
@@ -68,7 +75,19 @@
         if (C.scalette[f] && C.scalette[f].nCapitoli) C.nPerCorso[f] = C.scalette[f].nCapitoli;
       });
       pitta();
+      caricaCoppie();
     });
+  }
+
+  /** Le coppie corso+indice da scrivere: quante sono, quanto è già scritto, quanto costa il resto. */
+  function caricaCoppie() {
+    if (!(window.vault.percorsi && window.vault.percorsi.coppie)) return;
+    window.vault.percorsi.coppie(C.progetto).then(function (r) {
+      if (!r || r.error) { C.coppie = []; C.stima = null; pittaScrittura(); return; }
+      C.coppie = r.coppie || [];
+      C.stima = { costoUsd: r.costoUsd, modello: r.modello, fornitore: r.fornitore };
+      pittaScrittura();
+    }).catch(function () {});
   }
 
   function chiudi() {
@@ -101,7 +120,74 @@
 
   // ------------------------------------------------------------------- pittura
 
-  function pitta() { pittaPersonaggi(); pittaTopbar(); pittaRighe(); pittaPercorsi(); }
+  function pitta() { pittaPersonaggi(); pittaTopbar(); pittaRighe(); pittaPercorsi(); pittaScrittura(); }
+
+  /**
+   * La scrittura dei capitoli, coppia per coppia.
+   *
+   * Le coppie non vengono dal tavolo ma dai percorsi **salvati**: scrivere i
+   * capitoli di un'assegnazione che esiste solo a schermo produrrebbe cartelle
+   * che nessun percorso rivendica. Chi ha spostato un personaggio e non ha
+   * ancora salvato lo legge qui, invece di scoprirlo dopo aver speso.
+   */
+  function pittaScrittura() {
+    var box = $('#cmpScrittura'); if (!box) return;
+    var s = C.scr;
+    if (!C.coppie.length) {
+      box.innerHTML = '<span class="kick">Capitoli</span>' +
+        '<p class="cmp-vuoto">Nessuna coppia corso+indice da scrivere: assegna i personaggi agli indici e ' +
+        '<b>salva i percorsi</b>. Ogni coppia diventa una cartella <code>corso--indice</code> con i suoi capitoli.</p>';
+      return;
+    }
+    var daFare = C.coppie.filter(function (k) { return k.stato !== 'scritti'; });
+    var nCap = daFare.reduce(function (n, k) { return n + k.capitoli; }, 0);
+    var costo = C.stima && typeof C.stima.costoUsd === 'number'
+      ? 'circa <b>$' + C.stima.costoUsd.toFixed(2) + '</b> con ' + esc(C.stima.modello || 'il modello scelto')
+      : 'costo non stimabile con ' + esc((C.stima && C.stima.modello) || 'questo modello') + ' (non è a listino)';
+
+    var righe = C.coppie.map(function (k) {
+      var chips = k.usataDa.map(function (pid) {
+        var p = PG[pid]; return p ? '<span class="cmp-mini" style="background:' + tinta(p.colore, 20) + '" title="' +
+          esc(C.nomi[pid] || p.nome) + '">' + p.emoji + '</span>' : '';
+      }).join('');
+      var stato = k.stato === 'scritti' ? '<span class="cmp-fatto">✓ ' + k.scritti + ' scritti</span>'
+        : (k.stato === 'parziale' ? '<span class="cmp-parz">' + k.scritti + ' di ' + k.capitoli + '</span>'
+                                  : '<span class="cmp-sub">da scrivere</span>');
+      return '<tr' + (s.prog && s.prog.cartella === k.cartella ? ' class="incorso"' : '') + '>' +
+        '<td><code>' + esc(k.cartella) + '</code><div class="cmp-sub">' + esc(k.titoloCorso) + '</div></td>' +
+        '<td>' + esc(k.nome) + '</td>' +
+        '<td class="num">' + k.capitoli + '</td>' +
+        '<td>' + chips + (k.usataDa.length > 1 ? '<span class="cmp-cond">usato da ' + k.usataDa.length + ' percorsi</span>' : '') + '</td>' +
+        '<td>' + stato + '</td>' +
+        '<td><button type="button" class="wz-btn cmp-scrivi-uno" data-cartella="' + esc(k.cartella) + '"' +
+          (s.stato === 'in-corso' ? ' disabled' : '') + '>' + (k.scritti ? 'riscrivi' : 'scrivi') + '</button></td></tr>';
+    }).join('');
+
+    var avanz = '';
+    if (s.stato === 'in-corso') {
+      var p = s.prog || {};
+      var pc = Math.round(((p.coppia || 1) - 1 + ((p.indice || 0) / (p.totale || 1))) / (p.coppie || 1) * 100);
+      avanz = '<div class="wz-avviso">Coppia ' + (p.coppia || 1) + ' di ' + (p.coppie || '?') + ' · <code>' +
+        esc(p.cartella || '') + '</code>' +
+        (p.fase === 'capitolo' ? ' — capitolo ' + (p.indice || 1) + ' di ' + (p.totale || '?') + ': «' + esc(p.titolo || '') + '»' : ' — preparo la cartella') +
+        '</div><div class="cmp-bar"><i style="width:' + pc + '%"></i></div>';
+    }
+    if (s.errore) avanz += '<div class="wz-errore">' + esc(s.errore) + '</div>';
+
+    box.innerHTML = '<span class="kick">Capitoli · una cartella per coppia corso+indice</span>' +
+      '<div class="cmp-scrhead">' +
+      '<span>' + C.coppie.length + ' coppie · <b>' + nCap + '</b> capitoli da scrivere · ' + costo + '</span>' +
+      (s.stato === 'in-corso'
+        ? '<button type="button" class="wz-btn" id="cmpScrStop">Ferma dopo questo capitolo</button>'
+        : '<button type="button" class="wz-btn primary" id="cmpScrivi"' + (nCap ? '' : ' disabled') + '>' +
+            'Scrivi i capitoli mancanti</button>' +
+          '<button type="button" class="wz-btn" id="cmpRiscrivi">Riscrivi tutto</button>') +
+      '</div>' + avanz +
+      '<table class="cmp-tab"><thead><tr><th>Cartella</th><th>Indice</th><th class="num">Cap.</th>' +
+      '<th>Percorsi</th><th>Stato</th><th></th></tr></thead><tbody>' + righe + '</tbody></table>' +
+      (s.log.length ? '<ul class="cmp-log">' + s.log.slice(-8).map(function (l) {
+        return '<li' + (/✗/.test(l) ? ' class="err"' : '') + '>' + esc(l) + '</li>'; }).join('') + '</ul>' : '');
+  }
 
   function pittaPersonaggi() {
     var box = $('#cmpPg'); if (!box) return;
@@ -272,6 +358,62 @@
     });
   }
 
+  // ------------------------------------------------------- scrivere i capitoli
+
+  /**
+   * Avvia la scrittura. `cartelle` limita a certe coppie; `riscrivi` rifà anche
+   * quelle già fatte — e allora va detto prima quante ne dipendono: rigenerare
+   * un indice condiviso riscrive i capitoli di tutti i percorsi che lo usano.
+   */
+  function scriviCapitoli(cartelle, riscrivi) {
+    if (!(window.vault.percorsi && window.vault.percorsi.capitoli)) return;
+    var tocca = C.coppie.filter(function (k) {
+      return (!cartelle || cartelle.indexOf(k.cartella) >= 0) && (riscrivi || k.stato !== 'scritti');
+    });
+    if (!tocca.length) { toast('Non c\'è niente da scrivere: tutte le coppie sono già fatte', false); return; }
+    var condivise = tocca.filter(function (k) { return k.usataDa.length > 1 && k.scritti; });
+    var giaFatti = tocca.filter(function (k) { return k.scritti; });
+    if (giaFatti.length) {
+      var msg = 'Riscrivo ' + giaFatti.length + ' cartelle che hanno già i capitoli: quelli vecchi vengono cancellati.';
+      if (condivise.length) {
+        msg += '\n\n' + condivise.map(function (k) {
+          return '· ' + k.cartella + ' è usato da ' + k.usataDa.length + ' percorsi: si aggiornano tutti.';
+        }).join('\n');
+      }
+      if (!confirm(msg + '\n\nProcedo?')) return;
+    }
+    C.scr = { stato: 'in-corso', prog: null, log: [], errore: null };
+    pittaScrittura();
+    window.vault.percorsi.capitoli(C.progetto, {
+      cartelle: tocca.map(function (k) { return k.cartella; }), riscrivi: !!riscrivi
+    });
+  }
+
+  if (window.vault && window.vault.percorsi && window.vault.percorsi.onCapProgress) {
+    window.vault.percorsi.onCapProgress(function (d) {
+      if (C.scr.stato !== 'in-corso') return;
+      C.scr.prog = d || {}; pittaScrittura();
+    });
+    window.vault.percorsi.onCapLog(function (l) {
+      if (C.scr.stato !== 'in-corso') return;
+      C.scr.log.push(String(l)); if (C.scr.log.length > 60) C.scr.log.shift();
+      pittaScrittura();
+    });
+    window.vault.percorsi.onCapDone(function (d) {
+      if (C.scr.stato !== 'in-corso') return;
+      C.scr.stato = 'fermo'; C.scr.prog = null;
+      var s = (d && d.scritti) || 0, k = (d && d.scarti) || 0;
+      toast(s + ' capitoli scritti in ' + ((d && d.fatte) || 0) + ' cartelle' + (k ? ', ' + k + ' scartati' : ''), !k);
+      caricaCoppie();                         // lo stato si rilegge dal disco, non si deduce
+      if (typeof window.aggiornaVarianti === 'function') window.aggiornaVarianti();
+    });
+    window.vault.percorsi.onCapError(function (m) {
+      if (C.scr.stato !== 'in-corso') return;
+      C.scr.stato = 'fermo'; C.scr.prog = null; C.scr.errore = String(m || 'errore sconosciuto');
+      pittaScrittura(); toast('Scrittura non riuscita: ' + C.scr.errore, false);
+    });
+  }
+
   // ------------------------------------------------------------------ salvare
 
   /** Lo stato del tavolo, nella forma che va sul disco. */
@@ -297,6 +439,7 @@
       if (r && r.error) { toast('Percorsi non salvati: ' + r.error, false); return; }
       C.percorsi = (r && r.percorsi) || []; C.sporco = false;
       toast(C.percorsi.length + ' percorsi salvati in PERCORSI/', true);
+      caricaCoppie();                     // le coppie da scrivere cambiano con le assegnazioni
       if (typeof window.aggiornaVarianti === 'function') window.aggiornaVarianti();
     });
   }
@@ -363,6 +506,15 @@
       else $('#composer').requestFullscreen();
       return;
     }
+    if (e.target.closest('#cmpScrivi')) { scriviCapitoli(null, false); return; }
+    if (e.target.closest('#cmpRiscrivi')) { scriviCapitoli(null, true); return; }
+    if (e.target.closest('#cmpScrStop')) {
+      window.vault.percorsi.ferma(C.progetto);
+      toast('Mi fermo dopo questo capitolo', true);
+      return;
+    }
+    var uno = e.target.closest('.cmp-scrivi-uno');
+    if (uno) { scriviCapitoli([uno.getAttribute('data-cartella')], true); return; }
     var chiedi = e.target.closest('#cmpChiedi');
     if (chiedi) { chiediScalette(null, chiedi.dataset.rifai === '1'); return; }
     var rifai = e.target.closest('.cmp-rifai');

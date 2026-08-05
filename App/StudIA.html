@@ -1017,6 +1017,28 @@
   .cmp-perc ol li{ margin-bottom:.1rem; }
   .cmp-perc ol li.share{ color:var(--muted); }
   .cmp-perc .cn{ color:var(--muted); font-variant-numeric:tabular-nums; }
+  /* la scrittura dei capitoli: una riga per coppia corso+indice */
+  .cmp-scrittura{ border-top:1px solid var(--line); padding:1.1rem 1.1rem 3rem; }
+  .cmp-scrittura .kick{ font-size:10px; text-transform:uppercase; letter-spacing:.18em; font-weight:700; color:var(--muted); }
+  .cmp-scrhead{ display:flex; flex-wrap:wrap; gap:.6rem; align-items:center; margin:.6rem 0 .5rem; font-size:13px; }
+  .cmp-scrhead span{ flex:1; min-width:240px; color:var(--muted); }
+  .cmp-scrhead b{ color:var(--ink); }
+  .cmp-tab{ width:100%; border-collapse:collapse; font-size:12.5px; margin-top:.5rem; }
+  .cmp-tab th{ text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted);
+    border-bottom:1px solid var(--line); padding:.35rem .5rem; font-weight:700; }
+  .cmp-tab td{ border-bottom:1px solid var(--line-weak); padding:.45rem .5rem; vertical-align:top; }
+  .cmp-tab td.num, .cmp-tab th.num{ text-align:right; font-variant-numeric:tabular-nums; }
+  .cmp-tab tr.incorso td{ background:color-mix(in srgb,var(--teal) 8%,var(--panel)); }
+  .cmp-tab code{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; }
+  .cmp-tab .cmp-mini{ display:inline-grid; vertical-align:middle; margin-right:.15rem; }
+  .cmp-tab .wz-btn{ padding:.3rem .55rem; font-size:11px; }
+  .cmp-cond{ display:block; font-size:10px; text-transform:uppercase; letter-spacing:.08em;
+    font-weight:700; color:var(--teal-strong); }
+  .cmp-fatto{ color:var(--teal-strong); font-weight:700; }
+  .cmp-parz{ color:var(--yellow-strong); font-weight:700; }
+  .cmp-log{ list-style:none; margin:.6rem 0 0; padding:0; font-size:11.5px; color:var(--muted); }
+  .cmp-log li{ padding:.1rem 0; }
+  .cmp-log li.err{ color:#b91c1c; }
   .cmp-note{ padding:.7rem 1.1rem; border-top:1px solid var(--line-weak); font-size:12px; color:var(--muted); flex:0 0 auto; }
   .cmp-ov{ position:fixed; inset:0; background:rgba(15,17,21,.55); z-index:250; display:none;
     align-items:center; justify-content:center; padding:2rem; }
@@ -2122,10 +2144,43 @@ document.addEventListener('click',function(e){
 function corsiVisibili(){
   var tutti=Object.values(COURSES);
   var prog=progettoAttivo(); if(!prog) return tutti;
-  return tutti.filter(function(c){
+  var delProgetto=tutti.filter(function(c){
     var m=VAULT_META[c.id];
     return !m || m.projectId===prog;
   });
+  /* Le varianti di percorso: un corso può esistere in più versioni —
+     `03-delega--per-domande` e `03-delega--sequenza` — e mostrarle tutte
+     insieme farebbe leggere due volte lo stesso corso. Si vede quella del
+     percorso attivo; la cartella base si nasconde se il percorso ne usa una
+     variante, altrimenti resta (sono i capitoli scritti un corso per volta).
+     Senza percorsi salvati non si filtra niente: non c'è una variante attiva
+     rispetto a cui decidere. */
+  var p=percorsoScelto(); if(!p) return delProgetto;
+  var scelte=cartellePercorso();
+  return delProgetto.filter(function(c){
+    var m=VAULT_META[c.id]; if(!m) return true;
+    if(m.variante) return scelte[m.base]===m.folder;
+    return !scelte[m.base] || scelte[m.base]===m.folder;
+  });
+}
+
+/* ---- i percorsi (varianti) del progetto attivo ---- */
+var PERCORSI_ATTIVI=[];           // letti da PERCORSI/, riletti a ogni cambio progetto
+/** Il percorso attivo: quello scelto in topbar, o il primo se non si è scelto. */
+function percorsoScelto(){
+  var prog=progettoAttivo(); if(!prog || !PERCORSI_ATTIVI.length) return null;
+  var id=null; try{ id=localStorage.getItem('studia.percorso.'+prog); }catch(e){}
+  return PERCORSI_ATTIVI.filter(function(x){ return x.id===id; })[0] || PERCORSI_ATTIVI[0];
+}
+/** Corso base → cartella che il percorso attivo rivendica. */
+function cartellePercorso(){
+  var p=percorsoScelto(), out={};
+  if(!p) return out;
+  Object.keys(p.scelte||{}).forEach(function(base){
+    var c=p.scelte[base] && p.scelte[base].cartella;
+    if(c) out[base]=c;
+  });
+  return out;
 }
 /** Il numero del corso, che sta nella cartella «NN-slug». '' se non ce l'ha. */
 function numeroCorso(c){ var m=/^(\d{2})-/.exec(String((c&&c.id)||'')); return m?m[1]:''; }
@@ -2721,6 +2776,7 @@ function cambiaProgetto(id){
   if(!id) return;
   try{ localStorage.setItem('studia.progetto', id); }catch(e){}
   try{ MATERIALI.lista=null; }catch(e){}      // i materiali sono di un altro progetto
+  PERCORSI_ATTIVI=[];                         // e anche le varianti: filtrare con quelle di prima nasconderebbe corsi a caso
   refreshCourseSelect();
   var t=document.getElementById('projTopSelect'); if(t && t.value!==id) t.value=id;
   var s=document.getElementById('projSelect');   if(s && s.value!==id) s.value=id;
@@ -2738,27 +2794,42 @@ function cambiaProgetto(id){
  *
  * Le voci vengono da `PERCORSI/<personaggio>.json`, che il composer scrive: una
  * mappa corso → indice scelto, col nome dato alla variante preceduto dall'emoji
- * del personaggio — «🦉 Analitica».
+ * del personaggio — «🦉 Analitica». Cambiare voce cambia **quali capitoli si
+ * leggono**: ogni percorso rivendica una cartella per corso, e le altre spariscono
+ * dall'elenco.
  *
- * Il menu compare quando i percorsi esistono, ma resta DISABILITATO: cambiare
- * variante vuol dire leggere capitoli scritti su un altro indice, e quei
- * capitoli non ci sono ancora (oggi ogni corso ne ha una sola serie). Un menu
- * che si può muovere senza che cambi niente è peggio di un menu spento: qui
- * dice che le varianti esistono e che mancano i loro capitoli.
+ * Compare solo quando i percorsi esistono davvero: con un progetto solo e nessuna
+ * variante sarebbe un comando che non comanda niente.
  */
 function aggiornaVarianti(){
   var sel=document.getElementById('variantSelect'); if(!sel) return;
-  if(!(window.vault && window.vault.percorsi)){ sel.hidden=true; return; }
-  var prog=progettoAttivo(); if(!prog){ sel.hidden=true; return; }
-  window.vault.percorsi.list(prog).then(function(v){
-    if(!v || !v.length){ sel.hidden=true; sel.innerHTML=''; return; }
-    sel.hidden=false; sel.disabled=true;
-    sel.title='Varianti composte per questo progetto. I capitoli di ciascuna non sono ancora stati scritti.';
-    sel.innerHTML=v.map(function(x){
+  var prog=progettoAttivo();
+  if(!(window.vault && window.vault.percorsi) || !prog){ sel.hidden=true; PERCORSI_ATTIVI=[]; return; }
+  return window.vault.percorsi.list(prog).then(function(v){
+    // un percorso senza scelte non è una variante: non rivendica nessuna cartella
+    PERCORSI_ATTIVI=(v||[]).filter(function(x){ return x && Object.keys(x.scelte||{}).length; });
+    if(!PERCORSI_ATTIVI.length){ sel.hidden=true; sel.innerHTML=''; refreshCourseSelect(); return; }
+    var att=percorsoScelto();
+    sel.hidden=false; sel.disabled=false;
+    sel.title='Variante del percorso: cambia quali capitoli vedi, corso per corso.';
+    sel.innerHTML=PERCORSI_ATTIVI.map(function(x){
       return '<option value="'+escHtml(x.id)+'">'+escHtml((x.emoji?x.emoji+' ':'')+x.nome)+'</option>';
     }).join('');
-  }).catch(function(){ sel.hidden=true; });
+    if(att) sel.value=att.id;
+    refreshCourseSelect();
+    /* Il corso aperto può appartenere a una variante che non è più quella attiva:
+       resterebbe a schermo un capitolo che l'elenco non contiene più. */
+    var visibili=corsiOrdinati();
+    if(visibili.length && (!COURSE || !visibili.some(function(c){ return c.id===COURSE.id; }))) loadCourse(visibili[0].id);
+  }).catch(function(){ sel.hidden=true; PERCORSI_ATTIVI=[]; });
 }
+/* cambio di variante: la scelta è per progetto, e sopravvive alla chiusura */
+document.addEventListener('change', function(e){
+  if(!e.target || e.target.id!=='variantSelect') return;
+  var prog=progettoAttivo(); if(!prog) return;
+  try{ localStorage.setItem('studia.percorso.'+prog, e.target.value); }catch(err){}
+  aggiornaVarianti();
+});
 window.aggiornaVarianti=aggiornaVarianti;   // il composer la richiama dopo aver salvato
 
 /** Carica l'elenco dei materiali una volta per apertura del pannello. */
@@ -3487,7 +3558,12 @@ function buildVaultProjects(){
       if(!chapters.length) return;
       var id=addCourse({ id:co.folder, title:(cfm.title||co.folder), subtitle:(cfm.area||''), chapters:chapters });
       // mappa per gli appunti: da quale progetto/cartella/file .md viene ogni capitolo
+      // `03-delega--per-domande` è la variante «per-domande» del corso `03-delega`:
+      // il lettore ne ha bisogno per mostrare una sola versione per volta
+      var _sep=co.folder.indexOf('--');
       VAULT_META[id]={ projectId:proj.id, courseTitle:(cfm.title||co.folder), folder:co.folder,
+        base:(_sep<0?co.folder:co.folder.slice(0,_sep)),
+        variante:(_sep<0?'':(cfm.variante||co.folder.slice(_sep+2))),
         chapters:metaCh };
       if(!firstId) firstId=id;
     }catch(e){ console.error('Corso .md non valido:', co.folder, e); }
@@ -4779,6 +4855,8 @@ try{
       <span class="kick">Percorsi composti · capitoli in ordine</span>
       <div class="cmp-pcols" id="cmpPcols"></div>
     </section>
+    <!-- la scrittura vera: una cartella per coppia corso+indice, con quel che è già fatto -->
+    <section class="cmp-scrittura" id="cmpScrittura"></section>
   </div>
   <div class="cmp-note">
     Un personaggio segue <b>un indice per corso</b>: trascinarlo altrove lo sposta. Cliccalo sulla card per toglierlo.

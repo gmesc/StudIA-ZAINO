@@ -1864,6 +1864,71 @@ async function modelloFinto(o) {
     check('un personaggio inventato non si salva', true, (() => {
       try { perc.scrivi(VP, 'P', { id: 'unicorno', scelte: {} }); return false; } catch (e) { return true; }
     })());
+    /* Le cartelle delle coppie corso+indice. Il suffisso c'è sempre, anche con
+       una variante sola: se comparisse solo alla seconda, la prima dovrebbe
+       cambiare nome — e con lei i rimandi [[03-delega]] già scritti altrove. */
+    const treAlt = [{ nome: 'Sequenza didattica' }, { nome: 'Per domande' }, { nome: 'Sequenza didattica' }];
+    const nomi = perc.cartelleAlternative('03-delega', treAlt);
+    check('una cartella per indice, col nome dell\'indice', '03-delega--sequenza-didattica', nomi[0]);
+    check('i nomi uguali non diventano una cartella sola', '03-delega--sequenza-didattica-2', nomi[2]);
+    check('il suffisso c\'è anche con una variante sola', '01-intro--blocco-unico',
+      perc.cartelleAlternative('01-intro', [{ nome: 'Blocco unico' }])[0]);
+    check('e si scompone di nuovo in base e variante',
+      { base: '03-delega', variante: 'per-domande' }, perc.scomponi('03-delega--per-domande'));
+    check('una cartella senza suffisso non ha variante',
+      { base: '03-delega', variante: '' }, perc.scomponi('03-delega'));
+    check('un indice senza nome non fa sparire la cartella', '05-x--indice',
+      perc.cartelleAlternative('05-x', [{}])[0]);
+
+    /* La cartella si scrive dentro la scelta quando si salva: il lettore deve
+       poter sapere quale cartella è sua senza rileggersi le scalette. */
+    const arricchiti = perc.conCartelle([gufo], scalette);
+    check('la scelta porta con sé la sua cartella', '02-delega--per-domande',
+      arricchiti[0].scelte['02-delega'].cartella);
+    check('e il nome dell\'indice, se non c\'era', 'Per domande', arricchiti[0].scelte['02-delega'].nome);
+    check('conCartelle non tocca l\'originale', undefined, gufo.scelte['02-delega'].cartella);
+
+    /* Le coppie da scrivere: una per cartella, con chi la usa. Rigenerare un
+       indice condiviso riscrive i capitoli di tutti i percorsi che lo usano, e
+       va detto prima di premere. */
+    const daScrivere = perc.coppieDaScrivere([gufo, tarta], scalette);
+    check('una coppia per cartella distinta', 4, daScrivere.length);
+    check('ordinate per cartella', ['01-intro--sequenza', '02-delega--per-domande', '02-delega--sequenza', '03-fine--sequenza'],
+      daScrivere.map((k) => k.cartella));
+    check('la coppia condivisa dichiara chi la usa', ['gufo', 'tarta'],
+      daScrivere.find((k) => k.cartella === '01-intro--sequenza').usataDa);
+    check('e porta i capitoli da scrivere', 3,
+      daScrivere.find((k) => k.cartella === '02-delega--per-domande').capitoli.length);
+    check('un percorso che punta a un indice sparito non produce cartelle', 0,
+      perc.coppieDaScrivere([{ id: 'gufo', scelte: { '09-inesistente': { indice: 0 } } }], scalette).length);
+    check('la cartella di una scelta si ritrova anche a posteriori', '01-intro--sequenza',
+      perc.cartellaDi(gufo, '01-intro', scalette));
+
+    /* La cartella della coppia, con il suo `_corso.md`. Il titolo resta quello
+       del corso base: due varianti sono lo stesso corso, e distinguerle nel
+       titolo le farebbe leggere come due corsi diversi nell'indice. */
+    const corsoBase = { folder: '02-delega', title: 'La competenza di Delega', area: 'AI',
+                        materiali: [{ num: '07' }, { num: '03' }] };
+    const coppia = { cartella: '02-delega--per-domande', folder: '02-delega', nome: 'Per domande', capitoli: [] };
+    const prep = perc.preparaCartella(VP, 'P', corsoBase, coppia, {});
+    const corsoMd = fs.readFileSync(path.join(prep.dir, '_corso.md'), 'utf-8');
+    check('il titolo è quello del corso, non quello della variante', true, /title: "La competenza di Delega"/.test(corsoMd));
+    check('la variante è dichiarata nel frontmatter', true, /variante: "Per domande"/.test(corsoMd));
+    check('e con lei il corso da cui nasce', true, /corso_base: "02-delega"/.test(corsoMd));
+    // stessa forma che scrive `plan:approve` per i corsi normali: due modi diversi divergerebbero
+    check('i materiali del corso base ci sono tutti', true, /materiali: \[07, 03\]/.test(corsoMd));
+
+    // un capitolo già scritto: senza «riscrivi» non si tocca, con «riscrivi» sparisce prima
+    fs.writeFileSync(path.join(prep.dir, '01-primo.md'), '---\ntitle: "x"\n---\n', 'utf-8');
+    fs.writeFileSync(path.join(prep.dir, '_corso.md'), corsoMd.replace('approvato', 'generato'), 'utf-8');
+    perc.preparaCartella(VP, 'P', corsoBase, coppia, {});
+    check('senza riscrivere, i capitoli restano', ['01-primo.md'], perc.capitoliSulDisco(VP, 'P', coppia.cartella));
+    check('e il _corso.md non viene sovrascritto', true,
+      /status: "generato"/.test(fs.readFileSync(path.join(prep.dir, '_corso.md'), 'utf-8')));
+    const rip = perc.preparaCartella(VP, 'P', corsoBase, coppia, { riscrivi: true });
+    check('riscrivendo, i capitoli vecchi si tolgono PRIMA', ['01-primo.md'], rip.tolti);
+    check('e la cartella resta vuota per i nuovi', [], perc.capitoliSulDisco(VP, 'P', coppia.cartella));
+
     check('i percorsi stanno in PERCORSI/, fuori da _lavorazione', true,
       perc.dir(VP, 'P').endsWith(path.join('P', 'PERCORSI')) && perc.scaletteDir(VP, 'P').indexOf('_lavorazione') > 0);
     fs.rmSync(VP, { recursive: true, force: true });
