@@ -567,9 +567,11 @@ del §7.
 - I 10 GB della copia vecchia di TD74 sono stati liberati (Cestino svuotato dall'utente il 5 agosto).
 - Chandra occupa **~11 GB** sul computer dell'autore: 0,93 GB di ambiente in
   `~/Library/Application Support/studia/pyenv-ocr` e 9,9 GB di pesi nella cache di Hugging Face.
-  ⚠️ Su quella macchina `~/.cache/huggingface` è un **link** verso
-  `Antigravity/ScriverAI_models_database/huggingface`: i pesi sono fisicamente lì, insieme ad altri
-  modelli. «Rimuovi» nelle Impostazioni cancella l'ambiente ma **non** i pesi, che sono condivisi.
+  Su quella macchina `~/.cache/huggingface` è un **link** verso
+  `~/Antigravity/ScriverAI_models_database/huggingface` — stesso disco interno, solo un'altra
+  cartella, dove l'utente raccoglie i modelli di più programmi. Niente da collegare o da montare.
+  «Rimuovi» nelle Impostazioni cancella l'ambiente ma **non** i pesi: stanno in una cache condivisa
+  e potrebbero servire ad altro, quindi si tolgono a mano. L'app dice dove sono.
 - I server MCP `plugin:design:*` (asana, atlassian, figma, intercom, linear, notion, slack) risultano non
   autorizzati: vanno collegati dalle impostazioni dei connettori di claude.ai o con `claude mcp` in una
   sessione interattiva. Non servono a questo progetto.
