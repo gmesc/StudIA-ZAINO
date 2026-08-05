@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "studia/capitolo.schema.json",
+  "title": "Capitolo generato (structured output)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title", "inBreve", "contenuto", "puntiChiave"],
+  "properties": {
+    "title": { "type": "string", "minLength": 3, "maxLength": 120, "pattern": "^[^0-9]" },
+    "inBreve": { "type": "string", "minLength": 10, "maxLength": 900 },
+    "contenuto": { "type": "string", "minLength": 40 },
+    "puntiChiave": {
+      "type": "array", "minItems": 3, "maxItems": 5,
+      "items": { "type": "string", "minLength": 3, "maxLength": 300 }
+    },
+    "quiz": {
+      "type": "array", "minItems": 1, "maxItems": 3,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["q", "a", "perche"],
+        "properties": {
+          "q": { "type": "string", "minLength": 8, "maxLength": 300 },
+          "a": { "type": "boolean" },
+          "perche": { "type": "string", "minLength": 3, "maxLength": 400 }
+        }
+      }
+    },
+    "glossario": {
+      "type": "array", "minItems": 2, "maxItems": 4,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["t", "d"],
+        "properties": {
+          "t": { "type": "string", "minLength": 2, "maxLength": 80 },
+          "d": { "type": "string", "minLength": 5, "maxLength": 400 }
+        }
+      }
+    },
+    "videoRefs": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["video", "t"],
+        "properties": {
+          "video": { "type": "string", "pattern": "^[0-9]{2}$" },
+          "t": { "type": "integer", "minimum": 0 },
+          "label": { "type": "string", "maxLength": 120 }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["pdf", "page"],
+        "properties": {
+          "pdf": { "type": "string", "pattern": "^[0-9]{2}$" },
+          "page": { "type": "integer", "minimum": 1 },
+          "label": { "type": "string", "maxLength": 120 }
+        }
+      }
+    },
+    "footnotes": { "type": "array", "items": { "type": "string", "minLength": 3, "maxLength": 500 } },
+    "tags": { "type": "array", "items": { "type": "string", "maxLength": 40 } }
+  }
+}

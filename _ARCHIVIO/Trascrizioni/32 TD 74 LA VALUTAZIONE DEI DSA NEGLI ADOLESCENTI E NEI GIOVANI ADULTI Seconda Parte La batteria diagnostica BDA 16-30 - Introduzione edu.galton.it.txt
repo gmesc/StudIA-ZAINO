@@ -1,0 +1,2232 @@
+Buongiorno, eccoci al modulo secondo di questo videocorso sulla diagnosi dei disturbi specifici
+di apprendimento in adolescenza e in età adulta. Oggi parleremo espressamente di come deve essere
+effettuata la diagnosi, di quali parametri e quali prove devono essere somministrate per poter ottenere
+le informazioni che permettano al clinico di poter valutare l'eventuale presenza o assenza di un disturbo
+specifico di apprendimento. Storicamente la valutazione del disturbo specifico di apprendimento è
+segnatamente della dislessia è stata fatta tenendo sotto controllo due parametri principali durante la lettura.
+Il primo è la velocità, cioè quanto rapidamente riesce a leggere il soggetto testato. Il secondo parametro invece
+è la correttezza, anche detta accuratezza, non c'è differenza. Posso chiamarla correttezza o accuratezza
+senza che questo modifica alcunché. E si ottiene valutando il numero di errori prodotti durante la lettura.
+Ora, apparentemente sembra un'operazione semplice, tuttavia merita di avere un certo grado di attenzione
+perché nasconde alcuni bias, alcuni errori che l'operatore inesperto potrebbe, senza rendersene conto,
+effettuare e poi magari non riuscire ad avere dei dati sufficientemente affidabili per una valutazione puntuale.
+Anzitutto, cosa significa valutare la velocità di lettura?
+Certamente significa misurare il tempo che passa da quando il soggetto inizia a leggere la prova
+fino a quando finisce. È necessario dare una consegna precisa, cioè di leggere nel modo più rapido possibile.
+Cioè deve fare una lettura non intonata nell'intenzione di essere semplicemente chiaro,
+ma deve proprio cercare di fare il più rapidamente possibile.
+Fatto questo, noi facciamo partire un cronometro e poi, normalmente, dividiamo alla fine della prova
+il numero di sillabe presenti nel brano che ha letto o nelle liste di parole che ha letto
+per i secondi che ha impiegato a leggere.
+Ad esempio, se avessimo a che fare con un brano di mille sillabe
+e poniamo caso che questa persona riesca a leggere questo brano in 200 secondi,
+faremo un'operazione molto semplice.
+Mille sillabe diviso 200 secondi che ci darà come risultato 5.
+Questo 5 altro non sono che le sillabe al secondo che questa persona è riuscito a leggere.
+Ed è il parametro di velocità.
+La velocità, infatti, si misura in sillabe al secondo, facendo un semplice calcolo.
+C'è da dire che la maggior parte dei test attuali fa questo tipo di misurazione in maniera automatica,
+semplicemente compilando un programma o un software di cui normalmente sono ormai corredati tutti i test moderni.
+Ma in generale il processo per capire qual è la velocità di lettura è sostanzialmente un rapporto,
+cioè il numero di sillabe diviso il numero di secondi impiegato.
+Quanto velocemente riesce a leggere un adulto, ad esempio un universitario?
+Non è molto semplice da stabilire perché tanto cambia in funzione del tipo di testo che stiamo presentando.
+Un testo narrativo normalmente viene letto più rapidamente di quanto non si faccia con un testo specialistico.
+Tuttavia possiamo dire in grandi linee che un adulto, un normolettore senza difficoltà di lettura,
+generalmente a voce alta riesce a leggere tra le 6 e le 7 sillabe al secondo.
+Qualcuno ha anche 7 sillabe e mezzo.
+Mentre quando abbiamo a che fare con un disturbo di lettura possiamo osservare delle velocità sensibilmente più basse,
+4, 3,5, qualche volta 3 o addirittura meno, in funzione della gravità del disturbo di lettura.
+Osserviamo molte volte un numero di sillabe sensibilmente più basso,
+in funzione della gravità del disturbo di lettura.
+Bene, un altro dei parametri che viene normalmente valutato è l'accuratezza.
+L'accuratezza è soltanto la misurazione del numero di errori prodotto durante la lettura.
+Alcuni soggetti fisiologicamente durante una lettura di un testo possono sbagliare a leggere qualche parola.
+Questo è da considerarsi assolutamente normale.
+Invece se i soggetti che leggono si affaticano fisiologicamente e sistematicamente tendono a sbagliare,
+a confondere alcuni termini con altri, evidentemente ci troviamo di fronte a una difficoltà,
+una mancata accuratezza che non è compatibile con una buona lettura.
+Per capirlo non serve fare un'analisi semplicemente qualitativa.
+È necessario utilizzare questi dati che sono stati raccolti durante la somministrazione del test
+per fare un confronto standardizzato con quelle che sono le medie e le deviazioni standard oppure i centili
+nel caso dei soggetti normolettori.
+Si tratta di un'analisi di tipo statistico che in questa sede non è espressamente utile,
+ma che è fondamentale nel momento in cui dobbiamo trasformare questi dati grezzi
+recuperati durante la lettura della persona che stiamo testando
+e confrontarli con le tabelle normative presenti all'interno dei test standardizzati.
+Normalmente noi valutiamo la lettura mediante tre prove principali.
+La prima è la lettura di liste di parole conosciute.
+Che intendiamo per conosciute?
+Intendiamo parole che esistono nel vocabolario italiano.
+Quindi una lista di parole che possono essere variabili sia per lunghezza sia per frequenza d'uso
+in funzione dell'età che hanno i soggetti che stiamo testando.
+Ad esempio in età evolutiva, per tantissimi anni e ancora oggi,
+si utilizza un test che mostra ben quattro liste di parole che i bambini devono leggere
+partendo dalla cima e arrivando fino in fondo.
+Queste liste di parole inizialmente hanno una lunghezza e una frequenza d'uso molto semplice.
+Quindi sono tendenzialmente corte e semplici da leggere,
+come la parola mano, casa, pane.
+Quindi si tratta di parole che inizialmente sono più semplici e progressivamente nelle liste successive
+aumentano per lunghezza e per frequenza e si abbassano come frequenza di uso.
+Questa modalità è molto utile per misurare, valutare la facilità con cui i ragazzi accedono,
+riescono a leggere queste parole.
+Perché si deve presentare una lista di parole per valutare la capacità di lettura dei ragazzi e degli adulti?
+Sicuramente perché riusciamo in questo modo a comprendere se questi soggetti
+riescono a leggere le parole globalmente oppure si appoggiano a modalità fonologiche di frammentazione,
+come spiegato nel modulo introduttivo.
+E in che maniera riusciamo a comprendere se i nostri ragazzi effettivamente stanno leggendo in maniera globale
+oppure si appoggiano a sistemi fonologici, di analisi fonologica della parola?
+Abbiamo sostanzialmente due elementi.
+Il primo è di natura numerica,
+cioè più sono lenti a leggere la lista di parole
+e più è probabile che si appoggino a analisi di tipo fonologico,
+proprio perché la lettura d'accesso indiretto, quella fonologica,
+è più lenta di quella lessicale.
+La seconda invece è di tipo qualitativo
+ed è molto utile nella valutazione della lettura degli adulti.
+Ad esempio, la lettura qualitativa di una lista di parole potrebbe farci scoprire
+che alcuni soggetti leggono le parole frammentandole.
+Ad esempio, parole lunghe come falegnameria o magazziniere
+potrebbero essere lette in questo modo.
+Falegnameria, magazziniere.
+Ecco, se sentissimo questo tipo di approccio, anche prosodico,
+nella lettura di queste parole,
+evidentemente il soggetto fatica a cogliere nella globalità lo stimolo visivo
+e ha bisogno di frammentarlo.
+E ce ne accorgiamo proprio dalla qualità della lettura che mette in atto.
+Certo è che il dato qualitativo di per sé
+non è sufficiente a porre in essere una diagnosi,
+ma orienta moltissimo il clinico in scelta
+e soprattutto quando abbiamo dei dati
+che non sono chiaramente, nettamente a favore di una posizione
+piuttosto che di un'altra.
+Pertanto da clinici dobbiamo imparare a raccogliere
+quante più informazioni possibili
+perché queste, anche se da sole non sono sufficientemente indicative
+o esistive, possono essere nel complesso
+ciò che mi fa propendere per una scelta
+piuttosto che per un'altra.
+E da qui, infatti, come primissima analisi,
+prima ancora di somministrare le liste di parole,
+di non parole e di brano,
+un clinico dovrebbe stare molto attento
+a tutta la parte rammestica
+da cui si possono tirar fuori difficoltà o problemi,
+soprattutto durante la scuola primaria, ma non solo,
+che hanno contrassegnato il percorso scolastico
+del soggetto che stiamo testando.
+Un'altra prova tipica che viene utilizzata
+durante la valutazione della dislessia in adulti e in adolescenti
+è la prova di non parole.
+Si tratta, cioè, di una lista di parole inventate,
+quindi non esistenti all'interno del vocabolario della lingua italiana,
+ma che hanno però la configurazione ortografica
+che è tipica della lingua italiana.
+Ad esempio, non troveremo mai nella lista di non parole
+delle parole che hanno in sequenza
+consonanti e vocali non compatibili.
+Per esempio, immaginate la lettera F
+seguita dalla consonante V
+e poi ancora la lettera F.
+Ecco, questa configurazione non può essere prevista
+in una non parola
+perché non potrebbe essere fisiologicamente letta.
+Pertanto, le non parole devono comunque avere
+delle sillabe leggibili secondo la lingua italiana,
+ma non devono avere nessun tipo di significato
+che il soggetto può riconoscere.
+Per quale motivo somministriamo una lista di non parole
+ai soggetti che vogliamo testare?
+La motivazione è semplice
+perché desideriamo che loro non ricorrono all'accesso globale
+come facevano invece per le parole conosciute,
+ma vogliamo adesso invece testare
+la loro capacità di frammentare la parola che non è conosciuta.
+Nei soggetti più grandi, infatti,
+per poter veramente valutare questo aspetto
+è necessario somministrare parole più lunghe,
+certamente non di due o tre sillabe e basta.
+È meglio che siano parole con un maggior numero di lettere
+in modo tale che sicuramente
+non riescono a contenerla nella loro globalità.
+e pertanto somministrare una lista di non parole
+significa valutare la qualità dell'accesso indiretto,
+cioè fonologico, che il soggetto adulto è capace di mettere in atto.
+Un ultimo tipo di prova che può essere utilizzata utilmente
+nell'analisi della qualità della lettura dei soggetti adulti e adolescenti
+è sicuramente la lettura del brano.
+La differenza è che mentre io leggo un brano
+mi appoggio a tutta una serie di analisi
+che non sono strettamente correlate alla decodifica
+ma che fanno parte, più in generale,
+della qualità, della comprensione,
+quindi la qualità di lettura,
+della prevedibilità delle parole
+che io riesco a leggere all'interno del testo,
+della capacità di intonare correttamente o meno un testo
+e di conseguenza una misurazione, se vogliamo,
+più completa della lettura in generale.
+Ecco perché è molto utile
+valutare non soltanto quantitativamente
+le performance di lettura
+ma soprattutto negli adolescenti e negli adulti
+prestare un orecchio attento alla parte prosodica,
+alla parte cioè dell'intonazione durante la lettura
+perché questa è capace di dare una serie di suggerimenti utili
+proprio ai fini della valutazione globale della lettura stessa.
+Bene, nella valutazione dell'età evolutiva,
+quindi fino sostanzialmente alle scuole medie,
+cioè alla secondaria di primo grado,
+storicamente si è utilizzato un test che si chiama DDE2.
+Questo test, come si vede dalle diapositive,
+mostra una serie di parole relativamente semplici
+ed alta frequenza d'uso.
+Qui abbiamo una lista esempio di poche parole
+e serve esattamente in età evolutiva
+per capire se il ragazzo sia più o meno avvezzo
+a riconoscere globalmente queste parole.
+Poi abbiamo la lista delle non parole della DDE
+che appunto valuta l'accesso fonologico,
+come spiegato prima,
+che mostra di solito parole con due o tre sillabe,
+parole che non hanno senso
+ma che hanno le stesse regole ortografiche
+della lingua italiana.
+E infine dei brani che possono essere
+di taglio narrativo appena un po' più specialistico
+per valutare la comprensione, la velocità e l'accuratezza di lettura.
+Bene, noi nella valutazione degli adulti però
+osserviamo una serie di problemi.
+Uno tra questi è la velocità di lettura
+intesa come velocità fonarticolatoria.
+È un discorso un po' più delicato
+che deve essere compreso più approfonditamente
+ed è legato al fatto che da un certo momento in avanti,
+quando gli adulti leggono sufficientemente bene,
+perché ormai hanno concluso il percorso scolastico
+e magari hanno un'età sufficiente
+per poter considerare raggiunto
+il limite di apprendimento della lettura,
+ecco, la lettura il più delle volte
+raggiunge dei livelli talmente alti
+che supera il confine fonarticolatorio.
+Vi spiego meglio.
+La mia capacità di parlare,
+cioè di articolare la fonazione
+con l'apparato fonarticolatorio,
+quindi la bocca per intenderci,
+ha un tetto.
+Per quanto io mi sforzi,
+se voglio essere chiaro,
+non riuscirò a superare
+le 7-8 sillebe al secondo.
+Questo nel migliore dei casi,
+quando proprio cerco di parlare
+il più velocemente possibile.
+Tra l'altro c'è una differenza sostanziale
+tra soggetto e soggetto.
+Alcune persone sono fisiologicamente
+più rapide nella fonarticolazione,
+altre invece hanno una cadenza
+molto più contenuta.
+Quindi esiste una differenza interindividuale
+che certamente va considerata.
+Perché affrontiamo la fonarticolazione?
+In che modo questa può inficiare
+la valutazione della lettura?
+Beh, è molto semplice.
+Quando un bambino è piccolo,
+intorno ai 4-5 anni,
+di solito la sua velocità di lettura,
+beh, 4-5 anni non sa neanche leggere,
+ma quando comincia a maneggiare
+le prime forme di riconoscimento visivo
+delle parole,
+ad esempio in prima primaria,
+poi seconda primaria e così via,
+la sua velocità di lettura
+è di poche sillebe al secondo.
+Quindi sicuramente più bassa
+di quella che riesce a produrre
+con la sua bocca.
+Ma man mano che cresce,
+e finisce la primaria
+e comincia con la secondaria di primo
+e poi di secondo grado,
+la sua abilità di lettura
+cresce al punto tale
+di essere più rapida
+di quanto riesce a parlare.
+E infatti,
+c'è un momento
+in cui leggere nella mente
+è più rapido di leggere ad alta voce.
+mentre quando i bimbi
+sono molto piccoli,
+la lettura ad alta voce
+non è tanto diversa
+da quella che possono fare a mente.
+Addirittura,
+nelle prime classi della primaria,
+i bambini non sono quasi capaci
+di leggere nella mente
+e anche quando leggono in silenzio
+muovono comunque la bocca e le labbra
+sussurrando ciò che stanno leggendo.
+Questo perché hanno ancora bisogno
+del feedback uditivo
+che loro stessi producono
+durante la lettura.
+Pertanto abbiamo due modi diversi
+di leggere
+con due caratteristiche diverse
+di essere esposte.
+La lettura ad alta voce
+e la lettura nella mente.
+In questo grafico mostrato
+già nel 1997
+il ricercatore Patrizio Tressoldi
+mostrava come l'incremento
+di velocità di lettura ad alta voce
+per esempio nel brano,
+lo vediamo nell'ultima linea
+del grafico,
+parta da una velocità
+di circa 2,1 sillaba al secondo
+in seconda elementare
+e prosegua a una velocità media
+di mezza sillaba al secondo
+per classe
+fino ad arrivare in terza media
+a una velocità di 5,3 sillaba al secondo.
+Quello che abbiamo visto
+è che aumentando,
+cioè crescendo ancora,
+cioè cambiando le classi
+andando questa volta
+nella secondaria di secondo grado
+e poi l'università
+la velocità di lettura
+progressivamente diminuisce
+fino ad appiattirsi.
+Si vede meglio
+in questo secondo grafico
+in cui fino al secondo superiore
+in effetti osserviamo
+un certo grado
+di incremento di velocità
+ma dal secondo superiore in poi
+si vede una sorta di appiattimento
+che non supera nel concreto
+le sette sillabe al secondo.
+Bene, per tanti anni
+noi pensammo che la velocità massima
+di lettura
+avesse raggiunto un plateau
+cioè un tetto
+intorno alle sette sillabe
+e che non potesse essere incrementata.
+In realtà ci siamo resi conto
+proprio grazie a una serie di articoli
+che abbiamo sviluppato
+alcuni nazionali
+alcuni internazionali
+e ci siamo resi conto
+che le cose non stanno esattamente così
+ma che il limite
+di questo tipo di analisi
+è legato al fatto
+che da un certo momento in avanti
+la nostra bocca
+il nostro apparato
+fonoarticolatorio
+non è più capace
+di leggere a voce alta
+più di quel livello.
+Ecco, se io provassi
+a recitare una poesia a memoria
+per quanto mi sforzassi
+non riuscirei a superare
+le sette, sette e mezzo
+sillabe al secondo
+cioè la stessa velocità di lettura
+che osserviamo negli adulti.
+Ma cosa succede
+se io faccio leggere
+un brano nella mente
+a un adulto
+senza farlo quindi parlare?
+Bene, in questo grafico
+abbiamo fatto diverse analisi
+e abbiamo scoperto
+che quando i soggetti adulti
+leggono nella mente
+la loro velocità di lettura
+è nettamente più alta
+di circa
+si possono raggiungere
+livelli
+di circa 12-13
+sillabe al secondo
+che è quasi il doppio
+di quanto non succede
+quando si legge
+a voce alta
+per un motivo
+molto semplice
+non avendo il freno
+della fonoarticolazione
+la lettura
+operata esclusivamente
+per via visiva
+può essere liberata
+e quindi può tranquillamente
+raggiungere
+risultati molto più elevati.
+ecco perché
+a nostro giudizio
+oltre
+all'analisi
+della lettura
+di liste di parole
+di non parole
+di brano
+certamente
+in adolescenza
+in edad adulta
+è opportuno
+valutare
+la velocità
+di lettura
+nella mente
+oggi può essere fatto
+grazie a una prova
+specifica
+della BDA 1630
+che riesce a dare
+delle misurazioni
+affidabili
+di questo tipo
+di lettura
+in che modo?
+bene
+la prova di lettura
+silente
+si presenta
+come un testo
+che il soggetto
+deve leggere
+nella mente
+il più rapidamente
+possibile
+quindi senza parlare
+!
+all'interno
+di questo testo
+però
+ci sono delle consegne
+cioè delle istruzioni
+che il soggetto
+trova a svolgere
+man mano che legge
+ad esempio
+ci potrebbe essere
+scritto
+nel brano
+che il soggetto
+debba bussare
+sul tavolo
+a un certo
+preciso momento
+oppure
+che debba
+pronunciare
+una certa parola
+in un momento
+indicato nel testo
+o ancora
+che debba
+cliccare
+un pulsante
+messo in un'apposita
+pulsantiera
+proprio in quel momento
+in cui lo sta leggendo
+ecco
+grazie a questa lettura
+silenziosa
+che però
+viene
+valutata
+mediante
+queste operazioni
+che il lettore fa
+l'operatore
+può verificare
+la velocità
+di lettura
+effettiva
+e può anche
+essere certo
+che quel lettore
+stia realmente
+leggendo il testo
+che è davanti
+per il semplice fatto
+che se svolge
+l'operazione
+abbiamo la garanzia
+che sta effettivamente
+leggendo
+grazie a questa prova
+siamo riusciti ad ottenere
+una serie di parametri
+molto affidabili
+del test
+e in effetti
+ad oggi
+riusciamo anche
+a valutare
+molto bene
+le differenze
+messe in atto
+dai normolettori
+rispetto
+ai
+dislessici
+e si vede
+chiaramente
+in questo grafico
+in cui a sinistra
+abbiamo due colonne
+che sono
+in blu
+i normolettori
+e in rosso
+i soggetti
+dislessici
+abbiamo visto
+che la differenza
+di lettura
+di un brano
+ad alta voce
+tra i normolettori
+e i soggetti
+dislessici
+si attesta
+intorno al 47%
+che vuol dire
+vuol dire
+che i normolettori
+sono più rapidi
+in termini
+di velocità
+di circa
+il 47%
+dei dislessici
+questo nell'analisi
+della lettura
+ad alta voce
+se invece
+proponiamo
+di leggere
+un brano
+nella mente
+vediamo che
+i soggetti
+normolettori
+sono più rapidi
+dei dislessici
+del 105%
+quindi più del doppio
+questo significa
+pertanto
+che quando mostriamo
+quando somministriamo
+un test
+di lettura silente
+o un dislessico
+sicuramente
+riusciamo a vedere
+più facilmente
+il suo limite
+la sua difficoltà
+e pertanto
+sarà ancora più semplice
+riuscire a valutare
+il suo eventuale
+disturbo
+c'è da dire inoltre
+che la lettura
+nella mente
+rappresenta
+un modo diverso
+di leggere
+perché
+il tipo di analisi
+visiva
+cioè lo spostamento
+e i movimenti oculari
+che vengono chiamati
+saccadi
+e i punti di fissazione
+che vengono chiamati
+gays
+durante la lettura
+nella mente
+sono molto diversi
+da quelli lì
+operati
+durante la lettura
+ad alta voce
+questo perché
+come già spiegato
+nella parte introduttiva
+quando si legge
+ad alta voce
+resta presente
+il bisogno
+da parte del soggetto
+che sta valutando
+che sta leggendo
+di verificare
+che ciò che dice
+che pronuncia
+con la bocca
+sia effettivamente
+quello che è scritto
+nel testo
+mentre quando
+leggiamo nella mente
+possiamo rapidamente
+scorrere le parole
+sapendo che
+anche nel caso
+in cui
+commettessimo
+qualche imprecisione
+nella lettura
+saremmo poi capace
+di sistemarla
+nel concetto mentale
+che abbiamo appena
+recepito
+dal testo scritto
+pertanto è diverso
+la modalità di lettura
+e va sicuramente
+analizzata
+sia in un caso
+che nell'altro
+riprendendo
+i modelli teorici
+della lettura
+di Wotafritt
+oggi vi proporrò
+una rivisitazione
+del modello
+di lettura
+a due vie
+segnatamente
+cercando di inquadrarlo
+all'interno
+delle valutazioni
+delle considerazioni
+che abbiamo fatto
+fino adesso
+secondo Max Coltart
+infatti
+i ragazzi
+i bambini
+che acquisivano
+proprio questa competenza
+di lettura
+erano capaci
+di leggere
+sostanzialmente
+mediante
+un doppio tipo
+di accesso
+diretto
+o lessicale
+quando riconoscevano
+la parola letta
+e quindi
+la osservavano
+globalmente
+e la leggevano
+diversamente
+per le parole
+che non sono ancora
+sufficientemente
+inconsolidate
+ad esempio
+le non parole
+o le parole
+lunghe
+o straniere
+è molto probabile
+che i ragazzini
+facessero
+un'analisi
+di tipo
+fonologico
+cioè
+un'analisi
+che
+tende a
+frammentare
+la parola
+e a
+fare una
+conversione
+grafema
+fonema
+come si
+vedete
+da questa
+slide
+vi parlerò
+di un
+modello
+a tre
+vie
+che
+ben
+si
+adatta
+invece
+alle
+prove
+presenti
+all'interno
+della nostra
+VDA
+1630
+ecco
+le tre
+vie
+prevedono
+anzitutto
+la via
+fonologica
+e la via
+lessicale
+esattamente
+per come
+argomentate
+da Max
+Coltart
+l'utilizzo
+della via
+di accesso
+come si
+vede
+in questo
+specchio
+è una
+nel caso
+della via
+fonologica
+è una decodifica
+lenta
+che viene
+effettuata
+mediante
+un'analisi
+visiva
+a corto
+raggio
+quindi
+la frammentazione
+della parola
+è tipicamente
+rivolta
+alla lettura
+di parole
+non conosciute
+parole
+a bassa
+frequenza
+d'uso
+specie
+se particolarmente
+lunghe
+e inoltre
+la via
+fonologica
+ha un'importante
+funzione
+nella verifica
+e nel controllo
+della correttezza
+delle parole
+lette
+per via
+lessicale
+che vuol dire
+che quando io
+riconosco
+globalmente
+una parola
+poi in un
+secondo momento
+la via
+fonologica
+si attiva
+per verificare
+che quanto
+letto
+globalmente
+sia effettivamente
+rispondente
+all'analisi
+fonologica
+la via
+lessicale
+invece
+la seconda via
+di Max
+Coltart
+è una
+decodifica
+veloce
+del testo
+mediante
+analisi
+visiva
+a medio
+raggio
+perché
+questa volta
+stiamo parlando
+di analisi
+dell'intera
+parola
+quindi
+è chiaro
+che
+il punto
+di fissazione
+oculare
+non si
+concentrerà
+sulle sillabe
+quindi su frammenti
+della parola
+bensì
+su una
+zona molto più
+ampia
+che è
+l'intera
+parola
+e a questo
+punto
+abbiamo
+questa via
+che si
+utilizza
+prevalentemente
+nel riconoscimento
+globale
+di parole
+conosciute
+e presenti
+nel lessico
+interno
+del lettore
+e infine
+la terza via
+che se vogliamo
+la novità
+di questo modello
+altro non è in realtà
+che un'estensione
+una precisazione
+rivolta
+prevalentemente
+ai soggetti
+in età
+adolescente
+adulta
+che mettono
+in atto
+un tipo
+di lettura
+sostanzialmente
+diverso
+questa via
+che viene qui
+definita
+iperlessicale
+era un'analisi
+visiva
+di blocchi
+di testo
+quindi
+non più
+singole parole
+come nel caso
+della via
+lessicale
+o ancor meno
+singole frasi
+o singole sillabe
+nel caso
+di un'analisi
+a corto raggio
+bensì
+pezzi interi
+di frase
+a che pro
+in che modo
+un pezzo intero
+di frase
+può giovare
+alla lettura
+rapida
+specialmente
+serializzata
+nella mente
+perché guardando
+pezzi interi
+di frase
+oltre a leggere
+le parole
+che vi sono
+all'interno
+riusciamo
+a intuire
+la punteggiatura
+e l'intonazione
+da dare
+sulla base
+dei segni
+di interpunzione
+riusciamo
+a capirne
+le lunghezze
+e quindi
+anche
+la quantità
+di fiato
+che è
+commisurata
+congruente
+a quello
+che ci aspettiamo
+debba essere
+la lettura
+di quel passaggio
+e in qualche misura
+riusciamo a prevedere
+quanto letto
+spingendoci
+oltre
+a una velocità
+ben superiore
+a quella
+che possiamo
+magari
+realizzare
+ad alta voce
+ecco
+questa via
+iperlessicale
+questa terza via
+che in qualche misura
+altri ricercatori
+avevano già
+ampiamente
+discusso
+chi per aspetti
+legati al contesto
+chi per aspetti
+legati alle comprensioni
+in questa chiave
+di lettura
+però si rivolge
+espressamente
+alla modalità
+di lettura
+nella mente
+che
+diversamente
+da quello
+che succede
+nella lettura
+ad alta voce
+permette
+di fare
+un'analisi
+molto più ampia
+con tutta una serie
+di indizi
+che raccogliamo
+lungo la frase
+nel nostro
+campo visivo
+e questo
+secondo specchio
+fa vedere come
+nella nostra
+BDA 1630
+in funzione
+del tipo
+di prova
+che ancora
+non conosciamo
+perché non sono state
+elencate singolarmente
+ma che qui vediamo
+in generale
+nel tipo di prova
+di lettura
+dicevo
+che somministriamo
+capiremo
+quanta via
+fonologica
+viene utilizzata
+quanta via
+essicale
+viene utilizzata
+e quanta via
+iperlessicale
+viene utilizzata
+che vuol dire
+quanta via
+!
+viene utilizzata
+cioè
+il tipo di analisi
+è prevalentemente
+di un tipo
+piuttosto che di un altro
+e questo lo vediamo
+dal numero di x
+presenti
+all'interno
+di ogni cluster
+ad esempio
+tanto per cercare
+di chiedere
+il funzionamento
+di questo specchietto
+se valutassimo
+la prova
+di parole
+che è la comune
+prova di lettura
+di parole conosciute
+cioè presenti
+nel vocabolario
+italiano
+vediamo che
+normalmente
+negli adulti
+la via
+principalmente coinvolta
+è quella lessicale
+che nello specchietto
+si vede proprio
+nella prima riga
+nella colonna centrale
+è addirittura
+indicata
+con 3x
+che vuol dire
+che è la via
+maggiormente
+maggiormente
+attivata
+tuttavia
+però
+c'è anche
+una parte
+legata
+alla via fonologica
+cioè un coinvolgimento
+della via fonologica
+che come vi spiegavo
+è
+attivata
+per la verifica
+una volta letto
+che ciò che abbiamo
+realmente pronunciato
+sia rispondente
+a quanto scritto
+una sorta di check
+di controllo
+nessun coinvolgimento
+invece
+per la via
+iperlessicale
+perché la via
+iperlessicale
+si appoggia
+a blocchi di testo
+e qui abbiamo invece
+singole parole
+pertanto
+non può essere utilizzata
+utilizza molto
+la punteggiatura
+e
+intuisce
+sulla base
+del contesto
+e della prevedibilità
+delle parole
+quali saranno
+le parole
+che seguiranno dopo
+cioè tutta una serie
+di funzioni
+che in una lista
+singola di parole
+evidentemente
+non può essere attivata
+non possono essere attivate
+abbiamo anche altre prove
+che spiegheremo
+adesso a breve
+come le disparole
+le non parole
+il brano
+il disbrano
+il brano
+
+fuso
+ma queste
+hanno una capacità
+di sollecitare
+maggiormente
+una via
+rispetto all'altra
+e riescono proprio
+grazie
+a come sono
+costituite
+costruite
+queste prove
+bene
+la BDA
+1630
+appunto
+è uno strumento
+che
+da questo punto
+di vista
+dedica
+particolare
+attenzione
+proprio
+le sollecitazioni
+di modalità
+di lettura
+diverse
+perché a volte
+possiamo osservare
+settorialmente
+delle parti
+delle funzioni
+legate alla performance
+di lettura
+che sono
+direttamente
+o indirettamente
+coinvolte
+in un deficit
+quando parliamo
+di dislissia
+oppure anche
+all'interno
+del fisiologico
+normale
+atto
+di leggere
+quotidiano
+la BDA
+1630
+fa esattamente
+questo
+cioè
+tende a sollecitare
+tutte le componenti
+che riguardano
+il percorso
+dell'atto
+della lettura
+per valutare
+l'eventuale
+inefficienza
+sistematica
+capace di interferire
+con il normale
+apprendimento
+scolastico
+universitario
+e vediamo
+la struttura
+della BDA
+1630
+sicuramente
+abbiamo
+delle prove
+di lettura
+che sono in complesso
+8
+segnatamente
+4 liste
+di parole
+le parole note
+le parole
+le disparole
+le non parole
+e poi ancora
+4 brani
+diversi
+il brano
+il disbrano
+il brano fuso
+e la lettura silente
+poi abbiamo ancora
+lo vedremo
+nel corso
+della giornata
+abbiamo
+le prove
+di scrittura
+che sono due
+e sono segnatamente
+il dettato
+di brano
+in modalità
+incalzante
+scopriremo
+di che si tratta
+e come si può realizzare
+e poi il dettato
+di frasi
+con interferenza
+ortografica
+un'altra modalità
+che permette
+di slatentizzare
+le difficoltà
+del soggetto
+proprio quando
+è riuscito
+a ottenere
+un certo grado
+di compenso
+e infine
+abbiamo
+una prova
+di comprensione
+del testo scritto
+che
+diversamente
+da come invece
+siamo abituati
+a ragionare
+e a pensare
+non possiede
+domande
+alla fine
+per verificare
+la comprensione
+sembra una cosa
+apparentemente
+controsenso
+ma
+è proprio
+nella domanda finale
+che a volte
+si possono generare
+difficoltà di comprensione
+non tanto
+nel testo
+quindi abbiamo
+cercato
+di sviluppare
+un testo
+che investisse
+il meno possibile
+lunghi passaggi
+di lettura
+legata
+alla comprensione
+delle domande
+finali
+per cui
+sappiamo bene
+si può
+indovinare o sbagliare
+anche per motivi
+del tutto casuali
+perché quando io
+ho la possibilità
+di rispondere
+a una
+domanda
+risposta multipla
+con quattro
+possibili risposte
+mettendo una crocetta
+posso sì
+sbagliare
+se non conosco
+la risposta
+ma posso anche
+casualmente
+indovinare
+sulla base
+del 25%
+di probabilità
+quindi è già
+un dato
+che si presta
+di default
+a presentarsi
+come erroneo
+cioè a un certo
+grado
+di possibili errori
+vediamo
+quali sono
+le novità
+della BDA
+1630
+cerchiamo
+di capire
+in che modo
+è possibile
+rilevarle
+secondo un elenco
+che vediamo
+in questa slide
+e certamente
+la novità
+principale
+l'abbiamo
+appena
+osservata
+è la presenza
+di una prova
+di velocità
+di lettura silente
+e questa è la prima volta
+che abbiamo
+una prova
+standardizzata
+che permette
+ai clinici
+di sapere
+con una
+buonissima precisione
+la velocità
+di lettura
+della mente
+di un soggetto
+è stata
+una necessità
+rincorsa
+negli anni
+proprio perché
+sapevamo
+che la lettura
+della mente
+è quella più ecologica
+più giusta
+più vera
+nei soggetti
+soprattutto
+adolescenti ed adulti
+perché nella
+stragrandissima
+maggioranza
+dei casi
+anzi quasi
+esclusivamente
+i soggetti
+che studiano
+leggono
+lavorano
+leggono nella mente
+soltanto in pochissimi
+casi
+quando è richiesto
+da situazioni contingenti
+può essere
+opportuno
+fare dei passaggi
+generalmente
+molto brevi
+di lettura
+ad alta voce
+ma nella
+nella lettura
+di ogni giorno
+nello studio
+i ragazzi
+leggono
+nella mente
+e così
+dovrebbe essere
+volutata
+la presenza
+di un disturbo
+specifico
+di lettura
+quando
+questo si manifesta
+in ragazzi
+più grandi
+in adulti
+in studenti
+universitari
+inoltre
+altra novità
+della BBA
+1630
+le prove
+di lettura
+sono pensate
+per adolescenti
+adulti
+e quindi
+hanno degli
+item
+corretti
+giusti
+per lunghezza
+e per complessità
+proprio rivolte
+a questa fascia
+di età
+la 1630
+c'è la BBA
+a questo range
+1630
+perché è quello
+principalmente investito
+come richiesta
+ma
+è importante
+precisarlo
+può essere
+somministrata
+anche a soggetti
+ben più grandi
+perché la standardizzazione
+non si è fermata
+i 30 anni
+ma è andata
+ben oltre
+anche se la parte
+più ampiamente
+approfondita
+si è rivolta
+proprio a questa
+fascia di età
+nella BDA
+1630
+ci sono varie
+novità
+come vi dicevo
+una di queste
+è la standardizzazione
+indipendente
+delle autocorrezioni
+e degli errori
+questo è un tema
+che chi
+già fa
+valutazione
+di DSA
+anche
+nei ragazzini
+più piccoli
+conosce molto bene
+sa ad esempio
+che
+in alcuni
+tipi di prove
+l'autocorrezione
+non viene considerata
+da segnare
+quindi se un bambino
+dovesse leggere
+una parola
+poi si rende conto
+di averla letta male
+quindi si autocorregge
+in alcuni casi
+non bisogna
+segnarla
+come errore
+in altri casi
+invece
+viene dato
+un punteggio
+di mezzo
+errore
+come se
+l'autocorrezione
+corrispondesse
+a un errore
+di minor gravità
+bene
+durante
+lo studio
+e l'organizzazione
+di questa batteria
+io insieme
+chiaramente
+all'equipe
+che ha collaborato
+con me
+e gli altri autori
+abbiamo riflettuto
+a lungo
+su questa opportunità
+e abbiamo
+riconosciuto
+che
+l'errore
+e l'autocorrezione
+hanno una matrice
+diciamo
+neuropsicologica
+differente
+e pertanto
+devono essere
+considerati
+in maniera indipendente
+non devono sommarsi
+in un unico calderone
+perché questo
+potrebbe
+depistare
+il clinico
+e fargli perdere
+una serie di indizi
+che sono molto importanti
+ad esempio
+per fare un esempio
+concreto
+noi sappiamo
+molto bene
+che
+se
+un soggetto
+testato
+ad esempio
+produce
+durante una lettura
+di un brano
+5 errori
+questo per noi
+avrebbe un valore
+che si andrà poi
+a valutare
+secondo le tabelle
+normative
+se un altro lettore
+invece
+produce
+10 autocorrezioni
+secondo il criterio
+tradizionale
+per cui
+l'autocorrezione
+vale
+mezzo errore
+alla fine
+del test
+noi avremmo
+lo stesso identico
+risultato
+cioè 5 errori
+ma
+evidente
+che nel primo caso
+e nel secondo caso
+l'approccio
+e le difficoltà
+presenti
+sono proprio
+difficilmente
+compatibili
+sono nettamente
+diverse
+tra di loro
+nel primo caso
+il soggetto
+ha sbagliato
+senza avere la capacità
+di autocorreggersi
+nel secondo invece
+la persona
+che leggeva
+ha operato
+una evidente
+riconsiderazione
+della parola letta
+quindi
+evidentemente
+nel secondo caso
+funziona meglio
+molto meglio
+la via fonologica
+che invece
+non funziona
+nel primo caso
+eppure
+secondo il criterio
+di accomunare
+gli errori
+alle autocorrezioni
+questo dato
+si perde
+e non è possibile
+da parte del clinico
+rilevarlo
+e utilizzarlo
+ecco perché
+la BDA 1630
+invece
+standardizza
+in maniera indipendente
+gli errori
+dalle autocorrezioni
+quindi
+se una persona
+facesse ad esempio
+5 errori
+e 4 autocorrezioni
+ci sarà
+alla fine
+della tabella
+il dato
+di 5 errori
+e di 4 autocorrezioni
+senza che
+questi si
+accomunino
+un'altra
+caratteristica
+di questo test
+è che
+prima di
+presentare
+le liste
+o i brani
+soprattutto
+quando questi
+sono
+diciamo
+diversi
+da quelli che
+normalmente
+ci si aspetta
+come le disparole
+il disbrano
+il brano fuso
+le vedremo più avanti
+prima di
+presentarli
+dicevo
+c'è
+una lista
+esempio
+che il soggetto
+può leggere
+più volte
+in modo che
+sappia esattamente
+che tipo di prova
+andrà a fare
+questo rende il dato
+più affidabile
+perché a volte
+soprattutto
+nei ragazzini
+più piccoli
+quando presentiamo
+ad esempio
+le non parole
+o parole diverse
+da quelle che
+ragazzino si aspetta
+nella prima fase
+potrebbe bloccarsi
+a volte
+mettersi a ridere
+perché
+gli sembra buffa
+come tipo di
+prova da sostenere
+oppure
+fermarsi
+per fare
+domande
+per comprendere
+meglio
+quello che
+deve fare
+e questo
+inevitabilmente
+va a inficiare
+il risultato
+finale
+della prova
+avere una lista
+esempio
+che prima
+può essere
+letta
+considerata
+discussa
+con il ragazzo
+permetterà
+poi
+quando si
+offrirà
+l'ultima prova
+quella lì
+appunto
+del test
+che il dato
+resti
+quanto più
+possibile
+affidabile
+perché il ragazzo
+la sosterrà
+correttamente
+per come previsto
+un'altra delle
+caratteristiche
+principali
+della
+della
+BDA
+1630
+è che
+all'interno
+della
+BDA
+esistono
+delle prove
+di
+sentinella
+le chiamiamo
+che sono
+capaci di
+mostrare
+i tentativi
+di simulazione
+ecco
+questo è
+un dato
+forse
+se vogliamo
+nuovo
+anche
+sorprendente
+per alcuni
+di voi
+ma
+c'è da
+riconoscere
+che alcuni
+soggetti
+adulti
+potrebbero
+possono
+noi ne abbiamo
+testati diversi
+tentare
+di simulare
+una dislessia
+un disturbo
+specifico
+di apprendimento
+questo è chiaro
+perché
+nel momento in cui
+ottengo una
+certificazione
+per disturbo
+specifico
+di apprendimento
+posso avere
+accesso a tutta
+una serie
+di supporti
+facilitazioni
+non sono in realtà
+facilitazioni
+sono se vogliamo
+aggiustamenti
+nei programmi
+o nelle parti
+operativi
+però
+certamente
+possono essere
+magari
+interpretate
+come utili
+anche da chi
+invece un disturbo
+non ce l'ha
+e vuole approfittare
+di un particolare
+percorso
+diciamo
+personalizzato
+ora per evitare
+che questo
+succeda
+per evitare
+che questo
+succeda
+è sicuramente
+opportuno
+prevedere
+delle prove
+sentinella
+che sono
+messe lì
+apposta
+per smascherare
+e slatentizzare
+il tentativo
+di simulazione
+com'è possibile
+far questo?
+Beh
+chiaramente
+chi ha una dislessia
+legge male
+alcune cose
+ma
+per alcune prove
+particolari
+potrebbe
+e dovrebbe
+in realtà
+leggere normalmente
+com'è possibile
+questo?
+Bene
+lo vedremo
+quando studieremo
+il test delle parole
+note
+che è presente
+all'interno
+della BDA
+1630
+un'altra
+caratteristica
+tipica
+della BDA
+1630
+c'è una novità
+è che per la prima
+volta abbiamo
+un parametro
+nuovo
+che è capace
+di rilevare
+la velocità
+di scrittura
+normalmente
+noi fino ad oggi
+abbiamo utilizzato
+parametri
+per la velocità
+di lettura
+cioè
+le sillelle
+del secondo
+per valutare
+la velocità
+di scrittura
+sono stati usati
+dei test
+ad esempio
+lettere e numeri
+cioè
+quanti numeri
+scritti
+in lettere
+riesce un soggetto
+a
+a
+a
+scrivere
+dentro
+all'interno
+di un certo
+tempo
+ad esempio
+un minuto
+è un test
+datato
+che si utilizza
+da molto tempo
+ma
+non è un test
+quello
+che ci dà
+un parametro
+di velocità
+invece
+nella BDA
+1630
+per la prima
+volta
+abbiamo
+il parametro
+di
+lettere
+al minuto
+cioè
+quanto
+rapidamente
+quante lettere
+un ragazzo
+un adulto
+è capace
+di scrivere
+per ogni minuto
+di dettato
+dettato che
+chiaramente
+deve essere
+fatto in modalità
+incalzante
+onde evitare
+che tra
+una dettatura
+e l'altra
+ci sia
+uno spazio
+vuoto
+che farebbe
+scorrere il tempo
+senza nessun
+profitto
+ancora
+noi abbiamo
+una prova
+di comprensione
+preva di domande
+come
+vi avevo già
+spiegato
+inizialmente
+e che permette
+in maniera
+molto più agile
+
+di valutare
+le caratteristiche
+della
+comprensione
+del soggetto
+e infine
+questa è
+una
+un'estensione
+un lavoro
+che
+speriamo di poter
+concludere
+da qui a
+qualche anno
+poter fare
+delle prove
+di lettura
+silente
+in lingue
+diverse
+da quelle
+dell'operatore
+che le somministra
+questa è una novità
+assoluta
+molto interessante
+soprattutto
+in un'ottica
+che
+è capace
+di
+sempre di più
+emerge
+il bisogno
+di valutare
+le prestazioni
+di ragazzi
+che hanno
+una
+che sono
+di madrelingua
+diversa
+da quella
+italiana
+ad esempio
+tempo fa
+parlai con
+una
+collega
+inglese
+che
+mi raccontava
+come il principale
+problema
+ormai
+da parte
+delle istituzioni
+inglesi
+che sono sicuramente
+molto all'avanguardia
+per quanto riguarda
+gli studi specifici
+dell'apprendimento
+non è più tanto
+quello di
+fare le diagnosi
+ai ragazzi
+inglesi
+che vanno
+all'università
+o al college
+ma
+ancora di più
+a soggetti
+che vengono
+da altre
+nazioni
+e che
+conoscono
+l'inglese
+perché
+imparato
+in seconda
+battuta
+ma che
+dichiarano
+di essere
+disgressici
+già
+prima
+di poter
+venire
+in
+Inghilterra
+e pertanto
+con
+le difficoltà
+tipiche
+della loro
+lingua
+cioè
+disgressici
+sì
+ma
+già
+diagnosticati
+o già
+individuati
+a scuola
+nel percorso
+scolastico
+nel loro
+paese
+come è possibile
+valutare
+l'effettiva
+presenza
+di questo
+disturbo
+specifico
+di apprendimento
+se
+abbiamo a disposizione
+solo
+strumenti
+pensati
+nella lingua
+della nazione
+in cui
+queste persone
+sono venute
+a lavorare
+bene
+fino ad oggi
+la via maestra
+era quella
+di fare domande
+questionari
+di cercare
+di comprendere
+sulla base
+del riferito
+dei ragazzi
+se in effetti
+il disturbo
+specifico
+di apprendimento
+avesse inficiato
+il loro percorso
+di studi
+avesse affaticato
+appesantito
+la loro
+difficoltà
+nel leggere
+nello scrivere
+ma
+chiaramente
+restava
+una
+considerazione
+ferma
+all'aspetto
+del riferito
+invece
+con la prova
+di lettura silente
+che viene
+adeguatamente
+tradotta
+in una qualunque
+lingua
+che sia
+italiano
+inglese
+francese
+rumeno
+o egiziano
+o marocchino
+poco importa
+bene
+noi possiamo
+somministrare
+il test
+nella lingua
+della persona
+che abbiamo davanti
+lui lo leggerà
+nella sua lingua madre
+e noi avremo
+il corrispettivo
+delle azioni
+che deve svolgere
+questa volta
+però
+in lingua italiana
+pertanto
+saremo capaci
+tranquillamente
+di rilevare
+i tempi
+e la correttezza
+delle istruzioni
+che il ragazzo
+lo studente
+è chiamato
+a fare
+bene
+queste sono
+tra le novità
+che principalmente
+noi abbiamo
+osservato
+all'interno
+di questa
+batteria
+che abbiamo
+confezionato
+e che abbiamo
+promosso
+e adesso
+ci
+preoccuperemo
+di vedere
+singolarmente
+tutte le prove
+di lettura
+e capire
+quali sono
+le caratteristiche
+di ognuno
+di queste
+Francia
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Grazie a tutti.

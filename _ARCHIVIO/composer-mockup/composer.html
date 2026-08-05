@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="it" data-theme="chiaro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>StudIA · Composer degli indici</title>
+<style>
+@font-face{font-family:'OpenMoji';src:url('assets/fonts/OpenMoji-color.woff2') format('woff2');
+  font-display:swap;
+  unicode-range:U+00A9,U+00AE,U+203C,U+2049,U+20E3,U+2122,U+2139,U+2194-21AA,U+231A-231B,
+    U+2328,U+23CF-23FA,U+24C2,U+25AA-25FE,U+2600-27BF,U+2934-2935,U+2B00-2BFF,U+3030,U+303D,
+    U+3297,U+3299,U+1F000-1FAFF,U+FE0F;}
+:root{
+  --teal:#2dd4bf; --teal-strong:#0f766e; --yellow:#facc15; --yellow-strong:#a16207;
+  --blue:#3b82f6; --blue-strong:#1d4ed8; --orange:#f97316;
+  --bg:#fbfbfa; --panel:#fff; --ink:#16181d; --muted:#5b6069;
+  --line:#dcdcdc; --line-weak:#ececec; --hover:#f2f3f4;
+  --sh-3d:-5px 6px 12px rgba(15,17,21,.14);
+  --font-text:"Helvetica Neue",Helvetica,Arial;
+  --emoji-font:'OpenMoji','Noto Color Emoji','Apple Color Emoji','Segoe UI Emoji';
+  --ctl-h:40px;
+}
+html[data-theme="scuro"]{
+  --bg:#0f1115; --panel:#171a21; --ink:#eceef2; --muted:#a2a8b2;
+  --line:#3a4048; --line-weak:#2a2f37; --hover:#1e222b;
+  --teal-strong:#5eead4; --yellow-strong:#fde047; --blue-strong:#93c5fd;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--font-text),var(--emoji-font),sans-serif;font-size:15px;line-height:1.5}
+.kick{font-size:10px;text-transform:uppercase;letter-spacing:.18em;font-weight:700;color:var(--muted)}
+
+/* ---------- topbar ---------- */
+.topbar{position:sticky;top:0;z-index:40;background:var(--bg);border-bottom:1px solid var(--line);
+  display:flex;flex-wrap:wrap;gap:.6rem 1.1rem;align-items:center;padding:.6rem 1.1rem}
+.brand{display:flex;align-items:baseline;gap:.5rem;margin-right:auto}
+.brand b{font-size:14px;text-transform:uppercase;letter-spacing:.16em}
+.brand span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em}
+.btn{height:var(--ctl-h);border:1px solid var(--line);background:var(--panel);color:var(--ink);
+  padding:0 .8rem;font:inherit;font-size:12px;text-transform:uppercase;letter-spacing:.06em;
+  font-weight:700;cursor:pointer;border-radius:0}
+.btn:hover{background:var(--hover);box-shadow:var(--sh-3d)}
+.btn.primary{background:color-mix(in srgb,var(--teal) 16%,var(--panel));
+  border-color:color-mix(in srgb,var(--teal) 40%,var(--line));color:var(--teal-strong)}
+.btn.primary:hover{background:color-mix(in srgb,var(--teal) 28%,var(--panel))}
+
+/* ---------- gli 8 personaggi ---------- */
+.personaggi{display:flex;align-items:center;gap:.4rem;padding:.3rem .5rem;
+  border:1px dashed var(--line);background:var(--panel);flex-wrap:wrap}
+.pg{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:21px;
+  cursor:grab;border:2px solid transparent;position:relative;line-height:1;
+  font-family:var(--emoji-font),sans-serif}
+.pg:active{cursor:grabbing}
+.pg:hover{box-shadow:var(--sh-3d)}
+.pg.on{border-color:var(--ink)}
+.pg .n{position:absolute;bottom:-3px;right:-3px;min-width:15px;height:15px;border-radius:999px;
+  background:var(--ink);color:var(--bg);font-size:9px;font-weight:800;display:grid;place-items:center;
+  font-family:var(--font-text),sans-serif;padding:0 3px}
+.pg.manca .n{background:#b91c1c}
+
+/* ---------- riepilogo ---------- */
+.summary{display:flex;flex-wrap:wrap;gap:1.3rem;align-items:center;
+  padding:.6rem 1.1rem;border-bottom:1px solid var(--line-weak);background:var(--panel)}
+.summary b{font-size:18px;font-weight:800}
+.prog{height:6px;flex:1;min-width:120px;background:color-mix(in srgb,var(--teal) 12%,var(--panel))}
+.prog i{display:block;height:100%;background:var(--teal-strong);transition:width .2s}
+
+/* ---------- righe corso ---------- */
+.righe{padding:1rem 1.1rem 2rem}
+.riga{border-bottom:1px solid var(--line-weak);padding:.8rem 0;display:grid;
+  grid-template-columns:210px minmax(0,1fr);gap:1rem;align-items:start}
+.corso .n{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.1em}
+.corso .t{font-weight:700;line-height:1.3;margin:.15rem 0 .3rem}
+.corso .m{font-size:11px;color:var(--muted)}
+.piste{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.6rem}
+
+/* ---------- card indice ---------- */
+.card{border:1px solid var(--line);background:var(--panel);padding:.6rem .65rem;
+  display:flex;flex-direction:column;gap:.35rem;position:relative;transition:background .12s}
+.card:hover{background:var(--hover)}
+.card.drop{outline:2px dashed var(--blue);outline-offset:-4px;background:color-mix(in srgb,var(--blue) 6%,var(--panel))}
+.card.presa{border-color:var(--teal-strong);background:color-mix(in srgb,var(--teal) 7%,var(--panel))}
+.card .nome{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.card .caps{font-size:11px;color:var(--muted)}
+.card .ada{font-size:12px;line-height:1.4;color:var(--ink)}
+.card .ada em{font-style:normal;color:var(--muted)}
+.card .slot{display:flex;flex-wrap:wrap;gap:.25rem;min-height:30px;align-items:center;
+  border-top:1px solid var(--line-weak);padding-top:.35rem}
+.card .slot .vuoto{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.card .cond{font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;
+  color:var(--teal-strong);margin-left:auto}
+.risp{display:block;font-size:11px;color:var(--muted);font-weight:400;letter-spacing:0;
+  text-transform:none;margin-top:.1rem}
+.risp b{color:var(--teal-strong)}
+.perc ol li.share{color:var(--muted)}
+.perc ol li.share .cn{font-weight:700}
+.mini{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:15px;
+  cursor:pointer;line-height:1;font-family:var(--emoji-font),sans-serif}
+.mini:hover{box-shadow:var(--sh-3d)}
+
+/* ---------- percorsi in fondo ---------- */
+.percorsi{border-top:1px solid var(--line);padding:1.1rem 1.1rem 4rem;background:var(--panel)}
+.pcols{columns:280px;column-gap:1.6rem;margin-top:.7rem}
+.perc{break-inside:avoid;margin:0 0 1.3rem;border-left:4px solid var(--pc,var(--teal));padding-left:.7rem}
+.perc h4{margin:0 0 .1rem;font-size:13px;display:flex;align-items:center;gap:.4rem}
+.perc h4 .e{font-size:19px;font-family:var(--emoji-font),sans-serif}
+.perc .sub{font-size:11px;color:var(--muted);margin-bottom:.4rem}
+.perc ol{margin:0;padding-left:1.1rem;font-size:12.5px;line-height:1.5}
+.perc ol li{margin-bottom:.1rem}
+.perc .cn{color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* ---------- alert ---------- */
+.overlay{position:fixed;inset:0;background:rgba(15,17,21,.55);z-index:60;display:none;
+  align-items:center;justify-content:center;padding:2rem}
+.overlay[data-on="1"]{display:flex}
+.alert{background:var(--panel);border:1px solid var(--line);box-shadow:var(--sh-3d);
+  max-width:520px;width:100%}
+.alert .h{padding:.8rem 1rem;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:.6rem}
+.alert .h b{font-size:15px}
+.alert .b{padding:.9rem 1rem;font-size:13.5px;line-height:1.55}
+.alert .f{padding:.7rem 1rem;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:.5rem}
+.buco{display:flex;align-items:center;gap:.6rem;padding:.5rem 0;border-bottom:1px solid var(--line-weak)}
+.buco:last-child{border-bottom:0}
+.buco .e{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:19px;
+  flex:none;line-height:1;font-family:var(--emoji-font),sans-serif}
+.buco .num{font-weight:800;font-variant-numeric:tabular-nums}
+.note{padding:.9rem 1.1rem;border-top:1px solid var(--line-weak);font-size:12px;color:var(--muted)}
+.note b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><b>StudIA</b><span>· Composer degli indici</span></div>
+  <div class="personaggi" id="pgBox" title="Trascina un personaggio su un indice"></div>
+  <button class="btn" id="tema">Tema</button>
+  <button class="btn" id="fs">Schermo intero</button>
+  <button class="btn primary" id="scrivi">Scrivi i percorsi</button>
+</header>
+
+<div class="summary">
+  <span><span class="kick">Progetto</span><br><b>AI Literacy · Anthropic</b></span>
+  <span><span class="kick">Corsi</span><br><b>7</b></span>
+  <span><span class="kick">Percorsi completi</span><br><b id="nOk">0</b> / <span id="nAtt">0</span></span>
+  <div class="prog"><i id="bar" style="width:0%"></i></div>
+  <span><span class="kick">Capitoli da scrivere</span><br><b id="nCap">0</b>
+    <span id="nRisp" class="risp"></span></span>
+</div>
+
+<div class="righe" id="righe"></div>
+
+<section class="percorsi">
+  <span class="kick">Percorsi composti · capitoli in ordine</span>
+  <div class="pcols" id="pcols"></div>
+</section>
+
+<div class="note">
+  <b>Mockup interattivo.</b> I 7 corsi sono quelli veri del tuo progetto; gli indici e le frasi
+  «adatto a» hanno la forma che il modello già produce oggi in <code>differenza</code> e
+  <code>adattaA</code>. Trascina un personaggio su un indice · cliccalo di nuovo sulla card per
+  toglierlo · «Scrivi i percorsi» controlla i buchi.
+</div>
+
+<div class="overlay" id="ov"><div class="alert">
+  <div class="h"><span style="font-size:22px;font-family:var(--emoji-font)">⚠️</span><b>Percorsi incompleti</b></div>
+  <div class="b" id="ovBody"></div>
+  <div class="f"><button class="btn" id="ovNo">Torna a comporre</button>
+    <button class="btn primary" id="ovSi">Scrivi solo i completi</button></div>
+</div></div>
+
+<script>
+/* ---- gli 8 personaggi: stesso livello, modi di imparare diversi ---- */
+var PG = [
+  {id:'gufo',    e:'🦉', nome:'Analitica',    col:'#3b82f6', desc:'vuole andare a fondo di un tema per intero prima di passare oltre'},
+  {id:'tarta',   e:'🐢', nome:'Sequenziale',  col:'#0f766e', desc:'segue la logica dell\'autore senza saltare, un passo alla volta'},
+  {id:'volpe',   e:'🦊', nome:'Sintetica',    col:'#f97316', desc:'poco tempo: vuole l\'essenziale prima, i dettagli solo se servono'},
+  {id:'ape',     e:'🐝', nome:'Pratica',      col:'#a16207', desc:'capisce facendo: parte dal caso concreto e risale alla regola'},
+  {id:'polpo',   e:'🐙', nome:'Trasversale',  col:'#7c3aed', desc:'tiene aperti più fili insieme e ama i rimandi fra i temi'},
+  {id:'coniglio',e:'🐇', nome:'Curioso',      col:'#db2777', desc:'parte sempre da una domanda propria, non dall\'indice'},
+  {id:'elefante',e:'🐘', nome:'Ripassatore',  col:'#65a30d', desc:'ha bisogno di tornare più volte sulle stesse cose'},
+  {id:'aquila',  e:'🦅', nome:'Panoramica',   col:'#0891b2', desc:'vuole la mappa d\'insieme prima di entrare nel dettaglio'}
+];
+
+/* ---- i 7 corsi veri, con gli indici proposti (numero variabile: lo zig-zag è previsto) ---- */
+var CORSI = [
+ {n:'01', t:"Introduzione all'AI Fluency: Fondamenti e Framework", m:4, idx:[
+   {k:'Sequenza didattica', c:5, a:'chi vuole seguire la logica dell\'autore senza saltare'},
+   {k:'Per domande',        c:6, a:'chi studia da solo e parte dalle proprie curiosità'},
+   {k:'Panoramica prima',   c:3, a:'chi vuole vedere subito il quadro delle Quattro D'} ]},
+ {n:'02', t:"Comprendere l'IA Generativa: Capacità e Limiti", m:2, idx:[
+   {k:'Sequenza didattica', c:4, a:'chi non ha basi tecniche e teme di perdersi'},
+   {k:'Per casi e limiti',  c:5, a:'chi impara meglio vedendo dove il modello sbaglia'},
+   {k:'Blocco unico',       c:2, a:'chi ha già dimestichezza e vuole solo allinearsi'} ]},
+ {n:'03', t:"La Competenza di Delega nell'AI Fluency", m:1, idx:[
+   {k:'Sequenza didattica', c:5, a:'chi vuole seguire la logica dell\'autore senza saltare'},
+   {k:'Per domande',        c:5, a:'chi si chiede «cosa affido e cosa tengo per me»'},
+   {k:'Blocco unico',       c:1, a:'chi vuole una lettura sola, densa, senza interruzioni'} ]},
+ {n:'04', t:"La Competenza di Descrizione e Prompting Efficace", m:2, idx:[
+   {k:'Per esercizi',       c:6, a:'chi vuole provare subito e correggersi sul campo'},
+   {k:'Sequenza didattica', c:4, a:'chi preferisce capire il principio prima di scrivere'},
+   {k:'Per casi',           c:5, a:'chi parte da prompt reali e ne studia le differenze'},
+   {k:'Blocco unico',       c:2, a:'chi rivede una cosa che già pratica'} ]},
+ {n:'05', t:"La Competenza di Discernimento nell'AI Fluency", m:1, idx:[
+   {k:'Per casi',           c:4, a:'chi impara a valutare confrontando output veri'},
+   {k:'Sequenza didattica', c:4, a:'chi vuole prima i criteri, poi gli esempi'},
+   {k:'Blocco unico',       c:1, a:'chi ha poco tempo e cerca i criteri essenziali'} ]},
+ {n:'06', t:"La Competenza di Diligenza: Etica e Responsabilità", m:1, idx:[
+   {k:'Per dilemmi',        c:4, a:'chi ragiona meglio davanti a un caso spinoso'},
+   {k:'Sequenza didattica', c:3, a:'chi vuole il quadro normativo in ordine'},
+   {k:'Blocco unico',       c:1, a:'chi cerca un riferimento da rileggere all\'occorrenza'} ]},
+ {n:'07', t:"Conclusione e Riepilogo sull'AI Fluency", m:1, idx:[
+   {k:'Riepilogo attivo',   c:3, a:'chi consolida rispondendo invece che rileggendo'},
+   {k:'Sintesi lineare',    c:2, a:'chi vuole chiudere con una lettura ordinata'} ]}
+];
+
+var ass = {};        // "corso:indice" → [id personaggio]
+var COL = {}; PG.forEach(function(p){ COL[p.id]=p; });
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function tinta(col,pct){ return 'color-mix(in srgb,'+col+' '+pct+'%,var(--panel))'; }
+
+/* dove sta un personaggio, corso per corso */
+function sceltaDi(pid,cn){
+  for(var k in ass){ if(k.indexOf(cn+':')===0 && ass[k].indexOf(pid)>=0) return k.split(':')[1]; }
+  return null;
+}
+function attivi(){ var s={}; for(var k in ass) ass[k].forEach(function(p){s[p]=1;}); return Object.keys(s); }
+function buchiDi(pid){ return CORSI.filter(function(c){ return !sceltaDi(pid,c.n); }).map(function(c){return c.n;}); }
+
+function pittaPersonaggi(){
+  document.getElementById('pgBox').innerHTML = PG.map(function(p){
+    var att=attivi().indexOf(p.id)>=0, b=att?buchiDi(p.id).length:0;
+    return '<div class="pg'+(att?' on':'')+(b?' manca':'')+'" draggable="true" data-p="'+p.id+'"'+
+      ' style="background:'+tinta(p.col,18)+'" title="'+esc(p.nome+' — '+p.desc)+'">'+p.e+
+      (att?'<span class="n">'+(b?b:'✓')+'</span>':'')+'</div>';
+  }).join('');
+}
+
+function pittaRighe(){
+  document.getElementById('righe').innerHTML = CORSI.map(function(c){
+    var piste=c.idx.map(function(v,vi){
+      var key=c.n+':'+vi, dentro=ass[key]||[];
+      var chips=dentro.map(function(pid){ var p=COL[pid];
+        return '<span class="mini" data-del="'+key+'|'+pid+'" style="background:'+tinta(p.col,20)+
+               '" title="'+esc(p.nome)+' — clicca per togliere">'+p.e+'</span>'; }).join('');
+      /* più personaggi sulla stessa card = capitoli scritti UNA volta e condivisi */
+      var cond = dentro.length>1
+        ? '<span class="cond">scritti 1 volta · usati da '+dentro.length+'</span>' : '';
+      return '<div class="card'+(dentro.length?' presa':'')+'" data-k="'+key+'">'+
+        '<div class="nome">'+esc(v.k)+'</div>'+
+        '<div class="caps">'+v.c+' capitol'+(v.c===1?'o':'i')+'</div>'+
+        '<div class="ada"><em>Adatto a:</em> '+esc(v.a)+'</div>'+
+        '<div class="slot">'+(chips||'<span class="vuoto">trascina qui</span>')+cond+'</div></div>';
+    }).join('');
+    return '<div class="riga"><div class="corso"><div class="n">'+c.n+'</div>'+
+      '<div class="t">'+esc(c.t)+'</div><div class="m">'+c.m+' material'+(c.m===1?'e':'i')+
+      ' · '+c.idx.length+' indici proposti</div></div><div class="piste">'+piste+'</div></div>';
+  }).join('');
+}
+
+/* L'unità di lavoro è la COPPIA corso+indice, non il personaggio.
+   Due percorsi che scelgono lo stesso indice per un corso condividono quei
+   capitoli: si scrivono una volta sola. È ciò che rende sostenibile fare otto
+   varianti sulla stessa base — altrimenti si pagherebbe otto volte il materiale
+   su cui otto studenti sono d'accordo. */
+function pittaPercorsi(){
+  var att=attivi();
+  var ok=0, sommaIngenua=0;
+  var scritte={};                       // "corso:indice" → quanti percorsi la usano
+  for(var k in ass) if(ass[k].length) scritte[k]=ass[k].length;
+
+  document.getElementById('pcols').innerHTML = att.length ? att.map(function(pid){
+    var p=COL[pid], voci=[], completo=true;
+    CORSI.forEach(function(c){
+      var vi=sceltaDi(pid,c.n);
+      if(vi===null){ completo=false; return; }
+      var v=c.idx[Number(vi)], quanti=scritte[c.n+':'+vi]||1;
+      for(var i=1;i<=v.c;i++)
+        voci.push({num:c.n+'.'+String(i).padStart(2,'0'), t:v.k, cond:quanti>1, quanti:quanti});
+    });
+    if(completo) ok++;
+    sommaIngenua+=voci.length;
+    voci.sort(function(a,b){ return a.num.localeCompare(b.num,'it',{numeric:true}); });
+    var buchi=buchiDi(pid), nCond=voci.filter(function(v){return v.cond;}).length;
+    return '<div class="perc" style="--pc:'+p.col+'">'+
+      '<h4><span class="e">'+p.e+'</span> '+esc(p.nome)+'</h4>'+
+      '<div class="sub">'+voci.length+' capitoli'+
+        (nCond?' · '+nCond+' condivisi con altri percorsi':'')+
+        (buchi.length?' · <span style="color:#b91c1c">mancano i corsi '+buchi.join(', ')+'</span>':' · percorso completo')+
+      '</div><ol>'+voci.map(function(v){
+        return '<li'+(v.cond?' class="share" title="Condiviso con altri '+(v.quanti-1)+' percorsi"':'')+'>'+
+          '<span class="cn">'+v.num+'</span> — '+esc(v.t)+(v.cond?' ·  ×'+v.quanti:'')+'</li>';
+      }).join('')+'</ol></div>';
+  }).join('') : '<p style="color:var(--muted);font-size:13px">Nessun personaggio ancora assegnato: trascinane uno su un indice.</p>';
+
+  /* da scrivere davvero = i capitoli delle coppie DISTINTE scelte */
+  var daScrivere=0;
+  for(var key in scritte){
+    var pz=key.split(':'), c=CORSI.filter(function(x){return x.n===pz[0];})[0];
+    if(c) daScrivere += c.idx[Number(pz[1])].c;
+  }
+  document.getElementById('nOk').textContent=ok;
+  document.getElementById('nAtt').textContent=att.length;
+  document.getElementById('nCap').textContent=daScrivere;
+  document.getElementById('nRisp').innerHTML = sommaIngenua>daScrivere
+    ? 'invece di '+sommaIngenua+' · <b>'+(sommaIngenua-daScrivere)+' risparmiati</b>'
+    : (daScrivere?'nessuna sovrapposizione, per ora':'');
+  document.getElementById('bar').style.width=(att.length?Math.round(ok/att.length*100):0)+'%';
+}
+
+function pitta(){ pittaPersonaggi(); pittaRighe(); pittaPercorsi(); }
+
+/* trascinamento */
+var volo=null;
+document.addEventListener('dragstart',function(e){
+  var t=e.target.closest && e.target.closest('.pg'); if(t){ volo=t.dataset.p; e.dataTransfer.effectAllowed='copy'; }});
+document.addEventListener('dragover',function(e){
+  var c=e.target.closest && e.target.closest('.card'); if(c&&volo){ e.preventDefault(); c.classList.add('drop'); }});
+document.addEventListener('dragleave',function(e){
+  var c=e.target.closest && e.target.closest('.card'); if(c) c.classList.remove('drop'); });
+document.addEventListener('drop',function(e){
+  var c=e.target.closest && e.target.closest('.card'); if(!c||!volo) return;
+  e.preventDefault(); c.classList.remove('drop');
+  var key=c.dataset.k, cn=key.split(':')[0];
+  /* un personaggio segue UN indice per corso: assegnarlo altrove lo sposta */
+  for(var k in ass){ if(k.indexOf(cn+':')===0){ ass[k]=ass[k].filter(function(x){return x!==volo;}); if(!ass[k].length) delete ass[k]; } }
+  ass[key]=ass[key]||[]; if(ass[key].indexOf(volo)<0) ass[key].push(volo);
+  volo=null; pitta();
+});
+/* togliere un personaggio da una card */
+document.addEventListener('click',function(e){
+  var d=e.target.dataset && e.target.dataset.del; if(!d) return;
+  var p=d.split('|'); ass[p[0]]=(ass[p[0]]||[]).filter(function(x){return x!==p[1];});
+  if(!ass[p[0]].length) delete ass[p[0]]; pitta();
+});
+
+document.getElementById('scrivi').addEventListener('click',function(){
+  var att=attivi();
+  if(!att.length){ alert('Trascina almeno un personaggio su un indice.'); return; }
+  var rotti=att.filter(function(p){ return buchiDi(p).length; });
+  if(!rotti.length){ alert('Tutti i percorsi sono completi: si può scrivere.'); return; }
+  document.getElementById('ovBody').innerHTML =
+    '<p style="margin:0 0 .7rem">Questi personaggi hanno dei corsi <b>senza indice assegnato</b>. '+
+    'Scrivendo ora, il loro percorso resterebbe con dei buchi.</p>'+
+    rotti.map(function(pid){ var p=COL[pid], b=buchiDi(pid);
+      return '<div class="buco"><span class="e" style="background:'+tinta(p.col,20)+'">'+p.e+'</span>'+
+        '<span><b>'+esc(p.nome)+'</b><br><span style="font-size:12px;color:var(--muted)">'+
+        b.length+' corsi senza indice: <span class="num">'+b.join(' · ')+'</span></span></span></div>';
+    }).join('');
+  document.getElementById('ov').dataset.on='1';
+});
+document.getElementById('ovNo').addEventListener('click',function(){ document.getElementById('ov').dataset.on=''; });
+document.getElementById('ovSi').addEventListener('click',function(){ document.getElementById('ov').dataset.on=''; });
+document.getElementById('ov').addEventListener('click',function(e){ if(e.target.id==='ov') e.currentTarget.dataset.on=''; });
+
+document.getElementById('fs').addEventListener('click',function(){
+  if(document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); });
+document.getElementById('tema').addEventListener('click',function(){
+  var h=document.documentElement; h.dataset.theme = h.dataset.theme==='scuro'?'chiaro':'scuro'; });
+
+pitta();
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# Dipendenze e prodotti della compilazione: si rifanno, non si versionano.
+node_modules/
+dist/
+
+# Ambienti Python. Quello della trascrizione sta qui dentro per ragioni storiche;
+# quello della lettura avanzata dei documenti vive fuori, in
+# ~/Library/Application Support/studia/pyenv-ocr.
+.whisper-venv/
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# I DATI non stanno qui: vivono in «StudIA - file/», fuori da questa cartella, e
+# il loro percorso sta in ~/Library/Application Support/studia/config.json.
+# Queste righe servono nel caso qualcuno li rimettesse dentro: eviterebbero di
+# versionare gigabyte di video e, soprattutto, le chiavi API cifrate.
+Progetti/
+StudIA - file/
+config.json

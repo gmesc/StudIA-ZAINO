@@ -1,0 +1,389 @@
+{
+ "id": "td74-v02-consulenza-famiglia",
+ "schema": "1.0",
+ "title": "02 La consulenza alla famiglia",
+ "subtitle": "Videolezione 02 — capitoli brevi adattati ADHD/autismo/APC.",
+ "source": "Galton — Corso Tutor DSA (TD 74). Videolezione 02 «La consulenza alla famiglia» (trascrizione).",
+ "chapters": [
+  {
+   "id": "c01",
+   "title": "Il percorso inizia dai genitori",
+   "brief": "Spesso l'aiuto a un bambino non parte da una valutazione, ma dal conoscere i suoi genitori e ascoltare ciò che portano.",
+   "html": "<p>Spesso il processo di aiuto per un bambino <strong>non inizia da una valutazione diagnostica</strong>, ma dal conoscere i suoi genitori.</p><p>Sono loro a portare le prime istanze, e nel farlo chiedono — a volte apertamente, a volte in modo velato — «<em>cosa posso fare per dare una mano al bambino?</em>». Il primo colloquio è già parte del lavoro: è il momento in cui si comincia ad ascoltare e a mettere le cose nella giusta prospettiva.</p>",
+   "keypoints": [
+    "L'aiuto spesso inizia conoscendo i genitori, non con un test.",
+    "I genitori portano istanze e chiedono, anche implicitamente, come aiutare il figlio.",
+    "Il primo colloquio è già parte del percorso di aiuto."
+   ],
+   "glossary": [
+    {
+     "t": "Consulenza alla famiglia",
+     "d": "Il lavoro di ascolto e orientamento con i genitori, spesso all'inizio del percorso."
+    },
+    {
+     "t": "Primo colloquio",
+     "d": "L'incontro iniziale con la famiglia, in cui si raccoglie il racconto e si imposta la prospettiva."
+    }
+   ],
+   "quiz": [
+    {
+     "type": "tf",
+     "q": "Il percorso di aiuto inizia sempre e solo con la valutazione diagnostica.",
+     "answer": false,
+     "explain": "No: spesso inizia conoscendo i genitori e ascoltando ciò che portano."
+    },
+    {
+     "type": "single",
+     "q": "Il primo colloquio con i genitori è:",
+     "options": [
+      "Una formalità inutile",
+      "Già parte del lavoro di aiuto",
+      "Solo burocrazia"
+     ],
+     "answer": 1,
+     "explain": "È il momento in cui si inizia ad ascoltare e a impostare la giusta prospettiva."
+    }
+   ],
+   "videoRefs": [
+    {
+     "video": "02 TD 74 LA CONSULENZA ALLA FAMIGLIA edu.galton.it.mp4",
+     "t": 947,
+     "label": "02 · LA CONSULENZA ALLA FAMIGLIA"
+    }
+   ]
+  },
+  {
+   "id": "c02",
+   "title": "Come le famiglie arrivano",
+   "brief": "Le famiglie arrivano su sollecitazione della scuola o di propria iniziativa. I dati che portano sono esperienziali, non oggettivi.",
+   "html": "<p>Ci sono due vie principali con cui una famiglia entra in contatto con un servizio sui DSA:</p><ul><li><strong>Sollecitazione della scuola</strong>: l'insegnante ha rilevato difficoltà in classe e suggerito un approfondimento.</li><li><strong>Iniziativa autonoma</strong>: i genitori, per togliersi un dubbio, chiedono una consulenza raccontando ciò che hanno notato.</li></ul><p>Questa rilevazione è quasi mai accompagnata da <strong>dati oggettivi</strong>: è un <em>dato esperienziale</em>, il racconto di ciò che la famiglia vive.</p>",
+   "keypoints": [
+    "Due vie: sollecitazione della scuola o iniziativa autonoma dei genitori.",
+    "I dati portati sono esperienziali, non oggettivi.",
+    "È il racconto del vissuto familiare, non una misura."
+   ],
+   "glossary": [
+    {
+     "t": "Dato esperienziale",
+     "d": "Un'informazione basata sul vissuto e sull'osservazione quotidiana, non su una misura."
+    },
+    {
+     "t": "Sollecitazione della scuola",
+     "d": "La segnalazione dell'insegnante che invita la famiglia a un approfondimento."
+    }
+   ],
+   "quiz": [
+    {
+     "type": "single",
+     "q": "I dati che la famiglia porta al primo incontro sono di solito:",
+     "options": [
+      "Misure oggettive e test",
+      "Esperienziali, cioè legati al vissuto",
+      "Referti clinici"
+     ],
+     "answer": 1,
+     "explain": "Sono racconti del vissuto quotidiano, non dati oggettivi."
+    },
+    {
+     "type": "tf",
+     "q": "Le famiglie arrivano solo quando è la scuola a segnalarle.",
+     "answer": false,
+     "explain": "No: arrivano anche di propria iniziativa, per togliersi un dubbio."
+    }
+   ],
+   "videoRefs": [
+    {
+     "video": "02 TD 74 LA CONSULENZA ALLA FAMIGLIA edu.galton.it.mp4",
+     "t": 41,
+     "label": "02 · LA CONSULENZA ALLA FAMIGLIA"
+    }
+   ]
+  },
+  {
+   "id": "c03",
+   "title": "Cosa raccontano: compiti e atteggiamento",
+   "brief": "I racconti riguardano difficoltà specifiche (legge male, scrive male) oppure l'atteggiamento verso i compiti (conflitti, distrazione, disorganizzazione).",
+   "html": "<p>Le difficoltà riportate dai genitori si dividono grosso modo in due tipi.</p><h3>Difficoltà specifiche</h3><p>Su un ambito preciso: «fa molti errori quando scrive», «legge molto male», «fa fatica a capire quello che legge».</p><h3>Atteggiamento verso i compiti</h3><p>«Quando è il momento dei compiti è sempre una lotta», fatica a concentrarsi, si alza in continuazione, perde i materiali, non scrive i compiti — con grandi criticità di gestione e spesso veri e propri <strong>conflitti</strong> in famiglia.</p>",
+   "keypoints": [
+    "Un tipo di racconto riguarda difficoltà specifiche (lettura, scrittura, comprensione).",
+    "L'altro riguarda l'atteggiamento verso i compiti.",
+    "Distrazione, disorganizzazione e materiali persi sono segnali frequenti.",
+    "Spesso emergono conflitti familiari attorno ai compiti."
+   ],
+   "glossary": [
+    {
+     "t": "Difficoltà specifica",
+     "d": "Una difficoltà circoscritta a un ambito (es. lettura o scrittura)."
+    },
+    {
+     "t": "Atteggiamento verso i compiti",
+     "d": "Il modo in cui il bambino affronta il momento dei compiti (motivazione, gestione, conflitti)."
+    }
+   ],
+   "quiz": [
+    {
+     "type": "single",
+     "q": "I racconti dei genitori riguardano spesso:",
+     "options": [
+      "Solo i voti",
+      "Difficoltà specifiche e/o l'atteggiamento verso i compiti",
+      "Solo lo sport"
+     ],
+     "answer": 1,
+     "explain": "Si va da difficoltà su un ambito preciso al modo di affrontare i compiti."
+    },
+    {
+     "type": "tf",
+     "q": "Il momento dei compiti può essere fonte di conflitti in famiglia.",
+     "answer": true,
+     "explain": "Sì: gestione difficile e 'lotte' quotidiane sono spesso riportate dai genitori."
+    }
+   ]
+  },
+  {
+   "id": "c04",
+   "title": "Ascoltare la narrazione (e il non-verbale)",
+   "brief": "Il modo in cui i genitori raccontano dice molto della loro interpretazione. Conta anche il non-verbale: postura, tono, prosodia.",
+   "html": "<p>È molto importante <strong>lasciar parlare</strong> i genitori e raccogliere il loro racconto: il <em>modo</em> in cui narrano le difficoltà del figlio dice molto della loro interpretazione.</p><p>Va osservato anche tutto ciò che è <strong>non verbale</strong>: come sono seduti, con che tono e con quale <em>prosodia</em> raccontano. Alcuni genitori portano impazienza (vogliono subito una soluzione), altri esasperazione, altri senso di colpa perché non si sentono in grado di gestire le difficoltà del figlio.</p>",
+   "keypoints": [
+    "Lasciar parlare i genitori: il come racconta rivela la loro interpretazione.",
+    "Osservare il non-verbale: postura, tono, prosodia.",
+    "Le emozioni portate variano: impazienza, esasperazione, senso di colpa."
+   ],
+   "glossary": [
+    {
+     "t": "Narrazione",
+     "d": "Il racconto che la famiglia fa delle difficoltà, con il proprio punto di vista."
+    },
+    {
+     "t": "Non-verbale",
+     "d": "Postura, sguardo, gesti: comunicano oltre le parole."
+    },
+    {
+     "t": "Prosodia",
+     "d": "L'intonazione, il ritmo e la melodia del parlato."
+    }
+   ],
+   "quiz": [
+    {
+     "type": "tf",
+     "q": "Nel primo colloquio conta solo ciò che i genitori dicono a parole.",
+     "answer": false,
+     "explain": "No: conta molto anche il non-verbale (postura, tono, prosodia)."
+    },
+    {
+     "type": "single",
+     "q": "Il modo in cui i genitori raccontano il figlio rivela soprattutto:",
+     "options": [
+      "La diagnosi",
+      "La loro interpretazione delle difficoltà",
+      "Il voto del bambino"
+     ],
+     "answer": 1,
+     "explain": "Il come si racconta dice molto di come la famiglia interpreta il problema."
+    }
+   ],
+   "videoRefs": [
+    {
+     "video": "02 TD 74 LA CONSULENZA ALLA FAMIGLIA edu.galton.it.mp4",
+     "t": 169,
+     "label": "02 · LA CONSULENZA ALLA FAMIGLIA"
+    },
+    {
+     "video": "07 TD 74 DISLESSIA E LINGUA INGLESE edu.galton.it.mp4",
+     "t": 423,
+     "label": "07 · DISLESSIA E LINGUA INGLESE"
+    }
+   ]
+  },
+  {
+   "id": "c05",
+   "title": "Le idee e le etichette dei genitori",
+   "brief": "Spesso i genitori arrivano con un'idea già pronta ('è dislessico', 'è dell'attenzione'). Il compito è ascoltarla e aiutarli a superare fraintendimenti.",
+   "html": "<p>A volte i genitori arrivano con un'idea più o meno precisa: «secondo me è un disturbo dell'attenzione», «secondo me è dislessico». Può derivare da una sensibilizzazione sul tema, o dal <strong>semplificare</strong> con un'etichetta il problema del bambino che fatica.</p><p>Il compito è <strong>ascoltare</strong> la loro idea e ciò che già sanno, ed eventualmente aiutarli a <strong>superare fraintendimenti</strong> e a non cadere in stereotipi, mettendo le cose nella giusta prospettiva fin dal primo colloquio.</p>",
+   "keypoints": [
+    "I genitori spesso arrivano con un'etichetta già pronta.",
+    "L'etichetta semplifica un problema più complesso.",
+    "Il compito è ascoltare e aiutare a superare fraintendimenti e stereotipi.",
+    "Si lavora sull'interpretazione già dal primo colloquio."
+   ],
+   "glossary": [
+    {
+     "t": "Etichetta",
+     "d": "Una definizione semplificata ('è dislessico') usata per spiegare una difficoltà complessa."
+    },
+    {
+     "t": "Fraintendimento",
+     "d": "Un'idea errata sul problema, da chiarire con delicatezza."
+    }
+   ],
+   "quiz": [
+    {
+     "type": "single",
+     "q": "Di fronte a un genitore convinto che il figlio 'è dislessico', il clinico dovrebbe:",
+     "options": [
+      "Confermare subito per rassicurare",
+      "Ascoltare e aiutare a superare eventuali fraintendimenti",
+      "Ignorare l'idea"
+     ],
+     "answer": 1,
+     "explain": "Si accoglie l'idea e si aiuta a mettere le cose nella giusta prospettiva."
+    },
+    {
+     "type": "tf",
+     "q": "Un'etichetta pronta dei genitori va sempre accettata senza discutere.",
+     "answer": false,
+     "explain": "No: va ascoltata, ma il clinico aiuta a superare fraintendimenti e stereotipi."
+    }
+   ],
+   "videoRefs": [
+    {
+     "video": "02 TD 74 LA CONSULENZA ALLA FAMIGLIA edu.galton.it.mp4",
+     "t": 202,
+     "label": "02 · LA CONSULENZA ALLA FAMIGLIA"
+    }
+   ]
+  },
+  {
+   "id": "c06",
+   "title": "Entrare 'in punta di piedi': niente colpa",
+   "brief": "Si entra con delicatezza nel vissuto familiare, senza essere direttivi né attribuire colpe. Meglio far riflettere sulle emozioni.",
+   "html": "<p>Il vissuto che la famiglia apre è <strong>in equilibrio</strong> tra ciò che dovrebbe essere e ciò che sono riusciti a costruire. Bisogna entrarci <strong>in punta di piedi</strong>.</p><p>Non si è mai eccessivamente direttivi nell'attribuire responsabilità: meglio <strong>ispirare una riflessione</strong> — «come ti fa sentire quando il bambino fa così?», «secondo te non si mette a fare i compiti perché non gli interessa o perché è interessato ad altro?».</p><p>Se il genitore percepisce che «la colpa è mia», possono nascere <strong>sensi di colpa</strong> e persino astio verso il clinico. Per questo la delicatezza è essenziale.</p>",
+   "keypoints": [
+    "Entrare nel vissuto familiare con delicatezza, 'in punta di piedi'.",
+    "Non essere direttivi nell'attribuire responsabilità o colpe.",
+    "Meglio far riflettere sulle emozioni e sugli interessi del bambino.",
+    "Colpevolizzare genera sensi di colpa e astio verso il clinico."
+   ],
+   "glossary": [
+    {
+     "t": "Direttività",
+     "d": "Un atteggiamento che impone conclusioni o responsabilità; da evitare nel colloquio."
+    },
+    {
+     "t": "Senso di colpa",
+     "d": "Il vissuto del genitore che si sente responsabile delle difficoltà del figlio."
+    }
+   ],
+   "quiz": [
+    {
+     "type": "tf",
+     "q": "Nel colloquio è utile dire chiaramente ai genitori di chi è la colpa delle difficoltà.",
+     "answer": false,
+     "explain": "No: colpevolizzare genera sensi di colpa e astio; meglio far riflettere senza essere direttivi."
+    },
+    {
+     "type": "single",
+     "q": "Un buon approccio con i genitori è:",
+     "options": [
+      "Attribuire subito le responsabilità",
+      "Ispirare una riflessione sulle emozioni e sul comportamento",
+      "Prescrivere regole rigide"
+     ],
+     "answer": 1,
+     "explain": "Domande come 'come ti fa sentire quando...' aiutano più delle prescrizioni."
+    }
+   ],
+   "videoRefs": [
+    {
+     "video": "02 TD 74 LA CONSULENZA ALLA FAMIGLIA edu.galton.it.mp4",
+     "t": 274,
+     "label": "02 · LA CONSULENZA ALLA FAMIGLIA"
+    }
+   ]
+  },
+  {
+   "id": "c07",
+   "title": "Due modi di condurre il primo colloquio",
+   "brief": "Il primo colloquio può essere strutturato (schema di domande) o libero (dialogo aperto). Ognuno ha pregi e rischi; l'anamnesi si può integrare nel tempo.",
+   "html": "<p>Esistono due modi di condurre il primo colloquio.</p><ul><li><strong>Strutturato</strong>: segue uno schema di elementi da raccogliere (utile soprattutto a chi è alle prime armi, perché dà un binario). Passa in rassegna i punti che la Consensus Conference indica come importanti nella raccolta anamnestica.</li><li><strong>Libero</strong>: un confronto aperto, più simile a un dialogo. Dà dinamicità, ma espone al rischio di <strong>dimenticare dettagli</strong> importanti.</li></ul><p>In generale non si consiglia un approccio troppo schematico. E c'è sempre tempo: i percorsi diagnostici durano giorni o settimane, quindi l'<strong>anamnesi si può integrare</strong> in un secondo momento. Bene però avere un'idea degli ambiti almeno da toccare.</p>",
+   "keypoints": [
+    "Primo colloquio: approccio strutturato (schema) o libero (dialogo).",
+    "Lo strutturato dà un binario, utile a chi è alle prime armi.",
+    "Il libero è più dinamico ma rischia di far perdere dettagli.",
+    "L'anamnesi si può integrare nel tempo: i percorsi durano giorni/settimane."
+   ],
+   "glossary": [
+    {
+     "t": "Anamnesi",
+     "d": "La raccolta della storia del bambino e della famiglia, utile all'inquadramento."
+    },
+    {
+     "t": "Colloquio strutturato",
+     "d": "Colloquio guidato da uno schema di elementi da raccogliere."
+    },
+    {
+     "t": "Colloquio libero",
+     "d": "Confronto aperto, più simile a un dialogo che a una raccolta dati."
+    }
+   ],
+   "quiz": [
+    {
+     "type": "single",
+     "q": "Il rischio principale del colloquio 'libero' è:",
+     "options": [
+      "Essere troppo rigido",
+      "Dimenticare dettagli importanti",
+      "Durare troppo poco"
+     ],
+     "answer": 1,
+     "explain": "La maggiore apertura può far sfuggire dettagli utili all'inquadramento."
+    },
+    {
+     "type": "tf",
+     "q": "Se al primo colloquio sfugge un dettaglio anamnestico, è irrecuperabile.",
+     "answer": false,
+     "explain": "No: i percorsi durano giorni o settimane, l'anamnesi si può integrare in seguito."
+    }
+   ]
+  },
+  {
+   "id": "c08",
+   "title": "Non giudicare le famiglie",
+   "brief": "Nessuno nasce 'con la patente' del genitore. Contesti economici, conflitti e deleghe rendono tutto più complesso: il ruolo non è giudicare.",
+   "html": "<p>Il ruolo del clinico <strong>non è giudicare</strong> le difficoltà dei genitori: «nessuno nasce con la patente del genitore». Chi è clinico ma non è genitore può solo in parte avvicinarsi a certe fatiche.</p><p>Vanno tenuti presenti i <strong>contesti</strong>: famiglie in ristrettezza economica, con un genitore fuori casa tutto il giorno e la cura delegata all'altro — motivo, a volte, di conflitto. E l'atteggiamento verso la <strong>scuola</strong>: alcuni giudicano inutili certe attività o hanno un pessimo giudizio degli insegnanti; altri, al contrario, ne hanno un'immagine molto positiva ma restano perplessi perché il bambino continua ad avere difficoltà.</p>",
+   "keypoints": [
+    "Il ruolo non è giudicare i genitori: nessuno nasce 'genitore esperto'.",
+    "Contano i contesti: ristrettezze economiche, conflitti, deleghe.",
+    "L'atteggiamento verso la scuola varia molto da famiglia a famiglia.",
+    "Empatia e sospensione del giudizio sono essenziali."
+   ],
+   "glossary": [
+    {
+     "t": "Delega di cura",
+     "d": "Quando la gestione quotidiana del figlio ricade su un solo genitore o su terzi."
+    },
+    {
+     "t": "Sospensione del giudizio",
+     "d": "L'atteggiamento di non valutare moralmente le difficoltà della famiglia."
+    }
+   ],
+   "quiz": [
+    {
+     "type": "tf",
+     "q": "Il clinico dovrebbe giudicare i genitori che non riescono a gestire le difficoltà del figlio.",
+     "answer": false,
+     "explain": "No: il ruolo non è giudicare; nessuno nasce 'con la patente' del genitore."
+    },
+    {
+     "type": "single",
+     "q": "Perché è importante considerare il contesto familiare?",
+     "options": [
+      "Per assegnare colpe",
+      "Perché ristrettezze, conflitti e deleghe rendono tutto più complesso",
+      "Non è importante"
+     ],
+     "answer": 1,
+     "explain": "Il contesto aiuta a capire la situazione senza giudicare la famiglia."
+    }
+   ],
+   "videoRefs": [
+    {
+     "video": "02 TD 74 LA CONSULENZA ALLA FAMIGLIA edu.galton.it.mp4",
+     "t": 551,
+     "label": "02 · LA CONSULENZA ALLA FAMIGLIA"
+    }
+   ]
+  }
+ ]
+}

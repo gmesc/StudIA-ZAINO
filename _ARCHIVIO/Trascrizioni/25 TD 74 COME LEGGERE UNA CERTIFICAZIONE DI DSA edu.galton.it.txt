@@ -1,0 +1,916 @@
+Buongiorno, benvenuti a questa prima lezione che sarà divisa in due parti.
+In questa prima parte vedremo come è suddivisa una certificazione, quindi i
+test che la compongono e cercheremo di leggere e capire cosa significano i
+relativi punteggi che si trovano all'interno delle certificazioni.
+Dopodiché ci sarà una seconda parte della lezione che è registrata su un altro
+video dedicata proprio all'importanza del fare rete tra clinici, scuole e
+famiglia e quindi l'importanza del lavorare insieme per il benessere
+psicofisico del bambino. Quando parliamo di disturbo dell'apprendimento,
+quando ci rapportiamo a quest'area di disturbi ricorrono più volte diverse
+parole chiave. Uno tra questi è per esempio la parola discrepanza. Questo è
+il principale criterio per stabilire la diagnosi di disturbo dell'apprendimento.
+Discrepanza tra che cosa? Tra il dominio specifico interessato che deve
+essere deficitario, il rapporto alle attese per età o classe frequentata,
+quindi in questo caso la lettura deficitaria per l'età, la
+scrittura deficitaria per l'età o il calcolo e l'intelligenza generale che
+invece è adeguata all'età. Quindi si parla proprio di discrepanza tra
+un'abilità che può essere lettura, scrittura, calcolo o tutte e quante e
+l'intelligenza generale, cioè un ragazzino può avere una diagnosi di
+disturbo dell'apprendimento quando l'intelligenza generale è nella media,
+superore nella media, quindi superiore a un cozziente di 85, a fronte di
+abilità di apprendimento deficitarie.
+Un'altra parola che ricorre spesso è proprio quella di specificità, quindi di
+difficoltà significative ma circoscritte e che quindi lasciano
+intatto, quindi si ricollega alla prima parola chiave,
+lasciano intatto il funzionamento intellettivo generale, cioè chi ha un
+disturbo dell'apprendimento è una condizione che non intacca l'intelligenza,
+anzi la condizione è che per avere un disturbo dell'apprendimento l'intelligenza
+deve essere appunto come dicevo prima intatta nella norma a fronte di
+difficoltà significative, difficoltà in un dominio.
+Un'altra parola è quella di esclusione, cioè bisogna stare attenti nel senso che
+le difficoltà scolastiche non devono essere causate da difficoltà emotive, da
+difficoltà ambientali, da difficoltà sensoriali, neurologiche e appunto
+quindi è anche per questo che quando bisogna poi emettere una diagnosi di
+disturbo dell'apprendimento è necessario fare una visita anche dal
+neuropsichiatra proprio per andare ad escludere che quelle difficoltà che il
+bambino ha negli apprendimenti non siano dovute a
+condizioni neurologiche. Quindi bisogna proprio andare ad escludere tutte
+queste variabili. Altrettanto importante per esempio sarà
+considerare quelle situazioni di svantaggio socioculturale che per
+esempio possono andare a interferire con un'adeguata istruzione. Quindi per
+esempio un ragazzino che viene stimolato poco, che fa parte di un
+ambiente socioculturale di svantaggio è chiaro che farà fatica a
+leggere, a scrivere non perché c'è un disturbo dell'apprendimento ma perché non
+è stato stimolato questo bimbo. Bisogna stare attenti anche ai
+ragazzini stranieri. Quindi ragazzini che hanno una scarsa
+conoscenza della lingua italiana avranno difficoltà a leggere e a
+scrivere proprio perché è dovuto alla difficoltà della lingua. Quindi è
+molto importante utilizzare test standardizzati per andare a misurare
+l'intelligenza, andare a misurare l'abilità specifica ed escludere la
+presenza di altre condizioni che potrebbero andare a influenzare i
+risultati di questi test come per esempio appunto ripeto i deficit
+sensoriali, le condizioni neurologiche o i gravi disturbi della
+sfiera emotiva. Un'altra parola è significatività. Cosa vuol dire? Vuol
+dire che le prestazioni negli apprendimenti, quindi lettura e
+scrittura in calcolo, devono essere inferiori ai valori attesi per classe
+o per età. Quindi devono essere trovarsi al di sotto, poi questi
+parametri li vedremo, delle due deviazioni standard o del quinto
+percentile o in alcuni test come cutoff, quindi come punteggio limite, si
+stabilisce il decimo percentile. Questo poi ce lo dice il test. La
+certificazione è composta da diverse parti, parti che vanno compilate
+dall'equipe di SA. Vediamole adesso in maniera molto veloce e poi interremo
+un più nello specifico all'interno di ogni singola parte.
+Allora la certificazione è composta dai dati anagrafici, dalla diagnosi con
+i codici di l'ICD 10, poi tutte queste cose le vedremo bene, dai dati
+anamnestici, dai test effettuati, perché ci sono dei test obbligatori che vanno
+effettuati per poi porre una diagnosi di disturbo dell'apprendimento, e da
+eventuali test di approfondimento. Perché eventuali test? Perché quelli di
+approfondimento non sono obbligatori, ma servono al clinico per approfondire
+alcune aree che magari sono un pochino più in difficoltà. C'è una parte
+relativa alle proposte per l'intervento, c'è una parte relativa dove vengono
+inseriti tutti gli strumenti compensativi, le misure dispensative in
+base al profilo, al funzionamento del ragazzino stesso, e poi vengono
+allegati tutti i punteggi dei test effettuati con le relative deviazioni
+standard, quindi punteggi z, piuttosto che percentili, anche tutto questo poi lo
+vedremo nello specifico. Allora, questa è la prima parte della
+certificazione relativa ai dati anagrafici. Allora, in questa parte
+sono presenti tutti i dati del ragazzino, quindi ovviamente il nome e il
+cognome, l'indirizzo di residenza, un recapito telefonico dell'adulto di
+riferimento, quindi si può mettere un recapito della mamma, un recapito del
+papà, dove è nato il ragazzino e quando, la classe è frequentata e la
+scuola è frequentata dal ragazzino stesso, quindi il nome dell'istituto scolastico
+che frequenta. Nella diagnosi di disturbo dell'apprendimento deve essere
+contenuto un codice, un codice che è quello relativo all'IC10, ossia alla
+classificazione internazionale in cui rilevo proprio il tipo di DSA
+specifico che ho di fronte. Quindi io potrei avere un F81.0 nel caso del
+disturbo specifico della lettura o di slessia. La diagnosi per la slessia si
+può fare dopo il completamento del secondo anno della scuola primaria.
+In queste prove che poi andremo a vedere si vanno a vedere gli automatismi
+della lettura, quindi la decodifica del testo viene vista attraverso due
+parametri, quindi quello della velocità e quello della correttezza.
+Posso avere un F81.1 nel caso del disturbo specifico della compitazione
+o disortografia. Anche qua la diagnosi si può effettuare dopo il
+completamento del secondo anno della scuola primaria. La disortografia è di
+natura linguistica, quindi ci sono, come dire, si sottolineano proprio dei
+deficit nei processi della cifratura. Posso avere un 81.2 riferito al
+disturbo del calcolo e quindi alla discalculia. La diagnosi in
+questo caso non si fa prima della fine del terzo anno della scuola primaria.
+Questo può interessare o la conoscenza numerica, quindi il contare progressivo
+e aggressivo, quindi in avanti e indietro, o la lettura dei numeri, quindi ci
+sono bambini magari che fanno fatica quando i numeri diventano più grandi,
+oppure se all'interno continuano degli zeri, oppure posso fare fatica nel
+confronto e riordinamento di numeri, quindi riordina la più piccola più
+grande, la più grande più piccola, o confronta fra i due qual è più grande.
+La discalculia può avere l'abilità di calcolo in difficoltà, quindi si
+tratta della tutta la parte del calcolamento, della rapidità di
+calcolo, del recupero automatico del risultato nel magazzino dei fatti
+numerici. Queste sono difficoltà che i bambini hanno per esempio nel
+recuperare le tabelline, o difficoltà negli agoritmi delle operazioni.
+Posso mettere un codice di f81.3 se sono per esempio presenti disturbi vissi
+dell'apprendimento, come per esempio cioè se io vedo un bambino e vedo che ha
+sia una diagnosi di dislessia che di disortografia,
+piuttosto che una diagnosi di dislessia, disortografia e discalculia, quindi
+quando sono presenti più disturbi dell'apprendimento.
+Posso mettere un codice di f81.8 se sono in presenza di disgrafia e quindi
+la disgrafia è un deficit nei processi di realizzazione grafica e quindi più
+di natura motoria. Mentre un f81.9 è un codice che viene dato per un
+disordine evolutivo di abilità scolastiche, non meglio specificato, dove
+in realtà sono racchiuse molte problematiche e molte comorbidità.
+Dopo aver insegnito la diagnosi e quindi aver proprio spuntato il
+quadratino di dislessia, disortografia piuttosto che discalculia, c'è tutta
+una parte relativa ai dati anamnestici. I dati anamnestici sono i dati che
+si trovano in anamnesi e riguardano le indicazioni del peso alla nascita,
+oppure per esempio lo sviluppo del linguaggio, oppure le tappe dello
+sviluppo motorio, come è andato l'inserimento scolastico.
+Le note anamnestiche hanno l'obiettivo di raccogliere delle informazioni, delle
+notizie, delle sensazioni che possono aiutare il neuropsichiatra e lo
+psicologo durante lo svolgimento della diagnosi. Quindi le informazioni vengono
+ottenute come durante il colloquio con i genitori.
+Sono informazioni di fondamentale importanza perché sono informazioni
+che poi vanno, come dire, integrate con i risultati dei test e con l'osservazione
+clinica che viene fatta in studio. Come vi raccontavo qualche slide prima, per
+effettuare poi una diagnosi di disturbo dell'apprendimento è necessario
+somministrare tutta una serie di test. Ci sono dei test obbligatori, sono
+test che vanno somministrati al quale il clinico non può sottrarsi. Ci sono dei
+test che sono più a discrezione del clinico, quindi per esempio test che
+possono indagare l'autostima piuttosto che tutta la parte più emotiva, test
+che vanno indagare più le funzioni esecutive, quindi memoria, attenzione,
+problem solving. Sono sì test di approfondimento, però anche questi
+molto utili perché spesso con il disturbo dell'apprendimento abbiamo delle
+comorbità anche con altri disturbi come per esempio un'iperattività, una DHD,
+piuttosto che difficoltà magari relative alla sfera più emotiva, quindi
+il percorso di valutazione è, diciamo, composto, formato da diversi
+step che bisogna affrontare. Quindi la prima è una valutazione neurologica che è
+effettuata dal neuropsichiatra infantile, quindi di solito è un'unica
+visita che viene fatta con il neuropsichiatra che serve proprio ad
+andare ad escludere delle difficoltà più mediche, più organiche, quindi
+più a livello diciamo neuronale. Questo serve a fare una diagnosi, si
+chiama differenziale, perché io devo essere sicuro che quelle prestazioni di
+lettura, di scrittura di calcolo che sono deficitarie non sono dovute né a un
+intellettivo sotto la norma, per questo che si fa anche il test di
+intelligenza, ma non devono essere dovute nemmeno a dei problemi
+neuronali, per questo si fa la visita del neuropsichiatra. Il passo
+successivo è la valutazione dell'intelligenza,
+quindi il livello cognitivo che si fa attraverso un test
+multicomponenziale, i ragazzini dai 6-16 anni
+a loro verrà somministrata la wish 4, i ragazzini più grandi quindi dai
+16 anni, 17 in su, verrà somministrata la vice.
+Dopodiché c'è la valutazione, si procede con la valutazione delle abilità
+scolastiche. La valutazione delle abilità scolastiche riguardano proprio
+le prove di lettura, le prove di scrittura, le prove di calcolo, le prove
+di comprensione del testo e, faccio una specifica, le prove di scrittura si
+dividono in due filoni, le prove più ortografiche, quindi
+vado a vedere quanti errori fa il ragazzino, e le prove più grafiche di
+gesto motorio, quindi quelle che vanno a valutare se c'è o meno una
+dysgrafia. È chiaro che un bravo clinico non
+può soltanto compilare test e in base ai parametri dire se c'è una
+diamiosina o non c'è una diamiosina, ma deve integrare le informazioni dei test
+con un'osservazione durante tutto il processo, durante tutto lo svolgimento
+di test, quindi un'osservazione più clinica, quindi un'osservazione più
+qualitativa, e integrare poi queste informazioni anche con tutta la parte
+più di anamnesi. Dopodiché, appunto, c'è una parte di approfondimento come
+vi dicevo, in cui il clinico può decidere se approfondire le abilità
+trasversali, quindi andare a valutare anche questo tipo di abilità.
+Nelle prossime slide volevo vedere insieme a voi, passare un po' alla
+segna protocolli di test che si utilizzano per fare la diagnosi di
+disturbo dell'apprendimento. Volevo partire dal primo test che è quello, è
+la Wish 4, che è uno strumento clinico e diagnostico che si utilizza per la
+valutazione delle abilità intellettuali dei bambini da i 6 anni ai 16 anni e
+11 mesi. Allora, cosa misura appunto questo test? Misura il pozzetto
+intellettivo, ma diciamo, non solo. Dà proprio una fotografia del
+funzionamento del bambino, del ragazzino, del funzionamento delle sue
+abilità intellettive. Allora, proviamo a entrare un pochino più nello
+specifico. Questo è il protocollo di una bambina di 9 anni e 2 mesi. Vedete
+in alto, a destra, ci sono 4 box. Ok? Allora, il primo riquadro è quello che
+riguarda la comprensione verbale, quindi tutte le prove in cui il bambino
+utilizza il linguaggio. Il secondo riquadro riguarda il ragionamento
+percettivo, quindi tutte le prove dove il bambino viene chiesto di
+non utilizzare il linguaggio. Il terzo box è quello della memoria di
+lavoro, quindi è quella memoria che permette di il passaggio, diciamo, delle
+informazioni da breve termine a lungo termine.
+L'ultimo box è quello della velocità di lavorazione, quindi sono delle
+prove con il tempo e vanno a vedere proprio la capacità di lavorare del
+bambino correttamente, ma con il tempo. Allora, per ogni, diciamo, indice, quindi
+per la comprensione verbale, per il ragionamento video-percettivo, per la
+memoria di lavoro e per la velocità di elaborazione, si troveranno degli
+indici, dei quozienti, che trovate nella tabella sottosinistra, fino ad
+arrivare al QI totale, cioè il valore dell'intellettivo del bambino. Allora,
+vediamo un attimino. Perché ho messo una linea gialla? Allora, la linea
+gialla corrisponde alla media, ok? Quindi se io prendo un punteggio di
+10 in un subtest, vuol dire che la metà dei miei amici che avranno appunto la
+metà farà meglio di me, la metà farà peggio di me, ok? Quindi esattamente il
+cinquantesimo percentile, la media. Punteggi sopra il 10 saranno punteggi
+sopra la media, quindi punteggi, un punteggio di 12 corrisponde al limite
+superiore di media. Un punteggio di 8 corrisponde al limite inferiore di media.
+I punteggi dall'8 al 6 saranno punteggi critici, vuol dire che in
+quella in quella prova che io sto andando a somministrare, quindi in
+quell'abilità che sono andando a misurare, sottego un punteggio tra l'8 e il 6,
+vuol dire che comunque ci sono delle difficoltà. Dal 6, diciamo, dal 6 in
+giù, dal 5 in giù, anzi più precisamente, sono prove deficitale,
+quindi vuol dire che il ragazzino in quella abilità che io sto andando a
+misurare avrà un deficit. Tutte le prove invece dal 12 in su sono prove
+alte, molto alte, quindi superiori alla media. Proviamo a vedere questa
+bambina. Allora, questa mimba, la prima prova del primo box, quindi di
+comprensione verbale in alto a destra, è la prova di sommiglianza. La prova
+di sommiglianza è una prova di astrazione, quindi al bambino
+vengono date due parole e deve trovare la categoria alla quale appartengono, per
+esempio, latte e acqua sono liquidi, il 7 e il 2 sono due numeri, quindi deve
+trovare la categoria, scusate, la quale appartengono.
+Come vedete, ottiene un punteggio di 14, quindi è un punteggio, scusate,
+ottiene un punteggio di 12, quindi è un punteggio, comunque, che si colloca nel
+limite superiore di media. La seconda prova è quella di vocabolario, anche
+qua ottiene un punteggio di 12. La prova di vocabolario è una prova
+dove viene chiesto al bambino di spiegare il significato di
+alcune parole, quindi cos'è, per esempio, una mela, cos'è una mucca,
+cos'è un ladro, cos'è l'alfabeto, anche qua la bambina possiamo dire che
+possiede una buona, un'adeguata conoscenza lessicale.
+CO è la prova di intelligenza sociale, quindi viene chiesto al bambino come si
+comporterebbe in determinate situazioni, quindi cosa fai se dalla
+casa del tuo vicino esce il fumo nero, cosa fai se in un negozio
+trova il portafoglio della borsa di qualcuno, quindi a seconda di come
+risponde, il bambino prende determinati punteggi che poi vengono appunto
+convertiti. In questo caso, appunto, la bambina prende 13, quindi ha una buona
+intelligenza sociale. Guardiamo il secondo box, quello in
+russo, il box del ragionamento visopercettivo.
+Allora, sono tutte prove dove il bambino non deve parlare, ok, ma sono
+prove visive, oppure il bambino deve fare qualcosa. Per esempio, la prima
+prova, disegno con i cubi, qua la bambina ha preso appunto un punteggio di 13,
+vengono fatte vedere delle immagini al bambino, il bambino deve rifarle con
+dei cubetti, quindi questa prova va a vedere la coordinazione occhio-mano,
+insomma la pianificazione e anche la capacità di, insomma, anche di
+ripianificare un'azione, perché magari io parto con l'idea di fare la figura
+in un certo modo con i cubetti, poi mi accorgo che ho sbagliato e devo
+ripianificare le mie azioni. Ci è una prova di concetti illustrati, è la
+stessa prova, diciamo, di astrazione, come la prova di somiglianza, però su
+base percettiva, quindi vengono fatte delle immagini e il bambino deve
+trovare quelle che stanno bene insieme, quindi quelle che appartengono alla
+stessa categoria, che qua ottiene un punteggio elevato. RM è una prova di
+ragionamento di matrici, quindi è una prova di logica su base visiva, viene
+data una serie di immagini, il bambino deve capire la logica, capire quali
+immagini inserire dopo per completare la logica, anche qui la bambina va
+molto bene. Il terzo box, qual è il luminato di
+è il box della memoria di lavoro, quindi c'è la prima prova, memoria di cifre,
+vedete, ha un punteggio, tiene un punteggio di dieci, quindi in media, è una prova di
+span di cifre in avanti, quindi ti dico dei numeri uno a secondo, quando
+ho finito me li ripeti. La prova dopo è ti dico dei numeri uno a secondo, me
+li ripeti al contrario. Quindi perché memoria di lavoro?
+Perché il bambino deve fare un'operazione, deve trattenere la
+mente delle informazioni, farci un lavoro e poi dare un output. Lettere i numeri è
+una prova anche qua di memoria di lavoro, dove io al bambino, io clinico
+ripeto dei numeri delle lettere mischiate, il bambino me li deve
+riordinare, prima mi ripeti i numeri, me li è riordinandoli dal più piccolo al
+più grande, poi le lettere in ordine alfabitico. I ragazzini che hanno un
+disturbo del perdimento, di solito in questo in quest'area hanno una caduta.
+L'ultimo box è quello della velocità di elaborazione, come vi dicevo sono
+due prove a tempo, la prima è cifraria, quindi viene data una leggenda iniziale,
+ci sono dei numeri sotto ogni numero, cioè un simbolino, poi una griglia che
+riporta solo i numeri. Il bambino deve spostare il focus attentivo
+dall'alto al basso, completare la tabella riportando il simbolino esatto
+sotto ogni numero. Questa prova va a vedersi la capacità di
+lavorare velocemente con materiale insolito, ma anche la tensione
+divisa alternata, quindi da spostare il focus attentivo dall'alto al basso.
+Questa prova ricalca un po' il ricopiale della lavagna, quindi se avete
+bambini che sono lenti in questo subtest potrebbe essere che fanno
+fatica per esempio a spostare il focus attentivo quando devono ricopiare
+dalla lavagna. La seconda prova a tempo è ricerca dei simboli, quindi a
+sinistra del mio protocollo avrà un simbolo target e a destra una striscia
+di altri simboli. Il bambino deve riconoscere il simbolo target
+all'interno di quella striscia il più velocemente possibile e
+barrarlo, quindi anche questa prova comunque è una prova di velocità e
+di scansione visiva. Alla fine noi otterremo, se guardiamo il box sotto a
+sinistra, degli indici, quindi in comprensione verbale, la ragazzina a 114,
+adesso andiamo a spiegare, il ragionamento viso-percettivo 126, memoria
+di lavoro 197, velocità di elaborazione 103, quoziente totale
+intelligenza 115. Spostiamoci nel box in basso a destra,
+vediamo, allora comprensione verbale 114, allora 100 è esattamente il
+cinquantesimo percentile, quindi corrisponde un po' come il 10 del
+del riquadro sopra. 85 è limite inferiore di media, 115 è limite
+superiore di media, quindi tra 85 e 115 sono distribuiti i punteggi in media.
+Da 115 in su è media alta e sopra la media, da 85 a 70 sono punteggi,
+diciamo da 84 a 70 sono punteggi borderline, cioè iniziano ad
+esserci, sono sotto la media ma non deficitari, ma iniziano ad esserci le
+difficoltà, sotto il 70 sono punteggi deficitali. Quindi se guardiamo il
+profilo di questa bimba ha una comprensione verbale 114, quindi una
+buona comprensione verbale. Notiamo che il ragionamento perceptivo è il suo
+punto di forza, quindi è una bimba che magari funziona bene con i video, con le
+immagini, con i colori. La memoria di lavoro è un suo punto di
+debolezza, pur essendo comunque media ma secondo il suo profilo è un punto
+di debolezza mentre la velocità di elaborazione in media abbiamo nel totale
+un quoziente che è al limite superiore della media.
+Allora ricapitoliamo un pochino come leggere i punteggi. Allora i punteggi
+grezzi sono i punteggi ottenuti da soggetto in un test ottenuto dalla
+correzione dello stesso test, cioè ad esempio il numero di risposte
+corrette date da un soggetto. Venti domande e il soggetto ne risponde giusto
+a quattro. Il punteggio ponderato invece è derivato da un punteggio grezzo,
+cioè questo perché? Perché i punteggi grezzi non possono essere confrontati
+tra di loro, non forniscono informazioni facilmente interpretabili,
+cioè se un bambino risponde esattamente a quattro domande su
+venti, intuitivamente capisco che è una risposta un po' poche di domande,
+ma quanto poco? Cioè è un punteggio deficitario, è un punteggio critico, è
+al limite di media, ok? Quindi per poter interpretare i punteggi grezzi io ho
+bisogno di trasformarli in altri tipi di punteggio per poi essere
+messi in relazioni con delle norme in base all'età o alla scolarità. La
+trasformazione di punteggi da grezzi apponderati, ci sono delle tabelle che
+sono nell'indice del test e è lì appunto come lo risco a trasformarlo.
+Quindi prendete per esempio il test che vi ho fatto vedere prima, la wish.
+Il punteggio di 10, il punteggio di 8, il punteggio di 15, ricordate che siamo
+andati a vederlo su quel grafico, quelli sono già punteggi ponderati,
+trasformati, quindi sono già punteggi grezzi trasformati in ponderati. E
+effettivamente li potevo dire, cioè se il ragazzino prendeva 10 era una
+prestazione in media, se il ragazzino prendeva 4 era una
+prestazione deficitaria. All'interno delle certificazioni troverete altri
+tipi di punteggi, per esempio i percentili sono valori di posizione che
+dividono una distribuzione di frequenze osservate in cento parti uguali e il
+valore 50 corrisponde esattamente alla mediana, alla metà. I punti star vent,
+invece detti anche punti z, indicano la distanza di ciascun punteggio dalla
+metà unitica delle prestazioni. Vediamo nella prossima slide che cosa
+si intende. Allora vediamo questi concetti in maniera un po' più grafica,
+quindi questa è una distribuzione normale o gaussiana, quindi è la
+distribuzione, corrisponde alla distribuzione dei punteggi di una
+determinata popolazione. Poniamo a caso dei bambini di 9 anni e 2 mesi.
+Quindi tutti i punteggi dei bambini italiani di 9 anni e 2 mesi si
+distribuiranno lungo questa curva. Il valore medio corrisponde al
+cinquantesimo percentile e corrisponde al punteggio z zero, quindi
+è esattamente la metà. Quelle fasce colorate di azzurro che vanno da
+meno una deviazione standard a più una deviazione standard, quindi da meno
+uno punteggio z e da punteggio z più uno, sono i limiti di media, limite
+inferiore e limite superiore, quindi all'interno di meno una deviazione
+standard più una deviazione standard sono contenuti tutti i punteggi in
+media, media bassa, media alta. Tra meno due deviazioni standard e
+meno uno deviazioni standard corrispondono tutti i punteggi critici,
+quindi quali in difficoltà. Meno uno deviazione standard corrisponde all'incirca
+al quindicesimo percentile, meno due deviazioni standard
+corrisponde all'incirca al quinto percentile. Tutte le prestazioni
+sotto le meno due deviazioni standard, quindi sotto il quinto percentile, sono
+prestazioni deficitarie, al contrario più una deviazione standard
+corrisponde all'incirca all'ottantacinquesimo percentile, quindi
+tutte le prestazioni superiori a una deviazione standard sono prestazioni
+che si situano sopra la media di riferimento. Per quanto riguarda le
+prove di lettura per diagnosticare una dislessia, si somministra una prova di
+lettura di brano, una prova di lettura di parole e una prova di lettura di
+non parole. Allora vediamo la lettura di brano. In questo caso io ho inserito
+il protocollo di quella bimba di terza fine e terza elementare. Il brano che
+fa parte dell'MT clinica si chiama il gerbilio come si somministra. Allora si
+dice al bambino di leggere il brano ad alta voce, di non andare né troppo
+veloce né troppo lento ma di leggere come leggere il solito e noi
+dovremo siglare sia il tipo di errori che fa e quindi secondo il
+manuale, scrivere se è un punteggio o un errore da 1 o un errore da 0,5 e
+prendere il tempo. Quindi il bambino ha un tempo di lettura massimo di 4
+minuti, dopodiché appunto si segna dove è arrivato il bambino e si fa
+finire il brano di lettura percolando poi gli errori che continua a
+fare. Quindi vedete per esempio questa bimba non fa tantissimi errori ma lei
+arriva a leggere fino alla parola ruota dove ha messo il segnetto, quindi in 4
+minuti non arriva a leggere tutto il brano.
+Gli errori che maggiormente commette sono errori di omissione, per esempio
+non legge il suo corpo, oppure inserisce delle parole che non ci sono, oppure
+tende a fare delle anticipazioni andando a leggere parole appunto in
+maniera non corretta, oppure c'è uno scambio proprio anche a livello
+fonologico, quindi per esempio invece che leggere criceti, legge crigeti,
+quindi lo scambio di c' è quella G. Quindi si segna il tempo che la bambina
+ci ha messo a leggere, si segna il numero di sillabe lette in quel tempo e poi si
+va a calcolare la velocità di lettura, quindi le sillabe a secondo
+come si fa? Si fa il numero totale delle sillabe lette diviso il tempo di
+lettura, in questo caso appunto questa bambina legge a 1,1
+sillabe al secondo, tenete conto che la velocità di lettura fine e seconda
+è in circa di 2, 2 sillabe e mezzo, lei è una sillaba e uno, quindi è un
+punteggio che paragonato con le medie di riferimento per la sua età, è un
+punteggio che è sotto quinto percentile, quindi come vi ricordate è un
+punteggio deficitario, come errori si fa la somma degli errori, lei commette
+nove errori, quindi nove errori è una prestazione che si situa tra il
+quinto e il decimo percentile, quindi come vedete sono due parametri
+entrambi deficitari per poter mettere diagnosi di dislessia le tre prove
+quindi lettura di brano, lettura di non parole, lettura di parole, tutte tre
+hanno all'interno due parametri, quindi in tutte e tre le prove si va a
+vedere velocità e correttezza, quindi su sei parametri delle tre prove per
+fare diagnosi di dislessia almeno due devono essere sotto al quinto
+percentile, quindi come vedete qua praticamente ne abbiamo già due sotto
+quei determinati parametri. Questa è la seconda prova di lettura che si
+somministra, è la lettura di parole come vedete è suddivisa in quattro
+colonne, quindi si chiede al bambino di leggere una colonna per volta e di
+leggerla più velocemente che può ma correttamente, quindi il bambino deve
+dosare un po' la velocità, la correttezza, come vedete questa bimba
+tende a fare delle anticipazioni o delle inversioni anche di grafema.
+Anche qua si calcoleranno due parametri, la velocità e la correttezza, quindi il
+totale delle sillabe qua è 281, la bambina impiega un tempo totale di
+278 secondi per leggere tutte quattro le colonne, quindi farò 281 diviso 278.
+Mi viene fuori una lettura di una sillaba al secondo e quindi che è
+comunque una prestazione deficitaria, perché vedete corrisponde a un
+punteggio di zeta di meno 2,2, quindi meno 2,2 deviazioni standard.
+Quindi sotto diciamo la media, una prestazione clinica si dice, sotto il cut-off
+quindi una prestazione deficitaria. Come errori si contano tutti gli errori
+relative alle quattro colonne e compie 11 errori paragonati all'età,
+la classe frequentata è una prestazione sotto il quinto percentile. L'ultima prova di
+lettura che si somministra è la lettura di non parole. Quindi perché si
+somministrano questi tre tipi di prove così diverse? Perché la lettura di
+brano è una lettura ecologica, è la lettura che il bambino legge, si trova
+davanti quotidianamente. La lettura di parole e non parole vanno a vedere le due
+vie di lettura. Quindi la via fonologica e la via resticale. La via fonologica si
+attiva nel momento in cui io sto imparando a leggere e quindi non ho
+ancora automatizzato la conversione grafima-fonema, quindi leggero
+sillabando pian pianino, quando poi inizierò ad automatizzare la
+lettura, quando vedo la parola mamma non ho più bisogno di sillavarla, ma la
+leggerò nella sua complessità, nella sua totalità e quindi leggerò mamma. Quindi
+queste prove vanno a vedere come funzionano le due vie di lettura.
+Anche qua la bambina deve leggere più velocemente possibile ma correttamente,
+allora lei ci impiega un tempo totale di 263 secondi, le sillabe totali qua
+sono 127, quindi per calcolarmi la velocità delle sillabe al secondo farò
+127 diviso il tempo totale e quindi viene fuori 0,5 sillabe al secondo di
+velocità, che paragonato alla sua età, alla sua classe, è un punteggio
+deficitario, anche questo quindi sotto il quinto percentile. Per quanto riguarda
+gli errori, la bambina commette 17 errori, anche questo un punteggio sotto
+il quinto percentile, quindi come dire senza ombra di dubbio si può fare una
+diagnosi sicuramente di tislessia. Questa è la prova di dettato di
+è una delle prove che si somministano per indagare se c'è o meno un profilo
+di disortografia, quindi disortografia sono quei bambini che commettono molti
+errori ortografici. Allora questa bimba, come vi dicevo, è infine terza
+elementare e come potete vedere lei fa, compie diversi errori, errori di
+doppie, errori più fonologici, quindi dove non c'è una corrispondenza suono
+grafema, come per esempio armonioso, lei aggiunge tra la S e la O il grafema
+I, oppure calar della notte sostituisce la seconda A della parola
+con la lettera U, oppure fatica nel mettere l'apostrofo, quindi o non lo
+mette, oppure come per esempio l'acqua, acqua lo scrive bene ma si dimentica
+l'apostrofo, oppure dell'animale si dimentica proprio anche di metterle
+due L. Diciamo che ci sono diversi tipi di errori
+quando si va poi ad indagare la disortografia, allora gli errori più
+gravi, passatevi il termine, sono quelli fonologici, quindi quando non c'è proprio
+la corrispondenza fonema grafema, per esempio scrivo folpe al posto di volpe
+quindi sostituisco la F con la V, questi sono gli errori più gravi
+perché diciamo da fine, seconda, elementare non dovrebbero più esserci
+gli errori un pochino meno gravi sono quelli non fonologici, quindi le doppie,
+gli accenti, questi sono errori che se compaiono ancora in terza elementare
+non sono, come dire, errori gravi, poi dipende poi dalla quantità che c'è
+all'interno di un brano. Altri errori come per esempio l'acqua, anche questo
+non è un errore grave, quindi poniamo l'attenzione sugli errori fonologici che
+sono normali nel momento in cui sto prendendo la lettoscrittura, ma quando
+poi ce ne sono tanti, anche da fine, seconda, elementare, insomma dovrebbe
+essere un po' un campanello d'allarme questo.
+Come vedete questa bimba compie nove errori, sono pochi diciamo con i
+fonologici ma ci sono, con nove errori se paragoniamo il suo punteggio con le
+medie di riferimento per i bambini di terza elementare italiani, il suo
+punteggio è un punteggio deficitario perché si situa sotto il
+quinto percentile. Allora la scrittura di parole e di
+parole sono altre due prove che si somministrano per andare a indagare e
+completare poi la diagnosi di disortografia.
+Allora perché si somministrano queste prove? Perché sono di diversa
+difficoltà ortografica e si va a valutare l'automatizzazione di
+conversione fonema grafema. Io ho inserito parte della prova come viene
+somministrata, allora si detta al bambino una parola alla volta, il
+bambino la ripete perché il clinico deve assicurarsi che il bambino abbia
+capito bene che parola deve scrivere, una volta che l'ha ripetuta in maniera
+adeguata la può scrivere. Così anche per le non parole che sono parole che non
+esistono, quindi ha maggior ragione il bambino deve aver capito bene la
+parola che deve scrivere. Anche qua esistono, si fa poi il conteggio
+degli errori, possono esserci errori fonologici che quindi rappresentano la
+capacità compromessa di far corrispondere il suono al segno, per
+esempio lo scambio di lettere simili, quindi t al posto di d, b al posto di v, o
+l'aggiunta o la mancanza di lettere e sillabe all'interno della parola o
+l'inversione di lettere all'interno di una parola. Esistono poi appunto gli
+errori non fonologici che sono per esempio le separazioni e le fusioni
+illegali, come per esempio devo scrivere
+lo scrivo però staccato, lavoro, piuttosto che devo scrivere, non so, il cane e lo
+scrivo appunto tutto attaccato. Oppure gli scambio e le omissioni di
+graffie mi come o al posto di o con l'h, oppure cucina scritto con la q
+invece che con la c.
+Ovviamente anche l'omissione di lettere. Allora questa bimba vi ho
+riportato solo una parte dei suoi errori, per esempio come vedete lei
+scrive al posto di tipo, scrive tipo, quindi scambia la t con la d, quindi un
+errore fonologico, scambia lampo, lei scrive lambo, quindi scambia la p con
+la b, piuttosto che invece se passiamo nelle non parole, vuolo, lo scrive con la p,
+aggiungendo la p al posto della b, o chida, aggiunge appunto una lettra,
+quindi la, scrive chiada, oppure nell'ultima parte il suono sh lo
+scambia col suono ski. Questa è solo una parte di errori perché poi la
+bambina, diciamo, compia anche degli errori non fonologici, però come dire
+questi sono gli errori da tenere un pochino più in considerazione, sui
+quali bisogna intervenire prima. L'ultima prova che ci somministra per la
+disortografia è il dettato di frasi con omofone. Cosa vuol dire? Vuol dire
+che sono parole omofone, cioè con la stessa fonologia, ma non omografe,
+quindi si scrivono in maniera diversa, quindi con una diversa ortografia. Per
+esempio la mamma cucive pantaloni con lago, il bambino deve capire se si
+tratta del lago di montagna o lago che serve per cucinare, quindi capire se
+mettere o non mettere l'apostrofo, oppure era luna di notte quando ci
+siamo alzati. Luna, anche qua il bambino deve capire se mettere
+l'apostrofo o se non mettere l'apostrofo. Come si contano gli
+errori? Gli errori non si contano soltanto su tutti gli errori che
+vengono fatti in tutte le parole, ma gli errori vengono contati
+solamente sulle parole omofone, le ho messe di fianco, quindi per
+esempio sulla parola cuciva, quindi capire se ci vuole la Q, non ci vuole la C,
+l'ago, se ci vuole l'apostrofo o non ci vuole l'apostrofo, e quindi alla fine si
+farà un conteggio totale degli errori commessi, come al solito si andrà
+sull'appendice delle medie, si confronta il conteggio ottenuto
+del bambino nella prova con le medie di riferimento e si vedrà appunto se
+è una prestazione deficitaria, se è in media, se è sopra la media. Allora, anche
+per il dettato di parole e non parole della slide precedente, questa bimba ha
+ottenuto una prestazione in fascia clinica, quindi deficitaria, anche per
+il dettato di frasi abbiamo un punteggio deficitario e quindi quando
+si può fare viagnasi di disortografia? Quando almeno la metà delle prove
+somministrate si trova sotto il quinto percentile, in questo caso la bimba ha
+tutte le prove somministrate relative alla disortografia in fascia clinica,
+quindi deficitaria, si può anche dire richiesta di intervento immediato e
+quindi si può emettere una diagnosi di disortografia. Il disturbo della
+scrittura, nel caso quindi della disgrafia, è il disturbo che interessa
+la componente motoria ed è quindi proprio un disturbo di esecuzione motoria
+di ordine disprassico. Cosa vuol dire? Vuol dire che il ragazzino fatica
+proprio nella programmazione dei movimenti, non soltanto appunto nella
+programmazione del movimento della scrittura, ma i movimenti anche come
+per esempio movimenti che riguardano più la coordinazione motoria, quindi
+magari il ritagliare in maniera precisa, piuttosto che fare una linea
+utilizzando anche il righello in maniera precisa, fino ad arrivare a una
+disprassia più grave, quindi proprio di controllo anche del
+movimento. Quindi con la disgrafia si manifesta come una
+difficoltà a riprodurre sia i segni alfabetici che i numeri e riguarda
+proprio, come dicevo nello specifico, proprio la programmazione del gesto
+motorio, proprio l'uso del gesto motorio. Questa può influire
+negativamente sulla componente ortografica, quindi il bambino
+potrebbe compiere molti errori proprio di ortografia e sulla
+produzione del testo scritto, questo proprio a causa della difficoltà di
+rilettura e di autocorrezione. Esistono diverse prove che si possono
+somministrare per diagnosticare la disgrafia. Una tra queste è la batteria,
+si trova all'interno della batteria busco di tre soldi che vada la
+prima primaria alla terza secondaria di primo grado.
+Viene chiesto al bambino di scrivere, fondamentalmente di fare tre prove,
+quindi il bambino all'inizio deve scrivere in un minuto
+quante più volte riesce la sequenza LEE dove le due lettere sono
+scritte necessariamente in cursivo. Quindi questa prova va a vedere serve
+per valutare la fluenza del gesto grafico. La seconda prova è una sequenza
+numerica, quindi viene chiesto al bambino di scrivere dei numeri, quindi prima
+scrivo il numero uno, poi scrivo due, poi scrivo tre lettere. Può scrivere o
+in stampato minuscolo o in stampato maiuscolo in cursivo, questo lo
+sceglie il bambino. E questa prova serve per valutare l'impatto che ha il
+recupero ortografico sulla velocità di scrittura. La terza prova riguarda la
+prova di uno, quindi anche qua può essere scritto con il carattere che il
+bambino più preferisce, si scrive più volte la parola uno. Questa prova serve
+per fare un confronto poi con le altre due prove. Cosa si andrà a
+vedere in queste tre prove? Si andrà a vedere quanto è veloce il bambino ma
+quanto sono leggibili i caratteri di scrittura.
+Ovviamente poi le medie delle tre prove verranno confrontate, scusate, i
+risultati delle tre prove verranno confrontati con le medie di
+riferimento e si vedrà il risultato della prova del bambino come si
+posiziona sulla curva gaussiana, quindi se ha una prestazione in media, se ha
+limiti di media, superiore alla media o se è una prestazione deficitaria. Esiste
+poi un altro test che è il test BHK, che è una scala sintetica per la
+valutazione della scrittura in età evolutiva, quindi dal secondo al quinto
+anno della scuola primaria. Cosa valuta questa scala? Valuta la
+velocità, quindi se il bambino ha una scrittura lenta, piuttosto che adeguata,
+piuttosto che veloce, ma anche la qualità di scrittura, quindi se c'è
+presente all'interno una disgrafia o se il bambino non è disgrafico.
+Allora, diciamo che al di là di queste valutazioni più di quantità
+c'è proprio anche una valutazione che il clinico fa più di qualità, che
+va a concorrere per la diagnosi. Quindi si va a vedere appunto anche se la
+scrittura è leggibile o illegibile sia dal punto di vista del bambino, sia dal
+punto di vista del clinico, in tutti i caratteri. Quindi la lettura deve
+essere illegibile al bambino, la lettura della sua scrittura, al bambino
+e al clinico, anche se il bambino si sforza di scrivere il più attento
+corretto possibile. Si va a vedere poi la direzionalità del
+movimento, nel momento in cui appunto il bambino scrive. La spazzatura tra
+lettere e parole, perché ci sono bambini disgrafici che lasciano molto spazio
+tra magari una lettera e l'altra, o bambine al contrario lasciano poco
+spazio, magari anche solo tra una parola e l'altra, che sembra quasi
+uno scritto continuo. Si va a vedere poi anche la grandezza delle lettere,
+l'allineamento e la pressione. Quindi a volte si vedono dei protocolli molto
+calcati, dove il gesto grafico si vede che non è fluente, o la
+grandezza delle lettere. Magari si vedono appunto anche quaderni stessi di
+bambini dove una lettera è più grande e un'altra invece è un po'
+più bassa e sono completamente disallineate rispetto alla linea poi da
+da tenere per la scrittura. La discalculia è il disturbo specifico
+dell'apprendimento che corrisponde alla difficoltà di apprendere la
+matematica. Più nel dettaglio si può dire che coinvolge l'intelligenza
+numerica basale e l'abilità di calcolo. Cosa si intende per abilità
+numerica basale? Vuol dire il saper riconoscere piccole quantità in modo
+immediato e accurato, questo è subitizing, cioè ti faccio vedere tre
+stelline, velocemente devi dirmi quante stelline sono. Non ho bisogno di
+contare ma a colpo d'occhio so dire che sono tre. Oppure la capacità di
+ordinare in ordine crescente o decrescente
+una serie di numeri quindi metterlo dal più piccolo al più grande dal più
+grande al più piccolo. Oppure saper comparare per esempio saper
+distinguere se numero è maggiore o minore fra due. Oppure ancora comporre
+delle quantità per esempio ho tre decine, due centinaia in unità so
+ricomporre il numero preciso che corrisponde a questa scomposizione o
+anche il contrario. Ho il numero 1043 so dire a cosa
+corrispondono le diverse cifre. Come dire più che negli altri ambiti per
+la valutazione della matematica è necessario utilizzare una batteria
+completa di prove. Di solito viene conteggiato il numero di errori e la
+velocità con la quale il bambino ragazzino impiega a sbagliare quel
+processo. Di solito non viene valutata l'abilità di risoluzione dei
+problemi aritmetici che fa parte in una valutazione di un tipo diverso o
+meglio. All'interno delle batterie per la discalculia troviamo anche una parte
+dalla terza elementare che valuta la capacità di proven solving, quindi la
+risoluzione dei problemi. Però questa non concorre a fare diagnosi di
+discalculia perché indaga un'altra abilità che è appunto il proven
+solving. Quindi nelle prove noi che cosa troviamo? Troviamo delle prove di
+conteggio, quindi si chiede al bambino di contare più velocemente possibile
+avanti o indietro. Il riordinamento di quantità, quindi vengono presentati
+magari dei numeri e il soggetto deve riordinarli come dicevo prima in ordine
+crescente o decrescente. Oppure la trascrizione in cifre, quindi vengono
+dati al soggetto dei numeri scritti in lettere e lui deve riscriverli
+in cifre. Oppure viene dato al soggetto numero scomposto in ordine di
+grandezzo, lui deve assemblarlo come vi dicevo prima 8u3 da che numero viene fuori.
+C'è poi una parte di recupero dei fatti aritmetici. I fatti aritmetici sono
+quelle operazioni che recuperiamo dalla memoria. Quindi proviamo a pensare a
+tutte le tabelline, quindi 3x2, 7x3, 8x8 oppure quando diventano più grandi
+magari alle radici quadrate. Perché devo recuperarle dalla memoria? Perché il
+bambino in questa prova deve rispondere a solamente tre secondi al massimo per
+rispondere. Proprio perché non gli si dà il tempo di calcolare ma è un
+recupero della memoria stessa. C'è poi tutta una parte di
+calcolamento, quindi si propongono realmente dei calcoli, il soggetto deve
+eseguirli mentalmente. Quindi in questa prova sono due le variabili che vengono
+valutate. C'è la variabile correttezza e c'è la variabile velocità. A parte
+si indagano anche le strategie utilizzate. Questa più un'analisi
+qualitativa. C'è una parte poi di calcolo scritto, quindi all'interno
+della quale si propongono al soggetto una serie di operazioni e si chiede al
+bambino di risolverle utilizzando proprio le procedure del calcolo scritto.
+Anche qua si misura la correttezza e il tempo impiegato e anche le strategie
+che il bambino utilizza. Quindi a parte comunque si fanno sempre delle
+valutazioni più qualitative andando a vedere magari se si dimentica il
+riporto come questo viene utilizzato. Esistono due tipi di batterie diverse.
+Una batteria di primo livello che può essere per esempio la CMT3 dai 6 e 14
+anni. Questo tipo di batteria è un test che non fa diagnosi.
+Di fatti può essere somministrata sia da clinici che da non clinici. Sono prove
+che fanno una fotografia, una fotografia del funzionamento del bambino in questo
+momento. Ci sono poi prove di secondo livello come la BDE2 che sono prove
+utilizzate solo dai clinici che servono proprio per fare diagnosi di
+discalculia. Tendenzialmente nei protocolli dei ragazzini, diciamo dalla
+terza, quarta alimentare, fine terza, quarta alimentare in su,
+tendenzialmente troverete la somministrazione della BDE2 perché è
+proprio il test che fa proprio gli diagnosi.
+Allora torniamo un attimino al test della BDE2.
+Allora il test della BDE2 indaga principalmente con diverse prove tre aree
+diverse, quindi un'area di numero. All'interno di quest'area ci sono delle prove
+che indagano la competenza lessicale e sintattica del numero attraverso delle
+prove come per esempio prove di lettura del numero. Quindi è una prova a
+tempo dove il bambino in un minuto di tempo deve leggere la maggior parte
+dei numeri che si trova davanti. O un'altra prova è quella di scrittura dei
+numeri. Quindi è una prova non a tempo dove il bambino gli si dettano dei
+numeri e il bambino deve scriverli. Quindi sono numeri che raggiungono
+anche le migliaia e sono numeri, come dire, all'interno anche degli
+C'è un'area poi del calcolo. Sono prove, fanno parte delle prove che
+indagano la competenza del calcolo, quindi calcolamento e calcolo scritto.
+Quindi ci sono all'interno prove che riguardano appunto il calcolamento,
+prove di calcoli scritti, il recupero dei fatti numerici, come vi
+spiegavo un pochino prima, e anche le strategie che il bambino mette in atto.
+Una terza area indagata è quella dell'area del senso del numero. In
+quest'area si trovano delle prove di stime di grandezza e confronto fra le
+quantità. Quindi c'è la prova per esempio di triplette dove il bambino
+deve indicare tra tre numeri qual è il più grande tra i tre, oppure la
+prova di linea di numeri dove do una linea di numeri devo capire la
+posizione esatta di un determinato numero su quella linea.
+Allora, come vi dicevo, la BDE è un test per la descalculia evolutiva che
+indaga appunto le abilità matematiche dei bambini dalla terza
+della scuola primaria fino alla terza della scuola di primo grado.
+Alla fine io che cosa otterrò? Otterrò tre quotienti, quindi il
+quotiente del numero, il quotiente del calcolo e il quotiente del senso del
+numero. Una stima, diciamo, tra questi quotienti darà un quotiente totale.
+Allora, tenete conto che la media, i punti di riferimento, sono come
+quelli relativi al primo test che vi ho messo, alla wish, quello dell'intelligenza.
+Quindi un quotiente di 100 rappresenta esattamente la media, il 50esimo
+percentine. Un quotiente di 85 è relativo alla media bassa. Un quotiente tra 85 e
+70, comunque ci sono iniziate ad assorbe le criticità. Un quotiente sotto
+il 70 è un quotiente deficitario. Quindi quando si può fare diagnosi di
+discalculia, si può fare diagnosi di discalculia quando il quotiente totale
+è sotto il 70, sotto un conteggio di 70, perché vuol dire che quel
+quotiente è deficitario e quindi posso fare diagnosi di discalculia.
+Allora, sappiamo che chi ha un disturbo dell'apprendimento non ha caduto
+solamente nella lettura, piuttosto che nella scrittura, piuttosto che nel
+calcolo, ma sono compromessi a altre abilità trasversali. Quindi altre
+funzioni neuropsicologiche che possono essere, per esempio, l'attenzione,
+piuttosto che la memoria, per esempio la memoria fumologica, piuttosto che la
+parte più percettiva e visocostruttiva, quindi quella parte che vi permette di
+vedere le cose e coordinare occhio-mano per poi, come dire, ricostruire
+o rirappresentarle su un foglio. Quindi è necessario andare ad approfondire
+alcune aree. Come si fa a capire quali aree andare a approfondire? Per
+esempio, si possono andare a rivedere i test subministrati, per esempio
+partendo dalla wish, cioè se io vedo, per esempio, che nell'intellettivo c'è una
+grossa caduta nella memoria di lavoro, vado a indagare quell'aspetto,
+piuttosto che nell'analisi un pochino più qualitativa di come il bambino sta
+nella relazione, posso andare a indagare magari un aspetto più emotivo perché
+mi accorgo che c'è una fragilità più a livello, magari, affettivo
+relazionale, più emotiva, piuttosto che se vedo che il bambino è un bambino
+che fa fatica a star seduto, tocca tutti i materiali del test, fa
+fatica a contenersi, potrei andare a indagare un aspetto, magari, più di
+iperattività, di disattenzione. Quindi, per esempio, in presenza di una
+disvesia, potrei andare ad indagare, per esempio, la memoria verbale,
+soprattutto quella fonologica, che è responsabile proprio dell'elaborazione e
+del mantenimento temporaneo dell'informazione verbale nuova e di
+quella familiare, piuttosto che potrei andare ad indagare l'attenzione,
+l'attenzione sostenuta nel tempo o l'attenzione, magari, un pochino più
+visiva. Avrei bisogno, magari, nei bambini un pochino più piccolini, i primi anni
+di scolarizzazione, di andare a vedere se c'è un disturbo del linguaggio.
+Questo, in realtà, è compito, poi, del logopedista, quindi di un
+approfondimento più logopedico. Oppure, sempre, magari, in presenza di un
+bambino che va a scuola in seconda, in terza, avrò bisogno, magari, di andare a
+riprendere i prerequisiti della lettura e della scrittura e quindi andare a
+indagare con le teste apposta che vanno a approfondire più la
+metafonologia, quindi quei tassellini che servono, proprio, per la
+costruzione, per l'avvio, poi, di lettura e di scrittura, quindi
+manipolare, di saper manipolare le parole. Per esempio, gli dico lupo, tolgo lù, che cosa
+mi rimane? Ti dico mela, tolgo la, cosa rimane? In presenza, per esempio, di
+disortografia, potrebbe aver senso andare a vedere l'integrazione
+visuomotoria, come, per esempio, il test goemai, che va, proprio, ad
+indagare questo. Oppure avrò bisogno di andare a indagare l'abilità di
+attenzione visiva, l'abilità di attenzione uditiva. In presenza, magari, di sgrafia, avrò
+bisogno di andare a indagare l'abilità generale di motricità fine, quindi
+magari le componenti più visuomotoria, visupercettive, per percettive, andare a
+vedere com'è la coordinazione occhio-mano. Per resenza di
+scalcuria, per esempio, non so, bambino che ha difficoltà nell'incolonamento,
+dovrò andare ad approfondire tutto più il viso spaziale, come si organizza lo
+spazio del foglio, come lo gestisce, e magari anche le abilità più
+classiche. Dopo aver somministrato i test, c'è tutta una parte della
+certificazione dedicata alle proposte per l'intervento. Allora, nella
+conferenza per Manente Stato Regioni, sulla diagnostica sui DSA, viene indicato
+che nella diagnosi devono essere inserite sia proposte e suggerimenti per
+l'intervento, sia strumenti compensativi, misure dispensative, che
+vengono suggerite per il bambino. Quindi, tutto questo deve essere proprio
+inserito nella certificazione. A volte, quello che si trova però nelle
+relazioni non è proprio così soddisfacente, perché a volte ci troviamo
+di fronte ad un piano di aiuto che non è proprio, diciamo, specifico, perché
+magari ci sono delle informazioni che vengono un po', come dire, riportate su più
+diagnosi e non sono specifiche. Quindi, non sono specifiche magari caso per
+caso, a seconda del bambino che abbiamo in valutazione. Quindi, in questo
+senso, l'intervento non dovrebbe limitarsi a proporre delle metodologie
+specifiche che riducano il deficit, ma affiancare anche una serie di misure
+compensative per poter avanzare comunque nel percorso di apprendimento.
+Quindi, lungo questa direzione vanno considerati anche, per esempio, gli
+interventi metacognitivi che sono utili al fine di guidare i bambini e
+ragazzini ad affrontare e gestire in modo, come dire, più consapevole e
+strategico, le difficoltà che possono incontrare a livello di apprendimento e
+di studio. A volte, per esempio, nelle certificazioni si suggerisce di
+applicare gli strumenti compensativi, le misure dispensative, ma magari a
+volte non si dice quali. Oppure si danno dei suggerimenti, come per
+esempio si scrive di non penalizzare gli errori dove necessario, ma deve
+anche lo specialista a specificare quando, cioè lo specialista deve andare in
+aiuto alla scuola, è molto importante questa collaborazione. Quindi, per
+esempio, io avevo riportato una proposta di intervento, per esempio appunto
+qua ho scritto, alla famiglia si consiglia di proseguire il percorso
+logopedico, perché questa bambina stava già facendo logopedia
+perché avevamo distorbo di linguaggio, valutando all'inizio anno un
+potenziamento attraverso la tele-rehabilitazione relativa a lettura,
+quindi facendo tre mesi più tre mesi e scrittura altre tre mesi più tre
+mesi. Ho segnato il potenziamento avverrà
+tramite la piattaforma Readinet, con una frequenza di lettura del meno 15
+minuti per tre volte alla settimana, con colloqui settimanali in studio
+con il clinico per lavorare sugli aspetti metacognitivi. Cioè, allora questo
+è potrebbe essere un piano di aiuto perché comunque è specifico ed è
+unico proprio per questa bambina. In questo senso l'intervento non
+dovrebbe, come dire, limitarsi a proporre proprio delle metodologie
+specifiche che vanno a ridurre il deficit, ma affiancare anche proprio
+una serie di misure, come dicevo prima, per far sì che il bambino possa andare
+avanti proprio con l'apprendimento. Quindi c'è poi una parte della
+certificazione in cui vanno riportati tutti gli strumenti compensativi e le
+misure dispensative, costruite ad hoc per il bambino che è stato valutato
+in studio. Questi strumenti inseriti aiuteranno gli insegnanti nella
+compilazione del PDP, perché per compilare il PDP gli insegnanti si
+rifaranno alla certificazione, quindi agli strumenti che sono stati
+inseriti. Il PDP deve essere però efficace, quindi per essere efficace
+comunque dovrà essere breve, dovrà essere elaborato dagli insegnanti e
+dovrà essere il più semplice possibile, perché nella scuola esiste
+tantissima burocrazia, quindi i PDP composti da tante pagine non sono
+gestibili, sono poco flessibili. Esistono difatti molti PDP scaricati
+per esempio da internet, che magari sono già una loro
+struttura, sono già pre confezionati, alcuni magari anche come dicevo
+prima composti da tante pagine, quindi tenete conto che questi PDP arrivano
+da realtà diverse, con colleghi diversi e con bambini diversi fra di loro,
+quindi come dire, i bambini che hanno molte difficoltà, bambini che hanno
+difficoltà diverse, i consigli che si trovano in internet, come suddividere
+gli obiettivi in un compito, in sotto obiettivi, come dispensare dalla
+lettura d'alta voce, vanno benissimo. L'unica cosa è che sono proprio dei
+consigli standard che appunto potrebbero andare bene per tutti,
+potrebbero andare bene per il ragazzino autistico, per il ragazzino
+magari che ha un ritardo cognitivo, per un ragazzino che ha un DSA, come
+dire, sono delle indicazioni che noi ci troviamo, è un elenco che ci
+troviamo su internet, ma non sono delle indicazioni specifiche e non
+sono delle indicazioni personalizzate. Il mio consiglio è quello di scaricarvi
+il PDP redato dal MIUR, che è un PDP in cui gli insegnanti possono inserire le
+loro esperienze, possono inserire e adattarlo al loro modo per esempio di
+spiegare, di fare apprendimento e al loro modo di far apprendere poi la
+conoscenza a quel determinato bambino. Il fatto, ribadisco, che in internet si
+trovi un elenco degli strumenti compensativi o delle misure dispensative,
+come dire, nel momento in cui andiamo a fare il PDP non dobbiamo riportare
+l'elenco così come firmarlo e il PDP è fatto, il PDP è un po' di più, il PDP è
+costruire, elaborare
+degli strumenti, delle strategie per quel bambino e questo lo dice la
+circolare numero 8 del 6 marzo del 2013 del MIUR, cioè non si può parlare
+di d'attica personalizzata se gli strumenti sono un semplice elenco.
+Quindi, come dire, il PDP va fatto insieme e va elaborato dagli insegnanti
+stessi che conoscono il ragazzino. Ho riportato in questa slide la parte di
+PDP del MIUR, la parte relativa alla valutazione, vedete che a differenza di
+altri PDP qua non ci sono crocette, è una cosa voluta perché in questo caso
+va proprio compilato adattandolo alla propria classe, al proprio metodo di
+insegnamento. Quindi vedete che per ogni disciplina viene messo cosa
+a dispensare, cosa a compensare e i tempi aggiuntivi. Quindi vedete che è
+comunque un PDP chiaro, è formato, adesso è messo solo questo pezzettino,
+ma è formato da quattro pagine e a colpo d'occhio l'insegnante non ha
+bisogno di leggersi tutte le pagine ma è subito chiaro il quadro
+complessivo del ragazzino, gli strumenti di cui avrà bisogno.
+Quindi il PDP è un po' un equilibrio di logica, una logica sul se-allora, cioè se
+ti dispenso per esempio dalla lettura ad alta voce, allora ti compenso per
+farti ascoltare il brano letto dall'insegnante o con la sintesi vocale.
+Quindi per un'attività dispensata ne deve corrispondere sempre una
+compensata. Quindi per esempio, facciamo un altro esempio, se ti dispenso
+dallo studio mnemonico, allora ti compenso con delle tabelle, degli schemi, dei
+formulari. L'ultima parte relativa alla certificazione, l'ultima parte da
+compilare è proprio andare ad allegare i punteggi che il bambino ha ottenuto
+nei test somministrati. Vi ho portato degli esempi, allora qua c'è, ho
+riportato appunto il test intellettivo, queste sono le prove di una
+ragazzina che frequenta la seconda secondaria di primo grado, quindi la
+seconda media. Allora il test intellettivo cosa ci dice?
+Allora vedete che c'è una colonna dove riporto la prova somministrata, la
+seconda colonna riguarda il punteggio che lei ottiene, il punteggio
+imponderato in quel test, poi c'è la terza colonna relativa al punteggio
+standard e poi ci sono le osservazioni, la parte appunto clinica. Quindi vediamo
+il primo indice, l'indice di comprensione verbale, e lei ottiene un
+punteggio standard di 118, vi ricordate che il punteggio standard è quel
+punteggio che mi permette di fare dei confronti con le medie di
+riferimento, quindi se vi ricordate nella wish il 115 corrispondeva alla
+quindi lei ha un buon indice di comprensione verbale, l'indice viso
+percettivo di ragionamento viso percettivo ha un 91 quindi nella media,
+tutti i punteggi tra l'85 e il 115 sono punteggi nella media dove 85 è il
+limite basso di media, l'indice di male di lavoro ha un 70 quindi è un
+punteggio difficitario perché tutti i punteggi sotto al 70 sono punteggi
+difficitari a cui bisogna prestare molta attenzione, l'indice di velocità di
+elaborazione è un 103 quindi nella media, il totale del cui è un 97 quindi questa
+ragazzina ha un punteggio nella media. La tabella che si trova
+subito sotto è quella relativa alle prove di lettura, come vedete è stato
+somministrato la lettura del brano, la lettura di parole, la lettura di
+non parole. Tutte e tre le prove vanno a indagare due parametri, la correttezza e la
+velocità. Se vi ricordate si può fare diagnosi di dislessia quando almeno
+due parametri su 6 sono sotto il quinto percentile quindi quando al
+meno due parametri su 6 risultano difficitari o sotto il quinto
+percentile sotto le due deviazioni standard.
+Vedete che questa ragazzina ha praticamente quasi tutti i punteggi
+sotto il quinto percentile quindi si può fare diagnosi di dislessia ed è
+compromessa sia la velocità che la curatezza quindi ci aspettiamo una
+lettura molto lenta, magari che manca anche di prosodia e una lettura poco
+corretta. La tabella a destra è la tabella relativa alla scrittura, alle
+prove di scrittura somministrate. C'è una prima riga relativa alle prove di
+scrittura che vanno a indagare la disortografia, quindi le prove
+relative al gesto grafico, sotto dettato di parole di non parole di frase
+moffone e dettato di brano sono prove che vanno a indagare la
+disortografia. Alcune fanno parte della batteria di DE2, il dettato di brano
+fa parte della batteria della Wusco 2.
+Allora come velocità di scrittura lei ha una velocità buona e anche una buona
+leggibilità, quindi tutte e tre le prove sono in media, realtà meno 1
+di viazioni standard fa già parte della media bassa, comunque è una
+prestazione in media e quindi non si fa, non si mette diagnosi di
+disgraffia anche perché comunque questa ragazzina non ha anche tutti quegli
+aspetti più qualitativi di osservazione, quindi dolore alla mano, dolore al braccio,
+impugnata o scorretta, una scrittura come dire con lettere, una più
+grande, una più piccolina, parole distanziate, non ha tutto questo.
+Per quanto riguarda invece la scrittura, la scrittura la tenerò un po' in
+considerazione perché si può fare diagnosi di disortografia quando la
+metà delle prove ha una prestazione deficitaria, quindi sotto il quinto
+percentile o sotto le due direzioni standard. In questo caso abbiamo il
+dettato di parole che ha una prestazione critica a decimo percentile,
+quindi comunque non vuol dire che non essendo sotto il quinto percentile allora
+non ci sono difficoltà, no ci sono delle difficoltà e c'è il dettato di brano che
+è deficitario con otte o errori, tra l'altro la qualità degli errori in
+realtà questa ragazzina non compie errori fonologici ma sono più errori
+non fonologici, però come dire non mettiamo la diagnosi di disortografia
+ma stiamo un po' in allerta. In questa ultima slide ho inserito le prove
+relative ai punteggi del calcolo e delle abilità visospaziali, quindi le
+abilità visospaziali fanno parte di quei test di approfondimento perché
+abbiamo deciso di approfondire le abilità visospaziali perché questa
+ragazzina nella wish ha fatto fatica nella prova cubetti, la prova cubetti
+è una prova che un pochino va a misurare la coordinazione occhio
+umano, la capacità di pianificazione e comunque in generale nel suo
+intellettivo si è visto che le abilità visospaziali, le abilità visopercettive
+sono abilità che sono un po' un punto di debolezza per lei. Quindi partiamo
+dal calcolo, allora per quanto riguarda la prova del calcolo si può
+fare diagnosi di discalculia quando la metà delle prove sono sotto il
+quinto percentile. Allora in questo caso non abbiamo la metà delle prove sotto il
+quinto percentile ma abbiamo delle prove che richiedono comunque o un
+intervento immediato, per intervento immediato si intende una prestazione
+difficitaria o una richiesta di attenzione. Richiesta di attenzione
+significa una prestazione critica, una prestazione che si situa tra come
+dire quella parte borderline, quindi quella parte tra le meno uno di
+viazioni standard e le meno due di viazioni standard.
+Vediamo che questa ragazzina fa fatica nel calcolamento sia per quanto
+riguarda la correttezza sia per quanto riguarda la velocità, anche nel
+calcolo scritto per quanto riguarda la velocità e abbiamo anche delle
+difficoltà per quanto riguarda il dettato di numeri, quindi tutta quella
+parte che riguarda più la sintassi del numero, quindi il valore
+posizionale delle cifre del numero, è il recupero di fatti numerici, cioè
+andare a recuperare nella memoria il risultato di fatti numerici, quindi
+di tabelline piuttosto che di radici quadrate, cioè tutti quei risultati
+che dovremmo non calcolare ma memorizzare. Questa ragazzina fa
+fatica anche nel trascrivere in cifre i numeri e nel completare anche la
+serie, quindi anche qua tutta quella parte che riguarda un pochino di più
+il lessico e la sintassi del numero. Per quanto riguarda le abilità
+su spaziali, allora per quanto riguarda la figura direi che è una figura dove si
+chiede alla ragazzina prima di ricopiare quella figura anche abbastanza
+complessa, poi si lascia passare un po' di tempo e si chiede al ragazzino
+di rievocare a memoria quella figura e rifarla. Allora questa prova è una prova
+che va a vedere il percettivo e anche la memoria di lavoro. Il cut off che
+vuol dire il parametro che si utilizza per vedersi se questa
+prestazione è deficitaria è il decimo percentile e non il quinto come in altri test.
+Questa informazione la troviamo all'interno del test, comunque nei
+punteggi allegati si vede che la prestazione sotto il decimo percentile è
+una prestazione deficitaria. Quindi questa ragazzina a livello percettivo, a
+livello di memoria di lavoro si vanno a confermare le difficoltà che
+si erano riscontrate nel test intellettivo e quindi nella wish. Il
+VMAI è una prova anche qua di integrazione visomotoria, quindi la
+ragazzina deve ricopiare più preciso possibile delle forme. Qua non abbiamo
+una prestazione deficitale ma abbiamo una prestazione comunque critica e quindi
+da tenere in considerazione. Siamo arrivati alla fine di questa
+prima video lezione, vi ringrazio per l'attenzione. Questa video lezione
+quindi continuerà con una seconda parte in cui però la nostra attenzione
+sarà focalizzata un pochino di più sull'importanza della relazione, quindi
+del farrete, tra clinici, scuola e famiglia.

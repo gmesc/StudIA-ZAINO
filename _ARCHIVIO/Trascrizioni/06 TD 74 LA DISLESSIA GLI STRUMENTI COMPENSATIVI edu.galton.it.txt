@@ -1,0 +1,342 @@
+Benvenuti, la presente videolezione nasce con l'obiettivo di illustrare il
+funzionamento di alcuni strumenti compensativi per il disturbo di vetture.
+Il primo strumento indispensabile è sicuramente il computer. Deve essere
+dotato di casse acoustiche ed è maggiormente indicato l'utilizzo di
+computer portatili perché facilmente trasportabili e utilizzabili anche in
+classe. Le cuffie possono essere collegate al
+posto delle casse acoustiche e questo consente di avere una maggiore
+concentrazione durante l'ascolto e anche di evitare di disturbare gli altri.
+Lo scanner serve invece per trasferire documenti cartacei al computer e deve
+essere utilizzato in abbinamento a un software OCR come vedremo
+successivamente per la sintesi popale Leggi per me. La penna scanner infine
+è un piccolo scanner grande comune evidenziatore che consente di
+trasferire singole righe di testo al pc. Pertanto è più utile con brevi
+testi. Che cos'è la sintesi vocale? Un sistema di riproduzione artificiale
+della voce umana che converte il testo in parlato. Esistono sintesi
+vocali di ogni lingua, femminili o maschini, di bassa o alta qualità,
+gratuite o a pagamento. La sintesi vocale viene installata nel pc o anche
+su una chiavetta usb e i software di lettura e scrittura poi
+utilizzano la sintesi vocale per convertire il testo in parlato. Esistono
+sintesi vocali gratuite come Leggi per me che vedremo oggi insieme, ma
+anche Balabolca, FromSpeak e The Speech. Questi sono alcuni siti utili, alcuni
+link utili, ad esempio il sito dell'AID, l'associazione italiana di
+Sellesia, oppure di Maestro Roberto, ma anche di Sellesia passo dopo passo 2,
+dove troverete una serie di spiegazioni e indicazioni sull'utilizzo
+appunto delle sintesi vocali. Questi sono alcuni sintetizzatori vocali a
+pagamento che come vedete sono stati divisi per fascia d'età. Vengono
+indicati per i più piccoli Superquaderno e GECO, mentre per i
+grandi Carlo Mobile e Epico. Tutti questi software sono prodotti da
+Anastasis e si avvalgono della sintesi vocale loquendo. Vediamoli
+adesso nel dettaglio. Superquaderno è un editor di testi potenziato con
+immagini e oggetti multimediali. Facilita l'apprendimento della
+lettoscrittura e lo studio per tutti i bambini non solo con difficoltà di
+lettura ma anche con difficoltà autografiche, disturbo specifico
+d'apprendimento, disturbo della comunicazione del linguaggio o anche
+autismo. Ha un vocabolario figurato con più di 1700 parole che sono le
+parole di maggior frequenza nei testi scritti dai bambini di scuola
+alimentare. Ha un'interfaccia molto inquidiva, abbiamo già detto che
+utilizza la sintesi vocale loquendo ma anche i simboli per la
+comunicazione aumentativa. Grazie a queste caratteristiche può essere un
+primo strumento metacognitivo e uno strumento compensativo nelle
+difficoltà di lettura. È suggerito come software a partire dalla scuola
+dell'infanzia fino alla scuola primaria quindi nella fascia d'età dai 5
+e 12 anni. All'interno di Superquaderno c'è l'ambiente PDF, quindi l'ambiente
+di lettura e studio di file in PDF che possono essere aperti cliccando su
+l'apposito funzante e poi la sintesi vocale legge i file con la funzione
+karaoke quindi direttamente all'interno del testo mantenendo
+la stessa impaginazione e controlla la velocità di lettura. Il testo
+può essere evidenziato con la funzione evidenziatore e le parti di
+pagina catturate con lo strumento foto vengono polgopiati nella pagina
+Superquaderno per altri usi come ad esempio rielaborare il testo oppure
+inviarlo al software Supermappe per creare rapidamente una mappa
+concettuale. Un altro programma sempre di Anastasis è GECO. GECO viene
+suggerito a partire dalla scuola primaria quindi nella fascia d'età dai
+5-12 anni, supporta cinque lingue diverse con sintesi vocali di alta
+qualità. Le lingue sono l'italiano, lo spagnolo, il francese, l'inglese e il
+tedesco. All'interno di GECO ci sono quattro ambienti di lavoro, quaderni,
+libri, mappe e web che tra poco vedremo singolarmente e inoltre ci
+sono strumenti utili come il raccoglitore di immagini e la
+calcolatrice con cronologia e sintesi vocale. Questi ambienti comunicano tra
+loro ma possono anche essere utilizzati singolarmente. GECO è uno
+strumento che può essere utilizzato in classe con la LIM per stimolare
+l'apprendimento cooperativo e la didattica inclusiva. Vediamo singolarmente
+quaderni, è l'editor di testo per scrivere e condividere i documenti e
+arricchirli voi con immagini e può essere utilizzato in abbinamento
+quindi alla sintesi vocale e al correttore portografico. Libri serve per
+studiare, annotare, modificare, gestire libri digitali in formato PDF e farli
+leggere appunto con la sintesi vocale. E' possibile poi annotare ed
+evidenziare le parole difficili ad esempio con le immagini magiche, mappe
+per creare le mappe multimediali e il web infine per cercare le
+informazioni su internet con il supporto della sintesi vocale e delle
+immagini magiche. Tutto questo viene fatto in sicurezza perché l'ambiente
+web è interno al programma e filtra i siti che sono visitabili con il
+parental control. Un altro software sempre di Anastasis è Carlo Mobile Pro
+questo è indicato, abbiamo detto prima, per i più grandi, infatti la
+fascia di età va dalla scuola superiore fino all'università quindi
+dai 12 in 16 anni più. Sempre disponibile la sintesi vocale per la
+lettura dei testi, l'ambiente PDF per studiare e lavorare e inoltre c'è anche
+il traduttore e la calcolatrice parlante. Un altro programma ultimo di
+Anastasis è Epico. Epico supporta chi ha difficoltà di lettura, scrittura,
+calcoli, organizzazione del studio, favorisce l'apprendimento e l'autonomia
+degli studenti ed è indicato a partire dalla scuola secondaria quindi dalla
+seconda classe delle scuole medie fino al biennio delle superiore oltre
+quindi sempre la fascia di età 12 16 anni più. All'interno di Epico c'è un
+centro di attività in cui si trovano cinque funzioni, l'editor di testi,
+l'illettore sempre con la sintesi vocale e l'effetto karaoke che vi dà insieme al
+testo di lettura. Questo è anche ottimizzato per gli schermi touch screen.
+Poi c'è l'ambiente domande, c'è un catalogatore di informazioni che cosa
+fa? Potenzia le abilità di problem solving grazie allo schema domande e
+risposte. Questo aiuta nella comprensione del
+testo e nello studio perché favorisce la creazione di un metodo di studio
+personale. Nella risposta poi si possono inserire testo, immagini ma anche
+collegamenti multimediali. L'ambiente PDF abbiamo già visto più volte che è
+dedicato appunto ai libri digitali in cui si possono prendere appunti e
+personalizzare il libro come se fosse cartaceo, quindi ci sono
+evidenziatori, si possono inserire o estrarre pagine da altri documenti e
+inoltre è possibile fare un riassunto in lettura, consente di elaborare il
+testo direttamente sul libro digitale. Infine anche questo software è dotato
+di calcolatrice parlante con sintesi vocale. Le voci utilizzate sono sempre
+le voci filoquendo che vengono installate sul programma ed EPICO è
+disponibile in diverse versioni. Altri sintetizzatori vocali a
+pagamento questa volta su pendrive sono personal reader e le condizioni di
+personal reader in mac più, quindi in abbinamento al software supermappe e
+infine alfa reader. Personal reader è un software di nuovo di Anastasis
+mentre alfa reader è prodotto da Ericsson. Entrambi hanno all'interno
+l'ambiente PDF. Adesso li vediamo. Personal reader fa leggere i testi
+selezionati da internet, libri digitali, file PDF, documenti di scrittura e
+anche mail. È intuitivo e facile da usare, ha all'interno cinque lingue
+quindi italiano, inglese, francese, spagnolo e tedesco ed è utile a
+partire dalla scuola primaria, la scuola secondaria, inferiore e superiore ma
+anche l'università. Quindi abbraccia un bacino di utenti molto più ampio
+dagli 8 e 16 anni più. Personal reader map più vuol dire
+abbinare al software personal reader il programma supermappe per
+realizzare le mappe unicequali. Quindi è maggiormente indicato, vista
+la complessità nella fascia di età dalla metà della scuola secondaria di
+primo grado fino all'università. Consente di leggere i testi, prendere
+appunti, studiare, schematizzare, ripassare e anche studiare le lingue
+estremiere. Alfa reader che più tardi vedremo in modo dettagliato anche
+in un dirigio pratico. E' un software di Ericsson, è sempre su chiavetta USB da
+porto in civica per cui è anche possibile salvare direttamente su questa
+chiavetta i libri digitali. I punti di forza sono l'ambiente di studio
+PDF, su cui si può lavorare sul testo, sottolineando, evidenziando,
+noti e commenti, evidencia le parole elette mentre le pronuncia e rispetta
+la formattazione del testo in diversi formati di file, quindi sia Word,
+Writer, PDF e HTML. Permette di leggere i libri digitali o sezioni di
+brani o elenchi e ha anch'esso una calcolatrice con cui legge i numeri,
+le operazioni e semplici formule matematiche. L'alfa reader ha due lingue,
+l'italiano e l'inglese di default, ma possono essere aggiunte come voci
+supplementari lo spagnolo, il francese e il tedesco.
+Parleremo di nuovo di Alfa reader più tardi.
+Infine, ultimo software programma a pagamento è la penna OCR con sintesi
+vocale. Io presento qui la CPEN exam reader, che appunto è una penna
+con OCR e sintesi vocale, che rende autonomi gli studenti, soprattutto più
+grandi. Quindi la fascia di età è dalla scuola secondaria e l'università,
+quindi 12-16 anni e più, e può essere utilizzata anche dagli adulti con
+disturbi specifici dell'apprendimento per il lavoro. Come funziona? Basta
+passare la penna sul foglio di carta come se fosse proprio un evidenziatore
+e la sintesi vocale di alta qualità legge i testi negli auricolari. Legge
+riga per riga e all'interno ci sono 5 lingue. Come legge un ragazzo con
+difficoltà, disturbo di lettura. Vedremo tra poco un testo letto da due
+bambine con disturbo specifico dell'apprendimento di tipo misto. Sono
+entrambe bambine che frequentano la quinta elementare. Come vedremo sono
+molto diverse rispetto allo stile di lettura e quindi anche allo stile di
+apprendimento. Ascoltiamo quindi il primo audio. Il titolo del testo è
+l'Italia politica.
+Corrispondente alla regione italiana dopo la seconda guerra mondiale nel
+1996. Gli italiani decisero di modificare l'amerto del Stato
+dall'antarca repubblica per organizzare l'anaggente repubblica. Fu necessario
+scrivere una buona costituzione al posto del Stato Albertino per 248.
+Come avete potuto ascoltare questa bambina ha uno stile di lettura molto
+lento, sillabbato. Legge prima le parole a bassa voce e poi prova a dirle ad
+alta voce. La sua lentezza non le consente di leggere tutto il testo. La
+parte che abbiamo ascoltato dura circa tre minuti e mezzo e lei ha letto quattro
+ore e mezzo, in tre minuti e mezzo di tempo. Ascoltiamo adesso invece un'altra
+bambina con uno stile di lettura molto diverso ma con la stessa diagnosi,
+ovvero di disturbo specifico dell'apprendimento di tipo visto.
+La politica. Lo Stato italiano nasce come monarchia nel 1861 grazie all'unificazione
+degli Stati che occupava il territorio codispondente alla religione italiana.
+Dopo la seconda guerra mondiale nel 1946, con un referendum, gli italiani
+decidero di modificare ordinariamente lo stato della monarchia. A Repubblica
+per organizzare la nascente Repubblica fu necessario scrivere una Costituzione
+al posto dello statuto alberghiero del 1848. Come avete potuto ascoltare questa bambina è
+molto più veloce nella lettura ma fa tantissimi errori. Qui trovate la sbombinatura del testo
+letto dalle lei che è riuscita nel tempo previsto. La parte che abbiamo ascoltato
+dura circa un minuto e sette secondi. Pertanto tra le due per leggere la stessa parte di testo
+il tempo per la prima bambina è triplicato. La differenza però tra la prima e la seconda
+bambina sta a livello della comprensione del testo perché la prima è lontissima ma
+ha una buona comprensione mentre la seconda fa tantissimi errori sostituzioni pertanto perde
+poi al livello di comprensione. Quindi quali strumenti compensativi potrebbero utilizzare
+queste due bambine per sopperire alle difficoltà di lettura che presentano? Entrambe
+utilizzano la sintesi vocale Leggi per me. Questa sintesi vocale si può utilizzare con
+libri digitali, libri scannerizzati, documenti Word ma anche pagine del web. Un altro strumento
+compensativo è l'utilizzo di un font adeguato come vedremo fra poco. La sintesi vocale
+Leggi per me dicevamo che è gratuita e serve appunto per supportare nello studio
+alunni e studenti con BSA. È pensata sia per i più piccoli che per i più grandi ed ha una
+versione anche usb per cui non è necessaria l'installazione ed è appunto Leggi per me usb
+che vedremo adesso insieme. Leggi per me usb quando viene avviata apre questa suite il
+primo simbolo che troviamo il computerino che corrisponde proprio all'avvio della sintesi
+Leggi per me. Il secondo simbolo, la M, è del software matematica per me, il terzo MindMaple
+e infine il quarto è il PDF Viewer che consente di aprire e modificare i file PDF che per
+definizione non sarebbero modificabili. Il simbolo del granchio non è più utilizzabile
+perché il software è stato trasformato in un programma a pagamento e troviamo invece qui
+a destra un'altra suite sempre di Leggi per me in cui troviamo il collegamento con Google Chrome
+e poi gli altri collegamenti sono esattamente gli stessi nella versione usb. Quella che
+vedremo anche insieme è la versione Leggi per me fw40 per i più grandi in cui in aggiunta
+troviamo il collegamento con il software CMAP Kids per costruire mappe digitali e il secondo
+simbolo Lingos è un software per fare appunto delle traduzioni con altre lingue e in aggiunta
+c'è quest'altro software dicato al numero 3 si chiama Matomir che è molto utile per la
+matematica per i ragazzi di scuola superiore. Quindi vediamo come si può utilizzare Leggi
+per me con i libri digitali. Innanzitutto dove possiamo trovare libri digitali? Su
+la pagina dell'AID nella sezione libro AID. Il testo cartaceo viene trasformato proprio
+in un file PDF leggibile dal software Leggi per me. Come si fa ad aprire il file PDF?
+Si clicca innanzitutto sul computerino per avviare la sintesi vocale e si apre questa
+seconda suite. Si clicca sul quaderno e infine per poter aprire il file PDF si clicca sulla
+scritta PDF in rosso. Si aprirà allora la schermata per scegliere dove ritracciare
+il nostro libro digitale scaricato precedentemente quindi si clicca sul titolo del libro poi si
+clicca su apri si seleziona la pagina e per copiare il testo per selezionare il testo
+si clicca sulla T accanto alla macchinetta fotografica quindi si sottolinea la parte
+che ci interessa e poi si importa il testo cliccando sul play qui a destra in questo
+modo si può già ascoltare il testo avendo di fronte la pagina del libro. Per invece
+copiare il testo nella schermata principale si deve incollare il documento cliccando
+e poi si diventa una casetta per andare nella schermata principale ovvero in questa
+schermata dove si potrà poi lavorare sul testo per fare riassunti, mappe digitali o
+semplicemente per avere soltanto l'immagine con il testo scritto. Leggi per me anche
+utilizzabile con libri scannerizzati come abbiamo anticipato in abbinamento al software
+OCR quindi dal libro cartaceo si scannerizza la pagina e poi all'interno di leggi per me viene
+trasformata con il software OCR. I passaggi sono gli stessi di prima per avviare il
+programma quindi si clicca sul leggi per me poi si clicca sul quadernino PDF si sceglie
+la pagina del libro scannerizzato che abbiamo salvato in precedenza si clicca su apri. Per
+modificare il testo possiamo selezionare OCR qui in alto si seleziona la lingua
+quindi l'italiano poi si clicca su ok e si sceglie anche la pagina la pagina corrente
+da modificare e di nuovo gli stessi passaggi di prima per selezionare il
+testo clicchiamo sulla T accanto alla macchinetta fotografica sottolineiamo nel
+testo clicchiamo play successivamente in appiatorio e poi casetta per andare nella
+schermata principale dove possiamo poi lavorare sul testo. Infine per utilizzare
+leggi per me con documenti word possiamo direttamente dalla pagina word utilizzare
+leggi per me cliccando sul computerino quindi leggi per me selezionando il testo e cliccando
+su play oppure si clicca sul quaderno per portare il nostro testo word all'interno della
+come vediamo qui. I fonti adeguati l'abbiamo preannunciato che per facilitare la decodifica
+il carattere di stampa deve avere alcune caratteristiche specifiche devono essere
+evitate le interferenze deve prevenire l'affollamento percettivo e deve evitare
+lo scambio percettivo tra lettere simili per forma pertanto vengono indicati come più
+adeguati i caratteri ariel verdana comics e georgia con un corpo 14 o 16 è utile utilizzare
+l'interlinea doppia e un allineamento non giustificato il rientro di paragrafo anche
+consente di facilitare la lettura all'interno di leggi per me ci sono alcuni fonti adeguati
+che sono stati studiati proprio per il disturbo specifico di apprendimento che sono o per gli
+slacksic e bianco nero solitamente io lascio scegliere direttamente al bambino qual è il
+font che preferisce dove troviamo questi due font dentro leggi per me sulla schermata del
+del software dobbiamo cliccare sull'occhio visualizza e poi possiamo scegliere bianco
+nero bn o od questo è ad esempio il carattere bianco nero un'altra modalità che possiamo
+utilizzare quella lavagna per cui lo schermo diventa nero e la scritta bianca proviamo a
+vedere insieme come è possibile avviare la sintesi locale per me la prima volta che
+viene scaricata il primo passaggio entrando dentro leggi per me questo caso fw 40 sarà
+prima esecuzione dovremo essere connessi ad internet per poter scaricare le voci ogni
+volta che il computer ci chiederà il consenso dovremo accettare ed andare avanti per
+avviare la sintesi locale è possibile cliccare sul computer no come abbiamo visto sia per
+prima questa suite da cui è possibile leggere direttamente i file di esempio word o le
+pagine internet proviamo ad esempio ad aprire una pagina di word questo è il testo l'italia
+politica che abbiamo ascoltato prima letto dalle nostre bambine possiamo vedere come
+ascoltarlo dal pc sottolineo quindi seleziono la prima frase e poi clicco sul play l'italia
+politica lo stato italiano nasce come monarchia nel 1861 grazie all'unificazione degli stati
+che occupavano il territorio corrispondente alla regione italiana come vedete la sintesi
+vocale legge soltanto la frase sottolineata è possibile anche mettere in pausa durante la
+lettura l'italia politica lo stato italiano nasce come monarchia clicco qui per mettere
+in pausa e per riprendere di nuovo sul play l'italia politica lo stato italiano nasce è possibile
+fermare del tutto la lettura cliccando qui sullo stop il testo che stiamo ascoltando è un testo
+scritto in italiano e quindi la lingua è impostata predefinita è proprio in italiano ma
+cliccando sulla bandierina è possibile cambiare lingua sono il tedesco l'inglese l'americano
+lo spagnolo il francese e appunto l'italiano la voce italiana che ascoltiamo è la voce
+di lucia cliccando invece sul più o il meno è possibile aumentare o diminuire la velocità
+di lettura ad esempio rallentiamo ulteriormente l'italia politica lo stato italiano nasce come
+monarchia come vedete così la lettura è molto molto rallentata invece possiamo aumentare
+l'italia politica lo stato italiano nasce come monarchia nel 1861 grazie all'unifica e quindi
+la lettura diventa ovviamente più veloce la scelta e l'impostazione dipenderà da bambino
+a bambino per poter lavorare poi sul testo clicchiamo sul quadernino per aprire il documento
+e in automatico leggi per me copia la frase che avevamo sottolineato in precedenza. Utilizziamo
+questo testo per vedere come è possibile modificare il carattere di scrittura come
+descritto in precedenza si clicca sull'occhio visualizza si sottolinea il testo e poi si
+può scegliere il carattere di font studiati a posta che abbiamo presentato sono bianco
+nero vedete come si modifica il testo oppure open dyslexic l'interlinea è già a 2 e gli
+spazi anche tra le parole la modalità lavagna schermo nero scritta bianca e per i caratteri
+possiamo anche avere ovviamente lo stampato maiuscolo oppure tutto minuscolo con i caratteri
+normali per ingrandire soltanto la visualizzazione possiamo usare lo zoom e quindi non si modifica
+il carattere ma soltanto la visualizzazione oppure possiamo diminuire. Altre funzioni
+importanti per salvare il testo per salvare il testo si clicca sul file sul dischetto
+salva si sceglie dove salvare quindi ad esempio documenti e poi si dà il titolo
+al file creato per esempio l'italia politica e nel formato di salvataggio dobbiamo selezionare
+txt file.txt e poi salviamo. Altre funzioni importanti per la lettura sono l'audio che
+abbiamo visto prima in cui si può aumentare o diminuire la velocità di lettura e poi
+vediamo invece come aprire i libri digitali con la funzione pdf. Una volta aperta la
+schermata scegliamo ad esempio sul desktop il libro digitale clicchiamo su apri come
+vedete prima si apre la pagina su pdf exchange viewer e poi la inserisce all'interno di
+leggi per me e per sottolineare il testo dobbiamo cliccare sulla t accanto alla
+macchinetta fotografica selezionare il testo poi cliccare sul play. La storia è ferma
+statica cioè sempre uguale a se stessa. Ok per portarlo invece nella schermata
+principale clicchiamo sul inappiatoio e poi sulla casetta da qui potremo studiare
+e lavorare su questo testo. Un'altra funzione utile all'interno di leggi per me è il
+dizionario che si utilizza cliccando sulle bandierine qui in alto. Adesso è preimpostato
+inglese italiano ma possiamo anche invertire semplicemente cliccando sulla bandierina oppure
+scegliere altre lingue selezionando lingua e scegliere ad esempio dicevamo inglese italiano
+cliccando su cerca si può scrivere la parola letta nel testo di cui non si conosce il
+significato ad esempio dog e compare accanto la traduzione in italiano cane per chiudere
+si clicca sulla x. La nostra presentazione per parlare di un'altra sintesi vocale
+questa volta a pagamento che è Alfa Reader 3. Che cos'è Alfa Reader 3? Appunto un ausilio
+per la lettura facilitata un lettore vocale su chiavetta usb su cui è possibile anche
+salvare direttamente i libri digitali è un software che compensa le difficoltà
+della sua scrittura per i risultati specifici dell'apprendimento. La suite di Alfa Reader è
+questa. Come vedete le funzioni sono simili a quelle che abbiamo visto e leggi per me quindi
+il player deve far avviare la lettura, lo stop, il più e il meno per aumentare e diminuire
+la velocità di lettura, il pdf per aprire i libri digitali, la calcolatrice di cui non
+abbiamo ancora parlato e qui sulle impostazioni si possono scegliere altre funzioni. Si clicca
+sempre sulla T per selezionare il testo. Permette di leggere i testi in modalità karaoke
+direttamente nei file PDF, Word, Writer e Internet Explorer. Legge direttamente i
+file originali mantenendoli in paginazione e senza dover fare copia o colla e permette di
+fermarci, rallentare, tornare indietro o passare ad altri punti della pagina sempre con un
+immediato riscontro visivo. Infine consente di utilizzare contemporaneamente sia il
+controllo vocale che il correttore ortografico. Vediamo fra le opzioni la lettura continua,
+la lettura scandita e l'ego in scrittura. Permette di modificare la posizione, le dimensioni,
+l'interfaccia e i colori della barra dei comandi. È possibile attivare e personalizzare
+l'evidenziazione sincrona del testo letto ovvero compaiono colori diversi per parola
+e per frase letta. Si può scegliere tra interfacce diverse sia per la grafica che
+per le dimensioni. Questa ad esempio è la versione maxi pensata per i povedenti. L'opzione
+l'ego in scrittura consente di far ripetere la parola parola per parola oppure la frase
+oppure lettera per lettera. Si può scegliere tra tre voci preinstallate, due voci italiane
+Luca e Paola e una voce inglese, Serena. Quindi rispetto alla sintesi vocale d'aggi per me,
+di default ci sono soltanto queste due lingue. Anche qui c'è un ambiente di studio PDF che
+consente di evidenziare, sottolineare e barrare il testo ma anche intervenire sugli elementi
+grafici inserendone di nuovi, inserire note e altri commenti in formato di testo o di audio.
+Si possono inserire il link ad internet o altre parti dello stesso documento, inserire allegati,
+importare testi e salvarli nuovi documenti compatibili con tutti i principali reader
+PDF, esportare tutto il PDF o una selezione in formato TXT o anche in Ipermappe. Se il
+software Ericsson Ipermappe è installato. Infine si possono creare degli indici personalizzati.
+Vediamo anche qui la schermata dell'ambiente di studio dove ritroviamo la nostra pagina di
+prima del libro digitale e è necessario sempre cliccare sulla T in questo caso accanto alla
+pagina. Vediamo anche in questo caso come funziona direttamente il programma. Questa è
+la confezione di Alfa Reader 3 al cui interno si trova la chiavetta USB che è proprio una
+normale chiavetta e anche una guida didattica. Questo software è stato realizzato da Flavio
+Garolo per Ericsson. La guida ovviamente molto dettagliata spiega tutti i passaggi,
+tutte le funzioni. Vediamo però come funziona. Inseriamo la chiavetta, compare la schermata
+qui di Alfa Reader e cliccheremo sull'avvio. Si è aperto il nostro software, è possibile trascinarlo
+nella pagina e troviamo come abbiamo visto prima il play per far partire la lettura,
+più o meno per aumentare o diminuire la velocità di lettura e possiamo cliccare
+su PDF per aprire l'ambiente di studio PDF. Non riuscirete a leggerlo probabilmente perché
+è scritto molto piccolo, comunque compare la frase potete aprire un documento esistente
+facendo doppio clic qui. Quindi facciamo il doppio clic, cerchiamo sul nostro desktop il
+documento PDF, PSA, il libro digitale, apro e mi compare di nuovo la pagina del libro digitale.
+Posso selezionare cliccando sull'att il testo e poi cliccare sul play. La storia è ferma,
+statica, cioè è sempre uguale a se stessa, oppure cambia in continuazione? Ovviamente è
+dinamica poiché è in continuo ammutamento. Posso mettere in pausa, come vedete ho impostato
+il software in modo tale che possa evidenziare sia la frase intera in giallo che la parola
+che viene letta in quel momento. Posso far ripartire la lettura cliccando di nuovo sulla
+pausa. Infine per chiudere clicchiamo sulla X, vuoi veramente chiudere al farider? Sì. Sul
+nostro ambiente di studio, come abbiamo spiegato in precedenza, è possibile inserire delle
+casale di testo, oppure sottolineare con l'evidenziatore, oppure inserire frecce di
+collegamento, sottolineare in questo caso con il verde e inserire anche delle note audio
+cliccando su registratore, oppure dei collegamenti ad altre parti del documento, da cui si entra
+nella modalità a schermo intero. Infine una funzione molto utile è la lettura del solo
+testo evidenziato a cui possiamo accedere cliccando sull'evidenziatore giallo e sulla
+funzione leggi solo testo evidenziato. Torniamo alla nostra suite al farider per vedere le
+funzioni. All'interno di strumenti troviamo il collegamento per aprire la finestra di ricerca
+in rete, c'è la guida all'uso dello strumento, da qui è possibile esportare il testo selezionato
+come fa l'audio, oppure esportare il testo selezionato in formato insti. Il video di
+oggi si conclude qui, vi ringrazio per l'attenzione e a presto.

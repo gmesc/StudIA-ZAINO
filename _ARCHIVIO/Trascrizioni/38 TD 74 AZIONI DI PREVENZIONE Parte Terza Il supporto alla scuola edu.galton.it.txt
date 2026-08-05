@@ -1,0 +1,1458 @@
+Musica
+Terzo ed ultimo intervento della serie di video lezioni sull'identificazione e la gestione dei casi di rischio
+questa volta ci concentriamo sul supporto alla scuola nelle attività di prevenzione
+benvenuti
+Sarà anche in questo caso un esempio di lavoro reale, non simulato
+nel senso che costruiremo insieme un progetto che realmente poi andrò a fare in una scuola
+è giusto per dare un po' di contesto
+questa è una scuola in cui l'anno scorso ho realizzato un progetto di formazione per gli insegnanti
+della durata di 4 mesi addirittura
+quindi è stato un progetto anche intenso dal punto di vista della quantità di ore di formazione di cui gli insegnanti hanno fruito
+abbiamo iniziato il percorso con un momento di discussione, di condivisione di quello che oggi sappiamo
+dopo di che abbiamo aperto una finestra sui processi di apprendimento
+quindi proprio come si costruiscono le abilità di lettura, di scrittura e di calcolo
+questo ci ha consentito anche di fermarci un attimo a riflettere su
+ciò che già conoscevamo, ciò che di nuovo abbiamo imparato, come possiamo integrare queste informazioni
+e devo dire che in più di un'occasione è emersa l'osservazione da parte di molti insegnanti
+dell'assoluta prevalenza delle prassi sul senso delle cose che si fanno
+tante volte loro stessi sono stati disposti ad ammettere che certe cose le fanno per prassi
+perché sanno che si fa così però non riuscivano esattamente a collegare l'attività che proponevano al bambino
+con il processo di apprendimento su cui stavano cercando di lavorare
+sapevano genericamente che stavano lavorando sulla lettura o sulla scrittura o sul calcolo
+ma l'essere entrati a contatto con tutta quella serie di precursori di cui abbiamo avuto modo di discutere
+di aver visto i trend evolutivi, di aver sentito audio e visto video di bambini in difficoltà
+li ha messi proprio in condizioni di fare questi collegamenti e quindi di dire
+allora a questo punto posso non aver fretta di proporre determinate attività
+perché ho capito per esempio che determinate attività di scrittura devono essere fatte prima di altre
+perché altrimenti rischio di creare confusione poi nel bambino
+effettivamente il valore di questi percorsi sta proprio nel mettere gli insegnanti in una condizione
+di riflettere sul loro operato e rendersi conto di dove possono migliorare
+che è un qualcosa che per esempio nel nostro ambito in sanità capita quando facciamo percorsi di intervisione
+anche lì ci possono essere delle evidenze lampanti e clamorose di prassi che vengono portate avanti solo per abitudine
+ma che in realtà non hanno una base condivisa nella comunità
+quindi tante volte il confronto su questi temi ti fa nascere delle intuizioni
+che contribuiscono la maggior parte delle volte a migliorare quello che si fa quotidianamente
+il percorso di formazione che abbiamo fatto per questa scuola
+parlo di abbiamo perché eravamo più persone in realtà a svolgere questo progetto
+e la parte di cui mi sono occupato io in particolare
+era più incentrata sulla conoscenza delle tecnologie compensative
+quindi abbiamo fatto proprio sperimentare queste tecnologie
+e la sollecitazione in loro di una riflessione su quando conviene utilizzare una certa misura piuttosto che un'altra
+insomma alla fine del percorso
+come sempre succede nei percorsi di formazione che proponiamo nelle scuole
+c'è sempre un momento di metacognizione
+che cos'è che hai imparato, cos'è che fai quando sei in classe
+prova a riflettere sul tuo ruolo di insegnante proprio mentre sei in classe
+ti accorgerai che ci sono delle cose che puoi migliorare
+devo dire che una delle cose che è emersa praticamente da tutti
+è l'esigenza di imparare a osservare in maniera oggettiva
+da cui la richiesta delle insegnanti che poi hanno condiviso con il loro dirigente
+è di fare per il prossimo anno scolastico un progetto di accompagnamento alle insegnanti
+nelle attività proprio di rilevazione oggettiva
+il loro problema è questo
+noi ci limitiamo ad osservare, ci limitiamo a rilevare che un bambino
+o piuttosto che uno studente ha una certa difficoltà
+stiliamo una relazione di massima e inviamo il bambino per un approfondimento
+quello che manca è il dato oggettivo
+quando li abbiamo messi di fronte a una serie di punteggi grafici che scorrevano
+trend di evoluzione, si sono resi conto che avere un dato che supporti
+oppure disconfermi a volte la loro impressione può essere anche molto importante
+però a loro manca proprio una competenza nell'utilizzo degli strumenti
+a volte neanche sapevano che esistevano determinate prove che potevano valutare
+in maniera oggettiva quelle abilità
+per cui la richiesta esplicita è stata proprio questa
+insegnateci ad utilizzare gli strumenti
+mal celata in realtà era la richiesta veniteci a fare lo screening
+questa è una richiesta che si può anche comprendere
+è comprensibile il fatto che andare a proporre prove individuali o collettive
+ad un larghissimo numero di bambini è qualcosa di estremamente gravoso
+per cui va bene anche l'idea di delegare a personale esperto esterno
+questo genere di attività
+però questo ci porta a una serie di difficoltà in più
+quindi adesso mettiamo un po' tutto sul piatto
+e cerchiamo di costruire un progetto
+che poi discuterò effettivamente con l'insegnante referente per questo progetto
+partiamo da un
+l'unica cosa che effettivamente so per certo di questo progetto
+e proprio per rispettare il principio dell'atto in realtà
+scriverò
+in tempo reale
+tutto quello che già so su questo progetto
+allora l'insegnante referente mi scrive che si tratta di 4 prime
+5 seconde
+6 terze
+e qui parliamo di scuola primaria
+poi scrive anche
+e lo mette tra parentesi
+che sono 6
+quarte
+e 7 quinte
+le nostre scuole secondarie
+quindi qui parliamo di
+di secondaria
+ospitano 6 prime 7 seconde e 5 terze
+6 prime 7 seconde e 5 terze
+ecco questo è realmente tutto quello che so dell'assetto della scuola in cui dovremo fare questo progetto
+impostiamo un progetto
+tenendo in mente due obiettivi
+uno può essere quello di
+vengo io a fare lo screening
+tu osservi e l'anno prossimo lo farei da sola
+e quindi l'obiettivo è quello di
+tutoraggio
+il secondo obiettivo è quello di
+formazione dell'insegnante
+già all'uso degli strumenti
+per cui
+il mio ruolo sarebbe quello di
+accompagnare l'insegnante
+che però è lei che svolge effettivamente lo screening
+uno o più insegnanti
+e quindi diventa
+un obiettivo più formativo
+questo comporterebbe
+l'esigenza di scrivere due progetti
+paralleli
+sovrapponibili ma
+declinati un po' in modo diverso
+diciamo che tendenzialmente da come
+dal colloquio che abbiamo avuto telefonicamente con questo insegnante
+la loro idea è quella di
+andarci un po' con i piedi di piombo sulla cosa
+e osservare in prima battuta
+prima di essere lasciate da sole a fare
+io ho cercato un po' anche di passare l'idea
+a queste insegnanti
+che non si tratta di prove particolarmente complesse
+e non è nulla di diverso da quello che loro fanno quotidianamente a scuola
+l'unica differenza è che si tratta di prove oggettive
+e queste prove oggettive
+comportano una modalità di somministrazione standard
+devi solo stare attento a come la somministri
+poi trattandosi di prove oggettive
+sono anche standardizzate
+spesso le prove oggettive sono anche standardizzate
+per cui si tratta veramente soltanto di imparare a fare una conversione molto semplice
+cose che in due o tre ore di laboratorio, di formazione si riescono a risolvere
+ad ogni modo
+qualunque progetto si realizzi per la scuola
+dirò una banalità ma ha una struttura
+questa struttura prevede
+intanto qualcosa di non rilevante in questo momento che è un titolo
+quelli che sono i destinatari
+e se decideremo di mettere dentro la formazione
+i destinatari saranno gli insegnanti
+altrimenti
+i destinatari saranno gli stessi studenti
+ora
+quando si fanno attività di identificazione precoce
+in generale di prevenzione
+conviene
+circoscrivere il più possibile il campo d'azione
+nel senso che conviene concentrarsi sulle classi critiche
+quali sono le classi critiche?
+le classi critiche sono
+l'ultimo anno
+della scuola dell'infanzia
+e la prima e la seconda primaria
+queste sono le classi critiche
+quando si parla di prevenzione
+è vero che loro segnalano anche la presenza di una serie di classi anche nella scuola secondaria
+quindi dovremmo prendere in considerazione anche questo ed estendere eventualmente l'intervento anche sulle classi della secondaria
+in un'ottica di circ...
+avendo in mente l'idea di circoscrivere il campo d'azione anche per ottimizzare i tempi
+laddove dovessimo fare un progetto di screening nella scuola secondaria circoscrivendo potremmo strategicamente
+ridurlo alla prima primaria
+di modo che i ragazzi della prima primaria
+possono essere seguiti
+nei successivi due anni scolastici
+con un'ottica verosimilmente diversa
+auspicabilmente diversa
+oppure si può pensare ad un'idea di
+screening di base, degli apprendimenti di base
+su veramente tutte le classi di scuola secondaria un po' a tappeto
+questo dipende anche un po' dalle risorse che ha la scuola
+quindi diciamo che per adesso manteniamo l'ultimo anno della scuola dell'infanzia
+e la prima e la seconda come target preferenziale
+i tempi
+quando conviene effettuare un'osservazione
+abbiamo parlato di tempi critici
+per quello che riguarda l'ultimo anno della scuola dell'infanzia
+andremo a maggio
+anzi per maggior flessibilità ci appuntiamo tra aprile e maggio
+e per quel che riguarda la primaria
+la rilevazione
+la rilevazione
+sarà
+a gennaio
+per le classi prime
+a maggio
+per le classi prime
+a maggio
+per le classi prime
+e verso la metà dell'anno scolastico per le classi seconde
+metà fine anno scolastico per le classi seconde
+quindi potremmo indicare un periodo compreso tra aprile e maggio
+per le classi seconde
+per le classi seconde
+tendenzialmente
+adesso sto semplicemente imbastendo un po' l'idea generale
+poi entreremo più nello specifico e aggiusteremo lì dove serve
+per quel che riguarda i temi
+le modalità di esecuzione del progetto
+che in quest'ottica rientrano più in generale
+in un discorso di
+metodologia
+che utilizzeremo durante il progetto
+sempre in un'ottica di ottimizzazione delle risorse
+quanto più riusciamo ad utilizzare prove collettive
+tanto meglio è perché riduciamo i tempi di somministrazione
+il problema è che bisogna cercare un compromesso tra prove che siano sufficientemente sensibili
+da poter essere somministrate a tutta la classe senza perdere dati
+e il numero di prove che devono essere proposte
+quindi indicheremo senz'altro
+prove
+prove collettive
+e qui possiamo senz'altro
+ricorrere alle prove zero
+e le ACMT per l'area matematica
+e quindi l'area della letto scrittura e calcolo sono completamente coperti
+ovviamente qui stiamo parlando della primaria
+del primo ciclo di primaria
+per le
+dovessimo eventualmente inserire anche le
+classi successive della primaria
+abbiamo senz'altro
+le prove
+mt
+scuola
+di
+
+e correttezza
+sono le prove di lettura di brano
+da somministrare individualmente
+processo molto lungo da fare
+a ogni singolo bambino
+considerate che bisogna portare fuori il bambino
+stabilire un minimo di rapporto
+somministrare la prova
+e questa è la parte più
+più breve
+congedare il bambino
+per cui non è mai un
+entra il bambino fa la prova esce
+non è una cosa così rapida
+
+non so
+20 25 bambini
+almeno la
+una mezza giornata
+quindi la
+mezza giornata di scuola
+se i bambini fanno il tempo pieno
+per cui diciamo che tendenzialmente una mattina se ne va per una classe
+dipende sempre da quanti si è a somministrare
+ma questo è anche un po' legato a quante classi ha
+a quante
+a quanti spazi ha la scuola per poterci ospitare
+
+mt scuola dicevo per la rapidità e correttezza
+mt
+comprensione
+sempre dalla stessa batteria mt scuola
+queste a volte sono prove
+collettive
+quindi possono essere somministrate a tutta la classe
+contemporaneamente
+e una selezione di prove
+di competenza numerica e di calcolo
+che prenderemo sempre dalla cmt
+ma utilizzato solo in forma collettiva
+una buona idea potrebbe essere quella di
+sempre in un'ottica di ottimizzazione dei tempi
+utilizzare le prove di
+le prove collettive
+quindi somministrare a tutta la classe la medesima prova
+e eventualmente
+limitare
+la prova individuale a quei soli casi
+che dovessero risultare
+deficitare
+
+eventualmente
+limitare
+la prova individuale a quei soli casi
+che dovessero risultare
+deficitare nelle prove collettive
+questo anche potrebbe essere un modello
+per quel che riguarda invece la scuola
+anzi no manca ancora
+che abbiamo considerato la lettura
+la comprensione il calcolo
+ma non abbiamo considerato la scrittura
+per cui ci serve
+una prova di
+competenza ortografica
+che potrebbe essere un dettato
+e utilizzeremo quello della batteria
+BVSCO2
+oppure
+potremmo anche pensare di
+prendere due piccioni con una fava
+cioè
+proporre una prova di
+scrittura spontanea
+che potrebbe essere una prova di descrizione
+volendo anche più
+narrazione
+quindi proporre due prove
+in una decina di minuti normalmente
+10 minuti per prova
+normalmente si fanno
+così
+riusciamo a raccogliere
+sia il dato
+grafomotorio
+sia il dato ortografico
+che il dato dell'espressione scritta
+questo potrebbe essere una buona idea
+per ottimizzare i tempi
+il dettato ortografico anche può essere
+somministrato collettivamente
+credo che
+questa volta sia
+
+lasciare solo la prova
+
+che tanto ci da comunque
+un'indicazione anche dal punto di vista ortografico
+il
+l'aspetto grafomotorio è
+contemplato anche da queste
+che possiamo avere almeno un'idea
+della leggibilità del testo
+calcolo ce l'abbiamo
+comprensione e lettura
+direi che gli apprendimenti strumentali
+sono tutti rappresentati
+poiché si tratta di
+classi che vanno oltre
+il primo ciclo di primaria
+è possibile
+forse meno per le prove di descrizione e narrazione
+ma è possibile che le stesse prove
+possano essere utilizzate sia
+nella terza quarta e quinta primaria
+che nella secondaria
+non sono sicuro ma perché non conosco le classi nelle quali andrò sicuramente riconosce l'insegnante quindi a lei andrà chiesta questa cosa se i bambini di terza siano già in qualche maniera allenati a produrre un testo per iscritto può darsi che non lo siano ancora quindi eventualmente si potrà utilizzare la prova di dettato ortografica
+ortografico sempre tratta dalla batteria per la valutazione della scrittura della competenza ortografica versione 2
+uso la versione 2 perché la versione 3 è più circoscritta all'ambito clinico
+si può utilizzare dicevo la prova di dettato in sostituzione di quella di descrizione di narrazione
+ecco già così abbiamo un protocollo
+un protocollo soddisfacente per cogliere praticamente tutti gli indicatori di primi
+legati ai primi apprendimenti di lettura e scrittura o lo stato degli apprendimenti nelle classi successive al primo ciclo
+manca la scuola dell'infanzia
+per la scuola dell'infanzia ci sono due strade possibili o andiamo con un set di prove standardizzate ma dobbiamo vedere i bambini individualmente
+oppure proponiamo agli insegnanti l'uso di uno strumento di screening uno screening osservativo
+potrebbe essere una buona idea quella di siccome mi diceva l'insegnante che sono tanti bambini della scuola dell'infanzia l'anno prossimo
+l'ultimo anno della scuola dell'infanzia l'anno prossimo potrebbe essere una buona idea quella di utilizzare uno strumento osservativo come può essere ad esempio l'ipd a
+l'ipd a è uno strumento un po vecchio in realtà
+diciamo che per la maggior parte degli item che contempla e le aree che considera ha retto un po' ha retto abbastanza la prova del tempo
+forse la parte di prematematica di prealfabetizzazione andrebbe integrata un po' però diciamo che globalmente è uno strumento che è un buon compromesso
+quindi potremmo pensare di proporre un'attività formativa sull'ipd a anche perché sia un questionario osservativo però prevede una serie di attività che l'insegnante deve esplicitamente chiedere al bambino di svolgere
+per cui anche lì va fatto un po' un discorso introduttivo con l'insegnante su questo
+oppure laddove si deciderà di inserire una valutazione standard una valutazione con prove oggettive
+basterà andare riferendoci quindi alla linea in guida basterà mettere dentro una prova di
+di consapevolezza fonologica che potrebbe essere di segmentazione
+sillabica
+e di sintesi
+sillabica
+una prova di
+discriminazione
+di parole
+anzi mettiamo quella di non parole in coppia minima che è più pura della prova di discriminazione di non parole
+cioè di prova di discriminazione di parole
+è più pura perché il elemento lessicale legato al significato della parola
+elemento semantico legato al significato della parola potrebbe mettere già potrebbe facilitare il bambino nell'esecuzione di questa prova mentre discriminazione di parole in coppia minima
+sostanzialmente il compito sarebbe ad esempio tolo polo se ho detto la stessa cosa o un'altra cosa ti dà già l'impressione di una
+ti dà più l'impressione della capacità del bambino di discriminare suoni
+quindi questo farebbe emergere bambini con difficoltà nella discriminazione di suoni
+discriminazione di parole in coppia minima
+e questo già potrebbe essere una buona copertura dell'aspetto linguistico
+in alternativa
+possiamo utilizzare
+perché siamo dei clinici
+che
+operano all'interno di una scuola
+quindi possiamo utilizzare strumenti
+riservati all'ambito clinico
+possiamo utilizzare la prova di elaborazione
+fonologica
+della nepsi
+così in una sola
+siccome la prova di elaborazione fonologica della nepsi ha
+diversi compiti
+all'interno di diversi subtest della stessa prova
+possiamo unire le prove di segmentazione di fusione in una prova più ampia che contempli anche un aspetto più esecutivo
+per cui diciamo che tra le due fossi io a dover fare questo tipo di screening non farei tre prove diverse ma ne farei una che raccoglie un po' un po' tutto dando forse per scontato l'aspetto di segmentazione di sintesi ma se il bambino riesce a risolvere l'item che gli propongo vuol dire che la segmentazione e la sintesi c'è
+come processo per cui posso ragionare tranquillamente ad imbuto vedere l'abilità più
+un po' più complessa senza dover andare a vedere tutte le varie sotto abilità
+ecco l'elaborazione fonologica direi che potrebbe essere una buona scelta laddove sia io poi a dover andare a raccogliere i dati laddove invece deve essere l'insegnante raccogliere i dati posso fornire loro le prove di segmentazione di sintesi
+ovviamente dopo formazione
+ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ovvio ov
+Aspetto della consapevolezza notazionale uso di solito la prova di scrittura di nomi, mi pare si chiami, scrittura di nomi, sempre della Busco.
+Sostanzialmente si tratta di un foglio su cui sono riportati una serie di disegni, di figure, e il bambino deve semplicemente scrivere il nome della figura che vede.
+Lì vedi la prima concettualizzazione della lingua scritta, cioè se il bambino ha già un'idea di come si scriva cane, piuttosto che treno o altro.
+Vedi già l'aspetto di leggibilità del tratto grafico, vedi anche nel caso in cui il bambino sia già scolarizzato completamente o parzialmente,
+vedi già a che punto si trova il bambino nel fare un autodettato sostanzialmente.
+Quindi è una prova che credo sia molto utile per far emergere questo genere di abilità.
+Quindi con una singola prova hai modo di andare a guardare più sottoprocessi.
+La lettura di prove può essere sia legata al processo principale che intendono misurare, per esempio una prova di scrittura di nomi valuterebbe l'aspetto ortografico primariamente,
+però si può dare alla prestazione del bambino, quindi alla scrittura che lui fa, una lettura sotto diversi punti di vista.
+Per esempio siccome la prova ha un'immagine sotto a una piccola righetta sulla quale scrivere,
+tu puoi anche vedere l'aspetto di coordinazione fine motoria per scrivere nello spazio del rigo.
+Puoi subito vedere se ci sono bambini che fluttuano su quello spazio.
+Ci sono anche bambini che per dire invadono lo spazio della figura con le lettere perché non riescono a coordinarsi mentre scrivono.
+Quindi già anche questo ti dà un'informazione sull'aspetto grafo motorio,
+quindi siamo più in condizione di raccogliere elementi su ambiti di apprendimento diversi con la stessa prova,
+dando una lettura diversa di quello che è il risultato poi della prova,
+non tanto in termini di punteggio quanto proprio in termini visivi qualitativi.
+Per quello che riguarda la scrittura ci siamo.
+E quello che riguarda invece...
+Ah, tra l'altro, la prova di scrittura di nomi della Busco non è tarata per la scuola dell'infanzia.
+È tarata, se non vado errato, addirittura dalla metà della prima primaria in poi o qualcosa di simile.
+In ogni caso non ha dati normativi per la scuola dell'infanzia.
+Ecco un ulteriore esempio di strumento che può essere utilizzato per finalità qualitative,
+anche se non è stato primariamente costruito per andare a valutare quel genere di abilità.
+Un'altra alternativa potrebbe essere quella di far scrivere al bambino delle parole su richiesta dell'insegnante,
+utilizzando la procedura che avevamo condiviso nell'incontro precedente con la proposta da Pinto.
+Ci sono tanti modi diversi di affrontare il problema.
+Si può utilizzare una prova per finalità qualitative.
+Non creiamo nessun tipo di violazione della prova.
+Stiamo utilizzando la prova come uno strumento a nostro vantaggio.
+Per quel che riguarda poi l'aspetto del precalcolo,
+possiamo pensare a non tutta la batteria BIN 4.6, sicuramente alcune prove,
+magari le prove di discriminazione di quantità basate sui dot,
+la conoscenza di cifre e l'ordinamento.
+Sicuramente quelle sono prove molto importanti.
+Oppure valutare l'adozione della prova SNUP,
+che è una batteria di prove forse un po' lunga da somministrare individualmente.
+Quindi, vabbè, la tengo lì per una seconda riflessione su questo.
+Allora, direi che per la scuola dell'infanzia c'è l'aspetto grafomotorio,
+c'è l'aspetto linguistico e c'è l'aspetto dell'intelligenza numerica.
+Direi che tutto sommato è abbastanza completo.
+Dovessi esprimere una personalissima opinione, potenzialmente anche non condivisibile,
+sulle due alternative che ho descritto,
+tra un approccio, cioè quello legato al questionario osservativo
+e l'approccio oggettivo legato quindi all'utilizzo di prove standardizzate,
+direi che la strategia migliore sarebbe quella di limitare la valutazione individuale
+al bambino che dovesse emergere dall'IPDA come bambino a rischio,
+perché la somministrazione di queste prove, soprattutto con bambini piccolini,
+può dilungarsi anche molto.
+E un'altra cosa che ho dimenticato di inserire qui è una prova di denominazione rapida.
+Ecco, direi che una buona idea è proprio quella di far,
+di valutare individualmente i bambini con prove singole
+solo quando emergano dalla segnalazione dell'insegnante.
+Ci sono comunque due possibilità che sono ambedue valide.
+Dunque abbiamo indicato quelli che sono i destinatari,
+i tempi per lo screening, le modalità di realizzazione,
+una cosa molto importante che non abbiamo menzionato finora.
+Nella metodologia di questo genere di percorsi consiglio sempre di coinvolgere i genitori.
+Bisogna creare un momento di presentazione ai genitori.
+Questo serve a diverse cose contemporaneamente.
+Primo, coinvolgere i genitori in un percorso di questo tipo significa,
+intanto, visto che c'è un esterno che entra a scuola,
+farsi conoscere, capire chi è colui che andrà a valutare il proprio bambino,
+chi è che entrerà in classe a valutare i bambini,
+quali sono le sue qualifiche,
+che professione svolge, in che contesto lavora,
+in generale farsi conoscere.
+Secondo, aiuta a capire qual è il senso di fare uno screening.
+Talvolta questo è vincente perché previene l'effetto dello stereotipo.
+A volte, infatti, può capitare che quando i genitori sentano parlare di test,
+di valutazioni, di strumenti di valutazione,
+ecco, vadano in protezione e quindi rifiutino a priori l'idea che qualcuno,
+soprattutto perché è esterno, entri a scuola e valuti i figli.
+Questo può generare delle ansie.
+Fare un incontro con i genitori in cui si spiega qual è la procedura di valutazione,
+si fanno proprio provare le attività di valutazione,
+aiuta a non averne paura
+e aiuta anche a spiegare che il senso di fare queste valutazioni
+non è quello di individuare i bambini in difficoltà,
+è quello di avere un'immagine del gruppo classe e del bambino potenzialmente in difficoltà
+in modo da poterlo aiutare in maniera più mirata.
+Ecco, le volte che è capitato di coinvolgere, di fare questo genere di progetti
+e di coinvolgere gli genitori all'interno di questi progetti,
+proprio mostrando loro le prove, facendoli partecipare del percorso,
+è sempre stato vincente e raramente è capitato di ricevere resistenze effettivamente da parte dei genitori.
+Quando le resistenze ci sono c'è abbastanza poco che io posso fare per aiutare il genitore a superarle.
+Ciò che si può fare invece è inserire il progetto come attività di istituto
+per cui non si può scegliere se farlo o no.
+Sono tutte attività che devono essere svolte perché è la scuola che adotta quella modalità,
+cioè l'osservazione oggettiva, per individuare le situazioni di rischio.
+C'è una normativa scolastica che non suggerisce,
+indica alle scuole che questa cosa la devono fare,
+per cui non è necessario, ripeto, somministrare prove standardizzate,
+è necessario però procedere a una valutazione,
+è auspicabile procedere a una valutazione oggettiva,
+è necessario, praticamente obbligatorio per loro,
+fare queste attività di osservazione per poter provvedere a una segnalazione precoce.
+E quantomeno non tardiva.
+La legge 170 chiede alle scuole di far questo.
+Di conseguenza, anche laddove ci sono delle resistenze da parte dei genitori,
+ci si può lavorare su, ma di fatto queste attività in qualche modo devono essere portate avanti.
+Però io penso che la conoscenza aiuti a superare lo stereotipo.
+Come lo decliniamo questo momento di presentazione ai genitori?
+Anche se ultimamente le modalità online sta spopolando e continua a spopolare,
+credo che la cara vecchia presenza nella stessa stanza vinca ancora.
+Essere presente nello stesso posto aiuta a comunicare meglio.
+da remoto potrebbe non essere la scelta giusta.
+Quindi prevediamo un incontro
+in presenza
+diciamo all'incirca di un paio d'ore
+tra genitori che arrivano,
+si siedono, presentazioni,
+illustrazione del progetto
+e magari qualche volontario che si fa testare.
+Sì, diciamo che un paio d'ore ci vogliono.
+Un paio d'ore in presenza.
+I genitori come altro possono essere coinvolti.
+Ad ogni fine screening,
+ad ogni fine della rilevazione,
+il genitore deve ricevere un foglio di riepilogo breve su quello che è emerso.
+Lo sintetizzo scrivendo
+report breve.
+Questo report breve,
+in altre occasioni in cui mi è capitato di svolgere questo tipo di progetti,
+era proprio un foglio con un grafico sopra.
+Una piccola leggenda che indicava
+se il bambino si colloca qui vuol dire che queste abilità le dobbiamo potenziare,
+se il bambino si colloca là
+significa che il bambino dimostra già di possedere quell'abilità,
+quindi possiamo solo rinforzarla,
+quindi esercitarla ulteriormente e via dicendo.
+Niente punteggi,
+niente termini che possono essere fraintesi
+come richiesta di intervento immediato
+o fascia di prestazione sufficiente
+che può essere confusa con la sufficienza scolastica.
+suddividere le fasce in tre,
+uno, due, tre.
+Oppure associarle a un colore,
+oppure associarle a un simbolo,
+qualunque cosa,
+purché non si utilizzino dei termini o degli acronimi
+che i genitori possano fraintendere.
+Quindi ricevi ad ogni fine screening
+un report breve su quello che abbiamo osservato.
+Può essere accompagnato anche da una possibile
+piccola descrizione
+del profilo.
+Oppure, ancora meglio,
+ti apro la possibilità
+di prenotarti un colloquio gratuito
+in cui ti spiego personalmente
+che cos'è che è emerso.
+In altre occasioni,
+pur avendo aperto questa possibilità,
+in realtà saranno stati due o tre
+su duecento e passa bambini
+che abbiamo valutato,
+i genitori che hanno richiesto
+un colloquio personalizzato
+e tipicamente quando lo richiedono
+è perché magari c'è qualcos'altro.
+Se il foglio di riepilogo
+è semplice,
+senza troppa roba sopra
+e ben spiegato,
+nella leggenda tendenzialmente
+non c'è bisogno di preoccuparsi molto.
+Laddove invece si dovessero rilevare
+situazioni di grave criticità
+già nella rilevazione scolastica
+si fa sempre in tempo
+a convocare i genitori,
+contattarli personalmente
+e illustrare la problematica
+che abbiamo rilevato.
+Io ricordo che qualche anno fa
+è capitato di trovare un bambino
+che era effettivamente
+molto in difficoltà
+già all'ingresso della prima.
+Curiosamente le insegnanti
+non sapevano nulla
+della sua storia precedente
+perché non era stato fatto
+nessun passaggio di consegne
+tra la scuola dell'infanzia
+e la scuola primaria
+era un bambino francamente
+in difficoltà,
+sfuggito alla scuola primaria,
+alla scuola dell'infanzia
+e arrivato in scuola primaria
+si è manifestata la sua difficoltà
+in tutta...
+si è manifestata molto chiaramente.
+Per cui ricordo che allo screening
+questo bambino
+praticamente non è stato neanche possibile
+somministrargli le prove
+al che, d'accordo poi con gli insegnanti,
+abbiamo condiviso la necessità
+di convocare i genitori
+e condividere con loro
+queste osservazioni
+che i genitori poi hanno
+prenotato la loro visita
+in neuropsichiatria
+e c'è stato poi
+uno sviluppo
+della situazione.
+Quindi direi che
+è vincente
+l'idea di coinvolgere
+i genitori
+in qualunque momento
+del progetto.
+Per quel che riguarda invece
+la formazione
+agli insegnanti
+è vero che
+si può sempre
+delegare qualcosa
+ma
+sono un fan
+del lavoro manuale
+e sono convinto
+che il lavoro fatto
+manualmente
+di persona
+sia molto più soddisfacente
+per cui potrebbe essere
+una buona idea
+quella di formare
+l'insegnante
+all'utilizzo di queste prove
+e del resto
+la loro richiesta
+è stata un po' questa
+non sappiamo
+utilizzare prove
+di rilevazione oggettiva
+insegnaci a farlo
+e quindi
+inseriamo anche questo
+nel progetto
+formazione
+insegnanti
+dunque
+le prove
+sulle quali
+gli insegnanti
+vanno formati
+sono
+il
+il portfoglio 0
+le ACMT
+le MT
+di rapidità
+e correttezza
+e le prove
+di scrittura
+tempi per la
+formazione
+degli insegnanti
+allora direi
+che per le prove 0
+le prove 0
+basteranno
+diciamo
+3-4 ore
+di formazione
+tra presentazione
+della prova
+illustrazione
+delle modalità
+di somministrazione
+e
+parecchia esercitazione
+alla somministrazione
+simulazione
+proprio
+metti gli insegnanti
+in condizione
+di dettare
+agli altri
+le prove
+gli item
+e corregge
+eventuali difetti
+di dettatura
+ecco proprio
+addestramento
+all'uso
+della prova
+direi che
+3-4 ore
+bastano
+per la
+CMT
+ci vuole
+probabilmente
+lo stesso
+tempo
+la CMT
+non è una
+batteria di prove
+particolarmente
+complessa
+o che richiede
+particolari
+che richiede
+particolari
+azioni
+per la
+somministrazione
+o per lo
+sconing
+delle prove
+quindi direi che
+possiamo orientarci
+sulla stessa
+tempistica
+tra le 3
+e le 4 ore
+le prove
+MT
+di lettura
+invece direi
+che richiedono
+un po'
+di attenzione
+in più
+perché
+non tanto
+per misurare
+il tempo
+in cui
+il bambino
+legge il brano
+quanto per
+segnare
+gli errori
+quello può
+essere qualcosa
+di un po'
+più
+macchinoso
+quindi
+possiamo
+pensare
+di mantenere
+sempre le famose
+3-4 ore
+con
+la possibilità
+però di
+indicare agli insegnanti
+di registrare
+le prove
+quando le
+le
+le somministrano
+di modo
+che poi
+si possa lavorare
+in un secondo momento
+alla
+alla siglatura
+degli errori
+le prove
+di dettato
+invece
+e di scrittura
+no
+le prove
+di scrittura
+spontanea
+in realtà
+non richiedono
+formazione
+richiedono
+solo la
+conoscenza
+della modalità
+di correzione
+di conseguenza
+basta
+in realtà
+leggere
+le prove
+nelle indicazioni
+del manuale
+ed eventualmente
+pensare ad un
+accompagnamento
+dell'insegnante
+nel correggere
+alcuni testi
+però
+direi anche
+che
+tendenzialmente
+l'insegnante
+corregge
+molti più testi
+di quanti
+ne correga
+io
+per cui
+sarebbe anche
+più competente
+lei di me
+nel correggere
+una prova
+di scrittura
+spontanea
+l'unica cosa
+che deve
+rispettare
+quelli che sono
+i parametri
+indicati dal manuale
+altrimenti
+poi non si possono
+confrontare
+i punteggi
+con i dati
+normativi
+la prova
+di dettato
+invece
+dicevo
+che richiede
+l'unica attenzione
+che richiede
+è quella di
+correggere
+lo stile
+di dettatura
+una modalità
+di dettatura
+eccessivamente
+lenta
+può compromettere
+la qualità
+dei dati
+raccolti
+tendenzialmente
+gli insegnanti
+quando
+effettuano
+un dettato
+tendono
+a
+sottolineare
+ad evidenziare
+gli elementi
+ortografici
+contenuti
+all'interno
+della parola
+per esempio
+le doppie
+oppure
+quando c'è
+l'h
+o quando c'è
+un gruppo
+consonantico
+le prove
+di dettato
+ortografico
+invece
+vanno dettate
+come se
+si stesse
+parlando
+senza
+dettare
+e di conseguenza
+senza
+stressare
+le caratteristiche
+ortografiche
+della parola
+ecco
+solo quello
+va
+allenato
+per cui
+direi che
+in un paio
+d'ore
+la cosa
+si riesce
+a risolvere
+qui
+bisogna
+decidere
+a questo punto
+se
+creare
+momenti
+diversi
+di formazione
+cioè
+sessioni diverse
+di formazione
+una per
+strumento
+e questo
+può essere
+utile per esempio
+per
+scremare gli
+insegnanti
+per esempio
+gli insegnanti
+della scuola
+secondaria
+di primo grado
+non è detto
+che debbano
+conoscere
+come somministrare
+le prove
+zero
+possono essere
+interessati a farle
+quindi possono
+partecipare
+ma possono anche
+non farlo
+perché poi non sono
+prove che
+utilizzeranno
+loro
+quindi possiamo
+pensare di
+proporre alla
+scuola
+una
+puntata
+formativa
+una sessione
+formativa
+di
+facciamo
+quattro ore
+per
+per comodità
+per ogni
+test
+e queste
+sarebbe
+più opportuno
+anche se
+come dicevo
+prima
+va di moda
+l'online
+sarebbe più
+opportuno
+farle
+in presenza
+perché
+questo
+ti dà modo
+di lavorare
+sugli stessi
+materiali
+tutti in cerchio
+foglio in mano
+e via
+a correggere la prova
+!
+Allora direi che
+per quel che riguarda
+!
+la struttura generale
+del progetto
+grossomodo
+ci siamo
+abbiamo individuato
+destinatari
+tempi
+modalità
+tra le modalità
+abbiamo
+inserito
+gli strumenti
+che intendiamo
+utilizzare
+la formazione
+ai genitori
+e la formazione
+agli insegnanti
+di
+e noi
+abbiamo
+un brutto
+vizio
+quello di
+farci pagare
+e quindi
+andranno indicati
+anche i costi
+che non discuteremo
+però
+bene
+per concludere
+un po'
+questo
+esempio
+di
+lavoro
+reale
+basterebbe
+a questo punto
+aprirsi
+un
+classico
+foglio
+di
+word
+e
+mettere
+in bella
+copia
+tutta
+questa
+serie
+di
+riflessioni
+che abbiamo
+condiviso
+facendo
+precedere
+ai dettagli
+tecnici
+magari un piccolo
+paragrafo
+di spiegazione
+di quelli che sono
+le fondamenta scientifiche
+di questo
+modo di
+interpretare
+l'idea
+della prevenzione
+qual è il motivo
+per cui è importante
+somministrare
+prove oggettive
+e standardizzate
+qual è l'obiettivo
+che si intende
+raggiungere
+con la somministrazione
+di queste prove
+in che modo
+la normativa
+attualmente
+in vigore
+supporta
+questo tipo
+di ragionamento
+proprio si tratta
+di mettere
+in italiano
+questo genere
+di pensieri
+dopodiché
+di fatto
+diventa
+sostanzialmente
+una tabella
+c'è il tuo titolo
+hai la tua
+lista di destinatari
+e via dicendo
+si tratta
+fondamentalmente
+di
+impaginare
+in modo
+che sia
+comprensibile
+quella che è
+un'idea
+che abbiamo
+avuto modo
+di vedere
+così un po'
+abbozzata
+sul foglio digitale
+sul cui
+mi avete visto
+scrivere
+prima
+di presentare
+questo progetto
+alla scuola
+però
+fa
+sempre
+conviene
+sempre
+trovare
+un gancio
+all'interno
+della scuola
+per discutere
+della
+propria idea
+ed eventualmente
+correggerla
+mi spiego meglio
+per quello che riguarda
+questo progetto
+in particolare
+noi abbiamo condiviso
+con l'insegnante
+che l'ha richiesto
+delle idee
+molto abbozzate
+in realtà
+non così
+approfondite
+come ho fatto
+in questo momento
+sarà una buona idea
+prima di
+chiudere il progetto
+e presentarlo
+al dirigente
+quella di
+mettere in condivisione
+questo documento
+dicendo
+guarda
+questa è la mia idea
+di quel
+per concretizzare
+ciò di cui abbiamo discusso
+mi pare che questa idea
+si allinei
+alla vostra richiesta
+tenga conto
+di tutte
+le classi
+che mi ha indicato
+non conosco
+il numero
+dei bambini
+perché non me l'ha indicato
+non conosco il numero
+dei bambini
+che sono in ciascuna classe
+però posso ipotizzare
+una media di 20
+per classe
+e
+questo è un dato
+importante
+perché poi
+determinerà il costo
+del progetto
+però in questo momento
+non è importante
+in questo momento
+l'importante è
+creare
+una struttura
+e un progetto
+che sia
+condiviso
+da
+richiedente
+che sia
+in ultima analisi
+utile per loro
+ecco
+mi piaceva
+condividere
+questo tema
+in questa maniera
+per evitare
+di essere
+eccessivamente teorico
+su questi aspetti
+ma soprattutto
+perché
+credo che
+l'idea
+più importante
+quando si costruisce
+un progetto
+per la scuola
+sia
+quello di
+orientarsi
+alla semplicità
+meno cose
+si riesce
+a
+a
+prevedere
+all'interno
+di un progetto
+più semplice
+è la sua
+esecuzione
+il problema
+qual è?
+è che
+nel nostro campo
+semplificare
+spesso significa
+banalizzare
+e questo è un problema
+perché se noi
+non
+programmiamo
+un'attività
+di
+screening
+tra virgolette
+sufficientemente
+sensibile
+da individuare
+bambini a rischio
+rischiamo
+di far
+sfuggire
+i bambini
+che sono
+in realtà
+dei
+dei
+falsi positivi
+o dei
+falsi negativi
+per cui
+rischiamo di
+non rilevare
+bambini che
+invece avrebbero
+bisogno
+di un'ulteriore
+di ulteriori
+attività di
+potenziamento
+oppure
+rischiamo di
+individuare
+bambini che
+in realtà
+sono caduti
+nelle prove
+per motivi
+altri
+dalla disfunzione
+del sistema nervoso
+centrale
+per cui
+l'idea è sempre
+quella proprio
+di
+rendere le cose
+il più
+semplice
+e pulite
+possibili
+viceversa
+uno screening
+più completo
+e si poteva
+fare anche
+un'idea
+più complessa
+di questa
+uno screening
+più completo
+allunga
+clamorosamente
+i tempi
+di esecuzione
+allungare i tempi
+significa
+dover andare
+più volte
+all'interno
+della scuola
+significa
+si tratta
+sostanzialmente
+di invadere
+un territorio
+o altro
+e
+questo
+benché
+è un progetto
+che comunque
+si è condiviso
+all'interno
+del consiglio
+d'istituto
+di fatto
+tu stai entrando
+in una
+dinamica
+che ha già
+un equilibrio
+e volento
+non entro
+questo equilibrio
+in qualche modo
+lo perturbi
+per cui
+più
+invisibile sei
+mentre fai queste cose
+meglio è
+quando
+si tratta
+di portare fuori
+i bambini
+dalla classe
+bisogna usare
+sempre
+molta discrezione
+perché è
+molto
+facile
+andare a creare
+confusione
+all'interno
+della classe
+tu nel momento
+in cui arrivi
+in classe
+sei una persona
+nuova
+i bambini
+sono magari
+incuriositi
+da te
+oppure
+qualcun altro
+è anche
+intimorito
+questo può
+creare
+può creare
+disagio
+in alcuni
+per cui bisogna
+sempre entrare
+molto in punta
+di piedi
+cercare di
+pensarla
+il più semplice
+possibile
+cercando però
+quell'equilibrio
+tra
+semplicità
+e
+scientificità
+dell'osservazione
+che è
+quello che
+cerchiamo
+credo che per
+questo incontro
+dunque sia tutto
+e vi ringrazio
+per l'attenzione
+potential
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

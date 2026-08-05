@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "studia/profilo.schema.json",
+  "title": "Profilo di apprendimento (_profilo.md)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["bisogni"],
+  "properties": {
+    "schema": { "type": "integer", "enum": [1] },
+    "tipo": { "type": "string", "enum": ["profilo"] },
+    "aggiornato": { "type": "string" },
+    "title": { "type": "string" },
+
+    "bisogni": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "enum": [
+        "lettura-lenta", "lettura-decodifica", "lettura-comprensione",
+        "scrittura-ortografia", "scrittura-gesto", "scrittura-organizzazione",
+        "numeri-calcolo", "numeri-procedure", "numeri-quantita",
+        "attenzione-distraibilita", "attenzione-avvio", "attenzione-iperfocus",
+        "spazio-schemi", "spazio-grafici", "spazio-orientamento",
+        "carico-affollamento", "carico-prevedibilita", "carico-pause",
+        "memoria-lavoro", "memoria-richiamo"
+      ] }
+    },
+    "bisogni_altro": { "type": "string", "maxLength": 1200 },
+
+    "stile_progetto": { "type": "string", "enum": ["tematico", "cronologico", "problemi"] },
+    "stile_corsi": { "type": "string", "enum": ["cornici", "lineare", "spirale"] },
+    "stile_capitoli": { "type": "string", "enum": ["discorsivo", "schematico", "esempi", "domande"] },
+
+    "granularita": { "type": "string", "enum": ["atomico", "medio", "ampio"] },
+    "capitoli_brevi": { "type": "boolean" },
+    "quiz": { "type": "string", "enum": ["frequenti", "pochi", "nessuno"] },
+    "glossario": { "type": "string", "enum": ["esteso", "essenziale", "nessuno"] },
+    "esempi_concreti": { "type": "boolean" },
+    "approfondimenti": { "type": "string", "enum": ["ricchi", "minimi"] },
+
+    "comeImparo": { "type": "string", "maxLength": 1200 },
+    "cosaAffatica": { "type": "string", "maxLength": 1200 }
+  }
+}

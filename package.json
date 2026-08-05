@@ -1,0 +1,59 @@
+{
+  "name": "studia",
+  "version": "1.0.0",
+  "description": "StudIA — lettore di corsi di studio (Tutor DSA / Galton), con anteprima PDF affiancata",
+  "author": "Giacomo Meschini <giacomo@insegnai.ch>",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist:mac": "electron-builder --mac --arm64",
+    "test": "node test/roundtrip.js",
+    "studia": "node bin/studia.js"
+  },
+  "devDependencies": {
+    "electron": "^39.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "ch.insegnai.studia",
+    "productName": "StudIA",
+    "asar": false,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "bin/**",
+      "lib/**",
+      "App/wizard.js",
+      "prompts/**",
+      "schema/**",
+      "ingest.py",
+      "index_videos.py",
+      "App/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": "arm64"
+        }
+      ],
+      "category": "public.app-category.education",
+      "identity": null,
+      "artifactName": "StudIA-${version}-arm64.${ext}"
+    },
+    "dmg": {
+      "title": "StudIA ${version}"
+    }
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
+    "@google/genai": "^2.13.0",
+    "ajv": "^8.20.0",
+    "openai": "^6.49.0"
+  }
+}
