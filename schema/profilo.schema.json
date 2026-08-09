@@ -26,8 +26,8 @@
     },
     "bisogni_altro": { "type": "string", "maxLength": 1200 },
 
-    "stile_progetto": { "type": "string", "enum": ["tematico", "cronologico", "problemi"] },
-    "stile_corsi": { "type": "string", "enum": ["cornici", "lineare", "spirale"] },
+    "stile_corso": { "type": "string", "enum": ["tematico", "cronologico", "problemi"] },
+    "stile_lezioni": { "type": "string", "enum": ["cornici", "lineare", "spirale"] },
     "stile_capitoli": { "type": "string", "enum": ["discorsivo", "schematico", "esempi", "domande"] },
 
     "granularita": { "type": "string", "enum": ["atomico", "medio", "ampio"] },

@@ -5,14 +5,14 @@
  *
  * Serve per lavorare un corpus grande (decine di video e PDF) da terminale o da
  * uno script: trascrivere, indicizzare, far leggere i materiali agli agenti,
- * costruire l'architettura dei corsi. Sono gli stessi moduli che usa l'app —
+ * costruire l'architettura delle lezioni. Sono gli stessi moduli che usa l'app —
  * nessuna logica duplicata, così quello che si prova qui vale anche là.
  *
- *   node bin/studia.js stato        --vault <cartella> [--progetto NOME]
+ *   node bin/studia.js stato        --vault <cartella> [--corso NOME]
  *   node bin/studia.js ingest       --vault <cartella> [--force] [--only FILE]
- *   node bin/studia.js schede       --vault <cartella> --progetto NOME [--rifai] [--concorrenza 3]
- *   node bin/studia.js architettura --vault <cartella> --progetto NOME [--no-revisione]
- *   node bin/studia.js tutto        --vault <cartella> --progetto NOME
+ *   node bin/studia.js schede       --vault <cartella> --corso NOME [--rifai] [--concorrenza 3]
+ *   node bin/studia.js architettura --vault <cartella> --corso NOME [--no-revisione]
+ *   node bin/studia.js tutto        --vault <cartella> --corso NOME
  *
  * La chiave arriva dall'ambiente: ANTHROPIC_API_KEY, OPENAI_API_KEY o GOOGLE_API_KEY.
  * Con STUDIA_FINTO=1 la pipeline gira con un modello finto: utile per provarla a vuoto.
@@ -20,6 +20,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const corsiLib = require('../lib/corsi');   // la radice dei corsi: `Corsi/`, o `Progetti/` nei vault mai migrati
 const { spawn } = require('child_process');
 
 const RADICE = path.join(__dirname, '..');
@@ -30,7 +31,7 @@ const propose = require(path.join(RADICE, 'lib', 'propose'));
 const profilo = require(path.join(RADICE, 'lib', 'profilo'));
 const mat = require(path.join(RADICE, 'lib', 'materiali'));
 const provider = require(path.join(RADICE, 'lib', 'ai', 'provider'));
-const progetti = require(path.join(RADICE, 'lib', 'progetti'));
+const corsi = require(path.join(RADICE, 'lib', 'corsi'));
 
 // ------------------------------------------------------------------ utilità
 
@@ -58,21 +59,21 @@ function esci(messaggio, codice) {
 function controllaVault(vault) {
   if (!vault) esci('Manca --vault <cartella>.');
   if (!fs.existsSync(vault)) esci('Cartella inesistente: ' + vault);
-  try { fs.mkdirSync(path.join(vault, 'Progetti'), { recursive: true }); } catch (e) {}
+  try { fs.mkdirSync(corsiLib.radice(vault), { recursive: true }); } catch (e) {}
   return vault;
 }
 
-/** Il progetto deve esistere: il wizard lo crea, qui lo si crea al volo se manca. */
-function assicuraProgetto(vault, nome) {
-  if (!nome) esci('Manca --progetto <nome>.');
-  // un progetto protetto è materiale di studio: la pipeline non ci scrive
-  if (progetti.protetto(vault, nome)) esci(progetti.motivoRifiuto(nome));
-  const dir = path.join(vault, 'Progetti', nome);
+/** Il corso deve esistere: il wizard lo crea, qui lo si crea al volo se manca. */
+function assicuraCorso(vault, nome) {
+  if (!nome) esci('Manca --corso <nome>.');
+  // un corso protetto è materiale di studio: la pipeline non ci scrive
+  if (corsi.protetto(vault, nome)) esci(corsi.motivoRifiuto(nome));
+  const dir = corsiLib.cartella(vault, nome);
   if (!fs.existsSync(dir)) {
     const mdser = require(path.join(RADICE, 'lib', 'mdser'));
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, '_progetto.md'), mdser.progetto({ id: nome, title: nome }), 'utf-8');
-    console.log('· progetto creato: Progetti/' + nome);
+    fs.writeFileSync(path.join(dir, '_corso.md'), mdser.corso({ id: nome, title: nome }), 'utf-8');
+    console.log('· corso creato: Corsi/' + nome);
   }
   return nome;
 }
@@ -99,7 +100,7 @@ function modelloFinto() {
     if (s.indexOf('esperto della disciplina') > 0) return { ok: true, dati: { aree: [] }, uso: {} };
     if (s.indexOf('progettista didattico') > 0) return { ok: true, dati: { ordine: [] }, uso: {} };
     if (s.indexOf('corpora didattici') > 0) return { ok: true, dati: { coppie: [] }, uso: {} };
-    if (s.indexOf('responsabile del percorso') > 0) return { ok: true, dati: { corsi: [] }, uso: {} };
+    if (s.indexOf('responsabile del percorso') > 0) return { ok: true, dati: { lezioni: [] }, uso: {} };
     if (s.indexOf('revisore severo') > 0) return { ok: true, dati: { promossa: true, rilievi: [] }, uso: {} };
     return { ok: false, errore: 'fase non riconosciuta' };
   };
@@ -124,22 +125,23 @@ function configurazioneAi(arg) {
 /** Fotografia dello stato: materiali, elaborazione, schede, piano. */
 function comandoStato(arg) {
   const vault = controllaVault(arg.vault);
-  const dg = corpus.digest(vault);
+  const dg = corpus.digest(vault, arg.corso);
   console.log('Vault: ' + vault);
-  console.log('Materiali elaborati: ' + dg.totale + ' (' + dg.video + ' video, ' + dg.pdf + ' pdf, ' + (dg.durataTotale / 3600).toFixed(1) + ' ore)');
+  console.log('Materiali elaborati' + (arg.corso ? ' (corso «' + arg.corso + '»)' : '') + ': ' +
+    dg.totale + ' (' + dg.video + ' video, ' + dg.pdf + ' pdf, ' + (dg.durataTotale / 3600).toFixed(1) + ' ore)');
 
-  // i materiali stanno dentro i progetti (con ripiego sulle cartelle globali di prima)
-  const media = mat.elenca(vault, 'Media').length;
-  const fonti = mat.elenca(vault, 'Fonti').length;
+  // i materiali stanno dentro i corsi (con ripiego sulle cartelle globali di prima)
+  const media = mat.elenca(vault, 'Media', arg.corso, !!arg.corso).length;
+  const fonti = mat.elenca(vault, 'Fonti', arg.corso, !!arg.corso).length;
   console.log('Nelle cartelle: ' + media + ' video/audio, ' + fonti + ' documenti');
   if (dg.totale < media + fonti) console.log('  ⚠ ' + (media + fonti - dg.totale) + ' file non ancora elaborati → «studia ingest»');
 
-  if (arg.progetto) {
-    const mappa = schede.tutte(vault, arg.progetto, dg.materiali);
-    console.log('Progetto «' + arg.progetto + '»: ' + Object.keys(mappa).length + '/' + dg.totale + ' schede' +
-      (progetti.protetto(vault, arg.progetto) ? '  · PROTETTO (sola lettura)' : ''));
-    const piano = propose.leggiPiano(vault, arg.progetto);
-    console.log('  piano: ' + (piano ? (piano.corsi.length + ' corsi, stato ' + piano.status + ', origine ' + piano.origine) : 'non ancora costruito'));
+  if (arg.corso) {
+    const mappa = schede.tutte(vault, arg.corso, dg.materiali);
+    console.log('Corso «' + arg.corso + '»: ' + Object.keys(mappa).length + '/' + dg.totale + ' schede' +
+      (corsi.protetto(vault, arg.corso) ? '  · PROTETTO (sola lettura)' : ''));
+    const piano = propose.leggiPiano(vault, arg.corso);
+    console.log('  piano: ' + (piano ? (piano.lezioni.length + ' lezioni, stato ' + piano.status + ', origine ' + piano.origine) : 'non ancora costruito'));
   }
   return 0;
 }
@@ -175,15 +177,17 @@ function comandoIngest(arg) {
 /** Stadio 0: gli agenti leggono ogni materiale e scrivono le schede. */
 async function comandoSchede(arg) {
   const vault = controllaVault(arg.vault);
-  const progetto = assicuraProgetto(vault, arg.progetto);
+  const corso = assicuraCorso(vault, arg.corso);
   const ai = configurazioneAi(arg);
-  const dg = corpus.digest(vault);
+  // il digest è quello del CORSO, non del vault: senza il confine si leggerebbero
+  // (e si pagherebbero) anche i materiali degli altri corsi
+  const dg = corpus.digest(vault, corso);
   if (!dg.totale) esci('Nessun materiale elaborato: lancia prima «studia ingest».');
 
   const conc = Number(arg.concorrenza) || 3;
   console.log('· leggo ' + dg.totale + ' materiali (' + conc + ' in parallelo)…');
   const inizio = Date.now();
-  const esiti = await schede.analizzaTutti(vault, progetto, dg.materiali, {
+  const esiti = await schede.analizzaTutti(vault, corso, dg.materiali, {
     concorrenza: conc, rifai: !!arg.rifai, ai,
     onProgress: (e) => { if (e.stato !== 'in lettura') console.log('  [' + (e.fatti || 0) + '/' + e.totale + '] ' + (e.num || '--') + ' ' + (e.titolo || '').slice(0, 50) + ' — ' + e.stato); }
   });
@@ -197,15 +201,15 @@ async function comandoSchede(arg) {
 /** Stadio 1: le tre lenti, la sintesi, la revisione — e il piano scritto. */
 async function comandoArchitettura(arg) {
   const vault = controllaVault(arg.vault);
-  const progetto = assicuraProgetto(vault, arg.progetto);
+  const corso = assicuraCorso(vault, arg.corso);
   const ai = configurazioneAi(arg);
-  const dg = corpus.digest(vault);
-  const mappa = schede.tutte(vault, progetto, dg.materiali);
+  const dg = corpus.digest(vault, corso);
+  const mappa = schede.tutte(vault, corso, dg.materiali);
   const quante = Object.keys(mappa).length;
   if (!quante) esci('Nessuna scheda: lancia prima «studia schede».');
   if (quante < dg.totale) console.log('  ⚠ schede incomplete: ' + quante + '/' + dg.totale);
 
-  const r = await propose.proponiMultiagente(vault, progetto, {
+  const r = await propose.proponiMultiagente(vault, corso, {
     granularita: arg.granularita || 'atomico',
     profilo: profilo.load(vault),
     revisione: !arg['no-revisione'],
@@ -214,16 +218,16 @@ async function comandoArchitettura(arg) {
   }, {});
   if (r.errore) esci('Architettura non riuscita: ' + r.errore);
 
-  const scritto = propose.scriviPiano(vault, progetto, r.piano);
+  const scritto = propose.scriviPiano(vault, corso, r.piano);
   if (scritto.error) esci(scritto.error);
 
-  console.log('\n· architettura: ' + r.piano.corsi.length + ' corsi, ' + (r.giri > 1 ? 'due giri di sintesi' : 'un giro') +
+  console.log('\n· architettura: ' + r.piano.lezioni.length + ' lezioni, ' + (r.giri > 1 ? 'due giri di sintesi' : 'un giro') +
     ', revisione ' + (r.revisione ? (r.revisione.promossa ? 'promossa' : 'con rilievi') : 'saltata'));
-  for (const c of r.piano.corsi) {
+  for (const c of r.piano.lezioni) {
     console.log('  [' + c.materiali.map((m) => m.num || '?').join(',') + '] ' + c.title + (c.area ? '  ·  ' + c.area : '') + (c.tipo === 'modulo-fonte' ? '  (modulo-fonte)' : ''));
   }
   if ((r.piano.decisioni || []).length) { console.log('\n  Decisioni:'); r.piano.decisioni.forEach((d) => console.log('   – ' + d)); }
-  console.log('\n· piano scritto in Progetti/' + progetto + '/_piano.json');
+  console.log('\n· piano scritto in ' + path.relative(vault, propose.pianoPath(vault, corso)));
   return 0;
 }
 
@@ -249,7 +253,7 @@ function aiuto() {
     '  architettura   tre lenti + sintesi + revisione → _piano.json',
     '  tutto          ingest → schede → architettura',
     '',
-    'Opzioni: --vault <cartella> --progetto <nome> [--rifai] [--force] [--concorrenza N]',
+    'Opzioni: --vault <cartella> --corso <nome> [--rifai] [--force] [--concorrenza N]',
     '         [--granularita atomico|medio|ampio] [--no-revisione] [--fornitore anthropic|openai|google]',
     '',
     'Chiavi: ANTHROPIC_API_KEY | OPENAI_API_KEY | GOOGLE_API_KEY     Prova a vuoto: STUDIA_FINTO=1'

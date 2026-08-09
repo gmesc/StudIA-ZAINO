@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Worker di ingestion per StudIA (chiamato da Electron).
 Scansiona <vault>/Fonti/: PDF -> testo pagina in Indice-PDF/, video/audio -> trascrizione
-(timestamp) in Trascrizioni/. Poi rigenera i videoRefs nei corsi di Corsi/.
+(timestamp) in Trascrizioni/. Poi rigenera i videoRefs nelle lezioni di Lezioni/.
 Righe di avanzamento su stdout: @TOTAL n | @FILE i n kind nome | @SUB f | @OK .. | @ERR .. | @DONE fatti n
 """
 import sys, os, json, argparse, datetime, subprocess, tempfile, shutil, re
@@ -56,7 +56,7 @@ def extract_pdf(path, oj):
 
 # Pagine web salvate dal browser: 1 MB di file per ~7 KB di lezione. Il resto è
 # impalcatura del sito (menu, footer, script, template). Qui si tiene solo il testo
-# e lo si spezza sulle intestazioni, che nelle pagine di un corso sono la scaletta
+# e lo si spezza sulle intestazioni, che nelle pagine di una lezione sono la scaletta
 # della lezione. Niente librerie esterne: la regex basta perché il caso peggiore è
 # un po' di testo di troppo, non un file rovinato.
 _HTML_VIA = re.compile(
@@ -132,7 +132,7 @@ def _immagini_html(raw_pulito, path):
 def _e_interfaccia(par):
     """
     Vero se il blocco è una fila di comandi del sito e non prosa. I menu di una
-    pagina di corso non stanno sempre dentro <nav>: quello che li tradisce è che
+    pagina di lezione non stanno sempre dentro <nav>: quello che li tradisce è che
     sono corti e senza punteggiatura di frase. Una riga di prosa vera, anche
     breve, quasi sempre finisce con un punto.
     """
@@ -272,11 +272,11 @@ def _transcribe_audio(path, audio, oj, backend, lang):
             if f-last>=0.01: out("@SUB %.4f"%f); last=f
     return _save_transcript(path, oj, segs, getattr(info,'language',None) or lang or LINGUA_DEFAULT)
 
-def reindex_courses(vault):
+def reindex_lessons(vault):
     try: import index_videos
     except Exception as e: out("@ERR index :: %s"%e); return
-    tra=os.path.join(vault,"Trascrizioni"); cor=os.path.join(vault,"Corsi")
-    if not os.path.isdir(cor): return          # niente corsi in formato JSON: non c'è nulla da reindicizzare
+    tra=os.path.join(vault,"Trascrizioni"); cor=os.path.join(vault,"Lezioni")
+    if not os.path.isdir(cor): return          # niente lezioni in formato JSON: non c'è nulla da reindicizzare
     trs=[]
     for f in sorted(os.listdir(tra)) if os.path.isdir(tra) else []:
         if f.endswith(".json"):
@@ -287,9 +287,9 @@ def reindex_courses(vault):
         if not cf.endswith(".json"): continue
         p=os.path.join(cor,cf)
         try:
-            course=json.load(open(p,encoding="utf-8"))
-            index_videos.index(trs, course)      # usa il nome media reale (già .mp4 se presente)
-            atomic(course, p)
+            lesson=json.load(open(p,encoding="utf-8"))
+            index_videos.index(trs, lesson)      # usa il nome media reale (già .mp4 se presente)
+            atomic(lesson, p)
         except Exception as e: out("@ERR index %s :: %s"%(cf,e))
 
 def main():
@@ -299,7 +299,7 @@ def main():
     ap.add_argument("--force",action="store_true")          # rielabora anche se il .json esiste già
     ap.add_argument("--backend",default="auto",choices=["auto","mlx","fw"])  # motore: auto=mlx se c'è, altrimenti CPU
     ap.add_argument("--lang",default=LINGUA_DEFAULT)        # lingua parlata nei media; "auto" = la riconosce Whisper
-    ap.add_argument("--progetto",default=None)              # limita tutto ai materiali di QUESTO progetto
+    ap.add_argument("--corso",default=None)              # limita tutto ai materiali di QUESTO corso
     a=ap.parse_args()
     only=set(a.only)
     FONTI=os.path.join(a.vault,"Fonti"); MEDIA=os.path.join(a.vault,"Media")
@@ -307,33 +307,33 @@ def main():
     PIDX=os.path.join(a.vault,"Indice-PDF"); os.makedirs(PIDX,exist_ok=True)
     HIDX=os.path.join(a.vault,"Indice-HTML"); os.makedirs(HIDX,exist_ok=True)
 
-    # Un progetto può portarsi dentro i suoi materiali (Progetti/<id>/MATERIALI/):
+    # Un corso può portarsi dentro i suoi materiali (Corsi/<id>/MATERIALI/):
     # si scandiscono anche quelli, e il derivato (trascrizione, indice) viene
-    # scritto ACCANTO al materiale, così la cartella del progetto resta completa
+    # scritto ACCANTO al materiale, così la cartella del corso resta completa
     # anche quando la si copia altrove.
-    # dentro un progetto ogni tipo ha la sua cartella; «Media» e «Fonti» restano
+    # dentro un corso ogni tipo ha la sua cartella; «Media» e «Fonti» restano
     # i nomi interni della pipeline (vedi lib/materiali.js)
     NOMI={"Media":["Video","Audio"], "Fonti":["PDF","Web","Documenti"],
           "Trascrizioni":["Trascrizioni"], "Indice-PDF":["Indici-PDF"], "Indice-HTML":["Indici-Web"]}
     def cartelle_materiali(sub):
         """Le cartelle da scandire per `sub`.
 
-        Con --progetto si guarda SOLO dentro di lui. Senza, tutto il vault: era
-        l'unico comportamento, e faceva rielaborare i materiali di un progetto
+        Con --corso si guarda SOLO dentro di lui. Senza, tutto il vault: era
+        l'unico comportamento, e faceva rielaborare i materiali di un corso
         mentre se ne lavorava un altro — 64 file per due corsi che non c'entrano
         niente fra loro. La radice resta nell'elenco solo per i vault a corpus
-        unico, cioè quando nessun progetto si porta dentro i propri materiali."""
+        unico, cioè quando nessun corso si porta dentro i propri materiali."""
         out=[]
-        pdir=os.path.join(a.vault,"Progetti")
-        if os.path.isdir(pdir):
-            ids=[a.progetto] if a.progetto else sorted(os.listdir(pdir))
+        cdir=os.path.join(a.vault,"Corsi")
+        if os.path.isdir(cdir):
+            ids=[a.corso] if a.corso else sorted(os.listdir(cdir))
             for pid in ids:
                 for n in NOMI.get(sub,[sub])+[sub]:
-                    d=os.path.join(pdir,pid,"MATERIALI",n)
+                    d=os.path.join(cdir,pid,"MATERIALI",n)
                     if os.path.isdir(d) and d not in out: out.append(d)
-        # un progetto che ha già i suoi materiali non deve pescare dalla radice:
+        # un corso che ha già i suoi materiali non deve pescare dalla radice:
         # là ci sono quelli di tutti, ed è il ripiego dei vault mai riordinati
-        if a.progetto and out: return out
+        if a.corso and out: return out
         d=os.path.join(a.vault,sub)
         if os.path.isdir(d) and d not in out: out.append(d)
         return out
@@ -380,7 +380,7 @@ def main():
     def need(oj, stem=None, sub=None):
         if a.force: return True
         if os.path.exists(oj) and os.path.getsize(oj)>0: return False
-        # già elaborato altrove (nel vault o in un altro progetto): non rifarlo
+        # già elaborato altrove (nel vault o in un altro corso): non rifarlo
         return not (stem and sub and gia_fatto(stem, sub))
 
     tasks=[]                                                # (kind, fname, fullpath, oj)
@@ -421,7 +421,7 @@ def main():
             else:              n=transcribe(full,oj,backend,a.lang); misura="%d segmenti"%n
             out("@OK %s (%s)"%(fname, misura)); done+=1
         except Exception as e: out("@ERR %s :: %s"%(fname,e))
-    if not a.skip_video: reindex_courses(a.vault)
+    if not a.skip_video: reindex_lessons(a.vault)
     out("@DONE %d %d"%(done,total))
 
 if __name__=="__main__":

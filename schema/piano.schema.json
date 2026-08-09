@@ -1,13 +1,13 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "studia/piano.schema.json",
-  "title": "Piano di un progetto (_piano.json)",
+  "title": "Piano di un corso (_piano.json)",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "schema",
-    "project",
-    "corsi"
+    "course",
+    "lezioni"
   ],
   "properties": {
     "schema": {
@@ -16,7 +16,7 @@
         2
       ]
     },
-    "project": {
+    "course": {
       "type": "string",
       "minLength": 1
     },
@@ -63,7 +63,7 @@
     "costPreview": {
       "type": "object"
     },
-    "corsi": {
+    "lezioni": {
       "type": "array",
       "items": {
         "type": "object",
@@ -209,7 +209,7 @@
           "tipo": {
             "type": "string",
             "enum": [
-              "corso",
+              "lezione",
               "modulo-fonte"
             ]
           }

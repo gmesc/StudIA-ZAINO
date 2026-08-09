@@ -32,7 +32,7 @@ conseguenza**, invece di far scoprire i requisiti per tentativi.
 | Quali fornitori sono pronti | `main.js` → `chiaviDisponibili()` | Include già `claudecode` quando il binario c'è |
 | Elenco modelli reali | `lib/ai/modelli.js` + IPC `models:refresh` | Bottone già presente in ⚙ › AI |
 | Python + dipendenze | `main.js` → `findSystemPython()`, `venvPython()`, `ensureDeps(send)` (r. 121-155) | **Oggi gira solo quando parte l'ingest**: è lì che l'utente scopre che manca Python |
-| Scaffold cartelle vault | `main.js` → `scaffold(v)` | Crea Fonti, Media, Corsi, Progetti, Trascrizioni, Indice-PDF, Costi |
+| Scaffold cartelle vault | `main.js` → `scaffold(v)` | Crea Fonti, Media, Lezioni, Corsi, Trascrizioni, Indice-PDF, Costi |
 
 ## Che cosa manca
 
@@ -52,7 +52,7 @@ l'utente provi a fare qualcosa, verifichi quattro cose e le spieghi:
 
 **Una card, quattro passi interni, ognuno saltabile.** Stesso impianto di
 `#profiloSetup`: un pannello per volta, un'azione principale per schermata, lo
-stato sempre visibile. È un requisito d'uso dichiarato del progetto, non estetica.
+stato sempre visibile. È un requisito d'uso dichiarato dell'app, non estetica.
 
 Ogni passo mostra **l'esito del rilevamento**, non una domanda a vuoto:
 
@@ -117,7 +117,7 @@ invece di lasciarlo comparire da solo.
   verifica che le usi non si può provare da uno script `node` esterno.
 - **`--bare` di Claude Code**: disattiva OAuth e keychain, quindi rompe proprio
   l'aggancio all'abbonamento. Non usarlo.
-- **`preload` è eager**: `window.vault.projects` è calcolato una volta sola alla
+- **`preload` è eager**: `window.vault.courses` è calcolato una volta sola alla
   creazione della finestra. Dopo modifiche al vault serve `location.reload()`.
 - **Listener IPC**: i canali nuovi restituiscono la funzione di unsubscribe; gli
   `ingest.on*` storici no, e ce ne sono già due registrati altrove.

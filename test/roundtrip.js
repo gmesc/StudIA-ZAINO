@@ -72,7 +72,7 @@ check('sources: pagina', [7], letto.sources.map((s) => s.page));
 const html = letto.html;
 check('link al minuto → a.vlink', true, /class="vlink"[^>]*data-t="132"/.test(html));
 check('link alla pagina → a.plink', true, /class="plink"[^>]*data-page="7"/.test(html));
-check('wikilink → a.wlink', true, /class="wlink"[^>]*data-course="02-comorbidita"/.test(html));
+check('wikilink → a.wlink', true, /class="wlink"[^>]*data-lesson="02-comorbidita"/.test(html));
 check('footnote in fondo', true, /class="fnotes"[\s\S]*Consensus Conference/.test(html));
 check('grassetto in «In breve»', true, /<strong>specifici<\/strong>/.test(letto.brief));
 
@@ -94,7 +94,7 @@ sezione('Golden file del vault reale');
  *
  * Fino al riordino i dati stavano DENTRO la cartella dell'app, e questi test
  * potevano dire `path.join(__dirname, '..')`. Ora il vault vive per conto suo
- * (per esempio «StudIA - file»), perché un progetto dev'essere trasferibile da
+ * (per esempio «StudIA - file»), perché un corso dev'essere trasferibile da
  * solo. I controlli che leggono il corpus vero devono quindi cercarlo dove lo
  * cerca l'app — altrimenti non falliscono: si SALTANO, che è peggio, perché la
  * suite resta verde mentre smette di guardare i dati.
@@ -113,15 +113,15 @@ function vaultReale() {
   }
   cand.push(path.join(__dirname, '..'));                                // storica: dentro l'app
   cand.push(path.join(__dirname, '..', '..', 'StudIA - file'));         // affiancata all'app
-  return cand.find((v) => fs.existsSync(path.join(v, 'Progetti'))) || path.join(__dirname, '..');
+  return cand.find((v) => fs.existsSync(path.join(v, 'Corsi'))) || path.join(__dirname, '..');
 }
 const VAULT_VERO = vaultReale();
 
-// il vault reale: i corsi stanno in CORSI/, i progetti più vecchi nella radice
-const goldenBase = path.join(VAULT_VERO, 'Progetti', 'TD74-DSA');
-const golden = [path.join(goldenBase, 'CORSI', '01-fondamenti', '01-definizione-eterogeneita.md'),
+// il vault reale: le lezioni stanno in LEZIONI/, i corsi più vecchi nella radice
+const goldenBase = path.join(VAULT_VERO, 'Corsi', 'TD74-DSA');
+const golden = [path.join(goldenBase, 'LEZIONI', '01-fondamenti', '01-definizione-eterogeneita.md'),
                 path.join(goldenBase, '01-fondamenti', '01-definizione-eterogeneita.md')]
-  .find((f) => fs.existsSync(f)) || path.join(goldenBase, 'CORSI', '01-fondamenti', '01-definizione-eterogeneita.md');
+  .find((f) => fs.existsSync(f)) || path.join(goldenBase, 'LEZIONI', '01-fondamenti', '01-definizione-eterogeneita.md');
 if (!fs.existsSync(golden)) {
   console.log('  – saltato: ' + path.relative(process.cwd(), golden) + ' non trovato');
 } else {
@@ -173,7 +173,7 @@ check('capitolo invalido: ok=false', false, vKo.ok);
 
 const pOk = validateProfilo({ schema: 1, tipo: 'profilo', bisogni: ['lettura-lenta', 'carico-pause'],
   granularita: 'ampio', quiz: 'nessuno', glossario: 'essenziale', approfondimenti: 'minimi',
-  stile_progetto: 'tematico', stile_corsi: 'cornici', stile_capitoli: 'schematico',
+  stile_corso: 'tematico', stile_lezioni: 'cornici', stile_capitoli: 'schematico',
   capitoli_brevi: false, esempi_concreti: true, bisogni_altro: '', aggiornato: 'x', comeImparo: '', cosaAffatica: '' });
 check('profilo valido passa', true, pOk.ok);
 const pKo = validateProfilo({ bisogni: ['dislessia'], granularita: 'tematico' });
@@ -199,7 +199,7 @@ check('in proposta il testo libero NON entra', false, /profilo_utente/.test(bloc
 
 // round-trip del profilo attraverso il serializzatore e il lettore condiviso
 const pIn = { bisogni: ['lettura-decodifica', 'memoria-richiamo'], bisogniAltro: 'uso la sintesi vocale',
-  stileProgetto: 'problemi', stileCorsi: 'spirale', stileCapitoli: 'domande', granularita: 'ampio',
+  stileCorso: 'problemi', stileLezioni: 'spirale', stileCapitoli: 'domande', granularita: 'ampio',
   capitoliBrevi: false, quiz: 'nessuno', glossario: 'essenziale', esempiConcreti: false, approfondimenti: 'minimi',
   comeImparo: 'Con le "domande" prima.', cosaAffatica: 'L\'ordine sparso.' };
 const pRaw = mdser.profilo(pIn, '2026-07-25T00:00:00.000Z');
@@ -210,13 +210,13 @@ check('profilo round-trip: campi liberi', [pIn.comeImparo, pIn.cosaAffatica], [p
 check('profilo round-trip: enum UI', ['ampio', 'nessuno', 'essenziale', 'minimi'], [pOut.granularita, pOut.quiz, pOut.glossario, pOut.approfondimenti]);
 
 // ------------------------------------------------- 5. brief: upsert in-place
-sezione('Brief — upsert su _progetto.md senza perdere il resto');
+sezione('Brief — upsert su _corso.md senza perdere il resto');
 
-let prog = mdser.progetto({
-  id: 'td74-dsa', title: 'Tutor DSA — Galton', nCorsi: 16, nMateriali: 40,
+let prog = mdser.corso({
+  id: 'td74-dsa', title: 'Tutor DSA — Galton', nLezioni: 16, nMateriali: 40,
   brief: { obiettivo: 'professionale', priorita: 'comprensione' },
   fonti: { '09': 'appunti' },
-  ordineCorsi: ['01-fondamenti', '02-dislessia', '03-lingue'],
+  ordineLezioni: ['01-fondamenti', '02-dislessia', '03-lingue'],
   indicazioni: 'Prima versione delle indicazioni.'
 });
 // upsert mirato: cambia obiettivo e indicazioni, aggiunge scadenza, non tocca il resto
@@ -235,8 +235,8 @@ check('una chiave vuota scritta a mano resta stringa, non lista',
   '', profilo.parse('---\nobiettivo:\nfonti:\n  - { materiale: "09", ruolo: "appunti" }\n---\n').obiettivo);
 check('e la lista accanto resta lista', 1,
   profilo.parse('---\nobiettivo:\nfonti:\n  - { materiale: "09", ruolo: "appunti" }\n---\n').fonti.length);
-check('brief: ordine_corsi NON perso dall\'upsert', ['01-fondamenti', '02-dislessia', '03-lingue'], pFm.ordine_corsi);
-check('brief: n_corsi intatto', 16, pFm.n_corsi);
+check('brief: ordine_lezioni NON perso dall\'upsert', ['01-fondamenti', '02-dislessia', '03-lingue'], pFm.ordine_lezioni);
+check('brief: n_lezioni intatto', 16, pFm.n_lezioni);
 check('brief: sezione sostituita', true, /test standardizzati/.test(prog) && !/Prima versione/.test(prog));
 check('brief: un solo blocco frontmatter', 1, (prog.match(/^---$/gm) || []).length / 2);
 
@@ -255,8 +255,8 @@ check('titolo ripulito da sigle e code', 'LA DISLESSIA', corpusLib.titoloDi('05 
 check('estratto tagliato su parola', true, corpusLib.estratto('uno due tre quattro cinque', 12).endsWith('…'));
 check('parole chiave senza stopword', true, corpusLib.paroleChiave('la lettura la lettura è una cosa lettura', 3).indexOf('lettura') === 0);
 
-/* Il digest si chiede PER PROGETTO, come fa l'app: chiederlo per tutto il vault
-   e confrontarlo con un piano di un progetto solo è il paragone che qui falliva
+/* Il digest si chiede PER CORSO, come fa l'app: chiederlo per tutto il vault
+   e confrontarlo con un piano di un corso solo è il paragone che qui falliva
    quando lo scoping è entrato in funzione. */
 const PROG_VERO = 'TD74-DSA';
 const dg = corpusLib.digest(VAULT, PROG_VERO);
@@ -270,25 +270,25 @@ if (!dg.totale) {
   const heur = proposeLib.proponiEuristica(VAULT, PROG_VERO, { granularita: 'atomico' });
   const piano = heur.piano;
   check('piano: valido a schema', [], validate.schemaErrors('piano', piano));
-  check('piano: copertura completa', dg.totale, piano.corsi.reduce((s, c) => s + c.materiali.length, 0));
-  check('piano: nessun materiale in due corsi', true, (function () {
+  check('piano: copertura completa', dg.totale, piano.lezioni.reduce((s, c) => s + c.materiali.length, 0));
+  check('piano: nessun materiale in due lezioni', true, (function () {
     const visti = new Set();
-    for (const c of piano.corsi) for (const m of c.materiali) { if (visti.has(m.source)) return false; visti.add(m.source); }
+    for (const c of piano.lezioni) for (const m of c.materiali) { if (visti.has(m.source)) return false; visti.add(m.source); }
     return true;
   })());
-  check('piano: cartelle nella forma NN-slug', true, piano.corsi.every((c) => /^\d{2}-[a-z0-9-]+$/.test(c.folder)));
-  check('piano: ogni corso ha un perché', true, piano.corsi.every((c) => !!c.rationale));
+  check('piano: cartelle nella forma NN-slug', true, piano.lezioni.every((c) => /^\d{2}-[a-z0-9-]+$/.test(c.folder)));
+  check('piano: ogni lezione ha un perché', true, piano.lezioni.every((c) => !!c.rationale));
 
-  // la grana cambia davvero il numero di corsi
-  const fine = proposeLib.proponiEuristica(VAULT, 'x', { granularita: 'atomico' }).piano.corsi.length;
-  const largo = proposeLib.proponiEuristica(VAULT, 'x', { granularita: 'ampio' }).piano.corsi.length;
-  check('grana larga → meno corsi di grana fine', true, largo < fine);
+  // la grana cambia davvero il numero di lezioni
+  const fine = proposeLib.proponiEuristica(VAULT, 'x', { granularita: 'atomico' }).piano.lezioni.length;
+  const largo = proposeLib.proponiEuristica(VAULT, 'x', { granularita: 'ampio' }).piano.lezioni.length;
+  check('grana larga → meno lezioni di grana fine', true, largo < fine);
 
   // confronto con l'architettura di riferimento decisa a mano
   const RIF = [['01'], ['02'], ['03'], ['04', '05', '06'], ['07', '08'], ['09', '10', '11', '12'], ['13', '14'],
     ['15', '16'], ['17'], ['18'], ['19'], ['20', '21', '22', '23', '24'], ['25', '26', '27'], ['28'],
     ['29', '36', '37', '38'], ['30'], ['31', '32', '33', '34', '35'], ['39', '40']];
-  const prodotti = piano.corsi.map((c) => c.materiali.map((m) => m.num).join(','));
+  const prodotti = piano.lezioni.map((c) => c.materiali.map((m) => m.num).join(','));
   const esatti = RIF.filter((r) => prodotti.includes(r.join(','))).length;
   console.log('  · blocchi dell\'architettura di riferimento riprodotti esatti: ' + esatti + '/' + RIF.length);
   check('almeno 6 blocchi di riferimento riprodotti dalle sole euristiche', true, esatti >= 6);
@@ -300,16 +300,16 @@ const dgFinto = { materiali: [
   { num: '02', nome: 'b.pdf', tipo: 'pdf', titolo: 'B', npagine: 10 },
   { num: '03', nome: 'c.mp4', tipo: 'video', titolo: 'C', durata: 200 }
 ] };
-const rispostaAi = { corsi: [
+const rispostaAi = { lezioni: [
   { title: 'PRIMO', materiali: ['01', '99'] },        // 99 non esiste
   { title: 'SECONDO', materiali: ['02', '02'] },      // doppione
   { title: 'VUOTO', materiali: ['77'] }               // resterebbe senza materiali
 ] };
-const norm = proposeLib.corsiDaRisposta(rispostaAi, dgFinto);
-check('numeri inventati scartati', true, !norm.corsi.some((c) => c.materiali.some((m) => m.num === '99')));
-check('doppioni scartati', 1, norm.corsi[1].materiali.length);
-check('corsi rimasti vuoti eliminati', 2, norm.corsi.length);
-const completi = proposeLib.recuperaMancanti(norm.corsi, norm.usati, dgFinto);
+const norm = proposeLib.lezioniDaRisposta(rispostaAi, dgFinto);
+check('numeri inventati scartati', true, !norm.lezioni.some((c) => c.materiali.some((m) => m.num === '99')));
+check('doppioni scartati', 1, norm.lezioni[1].materiali.length);
+check('lezioni rimaste vuote eliminate', 2, norm.lezioni.length);
+const completi = proposeLib.recuperaMancanti(norm.lezioni, norm.usati, dgFinto);
 check('materiale dimenticato recuperato in coda', ['03'], completi[completi.length - 1].materiali.map((m) => m.num));
 check('titolo del recupero è esplicito', 'DA COLLOCARE', completi[completi.length - 1].title);
 check('numerazione cartelle progressiva', ['01-primo', '02-secondo', '03-da-collocare'],
@@ -479,17 +479,17 @@ async function modelloFinto(o) {
   if (s.indexOf('corpora didattici') > 0)
     return { ok: true, dati: { coppie: [{ materiali: ['07', '03'], tipo: 'teoria+applicazione' }], rimandi: [{ da: 'Pratica', a: 'Fondamenti' }], sovrapposizioni: [] }, uso: { inputTokens: 300, outputTokens: 90 } };
   if (s.indexOf('responsabile del percorso') > 0)
-    return { ok: true, dati: { corsi: [
+    return { ok: true, dati: { lezioni: [
       { title: 'FONDAMENTI DEL METODO', area: 'Teoria', rationale: 'Base teorica.', materiali: ['07'] },
       { title: 'DAL METODO ALLA PRATICA', area: 'Pratica', rationale: 'Applicazione e casi.', materiali: ['03', '01'] },
       { title: 'RIFERIMENTI NORMATIVI', area: 'Consultazione', tipo: 'modulo-fonte', rationale: 'Si consulta.', materiali: ['12'] }],
       rimandi: [{ da: 'DAL METODO ALLA PRATICA', a: 'FONDAMENTI DEL METODO', perche: 'ripasso' }],
-      decisioni: ['Il 12 non è un corso ma materiale di consultazione.'] }, uso: { inputTokens: 900, outputTokens: 400 } };
+      decisioni: ['Il 12 non è una lezione ma materiale di consultazione.'] }, uso: { inputTokens: 900, outputTokens: 400 } };
   if (s.indexOf('revisore severo') > 0)
     return { ok: true, dati: { promossa: true, rilievi: [] }, uso: { inputTokens: 400, outputTokens: 60 } };
   if (s.indexOf('SCALETTE ALTERNATIVE') > 0)
     return { ok: true, dati: { alternative: [
-      { nome: 'In sequenza', principio: 'sequenza didattica', differenza: 'Segui l\'ordine del corso: sicuro, ma la pratica arriva tardi.', adattaA: 'chi parte da zero',
+      { nome: 'In sequenza', principio: 'sequenza didattica', differenza: 'Segui l\'ordine della lezione: sicuro, ma la pratica arriva tardi.', adattaA: 'chi parte da zero',
         capitoli: [{ titolo: 'La teoria di base', sintesi: 'fondamenti', fonti: [{ materiale: '07', da: 1, a: 6 }] },
                    { titolo: 'La teoria applicata', sintesi: 'pratica', fonti: [{ materiale: '07', da: 7, a: 12 }] }] },
       { nome: 'Per domande', principio: 'per domande', differenza: 'Ogni capitolo risponde a una domanda: parti dal dubbio, non dalla definizione.', adattaA: 'chi ha già esperienza',
@@ -501,10 +501,10 @@ async function modelloFinto(o) {
   if (s.indexOf('Scrivi UN capitolo') === 0)
     return { ok: true, dati: {
       title: 'La teoria di base del metodo',
-      inBreve: 'Il capitolo introduce i fondamenti su cui poggia tutto il resto del corso.',
+      inBreve: 'Il capitolo introduce i fondamenti su cui poggia tutto il resto della lezione.',
       contenuto: 'Il metodo poggia su alcune idee di fondo. La prima riguarda la **teoria di base**, che si trova alla [p. 2](pdf:07#p=2) della dispensa.\\n\\n- Prima idea portante\\n- Seconda idea portante',
       puntiChiave: ['La teoria precede la pratica', 'Le idee di fondo sono tre', 'Il metodo si verifica sul campo'],
-      quiz: [{ q: 'La teoria di base precede sempre l\'applicazione pratica.', a: true, perche: 'Il corso costruisce la pratica sui fondamenti.' }],
+      quiz: [{ q: 'La teoria di base precede sempre l\'applicazione pratica.', a: true, perche: 'La lezione costruisce la pratica sui fondamenti.' }],
       glossario: [{ t: 'Metodo', d: 'Insieme ordinato di procedure per arrivare a un risultato verificabile.' },
                   { t: 'Fondamento', d: 'Assunto di partenza su cui poggiano le procedure successive.' }],
       sources: [{ pdf: '07', page: 2, label: 'La definizione' }]
@@ -531,20 +531,20 @@ async function modelloFinto(o) {
   const r = await proposeLib.proponiMultiagente(VF, 'P', { ai: { chiama: modelloFinto } }, {});
   check('origine multiagente', 'multiagente', r.origine);
   check('piano valido a schema', [], validate.schemaErrors('piano', r.piano));
-  check('copertura completa', 4, r.piano.corsi.reduce((s, c) => s + c.materiali.length, 0));
-  check('aree assegnate', ['Teoria', 'Pratica', 'Consultazione'], r.piano.corsi.map((c) => c.area));
-  check('modulo-fonte riconosciuto', true, r.piano.corsi.some((c) => c.tipo === 'modulo-fonte'));
+  check('copertura completa', 4, r.piano.lezioni.reduce((s, c) => s + c.materiali.length, 0));
+  check('aree assegnate', ['Teoria', 'Pratica', 'Consultazione'], r.piano.lezioni.map((c) => c.area));
+  check('modulo-fonte riconosciuto', true, r.piano.lezioni.some((c) => c.tipo === 'modulo-fonte'));
   check('rimandi e decisioni conservati', [1, 1], [r.piano.rimandi.length, r.piano.decisioni.length]);
   check('revisione eseguita', true, r.revisione && r.revisione.promossa === true);
   // il raggruppamento NON segue la numerazione dei file: 07 apre, 03 e 01 stanno insieme
-  check('ordine indipendente dai numeri', ['07', '03,01', '12'], r.piano.corsi.map((c) => c.materiali.map((m) => m.num).join(',')));
+  check('ordine indipendente dai numeri', ['07', '03,01', '12'], r.piano.lezioni.map((c) => c.materiali.map((m) => m.num).join(',')));
 
   // il revisore che boccia fa fare un secondo giro di sintesi
   let giriSintesi = 0;
   async function modelloCritico(o) {
     if (o.sistema.indexOf('responsabile del percorso') > 0) giriSintesi++;
     if (o.sistema.indexOf('revisore severo') > 0)
-      return { ok: true, dati: { promossa: false, rilievi: [{ gravita: 'alta', problema: 'il corso 2 mescola due cose', rimedio: 'separarle' }] }, uso: {} };
+      return { ok: true, dati: { promossa: false, rilievi: [{ gravita: 'alta', problema: 'la lezione 2 mescola due cose', rimedio: 'separarle' }] }, uso: {} };
     return modelloFinto(o);
   }
   const archLib = require('../lib/architettura');
@@ -559,11 +559,11 @@ async function modelloFinto(o) {
   const scalettaLib = require('../lib/scaletta');
   const generaLib = require('../lib/genera');
 
-  const corsoTest = { folder: '01-fondamenti', title: 'FONDAMENTI DEL METODO',
+  const lezioneTest = { folder: '01-fondamenti', title: 'FONDAMENTI DEL METODO',
     rationale: 'Base teorica.', materiali: [{ num: '07' }] };
   const schedeTutte = schedeLib.tutte(VF, 'P', dgF.materiali);
 
-  const rs = await scalettaLib.proponi(corsoTest, schedeTutte, { chiama: modelloFinto }, {});
+  const rs = await scalettaLib.proponi(lezioneTest, schedeTutte, { chiama: modelloFinto }, {});
   check('due alternative distinte, la gemella scartata', 2, rs.alternative.length);
   check('ogni alternativa ha un nome', ['In sequenza', 'Per domande'], rs.alternative.map(function (a) { return a.nome; }));
   check('la differenza è scritta per chi studia', true, /pratica arriva tardi/.test(rs.alternative[0].differenza));
@@ -585,7 +585,7 @@ async function modelloFinto(o) {
 
   // generazione di un capitolo: valido al primo colpo
   const capitoloTest = rs.alternative[0].capitoli[0];
-  const g = await generaLib.generaCapitolo(VF, corsoTest, capitoloTest, 1, 2, dgF.materiali, { chiama: modelloFinto }, {});
+  const g = await generaLib.generaCapitolo(VF, lezioneTest, capitoloTest, 1, 2, dgF.materiali, { chiama: modelloFinto }, {});
   check('capitolo generato senza errori', [], g.errori);
   check('un solo tentativo se è valido subito', 1, g.tentativi);
   check('il titolo non comincia con una cifra', true, !/^[0-9]/.test(g.dati.title));
@@ -608,17 +608,17 @@ async function modelloFinto(o) {
     if (giri === 1) return { ok: true, dati: { title: '01 titolo che comincia con la cifra', inBreve: 'x', contenuto: 'y', puntiChiave: ['a'] }, uso: null };
     return modelloFinto(o);
   }
-  const g2 = await generaLib.generaCapitolo(VF, corsoTest, capitoloTest, 1, 2, dgF.materiali, { chiama: modelloIncerto }, {});
+  const g2 = await generaLib.generaCapitolo(VF, lezioneTest, capitoloTest, 1, 2, dgF.materiali, { chiama: modelloIncerto }, {});
   check('la seconda risposta ripara la prima', [], g2.errori);
   check('e sono serviti due tentativi', 2, g2.tentativi);
 
-  // un capitolo irrecuperabile finisce in quarantena, non nel corso
+  // un capitolo irrecuperabile finisce in quarantena, non nella lezione
   async function modelloRotto() { return { ok: true, dati: { title: '9 no', inBreve: 'x', contenuto: 'y', puntiChiave: ['a'] }, uso: null }; }
-  const g3 = await generaLib.generaCapitolo(VF, corsoTest, capitoloTest, 2, 2, dgF.materiali, { chiama: modelloRotto }, {});
+  const g3 = await generaLib.generaCapitolo(VF, lezioneTest, capitoloTest, 2, 2, dgF.materiali, { chiama: modelloRotto }, {});
   check('capitolo irrecuperabile: errori riportati', true, g3.errori.length > 0);
   const scarto = generaLib.scriviScarto(VF, 'P', '01-fondamenti', 2, g3.dati, g3.errori);
   check('lo scarto è in quarantena con gli errori accanto', true,
-    fs.existsSync(path.join(VF, 'Progetti', 'P', '_lavorazione', 'scarti', scarto)));
+    fs.existsSync(path.join(VF, 'Corsi', 'P', '_lavorazione', 'scarti', scarto)));
 
   // prezzi: si stima solo ciò che è a listino, il resto è dichiarato non stimabile
   check('costo di un uso noto', 0.035, Number(providerLib.costoUsd({ modello: 'claude-opus-5', inputTokens: 2000, outputTokens: 1000 }).toFixed(4)));
@@ -770,77 +770,77 @@ async function modelloFinto(o) {
   }
   process.env.PATH = pathVero;
 
-  // --- progetti protetti: il materiale di studio non si tocca ---
-  const progettiLib = require('../lib/progetti');
+  // --- corsi protetti: il materiale di studio non si tocca ---
+  const corsiLib = require('../lib/corsi');
   const VP = fs.mkdtempSync(path.join(os.tmpdir(), 'studia-prot-'));
-  fs.mkdirSync(path.join(VP, 'Progetti', 'ORIGINALE'), { recursive: true });
-  fs.mkdirSync(path.join(VP, 'Progetti', 'COPIA'), { recursive: true });
-  fs.writeFileSync(path.join(VP, 'Progetti', 'ORIGINALE', '_progetto.md'), mdser.progetto({ id: 'o', title: 'O' }));
-  fs.writeFileSync(path.join(VP, 'Progetti', 'COPIA', '_progetto.md'), mdser.progetto({ id: 'c', title: 'C' }));
-  check('nuovo progetto non è protetto', false, progettiLib.protetto(VP, 'ORIGINALE'));
-  progettiLib.proteggi(VP, 'ORIGINALE', true);
-  check('dopo la marcatura è protetto', true, progettiLib.protetto(VP, 'ORIGINALE'));
+  fs.mkdirSync(path.join(VP, 'Corsi', 'ORIGINALE'), { recursive: true });
+  fs.mkdirSync(path.join(VP, 'Corsi', 'COPIA'), { recursive: true });
+  fs.writeFileSync(path.join(VP, 'Corsi', 'ORIGINALE', '_corso.md'), mdser.corso({ id: 'o', title: 'O' }));
+  fs.writeFileSync(path.join(VP, 'Corsi', 'COPIA', '_corso.md'), mdser.corso({ id: 'c', title: 'C' }));
+  check('nuovo corso non è protetto', false, corsiLib.protetto(VP, 'ORIGINALE'));
+  corsiLib.proteggi(VP, 'ORIGINALE', true);
+  check('dopo la marcatura è protetto', true, corsiLib.protetto(VP, 'ORIGINALE'));
   check('il marcatore finisce in _lavorazione/', true,
-    fs.existsSync(path.join(VP, 'Progetti', 'ORIGINALE', '_lavorazione', '_PROTETTO')));
-  // un vault già in uso tiene il marcatore nella radice del progetto: deve valere lo stesso
-  fs.writeFileSync(path.join(VP, 'Progetti', 'COPIA', '_PROTETTO'), 'x');
-  check('si riconosce anche il marcatore vecchio nella radice', true, progettiLib.protetto(VP, 'COPIA'));
-  fs.unlinkSync(path.join(VP, 'Progetti', 'COPIA', '_PROTETTO'));
-  check('la copia resta scrivibile', false, progettiLib.protetto(VP, 'COPIA'));
+    fs.existsSync(path.join(VP, 'Corsi', 'ORIGINALE', '_lavorazione', '_PROTETTO')));
+  // un vault già in uso tiene il marcatore nella radice del corso: deve valere lo stesso
+  fs.writeFileSync(path.join(VP, 'Corsi', 'COPIA', '_PROTETTO'), 'x');
+  check('si riconosce anche il marcatore vecchio nella radice', true, corsiLib.protetto(VP, 'COPIA'));
+  fs.unlinkSync(path.join(VP, 'Corsi', 'COPIA', '_PROTETTO'));
+  check('la copia resta scrivibile', false, corsiLib.protetto(VP, 'COPIA'));
   let bloccato = false;
-  try { progettiLib.assicuraScrivibile(VP, 'ORIGINALE'); } catch (e) { bloccato = /protetto/.test(e.message); }
+  try { corsiLib.assicuraScrivibile(VP, 'ORIGINALE'); } catch (e) { bloccato = /protetto/.test(e.message); }
   check('la scrittura sul protetto viene rifiutata', true, bloccato);
-  progettiLib.proteggi(VP, 'ORIGINALE', false);
-  check('si può riaprire alla scrittura', false, progettiLib.protetto(VP, 'ORIGINALE'));
+  corsiLib.proteggi(VP, 'ORIGINALE', false);
+  check('si può riaprire alla scrittura', false, corsiLib.protetto(VP, 'ORIGINALE'));
   fs.rmSync(VP, { recursive: true, force: true });
 
-  // --- materiali: prima quelli del progetto, poi il corpus del vault ---
-  sezione('Materiali dentro il progetto');
+  // --- materiali: prima quelli del corso, poi il corpus del vault ---
+  sezione('Materiali dentro il corso');
   const matLib = require('../lib/materiali');
   const VM = fs.mkdtempSync(path.join(os.tmpdir(), 'studia-mat-'));
-  const dentro = path.join(VM, 'Progetti', 'ALFA', 'MATERIALI');
-  for (const d of matLib.cartelleProgetto()) fs.mkdirSync(path.join(dentro, d), { recursive: true });
+  const dentro = path.join(VM, 'Corsi', 'ALFA', 'MATERIALI');
+  for (const d of matLib.cartelleCorso()) fs.mkdirSync(path.join(dentro, d), { recursive: true });
   fs.mkdirSync(path.join(VM, 'Media'), { recursive: true });
   fs.writeFileSync(path.join(dentro, 'Video', '01 lezione.mp4'), 'x');
   fs.writeFileSync(path.join(dentro, 'Trascrizioni', '01 lezione.json'), '{}');
   fs.writeFileSync(path.join(VM, 'Media', '01 lezione.mp4'), 'x');      // stesso nome, copia del vault
   fs.writeFileSync(path.join(VM, 'Media', '02 solo-nel-vault.mp4'), 'x');
 
-  check('il progetto con MATERIALI viene riconosciuto', 'ALFA', matLib.progettiConMateriali(VM)[0]);
-  check('la cartella del progetto viene cercata per prima', true,
-    matLib.cartelle(VM, 'Media')[0].indexOf(path.join('Progetti', 'ALFA')) >= 0);
+  check('il corso con MATERIALI viene riconosciuto', 'ALFA', matLib.corsiConMateriali(VM)[0]);
+  check('la cartella del corso viene cercata per prima', true,
+    matLib.cartelle(VM, 'Media')[0].indexOf(path.join('Corsi', 'ALFA')) >= 0);
   // ogni tipo di sorgente ha la sua cartella: un audio caricato non finisce fra i video
   check('un .mp3 va in Audio/', 'Audio', matLib.cartellaPerFile('12 registrazione.mp3'));
   check('un .mp4 va in Video/', 'Video', matLib.cartellaPerFile('12 lezione.mp4'));
   check('un .pdf va in PDF/', 'PDF', matLib.cartellaPerFile('12 dispensa.pdf'));
   check('una pagina salvata va in Web/', 'Web', matLib.cartellaPerFile('12 pagina.html'));
   fs.writeFileSync(path.join(dentro, 'Audio', '03 registrazione.mp3'), 'x');
-  check('l\'audio del progetto è fra i media trovati', true,
+  check('l\'audio del corso è fra i media trovati', true,
     matLib.elenca(VM, 'Media').some((m) => m.nome === '03 registrazione.mp3'));
-  check('un materiale del progetto si trova lì', true,
+  check('un materiale del corso si trova lì', true,
     matLib.trova(VM, 'Media', '01 lezione.mp4').indexOf('ALFA') >= 0);
   check('un materiale solo nel vault si trova comunque', true,
     !!matLib.trova(VM, 'Media', '02 solo-nel-vault.mp4'));
   check('un materiale inesistente non inventa percorsi', '', matLib.trova(VM, 'Media', 'mai visto.mp4'));
   check('l\'elenco non duplica i nomi presenti in due posti', 3, matLib.elenca(VM, 'Media').length);
-  check('la trascrizione di un video del progetto resta nel progetto', true,
+  check('la trascrizione di un video del corso resta nel corso', true,
     matLib.destinazioneDerivato(VM, path.join(dentro, 'Video', '01 lezione.mp4'), 'Trascrizioni').indexOf('ALFA') >= 0);
   check('quella di un video del vault resta nel vault', path.join(VM, 'Trascrizioni'),
     matLib.destinazioneDerivato(VM, path.join(VM, 'Media', '02 solo-nel-vault.mp4'), 'Trascrizioni'));
   check('il numero si legge dal nome', 7, matLib.numero('07 qualcosa.pdf'));
   check('un nome senza numero non ne inventa uno', null, matLib.numero('appunti.pdf'));
 
-  // il digest deve leggere la trascrizione che sta dentro il progetto
+  // il digest deve leggere la trascrizione che sta dentro il corso
   const corpusLib2 = require('../lib/corpus');
   fs.writeFileSync(path.join(dentro, 'Trascrizioni', '01 lezione.json'),
     JSON.stringify({ segments: [{ start: 0, end: 12, text: 'la dislessia è un disturbo della lettura' }] }));
   const dig = corpusLib2.digest(VM).materiali.filter((m) => m.num === '01');
-  check('il digest trova il video attraverso i materiali del progetto', 1, dig.length);
+  check('il digest trova il video attraverso i materiali del corso', 1, dig.length);
   check('e ne legge la durata dalla trascrizione interna', 12, dig[0] && dig[0].durata);
   fs.rmSync(VM, { recursive: true, force: true });
 
-  // --- pacchetto: il progetto in un file solo, per darlo a qualcun altro ---
-  sezione('Pacchetto del progetto');
+  // --- pacchetto: il corso in un file solo, per darlo a qualcun altro ---
+  sezione('Pacchetto del corso');
   const pk = require('../lib/pacchetto');
   check('il nome del file dice cos\'è', 'TD74-DSA.studia.zip', pk.nomeFile('TD74-DSA'));
   const cmdE = pk.comandoEsporta('ALFA', '/tmp/x.zip', { appunti: false });
@@ -850,62 +850,62 @@ async function modelloFinto(o) {
     pk.comandoEsporta('ALFA', '/tmp/x.zip', { appunti: true }).args.includes('ALFA/APPUNTI/*'));
   check('i video non si ricomprimono a vuoto', true, cmdE.args.join(' ').indexOf('mp4') >= 0);
 
-  const dentroZip = ['ALFA/', 'ALFA/_progetto.md', 'ALFA/01-intro/_corso.md', 'ALFA/01-intro/01-primo.md',
+  const dentroZip = ['ALFA/', 'ALFA/_corso.md', 'ALFA/01-intro/_lezione.md', 'ALFA/01-intro/01-primo.md',
     'ALFA/MATERIALI/Video/01 lezione.mp4', 'ALFA/MATERIALI/Audio/02 registrazione.mp3',
     'ALFA/MATERIALI/PDF/03 dispensa.pdf', 'ALFA/MATERIALI/Trascrizioni/01 lezione.json'];
   const info = pk.esamina(dentroZip);
   check('il pacchetto è riconosciuto', true, info.ok);
-  check('e si sa di quale progetto è', 'ALFA', info.id);
-  check('conta i corsi, non le cartelle di servizio', 1, info.corsi);
+  check('e si sa di quale corso è', 'ALFA', info.id);
+  check('conta le lezioni, non le cartelle di servizio', 1, info.lezioni);
   check('conta i video', 1, info.video);
   check('conta l\'audio a parte', 1, info.audio);
   check('vede che gli appunti non ci sono', false, info.appunti);
-  check('riassume il contenuto in italiano', '1 corso · 1 video · 1 audio · 1 PDF', pk.descrizione(info));
+  check('riassume il contenuto in italiano', '1 lezione · 1 video · 1 audio · 1 PDF', pk.descrizione(info));
   check('uno zip qualsiasi viene rifiutato', false, pk.esamina(['foto/a.jpg', 'musica/b.mp3']).ok);
-  check('e senza _progetto.md pure', false, pk.esamina(['X/capitolo.md']).ok);
+  check('e senza _corso.md pure', false, pk.esamina(['X/capitolo.md']).ok);
   check('un file vuoto non passa', false, pk.esamina([]).ok);
   const presi = new Set(['ALFA', 'ALFA-2']);
   check('un nome già preso non sovrascrive niente', 'ALFA-3', pk.idLibero('ALFA', (x) => presi.has(x)));
   check('se è libero resta quello', 'BETA', pk.idLibero('BETA', (x) => presi.has(x)));
 
-  // --- i corsi stanno in CORSI/, ma i progetti vecchi continuano a funzionare ---
-  sezione('CORSI/ dentro il progetto');
-  const VC = fs.mkdtempSync(path.join(os.tmpdir(), 'studia-corsi-'));
-  const pNuovo = path.join(VC, 'Progetti', 'NUOVO'), pVecchio = path.join(VC, 'Progetti', 'VECCHIO');
-  fs.mkdirSync(path.join(pNuovo, 'CORSI', '01-uno'), { recursive: true });
-  fs.mkdirSync(path.join(pNuovo, 'CORSI', '02-due'), { recursive: true });
+  // --- le lezioni stanno in LEZIONI/, ma i corsi vecchi continuano a funzionare ---
+  sezione('LEZIONI/ dentro il corso');
+  const VC = fs.mkdtempSync(path.join(os.tmpdir(), 'studia-lezioni-'));
+  const pNuovo = path.join(VC, 'Corsi', 'NUOVO'), pVecchio = path.join(VC, 'Corsi', 'VECCHIO');
+  fs.mkdirSync(path.join(pNuovo, 'LEZIONI', '01-uno'), { recursive: true });
+  fs.mkdirSync(path.join(pNuovo, 'LEZIONI', '02-due'), { recursive: true });
   fs.mkdirSync(path.join(pNuovo, 'APPUNTI'), { recursive: true });
   fs.mkdirSync(path.join(pNuovo, 'MATERIALI', 'Video'), { recursive: true });
   fs.mkdirSync(path.join(pVecchio, '01-solo'), { recursive: true });   // impianto di prima
   fs.mkdirSync(path.join(pVecchio, 'APPUNTI'), { recursive: true });
-  check('i corsi si leggono da CORSI/', 2, progettiLib.elencoCorsi(VC, 'NUOVO').length);
-  check('appunti e materiali non contano come corsi', -1, progettiLib.elencoCorsi(VC, 'NUOVO').indexOf('APPUNTI'));
-  check('un progetto vecchio tiene i corsi nella radice', 1, progettiLib.elencoCorsi(VC, 'VECCHIO').length);
-  check('e lì li si continua a trovare', true,
-    progettiLib.corsoDir(VC, 'VECCHIO', '01-solo').endsWith(path.join('VECCHIO', '01-solo')));
-  check('il corso nuovo va sempre in CORSI/', true,
-    progettiLib.cartellaCorsiPerScrivere(VC, 'VECCHIO').endsWith(path.join('VECCHIO', 'CORSI')));
+  check('le lezioni si leggono da LEZIONI/', 2, corsiLib.elencoLezioni(VC, 'NUOVO').length);
+  check('appunti e materiali non contano come lezioni', -1, corsiLib.elencoLezioni(VC, 'NUOVO').indexOf('APPUNTI'));
+  check('un corso vecchio tiene le lezioni nella radice', 1, corsiLib.elencoLezioni(VC, 'VECCHIO').length);
+  check('e lì le si continua a trovare', true,
+    corsiLib.lezioneDir(VC, 'VECCHIO', '01-solo').endsWith(path.join('VECCHIO', '01-solo')));
+  check('la lezione nuova va sempre in LEZIONI/', true,
+    corsiLib.cartellaLezioniPerScrivere(VC, 'VECCHIO').endsWith(path.join('VECCHIO', 'LEZIONI')));
   fs.rmSync(VC, { recursive: true, force: true });
 
   /* --- appunti: non devono sparire. Né dalla tendina, né dal disco. --- */
   sezione('Appunti — legame col capitolo e composizione dell\'elenco');
   const note = readerParser.loadNotes();
-  const ctx = { corso: 'Cosa sono i DSA', corsoId: '01-fondamenti', capitolo: 'Che cosa sono i DSA',
+  const ctx = { lezione: 'Cosa sono i DSA', lezioneId: '01-fondamenti', capitolo: 'Che cosa sono i DSA',
                 capitoloId: '01-fondamenti-c01', capitoloFile: '01-definizione-eterogeneita.md' };
-  const nQui = { file: 'a.md', title: 'Primo', corso: ctx.corso, corsoId: ctx.corsoId,
+  const nQui = { file: 'a.md', title: 'Primo', lezione: ctx.lezione, lezioneId: ctx.lezioneId,
                  capitolo: ctx.capitolo, capitoloId: ctx.capitoloId, capitoloFile: ctx.capitoloFile };
-  const nAltro = { file: 'b.md', title: 'Secondo', corso: ctx.corso, corsoId: ctx.corsoId,
+  const nAltro = { file: 'b.md', title: 'Secondo', lezione: ctx.lezione, lezioneId: ctx.lezioneId,
                    capitolo: 'La base neurobiologica', capitoloId: '01-fondamenti-c02',
                    capitoloFile: '02-base-neurobiologica.md' };
   check('l\'appunto del capitolo si riconosce', true, note.noteInChapter(nQui, ctx));
   check('quello di un altro capitolo no', false, note.noteInChapter(nAltro, ctx));
-  // il corso rigenerato sposta l'id posizionale: il file .md del capitolo no
+  // la lezione rigenerata sposta l'id posizionale: il file .md del capitolo no
   check('capitolo rinumerato: l\'appunto resta suo', true,
     note.noteInChapter(Object.assign({}, nQui, { capitoloId: '01-fondamenti-c04' }), ctx));
   check('senza id ci si aggancia al titolo', true,
-    note.noteInChapter({ file: 'c.md', corso: ctx.corso, capitolo: ctx.capitolo }, ctx));
-  check('stesso nome di file ma altro corso: non è suo', false,
-    note.noteInChapter({ file: 'd.md', corsoId: '07-disturbi-scrittura', capitoloFile: ctx.capitoloFile }, ctx));
+    note.noteInChapter({ file: 'c.md', lezione: ctx.lezione, capitolo: ctx.capitolo }, ctx));
+  check('stesso nome di file ma altra lezione: non è suo', false,
+    note.noteInChapter({ file: 'd.md', lezioneId: '07-disturbi-scrittura', capitoloFile: ctx.capitoloFile }, ctx));
   check('un appunto senza appigli non si attacca a niente', false,
     note.noteInChapter({ file: 'e.md' }, ctx));
 
@@ -920,7 +920,7 @@ async function modelloFinto(o) {
   check('l\'appunto aperto resta nell\'elenco anche da un altro capitolo', true,
     gLeggendoAltrove.altrove.some((n) => n.file === 'a.md'));
   check('e non finisce fra gli orfani', null, gLeggendoAltrove.orfano);
-  // aperto un appunto che nell'elenco non c'è (altro progetto, o file appena sparito)
+  // aperto un appunto che nell'elenco non c'è (altro corso, o file appena sparito)
   const gOrfano = note.noteGroups([nAltro], ctx, { file: 'z.md', title: 'Aperto ora' });
   check('l\'appunto aperto ma fuori elenco viene comunque mostrato', 'z.md', gOrfano.orfano.file);
   check('senza titolo si ripiega sul nome del file', 'x', note.noteEtichetta({ file: 'x.md' }));
@@ -933,14 +933,14 @@ async function modelloFinto(o) {
   const VA = fs.mkdtempSync(path.join(os.tmpdir(), 'studia-appunti-'));
   check('cartella APPUNTI assente = nessun appunto (non un errore)', 0, app.read(VA, 'P').notes.length);
   check('e nessun errore da mostrare', '', app.read(VA, 'P').error);
-  const salvato = app.save(VA, 'P', null, { title: 'Con "virgolette" e àccenti', corso: 'Cosa sono i DSA', capitolo: 'Definizione', capitoloId: '01-fondamenti-c01' }, 'Corpo dell\'appunto.');
+  const salvato = app.save(VA, 'P', null, { title: 'Con "virgolette" e àccenti', lezione: 'Cosa sono i DSA', capitolo: 'Definizione', capitoloId: '01-fondamenti-c01' }, 'Corpo dell\'appunto.');
   check('il nome del file si legge', 'Cosa sono i DSA - Definizione - Con -virgolette- e àccenti.md', salvato.file);
   const apRiletto = app.read(VA, 'P');
   check('rileggendo, l\'appunto c\'è', 1, apRiletto.notes.length);
   check('col titolo intatto', 'Con "virgolette" e àccenti', apRiletto.notes[0].title);
   check('e col corpo intatto', 'Corpo dell\'appunto.', apRiletto.notes[0].body.trim());
   check('l\'indice non viene contato come appunto', true, fs.existsSync(path.join(app.dir(VA, 'P'), '_indice.md')));
-  app.save(VA, 'P', null, { title: 'Con "virgolette" e àccenti', corso: 'Cosa sono i DSA', capitolo: 'Definizione' }, 'Secondo.');
+  app.save(VA, 'P', null, { title: 'Con "virgolette" e àccenti', lezione: 'Cosa sono i DSA', capitolo: 'Definizione' }, 'Secondo.');
   check('un titolo ripetuto non sovrascrive il primo', 2, app.read(VA, 'P').notes.length);
   // un appunto scritto a metà (o rovinato a mano) non deve far sparire l'intero elenco
   fs.writeFileSync(path.join(app.dir(VA, 'P'), 'monco.md'), '---\ntitle: "Tronc', 'utf-8');
@@ -963,48 +963,48 @@ async function modelloFinto(o) {
   fs.rmSync(VA, { recursive: true, force: true });
 
   // --- espansione: si accoda, non si rinumera mai ---
-  sezione('Espandere un progetto già finito');
+  sezione('Espandere un corso già finito');
   const esp = require('../lib/espandi');
-  const filesCorso = ['_corso.md', '01-primo.md', '02-secondo.md', '03-terzo.md', 'appunto.txt'];
-  check('i capitoli si riconoscono dal nome', 3, esp.capitoliDi(filesCorso).length);
-  check('il prossimo capitolo è il 4°', 4, esp.prossimoOrdine(filesCorso));
-  check('un corso vuoto riparte da 1', 1, esp.prossimoOrdine(['_corso.md']));
+  const filesLezione = ['_lezione.md', '01-primo.md', '02-secondo.md', '03-terzo.md', 'appunto.txt'];
+  check('i capitoli si riconoscono dal nome', 3, esp.capitoliDi(filesLezione).length);
+  check('il prossimo capitolo è il 4°', 4, esp.prossimoOrdine(filesLezione));
+  check('una lezione vuota riparte da 1', 1, esp.prossimoOrdine(['_lezione.md']));
   check('i buchi non fanno riusare un numero', 8, esp.prossimoOrdine(['01-a.md', '07-b.md']));
   check('l\'ordine cresce in fondo', '01-primo.md,02-secondo.md,04-nuovo.md',
     esp.ordineAggiornato(['01-primo.md', '02-secondo.md'], ['04-nuovo.md']).join(','));
   check('e non duplica ciò che c\'era', 2,
     esp.ordineAggiornato(['01-primo.md', '02-secondo.md'], ['02-secondo.md']).length);
 
-  const corsiFinti = [{ folder: '01-a', materiali: [1, 3] }, { folder: '02-b', materiali: [2] }];
+  const lezioniFinti = [{ folder: '01-a', materiali: [1, 3] }, { folder: '02-b', materiali: [2] }];
   const matFinti = [{ num: '01' }, { num: '02' }, { num: '03' }, { num: '41' }, { num: '42' }];
-  check('i materiali nuovi sono quelli che nessun corso usa', '41,42',
-    esp.materialiNuovi(matFinti, corsiFinti).map((m) => m.num).join(','));
-  check('senza corsi sono tutti nuovi', 5, esp.materialiNuovi(matFinti, []).length);
-  check('il corso nuovo prende il numero dopo l\'ultimo', '03', esp.prossimoCorso(['01-a', '02-b']));
-  check('il primo corso di un progetto vuoto è 01', '01', esp.prossimoCorso([]));
+  check('i materiali nuovi sono quelli che nessuna lezione usa', '41,42',
+    esp.materialiNuovi(matFinti, lezioniFinti).map((m) => m.num).join(','));
+  check('senza lezioni sono tutti nuovi', 5, esp.materialiNuovi(matFinti, []).length);
+  check('la lezione nuova prende il numero dopo l\'ultima', '03', esp.prossimoLezione(['01-a', '02-b']));
+  check('la prima lezione di un corso vuoto è 01', '01', esp.prossimoLezione([]));
 
   const capitoliTesto = [
     { file: '01-a/01-x.md', contenuto: 'Prosegue in [[02-b]] e in [[09-mai-scritto]].' },
-    { file: '02-b/01-y.md', contenuto: 'Vedi [[01-a|il primo corso]].' }
+    { file: '02-b/01-y.md', contenuto: 'Vedi [[01-a|la prima lezione]].' }
   ];
   const rotti = esp.wikilinkRotti(capitoliTesto, ['01-a', '02-b']);
-  check('un rimando verso un corso inesistente viene trovato', 1, rotti.length);
+  check('un rimando verso una lezione inesistente viene trovato', 1, rotti.length);
   check('e si sa in quale capitolo sta', '01-a/01-x.md', rotti[0].file);
   check('l\'etichetta dopo la barra non confonde il controllo', 0,
     esp.wikilinkRotti([{ file: 'x', contenuto: '[[01-a|con etichetta]]' }], ['01-a']).length);
 
-  // il validatore ora boccia il rimando verso un corso che non c'è
+  // il validatore ora boccia il rimando verso una lezione che non c'è
   const capConRimando = {
     schema: 1, tipo: 'capitolo', id: 'x', title: 'T', durata: 5,
     contenuto: 'Testo con rimando a [[09-mai-scritto]].', quiz: [], glossario: [], footnotes: []
   };
-  check('wikilink verso un corso inesistente: bocciato', true,
-    validateCapitolo(capConRimando, { corsi: ['01-a', '02-b'] }).errors.some((x) => /non c'è un corso/.test(x)));
-  check('verso un corso che esiste: passa', false,
+  check('wikilink verso una lezione inesistente: bocciato', true,
+    validateCapitolo(capConRimando, { lezioni: ['01-a', '02-b'] }).errors.some((x) => /non c'è una lezione/.test(x)));
+  check('verso una lezione che esiste: passa', false,
     validateCapitolo(Object.assign({}, capConRimando, { contenuto: 'Vedi [[01-a]].' }),
-      { corsi: ['01-a', '02-b'] }).errors.some((x) => /non c'è un corso/.test(x)));
-  check('senza elenco corsi il controllo non si inventa errori', false,
-    validateCapitolo(capConRimando, {}).errors.some((x) => /non c'è un corso/.test(x)));
+      { lezioni: ['01-a', '02-b'] }).errors.some((x) => /non c'è una lezione/.test(x)));
+  check('senza elenco lezioni il controllo non si inventa errori', false,
+    validateCapitolo(capConRimando, {}).errors.some((x) => /non c'è una lezione/.test(x)));
 
   fs.rmSync(VF, { recursive: true, force: true });
 
@@ -1031,7 +1031,7 @@ async function modelloFinto(o) {
   check('apostrofo tipografico normalizzato', "l'apprendimento", pron('l’apprendimento'));
   check('punteggiatura doppia collassata', 'la lettura, la scrittura.', pron('la lettura, (la scrittura).'));
 
-  /* Casi contati sul corpus vero (Progetti/TD74-DSA/CORSI): la freccia compare 82
+  /* Casi contati sul corpus vero (Corsi/TD74-DSA/LEZIONI): la freccia compare 82
      volte, «Racc.» 55, «sill/sec» 22, «×» 40. Senza queste regole il motore
      incolla le parole o legge sigle senza senso. */
   check('la freccia vale una virgola, non il silenzio', 'progressione grosso, fine',
@@ -1217,11 +1217,11 @@ async function modelloFinto(o) {
     console.log('  · sintesi di sistema assente: prova su file saltata');
   }
 
-  // ------------------------------------- confine fra i materiali dei progetti
-  sezione('Scoping — i materiali di un progetto non sfiorano quelli di un altro');
+  // ------------------------------------- confine fra i materiali dei corsi
+  sezione('Scoping — i materiali di un corso non sfiorano quelli di un altro');
   {
-    /* Vault sintetico con DUE progetti che si portano dentro i materiali. È lo
-       scenario che in produzione faceva costruire un corso sulla conferenza OECD
+    /* Vault sintetico con DUE corsi che si portano dentro i materiali. È lo
+       scenario che in produzione faceva costruire una lezione sulla conferenza OECD
        leggendo anche quaranta lezioni sulla dislessia — e pagandole. Sintetico e
        non sul vault vero, così il controllo vale su qualunque macchina. */
     const os2 = require('os');
@@ -1230,7 +1230,7 @@ async function modelloFinto(o) {
     const corpL = require('../lib/corpus');
 
     const metti = (prog, sub, nome, testo) => {
-      const d = path.join(VS, 'Progetti', prog, matL.CARTELLA, sub);
+      const d = path.join(VS, 'Corsi', prog, matL.CARTELLA, sub);
       fs.mkdirSync(d, { recursive: true });
       fs.writeFileSync(path.join(d, nome), testo);
     };
@@ -1249,41 +1249,41 @@ async function modelloFinto(o) {
     check('ed è il suo', '01', dAlfa.materiali[0].num);
     check('BETA vede un solo materiale', 1, dBeta.totale);
     check('ed è il suo', '50', dBeta.materiali[0].num);
-    check('senza progetto si vede tutto il vault (uso storico)', 2, dTutto.totale);
+    check('senza corso si vede tutto il vault (uso storico)', 2, dTutto.totale);
 
     // il confine vale anche per i derivati: la trascrizione di BETA non deve
     // rispondere a una richiesta fatta nel contesto di ALFA
-    check('la trascrizione altrui non si trova da dentro un progetto', '',
+    check('la trascrizione altrui non si trova da dentro un corso', '',
       matL.trova(VS, 'Trascrizioni', '50 lezione beta.json', 'ALFA', true));
     check('ma la propria sì', true,
       !!matL.trova(VS, 'Trascrizioni', '01 lezione alfa.json', 'ALFA', true));
 
-    /* Vault vecchio: i materiali stanno nella radice e il progetto non ha una
+    /* Vault vecchio: i materiali stanno nella radice e il corso non ha una
        cartella MATERIALI. Lì il confine non deve scattare, o un vault che ha
        sempre funzionato smetterebbe di vedere i propri file. */
     const VV = fs.mkdtempSync(path.join(os2.tmpdir(), 'studia-scope-old-'));
     fs.mkdirSync(path.join(VV, 'Media'), { recursive: true });
     fs.mkdirSync(path.join(VV, 'Trascrizioni'), { recursive: true });
-    fs.mkdirSync(path.join(VV, 'Progetti', 'VECCHIO'), { recursive: true });
+    fs.mkdirSync(path.join(VV, 'Corsi', 'VECCHIO'), { recursive: true });
     fs.writeFileSync(path.join(VV, 'Media', '01 storica.mp4'), 'x');
     fs.writeFileSync(path.join(VV, 'Trascrizioni', '01 storica.json'),
       JSON.stringify({ media: '01 storica.mp4', segments: [{ start: 0, end: 10, text: 'materiale storico del vault' }] }));
-    check('un progetto senza MATERIALI/ pesca ancora dal corpus del vault', 1,
+    check('un corso senza MATERIALI/ pesca ancora dal corpus del vault', 1,
       corpL.digest(VV, 'VECCHIO').totale);
     check('haMateriali distingue i due casi', [true, false],
       [matL.haMateriali(VS, 'ALFA'), matL.haMateriali(VV, 'VECCHIO')]);
 
-    /* L'import deve far atterrare i file DENTRO il progetto, o la numerazione per
-       progetto non vuol dire niente: si conterebbe il progetto e si scriverebbe
+    /* L'import deve far atterrare i file DENTRO il corso, o la numerazione per
+       corso non vuol dire niente: si conterebbe il corso e si scriverebbe
        nella radice comune. Le due cose stanno o cadono insieme. */
     const impL = require('../lib/importa');
-    check('un video importato in un progetto va nella sua cartella Video',
-      path.join('Progetti', 'ALFA', matL.CARTELLA, 'Video'), impL.destinazione('media', 'lezione.mp4', 'ALFA'));
+    check('un video importato in un corso va nella sua cartella Video',
+      path.join('Corsi', 'ALFA', matL.CARTELLA, 'Video'), impL.destinazione('media', 'lezione.mp4', 'ALFA'));
     check('un mp3 va in Audio, non fra i video',
-      path.join('Progetti', 'ALFA', matL.CARTELLA, 'Audio'), impL.destinazione('media', 'lezione.mp3', 'ALFA'));
-    check('un PDF va in PDF', path.join('Progetti', 'ALFA', matL.CARTELLA, 'PDF'),
+      path.join('Corsi', 'ALFA', matL.CARTELLA, 'Audio'), impL.destinazione('media', 'lezione.mp3', 'ALFA'));
+    check('un PDF va in PDF', path.join('Corsi', 'ALFA', matL.CARTELLA, 'PDF'),
       impL.destinazione('pdf', 'dispensa.pdf', 'ALFA'));
-    check('senza progetto resta la radice del vault (uso storico)', 'Media',
+    check('senza corso resta la radice del vault (uso storico)', 'Media',
       impL.destinazione('media', 'lezione.mp4', null));
   }
 
@@ -1411,23 +1411,23 @@ async function modelloFinto(o) {
        numero, il confronto falliva, ogni capitolo restava senza fonti e veniva
        scartato — e l'utente leggeva «il modello non ha prodotto scalette
        utilizzabili» su una risposta perfettamente sensata. */
-    const corso = { folder: '03-delega', title: 'Delega', materiali: [
+    const lezione = { folder: '03-delega', title: 'Delega', materiali: [
       { num: '34', source: '34 Lesson 4： A closer look at Delegation ｜ AI Fluency [EljzyfdYkrc].webm' },
       { num: '07', source: '07 Altra lezione qualsiasi.mp4' }
     ] };
     const titolo = 'Lesson 4: A closer look at Delegation | AI Fluency [EljzyfdYkrc]';
-    check('il numero esatto si riconosce', '34', scaL.numeroDiFonte('34', corso));
-    check('il titolo riporta al suo numero', '34', scaL.numeroDiFonte(titolo, corso));
+    check('il numero esatto si riconosce', '34', scaL.numeroDiFonte('34', lezione));
+    check('il titolo riporta al suo numero', '34', scaL.numeroDiFonte(titolo, lezione));
     check('la punteggiatura a larghezza piena non conta', '34',
-      scaL.numeroDiFonte('34 Lesson 4： A closer look at Delegation ｜ AI Fluency [EljzyfdYkrc].webm', corso));
-    check('un materiale di un altro corso non passa', '', scaL.numeroDiFonte('99', corso));
-    check('e nemmeno un titolo che non c\'entra', '', scaL.numeroDiFonte('Tutt\'altro argomento', corso));
+      scaL.numeroDiFonte('34 Lesson 4： A closer look at Delegation ｜ AI Fluency [EljzyfdYkrc].webm', lezione));
+    check('un materiale di un\'altra lezione non passa', '', scaL.numeroDiFonte('99', lezione));
+    check('e nemmeno un titolo che non c\'entra', '', scaL.numeroDiFonte('Tutt\'altro argomento', lezione));
 
     // l'alternativa intera sopravvive, che il modello citi per numero o per nome
     const perNome = scaL.normalizza({ nome: 'Sequenza', capitoli: [
       { titolo: 'Primo', sintesi: 's', fonti: [{ materiale: titolo, da: 0, a: 60 }] },
       { titolo: 'Secondo', sintesi: 's', fonti: [{ materiale: '07' }] }
-    ] }, corso);
+    ] }, lezione);
     check('i capitoli citati per nome non si perdono', 2, perNome.capitoli.length);
     check('e la fonte è ricondotta al numero', ['34', '07'], perNome.capitoli.map((c) => c.fonti[0].materiale));
     check('coprendo tutti i materiali, l\'alternativa risulta completa', true, perNome.completa);
@@ -1439,33 +1439,33 @@ async function modelloFinto(o) {
   }
 
   // ------------------------------- il piano deve accettare l'esito della generazione
-  sezione('Piano — segnare un corso come generato non deve far fallire il salvataggio');
+  sezione('Piano — segnare una lezione come generata non deve far fallire il salvataggio');
   {
     const valP = require('../lib/validate');
     const base = {
-      schema: 2, project: 'P', wizardStep: 4, status: 'approvato', granularity: 'atomico',
-      corsi: [{ folder: '01-un-corso', title: 'Un corso', rationale: 'perché sì',
+      schema: 2, course: 'P', wizardStep: 4, status: 'approvato', granularity: 'atomico',
+      lezioni: [{ folder: '01-un-lezione', title: 'Una lezione', rationale: 'perché sì',
         materiali: [{ source: '01', type: 'video' }], status: 'approvato' }]
     };
     check('il piano di partenza è valido', [], valP.schemaErrors('piano', base));
 
     /* Il difetto: gen:start scriveva i capitoli come {ordine, titolo, file},
        ma il piano li vuole come {file, title}. scriviPiano rifiutava, l'errore
-       non veniva guardato, e il piano restava indietro: il corso appariva
-       ancora «da scrivere» dopo essere stato scritto. */
+       non veniva guardato, e il piano restava indietro: la lezione appariva
+       ancora «da scrivere» dopo essere stata scritta. */
     const vecchiaForma = JSON.parse(JSON.stringify(base));
-    vecchiaForma.corsi[0].capitoli = [{ ordine: 1, titolo: 'Primo', file: '01-primo.md' }];
+    vecchiaForma.lezioni[0].capitoli = [{ ordine: 1, titolo: 'Primo', file: '01-primo.md' }];
     check('la forma sbagliata viene ancora rifiutata (è giusto così)', true,
       valP.schemaErrors('piano', vecchiaForma).length > 0);
 
     const nuovaForma = JSON.parse(JSON.stringify(base));
-    nuovaForma.corsi[0].status = 'generato';
-    nuovaForma.corsi[0].capitoli = [{ file: '01-primo.md', title: 'Primo', status: 'generato' }];
+    nuovaForma.lezioni[0].status = 'generato';
+    nuovaForma.lezioni[0].capitoli = [{ file: '01-primo.md', title: 'Primo', status: 'generato' }];
     check('la forma che scrive la generazione passa', [], valP.schemaErrors('piano', nuovaForma));
 
     // «parziale» è uno stato che il codice produce davvero, quando qualche capitolo è scartato
     const parziale = JSON.parse(JSON.stringify(nuovaForma));
-    parziale.corsi[0].status = 'parziale';
+    parziale.lezioni[0].status = 'parziale';
     check('e «parziale» è uno stato ammesso', [], valP.schemaErrors('piano', parziale));
   }
 
@@ -1477,26 +1477,26 @@ async function modelloFinto(o) {
     const proposeL = require('../lib/propose');
     const validateL = require('../lib/validate');
 
-    /* Il caso vero: un corso ha un campo che si CHIAMA «title», e in JSON Schema
+    /* Il caso vero: una lezione ha un campo che si CHIAMA «title», e in JSON Schema
        «title» è anche una parola chiave di metadati. Toglierla ovunque cancellava
        il campo e lasciava `required: ["title"]` a puntare nel vuoto: Gemini
        rifiutava l'intera richiesta con «property is not defined». */
     const conTitle = {
       type: 'object', title: 'Metadato da togliere',
-      properties: { corsi: { type: 'array', maxItems: 9, items: {
+      properties: { lezioni: { type: 'array', maxItems: 9, items: {
         type: 'object', additionalProperties: false,
         properties: { title: { type: 'string', maxLength: 120, title: 'etichetta' }, materiali: { type: 'array', items: { type: 'string' } } },
         required: ['title', 'materiali'] } } },
-      required: ['corsi']
+      required: ['lezioni']
     };
     const pulito = goog.schemaPulito(conTitle);
-    const campi = Object.keys(pulito.properties.corsi.items.properties);
+    const campi = Object.keys(pulito.properties.lezioni.items.properties);
     check('il campo che si chiama «title» sopravvive', true, campi.indexOf('title') >= 0);
-    check('e required resta soddisfacibile', [], pulito.properties.corsi.items.required.filter((r) => campi.indexOf(r) < 0));
+    check('e required resta soddisfacibile', [], pulito.properties.lezioni.items.required.filter((r) => campi.indexOf(r) < 0));
     check('il «title» di metadati viene tolto', false, 'title' in pulito);
-    check('anche quello dentro la definizione di un campo', false, 'title' in pulito.properties.corsi.items.properties.title);
+    check('anche quello dentro la definizione di un campo', false, 'title' in pulito.properties.lezioni.items.properties.title);
     check('e le parole chiave che Gemini rifiuta spariscono', [false, false],
-      ['maxItems' in pulito.properties.corsi, 'additionalProperties' in pulito.properties.corsi.items]);
+      ['maxItems' in pulito.properties.lezioni, 'additionalProperties' in pulito.properties.lezioni.items]);
 
     /* Guardia generale: per OGNI schema che l'app manda davvero a Gemini,
        dopo la ripulitura nessun `required` deve restare orfano. Vale anche per
@@ -1530,7 +1530,7 @@ async function modelloFinto(o) {
     check('maiuscole e spazi non contano', 'fr', lingua.normalizza('  FR '));
     check('un codice ignoto ricade sull\'italiano', 'it', lingua.normalizza('klingon'));
     check('l\'assenza di scelta ricade sull\'italiano', 'it', lingua.normalizza(undefined));
-    // «auto» vale per la trascrizione, non per la scrittura: un corso deve uscire in UNA lingua
+    // «auto» vale per la trascrizione, non per la scrittura: una lezione deve uscire in UNA lingua
     check('«auto» non è una lingua di uscita', 'it', lingua.normalizza('auto'));
     check('il nome esteso è in italiano', 'inglese', lingua.nome('en'));
 
@@ -1563,7 +1563,7 @@ async function modelloFinto(o) {
     const corpL = require('../lib/corpus');
     const os3 = require('os');
     const VN = fs.mkdtempSync(path.join(os3.tmpdir(), 'studia-muto-'));
-    const dir = (s) => { const d = path.join(VN, 'Progetti', 'P', 'MATERIALI', s); fs.mkdirSync(d, { recursive: true }); return d; };
+    const dir = (s) => { const d = path.join(VN, 'Corsi', 'P', 'MATERIALI', s); fs.mkdirSync(d, { recursive: true }); return d; };
     fs.writeFileSync(path.join(dir('Video'), '01 con trascrizione.mp4'), 'x');
     fs.writeFileSync(path.join(dir('Trascrizioni'), '01 con trascrizione.json'),
       JSON.stringify({ segments: [{ start: 0, end: 10, text: 'testo della lezione' }] }));
@@ -1574,7 +1574,7 @@ async function modelloFinto(o) {
     /* Il guasto da cui nasce tutto questo: `digest` restituiva `null` per il
        materiale senza indice, e quel materiale spariva. Un digest amputato non
        si vede — rende ciechi in modo coerente le schede, il gate dell'80% e il
-       recupero dei mancanti — e produce corsi che ignorano metà del corpus. */
+       recupero dei mancanti — e produce lezioni che ignorano metà del corpus. */
     const d = corpL.digest(VN, 'P');
     check('nel digest ci sono i soli materiali elaborati', 2, d.totale);
     check('ma quello senza indice è dichiarato', ['02'], d.senzaIndice.map((m) => m.num));
@@ -1653,7 +1653,7 @@ async function modelloFinto(o) {
        titolo lo calcolano in due: `corpus.titoloDi` nel processo principale e
        `titoloMateriale` nel renderer, che non può richiamare i moduli di lib/.
        Due copie della stessa regola divergono sempre — è già successo con
-       l'ordinamento dei corsi — quindi qui si confrontano. */
+       l'ordinamento delle lezioni — quindi qui si confrontano. */
     const corpL2 = require('../lib/corpus');
     const html = fs.readFileSync(path.join(__dirname, '..', 'App', 'StudIA.html'), 'utf-8');
     const corpo = /function titoloMateriale\(file\)\{([\s\S]*?)\n\}/.exec(html);
@@ -1678,7 +1678,7 @@ async function modelloFinto(o) {
     ];
     let giro = 0; const visti = [];
     const esito = await genL.generaCapitolo('/vault/inesistente',
-      { folder: '01-corso', title: 'Corso' },
+      { folder: '01-lezione', title: 'Lezione' },
       { titolo: 'Capitolo', fonti: [{ materiale: '03' }] }, 1, 1,
       [{ num: '03', nome: 'd.pdf', tipo: 'pdf', titolo: 'Dispensa', npagine: 40 }],
       { chiama: async (o) => { visti.push(o.utente); return { ok: true, dati: risposte[giro++] }; } });
@@ -1790,7 +1790,7 @@ async function modelloFinto(o) {
   }
 
   // --------------------------------- percorsi: le varianti composte dal composer
-  sezione('Percorsi — una mappa corso → indice, e i capitoli condivisi contati una volta');
+  sezione('Percorsi — una mappa lezione → indice, e i capitoli condivisi contati una volta');
   {
     const perc = require('../lib/percorsi');
     const scaL = require('../lib/scaletta');
@@ -1811,10 +1811,10 @@ async function modelloFinto(o) {
       /Numero dei capitoli/.test(scaL.messaggio({ title: 'X', materiali: [] }, {}, '', '')));
 
     const VP = fs.mkdtempSync(path.join(os.tmpdir(), 'studia-perc-'));
-    const CORSI = ['01-intro', '02-delega', '03-fine'];
-    // due indici per corso, con un numero di capitoli diverso: serve a distinguere i conti
+    const LEZIONI = ['01-intro', '02-delega', '03-fine'];
+    // due indici per lezione, con un numero di capitoli diverso: serve a distinguere i conti
     const scalette = {};
-    CORSI.forEach((f, i) => {
+    LEZIONI.forEach((f, i) => {
       const alternative = [
         { nome: 'Sequenza', capitoli: [{ titolo: 'a' }, { titolo: 'b' }] },
         { nome: 'Per domande', capitoli: [{ titolo: 'c' }, { titolo: 'd' }, { titolo: 'e' }] }
@@ -1827,7 +1827,7 @@ async function modelloFinto(o) {
     check('e con loro il numero di capitoli chiesto', 5, riletta['01-intro'].nCapitoli);
     check('quando non è stato chiesto resta null', null, riletta['02-delega'].nCapitoli);
 
-    /* Due percorsi che scelgono lo stesso indice per un corso condividono quei
+    /* Due percorsi che scelgono lo stesso indice per una lezione condividono quei
        capitoli: si scrivono una volta sola. È l'unica ragione per cui otto
        varianti non costano otto volte, quindi il conto deve dirlo. */
     const gufo = { id: 'gufo', nome: 'Analitica', scelte: {
@@ -1838,8 +1838,8 @@ async function modelloFinto(o) {
     const salvati = perc.leggiTutti(VP, 'P');
     check('i percorsi si rileggono, in ordine di personaggio', ['gufo', 'tarta'], salvati.map((p) => p.id));
     check('l\'emoji viene dal personaggio, non da chi salva', '🦉', salvati[0].emoji);
-    check('il buco è il corso senza indice', ['03-fine'], perc.buchi(salvati[1], CORSI));
-    check('e chi ha scelto tutto non ne ha', [], perc.buchi(salvati[0], CORSI));
+    check('il buco è la lezione senza indice', ['03-fine'], perc.buchi(salvati[1], LEZIONI));
+    check('e chi ha scelto tutto non ne ha', [], perc.buchi(salvati[0], LEZIONI));
     check('la coppia scelta da due percorsi è contata due volte', 2, perc.coppie(salvati)['01-intro:0']);
 
     /* Coppie distinte: 01:0 (2 cap) · 02:1 (3) · 03:0 (2) · 02:0 (2) = 9 da scrivere.
@@ -1864,7 +1864,7 @@ async function modelloFinto(o) {
     check('un personaggio inventato non si salva', true, (() => {
       try { perc.scrivi(VP, 'P', { id: 'unicorno', scelte: {} }); return false; } catch (e) { return true; }
     })());
-    /* Le cartelle delle coppie corso+indice. Il suffisso c'è sempre, anche con
+    /* Le cartelle delle coppie lezione+indice. Il suffisso c'è sempre, anche con
        una variante sola: se comparisse solo alla seconda, la prima dovrebbe
        cambiare nome — e con lei i rimandi [[03-delega]] già scritti altrove. */
     const treAlt = [{ nome: 'Sequenza didattica' }, { nome: 'Per domande' }, { nome: 'Sequenza didattica' }];
@@ -1904,34 +1904,1025 @@ async function modelloFinto(o) {
     check('la cartella di una scelta si ritrova anche a posteriori', '01-intro--sequenza',
       perc.cartellaDi(gufo, '01-intro', scalette));
 
-    /* La cartella della coppia, con il suo `_corso.md`. Il titolo resta quello
-       del corso base: due varianti sono lo stesso corso, e distinguerle nel
-       titolo le farebbe leggere come due corsi diversi nell'indice. */
-    const corsoBase = { folder: '02-delega', title: 'La competenza di Delega', area: 'AI',
+    /* La cartella della coppia, con il suo `_lezione.md`. Il titolo resta quello
+       della lezione base: due varianti sono la stessa lezione, e distinguerle nel
+       titolo le farebbe leggere come due lezioni diverse nell'indice. */
+    const lezioneBase = { folder: '02-delega', title: 'La competenza di Delega', area: 'AI',
                         materiali: [{ num: '07' }, { num: '03' }] };
     const coppia = { cartella: '02-delega--per-domande', folder: '02-delega', nome: 'Per domande', capitoli: [] };
-    const prep = perc.preparaCartella(VP, 'P', corsoBase, coppia, {});
-    const corsoMd = fs.readFileSync(path.join(prep.dir, '_corso.md'), 'utf-8');
-    check('il titolo è quello del corso, non quello della variante', true, /title: "La competenza di Delega"/.test(corsoMd));
-    check('la variante è dichiarata nel frontmatter', true, /variante: "Per domande"/.test(corsoMd));
-    check('e con lei il corso da cui nasce', true, /corso_base: "02-delega"/.test(corsoMd));
-    // stessa forma che scrive `plan:approve` per i corsi normali: due modi diversi divergerebbero
-    check('i materiali del corso base ci sono tutti', true, /materiali: \[07, 03\]/.test(corsoMd));
+    const prep = perc.preparaCartella(VP, 'P', lezioneBase, coppia, {});
+    const lezioneMd = fs.readFileSync(path.join(prep.dir, '_lezione.md'), 'utf-8');
+    check('il titolo è quello della lezione, non quello della variante', true, /title: "La competenza di Delega"/.test(lezioneMd));
+    check('la variante è dichiarata nel frontmatter', true, /variante: "Per domande"/.test(lezioneMd));
+    check('e con lei la lezione da cui nasce', true, /lezione_base: "02-delega"/.test(lezioneMd));
+    // stessa forma che scrive `plan:approve` per le lezioni normali: due modi diversi divergerebbero
+    check('i materiali della lezione base ci sono tutti', true, /materiali: \[07, 03\]/.test(lezioneMd));
 
     // un capitolo già scritto: senza «riscrivi» non si tocca, con «riscrivi» sparisce prima
     fs.writeFileSync(path.join(prep.dir, '01-primo.md'), '---\ntitle: "x"\n---\n', 'utf-8');
-    fs.writeFileSync(path.join(prep.dir, '_corso.md'), corsoMd.replace('approvato', 'generato'), 'utf-8');
-    perc.preparaCartella(VP, 'P', corsoBase, coppia, {});
+    fs.writeFileSync(path.join(prep.dir, '_lezione.md'), lezioneMd.replace('approvato', 'generato'), 'utf-8');
+    perc.preparaCartella(VP, 'P', lezioneBase, coppia, {});
     check('senza riscrivere, i capitoli restano', ['01-primo.md'], perc.capitoliSulDisco(VP, 'P', coppia.cartella));
-    check('e il _corso.md non viene sovrascritto', true,
-      /status: "generato"/.test(fs.readFileSync(path.join(prep.dir, '_corso.md'), 'utf-8')));
-    const rip = perc.preparaCartella(VP, 'P', corsoBase, coppia, { riscrivi: true });
+    check('e il _lezione.md non viene sovrascritto', true,
+      /status: "generato"/.test(fs.readFileSync(path.join(prep.dir, '_lezione.md'), 'utf-8')));
+    const rip = perc.preparaCartella(VP, 'P', lezioneBase, coppia, { riscrivi: true });
     check('riscrivendo, i capitoli vecchi si tolgono PRIMA', ['01-primo.md'], rip.tolti);
     check('e la cartella resta vuota per i nuovi', [], perc.capitoliSulDisco(VP, 'P', coppia.cartella));
 
     check('i percorsi stanno in PERCORSI/, fuori da _lavorazione', true,
       perc.dir(VP, 'P').endsWith(path.join('P', 'PERCORSI')) && perc.scaletteDir(VP, 'P').indexOf('_lavorazione') > 0);
     fs.rmSync(VP, { recursive: true, force: true });
+  }
+
+  // ------------------- il taglio delle lezioni corretto a mano, e ciò che invalida
+  sezione('Piano — correggere le lezioni rinumera le cartelle, e le scalette appese cadono');
+  {
+    const pe = require('../lib/pianoedit');
+    const perc = require('../lib/percorsi');
+    const piano = () => ({ lezioni: [
+      { folder: '01-intro', title: 'Introduzione', materiali: [{ num: '01' }, { num: '02' }] },
+      { folder: '02-delega', title: 'Delega', materiali: [{ num: '03' }] },
+      { folder: '03-fine', title: 'Conclusione', materiali: [{ num: '04' }] }
+    ] });
+
+    check('unire porta i materiali nel primo e toglie il secondo', ['01', '02', '03'],
+      pe.applica(piano(), 'unisci', 0).lezioni[0].materiali.map((m) => m.num));
+    check('e rinumera tutto ciò che segue', ['01-introduzione', '02-conclusione'],
+      pe.applica(piano(), 'unisci', 0).lezioni.map((c) => c.folder));
+    check('separare stacca l\'ultimo materiale in una lezione a sé', 4,
+      pe.applica(piano(), 'separa', 0).lezioni.length);
+    check('spostare in su scambia due lezioni', ['01-delega', '02-introduzione', '03-conclusione'],
+      pe.applica(piano(), 'su', 1).lezioni.map((c) => c.folder));
+    check('passare l\'ultimo materiale alla lezione dopo', ['02', '03'],
+      pe.applica(piano(), 'giu-mat', 0).lezioni[1].materiali.map((m) => m.num));
+    check('un comando impossibile non fa niente', ['01-intro', '02-delega', '03-fine'],
+      pe.applica(piano(), 'su', 0).lezioni.map((c) => c.folder));
+    check('il titolo decide il nome della cartella', '01-la-delega-consapevole',
+      (() => { const p = piano(); p.lezioni[0].title = 'La delega consapevole'; return pe.rinumera(p).lezioni[0].folder; })());
+    check('un titolo che inizia col numero non lo ripete', 'la-parte-prima', pe.slugLezione('03 - La parte prima'));
+
+    /* Il punto: `02-delega` continua a esistere dopo l'unione, ma è un'ALTRA
+       lezione. Una scaletta rimasta lì proporrebbe capitoli su materiali che quella
+       lezione non ha — sembrando giusta. */
+    const dopo = pe.applica(piano(), 'unisci', 0);
+    check('la cartella sopravvissuta con altri materiali è «cambiata»', ['01-intro', '02-delega', '03-fine'],
+      pe.cartelleCambiate(piano(), dopo).sort());
+    check('senza modifiche non cambia niente', [], pe.cartelleCambiate(piano(), piano()));
+
+    const VI = fs.mkdtempSync(path.join(os.tmpdir(), 'studia-inval-'));
+    perc.scriviScaletta(VI, 'P', '01-intro', [{ nome: 'A', capitoli: [{ titolo: 'x' }] }], null);
+    perc.scriviScaletta(VI, 'P', '03-fine', [{ nome: 'B', capitoli: [{ titolo: 'y' }] }], null);
+    perc.salvaTutti(VI, 'P', [
+      { id: 'gufo', nome: 'Analitica', scelte: { '01-intro': { indice: 0 }, '03-fine': { indice: 0 } } },
+      { id: 'tarta', nome: 'Sequenziale', scelte: { '01-intro': { indice: 0 } } }
+    ]);
+    const morte = perc.invalida(VI, 'P', ['01-intro']);
+    check('la scaletta della cartella cambiata sparisce', ['01-intro'], morte.scalette);
+    check('quella intatta resta', ['03-fine'], Object.keys(perc.leggiScalette(VI, 'P')));
+    check('e la scelta che la usava sparisce dal percorso', ['03-fine'],
+      Object.keys(perc.leggiTutti(VI, 'P').find((p) => p.id === 'gufo').scelte));
+    check('un percorso rimasto senza scelte non è più un percorso', ['gufo'],
+      perc.leggiTutti(VI, 'P').map((p) => p.id));
+    check('invalidare niente non tocca niente', { scalette: [], percorsi: [] }, perc.invalida(VI, 'P', []));
+    fs.rmSync(VI, { recursive: true, force: true });
+
+    /* Quante alternative chiedere: è un'opzione, non più una costante. Fuori
+       dai limiti si torna al valore di partenza invece di chiedere «1 scaletta
+       alternativa», che è una contraddizione. */
+    const scaL = require('../lib/scaletta');
+    check('il numero chiesto arriva nel prompt di sistema', true, /proponi 5 SCALETTE/.test(scaL.sistema(5)));
+    check('e nel messaggio all\'utente', true,
+      /Proponi 5 scalette/.test(scaL.messaggio({ title: 'X', materiali: [] }, {}, '', '', 0, 5)));
+    check('senza numero resta il valore di partenza', true, /proponi 3 SCALETTE/.test(scaL.sistema(null)));
+    check('un numero assurdo non passa', 3, scaL.quante(1));
+    check('e nemmeno uno enorme', 3, scaL.quante(40));
+    check('sei alternative sono ancora ammesse', 6, scaL.quante(6));
+  }
+
+  /* ================================================================= mappe
+     I moduli di App/assets/mappa/ sono UMD proprio per finire qui: il renderer
+     li carica con un <script>, questi controlli li richiedono da Node, e le due
+     metà non possono divergere perché sono lo stesso file (trappola ④). */
+  sezione('Mappe — igiene del grafo: i livelli non si credono, si ricalcolano');
+  {
+    const MG = require('../App/assets/mappa/grafo');
+
+    // livelli dichiarati sbagliati: devono essere riscritti dalla struttura
+    const bugiardo = MG.sanitizza({
+      nodi: [{ id: 'r', livello: 5 }, { id: 'a', livello: 0 }, { id: 'b', livello: 9 }],
+      archi: [{ da: 'r', a: 'a' }, { da: 'a', a: 'b' }]
+    });
+    check('i livelli vengono dalla struttura, non dal file',
+      { r: 0, a: 1, b: 2 },
+      bugiardo.nodi.reduce((o, n) => (o[n.id] = n.livello, o), {}));
+    check('e la riparazione viene detta', true, /livelli ricalcolati/.test(bugiardo.note.join(' ')));
+
+    // il gruppo (cioè il colore) si eredita dall'antenato di primo livello
+    const colori = MG.sanitizza({
+      nodi: [{ id: 'r' }, { id: 'a' }, { id: 'b' }, { id: 'a1' }, { id: 'b1' }],
+      archi: [{ da: 'r', a: 'a' }, { da: 'r', a: 'b' }, { da: 'a', a: 'a1' }, { da: 'b', a: 'b1' }]
+    });
+    const g = colori.nodi.reduce((o, n) => (o[n.id] = n.gruppo, o), {});
+    check('due rami diversi hanno gruppi diversi', true, g.a !== g.b);
+    check('il figlio prende il gruppo del suo ramo', [true, true], [g.a1 === g.a, g.b1 === g.b]);
+
+    // un arco verso il nulla si toglie, ma lo si dice
+    const orfano = MG.sanitizza({ nodi: [{ id: 'x' }], archi: [{ da: 'x', a: 'fantasma' }] });
+    check('l\'arco verso un nodo inesistente sparisce', 0, orfano.archi.length);
+    check('e finisce nelle note invece di sparire in silenzio', true, /archi verso nodi inesistenti/.test(orfano.note.join(' ')));
+
+    // cappi e doppioni sono rumore, non errori da segnalare
+    check('cappi e archi doppi si tolgono senza rumore', 1,
+      MG.sanitizza({ nodi: [{ id: 'a' }, { id: 'b' }],
+        archi: [{ da: 'a', a: 'a' }, { da: 'a', a: 'b' }, { da: 'a', a: 'b' }] }).archi.length);
+
+    // i due fuochi chiesti: un salto, e la linea di sangue intera
+    const fuoco = { nodi: [{ id: 'r' }, { id: 'a' }, { id: 'b' }, { id: 'a1' }, { id: 'a2' }],
+                    archi: [{ da: 'r', a: 'a' }, { da: 'r', a: 'b' }, { da: 'a', a: 'a1' }, { da: 'a1', a: 'a2' }] };
+    check('vicini: solo chi tocca il nodo', ['a', 'a1', 'a2'].sort(), MG.vicini(fuoco, 'a1').sort());
+    check('parentela: antenati e discendenti, non i fratelli', ['a', 'a1', 'a2', 'r'], MG.parentela(fuoco, 'a1').sort());
+    check('discendenti lungo la foresta', ['a1', 'a2'], MG.discendenti(fuoco, 'a').sort());
+
+    /* Rami chiusi. Il sottoalbero esce dal GRAFO, non si nasconde nel disegno:
+       chiudere un ramo serve a restituire spazio agli altri, e un nodo lasciato
+       lì invisibile terrebbe il buco dov'era. */
+    const chiuso = MG.senzaRami(fuoco, { a: 1 });
+    check('chiudendo un ramo sparisce tutto il sottoalbero', ['b', 'r', 'a'].sort(),
+      chiuso.grafo.nodi.map((n) => n.id).sort());
+    check('e si conta quanto è stato nascosto', 2, chiuso.quanti.a);
+    check('il tasto del ramo chiuso dice «chiuso»', 'chiuso', chiuso.chiudibili.a);
+    check('quello della radice resta «aperto»', 'aperto', chiuso.chiudibili.r);
+    check('una foglia non ha nessun tasto', undefined, chiuso.chiudibili.b);
+    check('gli archi verso i nodi spariti se ne vanno con loro', 2, chiuso.grafo.archi.length);
+    check('senza rami chiusi il grafo è lo stesso oggetto', true, MG.senzaRami(fuoco, {}).grafo === fuoco);
+    check('un id che non esiste più si ignora invece di far saltare tutto',
+      5, MG.senzaRami(fuoco, { 'sparito': 1 }).grafo.nodi.length);
+    check('chiudere una foglia non nasconde niente', 5, MG.senzaRami(fuoco, { b: 1 }).grafo.nodi.length);
+
+    /* «Fissato» è una domanda sola, e la fanno in tre: i motori, le operazioni
+       di modifica e il menu contestuale. Sta nel vocabolario del modello perché
+       tre letture a occhio della stessa condizione sono tre condizioni diverse.
+       ⚠️ Il controllo è sul TIPO: `+null` e `+''` fanno zero, e lo zero è una
+       posizione legittima — un nodo posato sull'origine non deve risultare
+       indistinguibile da uno che nessuno ha mai spostato. */
+    check('x e y, entrambe numeri: il nodo è fissato', true, MG.fissato({ x: 120, y: -40 }));
+    check('l\'origine è una posizione come le altre', true, MG.fissato({ x: 0, y: 0 }));
+    check('i decimali e i negativi valgono', true, MG.fissato({ x: -12.5, y: 0.25 }));
+    check('una coordinata sola non fissa niente', [false, false],
+      [MG.fissato({ x: 120 }), MG.fissato({ y: 120 })]);
+    check('una stringa non è ancora un numero', false, MG.fissato({ x: '120', y: '40' }));
+    check('e nemmeno il vuoto, il nulla o il non-numero',
+      [false, false, false, false, false],
+      [MG.fissato({ x: '', y: '' }), MG.fissato({ x: null, y: null }),
+       MG.fissato({ x: NaN, y: 3 }), MG.fissato({ x: 3, y: Infinity }), MG.fissato({})]);
+    check('un nodo che non c\'è non è fissato', [false, false], [MG.fissato(null), MG.fissato(undefined)]);
+  }
+
+  sezione('Mappe — i quattro motori: deterministici e senza card sovrapposte');
+  {
+    const ML = require('../App/assets/mappa/layouts');
+    const grande = (rami, figli) => {
+      const nodi = [{ id: 'r', testo: 'Radice' }], archi = [];
+      for (let i = 0; i < rami; i++) {
+        nodi.push({ id: 'a' + i, testo: 'Ramo ' + i }); archi.push({ da: 'r', a: 'a' + i, rel: 'comprende' });
+        for (let j = 0; j < figli; j++) { nodi.push({ id: 'a' + i + 'b' + j, testo: 'Foglia ' + i + '.' + j }); archi.push({ da: 'a' + i, a: 'a' + i + 'b' + j }); }
+      }
+      return { nodi, archi };
+    };
+    const casi = [grande(3, 2), grande(6, 4), grande(2, 0)];
+    ML.MOTORI.forEach((motore) => {
+      ['td', 'lr'].forEach((orient) => {
+        casi.forEach((g, i) => {
+          const m = ML.misura(ML.run(g, { motore, orient }));
+          check('nessuna card sovrapposta · ' + motore + '/' + orient + ' caso ' + i, 0, m.cardSovrapposte);
+        });
+      });
+    });
+
+    /* Il determinismo non è un dettaglio: su una mappa la memoria di DOVE sta un
+       concetto è parte di quello che si impara, e un layout che si riassesta a
+       ogni apertura la manda a monte. */
+    const g2 = grande(4, 3);
+    ML.MOTORI.forEach((motore) => {
+      const a = ML.run(g2, { motore }), b = ML.run(g2, { motore });
+      check('stesso grafo, stesso disegno · ' + motore, JSON.stringify(a.pos), JSON.stringify(b.pos));
+    });
+
+    // un ciclo non deve poter bloccare il disegno
+    const ciclo = { nodi: [{ id: 'a' }, { id: 'b' }, { id: 'c' }],
+                    archi: [{ da: 'a', a: 'b' }, { da: 'b', a: 'c' }, { da: 'c', a: 'a' }] };
+    const rc = ML.run(ciclo, { motore: 'dag' });
+    check('un ciclo si rompe invertendo un arco, non perdendolo', 1, rc.stats.invertiti);
+    check('e tutti i nodi restano sul foglio', 3, Object.keys(rc.pos).length);
+    check('grafo vuoto: nessuna eccezione', 0, Object.keys(ML.run({ nodi: [], archi: [] }, { motore: 'albero' }).pos).length);
+
+    // il percorso è una scaletta: i prerequisiti prima, numerati
+    const cat = { nodi: [{ id: 'z' }, { id: 'y' }, { id: 'x' }],
+                  archi: [{ da: 'x', a: 'y' }, { da: 'y', a: 'z' }] };
+    const p = ML.run(cat, { motore: 'percorso' });
+    check('il percorso numera i passi in ordine di prerequisito', [1, 2, 3], [p.passo.x, p.passo.y, p.passo.z]);
+
+    /* L'orientamento è una trasformazione finale sulle stesse coordinate
+       interne. Non è uno specchio — le distanze si misurano sulla dimensione
+       della card in QUEL verso, e una card è larga 168 e alta 48 — ma il livello
+       resta un livello: dall'alto è una riga, da sinistra è una colonna. */
+    const td = ML.run(g2, { motore: 'albero', orient: 'td' }), lr = ML.run(g2, { motore: 'albero', orient: 'lr' });
+    check('td e lr dispongono gli stessi nodi', Object.keys(td.pos).sort(), Object.keys(lr.pos).sort());
+    const stessoLivello = Object.keys(td.pos).filter((k) => td.pos[k].livello === 1);
+    check('dall\'alto un livello è una riga', 1, new Set(stessoLivello.map((k) => Math.round(td.pos[k].y))).size);
+    check('da sinistra lo stesso livello è una colonna', 1, new Set(stessoLivello.map((k) => Math.round(lr.pos[k].x))).size);
+    check('e i due versi non si somigliano per caso', true,
+      Math.round(td.bbox.w) !== Math.round(lr.bbox.w));
+  }
+
+  /* Il patto (PIANO-MAPPE-EDITOR §12.1, G1): un nodo è FISSATO se e solo se
+     porta `x` e `y`, entrambi numeri finiti. Trascinare un nodo scrive quelle
+     due coordinate e `mappe.js` le porta su disco: un motore che le ignorasse
+     rimetterebbe la mappa in ordine alla riapertura, e mezz'ora di sistemazione
+     sparirebbe senza che nessuno lo dica — la classe di guasto tipica di
+     quest'app. Il secondo pezzo è meno visibile e conta uguale: gli archi vanno
+     RI-instradati, altrimenti restano attaccati a dov'era il nodo e `misura()`
+     conta su una geometria che nessuno vede. */
+  sezione('Mappe — le posizioni fissate a mano vincono sul motore');
+  {
+    const ML = require('../App/assets/mappa/layouts');
+    const base = { nodi: [{ id: 'r', testo: 'Radice' }, { id: 'a', testo: 'A' },
+                          { id: 'b', testo: 'B' }, { id: 'c', testo: 'C' }],
+                   archi: [{ da: 'r', a: 'a' }, { da: 'r', a: 'b' }, { da: 'a', a: 'c' }] };
+    // `c` con le coordinate addosso, tutto il resto identico
+    const conC = (p) => ({ nodi: base.nodi.map((n) => (n.id === 'c' ? Object.assign({}, n, p) : n)),
+                           archi: base.archi });
+    const FUORI = { x: 640, y: -300 };            // dove nessun motore lo metterebbe
+    const altri = (res) => ['r', 'a', 'b'].map((k) => [k, res.pos[k].x, res.pos[k].y]);
+    // i capi degli archi che toccano `c`, filigrana del percorso compresa
+    const capiSuC = (res) => (res.archi || []).concat(res.extra || [])
+      .filter((a) => a.e.da === 'c' || a.e.a === 'c')
+      .map((a) => (a.e.a === 'c' ? a.punti[a.punti.length - 1] : a.punti[0]));
+    /* Sul BORDO vuol dire sul perimetro della card (168×48), non «vicino»: la
+       porta è un punto esatto su un lato, e mezzo pixel di tolleranza basta e
+       avanza per gli arrotondamenti. */
+    const sulBordo = (p, c) => {
+      const dx = Math.abs(p.x - c.x), dy = Math.abs(p.y - c.y);
+      return (Math.abs(dy - 24) < 0.5 && dx <= 84.5) || (Math.abs(dx - 84) < 0.5 && dy <= 24.5);
+    };
+
+    ML.MOTORI.forEach((motore) => {
+      const libero = ML.run(base, { motore });
+      const fisso = ML.run(conC(FUORI), { motore });
+      check('il nodo fissato resta dove l\'ha messo la mano · ' + motore,
+        [640, -300], [fisso.pos.c.x, fisso.pos.c.y]);
+      check('un nodo senza coordinate non si sposta di un pixel · ' + motore,
+        altri(libero), altri(fisso));
+      check('gli archi che lo raggiungono finiscono sul suo bordo · ' + motore, [true, true],
+        [capiSuC(fisso).length > 0, capiSuC(fisso).every((p) => sulBordo(p, fisso.pos.c))]);
+      check('e non dove il motore li avrebbe messi · ' + motore, false,
+        JSON.stringify(capiSuC(libero)) === JSON.stringify(capiSuC(fisso)));
+      check('il riquadro comprende il nodo fissato · ' + motore, [true, true],
+        [fisso.bbox.maxX >= 724 - 0.01, fisso.bbox.minY <= -324 + 0.01]);
+      check('misura() legge la geometria nuova · ' + motore, true,
+        ML.misura(fisso).larghezza > ML.misura(libero).larghezza);
+      check('quante posizioni sono fissate lo dicono le statistiche · ' + motore, 1, fisso.stats.fissate);
+      check('e il determinismo regge anche con le coordinate a mano · ' + motore,
+        JSON.stringify(fisso.pos), JSON.stringify(ML.run(conC(FUORI), { motore }).pos));
+    });
+
+    // da sinistra la porta cade sul lato verticale: il bordo è un altro, la regola no
+    const daSin = ML.run(conC(FUORI), { motore: 'albero', orient: 'lr' });
+    check('vale anche da sinistra, e l\'arco arriva sul lato giusto', [true, true],
+      [daSin.pos.c.x === 640 && daSin.pos.c.y === -300,
+       capiSuC(daSin).every((p) => sulBordo(p, daSin.pos.c))]);
+
+    /* Il pezzo che si perderebbe più facilmente è il secondo: non le card
+       spostate — quelle si vedono — ma gli archi ri-instradati. Qui il nodo
+       fissato sta esattamente sopra la radice, la mappa resta larga uguale, e
+       un arco che prima non passava su nessuna card ora ci passa sopra. Con la
+       geometria vecchia `misura()` direbbe zero. */
+    const prima = ML.misura(ML.run(base, { motore: 'albero' }));
+    const dopo = ML.misura(ML.run(conC({ x: 97, y: -300 }), { motore: 'albero' }));
+    check('un arco che ora passa sopra una card viene contato', [0, 1],
+      [prima.archiSuCard, dopo.archiSuCard]);
+    check('e non è il riquadro a dirlo: la larghezza è la stessa', prima.larghezza, dopo.larghezza);
+
+    /* Mezza coordinata non è una posizione: un nodo con la sola `x` finirebbe
+       su `y = 0`, che nessuno ha scelto. E una stringa non è un numero — sono
+       già numeri quando arrivano dal disco, e accettare "640" qui vorrebbe dire
+       avere due idee di che cos'è una coordinata. */
+    const dovEra = ML.run(base, { motore: 'albero' }).pos.c;
+    [['solo la x', { x: 640 }], ['solo la y', { y: -300 }],
+     ['una x che non è un numero', { x: NaN, y: -300 }],
+     ['coordinate scritte come stringhe', { x: '640', y: '-300' }],
+     ['una coordinata infinita', { x: Infinity, y: 0 }]].forEach((caso) => {
+      const r = ML.run(conC(caso[1]), { motore: 'albero' });
+      check(caso[0] + ': il nodo resta dove lo mette il motore',
+        [dovEra.x, dovEra.y], [r.pos.c.x, r.pos.c.y]);
+      check(caso[0] + ': e non conta come fissato', 0, r.stats.fissate);
+    });
+    /* Il motore non ha una sua idea di «fissato»: chiede a `grafo.fissato`, la
+       stessa che risponde a `modifica.libera` e al menu contestuale. */
+    check('e lo zero, che è una posizione, il motore lo onora',
+      [0, 0], (() => { const z = ML.run(conC({ x: 0, y: 0 }), { motore: 'albero' }); return [z.pos.c.x, z.pos.c.y]; })());
+    check('anche quando il motore lo avrebbe messo altrove', true,
+      dovEra.x !== 0 || dovEra.y !== 0);
+
+    // due nodi fissati non si contendono la passata: valgono tutti e due
+    const due = ML.run({ nodi: base.nodi.map((n) => (n.id === 'c' ? Object.assign({}, n, FUORI)
+                                        : n.id === 'b' ? Object.assign({}, n, { x: -500, y: 400 }) : n)),
+                         archi: base.archi }, { motore: 'albero' });
+    check('due nodi fissati stanno tutti e due dove sono stati messi',
+      [640, -300, -500, 400], [due.pos.c.x, due.pos.c.y, due.pos.b.x, due.pos.b.y]);
+    check('e le statistiche li contano entrambi', 2, due.stats.fissate);
+    check('senza nessuna coordinata il conto è zero', 0, ML.run(base, { motore: 'albero' }).stats.fissate);
+  }
+
+  sezione('Mappe — la vista generata esce dai file del capitolo, non dal modello');
+  {
+    const GEN = require('../App/assets/mappa/genera');
+    const DIS = require('../App/assets/mappa/disegna');
+    const REL = require('../App/assets/mappa/relazioni');
+    const ML2 = require('../App/assets/mappa/layouts');
+
+    // il capitolo arriva come lo produce il parser del lettore: HTML, non markdown
+    const cap = {
+      title: 'La decodifica',
+      brief: '<p>Leggere non è capire.</p>',
+      html: '<h3>Che cos\'è</h3><p>Vedi <a href="#" class="vlink" data-file="05 lez.mp4" data-t="132" data-label="2:12">2:12</a>.</p>' +
+            '<h4>Automatismo</h4><p>x</p>' +
+            '<h3>Come si valuta</h3><p><a href="#" class="plink" data-file="03 disp.pdf" data-page="7" data-label="p. 7">p. 7</a></p>',
+      keypoints: ['Uno &amp; due', 'Tre'],
+      glossary: [{ t: 'DSA', d: 'Disturbo specifico' }]
+    };
+    const gc = GEN.daCapitolo(cap, { glossario: true, indice: 3 });
+    const perTesto = (t) => gc.nodi.find((n) => n.testo === t);
+    check('la radice è il titolo del capitolo', 'La decodifica', gc.nodi[0].testo);
+    check('i titoli di sezione diventano rami', true, !!perTesto('Che cos\'è') && !!perTesto('Come si valuta'));
+    check('il sottotitolo sta sotto la sua sezione, non accanto', true,
+      gc.archi.some((a) => a.da === perTesto('Che cos\'è').id && a.a === perTesto('Automatismo').id));
+    check('l\'HTML dei punti chiave arriva come testo leggibile', true, !!perTesto('Uno & due'));
+
+    /* Il rimando è il pezzo che fa di una mappa uno strumento e non un disegno:
+       il nodo sa da dove viene, e il lettore lo riapre con `openNote`. */
+    check('il nodo della sezione porta il rimando che quella sezione cita',
+      { type: 'video', file: '05 lez.mp4', t: 132, label: '2:12' }, perTesto('Che cos\'è').rimando);
+    check('e la sezione col PDF porta la pagina',
+      { type: 'pdf', file: '03 disp.pdf', page: 7, label: 'p. 7' }, perTesto('Come si valuta').rimando);
+
+    // senza titoli di sezione i punti chiave SONO la mappa: nessun raccoglitore inutile
+    const nudo = GEN.daCapitolo({ title: 'T', brief: '', html: '<p>solo testo</p>', keypoints: ['a', 'b'], glossary: [] }, {});
+    check('capitolo senza sezioni: i punti chiave stanno sotto la radice', 3, nudo.nodi.length);
+    check('e non c\'è un livello «Punti chiave» che non serve', undefined, nudo.nodi.find((n) => n.testo === 'Punti chiave'));
+    const conGl = GEN.daCapitolo({ title: 'T', brief: '', html: '<p>x</p>', keypoints: ['a'], glossary: [{ t: 'X', d: 'd' }] }, { glossario: true });
+    check('col glossario invece i due gruppi si distinguono', true, !!conGl.nodi.find((n) => n.testo === 'Punti chiave'));
+
+    /* «Note e materiali» come ramo. Misurato su TD74: senza, 70 capitoli su 210
+       non avevano NESSUN nodo che riportasse alla fonte — la mappa si guardava
+       e basta. Le etichette arrivano già risolte da chi chiama: qui non si
+       ricostruisce il titolo di un materiale. */
+    const fonti = [{ type: 'video', file: '05 lez.mp4', t: 160, label: 'La definizione di Hammill' },
+                   { type: 'pdf', file: '03 disp.pdf', page: 21, label: 'A1: il criterio della discrepanza' },
+                   { type: 'pdf', file: '03 disp.pdf', page: 24, label: '' }];
+    const conFo = GEN.daCapitolo({ title: 'T', brief: '', html: '<p>x</p>', keypoints: ['a'], glossary: [] }, { fonti: fonti });
+    const rami = conFo.archi.filter((a) => a.da === conFo.nodi[0].id).map((a) => conFo.nodi.find((n) => n.id === a.a).testo);
+    check('le fonti diventano un ramo a sé', true, rami.indexOf('Note e materiali') >= 0);
+    check('una fonte senza etichetta non diventa un nodo muto', 2,
+      conFo.nodi.filter((n) => n.genere === 'fonte').length);
+    check('e ogni nodo-fonte apre il suo punto esatto',
+      [{ type: 'video', file: '05 lez.mp4', t: 160, label: 'La definizione di Hammill' },
+       { type: 'pdf', file: '03 disp.pdf', page: 21, label: 'A1: il criterio della discrepanza' }],
+      conFo.nodi.filter((n) => n.genere === 'fonte').map((n) => n.rimando));
+    check('senza fonti il ramo non compare', undefined,
+      GEN.daCapitolo({ title: 'T', brief: '', html: '', keypoints: ['a'], glossary: [] }, {})
+        .nodi.find((n) => n.testo === 'Note e materiali'));
+
+    // la mappa della lezione: i capitoli in ordine, ognuno sa dove portare
+    const lezione = { title: 'Lezione', chapters: [cap, { title: 'Secondo', brief: '', html: '', keypoints: [], glossary: [] }] };
+    const gk = GEN.daLezione(lezione, {});
+    check('ogni capitolo è un nodo che sa a quale capitolo porta', [0, 1],
+      gk.nodi.filter((n) => n.genere === 'capitolo').map((n) => n.capitolo));
+
+    // il disegno: markup autoconsistente, colori negli attributi
+    const svg = DIS.svg(ML2.run(gc, { motore: 'albero' }), { titolo: 'x' });
+    check('una card per nodo', gc.nodi.length, (svg.markup.match(/class="mnodo"/g) || []).length);
+    check('i colori stanno negli attributi, non in una classe', true, /fill="#/.test(svg.markup));
+    check('niente <marker>: le frecce sono disegnate', false, /<marker/.test(svg.markup));
+    check('il testo dell\'utente è sempre sfuggito', true,
+      DIS.svg(ML2.run({ nodi: [{ id: 'a', testo: '<script>ciao</script>' }], archi: [] }, {}), {}).markup.indexOf('<script>') < 0);
+
+    // le famiglie danno il colore agli archi: è ciò che rende «concettuale» una mappa
+    check('un verbo riconosciuto trova la sua famiglia', 'dipendenza', REL.famigliaDi('richiede'));
+    check('anche dentro una frase più lunga', 'trasformazione', REL.famigliaDi('Causa direttamente'));
+    check('un verbo sconosciuto non fa saltare niente', 'altro', REL.famigliaDi('sbrindella'));
+    check('senza verbo si resta neutri', 'altro', REL.famigliaDi(''));
+    check('la legenda dice solo le famiglie davvero usate', ['appartenenza'],
+      REL.legenda([{ rel: 'comprende' }, { rel: '' }]).map((f) => f.chiave));
+  }
+
+  /* La distinzione cromatica di Braynr (§3) e il bersaglio degli archi (§12.3,
+     G3). Il colore dice DA DOVE VIENE un nodo, il bordo dice la stessa cosa per
+     un altro canale: chi estrae un frammento e poi lo ricolora non deve perdere
+     l'informazione che quel nodo viene dalla fonte. */
+  sezione('Mappe — il colore dice l\'origine, e un arco si può prendere col mouse');
+  {
+    const ML3 = require('../App/assets/mappa/layouts');
+    const DIS3 = require('../App/assets/mappa/disegna');
+
+    const g3 = { nodi: [
+      { id: 'u', testo: 'Scritto a mano', origine: 'utente' },
+      { id: 'uc', testo: 'Estratto e ricolorato', origine: 'utente', colore: '#ff00ff' },
+      { id: 'f', testo: 'Estratto dalla fonte', origine: 'fonte' },
+      { id: 'gen', testo: 'Dalla vista generata', origine: 'generata' },
+      { id: 'muto', testo: 'Senza origine' }
+    ], archi: [{ da: 'u', a: 'uc', rel: 'comprende' }, { da: 'u', a: 'f' },
+               { da: 'f', a: 'gen', cross: true }, { da: 'u', a: 'muto' }] };
+    const res3 = ML3.run(g3, { motore: 'albero' });
+    const svg3 = DIS3.svg(res3, {}).markup;
+
+    const card = (mk, id) => (mk.match(new RegExp('<g class="mnodo" data-id="' + id + '"[\\s\\S]*?</g>')) || [''])[0];
+    // la barra d'accento è il SECONDO <rect> della card: il primo è la card
+    const accento = (mk, id) => {
+      const r = (card(mk, id).match(/<rect[^>]*\/>/g) || [])[1] || '';
+      return (r.match(/fill="([^"]*)"/) || [])[1];
+    };
+    const delRamo = (id) => DIS3.colore(res3.nodi.find((n) => n.id === id), DIS3.GRUPPI);
+
+    check('un nodo scritto ex novo è grigio', DIS3.TEMA.muted, accento(svg3, 'u'));
+    check('ma il colore scelto a mano vince su tutto', '#ff00ff', accento(svg3, 'uc'));
+    check('un nodo estratto porta il colore del suo ramo', delRamo('f'), accento(svg3, 'f'));
+    check('e così quello della vista generata', delRamo('gen'), accento(svg3, 'gen'));
+    check('senza origine si resta al colore del ramo', delRamo('muto'), accento(svg3, 'muto'));
+    check('il grigio non è un hex del modulo: viene dal tema', '#8a8f98',
+      accento(DIS3.svg(res3, { tema: { muted: '#8a8f98' } }).markup, 'u'));
+    check('e il grigio non si mangia il colore del ramo degli altri', true,
+      delRamo('f') !== DIS3.TEMA.muted);
+
+    /* Colore e origine sono DUE canali: il tratteggio resta all'origine, così
+       un nodo estratto e ricolorato continua a dire da dove viene. */
+    const tratteggiato = (id) => /stroke-dasharray="4 3"/.test(card(svg3, id));
+    check('il bordo tratteggiato dice l\'origine, non il colore',
+      [true, true, false, false], ['u', 'uc', 'f', 'gen'].map(tratteggiato));
+
+    /* Il bersaglio degli archi. Una linea da 1,4px non si prende col mouse, e
+       il menu contestuale sull'arco (L4) non si aprirebbe mai. */
+    const marchi = svg3.match(/<g class="marco"[\s\S]*?<\/g>/g) || [];
+    const paths = (s) => s.match(/<path[^>]*\/>/g) || [];
+    check('un gruppo per arco', res3.archi.length, marchi.length);
+    check('ognuno ha il suo bersaglio, e PRIMA del tratto visibile', [4, 4],
+      [marchi.filter((s) => /pointer-events="stroke"/.test(s)).length,
+       marchi.filter((s) => /pointer-events="stroke"/.test(paths(s)[0] || '')).length]);
+    check('il bersaglio è invisibile, spesso e senza riempimento', [true, true, true],
+      [/stroke-opacity="0"/.test(paths(marchi[0])[0]), /stroke-width="12"/.test(paths(marchi[0])[0]),
+       /fill="none"/.test(paths(marchi[0])[0])]);
+    check('e segue esattamente lo stesso tracciato del tratto visibile',
+      (paths(marchi[0])[0].match(/ d="([^"]*)"/) || [])[1],
+      (paths(marchi[0])[1].match(/ d="([^"]*)"/) || [])[1]);
+    check('il tratto visibile non è cambiato', true,
+      /stroke-width="1.4"/.test(paths(marchi[0])[1]));
+
+    /* ⚠️ Nel motore **Percorso** `res.archi` non sono i legami della mappa: sono
+       i segmenti del filo che numera il percorso, e i legami veri passano in
+       `res.extra`, in filigrana. Prima il gruppo `.marco` — cioè il bersaglio
+       del mouse e i capi che il menu contestuale legge — finiva sul filo: su
+       quel motore si poteva «invertire» un segmento inesistente, e gli archi
+       davvero scritti dall'utente non si potevano né etichettare né togliere. */
+    {
+      const gp = { nodi: [{ id: 'a', testo: 'A' }, { id: 'b', testo: 'B' }, { id: 'c', testo: 'C' }],
+                   archi: [{ da: 'a', a: 'b', rel: 'precede' }, { da: 'a', a: 'c', rel: 'richiede' }] };
+      const rp = ML3.run(gp, { motore: 'percorso' });
+      const sp = DIS3.svg(rp, {}).markup;
+      const capi = (sp.match(/<g class="marco"[^>]*>/g) || [])
+        .map((t) => (t.match(/data-da="([^"]*)" data-a="([^"]*)"/) || []).slice(1).join('→')).sort();
+      check('nel Percorso il filo esiste, e non è vuoto', true, (rp.archi || []).some((x) => x.e && x.e._filo));
+      check('i legami afferrabili sono quelli VERI del grafo, non i segmenti del filo',
+        ['a→b', 'a→c'], capi);
+      /* Il filo si disegna, ma non si prende: `pointer-events="none"` su ogni
+         suo segmento. (Non si può distinguerlo per i capi: il percorso passa
+         anche dove un legame vero esiste già, ed è giusto così.) */
+      check('e il filo si vede ma non si afferra',
+        (rp.archi || []).filter((x) => x.e && x.e._filo).length,
+        (sp.match(/pointer-events="none"/g) || []).length);
+      check('il numero del passo resta, che è il senso del motore', true,
+        !!rp.passo && Object.keys(rp.passo).length === 3);
+
+      /* ⚠️ La linking word sta sopra il suo arco e un `<text>` intercetta il
+         puntatore: senza `pointer-events="none"` la parola copriva il bersaglio
+         del proprio legame, e il menu non si apriva prendendolo per la parola —
+         cioè dal punto in cui la mano lo cerca per primo. */
+      const conVerbi = DIS3.svg(ML3.run(gp, { motore: 'albero' }), {}).markup;
+      const testi = conVerbi.match(/<text[^>]*>(precede|richiede)<\/text>/g) || [];
+      check('le linking word si vedono', 4, (conVerbi.match(/>(precede|richiede)</g) || []).length);
+      check('e non rubano il click al loro arco', 0,
+        (conVerbi.match(/<text(?![^>]*pointer-events="none")[^>]*>(precede|richiede)</g) || []).length);
+      check('ogni legame vero ha comunque il suo bersaglio invisibile', 2,
+        (sp.match(/pointer-events="stroke"/g) || []).length);
+    }
+
+    /* Il pallino della fonte è un FRATELLO della card, non un figlio: nel
+       registro «Mie» il click sulla card seleziona il nodo, e dentro il gruppo
+       il pallino erediterebbe quel click — la stessa trappola del tasto del
+       ramo, dove chiudere un ramo avrebbe aperto un PDF. */
+    const gRim = { nodi: [
+      { id: 'a', testo: 'Con fonte', rimando: { type: 'pdf', file: 'x.pdf', page: 3 } },
+      { id: 'b', testo: 'Con capitolo', capitolo: 2 },
+      { id: 'c', testo: 'Senza niente' }
+    ], archi: [{ da: 'a', a: 'b' }, { da: 'a', a: 'c' }] };
+    const svgR = DIS3.svg(ML3.run(gRim, { motore: 'albero' }), {}).markup;
+    const fonti = svgR.match(/<g class="mfonte"[\s\S]*?<\/g>/g) || [];
+    check('un pallino per ogni nodo che porta da qualche parte, e per nessun altro',
+      ['a', 'b'], fonti.map((s) => (s.match(/data-id="([^"]*)"/) || [])[1]).sort());
+    check('sta FUORI dalla card, non dentro', false,
+      /<g class="mfonte"/.test(card(svgR, 'a')));
+    check('ed è premibile: bersaglio invisibile largo, sopra il segno da 3px', [true, true],
+      [/r="11"[^>]*fill-opacity="0"/.test(fonti[0]), /r="3"/.test(fonti[0])]);
+    check('la card dice ancora che è apribile', true, /data-apri="1"/.test(card(svgR, 'a')));
+    check('e chi non ha né rimando né capitolo non lo dice', false, /data-apri/.test(card(svgR, 'c')));
+
+    /* L'indice cambia a ogni ridisegno — basta un ramo chiuso — e un menu che
+       agisse sull'arco «numero 7» agirebbe su un altro arco appena la mappa
+       cambia. I due capi, invece, l'arco lo nominano. */
+    const attr = (s, k) => (s.match(new RegExp(k + '="([^"]*)"')) || [])[1];
+    check('.marco porta i suoi due capi accanto all\'indice', ['0', 'u', 'uc'],
+      [attr(marchi[0], 'data-arco'), attr(marchi[0], 'data-da'), attr(marchi[0], 'data-a')]);
+    check('anche l\'arco che salta il ramo', ['f', 'gen'],
+      [attr(marchi[2], 'data-da'), attr(marchi[2], 'data-a')]);
+    check('un id con un apice non spacca l\'attributo', true,
+      DIS3.svg(ML3.run({ nodi: [{ id: 'a"b' }, { id: 'c' }], archi: [{ da: 'a"b', a: 'c' }] }, {}), {})
+        .markup.indexOf('data-da="a&quot;b"') > 0);
+  }
+
+  /* Il vocabolario dei verbi (§13.5) è una tabella sola che alimenta due
+     consumatori: il datalist dell'utente e l'enum mandato al modello. Se
+     divergessero, la mappa scritta a mano e quella generata si colorerebbero
+     con due leggi diverse — e il colore è il canale su cui si legge una mappa
+     concettuale senza fermarsi sulle parole. Qui si controlla che la sorgente
+     resti una, che nessun verbo abbia due colori, e che le tinte si distinguano
+     davvero anche a chi non vede il rosso o il verde. */
+  sezione('Mappe — un vocabolario solo per l\'utente e per il modello');
+  {
+    const REL2 = require('../App/assets/mappa/relazioni');
+
+    const perFam = REL2.verbiPerFamiglia();
+    const piatti = REL2.verbi();
+    const somma = REL2.CHIAVI.reduce((n, k) => n + REL2.FAMIGLIE[k].verbi.length, 0);
+
+    check('le tre famiglie del §13.5 ci sono, e «altro» resta l\'ultima',
+      ['definizione', 'misura', 'intervento', 'altro'], REL2.CHIAVI.slice(-4));
+    check('ognuna porta etichetta, colore e verbi', [],
+      REL2.CHIAVI.filter((k) => {
+        const f = REL2.FAMIGLIE[k];
+        return !f.etichetta || !f.colore || !(f.verbi || []).length;
+      }));
+
+    /* ⚠️ Nessun verbo in due famiglie: sarebbe un colore ambiguo, e prima lo si
+       scopriva solo guardando una mappa già disegnata (la seconda famiglia
+       sovrascriveva la prima, in silenzio). Il conto lo dice senza guardare:
+       se un verbo fosse doppio, la lista piatta sarebbe più corta della somma. */
+    check('nessun verbo appartiene a due famiglie', somma, piatti.length);
+    check('e il modulo si rifiuta di caricarsi se qualcuno ne mette uno doppio', true, (() => {
+      const F = REL2.FAMIGLIE;
+      // si simula la costruzione della tabella inversa con un doppione dentro
+      try {
+        const m = {};
+        REL2.CHIAVI.concat(['trasformazione']).forEach((k) => {
+          F[k].verbi.forEach((v) => { if (m[v]) throw new Error('doppio'); m[v] = k; });
+        });
+        return false;
+      } catch (e) { return e.message === 'doppio'; }
+    })());
+
+    check('la lista piatta è ordinata', true,
+      piatti.every((v, i) => i === 0 || piatti[i - 1].localeCompare(v, 'it') <= 0));
+    check('datalist ed enum sono la STESSA lista, non due che si somigliano', piatti,
+      REL2.CHIAVI.reduce((a, k) => a.concat(perFam[k]), []).sort((a, b) => a.localeCompare(b, 'it')));
+    check('e ogni verbo del vocabolario si ritrova nella famiglia da cui viene', [],
+      REL2.CHIAVI.filter((k) => perFam[k].some((v) => REL2.famigliaDi(v) !== k)));
+    check('verbiPerFamiglia restituisce copie: nessuno può modificare FAMIGLIE per sbaglio',
+      REL2.FAMIGLIE.misura.verbi.length,
+      (() => { const a = REL2.verbiPerFamiglia(); a.misura.push('inventato'); return REL2.FAMIGLIE.misura.verbi.length; })());
+    check('vocabolario() è una porta sul nome nuovo, non una seconda lista', piatti, REL2.vocabolario());
+
+    // i verbi nuovi trovano la loro famiglia, e con lei il colore
+    check('i verbi delle famiglie nuove sono riconosciuti',
+      ['definizione', 'definizione', 'misura', 'misura', 'intervento', 'intervento'],
+      ['si definisce', 'significa', 'indica', 'si valuta con', 'compensa', 'dispensa da'].map(REL2.famigliaDi));
+    check('anche dentro una frase più lunga', 'intervento', REL2.famigliaDi('Riduce sensibilmente'));
+
+    /* ⚠️ «è» è fuori dal vocabolario di proposito: nel corpus TD74 compare in
+       1.882 frasi su 5.259 (36%) perché è la copula, non un legame. Come voce
+       dell'enum sarebbe una calamita, e per la regola della sottostringa di
+       `famigliaDi` una chiave di un carattere vincerebbe su «altro» per
+       qualunque frase che contenga « è ». Un arco scritto «è» resta neutro. */
+    check('la copula nuda non è nel vocabolario', false, piatti.indexOf('è') >= 0);
+    check('e un arco scritto «è» resta neutro', ['altro', 'altro'],
+      [REL2.famigliaDi('è'), REL2.famigliaDi('non è')]);
+    check('«è simile a» invece continua a essere analogia, non definizione',
+      ['analogia', 'appartenenza', 'sequenza', 'dipendenza'],
+      ['è simile a', 'è esempio di', 'è seguito da', 'è condizione di'].map(REL2.famigliaDi));
+
+    /* ---- la palette, misurata e non dichiarata ----------------------------
+       Un colore che non discrimina è rumore (§13.5), e con 11 famiglie il
+       rischio è concreto. Si misura sul serio: sRGB → LMS → simulazione delle
+       tre dicromazie (Viénot–Brettel–Mollon) → CIELAB → ΔE2000, e di ogni
+       coppia si tiene la visione in cui si distinguono PEGGIO. Sta qui e non in
+       un foglio a parte perché una misura fatta una volta non è una garanzia:
+       la prossima famiglia va aggiunta con questo test acceso. */
+    const CVD = (() => {
+      const hsl = (h, s, l) => {
+        s /= 100; l /= 100;
+        const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+        const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+        return [f(0), f(8), f(4)];
+      };
+      const lin = (u) => (u <= 0.04045 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4));
+      const rgb = (c) => {
+        const m = /^hsl\(\s*([\d.]+)\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%\s*\)$/.exec(c);
+        if (!m) throw new Error('colore non in hsl(): ' + c);
+        return hsl(+m[1], +m[2], +m[3]).map(lin);
+      };
+      const mul = (M, v) => M.map((r) => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]);
+      const A = [[17.8824, 43.5161, 4.11935], [3.45565, 27.1554, 3.86714], [0.0299566, 0.184309, 1.46709]];
+      const Ai = [[0.0809445, -0.130504, 0.116721], [-0.0102485, 0.0540194, -0.113615], [-0.000365294, -0.00412163, 0.693513]];
+      const SIM = {
+        protanopia: [[0, 2.02344, -2.52581], [0, 1, 0], [0, 0, 1]],
+        deuteranopia: [[1, 0, 0], [0.494207, 0, 1.24827], [0, 0, 1]],
+        tritanopia: [[1, 0, 0], [0, 1, 0], [-0.395913, 0.801109, 0]]
+      };
+      const lab = (v) => {
+        const X = 0.4124564 * v[0] + 0.3575761 * v[1] + 0.1804375 * v[2];
+        const Y = 0.2126729 * v[0] + 0.7151522 * v[1] + 0.0721750 * v[2];
+        const Z = 0.0193339 * v[0] + 0.1191920 * v[1] + 0.9503041 * v[2];
+        const f = (t) => (t > 216 / 24389 ? Math.cbrt(t) : (24389 / 27 * t + 16) / 116);
+        const [fx, fy, fz] = [f(X / 0.95047), f(Y), f(Z / 1.08883)];
+        return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+      };
+      const dE = (p, q) => {   // CIEDE2000
+        const R = Math.PI / 180, G2 = 180 / Math.PI;
+        const [L1, a1, b1] = p, [L2, a2, b2] = q;
+        const C1 = Math.hypot(a1, b1), C2 = Math.hypot(a2, b2), Cb = (C1 + C2) / 2;
+        const g = 0.5 * (1 - Math.sqrt(Math.pow(Cb, 7) / (Math.pow(Cb, 7) + Math.pow(25, 7))));
+        const A1 = (1 + g) * a1, A2 = (1 + g) * a2;
+        const P1 = Math.hypot(A1, b1), P2 = Math.hypot(A2, b2);
+        const hh = (b, a) => (b === 0 && a === 0 ? 0 : ((Math.atan2(b, a) * G2) + 360) % 360);
+        const h1 = hh(b1, A1), h2 = hh(b2, A2);
+        let dh = 0;
+        if (P1 * P2 !== 0) { dh = h2 - h1; if (dh > 180) dh -= 360; else if (dh < -180) dh += 360; }
+        const dH = 2 * Math.sqrt(P1 * P2) * Math.sin(dh / 2 * R);
+        const Lb = (L1 + L2) / 2, Pb = (P1 + P2) / 2;
+        let hb;
+        if (P1 * P2 === 0) hb = h1 + h2;
+        else { hb = (h1 + h2) / 2; if (Math.abs(h1 - h2) > 180) hb += (h1 + h2 < 360 ? 180 : -180); }
+        const T = 1 - 0.17 * Math.cos((hb - 30) * R) + 0.24 * Math.cos(2 * hb * R)
+          + 0.32 * Math.cos((3 * hb + 6) * R) - 0.20 * Math.cos((4 * hb - 63) * R);
+        const Rc = 2 * Math.sqrt(Math.pow(Pb, 7) / (Math.pow(Pb, 7) + Math.pow(25, 7)));
+        const Sl = 1 + (0.015 * Math.pow(Lb - 50, 2)) / Math.sqrt(20 + Math.pow(Lb - 50, 2));
+        const Sc = 1 + 0.045 * Pb, Sh = 1 + 0.015 * Pb * T;
+        const Rt = -Math.sin(2 * (30 * Math.exp(-Math.pow((hb - 275) / 25, 2))) * R) * Rc;
+        return Math.sqrt(Math.pow((L2 - L1) / Sl, 2) + Math.pow((P2 - P1) / Sc, 2)
+          + Math.pow(dH / Sh, 2) + Rt * ((P2 - P1) / Sc) * (dH / Sh));
+      };
+      return {
+        /** la distanza nella visione che le confonde di più: una coppia vale
+         *  quanto vale per chi la vede peggio */
+        peggiore(c1, c2) {
+          const v1 = rgb(c1), v2 = rgb(c2);
+          let m = dE(lab(v1), lab(v2));
+          Object.keys(SIM).forEach((t) => {
+            m = Math.min(m, dE(lab(mul(Ai, mul(SIM[t], mul(A, v1)))), lab(mul(Ai, mul(SIM[t], mul(A, v2))))));
+          });
+          return m;
+        },
+        contrasto(c, fondo) {
+          const Y = (v) => 0.2126729 * v[0] + 0.7151522 * v[1] + 0.0721750 * v[2];
+          const a = Y(rgb(c)), b = fondo === 'bianco' ? 1 : Y([0.00805, 0.00961, 0.01444]);
+          return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+        }
+      };
+    })();
+
+    const NUOVE = ['definizione', 'misura', 'intervento'];
+    const coppie = [];
+    for (let i = 0; i < REL2.CHIAVI.length; i++) {
+      for (let j = i + 1; j < REL2.CHIAVI.length; j++) {
+        const a = REL2.CHIAVI[i], b = REL2.CHIAVI[j];
+        coppie.push({ a, b, d: CVD.peggiore(REL2.FAMIGLIE[a].colore, REL2.FAMIGLIE[b].colore) });
+      }
+    }
+    check('nessuna famiglia riusa il colore di un\'altra', REL2.CHIAVI.length,
+      new Set(REL2.CHIAVI.map((k) => REL2.FAMIGLIE[k].colore)).size);
+    check('ogni tinta nuova sta a ΔE2000 ≥ 8 da tutte le altre, nella dicromazia che la confonde di più',
+      [], coppie.filter((c) => (NUOVE.indexOf(c.a) >= 0 || NUOVE.indexOf(c.b) >= 0) && c.d < 8)
+        .map((c) => c.a + '/' + c.b + ' ' + c.d.toFixed(1)));
+
+    /* ⚠️ Il punto debole della palette è PRECEDENTE alle famiglie nuove: un
+       deuteranope non distingue il viola della dipendenza dal blu
+       dell'appartenenza (ΔE 3,0), né l'arancio della trasformazione dal
+       rosso-arancio dell'opposizione (ΔE 4,5). Il commento che stava in testa a
+       relazioni.js — «leggibile anche a chi confonde rosso e verde» — era
+       un'intenzione, non una misura. Questo controllo lo tiene scritto: se un
+       giorno lo si ripara, dirà che la coppia peggiore è un'altra. */
+    coppie.sort((x, y) => x.d - y.d);
+    check('e la coppia peggiore resta una di quelle di prima, non una nuova',
+      'dipendenza/appartenenza', coppie[0].a + '/' + coppie[0].b);
+    check('le due coppie che già si confondevano sono ancora quelle, e solo quelle',
+      ['dipendenza/appartenenza', 'trasformazione/opposizione'],
+      coppie.filter((c) => c.d < 5).map((c) => c.a + '/' + c.b));
+
+    /* Il colore dell'arco è FISSO: non lo passa il tema come per le card, quindi
+       la stessa tinta deve reggere sul foglio bianco e sul pannello scuro. */
+    check('le tinte nuove si vedono su tutti e due i fondi (WCAG ≥3:1)', [],
+      NUOVE.filter((k) => CVD.contrasto(REL2.FAMIGLIE[k].colore, 'bianco') < 3 ||
+                          CVD.contrasto(REL2.FAMIGLIE[k].colore, 'scuro') < 3));
+    check('e le uniche che non ci arrivano sono quelle già in casa', ['dipendenza'],
+      REL2.CHIAVI.filter((k) => CVD.contrasto(REL2.FAMIGLIE[k].colore, 'bianco') < 3 ||
+                                CVD.contrasto(REL2.FAMIGLIE[k].colore, 'scuro') < 3));
+  }
+
+  /* La porta del §4.2: da ogni nodo si trascina un arco verso un altro. Il
+     rischio non è disegnarla, è metterla dove c'è già qualcos'altro — il
+     pallino del ramo sta sul bordo da cui escono i figli, e due bersagli
+     sovrapposti significano chiudere un ramo credendo di collegare. */
+  sezione('Mappe — la porta da cui si tira un arco');
+  {
+    const ML4 = require('../App/assets/mappa/layouts');
+    const DIS4 = require('../App/assets/mappa/disegna');
+
+    const g4 = { nodi: [{ id: 'r', testo: 'Radice' }, { id: 'a', testo: 'A' }, { id: 'b', testo: 'B' }],
+                 archi: [{ da: 'r', a: 'a' }, { da: 'r', a: 'b' }] };
+    const rTd = ML4.run(g4, { motore: 'albero', orient: 'td' });
+    const mkTd = DIS4.svg(rTd, { maniglie: true, chiudibili: { r: 'aperto' } }).markup;
+    const porte = (mk) => mk.match(/<g class="mporta"[\s\S]*?<\/g>/g) || [];
+    const cerchi = (s) => (s.match(/<circle[^>]*\/>/g) || []);
+    const xy = (s) => [+(s.match(/cx="([-\d.]+)"/) || [])[1], +(s.match(/cy="([-\d.]+)"/) || [])[1]];
+
+    check('una porta per nodo — ma solo se la si chiede', [3, 0],
+      [porte(mkTd).length, porte(DIS4.svg(rTd, {}).markup).length]);
+    // dentro il gruppo della card erediterebbe il click che seleziona il nodo:
+    // si finirebbe a selezionare proprio mentre si prova a collegare
+    const cardDi = (mk, id) => (mk.match(new RegExp('<g class="mnodo" data-id="' + id + '"[\\s\\S]*?</g>')) || [''])[0];
+    check('sta FUORI dalla card, come il pallino della fonte e quello del ramo', [true, false],
+      [cardDi(mkTd, 'r').length > 0, /mporta/.test(cardDi(mkTd, 'r'))]);
+    check('bersaglio invisibile largo, sopra un segno piccolo', [true, true, true],
+      [/r="12"[^>]*fill-opacity="0"/.test(porte(mkTd)[0]), /r="5"/.test(porte(mkTd)[0]),
+       cerchi(porte(mkTd)[0]).length === 2]);
+    check('è raggiungibile da tastiera e si annuncia', [true, true],
+      [/role="button" tabindex="0"/.test(porte(mkTd)[0]), /<title>Trascina da qui per collegare<\/title>/.test(porte(mkTd)[0])]);
+    check('i colori restano attributi: l\'export PDF non perde niente', true,
+      /<circle[^>]*fill="hsl|<circle[^>]*fill="#/.test(porte(mkTd)[0]) && !/class="[^"]*colore/.test(porte(mkTd)[0]));
+
+    /* ⚠️ La porta precede la fonte nell'ordine del documento. Con la card di
+       fabbrica i due centri distano 15,8px e i bersagli invisibili si
+       sovrappongono: in SVG vince l'ultimo disegnato, e una porta messa dopo
+       ruberebbe i click alla fonte — che è il bersaglio più piccolo dei due. */
+    const gF = { nodi: [{ id: 'a', testo: 'Con fonte', rimando: { type: 'pdf', file: 'x.pdf', page: 3 } },
+                        { id: 'b', testo: 'B' }], archi: [{ da: 'a', a: 'b' }] };
+    const mkF = DIS4.svg(ML4.run(gF, { motore: 'albero' }), { maniglie: true }).markup;
+    check('la porta è disegnata PRIMA della fonte, che è il bersaglio più preciso', true,
+      mkF.indexOf('class="mporta" data-id="a"') < mkF.indexOf('class="mfonte" data-id="a"'));
+
+    // il verso: dei due bordi lontani, il ramo ne prende uno e la porta l'altro
+    const versi = (orient) => {
+      const res = ML4.run(g4, { motore: 'albero', orient: orient });
+      const mk = DIS4.svg(res, { maniglie: true, chiudibili: { r: 'aperto' } }).markup;
+      const p = xy(porte(mk).find((s) => /data-id="r"/.test(s)));
+      const c = res.pos.r;
+      return [Math.sign(Math.round(p[0] - c.x)), Math.sign(Math.round(p[1] - c.y))];
+    };
+    check('se i figli scendono la porta sta a destra', [1, 0], versi('td'));
+    check('se i figli vanno a destra la porta sta in basso', [0, 1], versi('lr'));
+
+    /* La verifica che conta: la porta e il pallino del ramo non devono MAI
+       finirsi addosso. Si controlla sui due orientamenti e su tutti i nodi di un
+       anello — dove il verso dei figli è radiale e cambia da nodo a nodo — con
+       la card di fabbrica e con la più piccola che `layouts` ammette (40×24). */
+    const stella = { nodi: [{ id: 'c', testo: 'Centro' }], archi: [] };
+    for (let i = 0; i < 24; i++) {
+      stella.nodi.push({ id: 'n' + i, testo: 'N' + i });
+      stella.archi.push({ da: 'c', a: 'n' + i });
+    }
+    const distanze = [];
+    [{ motore: 'albero', orient: 'td' }, { motore: 'albero', orient: 'lr' }, { motore: 'anelli' }]
+      .forEach((base) => [{ w: 168, h: 48 }, { w: 40, h: 24 }, { w: 300, h: 30 }].forEach((dim) => {
+        const res = ML4.run(stella, Object.assign({}, base, dim));
+        Object.keys(res.pos).forEach((id) => {
+          const d = DIS4.versoDeiFigli(res, res.pos[id]);
+          const t = DIS4.sulBordo(res.pos[id], d, res.opt.w, res.opt.h);
+          const q = DIS4.sulBordo(res.pos[id], DIS4.versoDellaPorta(d), res.opt.w, res.opt.h);
+          distanze.push(Math.hypot(t.x - q.x, t.y - q.y));
+        });
+      }));
+    check('porta e pallino del ramo non finiscono mai a meno di 16px', [],
+      distanze.filter((d) => d < 16).map((d) => +d.toFixed(1)));
+    check('e la prova ha guardato abbastanza casi da valere qualcosa', 225, distanze.length);
+    check('il verso della porta è sempre perpendicolare a quello dei figli', [],
+      [[0, 1], [1, 0], [0.6, 0.8], [-0.6, 0.8], [0.707, -0.707], [-1, 0], [0, -1]]
+        .map((v) => { const d = { x: v[0], y: v[1] }, t = DIS4.versoDellaPorta(d); return +(d.x * t.x + d.y * t.y).toFixed(6); })
+        .filter((p) => p !== 0));
+    check('e punta sempre in basso o a destra, mai in alto a sinistra', [],
+      [[0, 1], [1, 0], [0.6, 0.8], [-0.6, 0.8], [0.707, -0.707], [-1, 0], [0, -1]]
+        .map((v) => DIS4.versoDellaPorta({ x: v[0], y: v[1] }))
+        .filter((t) => t.x + t.y < -1e-9));
+  }
+
+  /* Il banco (PIANO-BANCO.md §2): quattro celle, otto forme, e uno stato
+     minuscolo che vive nel localStorage. Il rischio non è la griglia — è che
+     «quali blocchi ha questa forma» finisca scritto due volte, una nella
+     stringa delle aree e una in un elenco lì accanto: le due copie divergono al
+     primo ritocco, e il guasto non fa eccezione da nessuna parte, si vede solo
+     a occhio come un blocco che non compare. Qui si controlla che la
+     derivazione sia una sola, e che lo stato regga il giro dal disco. */
+  sezione('Banco — otto forme, due divisori, uno stato che torna dal disco');
+  {
+    const BF = require('../App/assets/banco/forme');
+
+    // ---- la tabella delle forme
+    check('otto forme, nell\'ordine del disegno del piano',
+      ['uno', 'due-col', 'due-riga', 'tre-sx', 'tre-dx', 'tre-sopra', 'tre-sotto', 'quattro'], BF.CHIAVI);
+    check('le aree sono quelle del piano, alla lettera',
+      ['"A A" "A A"', '"A C" "A C"', '"A A" "B B"', '"A C" "A D"',
+       '"A C" "B C"', '"A A" "B D"', '"A C" "B B"', '"A C" "B D"'],
+      BF.CHIAVI.map((k) => BF.FORME[k].aree));
+    check('ognuna ha un nome leggibile, e nessuno si ripete',
+      [[], 8], [BF.CHIAVI.filter((k) => !/\S/.test(BF.FORME[k].nome || '')),
+                new Set(BF.CHIAVI.map((k) => BF.FORME[k].nome)).size]);
+    check('i blocchi di ogni forma',
+      [['A'], ['A', 'C'], ['A', 'B'], ['A', 'C', 'D'],
+       ['A', 'B', 'C'], ['A', 'B', 'D'], ['A', 'B', 'C'], ['A', 'B', 'C', 'D']],
+      BF.CHIAVI.map((k) => BF.blocchiDi(k)));
+
+    /* ⚠️ La prova che conta davvero: l'elenco esce dalla STRINGA. Il test la
+       rilegge per conto suo — se un giorno `blocchiDi` tornasse a leggere un
+       elenco scritto a mano accanto alle aree, le due derivazioni si
+       separerebbero qui invece che a schermo, mesi dopo. */
+    const dallaStringa = (aree) => ['A', 'B', 'C', 'D'].filter((b) => aree.indexOf(b) >= 0);
+    check('blocchiDi legge le aree, non un secondo elenco', [],
+      BF.CHIAVI.filter((k) => JSON.stringify(BF.blocchiDi(k)) !== JSON.stringify(dallaStringa(BF.FORME[k].aree))));
+    check('e «quanti» è il conto di quell\'elenco, non un numero battuto a mano', [],
+      BF.CHIAVI.filter((k) => BF.FORME[k].quanti !== BF.blocchiDi(k).length));
+    check('l\'elenco è una copia: chi lo riceve non può svuotare la tabella', ['A', 'C'],
+      (() => { BF.blocchiDi('due-col').length = 0; return BF.blocchiDi('due-col'); })());
+    check('una forma che non esiste non ha blocchi, e non esplode',
+      [[], false, false, false],
+      [BF.blocchiDi('pippo'), BF.visibile('pippo', 'A'),
+       BF.usaDivisoreColonna('pippo'), BF.usaDivisoreRiga('pippo')]);
+
+    // ---- i due divisori, dove servono e dove no
+    check('il divisore verticale c\'è dove una riga è spezzata in due',
+      [false, true, false, true, true, true, true, true], BF.CHIAVI.map((k) => BF.usaDivisoreColonna(k)));
+    check('quello orizzontale dove è spezzata una colonna',
+      [false, false, true, true, true, true, true, true], BF.CHIAVI.map((k) => BF.usaDivisoreRiga(k)));
+    check('«un blocco solo» non ne ha nessuno, «due impilati» solo l\'orizzontale',
+      [false, false, false, true],
+      [BF.usaDivisoreColonna('uno'), BF.usaDivisoreRiga('uno'),
+       BF.usaDivisoreColonna('due-riga'), BF.usaDivisoreRiga('due-riga')]);
+
+    /* Anche i divisori si ricavano dalle aree. Il test li ridice in un altro
+       modo — «esiste un blocco che sta in una colonna sola?» invece di «due
+       celle affiancate hanno nomi diversi?» — perché due formulazioni della
+       stessa geometria si controllano a vicenda; ripetere la formula
+       dell'implementazione controllerebbe soltanto la copia-incolla. */
+    const spanne = (aree, b, asse) =>
+      new Set((aree.match(/[A-D]/g) || []).map((n, i) => (n === b ? (asse === 'col' ? (i & 1) : (i >> 1)) : null))
+        .filter((v) => v !== null)).size;
+    check('i divisori escono dalla geometria, non da un elenco di forme', [],
+      BF.CHIAVI.filter((k) => {
+        const aree = BF.FORME[k].aree, bl = BF.blocchiDi(k);
+        return BF.usaDivisoreColonna(k) !== bl.some((b) => spanne(aree, b, 'col') === 1)
+            || BF.usaDivisoreRiga(k) !== bl.some((b) => spanne(aree, b, 'riga') === 1);
+      }));
+
+    // ---- l'invariante che gira al caricamento del modulo
+    check('una diagonale non è una griglia, e il modulo lo sa dire', true,
+      /rettangolo/.test(BF.guastoNelleAree('"A C" "C A"')));
+    check('e nemmeno un nome inventato, un conto di celle sbagliato o il nulla',
+      [false, false, false],
+      [BF.guastoNelleAree('"A E" "B D"') === '', BF.guastoNelleAree('"A C B" "B D"') === '',
+       BF.guastoNelleAree('') === '']);
+    check('le otto forme, invece, passano tutte', [], BF.CHIAVI.filter((k) => BF.guastoNelleAree(BF.FORME[k].aree)));
+
+    // ---- normalizzaStato: l'entroSchema del banco
+    const S = (x) => BF.normalizzaStato(x);
+    check('senza niente in ingresso: forma di fabbrica, divisori a metà, quattro blocchi vuoti',
+      { forma: 'due-col', col: 0.5, riga: 0.5, blocchi: { A: '', B: '', C: '', D: '' } }, S(undefined));
+    check('una forma che non esiste ricade su quella di fabbrica, una buona resta',
+      ['due-col', 'due-col', 'tre-sopra'], [S({ forma: 'a caso' }).forma, S({ forma: 42 }).forma, S({ forma: 'tre-sopra' }).forma]);
+    check('le frazioni restano frazioni, e non toccano mai i bordi',
+      [0.62, 0.1, 0.9, 0.1, 0.9],
+      [S({ col: 0.62 }).col, S({ col: 0 }).col, S({ col: 1 }).col, S({ col: -4 }).col, S({ col: 99 }).col]);
+    /* ⚠️ `+null`, `+''` e `+[]` fanno zero: se la frazione si prendesse con una
+       conversione, un campo mancante diventerebbe un blocco schiacciato sul
+       minimo invece che una colonna a metà. */
+    check('ciò che non è un numero torna al mezzo, non al minimo', [0.5, 0.5, 0.5, 0.5, 0.5],
+      [S({ col: null }).col, S({ col: '' }).col, S({ col: '0.7' }).col, S({ col: NaN }).col, S({ col: [] }).col]);
+    check('la riga segue la stessa legge della colonna', [0.1, 0.9, 0.5],
+      [S({ riga: 0 }).riga, S({ riga: 1 }).riga, S({ riga: 'x' }).riga]);
+    check('e il limite è uno solo, esportato: lo usa anche chi trascina il divisore',
+      [0.1, 0.9, 0.5, 0.33], [BF.frazione(0), BF.frazione(1.2), BF.frazione('0.4'), BF.frazione(0.33)]);
+
+    check('i blocchi ci sono tutti e quattro, sempre e nello stesso ordine',
+      ['A', 'B', 'C', 'D'], Object.keys(S({ forma: 'uno', blocchi: { C: 'mappa' } }).blocchi));
+    check('un blocco che la forma non usa conserva il suo strumento… ma non è visibile',
+      ['mappa', false], [S({ forma: 'uno', blocchi: { C: 'mappa' } }).blocchi.C, BF.visibile('uno', 'C')]);
+    check('una chiave che non è un blocco sparisce', undefined, S({ blocchi: { E: 'x' } }).blocchi.E);
+    check('uno strumento che non è una stringa non diventa uno strumento', ['', '', ''],
+      [S({ blocchi: { A: 3 } }).blocchi.A, S({ blocchi: { A: { id: 'x' } } }).blocchi.A, S({ blocchi: { A: '   ' } }).blocchi.A]);
+    check('le chiavi in più non entrano nel localStorage: lì il rumore resta per sempre',
+      ['blocchi', 'col', 'forma', 'riga'], Object.keys(S({ zoom: 3, tema: 'scuro' })).sort());
+
+    /* ⚠️ Uno strumento in due blocchi è impossibile (§2.2): è un pezzo di
+       pagina, non un'immagine. Quando lo stato che arriva lo dice due volte, a
+       perdere dev'essere sempre lo stesso — e a vincere è chi si vede, perché
+       svuotare un blocco a schermo per conservare una copia nascosta è una
+       perdita che l'utente nota e non sa spiegarsi. */
+    check('duplicato fra due blocchi visibili: vince il primo in ordine A→B→C→D', ['mappa', ''],
+      (() => { const s = S({ forma: 'due-col', blocchi: { A: 'mappa', C: 'mappa' } }); return [s.blocchi.A, s.blocchi.C]; })());
+    check('duplicato fra un blocco nascosto e uno visibile: vince quello che si vede', ['', 'mappa'],
+      (() => { const s = S({ forma: 'due-col', blocchi: { B: 'mappa', C: 'mappa' } }); return [s.blocchi.B, s.blocchi.C]; })());
+    check('più blocchi vuoti invece convivono: «vuoto» non è uno strumento', 4,
+      Object.values(S({ blocchi: { A: '', B: '', C: '', D: '' } }).blocchi).filter((v) => v === '').length);
+    check('comunque arrivi lo stato, nessuno strumento resta in due blocchi', [],
+      [{ A: 'm', B: 'm', C: 'm', D: 'm' }, { A: 'a', B: 'a', C: 'b', D: 'b' }, { D: 'x', A: 'x' }]
+        .map((b) => Object.values(S({ forma: 'quattro', blocchi: b }).blocchi).filter(Boolean))
+        .filter((v) => new Set(v).size !== v.length));
+
+    const pieno = { forma: 'tre-sopra', col: 0.62, riga: 0.4, blocchi: { A: 'pdf', B: 'appunti', C: 'mappa', D: 'keyword' } };
+    check('normalizzare due volte non cambia niente', JSON.stringify(S(pieno)), JSON.stringify(S(S(pieno))));
+    check('e il giro dal localStorage lo restituisce identico', pieno, S(JSON.parse(JSON.stringify(S(pieno)))));
+
+    // ---- assegna: si sposta, non si duplica; e si scambia, non si buca
+    const base = S({ forma: 'quattro', blocchi: { A: 'capitolo', B: 'appunti', C: 'mappa', D: '' } });
+    check('mettere uno strumento in un blocco vuoto lo mette lì', 'keyword', BF.assegna(base, 'D', 'keyword').blocchi.D);
+    check('⚠️ se stava altrove i due blocchi si SCAMBIANO: nessun buco da riempire con un secondo gesto',
+      ['mappa', 'capitolo'], (() => { const s = BF.assegna(base, 'A', 'mappa'); return [s.blocchi.A, s.blocchi.C]; })());
+    check('lo scambio conserva quanti blocchi sono pieni', 3,
+      Object.values(BF.assegna(base, 'A', 'mappa').blocchi).filter(Boolean).length);
+    check('verso un blocco vuoto non c\'è niente da scambiare: quello di partenza resta vuoto',
+      ['', 'mappa'], (() => { const s = BF.assegna(base, 'D', 'mappa'); return [s.blocchi.C, s.blocchi.D]; })());
+    check('riassegnare lo stesso strumento allo stesso blocco non fa niente',
+      JSON.stringify(base), JSON.stringify(BF.assegna(base, 'C', 'mappa')));
+    check('la stringa vuota svuota il blocco, e non sposta nessun altro', ['', 'capitolo', 'appunti'],
+      (() => { const s = BF.assegna(base, 'C', ''); return [s.blocchi.C, s.blocchi.A, s.blocchi.B]; })());
+    check('un blocco che non esiste è un errore di chi chiama: lo stato torna com\'era',
+      JSON.stringify(base), JSON.stringify(BF.assegna(base, 'Z', 'mappa')));
+    check('uno strumento si ritrova dal suo nome, e uno che non c\'è non si inventa',
+      ['C', null, null], [BF.bloccoCon(base, 'mappa'), BF.bloccoCon(base, 'flashcard'), BF.bloccoCon(base, '')]);
+
+    /* Venti assegnazioni di fila, deterministiche: dopo ognuna l'invariante
+       deve reggere. Il conto dei blocchi pieni può scendere di uno solo quando
+       si svuota un blocco — se scendesse di più vorrebbe dire che uno scambio
+       ha lasciato per strada qualcosa. */
+    let corrente = S({ forma: 'quattro' });
+    const guasti = [];
+    ['capitolo', 'appunti', 'mappa', 'keyword', 'pdf'].forEach((t, i) => {
+      ['A', 'B', 'C', 'D'].forEach((b, j) => {
+        const pieniPrima = Object.values(corrente.blocchi).filter(Boolean).length;
+        corrente = BF.assegna(corrente, b, (i + j) % 3 === 0 ? '' : t);
+        const dentro = Object.values(corrente.blocchi).filter(Boolean);
+        if (new Set(dentro).size !== dentro.length) guasti.push('doppio dopo ' + b + '=' + t);
+        if (dentro.length < pieniPrima - 1) guasti.push('persi dopo ' + b + '=' + t);
+      });
+    });
+    check('venti assegnazioni di fila, e l\'invariante regge sempre', [], guasti);
+
+    // ---- cambiaForma: chi esce di scena si sa, e non si perde
+    const q = S({ forma: 'quattro', blocchi: { A: 'capitolo', B: 'appunti', C: 'mappa', D: 'keyword' } });
+    const solo = BF.cambiaForma(q, 'uno');
+    check('cambiare forma cambia la forma', 'uno', solo.forma);
+    check('e dichiara che cosa è uscito di scena, blocco per blocco',
+      [{ blocco: 'B', strumento: 'appunti' }, { blocco: 'C', strumento: 'mappa' }, { blocco: 'D', strumento: 'keyword' }],
+      solo.usciti);
+    check('⚠️ ma non lo perde: resta scritto nello stato', ['appunti', 'mappa', 'keyword'],
+      [solo.blocchi.B, solo.blocchi.C, solo.blocchi.D]);
+    check('tornando a quattro si ritrova tutto dov\'era', JSON.stringify(q), JSON.stringify(BF.cambiaForma(solo, 'quattro')));
+    check('⚠️ «usciti» non è enumerabile: nel localStorage non ci finisce', [false, false],
+      [JSON.stringify(solo).indexOf('usciti') >= 0, Object.keys(solo).indexOf('usciti') >= 0]);
+    check('un blocco vuoto che sparisce non è una notizia', [],
+      BF.cambiaForma(S({ forma: 'quattro', blocchi: { A: 'capitolo' } }), 'uno').usciti);
+    check('e un blocco già nascosto non «esce» una seconda volta', [],
+      BF.cambiaForma(S({ forma: 'due-col', blocchi: { A: 'capitolo', B: 'appunti', C: 'mappa' } }), 'uno')
+        .usciti.filter((u) => u.blocco === 'B'));
+    check('passare a una forma più larga non fa uscire nessuno', [['A', 'B', 'C', 'D'], []],
+      (() => { const s = BF.cambiaForma(q, 'quattro'); return [Object.keys(s.blocchi), s.usciti]; })());
+    check('una forma sconosciuta non rifà il banco: si tiene quella di adesso', ['tre-sopra', []],
+      (() => { const s = BF.cambiaForma(S({ forma: 'tre-sopra' }), 'pippo'); return [s.forma, s.usciti]; })());
+    check('«usciti» c\'è sempre, anche vuota: chi la legge non deve controllare prima', [true, true, true],
+      [Array.isArray(solo.usciti), Array.isArray(BF.cambiaForma(q, 'quattro').usciti),
+       Array.isArray(BF.cambiaForma(q, 'pippo').usciti)]);
+
+    // ---- purezza: nessuna mossa tocca lo stato che ha ricevuto
+    const intatto = JSON.stringify(base);
+    BF.assegna(base, 'A', 'mappa'); BF.assegna(base, 'B', ''); BF.cambiaForma(base, 'uno'); S(base);
+    check('nessuna mossa tocca lo stato ricevuto', intatto, JSON.stringify(base));
+    check('e lo stato nuovo non condivide i blocchi con quello vecchio', [false, false],
+      [BF.assegna(base, 'A', 'x').blocchi === base.blocchi, BF.cambiaForma(base, 'uno').blocchi === base.blocchi]);
+
+    /* Il giro completo che farà il localStorage: si cambia forma, si serializza,
+       si rilegge, si normalizza. Quello che deve arrivare dall'altra parte è il
+       banco di prima — compresi gli strumenti fuori scena — e NON la proprietà
+       `.usciti`, che era una notizia sull'operazione, non un dato del banco. */
+    const salvato = JSON.parse(JSON.stringify(BF.cambiaForma(
+      S({ forma: 'quattro', col: 0.62, riga: 0.4, blocchi: { A: 'capitolo', B: 'appunti', C: 'mappa', D: 'keyword' } }), 'uno')));
+    check('il giro completo dal disco: si salva, si rilegge, e il banco è quello di prima',
+      { forma: 'uno', col: 0.62, riga: 0.4, blocchi: { A: 'capitolo', B: 'appunti', C: 'mappa', D: 'keyword' } },
+      S(salvato));
+    check('e dal disco «usciti» non torna, perché non c\'era mai andato', undefined, S(salvato).usciti);
   }
 
   console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
