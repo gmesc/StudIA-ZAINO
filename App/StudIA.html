@@ -210,7 +210,7 @@
      `#notePane` — sono diventati strumenti del banco, e `bancoMonta` li sposta
      dentro i blocchi. Il guscio resta nel DOM perché una decina di funzioni lo
      interrogano (`positionPane`, i due ridimensionatori, la guardia di
-     `#selNote`) e toglierlo vorrebbe dire dodici modifiche a rischio per un
+     la barra sulla selezione) e toglierlo vorrebbe dire dodici modifiche a rischio per un
      guadagno estetico: qui non occupa spazio e non spinge più niente. */
   #dock{ display:none!important; }
   html[data-dock="1"] .wrap{ padding-right:0; }
@@ -867,10 +867,36 @@
   #emojiGrid button:hover{ background:var(--hover); }
   #emojiPop .ep-cat{ grid-column:1/-1; font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); padding:.35rem .1rem .1rem; }
   #emojiPop .ep-empty{ color:var(--muted); font-size:12px; padding:.5rem .2rem; }
-  /* pulsante flottante "appunta la selezione" */
-  #selNote{ position:fixed; z-index:200; display:none; border:1px solid var(--line); cursor:pointer;
-    font-size:12px; font-weight:700; padding:.4rem .7rem; background:var(--panel); color:var(--ink); box-shadow:var(--sh-3d); }
-  #selNote:hover{ background:color-mix(in srgb, var(--yellow) 22%, var(--panel)); }
+  /* ===== La barra contestuale sulla selezione ================================
+     Non è un menu contestuale: quello lo chiedi col tasto destro, questa si
+     offre da sé appena selezioni. In inglese la chiamano selection toolbar, o
+     bubble menu nel mondo degli editor; Word la chiama Mini Toolbar. Qui porta
+     tutto — la tavolozza e le quattro azioni — perché il gesto sia uno solo.
+
+     ⚠️ La posizione la calcola il BROWSER, non una funzione scritta a mano.
+     `#selAncora` è un rettangolo invisibile che si appoggia sulla selezione e
+     si dichiara ancora; la barra ci si aggancia e, se sopra non ci sta, il
+     motore la ribalta sotto e poi la sposta di lato. Misurato in questa build
+     (Chromium 142): `anchor-name`, `position-anchor`, `position-try-fallbacks`
+     e `position-area` ci sono tutti. Resta un ripiego in JS per il giorno che
+     si giri su qualcosa di più vecchio — vedi `selBarraPosiziona`. */
+  #selAncora{ position:fixed; anchor-name:--selezione; pointer-events:none;
+    width:0; height:0; z-index:-1; }
+  #selBarra{ position:fixed; z-index:210; display:none; align-items:center; gap:.3rem;
+    padding:.3rem; background:var(--panel); border:1px solid var(--line); box-shadow:var(--sh-3d);
+    position-anchor:--selezione; position-area:block-start;
+    position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+    margin-block:6px; max-width:min(96vw,420px); flex-wrap:nowrap; }
+  #selBarra.aperta{ display:flex; }
+  #selBarra .sb-az{ display:inline-flex; align-items:center; justify-content:center;
+    width:26px; height:24px; border:1px solid transparent; background:transparent; cursor:pointer;
+    color:var(--ink); font-size:13px; line-height:1; padding:0; }
+  #selBarra .sb-az:hover{ background:var(--hover); border-color:var(--line); }
+  #selBarra .sb-az[disabled]{ opacity:.35; cursor:not-allowed; }
+  #selBarra .sb-az[disabled]:hover{ background:transparent; border-color:transparent; }
+  #selBarra .sb-sep{ width:1px; height:18px; background:var(--line); margin:0 .15rem; flex:0 0 auto; }
+  #selBarra .ctx-col{ width:16px; height:16px; }
+  #selBarra input[type=color]{ width:20px; height:16px; }
   #mediaVideo{ flex:1; width:100%; border:0; background:#000; }
   .vids{ margin:2rem 0; padding:1rem 1.1rem; background:color-mix(in srgb, var(--teal) 7%, var(--panel)); }
   .vids > b{ display:flex; align-items:center; gap:.5rem; font-size:11px; text-transform:uppercase; letter-spacing:.16em; color:var(--muted); margin-bottom:.7rem; font-weight:700; }
@@ -3788,17 +3814,6 @@ document.addEventListener('click',function(e){
       var mine=notesOfChapter(); if(mine.length && !NOTES.cur) noteOpen(mine[0].file); }
     return;
   }
-  if(e.target.closest && e.target.closest('#selNote')){
-    /* Il bottone non appunta più da sé: apre il menu, che è la stessa
-       superficie del tasto destro. Prima chiamava `noteNew` con
-       `getSelection().toString()` — cioè creava sempre un file nuovo, e da un
-       titolo ci scriveva dentro il testo in maiuscolo. */
-    var b=$('#selNote'), sel=selezioneNelCapitolo();
-    if(!sel){ if(b) b.style.display='none'; return; }
-    var r=b.getBoundingClientRect();
-    selMenuApri(Math.round(r.left), Math.round(r.bottom+4), sel);
-    return;
-  }
 });
 document.addEventListener('change',function(e){
   if(e.target && e.target.id==='noteSelect'){
@@ -3819,35 +3834,80 @@ document.addEventListener('keydown',function(e){
   if(g && !g.hidden){ e.stopPropagation(); chiudiGuida(); return; }   // …poi la guida
   closePops();
 },true);
-/* pulsante flottante "Appunta" sulla selezione nel capitolo */
+/* ===== La barra contestuale: compare da sé sulla selezione ==================
+   Porta TUTTO — la tavolozza e le quattro azioni — così il gesto è uno solo.
+   Il menu col tasto destro resta e fa le stesse cose con le parole scritte: la
+   barra è per chi sa già, il menu per chi guarda. Le funzioni sono le stesse,
+   e questa è la condizione perché le due strade non divergano. */
+function selBarraAperta(){ var b=$('#selBarra'); return !!b && b.classList.contains('aperta'); }
+function selBarraChiudi(){ var b=$('#selBarra'); if(b) b.classList.remove('aperta'); }
+/**
+ * Posa l'ancora invisibile sul rettangolo della selezione. Da lì in poi è il
+ * browser a decidere: sopra se ci sta, sotto se non ci sta, spostata di lato se
+ * sborda — `position-try-fallbacks` nel CSS.
+ *
+ * Il ripiego serve solo dove il posizionamento ancorato non c'è. In questa
+ * build c'è (misurato), ma una funzione che si appoggia in silenzio a una
+ * capacità del motore è una funzione che un giorno smette di funzionare senza
+ * dire perché.
+ */
+function selBarraPosiziona(range){
+  var barra=$('#selBarra'), anc=$('#selAncora'); if(!barra||!anc) return;
+  var q=range.getClientRects(), r=(q && q.length ? q[0] : range.getBoundingClientRect());
+  anc.style.left=r.left+'px'; anc.style.top=r.top+'px';
+  anc.style.width=Math.max(1,r.width)+'px'; anc.style.height=Math.max(1,r.height)+'px';
+  if(CSS.supports && CSS.supports('position-try-fallbacks: flip-block')) return;
+  var b=barra.getBoundingClientRect();
+  barra.style.left=Math.max(8, Math.min(r.left, window.innerWidth-b.width-8))+'px';
+  barra.style.top =Math.max(8, r.top-b.height-6)+'px';
+}
+function selBarraApri(sel){
+  var barra=$('#selBarra'); if(!barra||!sel) return;
+  SELMENU.testo=sel.testo; SELMENU.range=sel.range;
+  var conVault=!!(notesApi() && curMeta());
+  var conEvidenze=conVault && evidenzePronte();
+  var conMappa=!!(mappeApi() && corsoAttivo() && mappaPronta());
+  var sopra=conEvidenze ? evidenzaSotto(sel.range) : null;
+  function az(nome, segno, titolo, spento){
+    return '<button class="sb-az" type="button" data-az="'+nome+'"'+(spento?' disabled':'')+
+      ' title="'+escHtml(titolo)+'" aria-label="'+escHtml(titolo)+'">'+segno+'</button>';
+  }
+  var h='';
+  (mappaColori()||[]).forEach(function(c){
+    h+='<button class="ctx-col" type="button" data-evcol="'+escHtml(c)+'" style="background:'+escHtml(c)+
+       '" title="Evidenzia con questo colore" aria-label="Evidenzia con questo colore"'+
+       (conEvidenze?'':' disabled')+'></button>';
+  });
+  h+='<input type="color" class="ev-pick" value="'+escHtml(evidenzeColore())+
+     '" title="Un altro colore" aria-label="Scegli un altro colore">';
+  h+='<span class="sb-sep" aria-hidden="true"></span>';
+  h+=az('cancella','&#9003;', sopra? 'Cancella l’evidenziatura' : 'Qui non c’è una parola chiave', !sopra);
+  h+=az('appunta','&#9998;', conVault? 'Appunta negli appunti' : 'Serve un capitolo del vault', !conVault);
+  h+=az('mappa','&#9711;', conMappa? 'Porta sulla mappa' : 'Serve un corso aperto', !conMappa);
+  h+=az('copia','&#10697;','Copia', false);
+  barra.innerHTML=h;
+  barra.classList.add('aperta');
+  selBarraPosiziona(sel.range);
+}
+/* La barra e il menu condividono il dispatcher: `data-az` è lo stesso
+   vocabolario, e le voci di uno sono le azioni dell'altra. */
 document.addEventListener('mouseup',function(e){
-  var btn=$('#selNote'); if(!btn) return;
+  if(!$('#selBarra')) return;
   /* ⚠️ Solo il tasto sinistro. Il `mouseup` del tasto DESTRO arriva subito dopo
-     che il menu contestuale si è aperto, e rimetteva in scena il bottone
-     flottante proprio sopra il menu appena comparso. Misurato con eventi veri:
-     il bottone tornava visibile e copriva la prima voce. */
+     che il menu contestuale si è aperto, e rimetteva in scena la barra proprio
+     sopra il menu appena comparso. Misurato con eventi veri. */
   if(e.button!==0) return;
-  // il pulsante flottante vale per il testo del capitolo: dentro l'editor o
-  // sopra l'anteprima non ha senso (prima la guardia guardava `#dock`, che come
-  // pannello non esiste più — i due pannelli ora stanno nei blocchi)
-  if(e.target.closest && (e.target.closest('#selNote')||e.target.closest('#notePane')||e.target.closest('#pdfPane'))) return;
+  // vale per il testo del capitolo: dentro l'editor o sopra l'anteprima no
+  if(e.target.closest && (e.target.closest('#selBarra')||e.target.closest('#selMenu')||
+                          e.target.closest('#notePane')||e.target.closest('#pdfPane'))) return;
   // al `mouseup` la selezione non è ancora aggiornata: si legge al giro dopo
   setTimeout(function(){
     var sel=selezioneNelCapitolo();
-    /* Il bottone non chiede più il vault. Prima le guardie erano quattro e due
-       riguardavano gli appunti (`notesApi`, `curMeta`): ora apre un menu in cui
-       «Copia» funziona comunque, e negare la superficie intera perché una voce
-       su sei non si può fare vorrebbe dire spegnere anche le altre. */
-    if(!sel || siStaRidimensionando()){ btn.style.display='none'; return; }
-    var r=sel.range.getBoundingClientRect();
-    btn.style.display='block';
-    // la larghezza si MISURA: era scritta a mano (120), e un bottone che cambia
-    // etichetta avrebbe smesso di stare dentro lo schermo senza dirlo
-    var b=btn.getBoundingClientRect();
-    btn.style.left=Math.max(8, Math.min(r.left, window.innerWidth-b.width-8))+'px';
-    btn.style.top =Math.max(8, r.top-b.height-6)+'px';
+    if(!sel || siStaRidimensionando()){ selBarraChiudi(); return; }
+    selBarraApri(sel);
   },0);
 });
+document.addEventListener('scroll', function(){ if(selBarraAperta()) selBarraChiudi(); }, true);
 
 /* ===== Il menu contestuale sulla selezione del capitolo (lotto 4) ===========
    Una superficie sola per due gesti: il tasto destro dentro la selezione e il
@@ -3867,7 +3927,7 @@ document.addEventListener('mouseup',function(e){
    click continua ad arrivare, la selezione resta viva. È lo stesso rimedio di
    qualunque barretta che compare sopra un testo selezionato. */
 document.addEventListener('mousedown', function(e){
-  if(e.target.closest && e.target.closest('#selNote')) e.preventDefault();
+  if(e.target.closest && e.target.closest('#selBarra')) e.preventDefault();
 });
 /* Il testo E il suo range: le evidenze hanno bisogno di sapere DOVE, non solo
    che cosa. Il range si tiene finché il menu è aperto — dopo, un `render()`
@@ -3942,7 +4002,7 @@ function selMenuApri(x, y, sel){
       righeColore+='<button class="ctx-col" data-evcol="'+escHtml(c)+'" style="background:'+escHtml(c)+
         '" title="Evidenzia con questo colore" aria-label="Evidenzia con questo colore"></button>';
     });
-    righeColore+='<input type="color" id="evColPick" value="'+escHtml(evidenzeColore())+
+    righeColore+='<input type="color" class="ev-pick" value="'+escHtml(evidenzeColore())+
       '" title="Un altro colore" aria-label="Scegli un altro colore">';
     righeColore+='</div>';
   }
@@ -3959,7 +4019,7 @@ function selMenuApri(x, y, sel){
   /* ⚠️ Il bottone flottante ha lo STESSO z-index dei menu contestuali (200) e
      sta dopo nel DOM: a parità vince chi viene dopo, quindi coprirebbe il menu
      che ha appena aperto. Si spegne. */
-  var b=$('#selNote'); if(b) b.style.display='none';
+  selBarraChiudi();
   m.classList.add('open');
   // si misura dopo l'apertura: da chiuso è `display:none` e misura zero
   var r=m.getBoundingClientRect();
@@ -3977,23 +4037,16 @@ document.addEventListener('contextmenu', function(e){
   e.preventDefault();
   selMenuApri(e.clientX, e.clientY, sel);
 });
-/* Le voci del menu. Un click delegato, come tutto il resto dell'app. */
-document.addEventListener('click', function(e){
-  if(!e.target.closest) return;
-  var it=e.target.closest('#selMenu .ctx-item');
-  if(!it){
-    /* ⚠️ `#selNote` va escluso, o il menu si chiude nell'istante in cui si apre.
-       Il bottone è servito da un listener registrato PRIMA di questo, sullo
-       stesso nodo: quando arriva qui, quello ha già aperto il menu, e un click
-       «fuori dal menu» lo richiuderebbe subito. Non è una gara sul fuoco né un
-       problema di propagazione — è l'ordine di registrazione, e si risolve
-       nominando l'apritore invece di rincorrerlo con un rinvio. */
-    if(selMenuAperto() && !e.target.closest('#selMenu') && !e.target.closest('#selNote')) selMenuChiudi();
-    return;
-  }
-  if(it.disabled) return;
-  var az=it.getAttribute('data-az'), testo=SELMENU.testo, range=SELMENU.range;
-  selMenuChiudi();
+/**
+ * Che cosa fa un'azione sulla selezione. UNA funzione, e la chiamano tutte e
+ * due le superfici: la barra che compare da sé e il menu del tasto destro.
+ *
+ * `data-az` è il vocabolario condiviso — le voci del menu e i tasti della barra
+ * portano gli stessi nomi. È la regola già pagata sulle mappe: due strade che
+ * arrivano allo stesso posto devono passare per la stessa porta, o un giorno
+ * una delle due dimentica di fare un pezzo.
+ */
+function selAzione(az, testo, range){
   if(az==='copia'){
     if(!navigator.clipboard){ toast('Copia non disponibile',false); return; }
     navigator.clipboard.writeText(testo).then(function(){ toast('Copiato',true); },
@@ -4004,6 +4057,27 @@ document.addEventListener('click', function(e){
   if(az==='keyword'){ evidenzia(range, evidenzeColore()); return; }
   if(az==='cancella'){ evidenzaCancella(range); return; }
   if(az==='mappa'){ mappaEstrai(testo, range); return; }
+}
+/* Le voci del menu e i tasti della barra. Un click delegato, come tutto il
+   resto dell'app. */
+document.addEventListener('click', function(e){
+  if(!e.target.closest) return;
+  var it=e.target.closest('#selMenu .ctx-item, #selBarra .sb-az');
+  if(!it){
+    /* ⚠️ `#selBarra` va esclusa, o il menu si chiude nell'istante in cui si apre.
+       La barra è servita da un listener registrato PRIMA di questo, sullo
+       stesso nodo: quando arriva qui, quello ha già aperto il menu, e un click
+       «fuori dal menu» lo richiuderebbe subito. Non è una gara sul fuoco né un
+       problema di propagazione — è l'ordine di registrazione, e si risolve
+       nominando l'apritore invece di rincorrerlo con un rinvio. */
+    if(selMenuAperto() && !e.target.closest('#selMenu') && !e.target.closest('#selBarra')) selMenuChiudi();
+    if(selBarraAperta() && !e.target.closest('#selBarra') && !e.target.closest('#selMenu')) selBarraChiudi();
+    return;
+  }
+  if(it.disabled) return;
+  var az=it.getAttribute('data-az'), testo=SELMENU.testo, range=SELMENU.range;
+  selMenuChiudi(); selBarraChiudi();
+  selAzione(az, testo, range);
 });
 /* La riga dei colori: sceglierne uno evidenzia CON quello e lo rende il colore
    di adesso. Due gesti in uno perché sono la stessa intenzione — «questa parola
@@ -4011,27 +4085,28 @@ document.addEventListener('click', function(e){
    sarebbe un passaggio in più per ottenere lo stesso. */
 document.addEventListener('click', function(e){
   if(!e.target.closest) return;
-  var b=e.target.closest('#selMenu .ctx-col'); if(!b) return;
+  var b=e.target.closest('#selMenu .ctx-col, #selBarra .ctx-col'); if(!b || b.disabled) return;
   var c=b.getAttribute('data-evcol'), range=SELMENU.range;
-  selMenuChiudi(); evidenzeColoreScegli(c); evidenzia(range, c);
+  selMenuChiudi(); selBarraChiudi(); evidenzeColoreScegli(c); evidenzia(range, c);
 });
 /* Il picker nativo parla con `change`, non con `click`: un `click` arriverebbe
    all'apertura della tavolozza, quando un colore non è ancora stato scelto. */
 document.addEventListener('change', function(e){
-  if(!e.target || e.target.id!=='evColPick') return;
+  if(!e.target || !e.target.classList || !e.target.classList.contains('ev-pick')) return;
   var c=e.target.value, range=SELMENU.range;
-  selMenuChiudi(); evidenzeColoreScegli(c); evidenzia(range, c);
+  selMenuChiudi(); selBarraChiudi(); evidenzeColoreScegli(c); evidenzia(range, c);
 });
 /* ⚠️ In cattura su `window`, come la pila della mappa e per la stessa ragione:
    in cattura sul DOCUMENTO ci sono già `closePops()` e `closePdf()`, registrati
    prima, e `stopPropagation` non ferma i gestori che stanno sullo STESSO nodo.
    Un Esc per chiudere questo menu chiuderebbe anche l'anteprima della fonte. */
 window.addEventListener('keydown', function(e){
-  if(e.key!=='Escape' || !selMenuAperto()) return;
-  e.stopPropagation();
-  selMenuChiudi();
+  if(e.key!=='Escape') return;
+  // uno strato per volta, dal più interno: il menu sta SOPRA la barra
+  if(selMenuAperto()){ e.stopPropagation(); selMenuChiudi(); return; }
+  if(selBarraAperta()){ e.stopPropagation(); selBarraChiudi(); }
 }, true);
-window.addEventListener('resize', selMenuChiudi);
+window.addEventListener('resize', function(){ selMenuChiudi(); selBarraChiudi(); });
 
 /* ===== Le evidenze: le parole chiave dello studente sul testo ==============
    Vivono su disco (`APPUNTI/_evidenze.json`, vedi `lib/evidenze.js`) e si
@@ -8124,7 +8199,11 @@ window.addEventListener('keydown', function(e){
     <div class="mmodo" id="mModo" hidden></div>
   </div>
 </section>
-<button id="selNote" type="button">&#9998; Appunta</button>
+<!-- L'ancora della barra: un rettangolo invisibile che si posa sulla selezione.
+     Serve perché il posizionamento ancorato del CSS lega un elemento a un ALTRO
+     elemento, e una selezione non è un elemento. -->
+<div id="selAncora" aria-hidden="true"></div>
+<div id="selBarra" role="toolbar" aria-label="Azioni sulla selezione"></div>
 <div id="uiModal" role="dialog" aria-modal="true" aria-labelledby="umTitle">
   <div class="um-card">
     <h3 id="umTitle">Titolo</h3>
