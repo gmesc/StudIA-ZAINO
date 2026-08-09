@@ -232,7 +232,7 @@ che è il primo punto della coda del §6 e non è mai stato fatto.
 
 ---
 
-# 10. La seconda metà del 9 agosto — le parole chiave e il menu sulla selezione
+# 10. La seconda metà del 9 agosto — le parole chiave e la selezione
 
 > Sessione successiva, stesso giorno. Punto di partenza: una domanda — «avevamo già discusso di
 > come gestire la funzione *Appunta* dal menu contestuale?». Punto d'arrivo: sei lotti chiusi,
@@ -246,8 +246,8 @@ che è il primo punto della coda del §6 e non è mai stato fatto.
 | **`cap:`** | rimando a un capitolo preciso: `[testo](cap:01-fondamenti-c03)` | dentro `prova-menu` |
 | **ancoraggio** | `App/assets/evidenze/ancoraggio.js` — TextQuoteSelector puro, sole stringhe e indici | `test/evidenze.js` |
 | **persistenza** | `lib/evidenze.js` → `APPUNTI/_evidenze.json` + vista `.md` | `test/evidenze.js` |
-| **menu** | `#selMenu` sulla selezione: Appunta · Alla mappa · Keyword · colori · Cancella · Copia | `test/cdp/prova-menu.js` (36) |
-| **strumento Keyword** | l'elenco a chip nel banco: ricerca, ordinamento, trascinamento | `test/cdp/prova-keyword.js` (21) |
+| **barra + menu** | `#selBarra` compare da sé sulla selezione e porta tutto; `#selMenu` è la stessa cosa col tasto destro e le parole scritte | `test/cdp/prova-menu.js` (42) |
+| **strumento Keyword** | l'elenco a chip nel banco: ricerca, ordinamento, trascinamento | `test/cdp/prova-keyword.js` (20) |
 | **L5** | il frammento diventa nodo `origine:'fonte'` | dentro `prova-menu` |
 | **pdf.js** | vendorizzato (`App/assets/pdfjs/`, build legacy) — **il viewer è da scrivere** | chiodo di prova superato |
 
@@ -269,6 +269,16 @@ che è il primo punto della coda del §6 e non è mai stato fatto.
 6. **Le orfane non si cancellano**: restano nell'elenco, barrate. Il loro posto è sparito, non la
    loro storia.
 7. **pdf.js: build `legacy/`**, e non è una preferenza — vedi §10.4.
+8. **Due superfici sulla selezione, e non sono un doppione.** La **barra
+   contestuale** (`#selBarra`) compare da sé ed è a icone: è per chi sa già. Il
+   **menu contestuale** (`#selMenu`) si chiede col tasto destro e ha le parole
+   scritte: è per chi guarda. Passano tutte e due da `selAzione()` e condividono
+   il vocabolario `data-az` — è la regola già pagata sulle mappe, dove due riti
+   separati avrebbero fatto dimenticare un pezzo a una delle due strade.
+   ⚠️ Vocabolario, perché serve per parlarne: ciò che compare da sé **non è** un
+   menu contestuale. In inglese è una *selection toolbar* (o *bubble menu* nel
+   gergo degli editor, *Mini Toolbar* per Word). La differenza non è l'aspetto,
+   è chi prende l'iniziativa.
 
 ## 10.3 I guasti trovati, tutti misurati
 
@@ -303,6 +313,35 @@ evidenze non crea nessun file; se il file c'è, svuotarlo lo riscrive.
 - `roundtrip` scendeva da 868 a 858 dicendo «tutti i controlli passati». **`npm test` legge il
   vault dalla config**: con la copia di prova puntata, dieci controlli che dipendono dai materiali
   venivano saltati in silenzio. Il numero vero si legge solo col vault vero.
+
+## 10.3-bis La posizione della barra la decide il browser
+
+`#selAncora` è un rettangolo invisibile che si posa sul rettangolo della
+selezione e si dichiara ancora (`anchor-name: --selezione`); `#selBarra` ci si
+aggancia con `position-anchor` e `position-try-fallbacks: flip-block,
+flip-inline`. Sopra se ci sta, sotto se non ci sta, di lato se sborda — e non
+esce mai dalla finestra. Il posizionamento ancorato nativo **c'è** in questa
+build: misurato, `anchor-name` · `position-anchor` · `position-try-fallbacks` ·
+`position-area` tutti supportati (Chromium 142; sono in Chromium dalla 125).
+
+Resta un ripiego in JS dentro `selBarraPosiziona`, e non è pignoleria: una
+funzione che si appoggia in silenzio a una capacità del motore è una funzione
+che un giorno smette senza dire perché.
+
+⚠️ **Il confine è la FINESTRA, non il blocco** — scelta dell'utente, e va
+saputa. Il capitolo vive dentro un `.bcorpo` della griglia del banco, quindi
+una barra che non esce dallo schermo può comunque posarsi **sopra il blocco
+accanto** (gli appunti, la mappa). Se un giorno darà fastidio, il rimedio è
+un'inversione già capita: `container-type: inline-size` su `.bcorpo` lo rende il
+blocco contenitore dei discendenti `position: fixed`. Per il **menu** è una
+trappola (va tenuto fuori dai blocchi, o si ancora al riquadro e finisce sotto
+la topbar); per una **barra** che deve restare nel suo riquadro è esattamente il
+meccanismo giusto. Menu fuori, barra dentro: sembra un'incoerenza ed è la stessa
+regola letta due volte.
+
+Nota minore ma della stessa famiglia: il picker del colore è passato da `id` a
+**classe**, perché barra e menu lo hanno entrambi e due elementi con lo stesso
+id non sono una svista da correggere dopo.
 
 ## 10.4 pdf.js: la misura che decide tutto
 
