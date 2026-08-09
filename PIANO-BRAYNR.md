@@ -67,9 +67,19 @@ concordata per le figure Chandra: zero codice nuovo per il click).
 - `lib/appunti.js`: file `.md` indipendenti, frontmatter con `lezioneId/capitoloId/capitoloFile/anchor`,
   scrittura atomica, `_indice.md` rigenerato a ogni salvataggio.
 - Nel lettore: EasyMDE nel dock (anteprima sopra, editor sotto, split ridimensionabile), callout
-  in stile Obsidian (7 tipi), emoji OpenMoji, `injectNoteMarkers`/`wireNoteMarkers` che rimontano
-  i marker nel capitolo dall'`anchor`, 🔖 (⌘⇧C) che cita il minuto/la pagina correnti, 📎 che
+  in stile Obsidian (7 tipi), emoji OpenMoji, 🔖 (⌘⇧C) che cita il minuto/la pagina correnti, 📎 che
   inserisce il rimando a un materiale scelto da elenco.
+
+  ⚠️ **Corretto il 9 agosto 2026, verificato riga per riga.** Qui c'era scritto che
+  `injectNoteMarkers`/`wireNoteMarkers` «rimontano i marker nel capitolo dall'`anchor`». **Non è
+  vero, e la frase ha indirizzato male il lavoro sulle evidenze.** Quelle due funzioni sostituiscono
+  i token `[[NN]]` **già scritti nell'HTML generato** e li mappano su `chapterNotes(c)`, cioè
+  l'elenco dei video e dei PDF del capitolo: una `String.replace` con una regex numerica. Nessuna
+  ricerca di testo, nessun `anchor`, nessun caso «frase non trovata». L'`anchor` degli appunti oggi
+  non ha alcun marcatore sul testo: serve solo come frammento nell'elenco e in `_indice.md`.
+  Conseguenza pratica: per le evidenze (P1.1) **non c'era niente da riusare**, e il motore di
+  ancoraggio è stato scritto da zero — `App/assets/evidenze/ancoraggio.js`, selettori
+  TextQuoteSelector, puro e provato in Node.
 
 ### Proposte
 

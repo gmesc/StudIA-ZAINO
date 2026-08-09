@@ -58,12 +58,25 @@ distinzione cromatica di Braynr si applica intera: **nodo estratto dalla fonte =
 
 ### 3.1 Dal testo del capitolo — selezione
 
-Il pulsante flottante sulla selezione (`#selNote`, `StudIA.html:3340`) diventa **doppio**:
-`Appunta · → Mappa`. «→ Mappa» inserisce il frammento nella **mappa attiva** (l'ultima aperta per
-quel capitolo; se non ce n'è, la crea e lo dice col toast): nodo `origine:'fonte'` con `anchor`
-(la frase attorno, come per gli appunti) e il rimando al capitolo. Se la mappa è aperta, il nodo
-si appende al **nodo selezionato** (se ce n'è uno) o resta flottante da posare; se è chiusa, il
-frammento entra comunque — il gesto di Braynr «trascina senza guardare», senza il drag.
+> ⚠️ **Superato il 9 agosto 2026, e realizzato.** Qui il pulsante flottante diventava **doppio**
+> (`Appunta · → Mappa`). Costruendo si è scelto un **menu contestuale**, perché le destinazioni
+> della selezione non sono rimaste due: sono sei. Il doppio segmento regge a due, un menu scala.
+> Il bottone flottante `#selNote` **resta** e apre lo stesso menu, chiamando la stessa funzione.
+
+Sulla selezione nel capitolo si apre un **menu contestuale** (`#selMenu`), col tasto destro dentro
+la selezione o dal pulsante flottante. Voci: `Appunta · Alla mappa · Keyword · [riga colori] ·
+Cancella evidenziatura · Copia`. «Alla mappa» inserisce il frammento nella **mappa attiva**; se non
+ce n'è, ne crea una col solo frammento intitolata a lezione + capitolo, e lo dice col toast. Il
+nodo nasce `origine:'fonte'` con la frase attorno nella `nota` e il numero del capitolo — il gesto
+di Braynr «trascina senza guardare», senza il drag.
+
+Due cose imparate costruendo, che valgono per qualunque superficie sulla selezione:
+- il testo si prende da **`range.toString()`**, mai da `selection.toString()`: in Chromium
+  quest'ultimo applica `text-transform`, e dentro `#content` sono maiuscoli titoli, occhiello,
+  punteggio del quiz e intestazioni dei riquadri. Misurato: un titolo tornava «MEMORIA DI LAVORO»
+  mentre nel documento c'è «memoria di lavoro»;
+- il `mousedown` sul pulsante flottante **collassa la selezione** prima che il gestore la legga:
+  serve `preventDefault`, altrimenti il gesto lavora sul vuoto.
 
 ### 3.2 Dal video e dal PDF — ⌘⇧C (Ctrl+Shift+C)
 
@@ -126,8 +139,14 @@ esistono le evidenze. Il formato nodo è già pronto (`origine`, `rimando`).
 ### 4.4 Colori
 
 - Menu contestuale del nodo → **riga colori: 5 preset + picker** (input color nativo).
-  I 5 preset dal design system StudIA (teal, giallo, blu + 2 della palette callout — costanti in
-  `lib/mappa.js`, non hex sparsi nel renderer).
+  ⚠️ **Corretto il 9 agosto 2026.** Qui c'era scritto che i 5 preset sono «costanti in
+  `lib/mappa.js`, non hex sparsi nel renderer». Quel file **non esiste** (il modulo si chiama
+  `lib/mappe.js` e non contiene nessuna palette), e per una volta ha ragione il codice: i preset
+  stanno in `mappaColori()` nel renderer, che li legge **a runtime dalle variabili CSS** — così
+  seguono il tema chiaro e scuro, cosa che cinque costanti in una libreria non potrebbero fare.
+  Dal lotto delle evidenze la stessa funzione serve anche al menu sulla selezione e a quello sul
+  chip delle parole chiave: una tavolozza sola, in un posto solo. Resta una crepa vera: il quinto
+  colore (`#7c3aed`) è un hex nudo senza variabile, e nel tema scuro non cambia con gli altri.
 - Checkbox **«applica ai discendenti»**: la cascata di MappAI/Braynr — il colore si propaga a
   tutto il sottoalbero (usa `getDescendants`, rispetta i rami chiusi). Senza spunta, colora solo
   il nodo.
@@ -352,7 +371,7 @@ ventaglio della fase D.
 | **L2** ✅ | i gesti sulla tela: crea, rinomina, sposta, elimina, ⌘Z, cestino | `StudIA.html` · `disegna.js` | L1 |
 | **L3** ✅ | archi, porte di trascinamento, linking words | `StudIA.html` · `disegna.js` · `relazioni.js` | L2 |
 | **L4** ✅ | menu contestuale unico (nodo · arco · vuoto) e colori | `StudIA.html` | L3 |
-| **L5** | estrazione: `→ Mappa`, ⌘⇧C verso la mappa | `StudIA.html` · `modifica.js` | L1 (basta), meglio dopo L4 |
+| **L5** ✅ | estrazione: `Alla mappa` dal menu contestuale (⌘⇧C resta da fare) | `StudIA.html` · `modifica.js` | L1 (basta), meglio dopo L4 |
 | **L6** | ✂ ritaglio d'area → nodo immagine | `disegna.js` · `main.js` · `preload.js` · `StudIA.html` | L5 |
 
 ### L0 — il livello puro
