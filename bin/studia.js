@@ -89,20 +89,50 @@ function chiaviAmbiente() {
   };
 }
 
-/** Modello finto per le prove a vuoto: risponde qualcosa di valido a ogni fase. */
+/**
+ * Modello finto per le prove a vuoto: risponde qualcosa di valido a ogni fase.
+ *
+ * La fase arriva dichiarata in `o.fase`. Prima si deduceva cercando una frase
+ * dentro il prompt, e bastava riscrivere quella frase — una precisazione, un
+ * refuso — perché la prova a vuoto collaudasse la fase sbagliata senza dire
+ * niente. Il ripiego sul testo resta per chi chiama senza dichiararla, ma è un
+ * ripiego: la fase la dichiara chi la conosce.
+ */
+const FINTO = { inputTokens: 10, outputTokens: 5 };
+const RISPOSTE_FINTE = {
+  // solo la lettura dei materiali dichiara un consumo: è la fase che nella prova
+  // a vuoto interessa vedere contata, le altre restano a zero come prima
+  porzione: { dati: { temi: [{ titolo: 'Tema simulato', da: 0, a: 60 }], concetti: ['prova'] }, uso: FINTO },
+  fusione: { dati: { sintesi: 'Scheda simulata a scopo di collaudo.', livello: 'misto', temi: [{ titolo: 'Tema simulato' }] }, uso: FINTO },
+  tassonomia: { dati: { aree: [] }, uso: {} },
+  sequenza: { dati: { ordine: [] }, uso: {} },
+  legami: { dati: { coppie: [] }, uso: {} },
+  sintesi: { dati: { lezioni: [] }, uso: {} },
+  revisione: { dati: { promossa: true, rilievi: [] }, uso: {} }
+};
+
+/** Ripiego: la fase dedotta dal prompt, per chi chiama senza dichiararla. */
+const FASE_DAL_PROMPT = [
+  ['Leggi la porzione', 'porzione'],
+  ['analisi parziali', 'fusione'],
+  ['esperto della disciplina', 'tassonomia'],
+  ['progettista didattico', 'sequenza'],
+  ['corpora didattici', 'legami'],
+  ['ARCHITETTURA DEFINITIVA', 'sintesi'],
+  ['revisore severo', 'revisione']
+];
+function faseDedotta(sistema) {
+  const s = sistema || '';
+  const t = FASE_DAL_PROMPT.find(([frase]) => s.indexOf(frase) > 0);
+  return t ? t[1] : null;
+}
+
 function modelloFinto() {
   return async function (o) {
-    const s = o.sistema || '';
-    if (s.indexOf('Leggi la porzione') > 0)
-      return { ok: true, dati: { temi: [{ titolo: 'Tema simulato', da: 0, a: 60 }], concetti: ['prova'] }, uso: { inputTokens: 10, outputTokens: 5 } };
-    if (s.indexOf('analisi parziali') > 0)
-      return { ok: true, dati: { sintesi: 'Scheda simulata a scopo di collaudo.', livello: 'misto', temi: [{ titolo: 'Tema simulato' }] }, uso: { inputTokens: 10, outputTokens: 5 } };
-    if (s.indexOf('esperto della disciplina') > 0) return { ok: true, dati: { aree: [] }, uso: {} };
-    if (s.indexOf('progettista didattico') > 0) return { ok: true, dati: { ordine: [] }, uso: {} };
-    if (s.indexOf('corpora didattici') > 0) return { ok: true, dati: { coppie: [] }, uso: {} };
-    if (s.indexOf('ARCHITETTURA DEFINITIVA') > 0) return { ok: true, dati: { lezioni: [] }, uso: {} };
-    if (s.indexOf('revisore severo') > 0) return { ok: true, dati: { promossa: true, rilievi: [] }, uso: {} };
-    return { ok: false, errore: 'fase non riconosciuta' };
+    const fase = o.fase || faseDedotta(o.sistema);
+    const r = RISPOSTE_FINTE[fase];
+    if (!r) return { ok: false, errore: 'fase non riconosciuta: ' + (fase || '—') };
+    return { ok: true, dati: r.dati, uso: r.uso };
   };
 }
 

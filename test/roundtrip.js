@@ -462,32 +462,54 @@ check('porzioni con marcatori temporali', true, /\[\d+:\d\d = \d+s\]/.test(porz[
 check('pdf spezzato conservando le pagine', true, /\[p\. 1\]/.test(chunkLib.testoConPagine([{ page: 1, text: 'x' }])));
 
 let chiamate = 0;
+
+/* La fase la dichiara chi la conosce (`o.fase`), non la si indovina dal prompt.
+   Il ripiego sul testo resta per chi chiama senza dichiararla — ed è anche il
+   controllo che le due strade dicano la stessa cosa. */
+const FASE_DAL_PROMPT = [
+  ['Leggi la porzione', 'porzione'],
+  ['analisi parziali', 'fusione'],
+  ['esperto della disciplina', 'tassonomia'],
+  ['progettista didattico', 'sequenza'],
+  ['corpora didattici', 'legami'],
+  ['ARCHITETTURA DEFINITIVA', 'sintesi'],
+  ['revisore severo', 'revisione'],
+  ['SCALETTE ALTERNATIVE', 'scalette'],
+  ['Scrivi UN capitolo', 'capitolo']
+];
+function faseDedotta(sistema) {
+  const t = String(sistema || '');
+  // «Scrivi UN capitolo» apre il prompt: qui basta che compaia, non dove
+  const trovata = FASE_DAL_PROMPT.find(([frase]) => t.indexOf(frase) >= 0);
+  return trovata ? trovata[1] : null;
+}
+
 async function modelloFinto(o) {
   chiamate++;
-  const s = o.sistema;
-  if (s.indexOf('Leggi la porzione') > 0)
+  const fase = o.fase || faseDedotta(o.sistema);
+  if (fase === 'porzione')
     return { ok: true, dati: { temi: [{ titolo: 'Tema', sintesi: 'x', da: 0, a: 300 }], concetti: ['metodo'], prerequisiti: [] }, uso: { inputTokens: 100, outputTokens: 50 } };
-  if (s.indexOf('analisi parziali') > 0)
+  if (fase === 'fusione')
     return { ok: true, dati: { sintesi: 'Materiale che insegna qualcosa di verificabile.', livello: 'teorico',
       temi: [{ titolo: 'Primo tema', da: 0, a: 300 }], concetti: ['metodo'], prerequisiti: [], collegamenti: [],
       capitoliProposti: [{ titolo: 'Capitolo uno', outline: 'o', da: 0, a: 300 }] }, uso: { inputTokens: 200, outputTokens: 80 } };
-  if (s.indexOf('esperto della disciplina') > 0)
+  if (fase === 'tassonomia')
     return { ok: true, dati: { aree: [{ nome: 'Fondamenti', materiali: ['07'] }, { nome: 'Pratica', materiali: ['03', '01'] }],
       anomali: [{ materiale: '12', motivo: 'consultazione', trattamento: 'modulo-fonte' }] }, uso: { inputTokens: 300, outputTokens: 90 } };
-  if (s.indexOf('progettista didattico') > 0)
+  if (fase === 'sequenza')
     return { ok: true, dati: { ordine: ['07', '03', '01', '12'], precedenze: [{ dopo: '03', prima: '07', perche: 'la pratica presuppone la teoria' }], fondamenti: ['07'] }, uso: { inputTokens: 300, outputTokens: 90 } };
-  if (s.indexOf('corpora didattici') > 0)
+  if (fase === 'legami')
     return { ok: true, dati: { coppie: [{ materiali: ['07', '03'], tipo: 'teoria+applicazione' }], rimandi: [{ da: 'Pratica', a: 'Fondamenti' }], sovrapposizioni: [] }, uso: { inputTokens: 300, outputTokens: 90 } };
-  if (s.indexOf('ARCHITETTURA DEFINITIVA') > 0)
+  if (fase === 'sintesi')
     return { ok: true, dati: { lezioni: [
       { title: 'FONDAMENTI DEL METODO', area: 'Teoria', rationale: 'Base teorica.', materiali: ['07'] },
       { title: 'DAL METODO ALLA PRATICA', area: 'Pratica', rationale: 'Applicazione e casi.', materiali: ['03', '01'] },
       { title: 'RIFERIMENTI NORMATIVI', area: 'Consultazione', tipo: 'modulo-fonte', rationale: 'Si consulta.', materiali: ['12'] }],
       rimandi: [{ da: 'DAL METODO ALLA PRATICA', a: 'FONDAMENTI DEL METODO', perche: 'ripasso' }],
       decisioni: ['Il 12 non è una lezione ma materiale di consultazione.'] }, uso: { inputTokens: 900, outputTokens: 400 } };
-  if (s.indexOf('revisore severo') > 0)
+  if (fase === 'revisione')
     return { ok: true, dati: { promossa: true, rilievi: [] }, uso: { inputTokens: 400, outputTokens: 60 } };
-  if (s.indexOf('SCALETTE ALTERNATIVE') > 0)
+  if (fase === 'scalette')
     return { ok: true, dati: { alternative: [
       { nome: 'In sequenza', principio: 'sequenza didattica', differenza: 'Segui l\'ordine della lezione: sicuro, ma la pratica arriva tardi.', adattaA: 'chi parte da zero',
         capitoli: [{ titolo: 'La teoria di base', sintesi: 'fondamenti', fonti: [{ materiale: '07', da: 1, a: 6 }] },
@@ -498,7 +520,7 @@ async function modelloFinto(o) {
         capitoli: [{ titolo: 'La teoria di base', sintesi: 'fondamenti', fonti: [{ materiale: '07' }] },
                    { titolo: 'La teoria applicata', sintesi: 'pratica', fonti: [{ materiale: '07' }] }] }
     ] }, uso: { inputTokens: 500, outputTokens: 300 } };
-  if (s.indexOf('Scrivi UN capitolo') === 0)
+  if (fase === 'capitolo')
     return { ok: true, dati: {
       title: 'La teoria di base del metodo',
       inBreve: 'Il capitolo introduce i fondamenti su cui poggia tutto il resto della lezione.',
@@ -509,7 +531,7 @@ async function modelloFinto(o) {
                   { t: 'Fondamento', d: 'Assunto di partenza su cui poggiano le procedure successive.' }],
       sources: [{ pdf: '07', page: 2, label: 'La definizione' }]
     }, uso: { inputTokens: 800, outputTokens: 600 } };
-  return { ok: false, errore: 'prompt non riconosciuto' };
+  return { ok: false, errore: 'fase non riconosciuta: ' + (fase || '—') };
 }
 
 (async () => {
@@ -542,8 +564,8 @@ async function modelloFinto(o) {
   // il revisore che boccia fa fare un secondo giro di sintesi
   let giriSintesi = 0;
   async function modelloCritico(o) {
-    if (o.sistema.indexOf('ARCHITETTURA DEFINITIVA') > 0) giriSintesi++;
-    if (o.sistema.indexOf('revisore severo') > 0)
+    if ((o.fase || faseDedotta(o.sistema)) === 'sintesi') giriSintesi++;
+    if ((o.fase || faseDedotta(o.sistema)) === 'revisione')
       return { ok: true, dati: { promossa: false, rilievi: [{ gravita: 'alta', problema: 'la lezione 2 mescola due cose', rimedio: 'separarle' }] }, uso: {} };
     return modelloFinto(o);
   }
