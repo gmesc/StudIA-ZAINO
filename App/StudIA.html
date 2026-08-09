@@ -22,6 +22,11 @@
 <!-- Il banco: forme della griglia e regole sullo stato. Puro e UMD come i
      moduli della mappa — i test lo richiedono da Node. -->
 <script src="assets/banco/forme.js"></script>
+<!-- Evidenze: ritrovare un pezzo di testo dopo che la pipeline ha rifatto
+     l'HTML. Conosce SOLO stringhe e indici — il ponte col DOM (quale nodo di
+     testo, quale offset) sta qui nel renderer, perché un modulo che importasse
+     il DOM non si potrebbe più provare in Node. -->
+<script src="assets/evidenze/ancoraggio.js"></script>
 <style>
   /* OpenMoji come font emoji dell'app (self-hosted, offline) — eccezione dichiarata per questa app al default Noto */
   @font-face{ font-family:'OpenMoji'; src:url('assets/fonts/OpenMoji-color.woff2') format('woff2');
@@ -168,7 +173,7 @@
   /* Il segno che dice di chi è il blocco: fonte o quaderno. Una riga di colore
      in testa, non un'etichetta — la distinzione la fa già il vault, qui va solo
      ricordata senza occupare spazio. */
-  .bhead{ display:flex; align-items:center; gap:.4rem; padding:0 .5rem; flex:0 0 auto;
+  .bhead{ display:flex; align-items:center; justify-content:center; gap:.4rem; padding:0 .5rem; flex:0 0 auto;
     min-height:calc(var(--ctl-h) - 12px); border-bottom:1px solid var(--line); background:var(--panel);
     border-top:2px solid transparent; }
   .blocco[data-fam="fonte"] .bhead{ border-top-color:var(--blue-strong); }
@@ -214,6 +219,8 @@
      collocazione, non di aspetto: il resto del loro stile è invariato. */
   .bcorpo > #pdfPane{ display:flex!important; height:100%; }
   .bcorpo > #notePane{ display:flex!important; height:100%; flex:1 1 auto; }
+  .bcorpo > #mappaView{ display:flex!important; height:100%; }
+  .bcorpo > #keywordPane{ display:flex!important; height:100%; }
   .bcorpo > main{ min-height:100%; }
   /* contenuti (articolo + nav) centrati nella colonna principale, così su schermi larghi non restano incollati a sinistra */
   main > article, main > .nav{ margin-inline:auto; }
@@ -260,6 +267,13 @@
     background:var(--panel); border:1px solid var(--line); box-shadow:var(--sh-3d); }
   .ctxmenu.open{ display:block; }
   .ctxmenu .ctx-head{ font-size:10px; text-transform:uppercase; letter-spacing:.14em; color:var(--muted); font-weight:700; padding:.35rem .6rem .2rem; }
+  /* Il menu sulla selezione: più largo del minimo perché la sua testata mostra
+     un pezzo del testo scelto, e quel testo va tenuto su una riga sola — se
+     andasse a capo il menu cambierebbe altezza fra un'apertura e l'altra, e il
+     clamp che lo tiene dentro lo schermo misura DOPO aver aperto. */
+  .selmenu{ min-width:212px; max-width:min(340px,92vw); }
+  .selmenu .ctx-head{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-transform:none;
+    letter-spacing:.02em; font-weight:400; font-style:italic; }
   .ctx-item{ display:flex; align-items:center; gap:.55rem; width:100%; text-align:left; border:0; background:transparent;
     color:var(--ink); font:inherit; font-size:12px; padding:.45rem .6rem; cursor:pointer; }
   .ctx-item:hover{ background:var(--hover); }
@@ -615,7 +629,11 @@
   #searchRes .sr-snip{ color:var(--muted); font-size:12px; margin-top:.15rem; }
   #searchRes mark{ background:color-mix(in srgb, var(--yellow) 55%, var(--panel)); color:var(--ink); }
   #searchRes .sr-empty{ padding:.9rem .7rem; color:var(--muted); font-size:12px; }
-  .hitflash{ background:color-mix(in srgb, var(--yellow) 55%, var(--panel)); transition:background 1.2s; }
+  /* Il lampo sull'occorrenza trovata dalla ricerca. Non è un elemento: è un
+     intervallo registrato con la CSS Custom Highlight API, e si colora da qui.
+     Le pseudo di evidenziatura accettano poche proprietà — fra queste non c'è
+     lo sfondo in forma abbreviata, quindi `background-color`. */
+  ::highlight(ricerca){ background-color:color-mix(in srgb, var(--yellow) 55%, var(--panel)); color:var(--ink); }
   /* ===== Callout negli appunti ===== */
   .ucallout{ margin:.9rem 0; border-left:4px solid var(--uc-col,var(--teal)); padding:.6rem .8rem;
     background:color-mix(in srgb, var(--uc-col,var(--teal)) 9%, var(--panel)); }
@@ -659,46 +677,64 @@
   .uc-dafare{ --uc-col:var(--yellow); --uc-ink:var(--yellow-strong); }
   /* ===== Modale generica (titolo appunto) + popup emoji/callout ===== */
   /* ===== Mappe — la vista generata dai capitoli e dalle lezioni =====
-     Sta dentro <main> come fratello dell'articolo: il capitolo resta com'era
-     sotto, e chiudendo la mappa si ritrova senza ricostruire nulla. */
-  #mappaView{ display:none; flex-direction:column; height:calc(100vh - var(--topbar-h));
+     Dal lotto B2 la mappa è uno strumento del banco: vive in un blocco, ACCANTO
+     al capitolo invece che sopra di lui. Da qui l'altezza al 100% del riquadro e
+     non più della finestra — quanto spazio abbia lo decide la griglia.
+     ⚠️ Qui stavano quattro regole appese a `html[data-mappa="1"]`: accendevano
+     la vista, riformattavano `main` e nascondevano articolo, nav e piè di pagina.
+     Erano il vestito di un overlay che non c'è più, e vanno lette come storia:
+     il guasto dei 72px che le aveva generate è nel §5 dell'handoff 8-9 agosto.
+     Toglierle è la sostanza di B2, non una pulizia. */
+  #mappaView{ display:none; flex-direction:column; height:100%;
     container-type:inline-size; container-name:mappa; }
-  html[data-mappa="1"] #mappaView{ display:flex; }
-  /* `max-width` e `margin:0 auto` servono alla colonna di LETTURA — un testo
-     largo quanto la finestra non si legge. La mappa vuole l'opposto: tutto lo
-     spazio che c'è. Il `margin:0` non è ridondante: con la sidebar nascosta,
-     `main` è una cella di griglia, e un margine automatico su una cella la fa
-     restringere al contenuto invece di distenderla (misurato: 367px su una
-     finestra da 1320). */
-  html[data-mappa="1"] main{ padding:0; max-width:none; margin:0; }
-  /* Il piè di pagina dei crediti stava fuori dall'elenco e da solo faceva
-     traboccare la pagina di 72px (34 di altezza + 38 di margine): il documento
-     diventava più alto della finestra, la rotella scorreva la PAGINA invece
-     della mappa e la barra dei comandi usciva dalla vista. La mappa occupa
-     l'altezza esatta della finestra: qualunque cosa le stia accanto dentro
-     `main` va nascosta, non solo quelle che ci si ricorda. */
-  html[data-mappa="1"] main > article,
-  html[data-mappa="1"] main > .nav,
-  html[data-mappa="1"] main > footer{ display:none; }
+
+  /* ===== Le parole chiave: l'elenco, come strumento del banco ===== */
+  #keywordPane{ display:none; flex-direction:column; height:100%; min-height:0; background:var(--panel); }
+  .kwbar{ display:flex; align-items:center; gap:.4rem; padding:.4rem .5rem; flex:0 0 auto;
+    border-bottom:1px solid var(--line); }
+  .kwbar input[type=search]{ flex:1 1 auto; min-width:0; height:calc(var(--ctl-h) - 16px);
+    background:var(--bg); border:1px solid var(--line); color:var(--ink); font:inherit; font-size:12px; padding:0 .5rem; }
+  .kwlista{ flex:1 1 auto; min-height:0; overflow:auto; padding:.5rem; display:flex; flex-wrap:wrap;
+    align-content:flex-start; gap:.35rem; }
+  /* Il colore dell'evidenza torna qui come sottolineatura, lo stesso segno che
+     ha sul testo: chip e parola evidenziata si riconoscono a colpo d'occhio
+     come la stessa cosa. Il valore lo porta il record, quindi non possono
+     divergere. */
+  .kwchip{ display:inline-flex; align-items:center; gap:.35rem; max-width:100%;
+    border:1px solid var(--line); background:var(--bg); color:var(--ink); font:inherit; font-size:12px;
+    padding:.25rem .5rem; cursor:grab; text-align:left;
+    border-bottom:3px solid var(--kw, var(--line)); }
+  .kwchip:hover{ background:var(--hover); }
+  .kwchip:active{ cursor:grabbing; }
+  .kwchip .kwtxt{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:22ch; }
+  /* Un'evidenza orfana — il suo testo non è più nel capitolo — resta
+     nell'elenco e lo DICE. Cancellarla di nascosto sarebbe buttare via il
+     lavoro di qualcuno perché la pipeline ha rigenerato una pagina. */
+  .kwchip.orfana{ opacity:.55; border-style:dashed; }
+  .kwchip.orfana .kwtxt{ text-decoration:line-through; }
+  .kwvuoto{ color:var(--muted); font-size:12px; padding:.6rem; }
 
   /* La barra segue la stessa regola di quella degli appunti: si misura sul
      RIQUADRO, non sulla finestra — con il dock aperto la colonna è stretta
      anche su uno schermo largo. */
-  /* Il margine a sinistra lascia il posto al tasto dell'indice, che è fisso e
-     atterra proprio sull'angolo della barra: senza, il primo comando finirebbe
-     sotto il fantasma e non si potrebbe premere. */
-  /* Alta esattamente come la maniglia dell'indice che le sta a sinistra: il
-     fantasma parte 1px più su per sovrapporre i bordi invece di affiancarli,
-     quindi 40−1 fa finire i due bordi inferiori sulla stessa riga. È
-     `min-height` e non `height` perché a riquadro stretto i comandi vanno a
-     capo, e allora la barra deve poter crescere. */
+  /* ⚠️ Qui c'erano 48px di margine a sinistra, per non finire sotto il tasto
+     dell'indice — che è fisso e atterrava sull'angolo della barra quando la
+     mappa partiva dal bordo della finestra. Con B2 non ci arriva più: `#menuBtn`
+     si posiziona a `sidebar.right / topbar.bottom` (positionPanelToggle), e in
+     quell'angolo ora c'è la TESTATA del blocco, non questa barra. Il margine
+     asimmetrico sarebbe rimasto a difendere da un fantasma che non c'è.
+     Alta come la maniglia dell'indice: `min-height` e non `height` perché a
+     riquadro stretto i comandi vanno a capo, e la barra deve poter crescere. */
   .mtoolbar{ display:flex; align-items:center; gap:.4rem; flex-wrap:wrap; row-gap:.3rem;
-    min-height:calc(var(--ctl-h) - 1px); padding:0 .5rem 0 48px;
+    min-height:calc(var(--ctl-h) - 1px); padding:0 .5rem;
     border-bottom:1px solid var(--line); background:var(--panel); flex:0 0 auto; }
   @container mappa (max-width:700px){ .mtoolbar{ padding-block:.25rem; } }
-  /* Barra di avanzamento e contatore misurano dove sei nel TESTO: sopra una
-     mappa non vogliono dire niente, e stanno esattamente dove serve spazio. */
-  html[data-mappa="1"] .cprog, html[data-mappa="1"] .chapcounter{ display:none; }
+  /* Barra di avanzamento e contatore misurano dove sei nel TESTO: si spengono
+     quando il capitolo non è a schermo. Prima la condizione era «la mappa è
+     aperta», che con B2 sarebbe falsa: mappa e capitolo ora stanno insieme, e
+     ciò che conta non è chi è entrato ma chi è uscito. */
+  html:not([data-strumenti~="capitolo"]) .cprog,
+  html:not([data-strumenti~="capitolo"]) .chapcounter{ display:none; }
   .mtoolbar .msep{ width:1px; height:20px; background:var(--line); margin:0 .15rem; }
   .mtoolbar .mspazio{ flex:1 1 auto; min-width:0; }
   .mseg{ display:inline-flex; align-items:center; border:1px solid var(--line); height:calc(var(--ctl-h) - 10px); }
@@ -767,14 +803,22 @@
     padding:.35rem .7rem; pointer-events:none; box-shadow:var(--sh-3d); }
   .mmodo[hidden]{ display:none!important; }
   .mapmenu{ min-width:238px; }
-  .mapmenu .ctx-item[disabled]{ opacity:.45; cursor:not-allowed; }
-  .mapmenu .ctx-scorc{ margin-left:auto; padding-left:1rem; font-size:10px; color:var(--muted);
+  /* Voce spenta e nota a destra: nate per il menu della mappa, valgono per
+     qualunque menu contestuale — il menu sulla selezione le usa per dire quando
+     arriverà una voce che ancora non esiste. Scritte una volta sola, che è la
+     ragione per cui non sono rimaste sotto `.mapmenu`. */
+  .ctxmenu .ctx-item[disabled]{ opacity:.45; cursor:not-allowed; }
+  .ctxmenu .ctx-item[disabled]:hover{ background:transparent; }
+  .ctxmenu .ctx-scorc{ margin-left:auto; padding-left:1rem; font-size:10px; color:var(--muted);
     letter-spacing:.06em; white-space:nowrap; }
-  .mapmenu .ctx-colori{ display:flex; align-items:center; gap:.35rem; padding:.35rem .6rem .1rem; }
-  .mapmenu .ctx-col{ width:18px; height:18px; border:1px solid var(--line); cursor:pointer; padding:0; }
-  .mapmenu .ctx-col:hover{ box-shadow:var(--sh-3d); }
-  .mapmenu .ctx-col.nessuno{ background:var(--panel); position:relative; }
-  .mapmenu input[type=color]{ width:22px; height:18px; padding:0; border:1px solid var(--line); background:var(--panel); cursor:pointer; }
+  /* La riga dei colori serve al menu della mappa E a quello sulla selezione:
+     una tavolozza sola, scritta una volta. Restare sotto `.mapmenu` avrebbe
+     voluto dire copiarla, e due righe di colori divergono al primo ritocco. */
+  .ctxmenu .ctx-colori{ display:flex; align-items:center; gap:.35rem; padding:.35rem .6rem .1rem; }
+  .ctxmenu .ctx-col{ width:18px; height:18px; border:1px solid var(--line); cursor:pointer; padding:0; }
+  .ctxmenu .ctx-col:hover{ box-shadow:var(--sh-3d); }
+  .ctxmenu .ctx-col.nessuno{ background:var(--panel); position:relative; }
+  .ctxmenu input[type=color]{ width:22px; height:18px; padding:0; border:1px solid var(--line); background:var(--panel); cursor:pointer; }
   .mapmenu .ctx-casc{ display:flex; align-items:center; gap:.4rem; font-size:11px; color:var(--muted);
     padding:.1rem .6rem .4rem; cursor:pointer; }
   #mappaSvg .mtoggle:hover circle + circle{ r:8; }
@@ -1183,7 +1227,12 @@
   a.vlink::before{ content:"▶ "; font-size:.75em; }
   a.plink::before{ content:"↗ "; font-size:.8em; }
   a.wlink{ color:var(--accent,#2a6ef0); text-decoration:none; border-bottom:1px dashed color-mix(in srgb, var(--accent,#2a6ef0) 50%, transparent); cursor:pointer; }
-  a.vlink:hover, a.plink:hover, a.wlink:hover{ border-bottom-style:solid; opacity:.85; }
+  /* Il rimando a un capitolo è un salto DENTRO il testo, come il wiki-link:
+     stessa sottolineatura tratteggiata, che è il segno «resti qui dentro». Le
+     due frecce piene (▶ ↗) restano ai link che aprono una fonte accanto. */
+  a.clink{ color:var(--accent,#2a6ef0); text-decoration:none; border-bottom:1px dashed color-mix(in srgb, var(--accent,#2a6ef0) 50%, transparent); cursor:pointer; }
+  a.clink::before{ content:"§ "; font-size:.85em; opacity:.7; }
+  a.vlink:hover, a.plink:hover, a.wlink:hover, a.clink:hover{ border-bottom-style:solid; opacity:.85; }
   #content .fnotes{ margin-top:1.6rem; padding-top:.8rem; border-top:1px solid var(--line-weak); font-size:13px; color:var(--muted); }
   #content .fnotes b{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.3rem; }
   #content .fnotes ol{ margin:0; padding-left:1.3rem; } #content .fnotes li{ margin:.15rem 0; }
@@ -1401,51 +1450,6 @@
       <div class="bcorpo" data-corpo="A">
   <main>
     <article id="content" tabindex="-1"></article>
-    <!-- La mappa vive accanto al capitolo, non al posto suo: si sovrappone
-         nascondendolo, e chiudendola il capitolo è ancora lì dov'era. -->
-    <section id="mappaView" aria-label="Mappa del capitolo o della lezione">
-      <div class="mtoolbar" role="toolbar" aria-label="Comandi della mappa">
-        <span class="mseg" id="mRegistro" role="group" aria-label="Registro della mappa">
-          <button type="button" data-reg="generata" aria-pressed="true" title="La mappa calcolata dal capitolo o dalla lezione: non si salva, segue i file">Generata</button>
-          <button type="button" data-reg="mie" aria-pressed="false" title="Le tue mappe, salvate in MAPPE/: le modifichi tu e la pipeline non le tocca">Mie</button>
-        </span>
-        <select id="mAmbito" aria-label="Che cosa mappare"></select>
-        <!-- «Modifica una copia» vive nel registro generato (semina una mappa
-             tua da quello che stai guardando), «+» in quello delle tue: sono lo
-             stesso posto perché sono la stessa domanda — «da dove parte questa
-             mappa». Uno dei due è sempre nascosto. -->
-        <button class="mbtn mlungo" id="mCopia" type="button" title="Crea una tua mappa con la sola radice di questa vista: i concetti li metti tu, ed è il punto">Parti da qui</button>
-        <button class="mbtn" id="mNuova" type="button" hidden title="Nuova mappa vuota" aria-label="Nuova mappa">&#43;</button>
-        <!-- il cestino sta accanto alla tendina, cioè accanto alla cosa che
-             elimina: in fondo alla barra, fra «adatta» e «chiudi», sarebbe a un
-             pixel dai comandi che si premono di continuo -->
-        <button class="mbtn" id="mCestino" type="button" hidden title="Elimina questa mappa" aria-label="Elimina questa mappa">&#128465;</button>
-        <span class="msep" aria-hidden="true"></span>
-        <span class="metichetta">Motore</span>
-        <span class="mseg" id="mMotore" role="group" aria-label="Motore di disposizione">
-          <button type="button" data-motore="albero" aria-pressed="true" title="Albero: la gerarchia pura">Albero</button>
-          <button type="button" data-motore="dag" aria-pressed="false" title="DAG: livelli, con gli archi che saltano">DAG</button>
-          <button type="button" data-motore="percorso" aria-pressed="false" title="Percorso: l'ordine in cui studiare, numerato">Percorso</button>
-          <button type="button" data-motore="anelli" aria-pressed="false" title="Anelli: che cosa sta a un passo dal centro">Anelli</button>
-        </span>
-        <span class="mseg" id="mOrient" role="group" aria-label="Orientamento">
-          <button type="button" data-orient="td" aria-pressed="true" title="Dall'alto verso il basso">TD</button>
-          <button type="button" data-orient="lr" aria-pressed="false" title="Da sinistra verso destra">SX</button>
-        </span>
-        <span class="mspazio"></span>
-        <!-- il pallino di modifica non salvata, come negli appunti: sta prima
-             dei comandi perché è uno stato, non un'azione -->
-        <span class="mdirty" id="mSporca" hidden title="Modifiche non salvate">&#9679;</span>
-        <button class="mbtn" id="mVista" type="button" title="Aggiustamenti della vista" aria-haspopup="dialog">&#9881;</button>
-        <button class="mbtn mlungo" id="mAdatta" type="button" title="Adatta la mappa alla finestra">&#10530;</button>
-        <button class="mbtn" id="mChiudi" type="button" title="Chiudi la mappa (Esc)" aria-label="Chiudi la mappa">&#10005;</button>
-      </div>
-      <div class="mtela">
-        <svg id="mappaSvg" role="list" aria-label="Diagramma"></svg>
-        <div class="mvuota" id="mVuota" hidden></div>
-        <div class="mmodo" id="mModo" hidden></div>
-      </div>
-    </section>
     <div class="nav">
       <button id="prev" class="prev"><img class="oi" src="data:image/svg+xml;base64,PHN2ZyBpZD0iZW1vamkiIHZpZXdCb3g9IjAgMCA3MiA3MiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBpZD0iY29sb3IiPjxwb2x5Z29uIGZpbGw9IiMzRjNGM0YiIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIHN0cm9rZS13aWR0aD0iMiIgcG9pbnRzPSIyMi43ODc2LDUxLjUzNDMgNSwzNS4wMzYzIDIyLjc4NzYsMTguNTM4MiAyNi41NzY2LDIyLjYxMzggMTYuMTgwOSwzMi4yNTU0IDY3LDMyLjI1NTQgNjcsMzcuODE3MSAxNi4xODA5LDM3LjgxNzEgMjYuNTc2Niw0Ny40NTg3Ii8+PC9nPjxnIGlkPSJoYWlyIi8+PGcgaWQ9InNraW4iLz48ZyBpZD0ic2tpbi1zaGFkb3ciLz48ZyBpZD0ibGluZSI+PHBvbHlnb24gZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1taXRlcmxpbWl0PSIxMCIgc3Ryb2tlLXdpZHRoPSIyIiBwb2ludHM9IjIyLjc4NzYsNTEuNTM0MyA1LDM1LjAzNjMgMjIuNzg3NiwxOC41MzgyIDI2LjU3NjYsMjIuNjEzOCAxNi4xODA5LDMyLjI1NTQgNjcsMzIuMjU1NCA2NywzNy44MTcxIDE2LjE4MDksMzcuODE3MSAyNi41NzY2LDQ3LjQ1ODciLz48L2c+PC9zdmc+" alt="" aria-hidden="true"><span class="txt"><small>Precedente</small><span id="prevT">—</span></span></button>
       <button id="next" class="next"><img class="oi" src="data:image/svg+xml;base64,PHN2ZyBpZD0iZW1vamkiIHZpZXdCb3g9IjAgMCA3MiA3MiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBpZD0iY29sb3IiPjxwb2x5Z29uIGZpbGw9IiMzRjNGM0YiIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIHN0cm9rZS13aWR0aD0iMiIgcG9pbnRzPSI0OS4yMTI0LDUxLjUzNDMgNjcsMzUuMDM2MyA0OS4yMTI0LDE4LjUzODIgNDUuNDIzNCwyMi42MTM4IDU1LjgxOTEsMzIuMjU1NCA1LDMyLjI1NTQgNSwzNy44MTcxIDU1LjgxOTEsMzcuODE3MSA0NS40MjM0LDQ3LjQ1ODciLz48L2c+PGcgaWQ9ImhhaXIiLz48ZyBpZD0ic2tpbiIvPjxnIGlkPSJza2luLXNoYWRvdyIvPjxnIGlkPSJsaW5lIj48cG9seWdvbiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLW1pdGVybGltaXQ9IjEwIiBzdHJva2Utd2lkdGg9IjIiIHBvaW50cz0iNDkuMjEyNCw1MS41MzQzIDY3LDM1LjAzNjMgNDkuMjEyNCwxOC41MzgyIDQ1LjQyMzQsMjIuNjEzOCA1NS44MTkxLDMyLjI1NTQgNSwzMi4yNTU0IDUsMzcuODE3MSA1NS44MTkxLDM3LjgxNzEgNDUuNDIzNCw0Ny40NTg3Ii8+PC9nPjwvc3ZnPg==" alt="" aria-hidden="true"><span class="txt"><small>Successivo</small><span id="nextT">—</span></span></button>
@@ -1487,6 +1491,12 @@
      impilamento. Dentro, un menu fisso si posizionerebbe rispetto a lei invece
      che alla finestra e finirebbe comunque sotto la topbar. -->
 <div class="ctxmenu mapmenu" id="mapMenu" role="menu" aria-label="Comandi della mappa"></div>
+<!-- Il menu sulla selezione del capitolo, per la stessa ragione del suo vicino:
+     figlio del body, perché `.bcorpo` ha `container-type:inline-size` e un menu
+     `position:fixed` messo là dentro si ancorerebbe al riquadro invece che alla
+     finestra, finendo sotto la topbar. -->
+<div class="ctxmenu selmenu" id="selMenu" role="menu" aria-label="Comandi sulla selezione"></div>
+<div class="ctxmenu selmenu" id="kwMenu" role="menu" aria-label="Comandi sulla parola chiave"></div>
 <nav class="navdots" id="navdots" aria-label="Avanzamento di lettura nella pagina"></nav>
 
 <script>
@@ -1591,6 +1601,11 @@ function render(){
   wireNoteMarkers(c);
   state.visited.add(state.current);
   refreshToc(); updateProgress(); updateNav(); updateNavdots(); wireTTS(c);
+  /* Le evidenze si rimontano QUI, in coda e dopo `wireTTS`: il DOM è stabile
+     solo adesso, e la mappa degli offset costruita prima nascerebbe già
+     scaduta. `render()` e non `go()`, perché il capitolo si ridisegna anche
+     all'avvio e al cambio di lezione, che da `go()` non passano. */
+  try{ evScade(); evidenzeDisegna(); }catch(e){ console.error('evidenze:', e); }
   /* La mappa GENERATA segue il capitolo: cambiando pagina dall'indice o dalle
      frecce deve mostrare la mappa di quello che si sta leggendo, non restare
      su quella di prima. `MAPPA` è dichiarata più in basso nello stesso script
@@ -1602,7 +1617,7 @@ function render(){
      aperto con la mappa generata del capitolo nuovo, lasciando in memoria un
      salvataggio in canna che punta al file di prima. Si aggiorna solo
      l'etichetta della tendina, che nel registro «Mie» non dipende dal capitolo. */
-  if(typeof MAPPA!=='undefined' && MAPPA && MAPPA.aperto && MAPPA.registro!=='mie') mappaRidisegna();
+  if(typeof MAPPA!=='undefined' && MAPPA && mappaAperta() && MAPPA.registro!=='mie') mappaRidisegna();
 }
 
 /* ---- Quiz ---- */
@@ -2924,7 +2939,7 @@ var VAULT_META={};            // idLezione -> {courseId, lessonTitle, chapters:[
 /* courseId = corso dell'appunto APERTO (non del capitolo che stai leggendo:
    se cambi capitolo o corso con l'editor aperto, il salvataggio deve tornare
    dov'è nato l'appunto). listCourse/listError descrivono l'ultima lettura. */
-var NOTES={ list:[], cur:null, mde:null, dirty:false, timer:null, courseId:null, listCourse:null, listError:'' };
+var NOTES={ list:[], cur:null, mde:null, dirty:false, timer:null, courseId:null, listCourse:null, listError:'', caricando:false };
 
 /* Electron non implementa window.prompt() (solleva un'eccezione): modale nostra. */
 function askText(titolo, def){
@@ -3072,6 +3087,7 @@ var GUIDA=[
   { nome:'Vai al minuto del video', sintassi:'Vedi [2:12](video:05#t=132) della lezione.', nota:'Non serve scriverlo a mano: con il video in riproduzione premi 🔖 (⌘⇧C) e il minuto esatto entra da sé. Con 📎 scegli il materiale da un elenco.' },
   { nome:'Vai alla pagina del PDF', sintassi:'Vedi la [p. 7](pdf:03#p=7) della dispensa.', nota:'Le frecce ‹ › nella barra dell\'anteprima cambiano pagina; 🔖 cita quella corrente.' },
   { nome:'Rimando a un\'altra lezione', sintassi:'Il tema prosegue in [[02-comorbidita]].', nota:'Il nome della cartella della lezione. Con «|» si cambia l\'etichetta: [[02-comorbidita|le comorbilità]].' },
+  { nome:'Rimando a un capitolo preciso', sintassi:'Ne parla [il capitolo sulla decodifica](cap:05-dislessia-decodifica-c02).', nota:'Il wiki-link porta all\'inizio della lezione; questo al capitolo esatto. Non serve scriverlo a mano: lo mette «Appunta» quando estrai un frammento dal testo.' },
   { nome:'Link esterno', sintassi:'Fonte: [Consensus Conference](https://www.iss.it).', nota:'Si apre nel browser di sistema.' },
   { nome:'Nota a piè di pagina', sintassi:'Affermazione da documentare.[^1]', nota:'Nei capitoli generati il numero rimanda al testo della nota in fondo.' },
   { sezione:'Emoji' },
@@ -3087,6 +3103,15 @@ var CREDITI=[
   { nome:'mlx-whisper', ruolo:'trascrizione dei video sulla GPU del Mac', url:'https://github.com/ml-explore/mlx-examples', licenza:'MIT' },
   { nome:'faster-whisper', ruolo:'trascrizione di riserva su CPU', url:'https://github.com/SYSTRAN/faster-whisper', licenza:'MIT' },
   { nome:'pypdf', ruolo:'estrazione del testo dai PDF', url:'https://github.com/py-pdf/pypdf', licenza:'BSD-3' },
+  /* Vendorizzata in `App/assets/pdfjs/` come EasyMDE — file copiati a mano,
+     nessuna riga in package.json. È la build `legacy/`, e non è una scelta di
+     comodo: dalla 6.0 pdf.js usa `Map.prototype.getOrInsertComputed`, che
+     Chromium spedisce dalla 145, mentre Electron 39 sta alla 142. Misurato
+     nell'app: il documento si carica e poi il primo `render()` muore. La
+     legacy porta i polyfill di core-js e funziona (80 pagine disegnate).
+     Il giorno che si passa a Electron 41+ si può tornare alla build moderna
+     e risparmiare 58 KB — ma va verificato, non dedotto. */
+  { nome:'PDF.js', ruolo:'visualizzatore dei PDF', url:'https://github.com/mozilla/pdf.js', licenza:'Apache-2.0' },
   { nome:'Ajv', ruolo:'validazione degli schemi', url:'https://github.com/ajv-validator/ajv', licenza:'MIT' }
 ];
 
@@ -3154,7 +3179,9 @@ function secondoCorrente(){
 
 /** Scrive nell'editor, usando l'eventuale selezione come etichetta del link. */
 function inserisciLink(etichetta, schema){
-  if(!NOTES.mde){ toast('Apri prima un appunto',false); return false; }
+  // l'editor esiste anche senza appunto aperto (openEditor costruisce sempre la
+  // toolbar): senza NOTES.cur il link finirebbe in un buffer di nessuno e si perderebbe
+  if(!NOTES.cur || !NOTES.mde){ toast('Apri prima un appunto',false); return false; }
   var cm=NOTES.mde.codemirror;
   var sel=cm.getSelection();
   cm.replaceSelection('['+(sel||etichetta)+']('+schema+')');
@@ -3238,7 +3265,7 @@ function cambiaCorso(id){
       MAPPA.mia.sporca=false; MAPPA.mia.vistaSporca=false;
       MAPPA.elenco=[]; MAPPA.elencoFirma=''; MAPPA.elencoErrore='';
       MAPPA.chiusi={}; MAPPA.z={k:1,x:0,y:0};
-      if(MAPPA.aperto) toast('Cambiato corso: la mappa è stata salvata e chiusa', true);
+      if(mappaAperta()) toast('Cambiato corso: la mappa è stata salvata e chiusa', true);
     }
   }catch(e){ console.error('mappe/cambioCorso:', e); }
   try{ localStorage.setItem('studia.corso', id); }catch(e){}
@@ -3260,7 +3287,7 @@ function cambiaCorso(id){
      chiave nuova. Ed è anche l'unico ridisegno che arriva quando il corso
      nuovo non ha lezioni visibili, perché in quel caso `loadLesson` non parte. */
   try{
-    if(typeof MAPPA!=='undefined' && MAPPA && MAPPA.aperto){
+    if(typeof MAPPA!=='undefined' && MAPPA && mappaAperta()){
       mappaCaricaVista(); mappaSincronizzaComandi(); mappaAmbiti(); mappaAdatta(); mappaRidisegna();
     }
   }catch(e){ console.error('mappe/cambioCorso:', e); }
@@ -3541,7 +3568,9 @@ function ensureMde(){
   var tb=host.querySelector('.editor-toolbar'), tpl=document.getElementById('noteCtlTpl');
   if(tb && tpl && !tb.querySelector('.notectl')) tb.appendChild(tpl.content.cloneNode(true));
   NOTES.mde.codemirror.on('change',function(){
-    if(!NOTES.cur) return;
+    // caricare un corpo nell'editor emette 'change' come se avesse scritto l'utente:
+    // senza la sentinella, aprire un appunto lo marcherebbe subito da salvare
+    if(NOTES.caricando || !NOTES.cur) return;
     NOTES.dirty=true; var d=$('#noteDirty'); if(d) d.hidden=false;
     clearTimeout(NOTES.timer); NOTES.timer=setTimeout(function(){ noteSave(true); },1800); // autosave
   });
@@ -3549,6 +3578,15 @@ function ensureMde(){
     'Cmd-S':function(){ noteSave(); }, 'Ctrl-S':function(){ noteSave(); }
   }));
   return NOTES.mde;
+}
+/* Unico modo di scrivere nell'editor per conto dell'app (apertura di un appunto,
+   svuotamento dopo l'eliminazione). Alza la sentinella letta dal gestore 'change'
+   così il caricamento non passa per modifica dell'utente. */
+function noteCaricaCorpo(testo){
+  if(!NOTES.mde) return;
+  NOTES.caricando=true;
+  try{ NOTES.mde.value(testo||''); }
+  finally{ NOTES.caricando=false; }
 }
 function noteOpen(file){
   var n=NOTES.list.filter(function(x){ return x.file===file; })[0];
@@ -3563,7 +3601,7 @@ function noteOpen(file){
   if(NOTES.listCourse) NOTES.courseId=NOTES.listCourse;
   else { var m0=curMeta(); if(m0) NOTES.courseId=m0.courseId; }
   var d=$('#noteDirty'); if(d) d.hidden=true;
-  mde.value(n.body||'');
+  noteCaricaCorpo(n.body);
   openEditor();
   try{ refreshNoteUI(); }catch(e){}
   setTimeout(function(){ mde.codemirror.refresh(); mde.codemirror.focus(); },60);
@@ -3573,8 +3611,7 @@ async function noteNew(anchor){
   var api=notesApi(); if(!api){ toast('Appunti disponibili solo nell’app',false); return; }
   var title=await askText('Titolo dell’appunto', 'APPUNTI');
   if(title===null) return; title=(title||'APPUNTI').trim()||'APPUNTI';
-  // il testo selezionato diventa un callout "Nota" con la citazione
-  var body=anchor? ('> [!nota] Dal capitolo\n> '+String(anchor).replace(/\s+/g,' ').trim()+'\n\n') : '';
+  var body=anchor? frammentoAppuntato(anchor, ctx) : '';
   var meta={ title:title, lezione:ctx.lezione, lezioneId:ctx.lezioneId, capitolo:ctx.capitolo,
              capitoloId:ctx.capitoloId, capitoloFile:ctx.capitoloFile, anchor:anchor||'' };
   var res=api.save(ctx.courseId, null, meta, body);
@@ -3582,6 +3619,53 @@ async function noteNew(anchor){
   NOTES.courseId=ctx.courseId;
   notesReload(); refreshNoteUI(); noteOpen(res.file);
   toast('Appunto creato',true);
+}
+/**
+ * Come si presenta, dentro un appunto, un frammento estratto dal capitolo.
+ *
+ * Sta in una funzione sua perché lo scrivono in due — chi crea l'appunto e chi
+ * ci accoda — e due riquadri diversi per lo stesso gesto sarebbero due verità
+ * sulla stessa cosa. Porta sempre il rimando: un frammento senza l'origine, fra
+ * un mese, è una frase che non si sa più di chi sia.
+ *
+ * ⚠️ Il rimando sta nel CORPO e non nel titolo del riquadro perché
+ * `renderNoteMd` passa il titolo da `escHtml` e il corpo da `mdToHtml`: un
+ * `[testo](cap:…)` messo nel titolo resterebbe scritto così com'è, morto.
+ */
+function frammentoAppuntato(testo, ctx){
+  var t=String(testo==null?'':testo).replace(/\s+/g,' ').trim();
+  if(!t) return '';
+  var dove=(ctx && ctx.capitolo) ? ctx.capitolo : 'il capitolo';
+  var rimando=(ctx && ctx.capitoloId) ? ('\n> — ['+dove+'](cap:'+ctx.capitoloId+')') : '';
+  return '> [!nota] Dal capitolo\n> '+t+rimando+'\n\n';
+}
+/**
+ * Accoda un frammento all'appunto APERTO, che è il gesto che mancava: finora
+ * «Appunta» sapeva soltanto creare un documento nuovo, e prendere tre appunti
+ * di fila da un capitolo voleva dire tre file e tre titoli da inventare.
+ *
+ * Se un appunto aperto non c'è, si ricade su `noteNew`, che il titolo lo chiede:
+ * è l'unico momento in cui la domanda ha senso.
+ */
+async function noteAppend(testo){
+  var t=String(testo==null?'':testo).trim();
+  if(!t) return;
+  var ctx=curCtx(); if(!ctx){ toast('Apri un capitolo del vault per prendere appunti',false); return; }
+  if(!notesApi()){ toast('Appunti disponibili solo nell’app',false); return; }
+  if(!NOTES.cur || !NOTES.mde){ return noteNew(t); }   // niente di aperto: se ne crea uno
+  openEditor();                                        // e se lo split è chiuso, si apre
+  var cm=NOTES.mde.codemirror;
+  var ultima=cm.lastLine(), coda=cm.getLine(ultima);
+  /* ⚠️ Si scrive con `replaceRange` e non con `mde.value(...)`: `setValue`
+     azzera la cronologia degli annullamenti e il cursore, e per giunta
+     rimpiazzerebbe il testo battuto negli ultimi 1,8 s (quello che l'autosalvataggio
+     non ha ancora scritto) con la copia vecchia del disco. */
+  cm.replaceRange((coda.trim()? '\n\n':'') + frammentoAppuntato(t, ctx),
+                  { line:ultima, ch:coda.length });
+  cm.setCursor(cm.lastLine(), 0); cm.scrollIntoView(null);
+  // il gesto è esplicito, quindi si scrive subito invece di aspettare il debounce
+  noteSave(true);
+  toast('Appuntato in «'+((NOTES.cur&&NOTES.cur.title)||'appunto')+'»', true);
 }
 function noteSave(silent){
   if(!NOTES.cur || !NOTES.mde) return;
@@ -3613,7 +3697,7 @@ function noteDelete(){
   clearTimeout(NOTES.timer); NOTES.timer=null;
   api.remove(pid, NOTES.cur.file);
   NOTES.cur=null; NOTES.dirty=false;
-  if(NOTES.mde) NOTES.mde.value('');
+  noteCaricaCorpo('');
   notesReload(); refreshNoteUI(); refreshMyNotes();
   toast('Appunto eliminato',true);
 }
@@ -3705,9 +3789,15 @@ document.addEventListener('click',function(e){
     return;
   }
   if(e.target.closest && e.target.closest('#selNote')){
-    var txt=String(window.getSelection?window.getSelection().toString():'').trim();
-    $('#selNote').style.display='none';
-    noteNew(txt); return;
+    /* Il bottone non appunta più da sé: apre il menu, che è la stessa
+       superficie del tasto destro. Prima chiamava `noteNew` con
+       `getSelection().toString()` — cioè creava sempre un file nuovo, e da un
+       titolo ci scriveva dentro il testo in maiuscolo. */
+    var b=$('#selNote'), sel=selezioneNelCapitolo();
+    if(!sel){ if(b) b.style.display='none'; return; }
+    var r=b.getBoundingClientRect();
+    selMenuApri(Math.round(r.left), Math.round(r.bottom+4), sel);
+    return;
   }
 });
 document.addEventListener('change',function(e){
@@ -3732,21 +3822,639 @@ document.addEventListener('keydown',function(e){
 /* pulsante flottante "Appunta" sulla selezione nel capitolo */
 document.addEventListener('mouseup',function(e){
   var btn=$('#selNote'); if(!btn) return;
+  /* ⚠️ Solo il tasto sinistro. Il `mouseup` del tasto DESTRO arriva subito dopo
+     che il menu contestuale si è aperto, e rimetteva in scena il bottone
+     flottante proprio sopra il menu appena comparso. Misurato con eventi veri:
+     il bottone tornava visibile e copriva la prima voce. */
+  if(e.button!==0) return;
   // il pulsante flottante vale per il testo del capitolo: dentro l'editor o
   // sopra l'anteprima non ha senso (prima la guardia guardava `#dock`, che come
   // pannello non esiste più — i due pannelli ora stanno nei blocchi)
   if(e.target.closest && (e.target.closest('#selNote')||e.target.closest('#notePane')||e.target.closest('#pdfPane'))) return;
+  // al `mouseup` la selezione non è ancora aggiornata: si legge al giro dopo
   setTimeout(function(){
-    var s=window.getSelection && window.getSelection();
-    var txt=s?String(s).trim():'';
-    var inContent=s && s.rangeCount && s.anchorNode && s.anchorNode.parentElement && s.anchorNode.parentElement.closest('#content');
-    if(!txt || !inContent || !notesApi() || !curMeta()){ btn.style.display='none'; return; }
-    var r=s.getRangeAt(0).getBoundingClientRect();
+    var sel=selezioneNelCapitolo();
+    /* Il bottone non chiede più il vault. Prima le guardie erano quattro e due
+       riguardavano gli appunti (`notesApi`, `curMeta`): ora apre un menu in cui
+       «Copia» funziona comunque, e negare la superficie intera perché una voce
+       su sei non si può fare vorrebbe dire spegnere anche le altre. */
+    if(!sel || siStaRidimensionando()){ btn.style.display='none'; return; }
+    var r=sel.range.getBoundingClientRect();
     btn.style.display='block';
-    btn.style.left=Math.max(8,Math.min(window.innerWidth-120, r.left))+'px';
-    btn.style.top=Math.max(8, r.top-38)+'px';
+    // la larghezza si MISURA: era scritta a mano (120), e un bottone che cambia
+    // etichetta avrebbe smesso di stare dentro lo schermo senza dirlo
+    var b=btn.getBoundingClientRect();
+    btn.style.left=Math.max(8, Math.min(r.left, window.innerWidth-b.width-8))+'px';
+    btn.style.top =Math.max(8, r.top-b.height-6)+'px';
   },0);
 });
+
+/* ===== Il menu contestuale sulla selezione del capitolo (lotto 4) ===========
+   Una superficie sola per due gesti: il tasto destro dentro la selezione e il
+   bottone flottante aprono lo STESSO menu chiamando la stessa funzione. Due
+   strade che portano allo stesso posto devono passare per la stessa porta —
+   è la regola che nelle mappe ha evitato che il menu eliminasse senza mettere
+   lo stato nella pila degli annullamenti mentre il tasto Canc lo faceva.
+
+   ⚠️ «Copia» non sostituisce un menu di sistema: in questa app il tasto destro
+   non ha mai mostrato niente (`main.js` non chiama `setApplicationMenu` e non
+   registra `context-menu`). È l'unica via col mouse per copiare, non un
+   rimpiazzo. */
+/* ⚠️ Premere il bottone flottante cancellava la selezione che il bottone serve
+   a lavorare: in Chromium il `mousedown` su un elemento a fuoco collassa la
+   selezione del documento, e quando il gestore del click andava a leggerla non
+   c'era più niente. Si nega il comportamento predefinito del `mousedown` — il
+   click continua ad arrivare, la selezione resta viva. È lo stesso rimedio di
+   qualunque barretta che compare sopra un testo selezionato. */
+document.addEventListener('mousedown', function(e){
+  if(e.target.closest && e.target.closest('#selNote')) e.preventDefault();
+});
+/* Il testo E il suo range: le evidenze hanno bisogno di sapere DOVE, non solo
+   che cosa. Il range si tiene finché il menu è aperto — dopo, un `render()`
+   l'avrebbe comunque scollegato dal documento. */
+var SELMENU={ testo:'', range:null };
+function selMenuAperto(){ var m=$('#selMenu'); return !!m && m.classList.contains('open'); }
+function selMenuChiudi(){ var m=$('#selMenu'); if(m) m.classList.remove('open'); }
+/**
+ * La selezione di lavoro: quella che sta davvero dentro il capitolo.
+ *
+ * ⚠️ Il testo si prende da `range.toString()`, MAI da `selection.toString()`:
+ * in Chromium quest'ultimo applica `text-transform`, e dentro `#content` sono
+ * maiuscoli l'occhiello, gli `h1`, il punteggio del quiz e le intestazioni dei
+ * riquadri. Misurato in questa stessa build (142): su un titolo la selezione
+ * dice «MEMORIA DI LAVORO» mentre nel documento c'è «memoria di lavoro». Un
+ * ancoraggio costruito su quella stringa nascerebbe orfano senza che nulla sia
+ * cambiato — ed è ciò che il bottone flottante faceva fino a oggi.
+ *
+ * L'appartenenza al capitolo si chiede a `commonAncestorContainer`, non ad
+ * `anchorNode`: quello è la FINE in una selezione fatta all'indietro, e con un
+ * triplo click può essere un elemento invece di un nodo di testo.
+ */
+function selezioneNelCapitolo(){
+  var s=window.getSelection && window.getSelection();
+  if(!s || !s.rangeCount || s.isCollapsed) return null;
+  var r=s.getRangeAt(0), c=document.getElementById('content');
+  if(!c || !c.contains(r.commonAncestorContainer)) return null;
+  var testo=r.toString().trim();
+  return testo ? { range:r, testo:testo } : null;
+}
+/** Il punto premuto cade dentro la selezione? Il tasto destro non aggiorna la
+ *  selezione e nessun evento lo dichiara: lo si chiede alla geometria. */
+function puntoNellaSelezione(range, x, y){
+  var q=range.getClientRects();
+  for(var i=0;i<q.length;i++){
+    var b=q[i];
+    if(x>=b.left-2 && x<=b.right+2 && y>=b.top-2 && y<=b.bottom+2) return true;
+  }
+  return false;
+}
+/** Mentre si trascina un divisore `user-select:none` è globale: in quel momento
+ *  una selezione non si può fare, e il menu non deve comparire. */
+function siStaRidimensionando(){
+  var d=document.documentElement.dataset;
+  return d.bresize==='1' || d.splitresize==='1' || d.paneresize==='1';
+}
+function selMenuApri(x, y, sel){
+  var m=$('#selMenu'); if(!m || !sel) return;
+  SELMENU.testo=sel.testo; SELMENU.range=sel.range;
+  var conVault=!!(notesApi() && curMeta());
+  /* Le voci non ancora costruite si dichiarano e si spengono, come fa il
+     registro degli strumenti del banco: se comparissero solo quando esistono,
+     alla terza si riscriverebbe il menu — e chi legge non saprebbe che stanno
+     arrivando. La frase dice quando. */
+  function voce(az, testo, arriva){
+    return '<button class="ctx-item" role="menuitem" data-az="'+az+'"'+(arriva?' disabled':'')+'>'+
+      escHtml(testo)+(arriva? '<span class="ctx-scorc">'+escHtml(arriva)+'</span>' : '')+'</button>';
+  }
+  var breve=sel.testo.length>34 ? sel.testo.slice(0,34)+'…' : sel.testo;
+  var conEvidenze=conVault && evidenzePronte();
+  var sopra=conEvidenze ? evidenzaSotto(sel.range) : null;
+  /* La riga dei colori È l'evidenziatore: cinque preset più il picker, letti da
+     `mappaColori()` — la stessa tavolozza delle mappe, che segue il tema chiaro
+     e scuro. Sceglierne uno evidenzia e diventa il colore corrente.
+     ⚠️ Non è una voce di menu a sé: `Keyword` e la riga fanno la stessa cosa
+     con due gradi di precisione, e una terza voce «Evidenzia» che ripete la
+     prima sarebbe un bottone che non aggiunge niente. */
+  var righeColore='';
+  if(conEvidenze){
+    righeColore='<div class="ctx-colori" role="group" aria-label="Colore della parola chiave">';
+    (mappaColori()||[]).forEach(function(c){
+      righeColore+='<button class="ctx-col" data-evcol="'+escHtml(c)+'" style="background:'+escHtml(c)+
+        '" title="Evidenzia con questo colore" aria-label="Evidenzia con questo colore"></button>';
+    });
+    righeColore+='<input type="color" id="evColPick" value="'+escHtml(evidenzeColore())+
+      '" title="Un altro colore" aria-label="Scegli un altro colore">';
+    righeColore+='</div>';
+  }
+  m.innerHTML=
+    '<div class="ctx-head">'+escHtml(breve)+'</div>'+
+    voce('appunta','Appunta', conVault? '' : 'serve un capitolo del vault')+
+    voce('mappa','Alla mappa', (mappeApi() && corsoAttivo() && mappaPronta())? '' : 'serve un corso aperto')+
+    voce('keyword', sopra? 'Ricolora la parola chiave' : 'Keyword',
+         conEvidenze? '' : 'serve un capitolo del vault')+
+    righeColore+
+    voce('cancella','Cancella evidenziatura', sopra? '' : 'qui non ce n’è')+
+    '<div class="ctx-sep"></div>'+
+    voce('copia','Copia','');
+  /* ⚠️ Il bottone flottante ha lo STESSO z-index dei menu contestuali (200) e
+     sta dopo nel DOM: a parità vince chi viene dopo, quindi coprirebbe il menu
+     che ha appena aperto. Si spegne. */
+  var b=$('#selNote'); if(b) b.style.display='none';
+  m.classList.add('open');
+  // si misura dopo l'apertura: da chiuso è `display:none` e misura zero
+  var r=m.getBoundingClientRect();
+  m.style.left=Math.max(8, Math.min(x, window.innerWidth-r.width-8))+'px';
+  m.style.top =Math.max(8, Math.min(y, window.innerHeight-r.height-8))+'px';
+}
+/* Il tasto destro apre il menu solo DENTRO la selezione e dentro il capitolo.
+   Fuori non si fa niente e non si chiama `preventDefault`: altrove nell'app il
+   tasto destro ha già i suoi padroni (l'indice e la tela delle mappe). */
+document.addEventListener('contextmenu', function(e){
+  if(!e.target.closest || !e.target.closest('#content')) return;
+  if(siStaRidimensionando()) return;
+  var sel=selezioneNelCapitolo();
+  if(!sel || !puntoNellaSelezione(sel.range, e.clientX, e.clientY)) return;
+  e.preventDefault();
+  selMenuApri(e.clientX, e.clientY, sel);
+});
+/* Le voci del menu. Un click delegato, come tutto il resto dell'app. */
+document.addEventListener('click', function(e){
+  if(!e.target.closest) return;
+  var it=e.target.closest('#selMenu .ctx-item');
+  if(!it){
+    /* ⚠️ `#selNote` va escluso, o il menu si chiude nell'istante in cui si apre.
+       Il bottone è servito da un listener registrato PRIMA di questo, sullo
+       stesso nodo: quando arriva qui, quello ha già aperto il menu, e un click
+       «fuori dal menu» lo richiuderebbe subito. Non è una gara sul fuoco né un
+       problema di propagazione — è l'ordine di registrazione, e si risolve
+       nominando l'apritore invece di rincorrerlo con un rinvio. */
+    if(selMenuAperto() && !e.target.closest('#selMenu') && !e.target.closest('#selNote')) selMenuChiudi();
+    return;
+  }
+  if(it.disabled) return;
+  var az=it.getAttribute('data-az'), testo=SELMENU.testo, range=SELMENU.range;
+  selMenuChiudi();
+  if(az==='copia'){
+    if(!navigator.clipboard){ toast('Copia non disponibile',false); return; }
+    navigator.clipboard.writeText(testo).then(function(){ toast('Copiato',true); },
+      function(){ toast('Copia non riuscita',false); });
+    return;
+  }
+  if(az==='appunta'){ noteAppend(testo); return; }
+  if(az==='keyword'){ evidenzia(range, evidenzeColore()); return; }
+  if(az==='cancella'){ evidenzaCancella(range); return; }
+  if(az==='mappa'){ mappaEstrai(testo, range); return; }
+});
+/* La riga dei colori: sceglierne uno evidenzia CON quello e lo rende il colore
+   di adesso. Due gesti in uno perché sono la stessa intenzione — «questa parola
+   la voglio di questo colore» — e chiedere prima il colore e poi la parola
+   sarebbe un passaggio in più per ottenere lo stesso. */
+document.addEventListener('click', function(e){
+  if(!e.target.closest) return;
+  var b=e.target.closest('#selMenu .ctx-col'); if(!b) return;
+  var c=b.getAttribute('data-evcol'), range=SELMENU.range;
+  selMenuChiudi(); evidenzeColoreScegli(c); evidenzia(range, c);
+});
+/* Il picker nativo parla con `change`, non con `click`: un `click` arriverebbe
+   all'apertura della tavolozza, quando un colore non è ancora stato scelto. */
+document.addEventListener('change', function(e){
+  if(!e.target || e.target.id!=='evColPick') return;
+  var c=e.target.value, range=SELMENU.range;
+  selMenuChiudi(); evidenzeColoreScegli(c); evidenzia(range, c);
+});
+/* ⚠️ In cattura su `window`, come la pila della mappa e per la stessa ragione:
+   in cattura sul DOCUMENTO ci sono già `closePops()` e `closePdf()`, registrati
+   prima, e `stopPropagation` non ferma i gestori che stanno sullo STESSO nodo.
+   Un Esc per chiudere questo menu chiuderebbe anche l'anteprima della fonte. */
+window.addEventListener('keydown', function(e){
+  if(e.key!=='Escape' || !selMenuAperto()) return;
+  e.stopPropagation();
+  selMenuChiudi();
+}, true);
+window.addEventListener('resize', selMenuChiudi);
+
+/* ===== Le evidenze: le parole chiave dello studente sul testo ==============
+   Vivono su disco (`APPUNTI/_evidenze.json`, vedi `lib/evidenze.js`) e si
+   RIAPPLICANO a ogni apertura del capitolo, ritrovando il proprio testo con i
+   selettori di `EvidenzeAncoraggio`. Dentro l'HTML non possono stare: quello
+   lo rifà la pipeline.
+
+   Si dipingono con la **CSS Custom Highlight API**, che non tocca il DOM: né
+   `<mark>`, né span, né nodi di testo spezzati sotto i piedi della mappa degli
+   offset. Chromium la supporta dalla 105 e qui siamo alla 142.
+
+   ⚠️ Il registro dei nomi è condiviso con la ricerca, che usa `'ricerca'`:
+   questi si chiamano `ev-N`. Due funzioni che registrano lo stesso nome si
+   spengono a vicenda senza un errore. */
+var EVIDENZE={ elenco:[], corso:'', mappa:null, orfane:0, nomi:[], colore:'' };
+/* Che cosa, dentro `#content`, NON è testo del capitolo: il tooltip dei
+   marcatori («Apri il documento»), le intestazioni dei riquadri, il quiz, il
+   blocco degli appunti, la barra della lettura vocale. Senza questo elenco un
+   TreeWalker infila quelle parole in mezzo al periodo, e un selettore salvato
+   ieri non si ritrova oggi. Punti chiave e glossario NON sono qui: sono
+   contenuto del capitolo e si evidenziano come il corpo. */
+var EV_SALTA='.kicker,.callout-head,sup.note,.note-tip,sup.fnref,.fnotes,.tts-go,.ttsbar,.notes,.myotes,.quiz';
+
+function evidenzeApi(){ try{ return (window.vault && window.vault.evidenze) || null; }catch(e){ return null; } }
+function evidenzePronte(){ return typeof EvidenzeAncoraggio!=='undefined' && !!window.CSS && !!CSS.highlights && typeof Highlight==='function'; }
+
+/**
+ * Il ponte fra il DOM e la stringa su cui lavorano i selettori: torna il testo
+ * del capitolo già normalizzato e, carattere per carattere, da quale nodo
+ * viene.
+ *
+ * ⚠️ Si normalizza MENTRE si accumula, non alla fine: una sequenza di spazi può
+ * stare a cavallo di due nodi di testo, e `normalizza` applicata pezzo per
+ * pezzo non dà lo stesso risultato di `normalizza` applicata al tutto. È
+ * l'invariante su cui poggia tutto il resto — `normalizza(testo) === testo`.
+ */
+function capitoloTesto(){
+  var radice=document.getElementById('content');
+  var testo='', origine=[], spazio=false;
+  function scendi(el){
+    for(var n=el.firstChild;n;n=n.nextSibling){
+      if(n.nodeType===3){
+        var v=n.nodeValue;
+        for(var i=0;i<v.length;i++){
+          if(/\s/.test(v[i])){
+            if(spazio) continue;             // la sequenza di spazi vale uno
+            spazio=true; testo+=' ';
+          } else { spazio=false; testo+=v[i]; }
+          origine.push({ nodo:n, off:i });
+        }
+        continue;
+      }
+      if(n.nodeType!==1 || n.hidden) continue;
+      if(n.matches && n.matches(EV_SALTA)) continue;
+      scendi(n);
+    }
+  }
+  if(radice) scendi(radice);
+  return { testo:testo, origine:origine };
+}
+/** La mappa si calcola una volta per capitolo e scade quando `render()` rifà
+ *  il DOM: ricostruirla a ogni gesto costerebbe una passata su tutto il testo. */
+function evMappa(){ if(!EVIDENZE.mappa) EVIDENZE.mappa=capitoloTesto(); return EVIDENZE.mappa; }
+function evScade(){ EVIDENZE.mappa=null; }
+
+/** Da una selezione ai due offset nella stringa del capitolo.
+ *  Si chiede `isPointInRange` invece di confrontare nodi e offset a mano
+ *  perché con un triplo click i capi della selezione sono ELEMENTI, non nodi
+ *  di testo, e un confronto ingenuo non troverebbe niente. */
+function offsetDaRange(m, range){
+  var inizio=-1, fine=-1;
+  for(var i=0;i<m.origine.length;i++){
+    var o=m.origine[i], dentro=false;
+    try{ dentro=range.isPointInRange(o.nodo, o.off); }catch(e){}
+    if(dentro){ if(inizio<0) inizio=i; fine=i+1; }
+  }
+  return inizio>=0 ? { inizio:inizio, fine:fine } : null;
+}
+/** E il viaggio di ritorno, per accendere il colore. */
+function rangeDaOffset(m, inizio, fine){
+  var a=m.origine[inizio], b=m.origine[fine-1];
+  if(!a || !b) return null;
+  try{ var r=document.createRange(); r.setStart(a.nodo, a.off); r.setEnd(b.nodo, b.off+1); return r; }
+  catch(e){ return null; }
+}
+
+function evidenzeCarica(){
+  var api=evidenzeApi(), corso=corsoAttivo();
+  if(!api || !corso){ EVIDENZE.elenco=[]; EVIDENZE.corso=''; return; }
+  var r=api.leggi(corso);
+  // `error` si guarda PRIMA di `length`: «non ce n'è» e «non si legge» sono
+  // due cose diverse, e dirle uguali nasconde un guasto di permessi
+  if(r && r.error){ console.error('evidenze:', r.error); EVIDENZE.elenco=[]; EVIDENZE.corso=corso; return; }
+  EVIDENZE.elenco=(r && r.evidenze) || []; EVIDENZE.corso=corso;
+}
+function evidenzeDelCapitolo(){
+  var ctx=curCtx(); if(!ctx) return [];
+  return EVIDENZE.elenco.filter(function(e){ return e.capitoloId===ctx.capitoloId; });
+}
+/** Una regola `::highlight()` per ogni colore in uso. Si generano invece di
+ *  scriverle a mano perché il picker può produrre un colore qualunque, e
+ *  cinque regole fisse coprirebbero solo i preset. */
+function evidenzeStile(colori){
+  var el=document.getElementById('evStile');
+  if(!el){ el=document.createElement('style'); el.id='evStile'; document.head.appendChild(el); }
+  el.textContent=colori.map(function(c,i){
+    /* Sottolineatura spessa e non fondo pieno: il fondo litigherebbe con il
+       giallo che la lettura vocale accende sul paragrafo in corso, e chi legge
+       lentamente — il pubblico di quest'app — è proprio chi userebbe le due
+       cose insieme. Il colore resta il canale che distingue le keyword. */
+    return '::highlight(ev-'+i+'){ text-decoration: underline '+c+' 0.22em; text-underline-offset:0.14em; }';
+  }).join('\n');
+}
+/** Accende le evidenze del capitolo aperto. Le orfane — quelle il cui testo
+ *  non c'è più — si contano e si dicono, non si cancellano: il loro posto è
+ *  sparito, non la loro storia. */
+function evidenzeDisegna(){
+  if(!evidenzePronte()) return;
+  // il corso può essere cambiato sotto: l'elenco in memoria sarebbe di un altro
+  if(EVIDENZE.corso!==corsoAttivo()) evidenzeCarica();
+  EVIDENZE.nomi.forEach(function(n){ try{ CSS.highlights.delete(n); }catch(e){} });
+  EVIDENZE.nomi=[];
+  EVIDENZE.orfane=0;
+  EVIDENZE.orfaneId=[];
+  var mie=evidenzeDelCapitolo(); if(!mie.length){ keywordDisegna(); return; }
+  var m=evMappa(); if(!m.testo){ keywordDisegna(); return; }
+  var r=EvidenzeAncoraggio.risolvi(m.testo, mie);
+  EVIDENZE.orfane=r.orfane.length;
+  EVIDENZE.orfaneId=r.orfane.map(function(v){ return v.id; });
+  var perColore={}, ordine=[];
+  r.trovate.forEach(function(t){
+    var rg=rangeDaOffset(m, t.inizio, t.fine); if(!rg) return;
+    var c=t.voce.colore || 'currentColor';
+    if(!perColore[c]){ perColore[c]=[]; ordine.push(c); }
+    perColore[c].push(rg);
+  });
+  evidenzeStile(ordine);
+  ordine.forEach(function(c,i){
+    var h=new Highlight();
+    perColore[c].forEach(function(rg){ h.add(rg); });
+    var nome='ev-'+i;
+    CSS.highlights.set(nome, h); EVIDENZE.nomi.push(nome);
+  });
+  keywordDisegna();
+}
+
+/* ===== Lo strumento «Parole chiave»: l'elenco a chip =======================
+   Mostra le evidenze di TUTTO il corso, non del solo capitolo aperto: sono la
+   trama che lo studente ha trovato leggendo, e vederla per intero è metà del
+   suo valore. Quali siano orfane si sa però solo del capitolo a schermo —
+   per gli altri bisognerebbe caricarne il testo, e non lo si fa per disegnare
+   un elenco. */
+var KW={ ordine:'alfa', filtro:'' };
+function kwOrfana(e){ return (EVIDENZE.orfaneId||[]).indexOf(e.id)>=0; }
+/** Il markdown che un chip lascia cadere: la parola con il rimando al suo
+ *  capitolo. Una funzione sua perché la usano il trascinamento e — domani —
+ *  qualunque altro modo di travasare una parola chiave altrove. */
+function kwMarkdown(e){
+  return e.capitoloId ? ('['+e.exact+'](cap:'+e.capitoloId+')') : e.exact;
+}
+function keywordDisegna(){
+  var host=document.getElementById('kwLista'); if(!host) return;
+  var b=document.getElementById('kwOrdine');
+  if(b){ b.textContent=(KW.ordine==='alfa'?'Aa':'📅');
+         b.title=(KW.ordine==='alfa'?'In ordine alfabetico — premi per ordinare per data'
+                                    :'Per data di aggiunta — premi per ordinare in alfabetico'); }
+  var q=KW.filtro.trim().toLowerCase();
+  var lista=(EVIDENZE.elenco||[]).filter(function(e){
+    return !q || e.exact.toLowerCase().indexOf(q)>=0 || String(e.capitolo||'').toLowerCase().indexOf(q)>=0;
+  });
+  lista.sort(KW.ordine==='alfa'
+    ? function(a,b2){ return a.exact.localeCompare(b2.exact, 'it'); }
+    : function(a,b2){ return String(b2.creato||'').localeCompare(String(a.creato||'')); });
+  if(!lista.length){
+    host.innerHTML='<div class="kwvuoto">'+((EVIDENZE.elenco||[]).length
+      ? 'Nessuna parola chiave con questo testo.'
+      : 'Nessuna parola chiave. Selezionane una nel capitolo e scegli «Keyword».')+'</div>';
+    return;
+  }
+  host.innerHTML=lista.map(function(e){
+    return '<button class="kwchip'+(kwOrfana(e)?' orfana':'')+'" role="listitem" draggable="true"'+
+      ' data-kw="'+escHtml(e.id)+'" style="--kw:'+escHtml(e.colore||'var(--line)')+'"'+
+      ' title="'+escHtml((e.capitolo||'')+(kwOrfana(e)?' — il testo non è più nel capitolo':'')+
+      '\nDoppio click per andarci, trascina negli appunti o sulla mappa')+'">'+
+      '<span class="kwtxt">'+escHtml(e.exact)+'</span></button>';
+  }).join('');
+}
+function kwDaId(id){ return (EVIDENZE.elenco||[]).filter(function(e){ return e.id===id; })[0]||null; }
+
+document.addEventListener('input', function(e){
+  if(!e.target || e.target.id!=='kwCerca') return;
+  KW.filtro=e.target.value||''; keywordDisegna();
+});
+document.addEventListener('click', function(e){
+  if(!e.target.closest || !e.target.closest('#kwOrdine')) return;
+  KW.ordine=(KW.ordine==='alfa')?'data':'alfa'; keywordDisegna();
+});
+/* Doppio click: si va dove la parola è stata trovata. È il «recupero del
+   contesto» di Braynr, e qui costa una riga perché il rimando al capitolo
+   esiste già. */
+document.addEventListener('dblclick', function(e){
+  if(!e.target.closest) return;
+  var c=e.target.closest('.kwchip'); if(!c) return;
+  var ev=kwDaId(c.getAttribute('data-kw')); if(!ev) return;
+  if(!vaiAlCapitolo(ev.capitoloId)) toast('Capitolo non trovato: forse è stato rigenerato', false);
+});
+/* Il trascinamento porta con sé DUE cose: il markdown per chi capisce il testo
+   (l'editor degli appunti lo incolla da sé) e l'id per chi vuole il record
+   intero (la mappa, che deve costruire un nodo col rimando). Il chip trasporta
+   l'identità, mai il solo testo nudo: è ciò che permette al nodo di sapere da
+   dove viene. */
+document.addEventListener('dragstart', function(e){
+  if(!e.target.closest) return;
+  var c=e.target.closest('.kwchip'); if(!c || !e.dataTransfer) return;
+  var ev=kwDaId(c.getAttribute('data-kw')); if(!ev) return;
+  e.dataTransfer.setData('text/plain', kwMarkdown(ev));
+  e.dataTransfer.setData('application/x-studia-evidenza', ev.id);
+  e.dataTransfer.effectAllowed='copy';
+});
+/* La tela della mappa accetta la caduta. `dragover` con `preventDefault` è
+   quello che la rende un bersaglio: senza, il cursore dice no e il `drop` non
+   arriva mai. */
+document.addEventListener('dragover', function(e){
+  if(!e.target.closest || !e.target.closest('#mappaSvg')) return;
+  e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect='copy';
+});
+document.addEventListener('drop', function(e){
+  if(!e.target.closest || !e.target.closest('#mappaSvg') || !e.dataTransfer) return;
+  var id=e.dataTransfer.getData('application/x-studia-evidenza'); if(!id) return;
+  e.preventDefault();
+  var ev=kwDaId(id); if(!ev) return;
+  if(!mappaMie() || !MAPPA.mia.grafo){ toast('Apri una mappa tua per posarci una parola chiave', false); return; }
+  var p=mappaPunto(e);
+  MAPPA.mia.grafo=MappaModifica.estrai(MAPPA.mia.grafo, {
+    testo:ev.exact, nota:(ev.prefix+ev.exact+ev.suffix).trim(),
+    x:p?Math.round(p.x):null, y:p?Math.round(p.y):null
+  });
+  mappaTocca(); mappaRidisegna();
+  toast('«'+ev.exact+'» posata sulla mappa', true);
+});
+/* Il menu sul chip: cambiare colore, andarci, toglierla. Il colore scelto qui
+   aggiorna il record, quindi il chip E l'evidenziatura sul testo si muovono
+   insieme — leggono lo stesso valore. */
+function kwMenuChiudi(){ var m=document.getElementById('kwMenu'); if(m) m.classList.remove('open'); }
+function kwMenuAperto(){ var m=document.getElementById('kwMenu'); return !!m && m.classList.contains('open'); }
+document.addEventListener('contextmenu', function(e){
+  if(!e.target.closest) return;
+  var c=e.target.closest('.kwchip'); if(!c) return;
+  e.preventDefault();
+  var ev=kwDaId(c.getAttribute('data-kw')); if(!ev) return;
+  var m=document.getElementById('kwMenu'); if(!m) return;
+  var h='<div class="ctx-head">'+escHtml(ev.exact)+'</div>';
+  h+='<div class="ctx-colori" role="group" aria-label="Colore della parola chiave">';
+  (mappaColori()||[]).forEach(function(col){
+    h+='<button class="ctx-col" data-kwcol="'+escHtml(col)+'" style="background:'+escHtml(col)+'" aria-label="Questo colore"></button>';
+  });
+  h+='<input type="color" id="kwColPick" value="'+escHtml(ev.colore||'#a16207')+'" aria-label="Un altro colore">';
+  h+='</div>';
+  h+='<button class="ctx-item" role="menuitem" data-kwaz="vai">Vai al capitolo</button>';
+  h+='<div class="ctx-sep"></div>';
+  h+='<button class="ctx-item" role="menuitem" data-kwaz="togli">Togli dall’elenco</button>';
+  m.innerHTML=h; m.dataset.kw=ev.id;
+  m.classList.add('open');
+  var r=m.getBoundingClientRect();
+  m.style.left=Math.max(8, Math.min(e.clientX, window.innerWidth-r.width-8))+'px';
+  m.style.top =Math.max(8, Math.min(e.clientY, window.innerHeight-r.height-8))+'px';
+});
+function kwRicolora(id, colore){
+  var api=evidenzeApi(); if(!api) return;
+  var r=api.colora(corsoAttivo(), id, colore);
+  if(r && r.error){ toast('Non cambiata: '+r.error, false); return; }
+  EVIDENZE.elenco=r.evidenze; evidenzeDisegna();
+}
+document.addEventListener('click', function(e){
+  if(!e.target.closest) return;
+  var m=document.getElementById('kwMenu'); if(!m) return;
+  var col=e.target.closest('#kwMenu .ctx-col');
+  if(col){ var id=m.dataset.kw; kwMenuChiudi(); kwRicolora(id, col.getAttribute('data-kwcol')); return; }
+  var it=e.target.closest('#kwMenu .ctx-item');
+  if(!it){ if(kwMenuAperto() && !e.target.closest('#kwMenu')) kwMenuChiudi(); return; }
+  var az=it.getAttribute('data-kwaz'), ev=kwDaId(m.dataset.kw);
+  kwMenuChiudi(); if(!ev) return;
+  if(az==='vai'){ if(!vaiAlCapitolo(ev.capitoloId)) toast('Capitolo non trovato', false); return; }
+  if(az==='togli'){
+    var api=evidenzeApi(); if(!api) return;
+    var r=api.rimuovi(corsoAttivo(), ev.id);
+    if(r && r.error){ toast('Non tolta: '+r.error, false); return; }
+    EVIDENZE.elenco=r.evidenze; evidenzeDisegna(); toast('Parola chiave tolta', true);
+  }
+});
+document.addEventListener('change', function(e){
+  if(!e.target || e.target.id!=='kwColPick') return;
+  var m=document.getElementById('kwMenu'), id=m?m.dataset.kw:'';
+  var c=e.target.value; kwMenuChiudi(); kwRicolora(id, c);
+});
+window.addEventListener('keydown', function(e){
+  if(e.key!=='Escape' || !kwMenuAperto()) return;
+  e.stopPropagation(); kwMenuChiudi();
+}, true);
+window.addEventListener('resize', kwMenuChiudi);
+/** Il colore con cui si evidenzia adesso: l'ultimo scelto, che sopravvive alla
+ *  chiusura. Di fabbrica il primo dei preset, che li legge dal tema. */
+function evidenzeColore(){
+  if(EVIDENZE.colore) return EVIDENZE.colore;
+  try{ EVIDENZE.colore=localStorage.getItem('studia.evidenze.colore')||''; }catch(e){}
+  if(!EVIDENZE.colore) EVIDENZE.colore=(mappaColori()||[])[1] || '#a16207';
+  return EVIDENZE.colore;
+}
+function evidenzeColoreScegli(c){
+  EVIDENZE.colore=c||'';
+  try{ localStorage.setItem('studia.evidenze.colore', EVIDENZE.colore); }catch(e){}
+}
+/**
+ * Evidenzia la selezione. Il selettore si costruisce dalla stringa del
+ * capitolo — non da `selection.toString()`, che in Chromium arriva maiuscolo
+ * dai titoli — e l'evidenza è idempotente: lo stesso punto ha lo stesso id, e
+ * ri-evidenziarlo cambia solo il colore.
+ */
+function evidenzia(range, colore){
+  var api=evidenzeApi(); if(!api){ toast('Evidenze disponibili solo nell’app',false); return; }
+  var ctx=curCtx(); if(!ctx){ toast('Apri un capitolo del vault',false); return; }
+  if(!evidenzePronte()){ toast('Modulo delle evidenze non caricato',false); return; }
+  var m=evMappa(), pos=offsetDaRange(m, range);
+  if(!pos){ toast('Non riesco ad ancorare questa selezione',false); return; }
+  var sel=EvidenzeAncoraggio.daTesto(m.testo, pos.inizio, pos.fine);
+  if(!sel){ toast('Selezione troppo corta',false); return; }
+  var r=api.aggiungi(corsoAttivo(), {
+    exact:sel.exact, prefix:sel.prefix, suffix:sel.suffix, colore:colore||evidenzeColore(),
+    lezioneId:ctx.lezioneId, capitoloId:ctx.capitoloId, capitolo:ctx.capitolo
+  });
+  if(r && r.error){ toast('Non salvata: '+r.error,false); return; }
+  EVIDENZE.elenco=r.evidenze; EVIDENZE.corso=corsoAttivo();
+  evidenzeDisegna();
+  toast('Parola chiave aggiunta',true);
+}
+/** Quale evidenza sta sotto la selezione: serve a «Cancella», che altrimenti
+ *  dovrebbe chiedere all'utente quale delle sovrapposte intende. Vince quella
+ *  che comincia più tardi, cioè la più interna. */
+function evidenzaSotto(range){
+  if(!evidenzePronte()) return null;
+  var mie=evidenzeDelCapitolo(); if(!mie.length) return null;
+  var m=evMappa(), pos=offsetDaRange(m, range); if(!pos) return null;
+  var r=EvidenzeAncoraggio.risolvi(m.testo, mie), vinta=null;
+  r.trovate.forEach(function(t){
+    if(t.fine<=pos.inizio || t.inizio>=pos.fine) return;      // non si toccano
+    if(!vinta || t.inizio>vinta.inizio) vinta=t;
+  });
+  return vinta ? vinta.voce : null;
+}
+/**
+ * L5 — il frammento selezionato diventa un nodo della mappa.
+ *
+ * Il gesto porta con sé l'origine, che è tutto il punto: il nodo nasce
+ * `origine:'fonte'` (colore pieno, non grigio) con il numero del capitolo, e
+ * `disegna.js` gli accende il segno della fonte. Nella `nota` finisce la frase
+ * attorno — lo stesso `anchor` degli appunti, ricavato dal ponte delle
+ * evidenze invece che da una seconda lettura del DOM.
+ *
+ * Senza una mappa tua aperta ne nasce una nuova **col solo frammento**
+ * (decisione §12.2.2 del piano): non si semina una copia della vista generata,
+ * perché un gesto piccolo non deve produrre venti nodi che nessuno ha chiesto.
+ * Il titolo è lezione + capitolo; il corso non ci va perché la mappa vive già
+ * dentro la cartella del suo corso, e ripeterlo sarebbe la stessa cosa detta
+ * due volte in due posti che possono divergere.
+ */
+function mappaEstrai(testo, range){
+  var api=mappeApi(), p=corsoAttivo(), ctx=curCtx();
+  if(!api || !p){ toast('Mappe disponibili solo nell’app', false); return; }
+  if(!mappaPronta()){ toast('Moduli della mappa non caricati', false); return; }
+  var t=String(testo==null?'':testo).replace(/\s+/g,' ').trim();
+  if(!t){ return; }
+  /* La frase attorno: se il ponte delle evidenze sa dire dove siamo, la si
+     ricava da lì. Se non lo sa, il nodo nasce lo stesso — un gesto che non fa
+     niente perché manca il contorno sarebbe peggio di un nodo senza nota. */
+  var nota='';
+  try{
+    if(range && evidenzePronte()){
+      var m=evMappa(), pos=offsetDaRange(m, range);
+      if(pos){
+        var s=EvidenzeAncoraggio.daTesto(m.testo, pos.inizio, pos.fine, { contesto:60 });
+        if(s) nota=(s.prefix+s.exact+s.suffix).trim();
+      }
+    }
+  }catch(e){ /* la nota è un di più, non una condizione */ }
+  var opt={ testo:t, nota:nota,
+            capitolo:(typeof state!=='undefined' && state ? state.current+1 : null) };
+  try{ bancoMostra('mappa'); }catch(e){}
+
+  if(mappaMie() && MAPPA.mia.grafo){
+    MAPPA.mia.grafo=MappaModifica.estrai(MAPPA.mia.grafo, opt);
+    mappaTocca(); mappaRidisegna();
+    toast('Nodo aggiunto a «'+(MAPPA.mia.titolo||'la mappa aperta')+'»', true);
+    return;
+  }
+  var titolo=((ctx && ctx.lezioneId) ? ctx.lezioneId+' — ' : '')+((ctx && ctx.capitolo) || 'Mappa');
+  var g=MappaModifica.estrai({ nodi:[], archi:[] }, opt);
+  mappaFlush().then(function(){
+    return api.salva(p, null, { titolo:titolo, corso:p, nodi:g.nodi, archi:g.archi,
+                                vista:mappaVistaVersoFile() });
+  }).then(function(r){
+    r=r||{};
+    if(r.error || !r.file){ toast('Mappa non creata: '+(r.error||'?'), false); return; }
+    MAPPA.registro='mie'; MAPPA.mia.file=''; MAPPA.mia.grafo=null;
+    return mappaCaricaElenco().then(function(){
+      mappaSincronizzaComandi();
+      return mappaApriMia(r.file);
+    }).then(function(){
+      // il toast dice SEMPRE dov'è finita la cattura: con più superfici che
+      // accettano lo stesso gesto, l'ambiguità si risolve dichiarando
+      toast('Mappa «'+titolo+'» creata col frammento', true);
+    });
+  }).catch(function(e){ console.error('mappe/estrai:', e); toast('Non riuscito: '+((e&&e.message)||e), false); });
+}
+function evidenzaCancella(range){
+  var api=evidenzeApi(); if(!api) return;
+  var v=evidenzaSotto(range);
+  if(!v){ toast('Qui non c’è una parola chiave',false); return; }
+  var r=api.rimuovi(corsoAttivo(), v.id);
+  if(r && r.error){ toast('Non rimossa: '+r.error,false); return; }
+  EVIDENZE.elenco=r.evidenze;
+  evidenzeDisegna();
+  toast(r.tolte? 'Parola chiave tolta' : 'Non c’era più', !!r.tolte);
+}
 document.addEventListener('keydown',function(e){
   if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); noteSave(); }
 });
@@ -3859,6 +4567,20 @@ function searchGoto(r,q){
   else { loadLesson(r.d.lessonId); go(r.d.idx); }
   setTimeout(function(){ searchHighlight(q); },120);
 }
+/* Il timer del lampo, uno solo perché uno solo è il nome registrato: due
+   ricerche ravvicinate devono spegnere il lampo di prima insieme al suo timer,
+   altrimenti il vecchio timer spegnerebbe in anticipo il lampo nuovo. */
+var HIT_T=null;
+/* L'occorrenza si accende registrando un intervallo, non avvolgendo il testo in
+   un `<mark>`. Il `<mark>` sopravviveva al lampo — dopo 1600 ms si toglieva la
+   classe, non l'elemento — e restava a schermo con il giallo predefinito del
+   browser, che nel capitolo sembrava un'evidenziatura fatta dall'utente e
+   spariva solo al render successivo. In più `surroundContents` spezza in tre il
+   nodo di testo, e l'ancoraggio delle evidenze conta gli offset sul testo del
+   capitolo: cambiargli i nodi sotto i piedi è il modo esatto di mandarlo fuori
+   strada. Qui il DOM non si tocca.
+   Del registro dei nomi si occupa solo «ricerca»: «evidenze» resta libero per
+   le evidenziature dell'utente. */
 function searchHighlight(q){
   var tok=sNorm(q).split(/\s+/).filter(Boolean)[0]; if(!tok) return;
   var root=$('#content'); if(!root) return;
@@ -3868,12 +4590,24 @@ function searchHighlight(q){
     var at=sNorm(node.nodeValue).indexOf(tok); if(at<0) continue;
     if(node.parentElement && node.parentElement.closest('script,style')) continue;
     var range=document.createRange(); range.setStart(node,at); range.setEnd(node,at+tok.length);
-    var mk=document.createElement('mark'); mk.className='hitflash';
-    try{ range.surroundContents(mk); }catch(e){ return; }
-    mk.scrollIntoView({block:'center', behavior:'smooth'});
-    setTimeout(function(){ mk.classList.remove('hitflash'); },1600);
+    searchInVista(range);
+    if(window.CSS && CSS.highlights && typeof Highlight==='function'){
+      clearTimeout(HIT_T);
+      CSS.highlights.set('ricerca', new Highlight(range));
+      HIT_T=setTimeout(function(){ CSS.highlights.delete('ricerca'); },1600);
+    }
     return;
   }
+}
+/* Un intervallo non sa portarsi in vista: `scrollIntoView` è degli elementi.
+   Si centra a mano nel corpo che scorre — quello del capitolo, lo stesso che
+   `bancoInCima` riporta in cima dopo ogni render — perché da quando c'è il
+   banco la pagina non scorre. */
+function searchInVista(range){
+  var corpo=bancoCorpoDi('capitolo'); if(!corpo) return;
+  var r=range.getBoundingClientRect(), c=corpo.getBoundingClientRect();
+  corpo.scrollBy({ top:Math.round((r.top+r.height/2)-(c.top+c.height/2)),
+                   behavior:document.documentElement.dataset.reduce==='1'?'auto':'smooth' });
 }
 (function(){
   var t=null;
@@ -3961,6 +4695,21 @@ function _mdInline(s){ s=escHtml(s);
     if(mv){ var f=_mediaNum()[mv[1].padStart(2,"0")]||''; return '<a href="#" class="vlink" data-file="'+escHtml(f)+'" data-t="'+mv[2]+'" data-label="'+txt+'">'+txt+'</a>'; }
     var mp=/^pdf:(\d+)#p=(\d+)/.exec(urlv);
     if(mp){ var pf=_pdfNum()[mp[1].padStart(2,"0")]||''; return '<a href="#" class="plink" data-file="'+escHtml(pf)+'" data-page="'+mp[2]+'" data-label="'+txt+'">'+txt+'</a>'; }
+    /* Rimando a un CAPITOLO preciso, che è cosa diversa dal wiki-link: `[[…]]`
+       arriva alla lezione e `loadLesson` riparte dal primo capitolo, quindi non
+       sa dire «quel punto lì». Serviva perché ogni frammento che si estrae dal
+       testo porti con sé la propria origine.
+       Si scrive l'id del capitolo per intero (`01-fondamenti-c03`) e non lezione
+       più indice: è lo stesso identificatore che gli appunti già salvano in
+       `capitoloId`, e due modi di dire dov'è un capitolo sarebbero due verità
+       che prima o poi divergono. ⚠️ Quell'id nasce dall'ORDINE dei capitoli
+       (`lessonId + '-c' + NN`): una rigenerazione che ne inserisce uno in mezzo
+       sposta gli id di tutti quelli dopo, e i rimandi vecchi non si ritrovano.
+       È un difetto che gli appunti hanno già oggi, non uno che nasce qui — ma
+       va scritto, perché il giorno che si darà un'identità stabile ai capitoli
+       questo è uno dei posti da correggere. */
+    var mc=/^cap:([A-Za-z0-9][A-Za-z0-9._-]*)$/.exec(urlv);
+    if(mc){ return '<a href="#" class="clink" data-cap="'+escHtml(mc[1])+'">'+txt+'</a>'; }
     if(/^https?:/.test(urlv)) return '<a href="'+urlv+'" target="_blank" rel="noopener">'+txt+'</a>';
     return txt; });
   s=s.replace(/\[\[([0-9]{2}-[a-z0-9-]+)(?:\|([^\]]+))?\]\]/g, function(m,folder,label){ return '<a href="#" class="wlink" data-lesson="'+folder+'">'+(label||folder)+'</a>'; });
@@ -4069,12 +4818,42 @@ function buildVaultCourses(){
   }); });
   _numAttivi = null;                 // finita la costruzione si torna alle mappe globali
   return firstId; }
-/* click delegato sui link vault (minuti video, pagine pdf, wiki-link fra lezioni) */
+/**
+ * Dove sta un capitolo, cercandolo per id in tutte le lezioni caricate.
+ *
+ * Si cerca invece di ricavare la lezione dall'id (che oggi la contiene, perché
+ * nasce come `lessonId + '-c' + NN`) perché quella è una convenzione di come
+ * l'id è fabbricato, non una promessa: il giorno che cambia, un `replace` di
+ * troppo manderebbe i rimandi in un posto qualsiasi senza dirlo. Scandire
+ * costa niente — sono qualche centinaio di capitoli in memoria — e regge
+ * qualunque schema di id.
+ */
+function trovaCapitolo(capId){
+  if(!capId) return null;
+  for(var lid in LESSONS){
+    var ch=(LESSONS[lid]||{}).chapters||[];
+    for(var i=0;i<ch.length;i++) if(ch[i] && ch[i].id===capId) return { lezione:lid, indice:i };
+  }
+  return null;
+}
+/** Porta a un capitolo preciso: apre la sua lezione solo se non è già quella
+ *  aperta, poi ci si sposta dentro. Torna `false` se il capitolo non c'è più —
+ *  chi chiama lo dice all'utente invece di lasciarlo su una pagina a caso. */
+function vaiAlCapitolo(capId){
+  var p=trovaCapitolo(capId); if(!p) return false;
+  if(!LESSON || LESSON.id!==p.lezione) loadLesson(p.lezione);
+  go(p.indice);
+  return true;
+}
+/* click delegato sui link vault (minuti video, pagine pdf, wiki-link fra lezioni,
+   rimandi a un capitolo) */
 document.addEventListener('click', function(e){
-  var a=e.target.closest?e.target.closest('a.vlink,a.plink,a.wlink'):null; if(!a) return;
+  var a=e.target.closest?e.target.closest('a.vlink,a.plink,a.wlink,a.clink'):null; if(!a) return;
   e.preventDefault();
   if(a.classList.contains('vlink')){ openVideo(a.getAttribute('data-file'), parseInt(a.getAttribute('data-t'),10), a.getAttribute('data-label')); }
   else if(a.classList.contains('plink')){ openPdf(a.getAttribute('data-file'), parseInt(a.getAttribute('data-page'),10), a.getAttribute('data-label')); }
+  else if(a.classList.contains('clink')){ var c=a.getAttribute('data-cap');
+    if(!vaiAlCapitolo(c)) toast('Capitolo non trovato: '+c+' — forse la lezione è stata rigenerata',false); }
   else if(a.classList.contains('wlink')){ var t=a.getAttribute('data-lesson'); if(LESSONS[t]) loadLesson(t); else toast('Lezione non trovata: '+t,false); } });
 /* ---- Auto-caricamento: prima i corsi .md, poi (fallback) i vecchi Lezioni/*.json ---- */
 try{
@@ -5231,8 +6010,8 @@ function bancoStrumenti(){
     capitolo:  { nome:'Capitolo',        famiglia:'fonte',    sel:'main' },
     fonte:     { nome:'Fonte · PDF e video', famiglia:'fonte', sel:'#pdfPane' },
     appunti:   { nome:'Appunti',         famiglia:'quaderno', sel:'#notePane' },
-    mappa:     { nome:'Mappa',           famiglia:'quaderno', sel:null, arriva:'arriva col lotto B2' },
-    keyword:   { nome:'Parole chiave',   famiglia:'quaderno', sel:null, arriva:'arrivano con le evidenze (P1.1)' },
+    mappa:     { nome:'Mappa',           famiglia:'quaderno', sel:'#mappaView' },
+    keyword:   { nome:'Parole chiave',   famiglia:'quaderno', sel:'#keywordPane' },
     flashcard: { nome:'Flashcard',       famiglia:'quaderno', sel:null, arriva:'arrivano col ripasso (P3)' }
   };
 }
@@ -5376,10 +6155,38 @@ function bancoDisegna(){
   bancoApplicaForma();
   bancoApplicaFrazioni();
   bancoMonta();
+  bancoDichiaraStrumenti();
   bancoAggiornaTestate();
   bancoAggiornaVuoti();
   bancoPosizionaDivisori();
+  bancoSincronizzaMappa();
   bancoDopoLayout();
+}
+
+/**
+ * La mappa entra ed esce di scena col banco, e questa è l'unica porta.
+ *
+ * Spostare un pannello è gratis — è un `appendChild` — ma la mappa no: entrando
+ * deve caricare la vista, tarare i comandi e inquadrare; uscendo deve salvare il
+ * lavoro e spegnere i gesti a metà. Sono le due funzioni che c'erano già,
+ * `mappaApri` e `mappaChiudi`; quello che cambia è **chi le chiama**.
+ *
+ * Prima le chiamava il tasto in topbar, ed era l'unica strada. Da B2 le strade
+ * sono tre — il tasto, la tendina del blocco, la ✕ — e se ognuna facesse il
+ * proprio pezzo avremmo tre riti da tenere allineati: è la trappola ④, e qui si
+ * paga con una mappa che non si salva perché è uscita dalla porta sbagliata.
+ * Quindi i gesti spostano lo strumento e basta; la reazione sta qui, sul fronte.
+ *
+ * `MAPPA.aperto` non è una seconda verità sulla visibilità (quella la dà
+ * `mappaAperta()`): è la memoria di questo rilevatore di fronte, cioè l'ultimo
+ * stato a cui la mappa ha già reagito.
+ */
+function bancoSincronizzaMappa(){
+  if(typeof MAPPA==='undefined' || !MAPPA || typeof mappaApri!=='function') return;
+  var ora=bancoVisibile('mappa');
+  if(ora===!!MAPPA.aperto) return;
+  try{ if(ora) mappaApri(); else mappaChiudi(); }
+  catch(e){ console.error('banco/mappa:', e); MAPPA.aperto=ora; }
 }
 
 /** Che cosa va rifatto quando un riquadro cambia misura. ⚠️ CodeMirror non si
@@ -5387,8 +6194,15 @@ function bancoDisegna(){
  *  cursore finisce su una riga che non è quella che si vede. */
 function bancoDopoLayout(){
   try{ if(NOTES && NOTES.mde) NOTES.mde.codemirror.refresh(); }catch(e){}
-  try{ if(typeof MAPPA!=='undefined' && MAPPA && MAPPA.aperto) mappaRidisegna(); }catch(e){}
+  try{ if(typeof MAPPA!=='undefined' && MAPPA && mappaAperta()) mappaRidisegna(); }catch(e){}
   try{ if(typeof positionPanelToggle==='function') positionPanelToggle(); }catch(e){}
+  /* L'elenco delle parole chiave si ridisegna quando lo strumento entra in un
+     blocco: montarlo è un `appendChild`, e nessuno gli direbbe altrimenti che
+     adesso è a schermo e ha del contenuto da mostrare. */
+  try{ if(typeof keywordDisegna==='function' && bancoVisibile('keyword')){
+    if(EVIDENZE.corso!==corsoAttivo()) evidenzeCarica();
+    keywordDisegna();
+  } }catch(e){ console.error('banco/keyword:', e); }
 }
 
 /* ---- i comandi ---- */
@@ -5430,6 +6244,35 @@ function bancoMostra(strumento){
   if(!cresciuta){ bancoAssegna(bancoBlocchiVisibili().slice(-1)[0], strumento); return; }
   BANCO.stato=BancoForme.cambiaForma(bancoStato(), cresciuta.forma);
   bancoAssegna(cresciuta.blocco, strumento);
+}
+/**
+ * «Togli questo strumento dallo schermo»: il gemello di `bancoMostra`, che
+ * serviva ai comandi di chiusura (la ✕ della mappa, Esc, il toggle in topbar).
+ *
+ * Svuota il blocco e **non** rimpicciolisce la forma: chi ha diviso il banco in
+ * quattro l'ha fatto apposta, e una forma che si accartoccia da sé al primo
+ * strumento chiuso sposterebbe tutto il resto sotto le mani di chi lavora. Il
+ * blocco resta lì, vuoto, pronto a ospitare la prossima cosa — che è poi il
+ * primo posto dove `bancoMostra` va a cercare.
+ */
+function bancoTogli(strumento){
+  if(!bancoPronto()) return;
+  var b=bancoBloccoDi(strumento);
+  if(b) bancoAssegna(b, '');
+}
+/**
+ * Dichiara su `<html>` quali strumenti sono a schermo, perché il CSS possa
+ * chiederlo: `html:not([data-strumenti~="capitolo"])` spegne la barra di
+ * avanzamento quando il capitolo non c'è.
+ *
+ * Serve un attributo e non una classe per strumento perché `~=` interroga un
+ * elenco separato da spazi con un selettore solo, e l'elenco lo scrive un punto
+ * solo — mentre sei classi accese e spente a mano sono sei occasioni di
+ * dimenticarne una.
+ */
+function bancoDichiaraStrumenti(){
+  var vivi=bancoBlocchiVisibili().map(bancoStrumentoIn).filter(function(s){ return !!s; });
+  document.documentElement.dataset.strumenti=vivi.join(' ');
 }
 /** La forma più piccola che tiene tutti i blocchi di adesso più uno nuovo.
  *  Si ricava dalla tabella, non da un elenco di casi scritto a mano. */
@@ -6100,11 +6943,24 @@ function mappaPunto(ev){
   return p.matrixTransform(ctm.inverse());
 }
 
-function mappaAperta(){ return document.documentElement.dataset.mappa==='1'; }
+/**
+ * La mappa è a schermo quando il banco le ha dato un blocco visibile.
+ *
+ * ⚠️ Prima la verità era `html[data-mappa="1"]`, e a scriverla era solo il tasto
+ * in topbar. Con B2 la mappa si chiama anche dalla tendina di un blocco: da
+ * quella seconda strada l'attributo sarebbe rimasto spento con la mappa in
+ * scena, e tutto ciò che lo interroga — il ridisegno, Esc, il tasto destro sulla
+ * tela — avrebbe creduto che non ci fosse. Una verità sola, e la tiene il banco.
+ */
+function mappaAperta(){ try{ return bancoVisibile('mappa'); }catch(e){ return false; } }
+/**
+ * Che cosa succede quando la mappa ENTRA in scena — non è più il gesto, è la
+ * reazione. Il gesto è assegnarla a un blocco, da qualunque strada arrivi; a
+ * chiamare qui è `bancoSincronizzaMappa`, sul fronte di salita.
+ */
 function mappaApri(){
   if(!mappaPronta()){ toast('Moduli della mappa non caricati',false); return; }
   MAPPA.aperto=true;
-  document.documentElement.dataset.mappa='1';
   var b=$('#mappaBtn'); if(b) b.setAttribute('aria-pressed','true');
   if(mappaMie()){
     /* Nel registro «Mie» le leve NON si prendono dal localStorage e lo zoom non
@@ -6128,6 +6984,9 @@ function mappaApri(){
   mappaAdatta();
   mappaRidisegna();
 }
+/** Che cosa succede quando la mappa ESCE di scena. Gemella di `mappaApri`: la
+ *  chiama `bancoSincronizzaMappa` sul fronte di discesa, qualunque sia stato il
+ *  gesto — la ✕, Esc, il tasto in topbar o la tendina che sceglie altro. */
 function mappaChiudi(){
   // chiudere non è annullare: quello che c'era in canna si scrive. `closeEditor`
   // degli appunti fa lo stesso, e la mappa non aveva nessuna rete equivalente
@@ -6137,7 +6996,6 @@ function mappaChiudi(){
   if(MAPPA.rinomina) mappaRinominaChiudi(true);
   mappaCollegaAnnulla(); mapMenuChiudi();
   MAPPA.aperto=false;
-  document.documentElement.dataset.mappa='';
   var b=$('#mappaBtn'); if(b) b.setAttribute('aria-pressed','false');
   closePops();
 }
@@ -6709,8 +7567,12 @@ function mappaRamo(id){
 /* ---- eventi ---- */
 document.addEventListener('click', function(e){
   if(!e.target.closest) return;
-  if(e.target.closest('#mappaBtn')){ if(mappaAperta()) mappaChiudi(); else mappaApri(); return; }
-  if(e.target.closest('#mChiudi')){ mappaChiudi(); return; }
+  /* I gesti spostano lo STRUMENTO; ad aprire e chiudere ci pensa
+     `bancoSincronizzaMappa`. Chiamare qui `mappaApri`/`mappaChiudi` lascerebbe
+     la mappa accesa in nessun blocco — visibile a `MAPPA.aperto`, invisibile
+     sullo schermo. */
+  if(e.target.closest('#mappaBtn')){ if(mappaAperta()) bancoTogli('mappa'); else bancoMostra('mappa'); return; }
+  if(e.target.closest('#mChiudi')){ bancoTogli('mappa'); return; }
   if(e.target.closest('#mAdatta')){ mappaAdatta(); return; }
   if(e.target.closest('#mVista')){
     var pop=$('#mappaPop');
@@ -7115,7 +7977,7 @@ document.addEventListener('input', function(e){
    cambiando tema vanno riscritti — non basta che cambi il foglio di stile. */
 (function(){
   if(typeof MutationObserver!=='function') return;
-  new MutationObserver(function(){ if(MAPPA.aperto) mappaRidisegna(); })
+  new MutationObserver(function(){ if(mappaAperta()) mappaRidisegna(); })
     .observe(document.documentElement,{ attributes:true, attributeFilter:['data-theme'] });
 })();
 
@@ -7160,7 +8022,9 @@ window.addEventListener('keydown', function(e){
   if(MAPPA.collega){ mappaCollegaAnnulla(); toast('Collegamento annullato', false); return; }
   var pop=$('#mappaPop');
   if(pop && pop.hasAttribute('open')){ closePops(); return; }
-  mappaChiudi();
+  // ultimo strato: la mappa lascia il suo blocco. Da B2 anche Esc passa dal
+  // banco, come la ✕ e il tasto in topbar — tre gesti, una strada sola.
+  bancoTogli('mappa');
 }, true);
 </script>
 <aside id="dock" aria-label="Colonna di lavoro: anteprima e appunti">
@@ -7199,6 +8063,67 @@ window.addEventListener('keydown', function(e){
   </template>
 </section>
 </aside>
+<!-- L'elenco delle parole chiave: uno strumento del banco come gli altri, e per
+     questo qui a livello di pagina. La barra ha ricerca e ordinamento; i chip
+     si trascinano negli appunti e sulla mappa. -->
+<section id="keywordPane" aria-label="Parole chiave">
+  <div class="kwbar">
+    <input id="kwCerca" type="search" placeholder="Cerca fra le parole chiave…" aria-label="Cerca fra le parole chiave">
+    <!-- un bottone solo che dice in che ordine sono ADESSO, non che cosa farà:
+         l'etichetta è lo stato, e premerlo lo cambia -->
+    <button class="iconbtn" id="kwOrdine" type="button" title="Ordina per data di aggiunta">Aa</button>
+  </div>
+  <div id="kwLista" class="kwlista" role="list"></div>
+</section>
+<!-- La mappa è uno strumento del banco come la fonte e gli appunti: sta qui a
+     livello di pagina, e `bancoMonta` la sposta nel blocco che la ospita.
+     ⚠️ Prima viveva dentro l'elemento `main`, che però è a sua volta lo
+     strumento «capitolo»: uno strumento annidato in un altro sarebbe stato
+     strappato via dal primo montaggio, e la mappa avrebbe nascosto il capitolo
+     invece di stargli accanto. -->
+<section id="mappaView" aria-label="Mappa del capitolo o della lezione">
+  <div class="mtoolbar" role="toolbar" aria-label="Comandi della mappa">
+    <span class="mseg" id="mRegistro" role="group" aria-label="Registro della mappa">
+      <button type="button" data-reg="generata" aria-pressed="true" title="La mappa calcolata dal capitolo o dalla lezione: non si salva, segue i file">Generata</button>
+      <button type="button" data-reg="mie" aria-pressed="false" title="Le tue mappe, salvate in MAPPE/: le modifichi tu e la pipeline non le tocca">Mie</button>
+    </span>
+    <select id="mAmbito" aria-label="Che cosa mappare"></select>
+    <!-- «Modifica una copia» vive nel registro generato (semina una mappa
+         tua da quello che stai guardando), «+» in quello delle tue: sono lo
+         stesso posto perché sono la stessa domanda — «da dove parte questa
+         mappa». Uno dei due è sempre nascosto. -->
+    <button class="mbtn mlungo" id="mCopia" type="button" title="Crea una tua mappa con la sola radice di questa vista: i concetti li metti tu, ed è il punto">Parti da qui</button>
+    <button class="mbtn" id="mNuova" type="button" hidden title="Nuova mappa vuota" aria-label="Nuova mappa">&#43;</button>
+    <!-- il cestino sta accanto alla tendina, cioè accanto alla cosa che
+         elimina: in fondo alla barra, fra «adatta» e «chiudi», sarebbe a un
+         pixel dai comandi che si premono di continuo -->
+    <button class="mbtn" id="mCestino" type="button" hidden title="Elimina questa mappa" aria-label="Elimina questa mappa">&#128465;</button>
+    <span class="msep" aria-hidden="true"></span>
+    <span class="metichetta">Motore</span>
+    <span class="mseg" id="mMotore" role="group" aria-label="Motore di disposizione">
+      <button type="button" data-motore="albero" aria-pressed="true" title="Albero: la gerarchia pura">Albero</button>
+      <button type="button" data-motore="dag" aria-pressed="false" title="DAG: livelli, con gli archi che saltano">DAG</button>
+      <button type="button" data-motore="percorso" aria-pressed="false" title="Percorso: l'ordine in cui studiare, numerato">Percorso</button>
+      <button type="button" data-motore="anelli" aria-pressed="false" title="Anelli: che cosa sta a un passo dal centro">Anelli</button>
+    </span>
+    <span class="mseg" id="mOrient" role="group" aria-label="Orientamento">
+      <button type="button" data-orient="td" aria-pressed="true" title="Dall'alto verso il basso">TD</button>
+      <button type="button" data-orient="lr" aria-pressed="false" title="Da sinistra verso destra">SX</button>
+    </span>
+    <span class="mspazio"></span>
+    <!-- il pallino di modifica non salvata, come negli appunti: sta prima
+         dei comandi perché è uno stato, non un'azione -->
+    <span class="mdirty" id="mSporca" hidden title="Modifiche non salvate">&#9679;</span>
+    <button class="mbtn" id="mVista" type="button" title="Aggiustamenti della vista" aria-haspopup="dialog">&#9881;</button>
+    <button class="mbtn mlungo" id="mAdatta" type="button" title="Adatta la mappa alla finestra">&#10530;</button>
+    <button class="mbtn" id="mChiudi" type="button" title="Chiudi la mappa (Esc)" aria-label="Chiudi la mappa">&#10005;</button>
+  </div>
+  <div class="mtela">
+    <svg id="mappaSvg" role="list" aria-label="Diagramma"></svg>
+    <div class="mvuota" id="mVuota" hidden></div>
+    <div class="mmodo" id="mModo" hidden></div>
+  </div>
+</section>
 <button id="selNote" type="button">&#9998; Appunta</button>
 <div id="uiModal" role="dialog" aria-modal="true" aria-labelledby="umTitle">
   <div class="um-card">
