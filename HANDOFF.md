@@ -10,7 +10,12 @@ Stato consegnato: **1260 controlli verdi** (`npm test`), app funzionante, tre co
 > compatibilità con i vault vecchi — sta in [RINOMINA-GLOSSARIO.md](RINOMINA-GLOSSARIO.md).
 > Se qui sotto un pezzo di codice usa ancora il vocabolario vecchio, è un residuo, non una variante.
 
-> **PUNTO DI RIPARTENZA (8 agosto, fine sessione).**
+> 📄 **Il racconto della sessione dell'8-9 agosto** — mappe personali (L0–L4) e primo lotto del
+> banco (B1), con i nove guasti trovati e le misure prese — sta in
+> [HANDOFF-SESSIONE-2026-08-09.md](HANDOFF-SESSIONE-2026-08-09.md). Questo file resta il punto di
+> ripartenza generale; quello serve a chi deve capire in fretta dove siamo arrivati.
+>
+> **PUNTO DI RIPARTENZA (8-9 agosto, fine sessione).**
 >
 > **Mappe, fase D — il piano di esecuzione è finalizzato in
 > [PIANO-MAPPE-EDITOR.md §12](PIANO-MAPPE-EDITOR.md), sei lotti L0–L6, e i primi cinque sono chiusi.**
