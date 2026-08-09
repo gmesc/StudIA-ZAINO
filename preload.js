@@ -4,6 +4,7 @@ const path = require('path');
 const url = require('url');
 const mat = require('./lib/materiali');   // materiali del corso, con ripiego sulle cartelle globali
 const corsiLib = require('./lib/corsi');  // dove stanno corsi e lezioni, anche nei vault mai migrati
+const evidenzeLib = require('./lib/evidenze'); // le parole chiave evidenziate, accanto agli appunti
 const voceLib = require('./lib/voce');    // sintesi di sistema per la lettura ad alta voce
 
 const cfg = ipcRenderer.sendSync('cfg:get') || {};
@@ -213,6 +214,38 @@ contextBridge.exposeInMainWorld('vault', {
     remove: (courseId, file) => { try { return appunti.remove(vaultPath, courseId, file); } catch (e) { return false; } },
     reindex: (courseId) => { try { return appunti.reindex(vaultPath, courseId); } catch (e) { return 0; } },
     indexPath: (courseId) => { try { return path.join(appunti.dir(vaultPath, courseId), '_indice.md'); } catch (e) { return ''; } }
+  },
+  /* Le parole chiave evidenziate nel testo (APPUNTI/_evidenze.json).
+     Sincrone come gli appunti e per la stessa ragione: si scrivono a gesto
+     dell'utente, una alla volta, e la scrittura sincrona è ciò che permette di
+     salvarle dentro `beforeunload` — cosa che alle mappe, che passano da
+     `invoke`, è preclusa perché la finestra si chiude prima della risposta. */
+  evidenze: {
+    leggi: (courseId) => {
+      if (!vaultPath) return { evidenze: [], error: 'nessuna cartella vault impostata' };
+      try { return evidenzeLib.leggi(vaultPath, courseId); }
+      catch (e) { return { evidenze: [], error: e.message }; }
+    },
+    salva: (courseId, elenco) => {
+      if (!vaultPath) return { evidenze: [], error: 'nessuna cartella vault impostata' };
+      try { return evidenzeLib.salva(vaultPath, courseId, elenco); }
+      catch (e) { return { evidenze: [], error: e.message }; }
+    },
+    aggiungi: (courseId, voce) => {
+      if (!vaultPath) return { evidenza: null, evidenze: [], error: 'nessuna cartella vault impostata' };
+      try { return evidenzeLib.aggiungi(vaultPath, courseId, voce); }
+      catch (e) { return { evidenza: null, evidenze: [], error: e.message }; }
+    },
+    rimuovi: (courseId, id) => {
+      if (!vaultPath) return { tolte: 0, evidenze: [], error: 'nessuna cartella vault impostata' };
+      try { return evidenzeLib.rimuovi(vaultPath, courseId, id); }
+      catch (e) { return { tolte: 0, evidenze: [], error: e.message }; }
+    },
+    colora: (courseId, id, colore) => {
+      if (!vaultPath) return { evidenza: null, evidenze: [], error: 'nessuna cartella vault impostata' };
+      try { return evidenzeLib.colora(vaultPath, courseId, id, colore); }
+      catch (e) { return { evidenza: null, evidenze: [], error: e.message }; }
+    }
   },
   /* Le mappe dell'utente (MAPPE/*.json). A differenza degli appunti passano dal
      main: una mappa la si salva mentre la si sta modificando, e un solo processo
