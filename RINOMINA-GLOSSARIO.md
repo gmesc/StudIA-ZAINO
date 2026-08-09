@@ -98,6 +98,48 @@ un `cdir` che esiste già:
 | `cdir`, `cbase`, `corsoDir` | `ldir`, `lbase`, `lezioneDir` |
 | `pdir`, `pdirs`, `projDir` | `cdir`, `cdirs`, `courseDir` |
 
+## I nomi di ruolo nei prompt
+
+Due prompt che si chiamano uguale pensano uguale. Nelle tre lenti di
+`architettura.js` è l'opposto di ciò che serve: esistono per guardare lo stesso
+corpus con occhi diversi, e la sintesi combina prospettive solo finché sono
+davvero diverse. Quindi i nomi di ruolo **non sono decorazione**.
+
+**`instructional designer`** sta nei tre punti dove il lavoro è davvero progettare
+un impianto didattico: `propose.js` (raggruppa il corpus in lezioni),
+`architettura.js` › sintesi (decide l'architettura definitiva), `scaletta.js`
+(propone gli indici di una lezione). Ha sostituito due nomi che promettevano un
+lavoro sbagliato — «progettista di percorsi di studio» e «responsabile del
+percorso di studio» — da quando il **Percorso** è un oggetto dell'app.
+
+Restano distinti, e devono restarlo: «esperto della disciplina», «progettista
+didattico», «analista di corpora didattici», «revisore severo», «analista di
+materiali didattici».
+
+### Le chiavi di smistamento del modello finto
+
+`STUDIA_FINTO=1` e i test riconoscono la fase cercando una sottostringa del
+prompt (`bin/studia.js` › `modelloFinto`, `test/roundtrip.js`). Da quando tre
+prompt cominciano con lo stesso ruolo, **la chiave non può più essere il nome del
+ruolo**: dev'essere una frase che compare in quel prompt e in nessun altro, e non
+alla posizione 0 (il confronto è `indexOf(...) > 0`).
+
+| fase | chiave | dove |
+|---|---|---|
+| lettura porzione | `Leggi la porzione` | `schede.js` |
+| sintesi scheda | `analisi parziali` | `schede.js` |
+| lente tassonomia | `esperto della disciplina` | `architettura.js` |
+| lente sequenza | `progettista didattico` | `architettura.js` |
+| lente legami | `corpora didattici` | `architettura.js` |
+| sintesi | `ARCHITETTURA DEFINITIVA` | `architettura.js` |
+| revisione | `revisore severo` | `architettura.js` |
+| scalette | `SCALETTE ALTERNATIVE` | `scaletta.js` |
+| capitolo | `Scrivi UN capitolo` | `genera.js` |
+
+Chi tocca un prompt controlli che la sua chiave sopravviva: se due chiavi
+pescassero lo stesso prompt, vincerebbe la prima della catena di `if` e la
+modalità a vuoto collauderebbe la fase sbagliata **senza dare errore**.
+
 ## Compatibilità con i vault vecchi
 
 La lettura tollera il vecchio impianto: se non c'è `Corsi/` si guarda in

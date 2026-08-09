@@ -478,7 +478,7 @@ async function modelloFinto(o) {
     return { ok: true, dati: { ordine: ['07', '03', '01', '12'], precedenze: [{ dopo: '03', prima: '07', perche: 'la pratica presuppone la teoria' }], fondamenti: ['07'] }, uso: { inputTokens: 300, outputTokens: 90 } };
   if (s.indexOf('corpora didattici') > 0)
     return { ok: true, dati: { coppie: [{ materiali: ['07', '03'], tipo: 'teoria+applicazione' }], rimandi: [{ da: 'Pratica', a: 'Fondamenti' }], sovrapposizioni: [] }, uso: { inputTokens: 300, outputTokens: 90 } };
-  if (s.indexOf('responsabile del percorso') > 0)
+  if (s.indexOf('ARCHITETTURA DEFINITIVA') > 0)
     return { ok: true, dati: { lezioni: [
       { title: 'FONDAMENTI DEL METODO', area: 'Teoria', rationale: 'Base teorica.', materiali: ['07'] },
       { title: 'DAL METODO ALLA PRATICA', area: 'Pratica', rationale: 'Applicazione e casi.', materiali: ['03', '01'] },
@@ -542,7 +542,7 @@ async function modelloFinto(o) {
   // il revisore che boccia fa fare un secondo giro di sintesi
   let giriSintesi = 0;
   async function modelloCritico(o) {
-    if (o.sistema.indexOf('responsabile del percorso') > 0) giriSintesi++;
+    if (o.sistema.indexOf('ARCHITETTURA DEFINITIVA') > 0) giriSintesi++;
     if (o.sistema.indexOf('revisore severo') > 0)
       return { ok: true, dati: { promossa: false, rilievi: [{ gravita: 'alta', problema: 'la lezione 2 mescola due cose', rimedio: 'separarle' }] }, uso: {} };
     return modelloFinto(o);

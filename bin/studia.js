@@ -100,7 +100,7 @@ function modelloFinto() {
     if (s.indexOf('esperto della disciplina') > 0) return { ok: true, dati: { aree: [] }, uso: {} };
     if (s.indexOf('progettista didattico') > 0) return { ok: true, dati: { ordine: [] }, uso: {} };
     if (s.indexOf('corpora didattici') > 0) return { ok: true, dati: { coppie: [] }, uso: {} };
-    if (s.indexOf('responsabile del percorso') > 0) return { ok: true, dati: { lezioni: [] }, uso: {} };
+    if (s.indexOf('ARCHITETTURA DEFINITIVA') > 0) return { ok: true, dati: { lezioni: [] }, uso: {} };
     if (s.indexOf('revisore severo') > 0) return { ok: true, dati: { promossa: true, rilievi: [] }, uso: {} };
     return { ok: false, errore: 'fase non riconosciuta' };
   };
