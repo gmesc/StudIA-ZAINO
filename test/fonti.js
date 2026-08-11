@@ -153,6 +153,74 @@ sezione('Un contenitore senza indici');
     false, fs.existsSync(F.dirIndici(VAULT, 'vuoto')));
 }
 
+sezione('Togliere una fonte, e il filo del lavoro che ci sta sopra');
+{
+  /* Una fonte non è un file: è il capo di un filo a cui sono legate evidenze,
+     ritagli, appunti e nodi di mappa, e il legame è il NOME che compare nei
+     rimandi `pdf:03#p=7`. Queste prove riguardano quel filo, non il file. */
+  const Z2 = 'zaino-rimozioni';
+  Z.crea(VAULT, { nome: 'Rimozioni' });
+  fs.mkdirSync(F.dirPdf(VAULT, Z2), { recursive: true });
+  const uno = path.join(FUORI, 'dispensa.pdf');
+  const due = path.join(FUORI, 'altro.pdf');
+  fs.writeFileSync(uno, '%PDF-1.4 il contenuto della dispensa');
+  fs.writeFileSync(due, '%PDF-1.4 un altro documento');
+
+  /* ⚠️ Da qui in poi la prova è asincrona (`elimina` cestina il file, e chi la
+     chiama può farlo con una funzione che aspetta). Il `return` qui sotto
+     interrompe l'esecuzione del modulo: è ciò che impedisce alle righe di
+     pulizia in fondo al file di cancellare il vault mentre le promesse girano
+     ancora. Chi aggiunge sezioni le metta PRIMA di questa. */
+  F.importa(VAULT, Z2, [uno]);
+  F.scriviIndice(VAULT, Z2, '01 dispensa.pdf', [{ n: 1, t: 'prima pagina' }], 'pdfjs');
+  check('la fonte è entrata col suo numero', ['01 dispensa.pdf'], F.elenco(VAULT, Z2).map((m) => m.nome || m));
+
+  return F.elimina(VAULT, Z2, '01 dispensa.pdf').then((r) => {
+    check('togliendola non si sbaglia', '', r.error);
+    check('il documento non c\'è più', false, fs.existsSync(path.join(F.dirPdf(VAULT, Z2), '01 dispensa.pdf')));
+    /* L'indice va via col documento: lasciarlo vuol dire una lente che trova
+       pagine di un documento che non c'è, e un click che non apre niente. */
+    check('e nemmeno il suo indice', false, F.haIndice(VAULT, Z2, '01 dispensa.pdf'));
+    const lapidi = F.rimossi(VAULT, Z2);
+    check('resta una traccia, con il nome di allora', ['01 dispensa.pdf'], lapidi.map((x) => x.nome));
+    check('e con l\'impronta del CONTENUTO', F.impronta(uno), lapidi[0].impronta);
+    check('la traccia sa quante pagine aveva', 1, lapidi[0].pagine);
+
+    /* ⚠️ Il numero di una fonte tolta resta prenotato. Senza, il documento
+       importato subito dopo se lo prendeva, e al ritorno della dispensa il
+       contenitore aveva due «01»: un rimando `pdf:01` non avrebbe più saputo
+       chi aprire — cioè proprio il legame che la traccia esiste per salvare. */
+    F.importa(VAULT, Z2, [due]);
+    check('il numero della fonte tolta resta prenotato', ['02 altro.pdf'],
+      F.elenco(VAULT, Z2).map((m) => m.nome || m));
+
+    const rit = F.importa(VAULT, Z2, [uno]).copiati[0];
+    check('lo stesso contenuto che torna riprende il nome di prima', '01 dispensa.pdf', rit.nome);
+    check('e l\'importazione lo dichiara, invece di farlo di nascosto', true, rit.tornata);
+    check('la traccia sparisce solo quando la fonte è tornata davvero', [], F.rimossi(VAULT, Z2).map((x) => x.nome));
+
+    /* Il riaggancio è sul contenuto: un file DIVERSO con lo stesso nome non
+       deve ereditare le evidenze di un altro documento. */
+    F.elimina(VAULT, Z2, '02 altro.pdf').then((r2) => {
+      check('anche la seconda lascia la sua traccia', '', r2.error);
+      const finto = path.join(FUORI, 'altro.pdf');
+      fs.writeFileSync(finto, '%PDF-1.4 tutt\'altra roba, stesso nome');
+      const c = F.importa(VAULT, Z2, [finto]).copiati[0];
+      check('stesso nome ma contenuto diverso: è un documento nuovo', false, c.tornata);
+      check('e prende un numero nuovo', '03 altro.pdf', c.nome);
+
+      const d = F.dimentica(VAULT, Z2, F.rimossi(VAULT, Z2)[0].impronta);
+      check('una traccia si può dimenticare', [1, ''], [d.tolte, d.error]);
+      check('e dimenticarne una che non c\'è lo dice', 'traccia non trovata',
+        F.dimentica(VAULT, Z2, 'nessuna').error);
+
+      for (const dd of [VAULT, FUORI]) { try { fs.rmSync(dd, { recursive: true, force: true }); } catch (e) {} }
+      console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
+      process.exit(ko ? 1 : 0);
+    });
+  });
+}
+
 for (const d of [VAULT, FUORI]) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) {} }
 
 console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');

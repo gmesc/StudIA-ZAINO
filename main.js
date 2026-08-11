@@ -390,6 +390,22 @@ ipcMain.handle('lettura:segna', (e, { corso, file, pagina } = {}) =>
 const fontiLib = require('./lib/fonti');
 ipcMain.handle('fonti:importa', (e, { corso, percorsi } = {}) =>
   fontiLib.importa(vaultDir(), corso, percorsi));
+/**
+ * Togliere un documento dallo zaino.
+ *
+ * ⚠️ `shell.trashItem` e non `unlink`: questo è un file dell'UTENTE, portato
+ * dentro da lui, e l'unico gesto irreversibile dell'app non può essere un
+ * click. Nel Cestino ci resta finché lo decide lui.
+ *
+ * Il resto — la traccia che permetterà il riaggancio, l'indice che va via col
+ * documento — lo fa `lib/fonti.js`, che non sa niente di Electron.
+ */
+ipcMain.handle('fonti:elimina', (e, { corso, file } = {}) =>
+  fontiLib.elimina(vaultDir(), corso, file, { cestina: (p) => shell.trashItem(p) }));
+ipcMain.handle('fonti:rimossi', (e, { corso } = {}) => fontiLib.rimossi(vaultDir(), corso));
+ipcMain.handle('fonti:usi', (e, { corso, file } = {}) => fontiLib.usi(vaultDir(), corso, file));
+ipcMain.handle('fonti:dimentica', (e, { corso, impronta } = {}) =>
+  fontiLib.dimentica(vaultDir(), corso, impronta));
 ipcMain.handle('fonti:indiceScrivi', (e, { corso, file, pagine, motore } = {}) =>
   fontiLib.scriviIndice(vaultDir(), corso, file, pagine, motore));
 ipcMain.handle('fonti:indiceServe', (e, { corso, file } = {}) =>

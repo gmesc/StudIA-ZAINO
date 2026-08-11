@@ -435,6 +435,13 @@ contextBridge.exposeInMainWorld('vault', {
   fonti: {
     percorsoDi: (file) => { try { return webUtils.getPathForFile(file); } catch (e) { return ''; } },
     importa: (corso, percorsi) => ipcRenderer.invoke('fonti:importa', { corso, percorsi }),
+    /* Togliere una fonte: il file va nel Cestino di sistema e resta una traccia
+       del suo contenuto, così se lo stesso documento torna riprende il nome e il
+       numero di prima e il lavoro che ci stava sopra si riaggancia da sé. */
+    elimina: (corso, file) => ipcRenderer.invoke('fonti:elimina', { corso, file }),
+    rimossi: (corso) => ipcRenderer.invoke('fonti:rimossi', { corso }),
+    usi: (corso, file) => ipcRenderer.invoke('fonti:usi', { corso, file }),
+    dimentica: (corso, impronta) => ipcRenderer.invoke('fonti:dimentica', { corso, impronta }),
     indiceServe: (corso, file) => ipcRenderer.invoke('fonti:indiceServe', { corso, file }),
     indiceScrivi: (corso, file, pagine, motore) =>
       ipcRenderer.invoke('fonti:indiceScrivi', { corso, file, pagine, motore }),

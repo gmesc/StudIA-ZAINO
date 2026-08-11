@@ -4500,6 +4500,7 @@ function closePdf(){ document.documentElement.dataset.pdf='';
 // Delego sul document cosicché la X funzioni indipendentemente dall'ordine di parsing.
 (function(){
   document.addEventListener('click',function(e){ if(e.target.closest && e.target.closest('#pdfClose')) closePdf(); });
+  document.addEventListener('click',function(e){ if(e.target.closest && e.target.closest('#pdfElimina')) fonteElimina(); });
   document.addEventListener('keydown',function(e){
     if(e.key!=='Escape') return;
     var a=document.activeElement; if(a && a.closest && a.closest('#notePane')) return; // non chiudere mentre si scrive
@@ -5145,6 +5146,61 @@ function barreSeparatori(){
   }
 }
 
+/**
+ * Togliere dallo zaino il documento aperto.
+ *
+ * Tre cose, in quest'ordine, e l'ordine è il punto:
+ *
+ *   1. **si chiede chi ci si appoggia** (`fonti.usi`) e lo si DICE. «Togliere
+ *      una fonte» e «togliere una fonte da cui hai preso quarantatré parole
+ *      chiave» sono due decisioni diverse, e chi conferma deve sapere quale sta
+ *      prendendo;
+ *   2. ⚠️ **se qualcosa non si è potuto leggere, non si toglie.** Un file
+ *      illeggibile potrebbe contenere un riferimento: «non lo so» non è «no». È
+ *      la stessa regola di `albumElimina`, e per lo stesso motivo;
+ *   3. **si promette il ritorno.** Il file va nel Cestino di sistema, e nello
+ *      zaino resta l'impronta del suo contenuto: reimportando lo stesso
+ *      documento riprende nome e numero di prima, e tutto si riaggancia. È il
+ *      motivo per cui questa non è una cancellazione, ed è giusto dirlo prima e
+ *      non dopo.
+ */
+async function fonteElimina(){
+  if(modoAttivo()!=='zaino') return;
+  var api=window.vault && window.vault.fonti;
+  if(!api || typeof api.elimina!=='function'){ toast('Non disponibile in questa versione', false); return; }
+  var corso=corsoAttivo(); var f=(ANTEPRIMA && ANTEPRIMA.tipo==='pdf') ? ANTEPRIMA.file : '';
+  if(!corso || !f){ toast('Nessun documento aperto', false); return; }
+  var nome=titoloMateriale(f)||f;
+  var u;
+  try{ u=await api.usi(corso, f); }
+  catch(e){ toast('Non posso controllare dove è usato: '+((e&&e.message)||e), false); return; }
+  if(u.error){ toast('Non posso controllare dove è usato: '+u.error, false); return; }
+  if(u.illeggibili && u.illeggibili.length){
+    toast('Non posso dire dove è usato ('+u.illeggibili.length+' file illeggibili): non lo tolgo', false);
+    return;
+  }
+  var pezzi=[];
+  if(u.evidenze) pezzi.push(u.evidenze+(u.evidenze===1?' parola chiave':' parole chiave'));
+  if(u.appunti.length) pezzi.push(u.appunti.length+(u.appunti.length===1?' appunto':' appunti'));
+  if(u.mappe.length) pezzi.push(u.mappe.length+(u.mappe.length===1?' mappa':' mappe'));
+  if(u.ritagli) pezzi.push(u.ritagli+(u.ritagli===1?' ritaglio':' ritagli'));
+  var msg='Togliere «'+nome+'» dallo zaino?\n\n';
+  msg += pezzi.length
+    ? ('Ci si appoggiano: '+pezzi.join(' · ')+'.\nRestano dove sono, in attesa: non si perde niente di scritto.\n\n')
+    : 'Nessun tuo lavoro ci si appoggia.\n\n';
+  msg += 'Il file va nel Cestino di sistema. Lo zaino tiene una traccia del suo contenuto: se un giorno reimporti lo stesso documento, riprende il numero di adesso e tutto si riaggancia da sé.';
+  if(typeof confirm==='function' && !confirm(msg)) return;
+  var r;
+  try{ r=await api.elimina(corso, f); }
+  catch(e){ toast('Non tolto: '+((e&&e.message)||e), false); return; }
+  if(!r || r.error){ toast('Non tolto: '+((r&&r.error)||'?'), false); return; }
+  closePdf();
+  try{ await fontiIndiciCarica(); }catch(e){}
+  try{ await zainoNavAggiorna(); }catch(e){}
+  try{ pdfDocEtichetta(); }catch(e){}
+  toast(r.avviso ? ('Documento nel Cestino — ⚠️ '+r.avviso) : ('«'+nome+'» è nel Cestino: reimportandolo si riaggancia'), !r.avviso);
+}
+
 /** L'etichetta del selettore dei documenti: quello aperto, o l'invito. */
 function pdfDocEtichetta(){
   var b=document.getElementById('pdfDoc'); if(!b) return;
@@ -5155,6 +5211,13 @@ function pdfDocEtichetta(){
 }
 function aggiornaBarraPagina(){
   pdfDocEtichetta();
+  /* Il cestino c'è solo dove i documenti sono dell'utente: nello ZAINO, e con
+     un documento davvero aperto. Nei corsi i materiali li governa la pipeline,
+     e un cestino lì prometterebbe un gesto che non esiste.
+     ⚠️ Prima di `barreSeparatori()`: le barrette si spengono guardando che cosa
+     è a schermo, e deciderlo dopo lascerebbe una barretta accanto al nulla. */
+  var cest=$('#pdfElimina');
+  if(cest) cest.hidden = !(modoAttivo()==='zaino' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file);
   try{ barreSeparatori(); }catch(e){}
   var box=$('#pdfPag'), et=$('#pdfPagN');
   if(!box) return;
@@ -12121,6 +12184,12 @@ window.addEventListener('keydown', function(e){
     <button class="tbtn" id="pdfFindBtn" type="button" hidden aria-expanded="false" title="Cerca nel documento (⌘F)" aria-label="Cerca nel documento">&#128269;</button>
     <i class="tbsep" aria-hidden="true"></i>
     <a id="pdfNewtab" href="#" target="_blank" rel="noopener">Apri in una scheda &#8599;</a>
+    <!-- ⚠️ Togliere una fonte è l'unico gesto dell'app che tocca un file portato
+         dentro dall'utente: sta accanto alla ✕ ma è un'altra cosa, e la barretta
+         prima lo dichiara. Compare SOLO nello zaino, dove i documenti sono suoi;
+         nei corsi i materiali li governa la pipeline. -->
+    <button class="tbtn" id="pdfElimina" type="button" hidden
+            title="Togli questo documento dallo zaino" aria-label="Togli questo documento dallo zaino">&#128465;</button>
     <button class="tbtn" id="pdfClose" type="button" aria-label="Chiudi anteprima">&#10005;</button>
   </div>
 
