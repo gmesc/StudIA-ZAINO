@@ -113,7 +113,7 @@ case "$VISTO" in
   *) echo "✗ la pagina aperta non è quella attesa: $VISTO"; exit 1 ;;
 esac
 
-if [ $# -gt 0 ]; then PROVE=("$@"); else PROVE=(prova-b1.js prova-b2.js prova-menu.js prova-selezione-menu.js prova-note.js prova-keyword.js prova-mappe-ui.js prova-topbar.js prova-topbar-stile.js prova-tbar.js prova-appunti-barra.js prova-maniglia-indice.js prova-wikilink.js prova-identita-capitoli.js prova-pdf.js prova-testolayer.js prova-album.js prova-memorie.js prova-tendine.js prova-modo.js prova-zaino.js prova-evidenze-pdf.js prova-fonti.js prova-fonte-rimossa.js prova-import.js); fi
+if [ $# -gt 0 ]; then PROVE=("$@"); else PROVE=(prova-b1.js prova-b2.js prova-menu.js prova-selezione-menu.js prova-note.js prova-keyword.js prova-mappe-ui.js prova-topbar.js prova-topbar-stile.js prova-tbar.js prova-appunti-barra.js prova-maniglia-indice.js prova-wikilink.js prova-identita-capitoli.js prova-pdf.js prova-testolayer.js prova-album.js prova-memorie.js prova-tendine.js prova-modo.js prova-zaino.js prova-evidenze-pdf.js prova-fonti.js prova-fonte-rimossa.js prova-import.js prova-ripasso.js); fi
 
 KO=0
 for p in "${PROVE[@]}"; do

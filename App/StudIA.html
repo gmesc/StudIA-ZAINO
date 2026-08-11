@@ -2204,12 +2204,101 @@ function refreshToc(){
     li.classList.toggle('st-studiare',  st==='studiare');
   });
 }
-/* stato da accuracy quiz: 81-100 appreso · 61-80 ripassare · 0-60 studiare */
-function setChapterState(id, acc){
-  const pct=Math.round(acc*100);
-  state.learn[id] = pct>=81 ? 'appreso' : pct>=61 ? 'ripassare' : 'studiare';
+/* ===== Il ripasso: la storia di che cosa hai già risposto (P3.1) ===========
+ * ⚠️ `state.learn` non è più una sessione: è la VISTA di ciò che sta in
+ * `RIPASSO/stato.json`. Prima il punteggio di un quiz scriveva un'etichetta in
+ * memoria e a ogni `loadLesson` si ricominciava da zero — il lavoro
+ * sull'apprendimento si perdeva ogni sera. Adesso il disco è la verità anche
+ * per questo (è la trappola ③ del progetto, l'ultima superficie a cui mancava).
+ *
+ * Le tre etichette e le due soglie restano quelle di sempre: la segnaletica su
+ * indice e barra non deve cambiare significato sotto gli occhi di chi la
+ * conosce. Cambia da dove viene il dato, non che cosa dice. */
+var RIPASSO={ corso:'', carte:{}, error:'' };
+function ripassoApi(){ return (window.vault && window.vault.ripasso) || null; }
+/** Le carte di un capitolo così come sono scritte sul disco. */
+function ripassoCarteDi(capId){
+  var out=[];
+  for(var k in RIPASSO.carte){ var v=RIPASSO.carte[k]; if(v && v.capitolo===capId) out.push(v); }
+  return out;
+}
+/** L'etichetta di un capitolo, derivata dalle sue carte. `null` = non lo so —
+ *  che è diverso da «da studiare»: un capitolo mai aperto non si accende. */
+function ripassoStatoDi(capId){
+  var l=ripassoCarteDi(capId).filter(function(c){ return c.esito; });
+  if(!l.length) return null;
+  var punti={ 'di-nuovo':0, difficile:40, buono:85, facile:100 };
+  var media=l.reduce(function(s,c){ return s+(punti[c.esito]||0); },0)/l.length;
+  return media>=81 ? 'appreso' : media>=61 ? 'ripassare' : 'studiare';
+}
+/** Rilegge `state.learn` dal disco. Si chiama dopo ogni scrittura e a ogni
+ *  cambio di corso: una vista che non si aggiorna è una bugia con la data. */
+function ripassoRifletti(){
+  state.learn={};
+  if(!LESSON) { refreshToc(); updateProgress(); return; }
+  LESSON.chapters.forEach(function(c){
+    var st=ripassoStatoDi(c.id);
+    if(st) state.learn[c.id]=st;
+  });
   refreshToc(); updateProgress();
 }
+/** Carica lo stato del corso aperto. ⚠️ Un file illeggibile si DICE: «non hai
+ *  ancora ripassato» e «la tua storia non si è potuta leggere» sono due cose
+ *  diverse, e mostrarle uguali nasconderebbe la seconda. */
+async function ripassoCarica(){
+  var api=ripassoApi(), corso=corsoAttivo();
+  RIPASSO={ corso:corso||'', carte:{}, error:'' };
+  if(!api || !corso){ ripassoRifletti(); return; }
+  try{
+    var r=await api.leggi(corso);
+    RIPASSO.carte=(r&&r.carte)||{}; RIPASSO.error=(r&&r.error)||'';
+    if(RIPASSO.error) toast('Storia dei ripassi non leggibile: '+RIPASSO.error, false);
+  }catch(e){ RIPASSO.error=String(e&&e.message||e); }
+  ripassoRifletti();
+}
+/** Registra la risposta a una carta e riscrive la vista. L'id lo calcola il
+ *  main: la formula dell'identità sta in `lib/ripasso.js`, in un posto solo. */
+async function ripassoRegistra(cap, q, esito){
+  var api=ripassoApi(), corso=corsoAttivo();
+  if(!api || !corso || !cap || !q) return;
+  try{
+    var r=await api.registra(corso, cap.id, String(q.q||''), esito);
+    if(r && r.error){ toast('Ripasso non salvato: '+r.error, false); return; }
+    if(r && r.carte) RIPASSO.carte=r.carte;
+    ripassoRifletti();
+  }catch(e){ toast('Ripasso non salvato: '+((e&&e.message)||e), false); }
+}
+/**
+ * Le carte che esistono ADESSO nel corso aperto, e la potatura di quelle che non
+ * ci sono più.
+ *
+ * ⚠️ Il patto è quello di `percorsi.invalida()`: quando una rigenerazione
+ * riscrive una domanda, la storia di quella carta è persa davvero — riattaccarla
+ * a una domanda diversa sarebbe mentire. La si toglie, e LO SI DICE. Perdere in
+ * silenzio è l'unica cosa peggiore di perdere.
+ */
+async function ripassoPota(){
+  var api=ripassoApi(), corso=corsoAttivo();
+  if(!api || !corso || !Object.keys(RIPASSO.carte).length) return;
+  var vive=[];
+  lezioniOrdinati().forEach(function(l){
+    ((LESSONS[l.id]||{}).chapters||[]).forEach(function(c){
+      (c.quiz||[]).forEach(function(q){ vive.push({ capitolo:c.id, domanda:String(q.q||'') }); });
+    });
+  });
+  if(!vive.length) return;   // corso non ancora caricato: potare adesso toglierebbe tutto
+  try{
+    var r=await api.pota(corso, vive);
+    if(r && r.error) return;
+    if(r && r.carte) RIPASSO.carte=r.carte;
+    if(r && r.tolte) toast(r.tolte===1 ? 'Una carta non esiste più: la sua storia è stata tolta'
+                                       : (r.tolte+' carte non esistono più: la loro storia è stata tolta'), false);
+    ripassoRifletti();
+  }catch(e){ /* la potatura è manutenzione: se non riesce, si riprova domani */ }
+}
+/* Il punteggio del quiz non decide più l'etichetta del capitolo: la decidono le
+   carte, una per una. Questa resta per chi la chiamava. */
+function setChapterState(id, acc){ ripassoRifletti(); }
 
 /* ---- Render capitolo ---- */
 function render(){
@@ -2304,6 +2393,15 @@ function buildQuiz(c){
         opts.children[correctIdx].classList.add('correct');
         if(oi===correctIdx){ fb.className='fb ok show'; fb.innerHTML=ic('check')+'<span>Corretto. '+(q.explain||'')+'</span>'; }
         else { btn.classList.add('wrong'); fb.className='fb no show'; fb.innerHTML=ic('cross')+'<span>Non proprio. '+(q.explain||'')+'</span>'; }
+        /* La risposta va su DISCO, non solo a schermo (P3.1). Prima il lavoro
+           sull'apprendimento durava una sessione: `state.learn` viveva in
+           memoria e si azzerava al primo cambio di lezione.
+           ⚠️ Due esiti soli, per ora: giusto → «buono», sbagliato → «di nuovo».
+           I quattro di Braynr (di nuovo/difficile/buono/facile) arrivano con
+           l'interfaccia di ripasso (P3.3); registrarne quattro da un quiz a due
+           risposte vorrebbe dire inventarsi una sfumatura che l'utente non ha
+           espresso. */
+        ripassoRegistra(c, q, oi===correctIdx ? 'buono' : 'di-nuovo');
         markScore(c);
       });
       opts.appendChild(btn);
@@ -2998,8 +3096,27 @@ function askReset(){
   $('#resetYes').addEventListener('click',doReset);
   $('#resetNo').addEventListener('click',renderResetBtn);
 }
+/**
+ * «Azzera avanzamento»: cancella la storia dei ripassi di QUESTO corso, sul
+ * disco.
+ *
+ * ⚠️ Adesso è un gesto vero, non più la pulizia di una variabile che si sarebbe
+ * azzerata da sé alla prossima apertura. Per questo si chiede conferma dicendo
+ * quante carte si stanno buttando: prima non c'era niente da perdere, ora sì.
+ */
 function doReset(){
+  var quante=Object.keys(RIPASSO.carte||{}).length;
+  if(quante && typeof confirm==='function' &&
+     !confirm('Azzerare l\'avanzamento di questo corso?\n\nSi perde la storia di '+quante+
+              (quante===1?' carta ripassata':' carte ripassate')+'. Non è reversibile.')) return;
   state.visited.clear(); state.learn={};
+  var api=ripassoApi(), corso=corsoAttivo();
+  if(api && corso && quante){
+    RIPASSO.carte={};
+    api.salva(corso, {}).then(function(r){
+      if(r && r.error) toast('Storia non azzerata sul disco: '+r.error, false);
+    }).catch(function(){});
+  }
   refreshToc(); updateProgress();
   resetWrap.innerHTML=`<span class="donemsg">${ic('check')}Avanzamento azzerato</span>`;
   setTimeout(renderResetBtn,2400);
@@ -3186,8 +3303,17 @@ function primoLezioneVisibile(){
 function loadLesson(id){
   if(!LESSONS[id]) return;
   if(typeof noteFlush==='function') noteFlush();   // l'appunto in scrittura si chiude qui, non si perde
-  LESSON=LESSONS[id]; state.current=0; state.visited=new Set(); state.learn={};
+  /* ⚠️ `state.learn` NON si azzera più qui, si rilegge: era questa riga a
+     buttare via il lavoro sull'apprendimento a ogni cambio di lezione. Adesso
+     la verità sta in `RIPASSO/stato.json` e questa è solo la sua vista. */
+  LESSON=LESSONS[id]; state.current=0; state.visited=new Set();
   buildToc(); buildNavdots(); render(); refreshLessonSelect();
+  try{ ripassoRifletti(); }catch(e){}
+  /* Il corso può essere cambiato: se lo stato in memoria è di un altro, si
+     rilegge (e con lui si potano le carte che non esistono più). */
+  try{
+    if(RIPASSO.corso!==corsoAttivo()) ripassoCarica().then(function(){ return ripassoPota(); });
+  }catch(e){}
 }
 function toast(msg,ok){
   let t=$('#toast'); if(!t){ t=document.createElement('div'); t.id='toast'; document.body.appendChild(t); }
@@ -5697,6 +5823,10 @@ function cambiaCorso(id){
   try{ localStorage.setItem('studia.corso', id); }catch(e){}
   try{ MATERIALI.lista=null; }catch(e){}      // i materiali sono di un altro corso
   try{ letturaFlush(); letturaCarica(); }catch(e){}   // il segno in canna si scrive, poi si rileggono i suoi
+  /* La storia dei ripassi è del CORSO: quella di prima resterebbe a dipingere
+     l'indice del corso nuovo con le etichette di un altro. Si rilegge, e si
+     potano le carte che nel frattempo non esistono più. */
+  try{ ripassoCarica().then(function(){ return ripassoPota(); }); }catch(e){}
   /* L'album è di un corso: quello di prima resterebbe a schermo con i suoi
      ritagli, e un click ci lavorerebbe sopra nel corso sbagliato. */
   try{ ALBUMVISTA.voci=[]; ALBUMVISTA.filtro=''; var ac=$('#albCerca'); if(ac) ac.value='';

@@ -388,6 +388,7 @@ ipcMain.handle('lettura:segna', (e, { corso, file, pagina } = {}) =>
  * visualizzatore è già nell'app, e così un documento entra senza Python e senza
  * modelli. Qui si scrive soltanto, e si dichiara chi ha letto (`motore`). */
 const fontiLib = require('./lib/fonti');
+const ripassoLib = require('./lib/ripasso');
 ipcMain.handle('fonti:importa', (e, { corso, percorsi } = {}) =>
   fontiLib.importa(vaultDir(), corso, percorsi));
 /**
@@ -400,6 +401,46 @@ ipcMain.handle('fonti:importa', (e, { corso, percorsi } = {}) =>
  * Il resto — la traccia che permetterà il riaggancio, l'indice che va via col
  * documento — lo fa `lib/fonti.js`, che non sa niente di Electron.
  */
+/* ===== Il ripasso: la storia di che cosa hai già risposto (P3.1) ===========
+   ⚠️ Cartella dell'UTENTE, come APPUNTI/ e MAPPE/: la pipeline non la tocca, e
+   un corso rigenerato non porta via niente. Il canale è corto di proposito —
+   leggi tutto, scrivi tutto — perché lo stato di un corso sono poche decine di
+   voci e un protocollo più fine avrebbe due modi di sbagliare invece di uno. */
+ipcMain.handle('ripasso:leggi', (e, { corso } = {}) => ripassoLib.leggi(vaultDir(), corso));
+/* Scrive tutto lo stato in un colpo: lo usa «azzera avanzamento», che è l'unico
+   gesto che tocca la storia intera di un corso. */
+ipcMain.handle('ripasso:salva', (e, { corso, carte } = {}) => ripassoLib.salva(vaultDir(), corso, carte || {}));
+/**
+ * Registra una risposta. ⚠️ L'IDENTITÀ DELLA CARTA SI CALCOLA QUI, non nel
+ * renderer: è un hash del capitolo più il testo della domanda, e il renderer non
+ * ha `crypto`. Farlo di là vorrebbe dire scrivere una seconda volta la stessa
+ * formula — e due formule per la stessa identità divergono al primo ritocco,
+ * lasciando la storia di ripasso attaccata a carte che nessuno ritrova più.
+ */
+ipcMain.handle('ripasso:registra', (e, { corso, capitolo, domanda, esito, quando } = {}) => {
+  const letto = ripassoLib.leggi(vaultDir(), corso);
+  if (letto.error) return { error: letto.error };
+  const id = ripassoLib.identita(capitolo, domanda);
+  const carte = ripassoLib.registra(letto.carte, id, esito, { capitolo, quando });
+  const scritto = ripassoLib.salva(vaultDir(), corso, carte);
+  return scritto.error ? { error: scritto.error } : { error: '', id, carte };
+});
+/**
+ * Toglie lo stato delle carte che non esistono più, e dice quante ne ha tolte.
+ * Si chiama all'apertura di un corso: è lì che si scopre che una rigenerazione
+ * ha riscritto un quiz. `vive` è l'elenco `{capitolo, domanda}` delle carte che
+ * ci sono adesso — gli id li calcola sempre questo lato.
+ */
+ipcMain.handle('ripasso:pota', (e, { corso, vive } = {}) => {
+  const letto = ripassoLib.leggi(vaultDir(), corso);
+  if (letto.error) return { error: letto.error, tolte: 0 };
+  const ids = (vive || []).map((v) => ripassoLib.identita(v && v.capitolo, v && v.domanda));
+  const p = ripassoLib.pota(letto.carte, ids);
+  if (!p.tolte.length) return { error: '', tolte: 0, carte: letto.carte };
+  const scritto = ripassoLib.salva(vaultDir(), corso, p.carte);
+  return scritto.error ? { error: scritto.error, tolte: 0 } : { error: '', tolte: p.tolte.length, carte: p.carte };
+});
+
 ipcMain.handle('fonti:elimina', (e, { corso, file } = {}) =>
   fontiLib.elimina(vaultDir(), corso, file, { cestina: (p) => shell.trashItem(p) }));
 ipcMain.handle('fonti:rimossi', (e, { corso } = {}) => fontiLib.rimossi(vaultDir(), corso));

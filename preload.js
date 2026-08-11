@@ -447,6 +447,21 @@ contextBridge.exposeInMainWorld('vault', {
       ipcRenderer.invoke('fonti:indiceScrivi', { corso, file, pagine, motore }),
     indici: (corso) => ipcRenderer.invoke('fonti:indici', { corso })
   },
+  /* Il ripasso: la storia di che cosa hai già risposto, e come. Vive in
+     `RIPASSO/stato.json` dentro il contenitore — cartella dell'utente, come gli
+     appunti: una rigenerazione del corso non la tocca. */
+  ripasso: {
+    leggi: (corso) => ipcRenderer.invoke('ripasso:leggi', { corso }),
+    /* Scrive TUTTO lo stato: lo usa «azzera avanzamento», e le prove per
+       ripartire da un terreno pulito. Le risposte singole passano da
+       `registra`, che non richiede al renderer di sapere com'è fatta una voce. */
+    salva: (corso, carte) => ipcRenderer.invoke('ripasso:salva', { corso, carte }),
+    /* L'id della carta lo calcola il main: la formula dell'identità sta in un
+       posto solo (`lib/ripasso.js`), e qui si mandano capitolo e domanda. */
+    registra: (corso, capitolo, domanda, esito) =>
+      ipcRenderer.invoke('ripasso:registra', { corso, capitolo, domanda, esito }),
+    pota: (corso, vive) => ipcRenderer.invoke('ripasso:pota', { corso, vive })
+  },
   lettura: {
     leggi: (corso) => ipcRenderer.invoke('lettura:leggi', { corso }),
     segna: (corso, file, pagina) => ipcRenderer.invoke('lettura:segna', { corso, file, pagina })
