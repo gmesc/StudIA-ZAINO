@@ -124,6 +124,16 @@
     W.step = 0; W.corso = corso || null; W.importati = []; W.daImportare = [];
     W.imp = { cartella: null, piano: null, forzati: [], stato: 'fermo', errore: null };
     W.fonti = {};
+    /* ⚠️ Il piano e lo stato dei capitoli appartengono a UN corso, e restavano
+       in piedi da un'apertura all'altra. Due conseguenze misurate: la lista del
+       passo «Capitoli» mostrava le lezioni del corso precedente, e con cartelle
+       omonime fra corsi (`01-introduzione` esiste ovunque) i capitoli finivano
+       nella lezione di un altro corso senza un errore; e la cartella già scelta
+       la volta prima lasciava il bottone «Scrivi i capitoli» pronto a partire.
+       La lingua sopravvive di proposito (è una preferenza del vault); questi no. */
+    W.piano = null;
+    W.cap = { folder: null, alternative: null, scelta: -1, stato: 'fermo', prog: null,
+              log: [], esito: null, stima: null, errore: null, perLezione: null, destinazioni: null };
     // la lingua dei media è una preferenza tecnica del vault: sopravvive alla chiusura
     // del wizard, perché in un corpus i materiali parlano quasi sempre la stessa lingua
     try {
@@ -726,12 +736,41 @@
       var m = {};
       (r.lezioni || []).forEach(function (c) { m[c.folder] = c.capitoli || 0; });
       W.cap.perLezione = m;
+      /* ⚠️ Si tiene l'elenco INTERO, non il solo conteggio. `expand:stato` torna
+         le DESTINAZIONI — le cartelle che il lettore mostra davvero — e questa è
+         l'unica lista che sappia distinguere una variante dal segnaposto della
+         sua base. La lista qui sotto si costruiva invece sul piano, che conosce
+         solo le basi: offriva i segnaposto, e da lì si generavano capitoli che
+         nessuno avrebbe visto. */
+      W.cap.destinazioni = r.lezioni || null;
       if (!$('#wizard').hidden && W.step === P.CAPITOLI) render();
     }).catch(function () {});
   }
 
+  /**
+   * Le lezioni da offrire: le destinazioni vere se sono arrivate, il piano come
+   * ripiego finché non arrivano (la prima apertura, o `expand:stato` in errore).
+   *
+   * ⚠️ Il ripiego è il piano perché è meglio di un elenco vuoto, ma è quello che
+   * contiene i segnaposto: dura il tempo di una richiesta, e poi `render()`
+   * ridisegna con le destinazioni.
+   */
+  function lezioniDaOffrire() {
+    var d = W.cap.destinazioni;
+    if (d && d.length) {
+      return d.map(function (c) {
+        return { folder: c.folder, title: c.titolo || c.folder, variante: c.variante || '',
+                 materiali: c.materiali || [], capitoli: c.capitoli || 0 };
+      });
+    }
+    return ((W.piano && W.piano.lezioni) || []).map(function (c) {
+      return { folder: c.folder, title: c.title, variante: '', materiali: c.materiali || [],
+               capitoli: null, status: c.status };
+    });
+  }
+
   function step4() {
-    var lezioni = (W.piano && W.piano.lezioni) || [];
+    var lezioni = lezioniDaOffrire();
     if (!lezioni.length) return '<h3>Nessuna lezione approvata</h3><p>Torna indietro e approva l\'indice.</p>';
 
     if (!W.cap.folder) {
@@ -754,8 +793,13 @@
           var n = perLezione ? (perLezione[c.folder] || 0)
                            : ((c.status === 'generato' || c.status === 'parziale') ? -1 : 0);
           var fatto = n !== 0;
+          /* La variante nell'etichetta: due varianti della stessa lezione
+             CONDIVIDONO il titolo per costruzione, e senza il suffisso sarebbero
+             due righe identiche a vista che portano in due posti diversi. */
           return '<li><span class="dest">' + esc(c.folder.slice(0, 2)) + '</span>' +
-            '<span style="flex:1">' + esc(c.title) + ' <span class="wz-hint">(' + (c.materiali || []).length + ' materiali)</span></span>' +
+            '<span style="flex:1">' + esc(c.title) +
+            (c.variante ? ' <span class="wz-hint">— variante «' + esc(c.variante) + '»</span>' : '') +
+            ' <span class="wz-hint">(' + (c.materiali || []).length + ' materiali)</span></span>' +
             (fatto
               ? '<span class="dest">✓ ' + (n > 0 ? n + ' capitol' + (n === 1 ? 'o' : 'i') : esc(c.status)) + '</span>'
               : '<span class="wz-hint">da scrivere</span>') +

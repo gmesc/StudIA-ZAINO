@@ -341,13 +341,60 @@ ipcMain.handle('course:list', () => {
     let raw = ''; try { raw = fs.readFileSync(corsiLib.fileCorso(v, d.name), 'utf-8'); } catch (e) {}
     const fm = profiloLib.parse(raw);
     let piano = null; try { piano = JSON.parse(fs.readFileSync(corsiLib.servizio(v, d.name, '_piano.json'), 'utf-8')); } catch (e) {}
-    const lezioni = corsiLib.elencoLezioni(v, d.name).length;
+    /* ⚠️ Le LEZIONI, non le cartelle. Un corso con varianti ne ha due per
+       lezione — il segnaposto e la variante scritta — e questo numero diceva 14
+       per un corso di 7. Il danno però non è il numero: `projDaFinire` chiede
+       `lezioni===0` per dire «nessuna lezione ancora scritta», e con le sole
+       cartelle-segnaposto il conto era 7 mentre da leggere non c'era una riga.
+       L'app dichiarava finito un corso vuoto. */
+    const lezioni = percorsiLib.nomiRaggiungibili(corsiLib.elencoLezioni(v, d.name).map((folder) => {
+      let files = []; try { files = fs.readdirSync(corsiLib.lezioneDir(v, d.name, folder)); } catch (_) {}
+      return { folder, capitoli: espandiLib.capitoliDi(files).length };
+    })).length;
     out.push({ id: d.name, title: fm.title || d.name, lezioni, protetto: corsiLib.protetto(v, d.name),
       status: piano ? piano.status : null, wizardStep: piano ? piano.wizardStep : null,
       incompleto: !!(piano && ['raccolta', 'ingest', 'proposto', 'approvato', 'in-generazione', 'errore'].includes(piano.status)) });
   }
   return out.sort((a, b) => a.id.localeCompare(b.id));
 });
+
+/* ---- zaini: la seconda modalità, e perché qui ci sono solo due righe ----
+ *
+ * Uno zaino è un contenitore di documenti propri: niente pipeline, niente
+ * lezioni, niente stato di lavorazione. Tutto quello che serve al main è
+ * elencarli e crearne uno — appunti, mappe, album ed evidenze arrivano dai loro
+ * canali di sempre, che passano da `corsi.cartella()` e trovano lo zaino da
+ * soli (vedi la nota su quella funzione in lib/corsi.js).
+ *
+ * ⚠️ `zaino:create` NON è `course:create` con un'altra cartella: il controllo di
+ * unicità è sulle DUE radici, ed è dentro `zaini.crea()`. Duplicarlo qui
+ * vorrebbe dire due regole che invecchiano separate.
+ */
+const zainiLib = require('./lib/zaini');
+ipcMain.handle('zaino:list', () => zainiLib.elenco(vaultDir()));
+ipcMain.handle('zaino:create', (e, { nome } = {}) =>
+  zainiLib.crea(vaultDir(), nome, new Date().toISOString().slice(0, 10)));
+
+/* ---- il segno di lettura: a che pagina si era arrivati ----
+ * Vale per i corsi come per gli zaini: `lib/lettura.js` passa da
+ * `corsi.cartella()` e trova da sé il contenitore giusto. */
+const letturaLib = require('./lib/lettura');
+ipcMain.handle('lettura:leggi', (e, { corso } = {}) => letturaLib.leggi(vaultDir(), corso));
+ipcMain.handle('lettura:segna', (e, { corso, file, pagina } = {}) =>
+  letturaLib.segna(vaultDir(), corso, file, pagina));
+
+/* ---- le fonti di un contenitore: import e indici ----
+ * ⚠️ L'indice per pagina lo costruisce il RENDERER con pdf.js — il
+ * visualizzatore è già nell'app, e così un documento entra senza Python e senza
+ * modelli. Qui si scrive soltanto, e si dichiara chi ha letto (`motore`). */
+const fontiLib = require('./lib/fonti');
+ipcMain.handle('fonti:importa', (e, { corso, percorsi } = {}) =>
+  fontiLib.importa(vaultDir(), corso, percorsi));
+ipcMain.handle('fonti:indiceScrivi', (e, { corso, file, pagine, motore } = {}) =>
+  fontiLib.scriviIndice(vaultDir(), corso, file, pagine, motore));
+ipcMain.handle('fonti:indiceServe', (e, { corso, file } = {}) =>
+  ({ serve: !fontiLib.haIndice(vaultDir(), corso, file) }));
+ipcMain.handle('fonti:indici', (e, { corso } = {}) => fontiLib.leggiIndici(vaultDir(), corso));
 
 // ---- pacchetto: un corso in un file solo, e ritorno ----
 // Il caso d'uso è un docente che passa il corso agli allievi: dentro ci va tutto
@@ -1035,17 +1082,13 @@ ipcMain.on('plan:propose', async (e, { corso, granularita } = {}) => {
     }
     const scritto = propose.scriviPiano(v, corso, r.piano);
     if (scritto.error) { send('plan:error', scritto.error); return; }
-    if (r.uso) {
-      // il costo della proposta va nel registro come qualunque altra chiamata
-      try {
-        fs.mkdirSync(path.join(v, 'Costi'), { recursive: true });
-        fs.appendFileSync(path.join(v, 'Costi', 'usage.jsonl'), JSON.stringify({
-          ts: new Date().toISOString(), provider: r.uso.fornitore, model: r.uso.modello,
-          inputTokens: r.uso.inputTokens || 0, outputTokens: r.uso.outputTokens || 0,
-          costUsd: 0, lessonId: corso, label: 'proposta indice'
-        }) + '\n');
-      } catch (err) {}
-    }
+    /* Il costo della proposta va nel registro come qualunque altra chiamata —
+       e ora ci va DAVVERO. ⚠️ Qui c'era una copia scritta a mano di
+       `registraUso` con `costUsd: 0` **cablato**: la proposta d'indice, che è
+       una delle chiamate più grosse del progetto (tutto il digest del corpus),
+       risultava gratis per costruzione. Una funzione sola, così il giorno che
+       cambia il modo di calcolare il costo cambia in un posto. */
+    if (r.uso) registraUso(r.uso, corso, 'proposta indice');
     send('plan:done', { piano: r.piano, origine: r.origine, avviso: r.avviso || null, revisione: r.revisione || null, giri: r.giri || 1 });
   } catch (err) {
     send('plan:error', String((err && err.message) || err));
@@ -1107,6 +1150,26 @@ ipcMain.handle('plan:approve', (e, { corso } = {}) => {
 // Analisi multiagente: schede per materiale + architettura delle lezioni
 // ============================================================================
 const schedeLib = require('./lib/schede');
+
+/**
+ * Mostra un file nel Finder.
+ *
+ * ⚠️ Arriva un `file://` (è quello che il renderer ha per mano: `srcUrl` torna
+ * URL, non percorsi) e `showItemInFolder` vuole un PERCORSO: passargli l'URL
+ * apre una finestra sulla cartella sbagliata, o nessuna. E si controlla che il
+ * file stia DENTRO il vault: questa è una porta che apre il Finder su ciò che
+ * gli si dice, e non deve poter puntare fuori.
+ */
+ipcMain.handle('file:reveal', (e, quale) => {
+  const v = vaultDir(); if (!v) return { ok: false, error: 'nessun vault' };
+  let p = String(quale || '');
+  try { if (/^file:\/\//i.test(p)) p = require('url').fileURLToPath(p); } catch (_) { return { ok: false, error: 'percorso illeggibile' }; }
+  const dentro = path.resolve(p);
+  if (!dentro.startsWith(path.resolve(v) + path.sep)) return { ok: false, error: 'fuori dal vault' };
+  if (!fs.existsSync(dentro)) return { ok: false, error: 'il file non c\'è più' };
+  shell.showItemInFolder(dentro);
+  return { ok: true, error: '' };
+});
 
 /** Registra il consumo di una fase nel registro costi. */
 function registraUso(uso, corso, etichetta) {
@@ -1170,7 +1233,7 @@ ipcMain.handle('scaletta:proponi', async (e, { corso, folder, nCapitoli, nAltern
   const ai = sceltaAi();
   if (!ai) return { error: 'Serve una chiave API: le scalette nascono dalla lettura delle schede.' };
   const piano = propose.leggiPiano(v, corso);
-  const lezione = piano && (piano.lezioni || []).find((c) => c.folder === folder);
+  const lezione = lezioneDelPiano(piano, folder);
   if (!lezione) return { error: 'lezione non trovata nel piano' };
   try {
     const dg = corpusLib().digest(v, corso);
@@ -1406,6 +1469,24 @@ ipcMain.on('percorsi:capitoli', async (ev, { corso, cartelle, riscrivi } = {}) =
 
 
 /**
+ * La voce di piano di una cartella-lezione, accettando anche le VARIANTI.
+ *
+ * ⚠️ Il piano conosce solo le basi (`lib/propose.js`: `folder: NN-slug`), ma la
+ * cartella in cui si scrive davvero è quella che il percorso fa leggere — che
+ * per una lezione variantizzata è `base--variante`. Il controllo «è nel piano?»
+ * quindi bocciava proprio le destinazioni giuste: la tendina di ⚙ offriva la
+ * variante e il click rispondeva «lezione non trovata nel piano». Cercare la
+ * base è ciò che rende la stessa domanda vera per tutte e due le forme.
+ */
+function lezioneDelPiano(piano, folder) {
+  const lez = (piano && piano.lezioni) || [];
+  const esatta = lez.find((c) => c.folder === folder);
+  if (esatta) return esatta;
+  const base = percorsiLib.scomponi(folder).base;
+  return lez.find((c) => c.folder === base) || null;
+}
+
+/**
  * Espansione: che cosa c'è di nuovo da mettere in un corso già finito.
  * Ritorna i materiali che nessuna lezione dichiara di usare, le lezioni esistenti
  * (per scegliere quale estendere) e i rimandi [[NN-slug]] che puntano nel vuoto.
@@ -1421,8 +1502,13 @@ ipcMain.handle('expand:stato', (e, { corso } = {}) => {
     const fm = profiloLib.parse(raw);
     let files = []; try { files = fs.readdirSync(ldir); } catch (_) {}
     const capitoli = espandiLib.capitoliDi(files);
+    /* `variante` e `base` viaggiano fino alla tendina: senza, l'unica cosa da
+       mostrare sarebbe il nome della cartella — che per una variante è lungo,
+       tagliato a metà e uguale a quello della sua base per i primi quaranta
+       caratteri. È così che si sceglie la riga sbagliata. */
+    const { base, variante } = percorsiLib.scomponi(folder);
     return {
-      folder, titolo: fm.title || folder,
+      folder, titolo: fm.title || folder, base, variante: fm.variante || variante,
       materiali: (fm.materiali || []).map((n) => parseInt(n, 10)).filter(Number.isFinite),
       capitoli: capitoli.length, prossimoOrdine: espandiLib.prossimoOrdine(files)
     };
@@ -1438,24 +1524,46 @@ ipcMain.handle('expand:stato', (e, { corso } = {}) => {
       try { capitoliTesto.push({ file: folder + '/' + f, contenuto: fs.readFileSync(path.join(ldir, f), 'utf-8') }); } catch (_) {}
     }
   }
-  const rotti = espandiLib.wikilinkRotti(capitoliTesto, cartelle);
+  /* ⚠️ Non `cartelle`: i nomi che il lettore sa aprire. Le due liste sembrano la
+     stessa cosa e non lo sono — fra le cartelle ci sono i segnaposto delle
+     lezioni variantizzate, che hanno il solo `_lezione.md`. Passandole, questo
+     controllo dichiarava sani otto rimandi che nel lettore erano morti: diceva
+     «esiste sul disco» mentre la domanda era «ci si arriva». */
+  const rotti = espandiLib.wikilinkRotti(capitoliTesto, percorsiLib.nomiRaggiungibili(lezioni));
 
   let materiali = [];
   try { materiali = corpusLib().digest(v, corso).materiali; } catch (_) {}
   const nuovi = espandiLib.materialiNuovi(materiali, lezioni);
 
   return {
-    lezioni, prossimoLezione: espandiLib.prossimoLezione(cartelle),
+    /* ⚠️ `destinazioni`, non `lezioni`, e con i PERCORSI in mano: fra le cartelle
+       ci sono i segnaposto delle lezioni variantizzate e le varianti che nessun
+       percorso legge, e generare lì dentro è denaro speso per capitoli che non
+       si vedranno. Chi decide non è il conteggio dei capitoli — è chi le legge. */
+    lezioni: espandiLib.destinazioni(lezioni, percorsiLib.leggiTutti(v, corso)),
+    prossimoLezione: espandiLib.prossimoLezione(cartelle),
     nuovi: nuovi.map((m) => ({ num: m.num, nome: m.nome, tipo: m.tipo, titolo: m.titolo })),
     nonElaborati: contaNonElaborati(v),
     rimandiRotti: rotti
   };
 });
 
-/** Le cartelle-lezione di un corso: servono a validare i rimandi [[NN-slug]]. */
+/**
+ * I nomi con cui si possono citare le lezioni di un corso: l'elenco che il
+ * modello riceve come «gli UNICI rimandi ammessi» e contro cui il validatore
+ * controlla i `[[NN-slug]]`.
+ *
+ * ⚠️ Prima tornava le CARTELLE (`corsi.elencoLezioni`), ed è da lì che nasceva
+ * il difetto: fra le cartelle ci sono i segnaposto senza capitoli delle lezioni
+ * variantizzate, e ci sono le varianti stesse. Il modello copiava alla lettera
+ * un nome dalla lista — come gli si chiede — e otteneva un rimando morto (il
+ * segnaposto) o uno che scavalca il percorso attivo (la variante). Il
+ * validatore approvava, perché guardava la stessa lista sbagliata. Non era il
+ * modello a inventare: era la lista a mentire.
+ */
 function lezioniDelCorso(corso) {
   const v = vaultDir(); if (!v) return [];
-  return corsiLib.elencoLezioni(v, corso);
+  return percorsiLib.nomiRimandabili(corsiLib.elencoLezioni(v, corso));
 }
 
 /** Materiali presenti ma senza trascrizione/indice: sono quelli da elaborare. */
@@ -1561,7 +1669,7 @@ ipcMain.on('gen:start', async (e, { corso, folder, capitoli, accoda } = {}) => {
   const ai = sceltaAi();
   if (!ai) { send('gen:error', 'Serve una chiave API per scrivere i capitoli.'); return; }
   const piano = propose.leggiPiano(v, corso);
-  const lezione = piano && (piano.lezioni || []).find((c) => c.folder === folder);
+  const lezione = lezioneDelPiano(piano, folder);
   if (!lezione) { send('gen:error', 'lezione non trovata nel piano'); return; }
   const lista = capitoli || [];
   if (!lista.length) { send('gen:error', 'nessun capitolo da scrivere'); return; }

@@ -1,10 +1,11 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
 const mat = require('./lib/materiali');   // materiali del corso, con ripiego sulle cartelle globali
 const corsiLib = require('./lib/corsi');  // dove stanno corsi e lezioni, anche nei vault mai migrati
 const evidenzeLib = require('./lib/evidenze'); // le parole chiave evidenziate, accanto agli appunti
+const albumLib = require('./lib/album');  // le immagini ritagliate dai documenti, per corso
 const voceLib = require('./lib/voce');    // sintesi di sistema per la lettura ad alta voce
 
 const cfg = ipcRenderer.sendSync('cfg:get') || {};
@@ -22,9 +23,13 @@ function loadLessons() {
   } catch (e) {}
   return out;
 }
+/* ⚠️ `Figure` sta nell'elenco perché i ritagli dei PDF sono file come gli altri e
+   il lettore li chiede per nome, esattamente come chiede un video o un PDF. Senza
+   questa voce un capitolo con una figura mostrerebbe una casella vuota — e la
+   causa (una cartella non cercata) non si vedrebbe da nessuna parte. */
 function srcUrl(file) {
   if (!vaultPath) return '../Fonti/' + encodeURIComponent(file);
-  for (const sub of ['Fonti', 'Media']) {
+  for (const sub of ['Fonti', 'Media', 'Figure']) {
     const p = mat.trova(vaultPath, sub, file);
     if (p) return url.pathToFileURL(p).href;
   }
@@ -58,7 +63,15 @@ function listByNum(dirs, exts) {
 function numeriPerCorso() {
   const out = {};
   if (!vaultPath) return out;
-  let ids; try { ids = fs.readdirSync(corsiLib.radice(vaultPath), { withFileTypes: true }); } catch (e) { return out; }
+  /* ⚠️ Le DUE radici, come ovunque: un documento dentro uno zaino ha un numero
+     (`01 dispensa.pdf`) esattamente come quelli di un corso, ed è quel numero a
+     rendere apribile un rimando `pdf:01#p=7`. Guardando solo `Corsi/`, nello
+     zaino la mappa restava vuota: le parole chiave e i frammenti finivano negli
+     appunti come testo nudo, senza link, e non si capiva perché. */
+  const ids = [];
+  for (const radice of [corsiLib.radice(vaultPath), path.join(vaultPath, corsiLib.RADICE_ZAINI)]) {
+    try { ids.push(...fs.readdirSync(radice, { withFileTypes: true })); } catch (e) { /* non c'è */ }
+  }
   for (const d of ids) {
     if (!d.isDirectory()) continue;
     const media = mat.cartelle(vaultPath, 'Media', d.name, true)
@@ -162,6 +175,17 @@ contextBridge.exposeInMainWorld('vault', {
   pdfByNum: vaultPath ? listByNum(mat.cartelle(vaultPath, 'Fonti'), ['.pdf']) : {},
   numeriPerCorso: numeriPerCorso(),   // e queste sono quelle che contano
   srcUrl: srcUrl,
+  /* Mostra un file nel Finder. Prende ciò che il renderer ha per mano — un
+     `file://` — e la conversione a percorso la fa il main, insieme al controllo
+     che stia dentro il vault. */
+  reveal: (quale) => ipcRenderer.invoke('file:reveal', quale),
+  /* Dov'è il vault, in chiaro e in sola lettura. Serve a due cose concrete: le
+     prove sull'app viva, che devono poter verificare di stare lavorando sulla
+     COPIA e non sul vault vero (prima lo leggevano dalla config dell'utente —
+     e con l'istanza di prova che ha una config sua quella lettura mentirebbe),
+     e i comandi che mostrano un file nel Finder. Non è una porta di scrittura:
+     è una stringa. */
+  vaultPath: vaultPath,
   choose: () => ipcRenderer.invoke('vault:choose'),
   media: { list: () => ipcRenderer.invoke('media:list') },
   // con `corso` l'elenco è quello del corso, non di tutto il vault
@@ -211,6 +235,20 @@ contextBridge.exposeInMainWorld('vault', {
         return appunti.save(vaultPath, courseId, file, meta || {}, body || '');
       } catch (e) { return { error: e.message }; }
     },
+    /* Rinomina: cambia il titolo DENTRO il file E il nome del file, che devono
+       restare d'accordo. Torna `{ file, nota }` — e `file` è il nome VERO che
+       l'appunto ha su disco, che quando cambiano le sole maiuscole NON è quello
+       chiesto: chi chiama deve usare questo per riaprirlo.
+       Sincrona come tutto ciò che sta in `notes`, e non è una svista: la
+       ragione è quella scritta qui sotto sulle evidenze — il sincrono è ciò
+       che permette di scrivere dentro `beforeunload`, dove una `invoke` non
+       farebbe in tempo a tornare. Perciò niente canale IPC nemmeno qui. */
+    rename: (courseId, file, titolo) => {
+      try {
+        if (!vaultPath) throw new Error('nessuna cartella vault impostata');
+        return appunti.rinomina(vaultPath, courseId, file, titolo);
+      } catch (e) { return { error: e.message }; }
+    },
     remove: (courseId, file) => { try { return appunti.remove(vaultPath, courseId, file); } catch (e) { return false; } },
     reindex: (courseId) => { try { return appunti.reindex(vaultPath, courseId); } catch (e) { return 0; } },
     indexPath: (courseId) => { try { return path.join(appunti.dir(vaultPath, courseId), '_indice.md'); } catch (e) { return ''; } }
@@ -245,6 +283,61 @@ contextBridge.exposeInMainWorld('vault', {
       if (!vaultPath) return { evidenza: null, evidenze: [], error: 'nessuna cartella vault impostata' };
       try { return evidenzeLib.colora(vaultPath, courseId, id, colore); }
       catch (e) { return { evidenza: null, evidenze: [], error: e.message }; }
+    }
+  },
+  /* L'album delle immagini ritagliate dai documenti (ALBUM/ + _album.json).
+     Sincrono e diretto come `notes` e `evidenze`, e per la stessa ragione detta
+     su `notes.rename`: si scrive a gesto dell'utente, una immagine alla volta, e
+     il sincrono è ciò che permette di salvare dentro `beforeunload` — dove una
+     `invoke` non farebbe in tempo a tornare. Nessun canale IPC nuovo, quindi:
+     l'album sta dalla parte degli appunti, non delle mappe.
+     Ogni metodo torna un oggetto con `error`: l'immagine che non si è salvata
+     deve poterlo dire, invece di fallire in silenzio. */
+  album: {
+    elenco: (corso) => {
+      if (!vaultPath) return { voci: [], error: 'nessuna cartella vault impostata' };
+      try { return albumLib.elenco(vaultPath, corso); }
+      catch (e) { return { voci: [], error: e.message }; }
+    },
+    /* `voce` è `{ materiale, pagina, rect, didascalia, dati }`, dove `rect` è in
+       coordinate della PAGINA (non dello schermo: a un altro zoom indicherebbe
+       un altro punto) e `dati` è il data URL del canvas. Se quell'area era già
+       stata ritagliata torna quella di prima con `giaCera: true`. */
+    salva: (corso, voce) => {
+      if (!vaultPath) return { voce: null, giaCera: false, error: 'nessuna cartella vault impostata' };
+      try { return albumLib.salva(vaultPath, corso, voce); }
+      catch (e) { return { voce: null, giaCera: false, error: e.message }; }
+    },
+    // cambia la DIDASCALIA: il nome del file resta quello, ed è l'identità a cui
+    // puntano gli appunti (`album:<id>`) e i nodi delle mappe
+    rinomina: (corso, id, didascalia) => {
+      if (!vaultPath) return { voce: null, error: 'nessuna cartella vault impostata' };
+      try { return albumLib.rinomina(vaultPath, corso, id, didascalia); }
+      catch (e) { return { voce: null, error: e.message }; }
+    },
+    // dove compare quest'immagine: serve a chiederlo PRIMA di cancellare
+    usi: (corso, id) => {
+      if (!vaultPath) return { appunti: [], mappe: [], illeggibili: [], quanti: 0, error: 'nessuna cartella vault impostata' };
+      try { return albumLib.usi(vaultPath, corso, id); }
+      catch (e) { return { appunti: [], mappe: [], illeggibili: [], quanti: 0, error: e.message }; }
+    },
+    // rifiuta se l'immagine è usata: si passa con `{ insisti: true }`, che è una
+    // scelta dell'utente e non un valore di fabbrica
+    rimuovi: (corso, id, opt) => {
+      if (!vaultPath) return { tolto: false, usi: null, error: 'nessuna cartella vault impostata' };
+      try { return albumLib.rimuovi(vaultPath, corso, id, opt); }
+      catch (e) { return { tolto: false, usi: null, error: e.message }; }
+    },
+    /* La URL con cui `<img>` mostra l'immagine, come `srcUrl` fa per i materiali.
+       ⚠️ Vuole anche il corso, a differenza della firma abbozzata nel piano:
+       l'album è di un corso, e un id da solo non individua nessun file — il nome
+       del file lo dà l'indice di QUEL corso. */
+    srcUrl: (corso, id) => {
+      if (!vaultPath) return '';
+      try {
+        const p = albumLib.percorsoImmagine(vaultPath, corso, id);
+        return p ? url.pathToFileURL(p).href : '';
+      } catch (e) { return ''; }
     }
   },
   /* Le mappe dell'utente (MAPPE/*.json). A differenza degli appunti passano dal
@@ -322,6 +415,34 @@ contextBridge.exposeInMainWorld('vault', {
     onProgress: (cb) => { const h = (e, d) => cb(d); ipcRenderer.on('scalette:progress', h); return () => ipcRenderer.removeListener('scalette:progress', h); },
     onDone: (cb) => { const h = (e, d) => cb(d); ipcRenderer.on('scalette:done', h); return () => ipcRenderer.removeListener('scalette:done', h); },
     onError: (cb) => { const h = (e, d) => cb(d); ipcRenderer.on('scalette:error', h); return () => ipcRenderer.removeListener('scalette:error', h); }
+  },
+  /* Gli zaini: la modalità in cui si studia sui propri documenti. L'API è corta
+     perché lo è il concetto — un contenitore e i suoi PDF. Appunti, mappe e
+     album dello zaino NON passano da qui: usano i loro canali di sempre con
+     l'id dello zaino al posto di quello del corso. */
+  zaino: {
+    list: () => ipcRenderer.invoke('zaino:list'),
+    create: (nome) => ipcRenderer.invoke('zaino:create', { nome })
+  },
+  /* Il segno di lettura di ogni documento. Sta nel vault e non nel
+     `localStorage` perché è un fatto del documento, non della macchina: lo
+     zaino passato a un altro computer si riapre dove l'avevi lasciato. */
+  /* Le fonti di un contenitore: portarle dentro e indicizzarle.
+     ⚠️ `percorsoDi` esiste perché da Electron 32 un `File` trascinato non ha
+     più `.path`: il percorso vero lo dà `webUtils.getPathForFile`, e senza
+     quello un documento trascinato non si potrebbe copiare — si potrebbe solo
+     leggerne il contenuto e riscriverlo, cioè fare la stessa cosa in peggio. */
+  fonti: {
+    percorsoDi: (file) => { try { return webUtils.getPathForFile(file); } catch (e) { return ''; } },
+    importa: (corso, percorsi) => ipcRenderer.invoke('fonti:importa', { corso, percorsi }),
+    indiceServe: (corso, file) => ipcRenderer.invoke('fonti:indiceServe', { corso, file }),
+    indiceScrivi: (corso, file, pagine, motore) =>
+      ipcRenderer.invoke('fonti:indiceScrivi', { corso, file, pagine, motore }),
+    indici: (corso) => ipcRenderer.invoke('fonti:indici', { corso })
+  },
+  lettura: {
+    leggi: (corso) => ipcRenderer.invoke('lettura:leggi', { corso }),
+    segna: (corso, file, pagina) => ipcRenderer.invoke('lettura:segna', { corso, file, pagina })
   },
   /* Composer degli indici: righe = lezioni, colonne = indici proposti, e gli otto
      personaggi che si trascinano sulle card. Lo stato arriva in un colpo solo —
