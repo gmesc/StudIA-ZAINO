@@ -392,7 +392,12 @@ Prossimo passo del piano: **M3, la ricerca** (~700 righe su 866 già pure). È l
 più silenziosamente — se l'indice smette di indicizzare qualcosa non lo dice nessuno, semplicemente
 non lo trovi più — e oggi non ha nemmeno una prova in Node.
 
-**Le flashcard adesso hanno su cosa stare.** L'identità dei capitoli è chiusa (§9.5): la storia di
+**P3.1 è fatto** (`lib/ripasso.js`): la storia dei ripassi vive in `RIPASSO/stato.json`, `state.learn`
+è la sua vista, e l'identità di una carta è `hash(capitolo + domanda normalizzata)` — calcolata nel
+main, perché il renderer non ha `crypto`. Restano P3.2 (le carte dal glossario), P3.3 (i quattro
+esiti e gli intervalli SM-2, con `prossimo` già dichiarato e vuoto) e P3.6 (i conteggi in home).
+
+**Le flashcard hanno su cosa stare.** L'identità dei capitoli è chiusa (§9.5): la storia di
 ripasso — il dato più costoso dell'app da ricostruire — può attaccarsi ai capitoli senza staccarsi
 alla prima rigenerazione. Il primo passo resta P3.1 di PIANO-BRAYNR: lo stato su disco, in
 `RIPASSO/stato.json`. Oggi `state.learn` vive solo in memoria e si azzera a ogni `loadLesson`.

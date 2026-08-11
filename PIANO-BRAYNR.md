@@ -231,7 +231,17 @@ sull'apprendimento si perde ogni sera.
 
 ### Proposte
 
-**P3.1 — Prima pietra: lo stato di ripasso vive su disco.**
+**P3.1 — Prima pietra: lo stato di ripasso vive su disco.** ✅ **FATTO l'11 agosto 2026**
+(`lib/ripasso.js`, `test/ripasso.js`, `test/cdp/prova-ripasso.js`). Com'è andata in pratica:
+l'identità della carta è `hash(capitolo + domanda normalizzata)` e si calcola **nel main**, perché
+il renderer non ha `crypto` e due formule per la stessa identità divergono al primo ritocco;
+`state.learn` è diventato la vista di `RIPASSO/stato.json`; le carte sparite si potano dicendolo;
+«azzera avanzamento» adesso chiede conferma, perché è diventato un gesto che perde qualcosa.
+⚠️ Dal quiz si registrano **due** esiti (giusto → `buono`, sbagliato → `di-nuovo`): i quattro
+arrivano con l'interfaccia di P3.3, e inventarne quattro da una domanda a due risposte sarebbe
+attribuire all'utente una sfumatura che non ha espresso. Il campo `prossimo` esiste già ed è vuoto.
+
+Il testo originale della proposta, per riferimento:
 `Corsi/<id>/RIPASSO/stato.json`: per ogni carta `{ id, visto, esito, prossimo, storia }`.
 Scrittura atomica, stessa regola di `APPUNTI/` e `MAPPE/`: cartella dell'utente, la pipeline non
 la tocca, funziona sui corsi protetti. `state.learn` smette di essere una sessione e diventa
@@ -308,7 +318,7 @@ vere sono poche.
 
 | # | lavoro | dipende da | taglia | note |
 |---|---|---|---|---|
-| 1 | **P3.1 + P3.2 (quiz/glossario) + P3.3 + P3.6** — ripasso persistente sui contenuti già generati | — | M | il valore c'è dal giorno uno, su 258 capitoli |
+| 1 | ~~P3.1~~ ✅ + **P3.2 (glossario) + P3.3 + P3.6** — ripasso persistente sui contenuti già generati | — | M | il valore c'è dal giorno uno, su 243 capitoli |
 | 2 | **P1.2 tag + P1.3 callout `domanda`** | — | S | sblocca la terza sorgente di carte |
 | 3 | **P3.4 mazzi-query** (+ appunti come sorgente) | 1, 2 | S/M | i «mazzi viventi» veri e propri |
 | 4 | **P1.1 evidenze** | — | M | indipendente; riusa i marker |
