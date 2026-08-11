@@ -20,7 +20,7 @@
  *   node test/cdp/prova-menu.js
  */
 const S = require('path').join(__dirname, 'cdp.js');
-const { collega, invia, val, clicca, pausa } = require(S);
+const { collega, invia, val, clicca, pausa, partiPulito } = require(S);
 
 let ko = 0;
 function ok(n, atteso, avuto) {
@@ -84,6 +84,15 @@ async function esc() {
      È caduta costruendo — la riga dei colori È l'evidenziatore, e una voce che
      ripete lo stesso gesto con meno precisione è un bottone senza mestiere. */
   ok('ha le cinque voci, in ordine', ['appunta', 'mappa', 'keyword', 'cancella', 'copia'], await voci());
+  /* ⚠️ La riga dei riquadri sta sotto «Appunta» e funziona come quella dei
+     colori: il primo bottone è «senza riquadro» (testo e rimando), gli altri
+     sette sono i callout. Quello in uso si dichiara con `aria-pressed`, e la
+     scelta si ricorda — è il modo di appuntare, non un'opzione per una volta. */
+  ok('c\'è la riga dei riquadri, otto scelte', 8,
+    await val(`document.querySelectorAll('#selMenu .ctx-cal').length`));
+  ok('la prima è «senza riquadro»', '', await val(`document.querySelector('#selMenu .ctx-cal').getAttribute('data-app')`));
+  ok('e una sola è dichiarata in uso', 1,
+    await val(`document.querySelectorAll('#selMenu .ctx-cal[aria-pressed="true"]').length`));
   ok('e la riga dei colori: cinque preset più il picker', [5, 1],
     await val(`[document.querySelectorAll('#selMenu .ctx-col').length,
                 document.querySelectorAll('#selMenu input[type=color]').length]`));
@@ -163,14 +172,48 @@ async function esc() {
   ok('il secondo frammento si accoda al primo', true, corpo2.length > corpo1.length);
   ok('e non ha cancellato quello di prima', true, corpo2.indexOf(corpo1.trim().slice(0, 40)) >= 0);
 
+  console.log('\n== e con che cosa si appunta: senza riquadro, o dentro uno');
+  /* ⚠️ Vale anche NEI CORSI, non solo nello zaino: la riga dei riquadri sta in
+     tutte e due le superfici della selezione, e la scelta è del gesto, non
+     della modalità. */
+  const lungPrima = (await val('NOTES.mde ? NOTES.mde.value().length : 0'));
+  await mostraBarra();
+  await clicca('#selBarra .ctx-cal[data-app="definizione"]'); await pausa(800);
+  const conRiquadro = await val('NOTES.mde ? NOTES.mde.value() : ""');
+  ok('scegliendo un riquadro, il frammento ci finisce dentro', true,
+    conRiquadro.indexOf('> [!definizione] Dal capitolo') >= 0);
+  ok('col rimando al capitolo, dentro il riquadro', true, /\n> — \[.*\]\(cap:/.test(conRiquadro));
+  ok('e si è accodato, non ha sostituito', true, conRiquadro.length > lungPrima);
+  /* La scelta si RICORDA: è il modo di appuntare, non un'opzione per una volta. */
+  ok('la scelta resta scritta', 'definizione', await val(`localStorage.getItem('studia.appunta.stile')`));
+  await mostraBarra();
+  ok('e la riga lo dichiara', 'definizione',
+    await val(`(document.querySelector('#selBarra .ctx-cal[aria-pressed="true"]')||{}).getAttribute
+      ? document.querySelector('#selBarra .ctx-cal[aria-pressed="true"]').getAttribute('data-app') : null`));
+  /* E si torna indietro: «senza riquadro» è una scelta come le altre. */
+  await clicca('#selBarra .ctx-cal[data-app=""]'); await pausa(800);
+  const nudo = await val('NOTES.mde ? NOTES.mde.value() : ""');
+  const ultimo = nudo.slice(conRiquadro.length);
+  console.log('   ' + JSON.stringify(ultimo.trim().slice(0, 90)));
+  ok('senza riquadro esce testo e rimando', true, /\]\(cap:[A-Za-z0-9._-]+\)/.test(ultimo));
+  ok('e nessuna riga citata', false, /^>/m.test(ultimo));
+  ok('la scelta nuova resta scritta', '', await val(`localStorage.getItem('studia.appunta.stile')`));
+
   console.log('\n== le parole chiave: evidenziare, ricolorare, cancellare');
   const quanteEv = () => val('window.vault.evidenze.leggi(corsoAttivo()).evidenze.length');
   const evPrima = await quanteEv();
+  /* ⚠️ Gli id di prima si segnano PRIMA: «l'ultima evidenza del file» non è
+     «quella appena creata». L'ordine nel file lo decide chi lo scrive, il vault
+     di prova ne contiene già altre, e un controllo che legge `slice(-1)`
+     confronta il testo di un'evidenza a caso — passando o fallendo per ragioni
+     che non c'entrano con il gesto che si sta provando. */
+  const idsPrima = await val(`window.vault.evidenze.leggi(corsoAttivo()).evidenze.map(e=>e.id)`);
   const s3 = await mostraBarra();
   await clicca('#selBarra .ctx-col'); await pausa(700);        // il primo preset
   ok('evidenziare scrive una parola chiave', evPrima + 1, await quanteEv());
-  ok('con il testo della selezione', s3.testo,
-    await val(`window.vault.evidenze.leggi(corsoAttivo()).evidenze.slice(-1)[0].exact`));
+  const nata = await val(`(()=>{ const vecchi=${JSON.stringify(idsPrima)};
+    return window.vault.evidenze.leggi(corsoAttivo()).evidenze.filter(e=>vecchi.indexOf(e.id)<0)[0]||null; })()`);
+  ok('con il testo della selezione', s3.testo, nata ? nata.exact : null);
   ok('e il giallo è acceso senza toccare il DOM', true,
     await val(`CSS.highlights.has('ev-0')`));
   ok('nessun <mark> è stato infilato nel capitolo', 0,

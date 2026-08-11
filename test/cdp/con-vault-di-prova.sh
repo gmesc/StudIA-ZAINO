@@ -1,16 +1,31 @@
 #!/bin/bash
-# Le prove sull'app viva, senza mettere le mani nel vault vero.
+# Le prove sull'app viva, senza mettere le mani su niente di tuo.
 #
-# ⚠️ Perché esiste. Le prove CDP girano contro il vault indicato nella config, creano ed
-# eliminano mappe e appunti, e una sequenza interrotta a metà ha già fatto sparire un file
-# dell'utente (`AI.json`). I dati non sono versionati: sotto non c'è nessuna rete. È la
-# trappola ⑧ del verbale 8-9 agosto, e questo script è il rimedio scritto una volta invece
-# che ricordato ogni volta.
+# ⚠️ Perché esiste. Le prove CDP creano ed eliminano mappe, appunti e immagini, e una
+# sequenza interrotta a metà ha già fatto sparire un file dell'utente (`AI.json`). I dati
+# non sono versionati: sotto non c'è nessuna rete. È la trappola ⑧ del verbale 8-9 agosto,
+# e questo script è il rimedio scritto una volta invece che ricordato ogni volta.
 #
-# Che cosa fa, in ordine: salva la config vera, ne fa una COPIA MAGRA del vault (tutto il
-# testo, niente MATERIALI: 23 GB diventano ~2 MB), ci punta `vaultPath`, lancia l'app con
-# la porta di debug, esegue le prove che gli passi, e alla fine rimette tutto com'era —
-# **anche se lo interrompi con Ctrl-C o se una prova fallisce**, ed è il punto.
+# ── Che cosa è cambiato, e perché conta ──────────────────────────────────────────────
+# La prima versione **scambiava la config vera**: la copiava, ci riscriveva dentro
+# `vaultPath`, e la rimetteva a posto alla fine. Funzionava, ma aveva due difetti che si
+# pagavano ogni volta:
+#
+#   1. mentre le prove giravano, StudIA **non poteva restare aperta**. Se l'utente stava
+#      elaborando un corpus e l'app scriveva la config (costi, chiavi, ultimo corso), il
+#      ripristino gliela riscriveva sopra;
+#   2. il rimedio dipendeva dal ripristino, cioè da un `trap`. Un `kill -9` e la config
+#      restava puntata a un vault temporaneo che poi veniva cancellato.
+#
+# Adesso l'istanza di prova ha una **cartella dati tutta sua** (`--user-data-dir`): la sua
+# config, le sue preferenze, il suo tutto. Della tua non tocca niente, nemmeno per un
+# istante, e `main.js` non ha un lock di istanza singola — quindi **la tua StudIA può
+# restare aperta e lavorare** mentre queste prove girano.
+#
+# Che cosa fa, in ordine: copia magra del vault (tutto il testo, niente MATERIALI: 23 GB
+# diventano ~2 MB), una config nuova in una cartella dati temporanea, l'app con la porta di
+# debug, le prove, e alla fine butta via la cartella temporanea. Non c'è niente da
+# ripristinare, che è il modo più sicuro di ripristinare.
 #
 #   ./test/cdp/con-vault-di-prova.sh                     tutte le prove
 #   ./test/cdp/con-vault-di-prova.sh prova-menu.js       una sola
@@ -18,70 +33,95 @@
 set -u
 
 QUI="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CFG="$HOME/Library/Application Support/studia/config.json"
+CFG_VERA="$HOME/Library/Application Support/studia/config.json"
 LAVORO="$(mktemp -d "${TMPDIR:-/tmp}/studia-prove-XXXXXX")"
-COPIA_CFG="$LAVORO/config.vera.json"
+DATI="$LAVORO/dati"           # la cartella `userData` dell'istanza di prova
 VAULT="$LAVORO/vault"
+PORTA="${STUDIA_PORTA:-9333}"
 PID_APP=""
 
-# Il ripristino è la prima cosa che si scrive, non l'ultima: se lo si mette in fondo, un
-# `exit` a metà lo salta — che è esattamente com'è nato il guasto.
-ripristina() {
+# Si chiude l'app e si butta la cartella temporanea. Nessun ripristino: non c'è niente da
+# rimettere a posto, perché non si è spostato niente.
+pulisci() {
   local esito=$?
   echo ""
   if [ -n "$PID_APP" ] && kill -0 "$PID_APP" 2>/dev/null; then
     kill "$PID_APP" 2>/dev/null; wait "$PID_APP" 2>/dev/null
-    echo "  app chiusa"
-  fi
-  if [ -f "$COPIA_CFG" ]; then
-    cp "$COPIA_CFG" "$CFG" && echo "  config ripristinata → $(node -e "console.log(JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).vaultPath)" "$CFG")"
+    echo "  app di prova chiusa"
   fi
   rm -rf "$LAVORO"
+  echo "  cartella temporanea rimossa (la tua config non è mai stata toccata)"
   exit $esito
 }
-trap ripristina EXIT INT TERM
+trap pulisci EXIT INT TERM
 
-[ -f "$CFG" ] || { echo "✗ config non trovata: $CFG"; exit 1; }
-cp "$CFG" "$COPIA_CFG"
-VERO="$(node -e "console.log(JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).vaultPath||'')" "$CFG")"
+[ -f "$CFG_VERA" ] || { echo "✗ config non trovata: $CFG_VERA"; exit 1; }
+VERO="$(node -e "console.log(JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).vaultPath||'')" "$CFG_VERA")"
 [ -d "$VERO" ] || { echo "✗ il vault della config non esiste: $VERO"; exit 1; }
 
-echo "  vault vero:  $VERO"
+# La porta di debug è una risorsa a esemplare unico: se è già occupata, due istanze si
+# contenderebbero le stesse prove e le misure mentirebbero.
+if lsof -nP -iTCP:"$PORTA" -sTCP:LISTEN >/dev/null 2>&1; then
+  echo "✗ la porta $PORTA è già occupata: chiudi l'altra istanza di prova, o STUDIA_PORTA=9334 ..."
+  exit 1
+fi
+
+echo "  vault vero:  $VERO  (in sola lettura: se ne fa una copia)"
 echo "  copia magra: $VAULT"
-mkdir -p "$VAULT"
+mkdir -p "$VAULT" "$DATI"
 # `MATERIALI/` e `_lavorazione/` sono il 99,99% del peso e non servono a provare
 # l'interfaccia: restano fuori. Tutto il resto — lezioni, appunti, mappe — viene copiato.
 rsync -a --exclude 'MATERIALI/' --exclude '_lavorazione/' "$VERO/" "$VAULT/" || exit 1
 echo "  pesa $(du -sh "$VAULT" | cut -f1), con $(ls -1 "$VAULT/Corsi" 2>/dev/null | wc -l | tr -d ' ') corsi"
 
+# La config dell'istanza di prova: si parte dalla tua — così l'onboarding risulta già
+# fatto e non compare la card di primo avvio davanti alle prove — ma il vault è la copia
+# e **le chiavi API non si portano dietro**: queste prove non chiamano nessun modello, e
+# una chiave copiata in una cartella temporanea è una chiave in più in giro per il disco.
 node -e "
-const fs=require('fs'), p=process.argv[1];
-const c=JSON.parse(fs.readFileSync(p,'utf8')); c.vaultPath=process.argv[2];
-fs.writeFileSync(p, JSON.stringify(c,null,2));
-" "$CFG" "$VAULT" || exit 1
+const fs=require('fs');
+const c=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));
+delete c.keys;
+c.vaultPath=process.argv[2];
+c.onboardingFatto=true;
+fs.writeFileSync(process.argv[3], JSON.stringify(c,null,2));
+" "$CFG_VERA" "$VAULT" "$DATI/config.json" || exit 1
 
 cd "$QUI" || exit 1
-./node_modules/.bin/electron . --remote-debugging-port=9333 > "$LAVORO/app.log" 2>&1 &
+# ⚠️ `--user-data-dir` è ciò che rende innocuo tutto il resto: l'app di prova legge e
+# scrive la config lì dentro, e la tua può restare aperta a lavorare.
+./node_modules/.bin/electron . --user-data-dir="$DATI" --remote-debugging-port="$PORTA" > "$LAVORO/app.log" 2>&1 &
 PID_APP=$!
-printf "  avvio dell'app"
-for _ in $(seq 1 30); do
-  curl -s --max-time 2 http://127.0.0.1:9333/json/version >/dev/null 2>&1 && break
+printf "  avvio dell'app di prova"
+for _ in $(seq 1 40); do
+  curl -s --max-time 2 "http://127.0.0.1:$PORTA/json/version" >/dev/null 2>&1 && break
   printf "."; sleep 1
 done
-curl -s --max-time 2 http://127.0.0.1:9333/json/version >/dev/null 2>&1 || {
-  echo " ✗ non risponde sulla 9333 — log in $LAVORO/app.log"; tail -5 "$LAVORO/app.log"; exit 1; }
+curl -s --max-time 2 "http://127.0.0.1:$PORTA/json/version" >/dev/null 2>&1 || {
+  echo " ✗ non risponde sulla $PORTA — log in $LAVORO/app.log"; tail -5 "$LAVORO/app.log"; exit 1; }
 echo " pronta"
 sleep 2
 
-if [ $# -gt 0 ]; then PROVE=("$@"); else PROVE=(prova-b1.js prova-b2.js prova-menu.js prova-keyword.js); fi
+# La prova che la separazione ha funzionato davvero: l'app di prova deve vedere la COPIA.
+# Se leggesse il vault vero, tutto il resto di questo script sarebbe teatro.
+VISTO="$(curl -s --max-time 3 "http://127.0.0.1:$PORTA/json" | node -e "
+let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{
+  try{ const t=JSON.parse(s).find(x=>x.type==='page'); console.log(t?t.url:''); }catch(e){ console.log(''); }
+});")"
+case "$VISTO" in
+  *StudIA.html*) : ;;
+  *) echo "✗ la pagina aperta non è quella attesa: $VISTO"; exit 1 ;;
+esac
+
+if [ $# -gt 0 ]; then PROVE=("$@"); else PROVE=(prova-b1.js prova-b2.js prova-menu.js prova-keyword.js prova-mappe-ui.js prova-topbar.js prova-topbar-stile.js prova-tbar.js prova-appunti-barra.js prova-maniglia-indice.js prova-wikilink.js prova-pdf.js prova-testolayer.js prova-album.js prova-memorie.js prova-tendine.js prova-modo.js prova-zaino.js prova-evidenze-pdf.js prova-fonti.js prova-import.js); fi
 
 KO=0
 for p in "${PROVE[@]}"; do
   echo ""
   echo "── $p ───────────────────────────────────────────"
-  node "test/cdp/$p" || KO=$((KO+1))
+  STUDIA_PORTA="$PORTA" node "test/cdp/$p" || KO=$((KO+1))
 done
 
 echo ""
-if [ "$KO" -gt 0 ]; then echo "✗ $KO prove fallite"; else echo "✓ tutte le prove sono verdi"; fi
-exit "$KO"
+if [ "$KO" -eq 0 ]; then echo "✓ tutte le prove sono verdi"; else echo "✗ $KO prove fallite"; fi
+exit $KO

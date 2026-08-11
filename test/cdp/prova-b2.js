@@ -15,7 +15,7 @@
  *   node test/cdp/prova-b2.js
  */
 const S = require('path').join(__dirname, 'cdp.js');
-const { collega, invia, val, clicca, pausa } = require(S);
+const { collega, invia, val, clicca, pausa, apriStrumento } = require(S);
 
 let ko = 0;
 function ok(n, atteso, avuto) {
@@ -47,11 +47,13 @@ const alto = (sel) => val(`(()=>{const e=document.querySelector(${JSON.stringify
   ok('e NON è più annidata dentro il capitolo', false,
     await val(`!!document.getElementById('mappaView').closest('main')`));
 
-  console.log('\n== il tasto in topbar la porta in scena');
-  await clicca('#mappaBtn'); await pausa(600);
+  console.log('\n== la tendina del blocco la porta in scena');
+  await apriStrumento('mappa');
   ok('la mappa è a schermo', true, await val('mappaAperta()'));
   ok('ed è dentro il corpo di un blocco', 'bcorpo', await dove());
-  ok('il tasto lo dichiara', 'true', await val(`document.getElementById('mappaBtn').getAttribute('aria-pressed')`));
+  /* Il tasto in topbar non c'e' piu': lo stato lo dice il BANCO, che e' la
+     verita' da quando la mappa e' uno strumento. */
+  ok('e il banco la registra come strumento a schermo', true, await val('bancoVisibile("mappa")'));
   ok('l\'elenco degli strumenti a schermo la nomina', true,
     await val(`(document.documentElement.dataset.strumenti||'').split(' ').indexOf('mappa')>=0`));
 
@@ -90,8 +92,7 @@ const alto = (sel) => val(`(()=>{const e=document.querySelector(${JSON.stringify
   ok('scegliendola dalla tendina, la mappa entra in scena', true, await val('mappaAperta()'));
   ok('ed è montata nel blocco scelto', true,
     await val(`!!document.querySelector('.bcorpo[data-corpo="${bloccoLibero}"] > #mappaView')`));
-  ok('il tasto in topbar si accorge anche di questa strada', 'true',
-    await val(`document.getElementById('mappaBtn').getAttribute('aria-pressed')`));
+  ok('e anche per questa strada il banco la registra', true, await val('bancoVisibile("mappa")'));
 
   console.log('\n== Esc chiude uno strato per volta');
   await invia('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
@@ -103,7 +104,7 @@ const alto = (sel) => val(`(()=>{const e=document.querySelector(${JSON.stringify
     await val(`!!document.querySelector('.bcorpo[data-corpo="A"] > main')`));
 
   console.log('\n== la barra di avanzamento segue il CAPITOLO, non la mappa');
-  await clicca('#mappaBtn'); await pausa(600);
+  await apriStrumento('mappa');
   ok('col capitolo a schermo la barra resta', true,
     await val(`(()=>{const c=document.getElementById('cprog');
       return !!c && getComputedStyle(c).display!=='none';})()`));
