@@ -1,5 +1,11 @@
 # Handoff — StudIA, 3-8 agosto 2026
 
+> ⚠️ **QUESTO FILE È VECCHIO.** Chi arriva adesso parte da
+> **[HANDOFF-DEFINITIVO-2026-08-12.md](HANDOFF-DEFINITIVO-2026-08-12.md)**, che racconta lo stato
+> corrente e dice che cosa fare per primo. Quello che segue resta perché il vocabolario, le scelte
+> di fondo e le trappole del 3-8 agosto valgono ancora — ma i numeri e l'elenco dei lavori aperti
+> qui sotto sono superati.
+
 Stato consegnato: **1260 controlli verdi** (`npm test`), app funzionante, tre corsi nel vault.
 
 > **Vocabolario, prima di tutto il resto.** I tre livelli si chiamano **Corso › Lezione ›

@@ -1,5 +1,9 @@
 # Handoff definitivo — 11 agosto 2026
 
+> ⚠️ **Continua in [HANDOFF-DEFINITIVO-2026-08-12.md](HANDOFF-DEFINITIVO-2026-08-12.md)**, che è
+> il punto di partenza per chi arriva adesso. Questo file resta per il dettaglio dello ZAINO e per
+> i guasti misurati quel giorno.
+
 > **A chi arriva adesso.** Questo file basta per ripartire. Racconta la giornata — è nata la
 > **modalità ZAINO** e si è cominciato il **riordino delle barre** — e dice che cosa resta aperto.
 > Il dettaglio dello zaino, lavoro per lavoro, sta in [PIANO-ZAINO.md](PIANO-ZAINO.md); tutto ciò
