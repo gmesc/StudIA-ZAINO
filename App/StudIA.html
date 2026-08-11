@@ -6221,7 +6221,12 @@ function noteDelete(){
  * riferimento con qualcosa che chi studia non ha scelto. Un elenco che non
  * contiene il valore corrente non è un elenco: è una riassegnazione.
  */
-function noteDocVoci(lista, corrente){
+/* ⚠️ Il nome dice «note» per come è nato, ma le voci sono le stesse per gli
+   appunti e per le mappe: nello zaino la domanda «da quale documento nasce
+   questa cosa» è una sola, e due elenchi della stessa cosa divergono al primo
+   documento aggiunto da una parte sola. Chi lo chiama: `noteRename` e
+   `mappaRinominaMappa`. */
+function docVoci(lista, corrente){
   var voci=[{ valore:'', testo:PERSONALE + ' — nessun documento' }];
   var visto={};
   (lista||[]).forEach(function(m){
@@ -6263,7 +6268,7 @@ async function noteRename(){
   var matVecchio = String(NOTES.cur.materiale||'');
   var campo = zaino
     ? { etichetta:'Nasce dal documento', valore:matVecchio,
-        voci:noteDocVoci(await documentiPdf(pid), matVecchio) }
+        voci:docVoci(await documentiPdf(pid), matVecchio) }
     : null;
   var r0=await askText('Nuovo titolo dell’appunto', vecchio, campo);
   if(r0===null) return;
@@ -10936,12 +10941,41 @@ function mappaRinominaMappa(){
   var api=mappeApi(), p=MAPPA.mia.corso||corsoAttivo();
   if(!api||!p) return;
   var file=MAPPA.mia.file, vecchio=MAPPA.mia.titolo||'';
-  askText('Nuovo titolo della mappa', vecchio).then(function(t){
-    if(t===null) return;
+  /* Nello zaino la finestra chiede una cosa in più, la stessa degli appunti: da
+     quale documento nasce la mappa. Nei corsi non si chiede — là il legame è
+     con la lezione e il capitolo da cui la mappa è stata seminata, e cambiarlo
+     a mano vorrebbe dire dire il falso su da dove viene. */
+  var zaino = modoAttivo()==='zaino';
+  var matVecchio = String((MAPPA.mia.doc && MAPPA.mia.doc.materiale) || '');
+  var prep = zaino
+    ? documentiPdf(p).then(function(lista){
+        return { etichetta:'Nasce dal documento', valore:matVecchio, voci:docVoci(lista, matVecchio) }; })
+    : Promise.resolve(null);
+  prep.then(function(campo){
+    return askText('Nuovo titolo della mappa', vecchio, campo);
+  }).then(function(r0){
+    if(r0===null) return;
+    var t=(zaino ? r0.testo : r0);
+    var matNuovo = zaino ? String(r0.scelta||'') : matVecchio;
     t=(t||'').trim();
     if(!t){ toast('Il titolo non può essere vuoto', false); return; }
-    if(t===vecchio) return;
+    if(t===vecchio && matNuovo===matVecchio) return;
+    /* ⚠️ Il documento si scrive nel documento PRIMA di rinominare: `rinomina`
+       rilegge la mappa dal disco (`apri`), le cambia il titolo e la riscrive —
+       un campo cambiato solo in memoria verrebbe sovrascritto dalla copia
+       vecchia, e sparirebbe senza un errore. Stessa trappola degli appunti,
+       stessa cura. */
+    if(zaino && matNuovo!==matVecchio && MAPPA.mia.doc){
+      MAPPA.mia.doc.materiale=matNuovo;
+      /* ⚠️ E la si dichiara SPORCA, o non si salva: `mappaFlush()` esce subito
+         se la mappa non ha modifiche in canna (`!sporca && !vistaSporca`).
+         Scrivere nel documento in memoria e chiamare flush sembra salvare, e
+         invece non fa niente — misurato leggendo `mappaFlush`, non a schermo:
+         a schermo sarebbe sembrato a posto fino alla riapertura. */
+      MAPPA.mia.sporca=true;
+    }
     return mappaFlush().then(function(){
+      if(t===vecchio) return { file:file, mappa:MAPPA.mia.doc };   // cambiato solo il documento
       return api.rinomina(p, file, t);
     }).then(function(r){
       r=r||{};
@@ -10951,7 +10985,11 @@ function mappaRinominaMappa(){
       if(MAPPA.mia.doc) MAPPA.mia.doc.titolo=MAPPA.mia.titolo;
       return mappaCaricaElenco().then(function(){
         mappaSincronizzaComandi(); mappaAmbiti();
-        toast('Mappa rinominata: «'+MAPPA.mia.titolo+'»', true);
+        /* Il messaggio dice quello che è successo davvero: cambiare solo il
+           documento e sentirsi dire «rinominata» fa dubitare di aver sbagliato
+           gesto. */
+        toast(t===vecchio ? 'Documento della mappa aggiornato'
+                          : ('Mappa rinominata: «'+MAPPA.mia.titolo+'»'), true);
       });
     });
   }).catch(function(e){

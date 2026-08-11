@@ -350,9 +350,21 @@ pulisci();
 
   const vuota = M.salva(VAULT, PROG, 'Vuota.json', { titolo: 'Vuota' });
   check('una mappa senza nodi ha comunque la forma piena',
-    ['formato', 'titolo', 'corso', 'lezioneId', 'capitoloId', 'origine', 'creato', 'aggiornato', 'nodi', 'archi', 'vista', 'memorie'],
+    ['formato', 'titolo', 'corso', 'lezioneId', 'capitoloId', 'materiale', 'origine', 'creato', 'aggiornato', 'nodi', 'archi', 'vista', 'memorie'],
     Object.keys(vuota.mappa).filter((k) => k !== 'file'));
   check('e origine «utente» quando non viene da una generata', 'utente', vuota.mappa.origine);
+  /* ⚠️ `materiale` è il documento da cui la mappa nasce nello ZAINO, dove non ci
+     sono lezioni né capitoli (Z6, come per gli appunti). Il controllo che conta
+     non è che il campo esista: è che TORNI INDIETRO dal disco. `normalizza()` è
+     una lista bianca, e un campo dimenticato lì sparisce al primo salvataggio
+     senza un errore — la stessa trappola di `CHIAVI` in `lib/appunti.js`. */
+  M.salva(VAULT, PROG, 'DaDoc.json', { titolo: 'Da un documento', materiale: '03 dispensa.pdf' });
+  check('il documento d\'origine sopravvive al giro salva→rileggi',
+    '03 dispensa.pdf', (M.apri(VAULT, PROG, 'DaDoc.json').mappa || {}).materiale);
+  check('…e lo dice anche l\'elenco, senza riaprire la mappa',
+    '03 dispensa.pdf',
+    ((M.elenco(VAULT, PROG).mappe || []).filter((x) => x.file === 'DaDoc.json')[0] || {}).materiale);
+  check('una mappa senza documento non se lo inventa', '', vuota.mappa.materiale);
 }
 
 /* ------------------------------- 10. le posizioni fissate a mano (x · y) */
