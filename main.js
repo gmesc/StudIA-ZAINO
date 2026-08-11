@@ -9,11 +9,11 @@ const { pathToFileURL } = require('url');
 const CFG = path.join(app.getPath('userData'), 'config.json');
 const readCfg = () => { try { return JSON.parse(fs.readFileSync(CFG, 'utf8')); } catch (e) { return {}; } };
 const writeCfg = (c) => { try { fs.mkdirSync(path.dirname(CFG), { recursive: true }); } catch (e) {} fs.writeFileSync(CFG, JSON.stringify(c, null, 2)); };
-const mat = require('./lib/materiali');   // i materiali possono vivere dentro il progetto
+const mat = require('./lib/materiali');   // i materiali possono vivere dentro il corso
 // Un vault nuovo nasce con le sole cartelle che servono: i materiali di un
-// progetto vivono dentro il progetto (vedi lib/materiali.js), «Corsi/» era il
+// corso vivono dentro il corso (vedi lib/materiali.js), «Lezioni/» era il
 // formato JSON di prima e non si crea più.
-const scaffold = (v) => { for (const d of ['Progetti', mat.ATTESA, '.studia']) { try { fs.mkdirSync(path.join(v, d), { recursive: true }); } catch (e) {} } };
+const scaffold = (v) => { for (const d of [corsiLib.RADICE, mat.ATTESA, '.studia']) { try { fs.mkdirSync(path.join(v, d), { recursive: true }); } catch (e) {} } };
 
 // ---- chiavi API personali: cifrate con safeStorage (Keychain) quando disponibile ----
 const PROVIDERS = ['anthropic', 'openai', 'google'];
@@ -84,7 +84,7 @@ ipcMain.handle('costs:log', (e, entry) => {
   const row = {
     ts: entry.ts || new Date().toISOString(), provider: entry.provider || '?', model: entry.model || '?',
     inputTokens: Number(entry.inputTokens) || 0, outputTokens: Number(entry.outputTokens) || 0,
-    costUsd: Number(entry.costUsd) || 0, courseId: entry.courseId || '', label: entry.label || ''
+    costUsd: Number(entry.costUsd) || 0, lessonId: entry.lessonId || '', label: entry.label || ''
   };
   try { fs.appendFileSync(path.join(c.vaultPath, 'Costi', 'usage.jsonl'), JSON.stringify(row) + '\n'); }
   catch (err) { return { ok: false, error: String(err) }; }
@@ -270,8 +270,8 @@ ipcMain.on('ingest:start', async (e, opts) => {
     const lang = String((opts && opts.lang) || leggiPrefs().lingua || 'it').trim().toLowerCase();
     const args = [path.join(__dirname, 'ingest.py'), '--vault', cfg.vaultPath, '--model', cfg.model || 'medium',
       '--lang', /^[a-z]{2,3}$|^auto$/.test(lang) ? lang : 'it'];
-    // senza progetto si elabora tutto il vault: è il ripiego dei vault a corpus unico
-    if (opts && opts.progetto) args.push('--progetto', String(opts.progetto));
+    // senza corso si elabora tutto il vault: è il ripiego dei vault a corpus unico
+    if (opts && opts.corso) args.push('--corso', String(opts.corso));
     if (opts && Array.isArray(opts.files)) for (const f of opts.files) args.push('--only', f);
     if (opts && opts.force) args.push('--force');
     const proc = spawn(py, args);
@@ -304,14 +304,18 @@ ipcMain.on('ingest:start', async (e, opts) => {
 });
 
 // ============================================================================
-// M2 — progetti, brief e importazione materiali
+// M2 — corsi, brief e importazione materiali
 // ============================================================================
 const mdser = require('./lib/mdser');
 const profiloLib = require('./lib/profilo');
-const progettiLib = require('./lib/progetti');
+const corsiLib = require('./lib/corsi');
 
 const vaultDir = () => readCfg().vaultPath || null;
-const projDir = (id) => path.join(vaultDir(), 'Progetti', id);
+const courseDir = (id) => corsiLib.cartella(vaultDir(), id);
+/* Il file che descrive il corso. Passa da lib/corsi perché in un vault mai
+   migrato si chiama ancora `_progetto.md`: leggerlo col nome nuovo darebbe un
+   corso senza titolo invece di un errore, ed è il modo peggiore di sbagliare. */
+const fileCorsoDi = (id) => corsiLib.fileCorso(vaultDir(), id);
 const MEDIA_EXTS = ['.mp4', '.mov', '.mkv', '.webm', '.avi', '.mpeg', '.mpg', '.m4a', '.mp3', '.wav', '.aac', '.flac'];
 
 // scrittura atomica: mai lasciare un .md a metà se il processo muore
@@ -327,30 +331,77 @@ ipcMain.handle('profile:get', () => { const v = vaultDir(); return v ? profiloLi
 ipcMain.handle('profile:skip', () => { const c = readCfg(); c.profiloSaltato = true; writeCfg(c); return true; });
 ipcMain.handle('profile:skipped', () => !!readCfg().profiloSaltato);
 
-// ---- progetti ----
-ipcMain.handle('project:list', () => {
+// ---- corsi ----
+ipcMain.handle('course:list', () => {
   const v = vaultDir(); if (!v) return [];
-  const root = path.join(v, 'Progetti'); const out = [];
+  const root = corsiLib.radice(v); const out = [];
   let dirs; try { dirs = fs.readdirSync(root, { withFileTypes: true }); } catch (e) { return []; }
   for (const d of dirs) {
     if (!d.isDirectory()) continue;
-    let raw = ''; try { raw = fs.readFileSync(path.join(root, d.name, '_progetto.md'), 'utf-8'); } catch (e) {}
+    let raw = ''; try { raw = fs.readFileSync(corsiLib.fileCorso(v, d.name), 'utf-8'); } catch (e) {}
     const fm = profiloLib.parse(raw);
-    let piano = null; try { piano = JSON.parse(fs.readFileSync(progettiLib.servizio(v, d.name, '_piano.json'), 'utf-8')); } catch (e) {}
-    const corsi = progettiLib.elencoCorsi(v, d.name).length;
-    out.push({ id: d.name, title: fm.title || d.name, corsi, protetto: progettiLib.protetto(v, d.name),
+    let piano = null; try { piano = JSON.parse(fs.readFileSync(corsiLib.servizio(v, d.name, '_piano.json'), 'utf-8')); } catch (e) {}
+    /* ⚠️ Le LEZIONI, non le cartelle. Un corso con varianti ne ha due per
+       lezione — il segnaposto e la variante scritta — e questo numero diceva 14
+       per un corso di 7. Il danno però non è il numero: `projDaFinire` chiede
+       `lezioni===0` per dire «nessuna lezione ancora scritta», e con le sole
+       cartelle-segnaposto il conto era 7 mentre da leggere non c'era una riga.
+       L'app dichiarava finito un corso vuoto. */
+    const lezioni = percorsiLib.nomiRaggiungibili(corsiLib.elencoLezioni(v, d.name).map((folder) => {
+      let files = []; try { files = fs.readdirSync(corsiLib.lezioneDir(v, d.name, folder)); } catch (_) {}
+      return { folder, capitoli: espandiLib.capitoliDi(files).length };
+    })).length;
+    out.push({ id: d.name, title: fm.title || d.name, lezioni, protetto: corsiLib.protetto(v, d.name),
       status: piano ? piano.status : null, wizardStep: piano ? piano.wizardStep : null,
       incompleto: !!(piano && ['raccolta', 'ingest', 'proposto', 'approvato', 'in-generazione', 'errore'].includes(piano.status)) });
   }
   return out.sort((a, b) => a.id.localeCompare(b.id));
 });
 
-// ---- pacchetto: un progetto in un file solo, e ritorno ----
+/* ---- zaini: la seconda modalità, e perché qui ci sono solo due righe ----
+ *
+ * Uno zaino è un contenitore di documenti propri: niente pipeline, niente
+ * lezioni, niente stato di lavorazione. Tutto quello che serve al main è
+ * elencarli e crearne uno — appunti, mappe, album ed evidenze arrivano dai loro
+ * canali di sempre, che passano da `corsi.cartella()` e trovano lo zaino da
+ * soli (vedi la nota su quella funzione in lib/corsi.js).
+ *
+ * ⚠️ `zaino:create` NON è `course:create` con un'altra cartella: il controllo di
+ * unicità è sulle DUE radici, ed è dentro `zaini.crea()`. Duplicarlo qui
+ * vorrebbe dire due regole che invecchiano separate.
+ */
+const zainiLib = require('./lib/zaini');
+ipcMain.handle('zaino:list', () => zainiLib.elenco(vaultDir()));
+ipcMain.handle('zaino:create', (e, { nome } = {}) =>
+  zainiLib.crea(vaultDir(), nome, new Date().toISOString().slice(0, 10)));
+
+/* ---- il segno di lettura: a che pagina si era arrivati ----
+ * Vale per i corsi come per gli zaini: `lib/lettura.js` passa da
+ * `corsi.cartella()` e trova da sé il contenitore giusto. */
+const letturaLib = require('./lib/lettura');
+ipcMain.handle('lettura:leggi', (e, { corso } = {}) => letturaLib.leggi(vaultDir(), corso));
+ipcMain.handle('lettura:segna', (e, { corso, file, pagina } = {}) =>
+  letturaLib.segna(vaultDir(), corso, file, pagina));
+
+/* ---- le fonti di un contenitore: import e indici ----
+ * ⚠️ L'indice per pagina lo costruisce il RENDERER con pdf.js — il
+ * visualizzatore è già nell'app, e così un documento entra senza Python e senza
+ * modelli. Qui si scrive soltanto, e si dichiara chi ha letto (`motore`). */
+const fontiLib = require('./lib/fonti');
+ipcMain.handle('fonti:importa', (e, { corso, percorsi } = {}) =>
+  fontiLib.importa(vaultDir(), corso, percorsi));
+ipcMain.handle('fonti:indiceScrivi', (e, { corso, file, pagine, motore } = {}) =>
+  fontiLib.scriviIndice(vaultDir(), corso, file, pagine, motore));
+ipcMain.handle('fonti:indiceServe', (e, { corso, file } = {}) =>
+  ({ serve: !fontiLib.haIndice(vaultDir(), corso, file) }));
+ipcMain.handle('fonti:indici', (e, { corso } = {}) => fontiLib.leggiIndici(vaultDir(), corso));
+
+// ---- pacchetto: un corso in un file solo, e ritorno ----
 // Il caso d'uso è un docente che passa il corso agli allievi: dentro ci va tutto
 // quello che serve a leggerlo altrove, niente di ciò che appartiene solo a chi
 // l'ha costruito. Vedi lib/pacchetto.js.
 const pacchetto = require('./lib/pacchetto');
-const espandiLib = require('./lib/espandi');   // far crescere un progetto senza rinumerare niente
+const espandiLib = require('./lib/espandi');   // far crescere un corso senza rinumerare niente
 
 function contaFileRicorsivo(dir, salta) {
   let n = 0;
@@ -363,22 +414,22 @@ function contaFileRicorsivo(dir, salta) {
   return n;
 }
 
-ipcMain.handle('project:export', async (e, { progetto, appunti } = {}) => {
+ipcMain.handle('course:export', async (e, { corso, appunti } = {}) => {
   const v = vaultDir(); if (!v) return { error: 'nessuna cartella StudIA impostata' };
-  if (!progetto) return { error: 'nessun progetto scelto' };
-  const radice = path.join(v, 'Progetti');
-  if (!fs.existsSync(path.join(radice, progetto, '_progetto.md'))) return { error: 'progetto inesistente' };
+  if (!corso) return { error: 'nessun corso scelto' };
+  const radice = corsiLib.radice(v);
+  if (!fs.existsSync(corsiLib.fileCorso(v, corso))) return { error: 'corso inesistente' };
 
   const r = await dialog.showSaveDialog(win, {
-    title: 'Esporta il progetto',
-    defaultPath: path.join(app.getPath('downloads'), pacchetto.nomeFile(progetto)),
+    title: 'Esporta il corso',
+    defaultPath: path.join(app.getPath('downloads'), pacchetto.nomeFile(corso)),
     filters: [{ name: 'Pacchetto StudIA', extensions: ['zip'] }]
   });
   if (r.canceled || !r.filePath) return { annullato: true };
 
-  const salta = [progettiLib.LAVORAZIONE].concat(appunti ? [] : ['APPUNTI']);
-  const totale = contaFileRicorsivo(path.join(radice, progetto), salta) || 1;
-  const { cmd, args } = pacchetto.comandoEsporta(progetto, r.filePath, { appunti: !!appunti });
+  const salta = [corsiLib.LAVORAZIONE].concat(appunti ? [] : ['APPUNTI']);
+  const totale = contaFileRicorsivo(path.join(radice, corso), salta) || 1;
+  const { cmd, args } = pacchetto.comandoEsporta(corso, r.filePath, { appunti: !!appunti });
   try { fs.unlinkSync(r.filePath); } catch (_) {}          // zip aggiungerebbe a un file esistente
 
   return await new Promise((resolve) => {
@@ -392,7 +443,7 @@ ipcMain.handle('project:export', async (e, { progetto, appunti } = {}) => {
         if (ora - ultimo > 200) {                          // niente raffiche di messaggi al renderer
           ultimo = ora;
           if (win && !win.isDestroyed()) {
-            win.webContents.send('project:export:progress', {
+            win.webContents.send('course:export:progress', {
               fatti, totale, percento: Math.min(99, Math.round(fatti / totale * 100))
             });
           }
@@ -406,7 +457,7 @@ ipcMain.handle('project:export', async (e, { progetto, appunti } = {}) => {
     p.on('close', (code) => {
       if (code !== 0 && code !== 12) return resolve({ error: 'esportazione non riuscita' + (err ? ': ' + err.trim() : ' (codice ' + code + ')') });
       let size = 0; try { size = fs.statSync(r.filePath).size; } catch (_) {}
-      if (win && !win.isDestroyed()) win.webContents.send('project:export:progress', { fatti: totale, totale, percento: 100 });
+      if (win && !win.isDestroyed()) win.webContents.send('course:export:progress', { fatti: totale, totale, percento: 100 });
       resolve({ file: r.filePath, size, file_count: fatti });
     });
   });
@@ -425,10 +476,10 @@ function leggiPacchetto(zip) {
   });
 }
 
-ipcMain.handle('project:import', async () => {
+ipcMain.handle('course:import', async () => {
   const v = vaultDir(); if (!v) return { error: 'nessuna cartella StudIA impostata' };
   const scelta = await dialog.showOpenDialog(win, {
-    title: 'Scegli il pacchetto del progetto',
+    title: 'Scegli il pacchetto del corso',
     properties: ['openFile'],
     filters: [{ name: 'Pacchetto StudIA', extensions: ['zip'] }]
   });
@@ -438,12 +489,12 @@ ipcMain.handle('project:import', async () => {
   const info = await leggiPacchetto(zip);
   if (!info.ok) return { error: 'Pacchetto non valido: ' + info.motivo };
 
-  const radice = path.join(v, 'Progetti');
+  const radice = corsiLib.radice(v);
   fs.mkdirSync(radice, { recursive: true });
   const idFinale = pacchetto.idLibero(info.id, (x) => fs.existsSync(path.join(radice, x)));
 
   // si estrae in una cartella di servizio e si sposta solo a estrazione riuscita:
-  // un'interruzione a metà non lascia un progetto monco dentro Progetti/
+  // un'interruzione a metà non lascia un corso monco dentro Corsi/
   const tmp = path.join(radice, '.import-' + Date.now());
   const { cmd, args } = pacchetto.comandoEstrai(zip, tmp);
   return await new Promise((resolve) => {
@@ -458,39 +509,39 @@ ipcMain.handle('project:import', async () => {
         fs.renameSync(path.join(tmp, info.id), path.join(radice, idFinale));
         pulisci();
         // il pacchetto di qualcun altro non deve arrivare già in sola lettura
-        try { fs.rmSync(path.join(radice, idFinale, progettiLib.LAVORAZIONE), { recursive: true, force: true }); } catch (_) {}
+        try { fs.rmSync(path.join(radice, idFinale, corsiLib.LAVORAZIONE), { recursive: true, force: true }); } catch (_) {}
         resolve({ id: idFinale, rinominato: idFinale !== info.id, contenuto: pacchetto.descrizione(info) });
       } catch (e2) { pulisci(); resolve({ error: e2.message }); }
     });
   });
 });
 
-ipcMain.handle('project:create', (e, { nome, brief } = {}) => {
+ipcMain.handle('course:create', (e, { nome, brief } = {}) => {
   const v = vaultDir(); if (!v) return { error: 'nessuna cartella StudIA impostata' };
   const id = mdser.slugify(String(nome || '').trim(), 60);
-  if (!id || id === 'senza-titolo') return { error: 'dai un nome al progetto' };
-  const dir = path.join(v, 'Progetti', id);
-  if (fs.existsSync(dir)) return { error: 'esiste già un progetto con questo nome' };
+  if (!id || id === 'senza-titolo') return { error: 'dai un nome al corso' };
+  const dir = path.join(corsiLib.radice(v), id);
+  if (fs.existsSync(dir)) return { error: 'esiste già un corso con questo nome' };
   try {
     fs.mkdirSync(dir, { recursive: true });
-    // un progetto nuovo nasce già con la sua cartella dei materiali: è ciò che
+    // un corso nuovo nasce già con la sua cartella dei materiali: è ciò che
     // rende la cartella distribuibile così com'è
-    for (const sub of mat.cartelleProgetto()) fs.mkdirSync(path.join(dir, mat.CARTELLA, sub), { recursive: true });
-    writeAtomic(path.join(dir, '_progetto.md'), mdser.progetto({
+    for (const sub of mat.cartelleCorso()) fs.mkdirSync(path.join(dir, mat.CARTELLA, sub), { recursive: true });
+    writeAtomic(path.join(dir, '_corso.md'), mdser.corso({
       id, title: String(nome).trim(), brief: brief || {}, indicazioni: (brief && brief.indicazioni) || ''
     }));
     return { id };
   } catch (err) { return { error: err.message }; }
 });
 
-// ---- brief: upsert IN-PLACE su _progetto.md (mai ri-serializzare da un parse) ----
-ipcMain.handle('brief:get', (e, { progetto } = {}) => {
-  const v = vaultDir(); if (!v || !progetto) return {};
-  let raw = ''; try { raw = fs.readFileSync(path.join(projDir(progetto), '_progetto.md'), 'utf-8'); } catch (err) { return {}; }
+// ---- brief: upsert IN-PLACE su _corso.md (mai ri-serializzare da un parse) ----
+ipcMain.handle('brief:get', (e, { corso } = {}) => {
+  const v = vaultDir(); if (!v || !corso) return {};
+  let raw = ''; try { raw = fs.readFileSync(fileCorsoDi(corso), 'utf-8'); } catch (err) { return {}; }
   const fm = profiloLib.parse(raw);
   const sec = /^##\s+Indicazioni per questo materiale\s*$([\s\S]*?)(?=^##\s|\Z)/m.exec(raw);
   return {
-    title: fm.title || progetto,
+    title: fm.title || corso,
     obiettivo: fm.obiettivo || '', scadenza: fm.scadenza || '',
     priorita: fm.priorita || '', granularita: fm.granularita || '',
     fonti: mappaFonti(fm),
@@ -508,22 +559,22 @@ function mappaFonti(fm) {
 }
 
 // il ruolo dichiarato di una fonte: l'unica cosa che il file non sa di sé
-ipcMain.handle('fonti:set', (e, { progetto, fonti } = {}) => {
-  const v = vaultDir(); if (!v || !progetto) return { error: 'progetto mancante' };
-  if (progettiLib.protetto(v, progetto)) return { error: progettiLib.motivoRifiuto(progetto) };
-  const file = path.join(projDir(progetto), '_progetto.md');
-  let raw; try { raw = fs.readFileSync(file, 'utf-8'); } catch (err) { return { error: '_progetto.md non trovato' }; }
+ipcMain.handle('fonti:set', (e, { corso, fonti } = {}) => {
+  const v = vaultDir(); if (!v || !corso) return { error: 'corso mancante' };
+  if (corsiLib.protetto(v, corso)) return { error: corsiLib.motivoRifiuto(corso) };
+  const file = fileCorsoDi(corso);
+  let raw; try { raw = fs.readFileSync(file, 'utf-8'); } catch (err) { return { error: '_corso.md non trovato' }; }
   try {
     writeAtomic(file, mdser.upsertFmLine(raw, 'fonti', mdser.bloccoFonti(fonti || {})));
     return { ok: true };
   } catch (err) { return { error: err.message }; }
 });
 
-ipcMain.handle('brief:set', (e, { progetto, brief } = {}) => {
-  const v = vaultDir(); if (!v || !progetto) return { error: 'progetto mancante' };
-  if (progettiLib.protetto(v, progetto)) return { error: progettiLib.motivoRifiuto(progetto) };
-  const file = path.join(projDir(progetto), '_progetto.md');
-  let raw; try { raw = fs.readFileSync(file, 'utf-8'); } catch (err) { return { error: '_progetto.md non trovato' }; }
+ipcMain.handle('brief:set', (e, { corso, brief } = {}) => {
+  const v = vaultDir(); if (!v || !corso) return { error: 'corso mancante' };
+  if (corsiLib.protetto(v, corso)) return { error: corsiLib.motivoRifiuto(corso) };
+  const file = fileCorsoDi(corso);
+  let raw; try { raw = fs.readFileSync(file, 'utf-8'); } catch (err) { return { error: '_corso.md non trovato' }; }
   const b = brief || {};
   try {
     if (b.obiettivo !== undefined) raw = mdser.upsertFmLine(raw, 'obiettivo', 'obiettivo: ' + mdser.yq(b.obiettivo));
@@ -578,23 +629,23 @@ const importaLib = require('./lib/importa');
 /**
  * Il numero da dare al prossimo materiale importato.
  *
- * Si conta DENTRO il progetto: un progetto nuovo parte da 01. Prima si guardava
- * tutto il vault — ogni altro progetto, la radice e i materiali in attesa — e si
+ * Si conta DENTRO il corso: un corso nuovo parte da 01. Prima si guardava
+ * tutto il vault — ogni altro corso, la radice e i materiali in attesa — e si
  * ripartiva dal massimo. Così un corpus di 24 lezioni si è ritrovato numerato
  * 79–102 perché altrove, in una cartella di lavoro che non era nemmeno un
- * progetto, c'erano 45 file già numerati.
+ * corso, c'erano 45 file già numerati.
  *
- * Senza `progetto` resta il conteggio globale, che è quello giusto per i vault a
- * corpus unico, dove i numeri non hanno un progetto a cui appartenere.
+ * Senza `corso` resta il conteggio globale, che è quello giusto per i vault a
+ * corpus unico, dove i numeri non hanno un corso a cui appartenere.
  */
-function prossimoNumero(v, progetto) {
+function prossimoNumero(v, corso) {
   let max = 0;
   const guarda = (dir) => {
     let files; try { files = fs.readdirSync(dir); } catch (e) { return; }
     for (const f of files) { const n = mat.numero(f); if (n) max = Math.max(max, n); }
   };
   for (const sub of ['Media', 'Fonti']) {
-    for (const dir of mat.cartelle(v, sub, progetto, !!progetto)) guarda(dir);
+    for (const dir of mat.cartelle(v, sub, corso, !!corso)) guarda(dir);
   }
   return max + 1;
 }
@@ -608,40 +659,40 @@ ipcMain.handle('import:pick', async () => {
   return r.canceled ? null : r.filePaths[0];
 });
 
-// `progetto` decide due cose insieme: da che numero si parte e dove atterrano i
-// file. Vanno decise insieme, o si numera per progetto scrivendo nella radice.
-ipcMain.handle('import:scan', (e, { cartella, forzati, progetto } = {}) => {
+// `corso` decide due cose insieme: da che numero si parte e dove atterrano i
+// file. Vanno decise insieme, o si numera per corso scrivendo nella radice.
+ipcMain.handle('import:scan', (e, { cartella, forzati, corso } = {}) => {
   const v = vaultDir(); if (!v) return { error: 'nessuna cartella StudIA impostata' };
   if (!cartella) return { error: 'nessuna cartella da esaminare' };
   try {
-    return importaLib.esamina(cartella, { numeraDa: prossimoNumero(v, progetto), progetto, forzati: forzati || [] });
+    return importaLib.esamina(cartella, { numeraDa: prossimoNumero(v, corso), corso, forzati: forzati || [] });
   } catch (err) { return { error: err.message }; }
 });
 
-ipcMain.handle('import:apply', (e, { cartella, forzati, progetto } = {}) => {
+ipcMain.handle('import:apply', (e, { cartella, forzati, corso } = {}) => {
   const v = vaultDir(); if (!v) return { error: 'nessuna cartella StudIA impostata' };
   if (!cartella) return { error: 'nessuna cartella da importare' };
   try {
     // si ripianifica al momento della copia: l'anteprima poteva essere vecchia
-    const piano = importaLib.esamina(cartella, { numeraDa: prossimoNumero(v, progetto), progetto, forzati: forzati || [] });
+    const piano = importaLib.esamina(cartella, { numeraDa: prossimoNumero(v, corso), corso, forzati: forzati || [] });
     return { ...importaLib.applica(v, piano), riepilogo: piano.riepilogo };
   } catch (err) { return { error: err.message }; }
 });
 
 // ---- corpus: materiali (media + PDF) con lo stato di elaborazione ----
 // estende media:list ai PDF, che vengono indicizzati in Indice-PDF/ invece che trascritti
-// Con `progetto` elenca SOLO i suoi materiali: il pannello «Elaborazione» del
-// wizard mostrava tutto il vault, cioè anche i materiali degli altri progetti.
-ipcMain.handle('corpus:list', (e, { progetto } = {}) => {
+// Con `corso` elenca SOLO i suoi materiali: il pannello «Elaborazione» del
+// wizard mostrava tutto il vault, cioè anche i materiali degli altri corsi.
+ipcMain.handle('corpus:list', (e, { corso } = {}) => {
   const v = vaultDir(); if (!v) return [];
-  const solo = !!progetto;
+  const solo = !!corso;
   const out = [];
   const stato = (dirStato, stem) => {
-    const f = mat.trova(v, dirStato, stem + '.json', progetto, solo);
+    const f = mat.trova(v, dirStato, stem + '.json', corso, solo);
     try { return !!f && fs.statSync(f).size > 0; } catch (e) { return false; }
   };
   for (const sub of ['Media', 'Fonti']) {
-    for (const { nome: f, dir, dentroProgetto } of mat.elenca(v, sub, progetto, solo)) {
+    for (const { nome: f, dir, dentroCorso } of mat.elenca(v, sub, corso, solo)) {
       const ext = path.extname(f).toLowerCase();
       const isMedia = MEDIA_EXTS.includes(ext), isPdf = ext === '.pdf', isHtml = (ext === '.html' || ext === '.htm');
       if (!isMedia && !isPdf && !isHtml) continue;
@@ -656,9 +707,9 @@ ipcMain.handle('corpus:list', (e, { progetto } = {}) => {
         num: m ? m[1].padStart(2, '0') : null,
         fatto: stato(dove, stem),
         // la trascrizione fornita dall'autore, quando c'è, affianca quella di Whisper
-        ufficiale: tipo === 'media' && !!mat.trova(v, 'Trascrizioni', stem + '.ufficiale.txt', progetto, solo),
-        // dove sta davvero il file: dentro il progetto o nel corpus del vault
-        dentroProgetto: !!dentroProgetto
+        ufficiale: tipo === 'media' && !!mat.trova(v, 'Trascrizioni', stem + '.ufficiale.txt', corso, solo),
+        // dove sta davvero il file: dentro il corso o nel corpus del vault
+        dentroCorso: !!dentroCorso
       });
     }
   }
@@ -666,9 +717,10 @@ ipcMain.handle('corpus:list', (e, { progetto } = {}) => {
 });
 
 // ============================================================================
-// M4 — proposta dell'indice dei corsi e approvazione
+// M4 — proposta dell'indice delle lezioni e approvazione
 // ============================================================================
 const propose = require('./lib/propose');
+const pianoEdit = require('./lib/pianoedit');   // le correzioni al taglio delle lezioni, dal composer
 const providerAi = require('./lib/ai/provider');
 const linguaLib = require('./lib/lingua');
 
@@ -774,17 +826,17 @@ ipcMain.handle('ocr:stato', () => {
 });
 
 /**
- * Che cosa guadagnerebbe questo progetto a farsi rileggere i PDF, PDF per PDF.
+ * Che cosa guadagnerebbe questo corso a farsi rileggere i PDF, PDF per PDF.
  *
  * Gira sull'ambiente della trascrizione, non su quello dell'OCR: la stima deve
  * potersi vedere PRIMA di scaricare undici gigabyte, altrimenti l'unico modo di
  * sapere se conviene installare Chandra sarebbe installarlo.
  */
-ipcMain.handle('ocr:stima', (e, { progetto } = {}) => {
-  const v = vaultDir(); if (!v || !progetto) return { error: 'progetto mancante' };
+ipcMain.handle('ocr:stima', (e, { corso } = {}) => {
+  const v = vaultDir(); if (!v || !corso) return { error: 'corso mancante' };
   try {
     const file = [];
-    for (const dir of mat.cartelle(v, 'Fonti', progetto, true)) {
+    for (const dir of mat.cartelle(v, 'Fonti', corso, true)) {
       let nomi = []; try { nomi = fs.readdirSync(dir); } catch (_) { continue; }
       for (const n of nomi.sort()) if (n.toLowerCase().endsWith('.pdf')) file.push(path.join(dir, n));
     }
@@ -849,32 +901,32 @@ ipcMain.on('ocr:installa', async (e, { conModello } = {}) => {
  * con il nome — un errore riassunto in «alcuni file» non si può indagare.
  */
 const ocrFermato = new Set();
-ipcMain.on('ocr:ferma', (e, { progetto } = {}) => { if (progetto) ocrFermato.add(progetto); });
+ipcMain.on('ocr:ferma', (e, { corso } = {}) => { if (corso) ocrFermato.add(corso); });
 
-ipcMain.on('ocr:leggi', async (e, { progetto, scelte } = {}) => {
+ipcMain.on('ocr:leggi', async (e, { corso, scelte } = {}) => {
   const send = (ch, d) => { try { e.sender.send(ch, d); } catch (_) {} };
   const v = vaultDir();
-  if (!v || !progetto) { send('ocr:leggiError', 'progetto mancante'); return; }
-  if (progettiLib.protetto(v, progetto)) { send('ocr:leggiError', progettiLib.motivoRifiuto(progetto)); return; }
+  if (!v || !corso) { send('ocr:leggiError', 'corso mancante'); return; }
+  if (corsiLib.protetto(v, corso)) { send('ocr:leggiError', corsiLib.motivoRifiuto(corso)); return; }
   const ud = app.getPath('userData');
   if (!ocrLib.stato(ud).installato) { send('ocr:leggiError', 'La lettura avanzata non è installata.'); return; }
   const lista = (scelte || []).filter((s) => s && s.file && (s.pagine || []).length);
   if (!lista.length) { send('ocr:leggiError', 'nessun PDF da rileggere'); return; }
 
-  ocrFermato.delete(progetto);
+  ocrFermato.delete(corso);
   const py = ocrLib.python(ud);
   const fatti = [], falliti = [];
   const totPagine = lista.reduce((a, s) => a + s.pagine.length, 0);
   let fattePagine = 0;
 
   for (const s of lista) {
-    if (ocrFermato.has(progetto)) { send('ocr:leggiLog', 'Fermato su richiesta.'); break; }
-    const pdf = mat.trova(v, 'Fonti', s.file, progetto, true);
+    if (ocrFermato.has(corso)) { send('ocr:leggiLog', 'Fermato su richiesta.'); break; }
+    const pdf = mat.trova(v, 'Fonti', s.file, corso, true);
     if (!pdf) { falliti.push({ file: s.file, errore: 'non trovato' }); continue; }
     const stem = s.file.replace(/\.[a-z0-9]+$/i, '');
-    // l'indice e i ritagli stanno ACCANTO al materiale, cioè dentro il progetto:
-    // altrimenti il progetto spostato altrove avrebbe i PDF senza le sue figure
-    const indice = mat.trova(v, 'Indice-PDF', stem + '.json', progetto, true) ||
+    // l'indice e i ritagli stanno ACCANTO al materiale, cioè dentro il corso:
+    // altrimenti il corso spostato altrove avrebbe i PDF senza le sue figure
+    const indice = mat.trova(v, 'Indice-PDF', stem + '.json', corso, true) ||
       path.join(mat.destinazioneDerivato(v, pdf, 'Indice-PDF'), stem + '.json');
     const figure = mat.destinazioneDerivato(v, pdf, 'Figure');
     fs.mkdirSync(path.dirname(indice), { recursive: true });
@@ -954,22 +1006,32 @@ function sceltaAi() {
     lingua: linguaLib.normalizza(prefs.linguaOutput) };
 }
 
-ipcMain.handle('plan:get', (e, { progetto } = {}) => {
-  const v = vaultDir(); if (!v || !progetto) return null;
-  return propose.leggiPiano(v, progetto);
+ipcMain.handle('plan:get', (e, { corso } = {}) => {
+  const v = vaultDir(); if (!v || !corso) return null;
+  return propose.leggiPiano(v, corso);
 });
 
-ipcMain.handle('plan:save', (e, { progetto, piano } = {}) => {
-  const v = vaultDir(); if (!v || !progetto) return { error: 'progetto mancante' };
-  if (progettiLib.protetto(v, progetto)) return { error: progettiLib.motivoRifiuto(progetto) };
-  return propose.scriviPiano(v, progetto, piano);
+ipcMain.handle('plan:save', (e, { corso, piano } = {}) => {
+  const v = vaultDir(); if (!v || !corso) return { error: 'corso mancante' };
+  if (corsiLib.protetto(v, corso)) return { error: corsiLib.motivoRifiuto(corso) };
+  /* Correggere il taglio delle lezioni rinumera le cartelle: `03-delega` può
+     ritrovarsi a essere un'altra lezione. Le scalette appese alle cartelle
+     cambiate non valgono più, e vanno buttate PRIMA di salvare — una scaletta
+     sopravvissuta sembrerebbe quella giusta e proporrebbe capitoli su materiali
+     che quella lezione non ha. Si perde una spesa, ma è già persa. */
+  const prima = propose.leggiPiano(v, corso);
+  const cambiate = pianoEdit.cartelleCambiate(prima, piano);
+  const buttate = percorsiLib.invalida(v, corso, cambiate);
+  const r = propose.scriviPiano(v, corso, piano);
+  if (r && r.error) return r;
+  return Object.assign({}, r, { invalidate: buttate.scalette, percorsiToccati: buttate.percorsi });
 });
 
-ipcMain.on('plan:propose', async (e, { progetto, granularita } = {}) => {
+ipcMain.on('plan:propose', async (e, { corso, granularita } = {}) => {
   const send = (ch, d) => { try { e.sender.send(ch, d); } catch (_) {} };
   const v = vaultDir();
-  if (!v || !progetto) { send('plan:error', 'progetto mancante'); return; }
-  if (progettiLib.protetto(v, progetto)) { send('plan:error', progettiLib.motivoRifiuto(progetto)); return; }
+  if (!v || !corso) { send('plan:error', 'corso mancante'); return; }
+  if (corsiLib.protetto(v, corso)) { send('plan:error', corsiLib.motivoRifiuto(corso)); return; }
   try {
     send('plan:progress', { fase: 'digest', msg: 'Leggo trascrizioni e indici…' });
     const ai = sceltaAi();
@@ -977,10 +1039,10 @@ ipcMain.on('plan:propose', async (e, { progetto, granularita } = {}) => {
       fase: ai ? 'ai' : 'euristica',
       msg: ai ? ('Chiedo a ' + ai.fornitore + ' di rivedere il raggruppamento…') : 'Nessuna chiave API: uso le sole euristiche locali…'
     });
-    // il brief sta nel frontmatter di _progetto.md: entra nel prompt della proposta
+    // il brief sta nel frontmatter di _corso.md: entra nel prompt della proposta
     let briefObj = {};
     try {
-      const raw = fs.readFileSync(path.join(projDir(progetto), '_progetto.md'), 'utf-8');
+      const raw = fs.readFileSync(fileCorsoDi(corso), 'utf-8');
       const fm = profiloLib.parse(raw);
       briefObj = { obiettivo: fm.obiettivo, priorita: fm.priorita, fonti: mappaFonti(fm) };
     } catch (err) {}
@@ -991,12 +1053,12 @@ ipcMain.on('plan:propose', async (e, { progetto, granularita } = {}) => {
        comprende materiali non elaborati e pagine web congelate, e la soglia
        dell'80% diventa un confronto fra due numeri che si muovono insieme —
        sempre soddisfatto, anche con mezzo corpus fuori. */
-    const dgOra = propose.corpusDelPiano(v, progetto).dg;
-    const schedePresenti = Object.keys(schedeLib.tutte(v, progetto, dgOra.materiali)).length;
+    const dgOra = propose.corpusDelPiano(v, corso).dg;
+    const schedePresenti = Object.keys(schedeLib.tutte(v, corso, dgOra.materiali)).length;
     let r;
     if (ai && schedePresenti >= Math.max(1, Math.floor(dgOra.totale * 0.8))) {
       send('plan:progress', { fase: 'multiagente', msg: 'Tre analisi indipendenti sulle ' + schedePresenti + ' schede…' });
-      r = await propose.proponiMultiagente(v, progetto, {
+      r = await propose.proponiMultiagente(v, corso, {
         granularita: granularita || 'atomico', brief: briefObj, profilo: profiloLib.load(v),
         ai: { fornitore: ai.fornitore, modello: ai.modello, apiKey: ai.apiKey, lingua: ai.lingua },
         onProgress: (ev) => send('plan:progress', {
@@ -1006,9 +1068,9 @@ ipcMain.on('plan:propose', async (e, { progetto, granularita } = {}) => {
         })
       });
       if (r.errore) { send('plan:error', r.errore); return; }
-      if (r.uso) registraUso(Object.assign({ fornitore: ai.fornitore, modello: ai.modello }, r.uso), progetto, 'architettura multiagente');
+      if (r.uso) registraUso(Object.assign({ fornitore: ai.fornitore, modello: ai.modello }, r.uso), corso, 'architettura multiagente');
     } else {
-      r = await propose.proponi(v, progetto, {
+      r = await propose.proponi(v, corso, {
         granularita: granularita || 'atomico',
         brief: briefObj,
         profilo: profiloLib.load(v),
@@ -1018,31 +1080,27 @@ ipcMain.on('plan:propose', async (e, { progetto, granularita } = {}) => {
         r.avviso = (r.avviso ? r.avviso + ' ' : '') + 'Analisi dei materiali incompleta (' + schedePresenti + '/' + dgOra.totale + '): per un indice di qualità piena, analizza prima tutti i materiali.';
       }
     }
-    const scritto = propose.scriviPiano(v, progetto, r.piano);
+    const scritto = propose.scriviPiano(v, corso, r.piano);
     if (scritto.error) { send('plan:error', scritto.error); return; }
-    if (r.uso) {
-      // il costo della proposta va nel registro come qualunque altra chiamata
-      try {
-        fs.mkdirSync(path.join(v, 'Costi'), { recursive: true });
-        fs.appendFileSync(path.join(v, 'Costi', 'usage.jsonl'), JSON.stringify({
-          ts: new Date().toISOString(), provider: r.uso.fornitore, model: r.uso.modello,
-          inputTokens: r.uso.inputTokens || 0, outputTokens: r.uso.outputTokens || 0,
-          costUsd: 0, courseId: progetto, label: 'proposta indice'
-        }) + '\n');
-      } catch (err) {}
-    }
+    /* Il costo della proposta va nel registro come qualunque altra chiamata —
+       e ora ci va DAVVERO. ⚠️ Qui c'era una copia scritta a mano di
+       `registraUso` con `costUsd: 0` **cablato**: la proposta d'indice, che è
+       una delle chiamate più grosse del progetto (tutto il digest del corpus),
+       risultava gratis per costruzione. Una funzione sola, così il giorno che
+       cambia il modo di calcolare il costo cambia in un posto. */
+    if (r.uso) registraUso(r.uso, corso, 'proposta indice');
     send('plan:done', { piano: r.piano, origine: r.origine, avviso: r.avviso || null, revisione: r.revisione || null, giri: r.giri || 1 });
   } catch (err) {
     send('plan:error', String((err && err.message) || err));
   }
 });
 
-/** Crea le cartelle-corso e i _corso.md, e aggiorna ordine_corsi nel progetto. */
-ipcMain.handle('plan:approve', (e, { progetto } = {}) => {
-  const v = vaultDir(); if (!v || !progetto) return { error: 'progetto mancante' };
-  if (progettiLib.protetto(v, progetto)) return { error: progettiLib.motivoRifiuto(progetto) };
-  const piano = propose.leggiPiano(v, progetto);
-  if (!piano || !Array.isArray(piano.corsi) || !piano.corsi.length) return { error: 'nessun piano da approvare' };
+/** Crea le cartelle-lezione e i _lezione.md, e aggiorna ordine_lezioni nel corso. */
+ipcMain.handle('plan:approve', (e, { corso } = {}) => {
+  const v = vaultDir(); if (!v || !corso) return { error: 'corso mancante' };
+  if (corsiLib.protetto(v, corso)) return { error: corsiLib.motivoRifiuto(corso) };
+  const piano = propose.leggiPiano(v, corso);
+  if (!piano || !Array.isArray(piano.lezioni) || !piano.lezioni.length) return { error: 'nessun piano da approvare' };
 
   /* Ultima rete prima che il piano diventi cartelle sul disco: il corpus si
      rilegge ADESSO e si controlla che nessun materiale utilizzabile sia rimasto
@@ -1051,9 +1109,9 @@ ipcMain.handle('plan:approve', (e, { progetto } = {}) => {
      furono indicizzati dopo la proposta, e nulla lo disse. Restano fuori senza
      protestare i materiali non ancora elaborati e le pagine web congelate:
      quelli l'utente li vede nell'avviso della proposta. */
-  const delPiano = propose.corpusDelPiano(v, progetto).dg;
+  const delPiano = propose.corpusDelPiano(v, corso).dg;
   const nelPiano = new Set();
-  for (const c of piano.corsi) for (const m of (c.materiali || [])) if (m.num) nelPiano.add(String(m.num).padStart(2, '0'));
+  for (const c of piano.lezioni) for (const m of (c.materiali || [])) if (m.num) nelPiano.add(String(m.num).padStart(2, '0'));
   const fuori = delPiano.materiali.filter((m) => m.num && !nelPiano.has(String(m.num).padStart(2, '0')));
   if (fuori.length) {
     return { error: 'Il piano lascia fuori ' + fuori.length + ' materiali già elaborati (' +
@@ -1062,10 +1120,10 @@ ipcMain.handle('plan:approve', (e, { progetto } = {}) => {
 
   const creati = [];
   try {
-    for (const c of piano.corsi) {
-      const dir = path.join(progettiLib.cartellaCorsiPerScrivere(v, progetto), c.folder);
+    for (const c of piano.lezioni) {
+      const dir = path.join(corsiLib.cartellaLezioniPerScrivere(v, corso), c.folder);
       fs.mkdirSync(dir, { recursive: true });
-      writeAtomic(path.join(dir, '_corso.md'), mdser.corso({
+      writeAtomic(path.join(dir, '_lezione.md'), mdser.lezione({
         id: c.folder, title: c.title, area: c.area || '',
         materiali: (c.materiali || []).map((m) => m.num || m.source),
         status: 'approvato', ordineCapitoli: (c.capitoli || []).map((k) => k.file),
@@ -1074,27 +1132,47 @@ ipcMain.handle('plan:approve', (e, { progetto } = {}) => {
       creati.push(c.folder);
       c.status = 'approvato';
     }
-    // ordine_corsi nel progetto, upsert in-place per non perdere il resto del frontmatter
-    const fileProg = path.join(projDir(progetto), '_progetto.md');
+    // ordine_lezioni nel corso, upsert in-place per non perdere il resto del frontmatter
+    const fileProg = fileCorsoDi(corso);
     let raw = fs.readFileSync(fileProg, 'utf-8');
-    raw = mdser.upsertFmLine(raw, 'ordine_corsi', 'ordine_corsi: ' + mdser.yList(creati));
-    raw = mdser.upsertFmLine(raw, 'n_corsi', 'n_corsi: ' + creati.length);
+    raw = mdser.upsertFmLine(raw, 'ordine_lezioni', 'ordine_lezioni: ' + mdser.yList(creati));
+    raw = mdser.upsertFmLine(raw, 'n_lezioni', 'n_lezioni: ' + creati.length);
     writeAtomic(fileProg, raw);
 
     piano.status = 'approvato'; piano.wizardStep = 4; piano.aggiornato = new Date().toISOString();
-    const scritto = propose.scriviPiano(v, progetto, piano);
+    const scritto = propose.scriviPiano(v, corso, piano);
     if (scritto.error) return { error: scritto.error };
     return { ok: true, creati };
   } catch (err) { return { error: err.message }; }
 });
 
 // ============================================================================
-// Analisi multiagente: schede per materiale + architettura dei corsi
+// Analisi multiagente: schede per materiale + architettura delle lezioni
 // ============================================================================
 const schedeLib = require('./lib/schede');
 
+/**
+ * Mostra un file nel Finder.
+ *
+ * ⚠️ Arriva un `file://` (è quello che il renderer ha per mano: `srcUrl` torna
+ * URL, non percorsi) e `showItemInFolder` vuole un PERCORSO: passargli l'URL
+ * apre una finestra sulla cartella sbagliata, o nessuna. E si controlla che il
+ * file stia DENTRO il vault: questa è una porta che apre il Finder su ciò che
+ * gli si dice, e non deve poter puntare fuori.
+ */
+ipcMain.handle('file:reveal', (e, quale) => {
+  const v = vaultDir(); if (!v) return { ok: false, error: 'nessun vault' };
+  let p = String(quale || '');
+  try { if (/^file:\/\//i.test(p)) p = require('url').fileURLToPath(p); } catch (_) { return { ok: false, error: 'percorso illeggibile' }; }
+  const dentro = path.resolve(p);
+  if (!dentro.startsWith(path.resolve(v) + path.sep)) return { ok: false, error: 'fuori dal vault' };
+  if (!fs.existsSync(dentro)) return { ok: false, error: 'il file non c\'è più' };
+  shell.showItemInFolder(dentro);
+  return { ok: true, error: '' };
+});
+
 /** Registra il consumo di una fase nel registro costi. */
-function registraUso(uso, progetto, etichetta) {
+function registraUso(uso, corso, etichetta) {
   const v = vaultDir(); if (!v || !uso) return;
   try {
     fs.mkdirSync(path.join(v, 'Costi'), { recursive: true });
@@ -1103,20 +1181,20 @@ function registraUso(uso, progetto, etichetta) {
       inputTokens: uso.inputTokens || 0, outputTokens: uso.outputTokens || 0,
       // Claude Code dichiara già il costo a listino: quello vince sul nostro calcolo
       costUsd: (typeof uso.costoUsdDichiarato === 'number' ? uso.costoUsdDichiarato : providerAi.costoUsd(uso)) || 0,
-      courseId: progetto, label: etichetta
+      lessonId: corso, label: etichetta
     }) + '\n');
   } catch (e) {}
 }
 
-/** Stato delle schede di un progetto: quante ci sono e quante mancano. */
-ipcMain.handle('schede:stato', (e, { progetto } = {}) => {
-  const v = vaultDir(); if (!v || !progetto) return { totale: 0, fatte: 0, mancanti: [] };
+/** Stato delle schede di un corso: quante ci sono e quante mancano. */
+ipcMain.handle('schede:stato', (e, { corso } = {}) => {
+  const v = vaultDir(); if (!v || !corso) return { totale: 0, fatte: 0, mancanti: [] };
   /* Il conteggio deve chiudere: se il totale comprende materiali che l'analisi
      non tocca — non elaborati, o congelati — «24 su 37» non arriva mai a 37 e
      l'utente rifà l'analisi all'infinito cercando le tredici che mancano. */
-  const filtrato = corpusLib().perIlPiano(corpusLib().digest(v, progetto));
+  const filtrato = corpusLib().perIlPiano(corpusLib().digest(v, corso));
   const dg = filtrato.dg;
-  const mappa = schedeLib.tutte(v, progetto, dg.materiali);
+  const mappa = schedeLib.tutte(v, corso, dg.materiali);
   const fatti = new Set(Object.keys(mappa));
   return {
     totale: dg.totale,
@@ -1134,13 +1212,13 @@ const scalettaLib = require('./lib/scaletta');
 const generaLib = require('./lib/genera');
 
 /** Le regole di forma del profilo, per la fase chiesta. */
-function regoleForma(fase, progetto) {
+function regoleForma(fase, corso) {
   const v = vaultDir(); if (!v) return '';
   try {
     const p = profiloLib.load(v);
     let indicazioni = '';
-    if (progetto) {
-      const raw = fs.readFileSync(path.join(projDir(progetto), '_progetto.md'), 'utf-8');
+    if (corso) {
+      const raw = fs.readFileSync(fileCorsoDi(corso), 'utf-8');
       const sec = /^##\s+Indicazioni per questo materiale\s*$([\s\S]*?)(?=^##\s|\Z)/m.exec(raw);
       indicazioni = sec ? sec[1].trim().replace(/^—$/, '') : '';
     }
@@ -1148,100 +1226,102 @@ function regoleForma(fase, progetto) {
   } catch (err) { return ''; }
 }
 
-// le alternative di scaletta per UN corso del piano
-ipcMain.handle('scaletta:proponi', async (e, { progetto, folder, nCapitoli } = {}) => {
-  const v = vaultDir(); if (!v || !progetto) return { error: 'progetto mancante' };
-  if (progettiLib.protetto(v, progetto)) return { error: progettiLib.motivoRifiuto(progetto) };
+// le alternative di scaletta per UNA lezione del piano
+ipcMain.handle('scaletta:proponi', async (e, { corso, folder, nCapitoli, nAlternative } = {}) => {
+  const v = vaultDir(); if (!v || !corso) return { error: 'corso mancante' };
+  if (corsiLib.protetto(v, corso)) return { error: corsiLib.motivoRifiuto(corso) };
   const ai = sceltaAi();
   if (!ai) return { error: 'Serve una chiave API: le scalette nascono dalla lettura delle schede.' };
-  const piano = propose.leggiPiano(v, progetto);
-  const corso = piano && (piano.corsi || []).find((c) => c.folder === folder);
-  if (!corso) return { error: 'corso non trovato nel piano' };
+  const piano = propose.leggiPiano(v, corso);
+  const lezione = lezioneDelPiano(piano, folder);
+  if (!lezione) return { error: 'lezione non trovata nel piano' };
   try {
-    const dg = corpusLib().digest(v, progetto);
-    const schedeMappa = schedeLib.tutte(v, progetto, dg.materiali);
+    const dg = corpusLib().digest(v, corso);
+    const schedeMappa = schedeLib.tutte(v, corso, dg.materiali);
     if (!Object.keys(schedeMappa).length) return { error: 'Mancano le schede: fai prima il passo «Analisi».' };
-    const r = await scalettaLib.proponi(corso, schedeMappa,
+    const r = await scalettaLib.proponi(lezione, schedeMappa,
       { fornitore: ai.fornitore, modello: ai.modello, apiKey: ai.apiKey, lingua: ai.lingua },
-      { regoleForma: regoleForma('proposta', progetto), nCapitoli: nCapitoli });
-    if (r.uso) registraUso(Object.assign({ fornitore: ai.fornitore, modello: ai.modello }, r.uso), progetto, 'scalette ' + folder);
+      { regoleForma: regoleForma('proposta', corso), nCapitoli: nCapitoli,
+        nAlternative: nAlternative || leggiPrefs().nAlternative });
+    if (r.uso) registraUso(Object.assign({ fornitore: ai.fornitore, modello: ai.modello }, r.uso), corso, 'scalette ' + folder);
     if (r.errore) return { error: r.errore };
     // in cache: le alternative sono un intermedio pagato, e il composer le rilegge invece di ricomprarle
-    try { percorsiLib.scriviScaletta(v, progetto, folder, r.alternative, nCapitoli); } catch (err) {}
+    try { percorsiLib.scriviScaletta(v, corso, folder, r.alternative, nCapitoli); } catch (err) {}
     return { alternative: r.alternative };
   } catch (err) { return { error: String((err && err.message) || err) }; }
 });
 
 // ============================================================================
-// Composer degli indici: le scalette di TUTTI i corsi, e i percorsi che ne nascono
+// Composer degli indici: le scalette di TUTTE le lezioni, e i percorsi che ne nascono
 // ============================================================================
 const percorsiLib = require('./lib/percorsi');
 
 /** Quello che il composer trova già in casa: piano, scalette in cache, percorsi salvati. */
-ipcMain.handle('composer:stato', (e, { progetto } = {}) => {
-  const v = vaultDir(); if (!v || !progetto) return { error: 'progetto mancante' };
-  const piano = propose.leggiPiano(v, progetto);
-  const corsi = ((piano && piano.corsi) || []).map((c) => ({
+ipcMain.handle('composer:stato', (e, { corso } = {}) => {
+  const v = vaultDir(); if (!v || !corso) return { error: 'corso mancante' };
+  const piano = propose.leggiPiano(v, corso);
+  const lezioni = ((piano && piano.lezioni) || []).map((c) => ({
     folder: c.folder, title: c.title, materiali: (c.materiali || []).length
   }));
   return {
-    corsi,
-    scalette: percorsiLib.leggiScalette(v, progetto),
-    percorsi: percorsiLib.leggiTutti(v, progetto),
+    lezioni,
+    scalette: percorsiLib.leggiScalette(v, corso),
+    percorsi: percorsiLib.leggiTutti(v, corso),
     personaggi: percorsiLib.PERSONAGGI,
-    protetto: progettiLib.protetto(v, progetto)
+    protetto: corsiLib.protetto(v, corso)
   };
 });
 
 /**
- * Chiede le scalette di più corsi in fila, mandando avanzamento per ognuno.
+ * Chiede le scalette di più lezioni in fila, mandando avanzamento per ognuna.
  *
- * Un corso per volta e non tutti insieme: sono chiamate lunghe, e con la
+ * Una lezione per volta e non tutte insieme: sono chiamate lunghe, e con la
  * concorrenza un 429 del fornitore ne farebbe cadere quattro invece di una.
- * `solo` limita ai corsi indicati (il «rifai» di una riga sola); senza `rifai`
- * i corsi che hanno già una scaletta in cache si saltano, così riaprire il
+ * `solo` limita alle lezioni indicate (il «rifai» di una riga sola); senza `rifai`
+ * le lezioni che hanno già una scaletta in cache si saltano, così riaprire il
  * composer dopo un errore non ricompra quello che c'è già.
  */
-ipcMain.on('scalette:tutte', async (e, { progetto, nCapitoli, solo, rifai } = {}) => {
+ipcMain.on('scalette:tutte', async (e, { corso, nCapitoli, nAlternative, solo, rifai } = {}) => {
   const send = (ch, d) => { try { e.sender.send(ch, d); } catch (_) {} };
   const v = vaultDir();
-  if (!v || !progetto) { send('scalette:error', 'progetto mancante'); return; }
-  if (progettiLib.protetto(v, progetto)) { send('scalette:error', progettiLib.motivoRifiuto(progetto)); return; }
+  if (!v || !corso) { send('scalette:error', 'corso mancante'); return; }
+  if (corsiLib.protetto(v, corso)) { send('scalette:error', corsiLib.motivoRifiuto(corso)); return; }
   const ai = sceltaAi();
   if (!ai) { send('scalette:error', 'Serve una chiave API: le scalette nascono dalla lettura delle schede.'); return; }
-  const piano = propose.leggiPiano(v, progetto);
-  const tutti = (piano && piano.corsi) || [];
-  if (!tutti.length) { send('scalette:error', 'nessun corso nel piano'); return; }
-  const cache = percorsiLib.leggiScalette(v, progetto);
+  const piano = propose.leggiPiano(v, corso);
+  const tutti = (piano && piano.lezioni) || [];
+  if (!tutti.length) { send('scalette:error', 'nessuna lezione nel piano'); return; }
+  const cache = percorsiLib.leggiScalette(v, corso);
   const lista = tutti.filter((c) => (!solo || !solo.length || solo.indexOf(c.folder) >= 0))
                      .filter((c) => rifai || !(cache[c.folder] && (cache[c.folder].alternative || []).length));
   if (!lista.length) { send('scalette:done', { fatti: 0, errori: [] }); return; }
   try {
-    const dg = corpusLib().digest(v, progetto);
-    const schedeMappa = schedeLib.tutte(v, progetto, dg.materiali);
+    const dg = corpusLib().digest(v, corso);
+    const schedeMappa = schedeLib.tutte(v, corso, dg.materiali);
     if (!Object.keys(schedeMappa).length) { send('scalette:error', 'Mancano le schede: fai prima il passo «Analisi».'); return; }
-    const regole = regoleForma('proposta', progetto);
+    const regole = regoleForma('proposta', corso);
     const errori = [];
     let fatti = 0;
     for (let i = 0; i < lista.length; i++) {
-      const corso = lista[i];
-      send('scalette:progress', { folder: corso.folder, titolo: corso.title, indice: i + 1, totale: lista.length, stato: 'in corso' });
+      const lezione = lista[i];
+      send('scalette:progress', { folder: lezione.folder, titolo: lezione.title, indice: i + 1, totale: lista.length, stato: 'in corso' });
       let r;
       try {
-        r = await scalettaLib.proponi(corso, schedeMappa,
+        r = await scalettaLib.proponi(lezione, schedeMappa,
           { fornitore: ai.fornitore, modello: ai.modello, apiKey: ai.apiKey, lingua: ai.lingua },
-          { regoleForma: regole, nCapitoli: nCapitoli });
+          { regoleForma: regole, nCapitoli: nCapitoli,
+            nAlternative: nAlternative || leggiPrefs().nAlternative });
       } catch (err) { r = { errore: String((err && err.message) || err) }; }
-      if (r.uso) registraUso(Object.assign({ fornitore: ai.fornitore, modello: ai.modello }, r.uso), progetto, 'scalette ' + corso.folder);
+      if (r.uso) registraUso(Object.assign({ fornitore: ai.fornitore, modello: ai.modello }, r.uso), corso, 'scalette ' + lezione.folder);
       if (r.errore || !(r.alternative || []).length) {
-        errori.push({ folder: corso.folder, errore: r.errore || 'nessuna scaletta utilizzabile' });
-        send('scalette:progress', { folder: corso.folder, titolo: corso.title, indice: i + 1, totale: lista.length, stato: 'errore: ' + (r.errore || 'niente di utilizzabile') });
+        errori.push({ folder: lezione.folder, errore: r.errore || 'nessuna scaletta utilizzabile' });
+        send('scalette:progress', { folder: lezione.folder, titolo: lezione.title, indice: i + 1, totale: lista.length, stato: 'errore: ' + (r.errore || 'niente di utilizzabile') });
         continue;
       }
-      percorsiLib.scriviScaletta(v, progetto, corso.folder, r.alternative, nCapitoli);
+      percorsiLib.scriviScaletta(v, corso, lezione.folder, r.alternative, nCapitoli);
       fatti++;
       send('scalette:progress', {
-        folder: corso.folder, titolo: corso.title, indice: i + 1, totale: lista.length,
+        folder: lezione.folder, titolo: lezione.title, indice: i + 1, totale: lista.length,
         stato: r.alternative.length + ' indici', alternative: r.alternative
       });
     }
@@ -1249,43 +1329,76 @@ ipcMain.on('scalette:tutte', async (e, { progetto, nCapitoli, solo, rifai } = {}
   } catch (err) { send('scalette:error', String((err && err.message) || err)); }
 });
 
-ipcMain.handle('percorsi:list', (e, { progetto } = {}) => {
-  const v = vaultDir(); if (!v || !progetto) return [];
-  return percorsiLib.leggiTutti(v, progetto);
+ipcMain.handle('percorsi:list', (e, { corso } = {}) => {
+  const v = vaultDir(); if (!v || !corso) return [];
+  return percorsiLib.leggiTutti(v, corso);
 });
 
 /** Lo stato intero del composer: i percorsi mandati si salvano, quelli spariti si cancellano. */
-ipcMain.handle('percorsi:save', (e, { progetto, percorsi } = {}) => {
-  const v = vaultDir(); if (!v || !progetto) return { error: 'progetto mancante' };
-  if (progettiLib.protetto(v, progetto)) return { error: progettiLib.motivoRifiuto(progetto) };
+ipcMain.handle('percorsi:save', (e, { corso, percorsi } = {}) => {
+  const v = vaultDir(); if (!v || !corso) return { error: 'corso mancante' };
+  if (corsiLib.protetto(v, corso)) return { error: corsiLib.motivoRifiuto(corso) };
   try {
     // la cartella della coppia si calcola qui, dove le scalette ci sono, e resta
     // scritta nel percorso: il lettore la legge senza dover conoscere le scalette
-    const conCartelle = percorsiLib.conCartelle(percorsi || [], percorsiLib.leggiScalette(v, progetto));
-    return { ok: true, percorsi: percorsiLib.salvaTutti(v, progetto, conCartelle) };
+    const conCartelle = percorsiLib.conCartelle(percorsi || [], percorsiLib.leggiScalette(v, corso));
+    return { ok: true, percorsi: percorsiLib.salvaTutti(v, corso, conCartelle) };
   } catch (err) { return { error: String((err && err.message) || err) }; }
 });
 
-/** I file .md di capitolo dentro una cartella-corso (la logica sta in lib/, coperta dai test). */
-function capitoliSulDisco(v, progetto, cartella) { return percorsiLib.capitoliSulDisco(v, progetto, cartella); }
+/**
+ * Un comando sul taglio delle lezioni, dal composer: sposta, unisci, separa,
+ * rinomina. La logica sta in `lib/pianoedit.js`; qui si legge, si applica, si
+ * buttano le scalette che il rimescolamento ha reso false, e si salva.
+ */
+ipcMain.handle('plan:comando', (e, { corso, azione, indice, valore } = {}) => {
+  const v = vaultDir(); if (!v || !corso) return { error: 'corso mancante' };
+  if (corsiLib.protetto(v, corso)) return { error: corsiLib.motivoRifiuto(corso) };
+  const piano = propose.leggiPiano(v, corso);
+  if (!piano || !Array.isArray(piano.lezioni)) return { error: 'nessun piano da correggere' };
+  const prima = JSON.parse(JSON.stringify(piano));
+  const i = Number(indice);
+  if (azione === 'titolo') {
+    if (!piano.lezioni[i]) return { error: 'lezione inesistente' };
+    piano.lezioni[i].title = String(valore || '').slice(0, 120);
+    pianoEdit.rinumera(piano);
+  } else {
+    if (pianoEdit.AZIONI.indexOf(azione) < 0) return { error: 'comando sconosciuto: ' + azione };
+    if (!pianoEdit.possibile(piano, azione, i)) return { error: 'comando non applicabile qui' };
+    pianoEdit.applica(piano, azione, i);
+  }
+  const buttate = percorsiLib.invalida(v, corso, pianoEdit.cartelleCambiate(prima, piano));
+  const w = propose.scriviPiano(v, corso, piano);
+  if (w && w.error) return { error: w.error };
+  return {
+    ok: true,
+    lezioni: piano.lezioni.map((c) => ({ folder: c.folder, title: c.title, materiali: (c.materiali || []).length })),
+    scalette: percorsiLib.leggiScalette(v, corso),
+    percorsi: percorsiLib.leggiTutti(v, corso),
+    invalidate: buttate.scalette
+  };
+});
+
+/** I file .md di capitolo dentro una cartella-lezione (la logica sta in lib/, coperta dai test). */
+function capitoliSulDisco(v, corso, cartella) { return percorsiLib.capitoliSulDisco(v, corso, cartella); }
 
 /**
- * Le coppie corso+indice da scrivere, con quanto è già stato scritto e quanto costa il resto.
+ * Le coppie lezione+indice da scrivere, con quanto è già stato scritto e quanto costa il resto.
  * È ciò che il composer mostra prima di far spendere: quante cartelle, quanti
  * capitoli, e quali indici sono condivisi fra più percorsi.
  */
-ipcMain.handle('percorsi:coppie', (e, { progetto } = {}) => {
-  const v = vaultDir(); if (!v || !progetto) return { error: 'progetto mancante' };
-  const piano = propose.leggiPiano(v, progetto);
-  const perCorso = {};
-  for (const c of ((piano && piano.corsi) || [])) perCorso[c.folder] = c;
+ipcMain.handle('percorsi:coppie', (e, { corso } = {}) => {
+  const v = vaultDir(); if (!v || !corso) return { error: 'corso mancante' };
+  const piano = propose.leggiPiano(v, corso);
+  const perLezione = {};
+  for (const c of ((piano && piano.lezioni) || [])) perLezione[c.folder] = c;
   const coppie = percorsiLib.coppieDaScrivere(
-    percorsiLib.leggiTutti(v, progetto), percorsiLib.leggiScalette(v, progetto)
+    percorsiLib.leggiTutti(v, corso), percorsiLib.leggiScalette(v, corso)
   ).map((k) => {
-    const scritti = capitoliSulDisco(v, progetto, k.cartella).length;
+    const scritti = capitoliSulDisco(v, corso, k.cartella).length;
     return Object.assign({}, k, {
       capitoli: k.capitoli.length,
-      titoloCorso: (perCorso[k.folder] && perCorso[k.folder].title) || k.folder,
+      titoloLezione: (perLezione[k.folder] && perLezione[k.folder].title) || k.folder,
       scritti,
       stato: !scritti ? 'da scrivere' : (scritti >= k.capitoli.length ? 'scritti' : 'parziale')
     });
@@ -1301,9 +1414,9 @@ ipcMain.handle('percorsi:coppie', (e, { progetto } = {}) => {
 });
 
 /**
- * Scrive i capitoli delle coppie corso+indice.
+ * Scrive i capitoli delle coppie lezione+indice.
  *
- * Una cartella per coppia, `03-delega--per-domande`, col suo `_corso.md`. Le
+ * Una cartella per coppia, `03-delega--per-domande`, col suo `_lezione.md`. Le
  * coppie già scritte si saltano se non si chiede `riscrivi`: è la stessa regola
  * delle scalette — quello che è già stato pagato non si ricompra da solo.
  *
@@ -1312,39 +1425,39 @@ ipcMain.handle('percorsi:coppie', (e, { progetto } = {}) => {
  * ritrovarsi due versioni dello stesso capitolo con numeri uguali e slug
  * diversi, senza modo di sapere quale sia quella buona.
  */
-ipcMain.on('percorsi:capitoli', async (ev, { progetto, cartelle, riscrivi } = {}) => {
+ipcMain.on('percorsi:capitoli', async (ev, { corso, cartelle, riscrivi } = {}) => {
   const send = (ch, d) => { try { ev.sender.send(ch, d); } catch (_) {} };
   const v = vaultDir();
-  if (!v || !progetto) { send('percorsi:cap:error', 'progetto mancante'); return; }
-  if (progettiLib.protetto(v, progetto)) { send('percorsi:cap:error', progettiLib.motivoRifiuto(progetto)); return; }
+  if (!v || !corso) { send('percorsi:cap:error', 'corso mancante'); return; }
+  if (corsiLib.protetto(v, corso)) { send('percorsi:cap:error', corsiLib.motivoRifiuto(corso)); return; }
   const ai = sceltaAi();
   if (!ai) { send('percorsi:cap:error', 'Serve una chiave API per scrivere i capitoli.'); return; }
-  const piano = propose.leggiPiano(v, progetto);
-  const perCorso = {};
-  for (const c of ((piano && piano.corsi) || [])) perCorso[c.folder] = c;
+  const piano = propose.leggiPiano(v, corso);
+  const perLezione = {};
+  for (const c of ((piano && piano.lezioni) || [])) perLezione[c.folder] = c;
 
   const tutte = percorsiLib.coppieDaScrivere(
-    percorsiLib.leggiTutti(v, progetto), percorsiLib.leggiScalette(v, progetto));
+    percorsiLib.leggiTutti(v, corso), percorsiLib.leggiScalette(v, corso));
   const lista = tutte
     .filter((k) => !cartelle || !cartelle.length || cartelle.indexOf(k.cartella) >= 0)
-    .filter((k) => riscrivi || !capitoliSulDisco(v, progetto, k.cartella).length)
-    .filter((k) => perCorso[k.folder] && k.capitoli.length);
+    .filter((k) => riscrivi || !capitoliSulDisco(v, corso, k.cartella).length)
+    .filter((k) => perLezione[k.folder] && k.capitoli.length);
   if (!lista.length) { send('percorsi:cap:done', { fatte: 0, scritti: 0, scarti: 0, saltate: tutte.length }); return; }
 
-  genFermato.delete(progetto);
+  genFermato.delete(corso);
   let scritti = 0, scarti = 0, fatte = 0;
   try {
     for (let i = 0; i < lista.length; i++) {
-      if (genFermato.has(progetto)) { send('percorsi:cap:log', 'Fermato su richiesta.'); break; }
+      if (genFermato.has(corso)) { send('percorsi:cap:log', 'Fermato su richiesta.'); break; }
       const k = lista[i];
-      const corso = perCorso[k.folder];
-      send('percorsi:cap:progress', { fase: 'corso', cartella: k.cartella, titoloCorso: corso.title,
+      const lezione = perLezione[k.folder];
+      send('percorsi:cap:progress', { fase: 'lezione', cartella: k.cartella, titoloLezione: lezione.title,
         nome: k.nome, coppia: i + 1, coppie: lista.length, indice: 0, totale: k.capitoli.length });
-      percorsiLib.preparaCartella(v, progetto, corso, k, { riscrivi: !!riscrivi });
+      percorsiLib.preparaCartella(v, corso, lezione, k, { riscrivi: !!riscrivi });
       const r = await scriviCapitoli({
-        v, progetto, corso, cartella: k.cartella, capitoli: k.capitoli, accoda: false, ai,
+        v, corso, lezione, cartella: k.cartella, capitoli: k.capitoli, accoda: false, ai,
         onProgress: (d) => send('percorsi:cap:progress', Object.assign({ fase: 'capitolo', cartella: k.cartella,
-          titoloCorso: corso.title, nome: k.nome, coppia: i + 1, coppie: lista.length }, d)),
+          titoloLezione: lezione.title, nome: k.nome, coppia: i + 1, coppie: lista.length }, d)),
         onLog: (l) => send('percorsi:cap:log', k.cartella + ' · ' + l)
       });
       scritti += r.scritti.length; scarti += r.scarti.length; fatte++;
@@ -1356,56 +1469,101 @@ ipcMain.on('percorsi:capitoli', async (ev, { progetto, cartelle, riscrivi } = {}
 
 
 /**
- * Espansione: che cosa c'è di nuovo da mettere in un progetto già finito.
- * Ritorna i materiali che nessun corso dichiara di usare, i corsi esistenti
+ * La voce di piano di una cartella-lezione, accettando anche le VARIANTI.
+ *
+ * ⚠️ Il piano conosce solo le basi (`lib/propose.js`: `folder: NN-slug`), ma la
+ * cartella in cui si scrive davvero è quella che il percorso fa leggere — che
+ * per una lezione variantizzata è `base--variante`. Il controllo «è nel piano?»
+ * quindi bocciava proprio le destinazioni giuste: la tendina di ⚙ offriva la
+ * variante e il click rispondeva «lezione non trovata nel piano». Cercare la
+ * base è ciò che rende la stessa domanda vera per tutte e due le forme.
+ */
+function lezioneDelPiano(piano, folder) {
+  const lez = (piano && piano.lezioni) || [];
+  const esatta = lez.find((c) => c.folder === folder);
+  if (esatta) return esatta;
+  const base = percorsiLib.scomponi(folder).base;
+  return lez.find((c) => c.folder === base) || null;
+}
+
+/**
+ * Espansione: che cosa c'è di nuovo da mettere in un corso già finito.
+ * Ritorna i materiali che nessuna lezione dichiara di usare, le lezioni esistenti
  * (per scegliere quale estendere) e i rimandi [[NN-slug]] che puntano nel vuoto.
  */
-ipcMain.handle('expand:stato', (e, { progetto } = {}) => {
-  const v = vaultDir(); if (!v || !progetto) return { error: 'progetto mancante' };
-  if (!fs.existsSync(path.join(projDir(progetto), '_progetto.md'))) return { error: 'progetto inesistente' };
-  const cartelle = progettiLib.elencoCorsi(v, progetto);
+ipcMain.handle('expand:stato', (e, { corso } = {}) => {
+  const v = vaultDir(); if (!v || !corso) return { error: 'corso mancante' };
+  if (!fs.existsSync(fileCorsoDi(corso))) return { error: 'corso inesistente' };
+  const cartelle = corsiLib.elencoLezioni(v, corso);
 
-  const corsi = cartelle.map((folder) => {
-    const cdir = progettiLib.corsoDir(v, progetto, folder);
-    let raw = ''; try { raw = fs.readFileSync(path.join(cdir, '_corso.md'), 'utf-8'); } catch (_) {}
+  const lezioni = cartelle.map((folder) => {
+    const ldir = corsiLib.lezioneDir(v, corso, folder);
+    let raw = ''; try { raw = fs.readFileSync(corsiLib.fileLezione(ldir), 'utf-8'); } catch (_) {}
     const fm = profiloLib.parse(raw);
-    let files = []; try { files = fs.readdirSync(cdir); } catch (_) {}
+    let files = []; try { files = fs.readdirSync(ldir); } catch (_) {}
     const capitoli = espandiLib.capitoliDi(files);
+    /* `variante` e `base` viaggiano fino alla tendina: senza, l'unica cosa da
+       mostrare sarebbe il nome della cartella — che per una variante è lungo,
+       tagliato a metà e uguale a quello della sua base per i primi quaranta
+       caratteri. È così che si sceglie la riga sbagliata. */
+    const { base, variante } = percorsiLib.scomponi(folder);
     return {
-      folder, titolo: fm.title || folder,
+      folder, titolo: fm.title || folder, base, variante: fm.variante || variante,
       materiali: (fm.materiali || []).map((n) => parseInt(n, 10)).filter(Number.isFinite),
       capitoli: capitoli.length, prossimoOrdine: espandiLib.prossimoOrdine(files)
     };
   });
 
-  // rimandi verso corsi che non esistono: su un progetto che cresce è l'errore
+  // rimandi verso lezioni che non esistono: su un corso che cresce è l'errore
   // che non si vede finché un allievo non ci clicca sopra
   const capitoliTesto = [];
   for (const folder of cartelle) {
-    const cdir = progettiLib.corsoDir(v, progetto, folder);
-    let files = []; try { files = fs.readdirSync(cdir); } catch (_) {}
+    const ldir = corsiLib.lezioneDir(v, corso, folder);
+    let files = []; try { files = fs.readdirSync(ldir); } catch (_) {}
     for (const f of espandiLib.capitoliDi(files)) {
-      try { capitoliTesto.push({ file: folder + '/' + f, contenuto: fs.readFileSync(path.join(cdir, f), 'utf-8') }); } catch (_) {}
+      try { capitoliTesto.push({ file: folder + '/' + f, contenuto: fs.readFileSync(path.join(ldir, f), 'utf-8') }); } catch (_) {}
     }
   }
-  const rotti = espandiLib.wikilinkRotti(capitoliTesto, cartelle);
+  /* ⚠️ Non `cartelle`: i nomi che il lettore sa aprire. Le due liste sembrano la
+     stessa cosa e non lo sono — fra le cartelle ci sono i segnaposto delle
+     lezioni variantizzate, che hanno il solo `_lezione.md`. Passandole, questo
+     controllo dichiarava sani otto rimandi che nel lettore erano morti: diceva
+     «esiste sul disco» mentre la domanda era «ci si arriva». */
+  const rotti = espandiLib.wikilinkRotti(capitoliTesto, percorsiLib.nomiRaggiungibili(lezioni));
 
   let materiali = [];
-  try { materiali = corpusLib().digest(v, progetto).materiali; } catch (_) {}
-  const nuovi = espandiLib.materialiNuovi(materiali, corsi);
+  try { materiali = corpusLib().digest(v, corso).materiali; } catch (_) {}
+  const nuovi = espandiLib.materialiNuovi(materiali, lezioni);
 
   return {
-    corsi, prossimoCorso: espandiLib.prossimoCorso(cartelle),
+    /* ⚠️ `destinazioni`, non `lezioni`, e con i PERCORSI in mano: fra le cartelle
+       ci sono i segnaposto delle lezioni variantizzate e le varianti che nessun
+       percorso legge, e generare lì dentro è denaro speso per capitoli che non
+       si vedranno. Chi decide non è il conteggio dei capitoli — è chi le legge. */
+    lezioni: espandiLib.destinazioni(lezioni, percorsiLib.leggiTutti(v, corso)),
+    prossimoLezione: espandiLib.prossimoLezione(cartelle),
     nuovi: nuovi.map((m) => ({ num: m.num, nome: m.nome, tipo: m.tipo, titolo: m.titolo })),
     nonElaborati: contaNonElaborati(v),
     rimandiRotti: rotti
   };
 });
 
-/** Le cartelle-corso di un progetto: servono a validare i rimandi [[NN-slug]]. */
-function corsiDelProgetto(progetto) {
+/**
+ * I nomi con cui si possono citare le lezioni di un corso: l'elenco che il
+ * modello riceve come «gli UNICI rimandi ammessi» e contro cui il validatore
+ * controlla i `[[NN-slug]]`.
+ *
+ * ⚠️ Prima tornava le CARTELLE (`corsi.elencoLezioni`), ed è da lì che nasceva
+ * il difetto: fra le cartelle ci sono i segnaposto senza capitoli delle lezioni
+ * variantizzate, e ci sono le varianti stesse. Il modello copiava alla lettera
+ * un nome dalla lista — come gli si chiede — e otteneva un rimando morto (il
+ * segnaposto) o uno che scavalca il percorso attivo (la variante). Il
+ * validatore approvava, perché guardava la stessa lista sbagliata. Non era il
+ * modello a inventare: era la lista a mentire.
+ */
+function lezioniDelCorso(corso) {
   const v = vaultDir(); if (!v) return [];
-  return progettiLib.elencoCorsi(v, progetto);
+  return percorsiLib.nomiRimandabili(corsiLib.elencoLezioni(v, corso));
 }
 
 /** Materiali presenti ma senza trascrizione/indice: sono quelli da elaborare. */
@@ -1424,7 +1582,7 @@ function contaNonElaborati(v) {
 }
 
 /** Quanto costerà, prima di spendere: il conto si fa sui capitoli, non a occhio. */
-ipcMain.handle('gen:stima', (e, { progetto, folder, capitoli } = {}) => {
+ipcMain.handle('gen:stima', (e, { corso, folder, capitoli } = {}) => {
   const v = vaultDir(); if (!v) return { error: 'nessuna cartella StudIA' };
   const ai = sceltaAi();
   const n = (capitoli || []).length;
@@ -1435,45 +1593,45 @@ ipcMain.handle('gen:stima', (e, { progetto, folder, capitoli } = {}) => {
 
 // generazione: un capitolo per volta, si può fermare fra l'uno e l'altro
 const genFermato = new Set();
-ipcMain.on('gen:cancel', (e, { progetto } = {}) => { if (progetto) genFermato.add(progetto); });
+ipcMain.on('gen:cancel', (e, { corso } = {}) => { if (corso) genFermato.add(corso); });
 
 /**
- * Scrive i capitoli di un corso dentro `cartella`.
+ * Scrive i capitoli di una lezione dentro `cartella`.
  *
- * `cartella` non è sempre `corso.folder`: per le varianti di percorso è
- * `03-delega--per-domande`, cioè una coppia corso+indice. Il corso da cui si
- * legge (materiali, titolo, razionale) resta lo stesso — cambia solo dove
+ * `cartella` non è sempre `lezione.folder`: per le varianti di percorso è
+ * `03-delega--per-domande`, cioè una coppia lezione+indice. La lezione da cui si
+ * legge (materiali, titolo, razionale) resta la stessa — cambia solo dove
  * atterrano i file. Il resto — ordine, riparazione, quarantena, aggiornamento
- * di `_corso.md` — è identico, e sta qui in un punto solo perché due copie
+ * di `_lezione.md` — è identico, e sta qui in un punto solo perché due copie
  * della stessa procedura divergono sempre.
  */
-async function scriviCapitoli({ v, progetto, corso, cartella, capitoli, accoda, ai, onProgress, onLog }) {
+async function scriviCapitoli({ v, corso, lezione, cartella, capitoli, accoda, ai, onProgress, onLog }) {
   const log = onLog || (() => {});
   const avanti = onProgress || (() => {});
   // espansione: i capitoli nuovi si aggiungono in coda, con i numeri successivi.
-  // Rinumerare quelli già scritti spezzerebbe i rimandi [[NN-slug]] degli altri corsi.
-  const dirCorso = progettiLib.corsoDir(v, progetto, cartella);
-  let filePresenti = []; try { filePresenti = fs.readdirSync(dirCorso); } catch (_) {}
+  // Rinumerare quelli già scritti spezzerebbe i rimandi [[NN-slug]] delle altre lezioni.
+  const dirLezione = corsiLib.lezioneDir(v, corso, cartella);
+  let filePresenti = []; try { filePresenti = fs.readdirSync(dirLezione); } catch (_) {}
   const daOrdine = accoda ? espandiLib.prossimoOrdine(filePresenti) : 1;
-  const regole = regoleForma('generazione', progetto);
-  const materiali = corpusLib().digest(v, progetto).materiali;
+  const regole = regoleForma('generazione', corso);
+  const materiali = corpusLib().digest(v, corso).materiali;
   const scritti = [], scarti = [];
   let uso = null, fermato = false;
   for (let i = 0; i < capitoli.length; i++) {
-    if (genFermato.has(progetto)) { fermato = true; log('Fermato su richiesta dopo ' + scritti.length + ' capitoli.'); break; }
+    if (genFermato.has(corso)) { fermato = true; log('Fermato su richiesta dopo ' + scritti.length + ' capitoli.'); break; }
     const cap = capitoli[i];
     const ordine = daOrdine + i;
     avanti({ indice: i + 1, totale: capitoli.length, titolo: cap.titolo, frazione: i / capitoli.length, ordine });
-    const g = await generaLib.generaCapitolo(v, corso, cap, ordine, daOrdine + capitoli.length - 1, materiali,
+    const g = await generaLib.generaCapitolo(v, lezione, cap, ordine, daOrdine + capitoli.length - 1, materiali,
       { fornitore: ai.fornitore, modello: ai.modello, apiKey: ai.apiKey, lingua: ai.lingua },
       { regoleForma: regole,
-        progetto,                                 // il testo delle fonti si cerca solo dentro questo progetto
-        corsi: corsiDelProgetto(progetto),        // i rimandi devono puntare a corsi che esistono
+        corso,                                 // il testo delle fonti si cerca solo dentro questo corso
+        lezioni: lezioniDelCorso(corso),        // i rimandi devono puntare a lezioni che esistono
         precedente: i > 0 ? capitoli[i - 1].titolo : '',
         successivo: i + 1 < capitoli.length ? capitoli[i + 1].titolo : '' });
     uso = generaLib.sommaUso(uso, g.uso);
     if (g.errori.length || !g.dati) {
-      const nome = g.dati ? generaLib.scriviScarto(v, progetto, cartella, ordine, g.dati, g.errori) : '(nessuna risposta)';
+      const nome = g.dati ? generaLib.scriviScarto(v, corso, cartella, ordine, g.dati, g.errori) : '(nessuna risposta)';
       scarti.push({ ordine, titolo: cap.titolo, errori: g.errori, scarto: nome });
       log('✗ ' + cap.titolo + ' — ' + g.errori.join('; '));
       continue;                                   // un capitolo storto non ferma gli altri
@@ -1481,16 +1639,16 @@ async function scriviCapitoli({ v, progetto, corso, cartella, capitoli, accoda, 
     // «fonte» nel frontmatter dice da quale materiale nasce il capitolo, col suo tipo vero
     const prima = cap.fonti && cap.fonti[0];
     const mPrima = prima && materiali.find((m) => m.num === prima.materiale);
-    const w = generaLib.scriviCapitolo(v, progetto, cartella, ordine, g.dati,
+    const w = generaLib.scriviCapitolo(v, corso, cartella, ordine, g.dati,
       { fonte: mPrima ? { tipo: mPrima.tipo, materiale: mPrima.num } : null });
     scritti.push({ ordine, titolo: g.dati.title, file: w.file });
     log('✓ ' + g.dati.title);
   }
-  if (uso) registraUso(Object.assign({ fornitore: ai.fornitore, modello: ai.modello }, uso), progetto, 'capitoli ' + cartella);
-  // l'ordine dei capitoli nel _corso.md riflette ciò che è stato davvero scritto
+  if (uso) registraUso(Object.assign({ fornitore: ai.fornitore, modello: ai.modello }, uso), corso, 'capitoli ' + cartella);
+  // l'ordine dei capitoli nel _lezione.md riflette ciò che è stato davvero scritto
   try {
-    const fileCorso = path.join(dirCorso, '_corso.md');
-    let raw = fs.readFileSync(fileCorso, 'utf-8');
+    const fileLezione = corsiLib.fileLezione(dirLezione);
+    let raw = fs.readFileSync(fileLezione, 'utf-8');
     // accodando, l'ordine dichiarato dall'autore resta e i nuovi vanno in fondo
     // «prima» = i capitoli che c'erano quando la generazione è partita (il
     // frontmatter li tiene come testo, la cartella è la fonte affidabile)
@@ -1498,37 +1656,37 @@ async function scriviCapitoli({ v, progetto, corso, cartella, capitoli, accoda, 
     const ordineFinale = espandiLib.ordineAggiornato(prima, scritti.map((x) => x.file));
     raw = mdser.upsertFmLine(raw, 'ordine_capitoli', 'ordine_capitoli: ' + mdser.yList(ordineFinale));
     raw = mdser.upsertFmLine(raw, 'status', 'status: ' + mdser.yq(scarti.length ? 'parziale' : 'generato'));
-    writeAtomic(fileCorso, raw);
+    writeAtomic(fileLezione, raw);
   } catch (err) {}
   return { scritti, scarti, uso, fermato };
 }
 
-ipcMain.on('gen:start', async (e, { progetto, folder, capitoli, accoda } = {}) => {
+ipcMain.on('gen:start', async (e, { corso, folder, capitoli, accoda } = {}) => {
   const send = (ch, d) => { try { e.sender.send(ch, d); } catch (_) {} };
   const v = vaultDir();
-  if (!v || !progetto) { send('gen:error', 'progetto mancante'); return; }
-  if (progettiLib.protetto(v, progetto)) { send('gen:error', progettiLib.motivoRifiuto(progetto)); return; }
+  if (!v || !corso) { send('gen:error', 'corso mancante'); return; }
+  if (corsiLib.protetto(v, corso)) { send('gen:error', corsiLib.motivoRifiuto(corso)); return; }
   const ai = sceltaAi();
   if (!ai) { send('gen:error', 'Serve una chiave API per scrivere i capitoli.'); return; }
-  const piano = propose.leggiPiano(v, progetto);
-  const corso = piano && (piano.corsi || []).find((c) => c.folder === folder);
-  if (!corso) { send('gen:error', 'corso non trovato nel piano'); return; }
+  const piano = propose.leggiPiano(v, corso);
+  const lezione = lezioneDelPiano(piano, folder);
+  if (!lezione) { send('gen:error', 'lezione non trovata nel piano'); return; }
   const lista = capitoli || [];
   if (!lista.length) { send('gen:error', 'nessun capitolo da scrivere'); return; }
 
-  genFermato.delete(progetto);
+  genFermato.delete(corso);
   try {
     const { scritti, scarti, uso } = await scriviCapitoli({
-      v, progetto, corso, cartella: folder, capitoli: lista, accoda, ai,
+      v, corso, lezione, cartella: folder, capitoli: lista, accoda, ai,
       onProgress: (d) => send('gen:progress', d),
       onLog: (l) => send('gen:log', l)
     });
-    const cc = (piano.corsi || []).find((c) => c.folder === folder);
+    const cc = (piano.lezioni || []).find((c) => c.folder === folder);
     if (cc) {
       /* Nel piano un capitolo si scrive {file, title}: la generazione lo produce
          come {ordine, titolo, file}. Passandolo così com'era, `scriviPiano`
          falliva la validazione e restituiva un errore che nessuno guardava —
-         quindi il piano NON veniva mai aggiornato, il corso restava
+         quindi il piano NON veniva mai aggiornato, la lezione restava in stato
          «approvato» e nell'elenco non compariva mai la spunta di «già fatto».
          Un errore silenzioso che si vedeva solo come una casella mancante. */
       cc.status = scarti.length ? 'parziale' : 'generato';
@@ -1536,25 +1694,25 @@ ipcMain.on('gen:start', async (e, { progetto, folder, capitoli, accoda } = {}) =
         file: x.file, title: String(x.titolo || '').slice(0, 120), status: 'generato'
       }));
       cc.capitoli = (accoda ? (cc.capitoli || []) : []).concat(nuovi);
-      const w = propose.scriviPiano(v, progetto, piano);
-      if (w && w.error) send('gen:log', '⚠ stato del corso non salvato nel piano: ' + w.error);
+      const w = propose.scriviPiano(v, corso, piano);
+      if (w && w.error) send('gen:log', '⚠ stato della lezione non salvato nel piano: ' + w.error);
     }
     send('gen:done', { scritti, scarti, uso });
   } catch (err) { send('gen:error', String((err && err.message) || err)); }
 });
 
-ipcMain.on('schede:build', async (e, { progetto, rifai } = {}) => {
+ipcMain.on('schede:build', async (e, { corso, rifai } = {}) => {
   const send = (ch, d) => { try { e.sender.send(ch, d); } catch (_) {} };
   const v = vaultDir();
-  if (!v || !progetto) { send('schede:error', 'progetto mancante'); return; }
-  if (progettiLib.protetto(v, progetto)) { send('schede:error', progettiLib.motivoRifiuto(progetto)); return; }
+  if (!v || !corso) { send('schede:error', 'corso mancante'); return; }
+  if (corsiLib.protetto(v, corso)) { send('schede:error', corsiLib.motivoRifiuto(corso)); return; }
   const ai = sceltaAi();
   if (!ai) { send('schede:error', 'Serve una chiave API: l\'analisi dei materiali legge i contenuti con il modello.'); return; }
   try {
     /* Si analizza solo ciò che potrà entrare in un piano: una scheda si paga, e
        pagarla per un materiale che il piano non può accogliere è denaro speso
        per niente. Ciò che resta fuori viene detto, non taciuto. */
-    const grezzo = corpusLib().digest(v, progetto);
+    const grezzo = corpusLib().digest(v, corso);
     const filtrato = corpusLib().perIlPiano(grezzo);
     const dg = filtrato.dg;
     if (!dg.totale) { send('schede:error', 'Nessun materiale elaborato: fai prima trascrizione e indicizzazione.'); return; }
@@ -1562,18 +1720,78 @@ ipcMain.on('schede:build', async (e, { progetto, rifai } = {}) => {
     // il ruolo dichiarato viaggia col materiale: chi legge deve sapere se ha
     // davanti la dispensa ufficiale o gli appunti presi a lezione
     let ruoli = {};
-    try { ruoli = mappaFonti(profiloLib.parse(fs.readFileSync(path.join(projDir(progetto), '_progetto.md'), 'utf-8'))); } catch (err) {}
+    try { ruoli = mappaFonti(profiloLib.parse(fs.readFileSync(fileCorsoDi(corso), 'utf-8'))); } catch (err) {}
     const materiali = dg.materiali.map((m) => (ruoli[m.num] ? Object.assign({}, m, { ruolo: ruoli[m.num] }) : m));
     send('schede:progress', { fase: 'avvio', totale: dg.totale,
       msg: 'Leggo ' + dg.totale + ' materiali con ' + ai.fornitore + '…' + (escluso ? ' ' + escluso : '') });
-    const esiti = await schedeLib.analizzaTutti(v, progetto, materiali, {
+    const esiti = await schedeLib.analizzaTutti(v, corso, materiali, {
       concorrenza: 3, rifai: !!rifai,
       ai: { fornitore: ai.fornitore, modello: ai.modello, apiKey: ai.apiKey, lingua: ai.lingua },
       onProgress: (ev) => send('schede:progress', ev)
     });
-    registraUso(Object.assign({ fornitore: ai.fornitore, modello: ai.modello }, esiti.uso), progetto, 'analisi materiali');
+    registraUso(Object.assign({ fornitore: ai.fornitore, modello: ai.modello }, esiti.uso), corso, 'analisi materiali');
     send('schede:done', esiti);
   } catch (err) {
     send('schede:error', String((err && err.message) || err));
   }
+});
+
+/* ===================== MAPPE dell'utente (fase D) =========================
+   Le mappe personali vivono in `Corsi/<id>/MAPPE/*.json`. Passano dal main
+   e non dal preload — come i corsi e i materiali — così un solo processo
+   tocca il vault e la scrittura atomica sta in un posto solo.
+
+   ⚠️ Nessuna di queste chiamate passa da `corsiLib.assicuraScrivibile()`, ed
+   è voluto: la protezione ferma la PIPELINE, non chi studia. Su TD74-DSA le
+   mappe si devono poter fare e salvare, esattamente come gli appunti.
+
+   La logica sta in lib/mappe.js — condivisa e coperta da test/mappe.js. Qui
+   restano solo i legacci col vault corrente e la forma degli errori.
+   ========================================================================= */
+const mappeLib = require('./lib/mappe');
+
+/** Il vault e il corso, o il motivo per cui non si può fare niente. */
+function mappeDove(corso) {
+  const v = vaultDir();
+  if (!v) return { error: 'nessuna cartella StudIA impostata' };
+  if (!corso) return { error: 'nessun corso scelto' };
+  return { v };
+}
+
+// elenco leggero per il menu a tendina: i nodi non attraversano il ponte finché
+// una mappa non viene davvero aperta
+ipcMain.handle('mappe:elenco', (e, { corso } = {}) => {
+  const d = mappeDove(corso); if (d.error) return { mappe: [], error: d.error };
+  return mappeLib.elenco(d.v, corso);
+});
+
+ipcMain.handle('mappe:apri', (e, { corso, file } = {}) => {
+  const d = mappeDove(corso); if (d.error) return { mappa: null, error: d.error };
+  return mappeLib.apri(d.v, corso, file);
+});
+
+// `file` assente = mappa nuova: il nome nasce dal titolo e torna indietro, così
+// il renderer sa su quale file continuerà a salvare
+ipcMain.handle('mappe:salva', (e, { corso, file, mappa } = {}) => {
+  const d = mappeDove(corso); if (d.error) return { error: d.error };
+  return mappeLib.salva(d.v, corso, file, mappa || {});
+});
+
+ipcMain.handle('mappe:rimuovi', (e, { corso, file } = {}) => {
+  const d = mappeDove(corso); if (d.error) return { ok: false, error: d.error };
+  return { ok: mappeLib.rimuovi(d.v, corso, file), error: '' };
+});
+
+ipcMain.handle('mappe:rinomina', (e, { corso, file, titolo } = {}) => {
+  const d = mappeDove(corso); if (d.error) return { error: d.error };
+  return mappeLib.rinomina(d.v, corso, file, titolo);
+});
+
+// «Modifica una copia»: il grafo arriva già costruito dal renderer (è
+// `MappaGenera.daCapitolo/daLezione`), qui si scrive soltanto. Il main non
+// ricostruisce la vista generata: il parser dei capitoli è quello del lettore, e
+// una seconda lettura del disco sarebbe una seconda verità.
+ipcMain.handle('mappe:semina', (e, { corso, grafo, meta } = {}) => {
+  const d = mappeDove(corso); if (d.error) return { error: d.error };
+  return mappeLib.semina(d.v, corso, grafo || {}, meta || {});
 });

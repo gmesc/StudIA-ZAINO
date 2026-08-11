@@ -1,39 +1,45 @@
 'use strict';
 /**
- * wizard — creazione guidata di un corso.
+ * wizard — creazione guidata di un corso e delle sue lezioni.
  *
- * Questa versione copre gli step 0 (progetto e brief) e 1 (raccolta materiali);
+ * Questa versione copre gli step 0 (corso e brief) e 1 (raccolta materiali);
  * gli step 2–5 (elaborazione, proposta indice, generazione, fine) arrivano con M3–M5.
- * Lo stato vive nel filesystem: `_progetto.md` è scritto alla fine dello step 0,
+ * Lo stato vive nel filesystem: `_corso.md` è scritto alla fine dello step 0,
  * quindi il brief esiste PRIMA di qualunque elaborazione e il wizard è riprendibile.
  *
  * Un pannello per volta, azioni esplicite, «Chiudi (riprendi dopo)» sempre disponibile.
  */
 (function () {
-  var W = { step: 0, progetto: null, brief: {}, importati: [], daImportare: [],
+  var W = { step: 0, corso: null, brief: {}, importati: [], daImportare: [],
             corpus: [], scelti: null, ing: { stato: 'fermo', frazione: 0, msg: '', file: '', log: [], errore: null },
             imp: { cartella: null, piano: null, forzati: [], stato: 'fermo', errore: null },
             fonti: {},                                  // numero materiale → ruolo dichiarato
             cap: { folder: null, alternative: null, scelta: -1, stato: 'fermo', prog: null, log: [], esito: null, stima: null, errore: null },
             piano: null, plan: { stato: 'fermo', msg: '', errore: null, avviso: null, origine: null }, granularita: 'atomico',
+            profilo: {}, nAlternative: 3, nCapitoli: 0,   // leve del passo «Opzioni»
+            comp: {},                                     // riassunto del composer
             lingua: 'it',                               // lingua parlata nei media (vedi LINGUE)
-            linguaOut: 'it',                            // lingua in cui scrivere il corso (vedi LINGUE_OUT)
+            linguaOut: 'it',                            // lingua in cui scrivere la lezione (vedi LINGUE_OUT)
             sch: { stato: 'fermo', fatte: 0, totale: 0, mancanti: [], corrente: '', righe: [], errore: null } };
   var $ = function (s) { return document.querySelector(s); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var toast = function (m, ok) { if (typeof window.toast === 'function') window.toast(m, ok); };
 
-  var STEPS = ['Progetto', 'Materiali', 'Elaborazione', 'Analisi', 'Indice dei corsi', 'Capitoli'];
+  /* I passi per NOME, non per numero. `W.step === 4` sparso in dodici punti è il
+     modo sicuro di dimenticarne uno il giorno in cui se ne aggiunge un altro —
+     ed è successo esattamente qui, quando i passi sono diventati sette. */
+  var P = { CORSO: 0, MATERIALI: 1, ELABORAZIONE: 2, ANALISI: 3, OPZIONI: 4, COMPOSER: 5, CAPITOLI: 6 };
+  var STEPS = ['Corso', 'Materiali', 'Elaborazione', 'Analisi', 'Opzioni', 'Composer', 'Capitoli'];
   /* Il ruolo di una fonte è la sola cosa che il file non dice di sé: un PDF non
-     sa se è la dispensa ufficiale del corso o i tuoi appunti presi a lezione.
+     sa se è la dispensa ufficiale della lezione o i tuoi appunti presi a lezione.
      «ufficiale» è il caso normale e non si scrive: si dichiarano le eccezioni. */
   var RUOLI = [
-    ['', 'materiale ufficiale del corso'],
+    ['', 'materiale ufficiale della lezione'],
     ['integrazione', 'fonte esterna aggiunta da me'],
     ['appunti', 'appunti personali'],
     ['riferimento', 'da consultare, non da studiare']
   ];
-  /* La lingua PARLATA nei video e negli audio — non quella del corso, che resta
+  /* La lingua PARLATA nei video e negli audio — non quella della lezione, che resta
      l'italiano in ogni caso. Va dichiarata perché Whisper, con la lingua sbagliata,
      non fallisce in modo visibile: traduce i suoni in parole plausibili della lingua
      imposta e restituisce un testo scorrevole e del tutto inventato. */
@@ -41,7 +47,7 @@
     ['it', 'italiano'], ['en', 'inglese'], ['fr', 'francese'], ['de', 'tedesco'],
     ['es', 'spagnolo'], ['pt', 'portoghese'], ['auto', 'riconoscila dall\'audio']
   ];
-  /* La lingua in cui il modello SCRIVE il corso: un'altra cosa dalla precedente.
+  /* La lingua in cui il modello SCRIVE la lezione: un'altra cosa dalla precedente.
      Non ha «auto»: una lingua di uscita va decisa, non indovinata. L'elenco
      rispecchia lib/lingua.js, che è dove la scelta diventa un'istruzione. */
   var LINGUE_OUT = [
@@ -90,11 +96,11 @@
   }
   function fineIngest() {
     document.documentElement.dataset.wizingest = '';
-    if (window.vault.corpus) window.vault.corpus.list(W.progetto).then(function (c) { W.corpus = c || []; pitta(); });
+    if (window.vault.corpus) window.vault.corpus.list(W.corso).then(function (c) { W.corpus = c || []; pitta(); });
     else pitta();
     toast(W.ing.stato === 'fatto' ? 'Elaborazione completata' : 'Elaborazione interrotta: ' + W.ing.errore, W.ing.stato === 'fatto');
   }
-  function pitta() { if (!$('#wizard').hidden && W.step === 2) render(); }
+  function pitta() { if (!$('#wizard').hidden && W.step === P.ELABORAZIONE) render(); }
   // durante l'elaborazione arrivano molte righe al secondo: si ridisegna al massimo una volta per frame
   // NB: setTimeout e non requestAnimationFrame — rAF viene sospeso quando la finestra
   // è in secondo piano, e l'elaborazione è proprio il momento in cui si guarda altrove
@@ -108,16 +114,26 @@
   /**
    * Apre il wizard. Con `passo` lo riapre a metà strada.
    *
-   * Un progetto con i materiali dentro ma nessun corso era finora irraggiungibile:
-   * non compariva negli elenchi (che filtravano per corsi), «+ Nuovo progetto»
+   * Un corso con i materiali dentro ma nessuna lezione era finora irraggiungibile:
+   * non compariva negli elenchi (che filtravano per lezioni), «+ Nuovo corso»
    * ricominciava sempre da zero, e il pannello «Estendi» nasconde i suoi comandi
-   * quando i corsi sono zero. L'unica via d'uscita era rifare il progetto — ed è
+   * quando le lezioni sono zero. L'unica via d'uscita era rifare il corso — ed è
    * così che ne nascono quattro uguali.
    */
-  function open(progetto, passo) {
-    W.step = 0; W.progetto = progetto || null; W.importati = []; W.daImportare = [];
+  function open(corso, passo) {
+    W.step = 0; W.corso = corso || null; W.importati = []; W.daImportare = [];
     W.imp = { cartella: null, piano: null, forzati: [], stato: 'fermo', errore: null };
     W.fonti = {};
+    /* ⚠️ Il piano e lo stato dei capitoli appartengono a UN corso, e restavano
+       in piedi da un'apertura all'altra. Due conseguenze misurate: la lista del
+       passo «Capitoli» mostrava le lezioni del corso precedente, e con cartelle
+       omonime fra corsi (`01-introduzione` esiste ovunque) i capitoli finivano
+       nella lezione di un altro corso senza un errore; e la cartella già scelta
+       la volta prima lasciava il bottone «Scrivi i capitoli» pronto a partire.
+       La lingua sopravvive di proposito (è una preferenza del vault); questi no. */
+    W.piano = null;
+    W.cap = { folder: null, alternative: null, scelta: -1, stato: 'fermo', prog: null,
+              log: [], esito: null, stima: null, errore: null, perLezione: null, destinazioni: null };
     // la lingua dei media è una preferenza tecnica del vault: sopravvive alla chiusura
     // del wizard, perché in un corpus i materiali parlano quasi sempre la stessa lingua
     try {
@@ -125,8 +141,8 @@
       W.lingua = pr.lingua || 'it'; W.linguaOut = pr.linguaOutput || 'it';
     } catch (e) { W.lingua = 'it'; W.linguaOut = 'it'; }
     $('#wizard').hidden = false;
-    if (W.progetto && window.vault.brief) {
-      window.vault.brief.get(W.progetto).then(function (b) {
+    if (W.corso && window.vault.brief) {
+      window.vault.brief.get(W.corso).then(function (b) {
         W.brief = b || {}; W.fonti = (b && b.fonti) || {};
         if (passo > 0) vaiAPasso(passo); else render();
       });
@@ -139,43 +155,47 @@
    * Ogni pannello vive di quello che `avanti()` gli carica strada facendo: il
    * passo 2 ha bisogno del corpus, il 3 dello stato delle schede, il 4 del piano.
    * Arrivandoci di lato quei dati mancherebbero, e il pannello direbbe «nessun
-   * materiale» su un progetto pieno. Qui si caricano tutti quelli dei passi
+   * materiale» su un corso pieno. Qui si caricano tutti quelli dei passi
    * attraversati, non solo del passo d'arrivo: indietro si può sempre tornare.
    */
   function vaiAPasso(n) {
     W.step = Math.max(0, Math.min(STEPS.length - 1, Number(n) || 0));
     render();
-    if (W.step >= 2 && window.vault.corpus) {
-      window.vault.corpus.list(W.progetto).then(function (c) { W.corpus = c || []; render(); });
+    if (W.step >= P.ELABORAZIONE && window.vault.corpus) {
+      window.vault.corpus.list(W.corso).then(function (c) { W.corpus = c || []; render(); });
     }
-    if (W.step >= 3) caricaStatoSchede();
-    if (W.step >= 4 && window.vault.plan) {
-      window.vault.plan.get(W.progetto).then(function (p) {
-        if (p && p.corsi) { W.piano = p; W.granularita = p.granularity || W.granularita; W.plan.origine = p.origine; render(); }
+    if (W.step >= P.ANALISI) caricaStatoSchede();
+    if (W.step >= P.OPZIONI) caricaProfilo();
+    if (W.step >= P.OPZIONI && window.vault.plan) {
+      window.vault.plan.get(W.corso).then(function (p) {
+        if (p && p.lezioni) { W.piano = p; W.granularita = p.granularity || W.granularita; W.plan.origine = p.origine; render(); }
       });
     }
-    if (W.step >= 5) caricaStatoCorsi();      // quanti capitoli ha già ogni corso
+    if (W.step >= P.COMPOSER) caricaStatoComposer();
+    if (W.step >= P.CAPITOLI) caricaStatoLezioni();   // quanti capitoli ha già ogni lezione
   }
   function close() {
     $('#wizard').hidden = true;
     // se l'elaborazione è in corso torna a mostrarsi la barra globale in fondo:
     // il processo prosegue anche a wizard chiuso e l'utente deve poterlo vedere
     if (W.ing.stato === 'in-corso') document.documentElement.dataset.wizingest = '';
-    if (W.progetto) toast('Progetto «' + W.progetto + '» salvato: puoi riprendere quando vuoi', true);
+    if (W.corso) toast('Corso «' + W.corso + '» salvato: puoi riprendere quando vuoi', true);
   }
 
-  var TITOLI = ['Nuovo progetto', 'Materiali di studio', 'Elaborazione dei materiali', 'Analisi dei contenuti', 'Indice dei corsi', 'Scrittura dei capitoli'];
-  var PANNELLI = [step0, step1, step2, stepAnalisi, step3, step4];
+  var TITOLI = ['Nuovo corso', 'Materiali di studio', 'Elaborazione dei materiali', 'Analisi dei contenuti',
+                'Opzioni e profilo', 'Composer degli indici', 'Scrittura dei capitoli'];
+  var PANNELLI = [step0, step1, step2, stepAnalisi, stepOpzioni, stepComposer, step4];
   function render() {
     $('#wzSteps').textContent = 'Passo ' + (W.step + 1) + ' di ' + STEPS.length + ' · ' + STEPS[W.step];
     $('#wzTitle').textContent = TITOLI[W.step];
     $('#wzBack').disabled = (W.step === 0 || W.ing.stato === 'in-corso' || W.plan.stato === 'in-corso' || W.sch.stato === 'in-corso');
-    $('#wzNext').textContent = W.step === 4 ? 'Approva l\'indice' : (W.step === 5 ? 'Chiudi' : 'Avanti');
+    $('#wzNext').textContent = W.step === P.OPZIONI ? 'Vai al composer'
+      : (W.step === P.COMPOSER ? 'Approva le lezioni' : (W.step === P.CAPITOLI ? 'Chiudi' : 'Avanti'));
     $('#wzNext').disabled = (W.ing.stato === 'in-corso' || W.plan.stato === 'in-corso' || W.sch.stato === 'in-corso' ||
-      W.cap.stato === 'in-corso' || (W.step === 4 && !(W.piano && W.piano.corsi && W.piano.corsi.length)));
+      W.cap.stato === 'in-corso' || (W.step >= P.OPZIONI && !(W.piano && W.piano.lezioni && W.piano.lezioni.length)));
     ($('#wzBody')).innerHTML = PANNELLI[W.step]();
     if (W.step === 0) {
-      var n = $('#wzNome'); if (n && !W.progetto) setTimeout(function () { n.focus(); }, 30);
+      var n = $('#wzNome'); if (n && !W.corso) setTimeout(function () { n.focus(); }, 30);
     }
     aggiornaHint();
   }
@@ -184,17 +204,17 @@
   function step0() {
     var b = W.brief || {};
     return '' +
-      '<h3>Di che progetto si tratta</h3>' +
-      '<p>Un progetto raccoglie i corsi che nascono dallo stesso materiale. Il nome diventa la cartella dentro <code>Progetti/</code>.</p>' +
-      '<label class="f">Nome del progetto' +
-      '<input type="text" id="wzNome" value="' + esc(b.title || W.progetto || '') + '"' + (W.progetto ? ' disabled' : '') + ' placeholder="Es. Tutor DSA — corso Galton"></label>' +
+      '<h3>Di che corso si tratta</h3>' +
+      '<p>Un corso raccoglie le lezioni che nascono dallo stesso materiale. Il nome diventa la cartella dentro <code>Corsi/</code>.</p>' +
+      '<label class="f">Nome del corso' +
+      '<input type="text" id="wzNome" value="' + esc(b.title || W.corso || '') + '"' + (W.corso ? ' disabled' : '') + ' placeholder="Es. Tutor DSA"></label>' +
       '<label class="f">A cosa ti serve' +
       '<select id="wzObiettivo">' + opt(['', 'esame', 'professionale', 'curiosita'], ['— scegli —', 'Preparare un esame', 'Lavoro / formazione professionale', 'Interesse personale'], b.obiettivo) + '</select></label>' +
       '<label class="f">Cosa conta di più' +
       '<select id="wzPriorita">' + opt(['', 'comprensione', 'memorizzazione', 'applicazione'], ['— scegli —', 'Capire a fondo', 'Ricordare i contenuti', 'Saperli applicare'], b.priorita) + '</select></label>' +
       '<label class="f" style="margin-top:1.2rem;">Indicazioni per questo materiale <span style="font-weight:400;text-transform:none;letter-spacing:0;">(facoltative)</span>' +
       '<textarea id="wzIndicazioni" rows="3" placeholder="Es. la parte sui test standardizzati mi serve più approfondita del resto.">' + esc(b.indicazioni || '') + '</textarea></label>' +
-      '<p>Queste indicazioni valgono <b>solo per questo progetto</b> e descrivono come trattare il materiale, non quali argomenti includere. Il tuo profilo generale sta in ⚙ Impostazioni › Utente.</p>';
+      '<p>Queste indicazioni valgono <b>solo per questo corso</b> e descrivono come trattare il materiale, non quali argomenti includere. Il tuo profilo generale sta in ⚙ Impostazioni › Utente.</p>';
   }
   function opt(valori, etichette, sel) {
     return valori.map(function (v, i) { return '<option value="' + esc(v) + '"' + (v === (sel || '') ? ' selected' : '') + '>' + esc(etichette[i]) + '</option>'; }).join('');
@@ -208,16 +228,16 @@
       indicazioni: ($('#wzIndicazioni') || {}).value || ''
     };
     W.brief = Object.assign({}, W.brief, brief, { title: nome });
-    if (W.progetto) return window.vault.brief.set(W.progetto, brief).then(function (r) {
+    if (W.corso) return window.vault.brief.set(W.corso, brief).then(function (r) {
       if (r && r.error) throw new Error(r.error);
-      return W.progetto;
+      return W.corso;
     });
-    if (!nome) return Promise.reject(new Error('dai un nome al progetto'));
-    return window.vault.project.create(nome, brief).then(function (r) {
+    if (!nome) return Promise.reject(new Error('dai un nome al corso'));
+    return window.vault.course.create(nome, brief).then(function (r) {
       if (r && r.error) throw new Error(r.error);
-      W.progetto = r.id;
-      // il brief va riscritto dopo la creazione: project:create scrive il file, brief:set fa l'upsert dei campi
-      return window.vault.brief.set(W.progetto, brief).then(function () { return W.progetto; });
+      W.corso = r.id;
+      // il brief va riscritto dopo la creazione: course:create scrive il file, brief:set fa l'upsert dei campi
+      return window.vault.brief.set(W.corso, brief).then(function () { return W.corso; });
     });
   }
 
@@ -293,7 +313,7 @@
   }
 
   function riesaminaCartella() {
-    return window.vault.cartella.scan(W.imp.cartella, W.imp.forzati, W.progetto).then(function (p) {
+    return window.vault.cartella.scan(W.imp.cartella, W.imp.forzati, W.corso).then(function (p) {
       if (p && p.error) { W.imp.errore = p.error; W.imp.piano = null; }
       else { W.imp.piano = p; W.imp.errore = null; }
       render();
@@ -309,7 +329,7 @@
 
   function applicaCartella() {
     W.imp.stato = 'copia'; render();
-    window.vault.cartella.apply(W.imp.cartella, W.imp.forzati, W.progetto).then(function (r) {
+    window.vault.cartella.apply(W.imp.cartella, W.imp.forzati, W.corso).then(function (r) {
       W.imp.stato = 'fermo';
       if (r && r.error) { W.imp.errore = r.error; render(); return; }
       var esiti = (r && r.esiti) || [];
@@ -378,7 +398,7 @@
           '<span class="dest">' + (m.fatto ? '✓ fatto' : '— da fare') + '</span></li>';
       }).join('') + '</ul>' +
         '<p class="wz-hint" style="display:block;margin-top:.5rem;">PDF e pagine web vengono sempre indicizzati (sono veloci); la casella vale per video e audio. ' +
-        'Il menu a destra dice <b>che ruolo</b> ha la fonte: è l\'unica cosa che il file non sa di sé, e l\'analisi la userà per pesare le fonti quando costruisce i corsi.</p>' +
+        'Il menu a destra dice <b>che ruolo</b> ha la fonte: è l\'unica cosa che il file non sa di sé, e l\'analisi la userà per pesare le fonti quando costruisce le lezioni.</p>' +
         '<div class="setrow" style="margin-top:.9rem;">' +
         '<label class="wz-hint" for="wzLingua">Lingua parlata nei video e negli audio&nbsp;</label>' +
         '<select id="wzLingua">' + LINGUE.map(function (l) {
@@ -390,22 +410,22 @@
         'Vale solo per video e audio — i PDF si leggono in qualunque lingua senza impostare niente.' +
         '</p>' +
         '<div class="setrow" style="margin-top:.7rem;">' +
-        '<label class="wz-hint" for="wzLinguaOut">Lingua in cui scrivere il corso&nbsp;</label>' +
+        '<label class="wz-hint" for="wzLinguaOut">Lingua in cui scrivere la lezione&nbsp;</label>' +
         '<select id="wzLinguaOut">' + LINGUE_OUT.map(function (l) {
           return '<option value="' + esc(l[0]) + '"' + (l[0] === W.linguaOut ? ' selected' : '') + '>' + esc(l[1]) + '</option>';
         }).join('') + '</select>' +
         '</div>' +
         '<p class="wz-hint" style="display:block;margin-top:.35rem;">' +
-        'Vale per tutto quello che scrive il modello: schede, titoli dei corsi, capitoli, glossario, domande. ' +
+        'Vale per tutto quello che scrive il modello: schede, titoli delle lezioni, capitoli, glossario, domande. ' +
         'Può essere diversa dalla lingua dei materiali — è il caso normale.' +
         (W.lingua !== 'auto' && W.lingua !== W.linguaOut
-          ? ' Qui i materiali sono in <b>' + esc(nomeLingua(W.lingua)) + '</b> e il corso uscirà in <b>' + esc(nomeLingua(W.linguaOut)) + '</b>: ' +
+          ? ' Qui i materiali sono in <b>' + esc(nomeLingua(W.lingua)) + '</b> e la lezione uscirà in <b>' + esc(nomeLingua(W.linguaOut)) + '</b>: ' +
             'i minutaggi e i numeri di pagina restano corretti (sono numeri), e le <b>citazioni testuali restano nella lingua della fonte</b>, ' +
             'perché tradurre le parole di un relatore e attribuirgliele falsifica la fonte.'
           : '') +
         '</p>' +
         /* UN comando solo, che dice su che cosa agisce. Prima erano due, e il
-           secondo — «Rielabora tutto» — non voleva dire «rifai questo progetto»
+           secondo — «Rielabora tutto» — non voleva dire «rifai questo corso»
            ma «rifai i materiali dell'intero vault»: è così che una lavorazione
            dell'OECD ha ritrascritto anche le quaranta lezioni sui DSA.
            Rifare un singolo materiale ora si chiede spuntandolo: se ne scegli
@@ -416,7 +436,7 @@
         '</button>' +
         '</div>' +
         '<p class="wz-hint" style="display:block;margin-top:.4rem;">' +
-        'Agisce solo su <b>' + esc(W.progetto || 'questo progetto') + '</b>. ' +
+        'Agisce solo su <b>' + esc(W.corso || 'questo corso') + '</b>. ' +
         'Le caselle sono già spuntate sui materiali da fare; se ne spunti uno già elaborato, quello viene rifatto.' +
         '</p>';
     } else {
@@ -437,7 +457,7 @@
         '</div>';
     } else if (W.ing.stato === 'fatto') {
       h += '<div style="border-left:4px solid var(--teal-strong);background:color-mix(in srgb,var(--teal) 10%,var(--panel));padding:.6rem .8rem;margin-top:.8rem;font-size:13px;">' +
-        'Elaborazione completata. Il passo successivo — la proposta dell\'indice dei corsi — arriva con la prossima parte del wizard.</div>';
+        'Elaborazione completata. Il passo successivo — la proposta dell\'indice delle lezioni — arriva con la prossima parte del wizard.</div>';
     }
 
     if (W.ing.log.length) {
@@ -457,7 +477,7 @@
   }
 
   /**
-   * Avvia l'elaborazione dei materiali SCELTI, dentro il progetto corrente.
+   * Avvia l'elaborazione dei materiali SCELTI, dentro il corso corrente.
    *
    * Il «rifai» non è più un comando a sé: si deduce dalla scelta. Se fra i
    * materiali spuntati ce n'è almeno uno già elaborato, vuol dire che lo si
@@ -485,7 +505,7 @@
     W.ing = { stato: 'in-corso', frazione: -1, msg: 'Avvio…', file: '', log: [], errore: null };
     document.documentElement.dataset.wizingest = '1';   // nasconde la barra globale: qui il progresso è nel wizard
     render();
-    window.vault.ingest.start(force ? { force: true, lang: W.lingua, progetto: W.progetto } : { files: scelti, lang: W.lingua, progetto: W.progetto });
+    window.vault.ingest.start(force ? { force: true, lang: W.lingua, corso: W.corso } : { files: scelti, lang: W.lingua, corso: W.corso });
   }
 
   // ------------------------------------------------------------ step Analisi
@@ -497,7 +517,7 @@
     var s = W.sch, inCorso = s.stato === 'in-corso';
     var h = '<h3>Lettura dei materiali</h3>' +
       '<p>Ogni materiale viene letto per intero dal modello, che ne scrive una scheda: di cosa tratta, i temi in sequenza con i minutaggi o le pagine, i concetti, i prerequisiti e i capitoli proposti. ' +
-      'Le schede restano nel progetto: si pagano una volta e servono poi all\'indice e alla generazione.</p>';
+      'Le schede restano nel corso: si pagano una volta e servono poi all\'indice e alla generazione.</p>';
 
     if (s.totale) {
       h += '<p><b>' + s.fatte + '</b> material' + (s.fatte === 1 ? 'e letto' : 'i letti') + ' su ' + s.totale +
@@ -524,16 +544,16 @@
       }).join('') + '</ul>';
     }
     if (s.fatte && s.fatte >= s.totale && s.totale) {
-      h += '<div class="wz-ok">Tutti i materiali sono stati letti. Il passo successivo costruisce l\'architettura dei corsi a partire dalle schede.</div>';
+      h += '<div class="wz-ok">Tutti i materiali sono stati letti. Il passo successivo costruisce l\'architettura delle lezioni a partire dalle schede.</div>';
     }
     return h;
   }
 
   function caricaStatoSchede() {
     if (!window.vault.schede) return;
-    window.vault.schede.stato(W.progetto).then(function (st) {
+    window.vault.schede.stato(W.corso).then(function (st) {
       W.sch.totale = st.totale; W.sch.fatte = st.fatte; W.sch.mancanti = st.mancanti || [];
-      if (W.step === 3) render();
+      if (W.step === P.ANALISI) render();
     });
   }
 
@@ -541,175 +561,255 @@
     if (!window.vault.schede) { toast('Analisi disponibile solo nell\'app', false); return; }
     W.sch.stato = 'in-corso'; W.sch.errore = null; W.sch.righe = []; W.sch.corrente = 'Avvio…';
     render();
-    window.vault.schede.build(W.progetto, !!rifai);
+    window.vault.schede.build(W.corso, !!rifai);
   }
 
-  // ---------------------------------------------------------------- step 3
-  // Editor dell'indice: azioni esplicite a bottoni, niente trascinamento.
+  // ------------------------------------------------------------- step OPZIONI
+  /* Prima di far proporre qualcosa al modello si guarda con che regole lo farà.
+     Il profilo esiste dal primo avvio e governa la FORMA di tutto — ma finora
+     non si rivedeva mai: lo si compilava una volta e poi si dimenticava che
+     stava decidendo la lunghezza dei capitoli, i quiz, il glossario. Qui torna
+     sotto gli occhi nel momento in cui conta, e si corregge senza uscire.
 
-  /** Elenco dei corsi con i loro materiali e i comandi di modifica. */
-  function elencoCorsi() {
-    var corsi = (W.piano && W.piano.corsi) || [];
-    return corsi.map(function (c, i) {
-      return '<li class="wz-corso">' +
-        '<div class="wc-testa">' +
-        '<span class="wc-num">' + (i + 1) + '</span>' +
-        '<input type="text" class="wc-titolo" data-i="' + i + '" value="' + esc(c.title) + '" aria-label="Titolo del corso">' +
-        '</div>' +
-        '<div class="wc-mat">' + c.materiali.map(function (m) {
-          return '<span class="wc-chip" title="' + esc(m.source) + '">' + (m.num || '?') + ' · ' + (m.type === 'pdf' ? 'PDF' : 'video') + '</span>';
-        }).join('') + '</div>' +
-        (c.rationale ? '<div class="wc-perche">' + esc(c.rationale) + '</div>' : '') +
-        '<div class="wc-cmd">' +
-        cmd(i, 'su', '↑', 'Sposta il corso più in alto', i === 0) +
-        cmd(i, 'giu', '↓', 'Sposta il corso più in basso', i === corsi.length - 1) +
-        cmd(i, 'unisci', 'Unisci col successivo', '', i === corsi.length - 1) +
-        cmd(i, 'separa', 'Separa l\'ultimo materiale', '', c.materiali.length < 2) +
-        cmd(i, 'giu-mat', 'Passa l\'ultimo al corso dopo', '', i === corsi.length - 1 || c.materiali.length < 2) +
-        '</div></li>';
-    }).join('');
-  }
-  function cmd(i, azione, testo, titolo, disabilitato) {
-    return '<button type="button" class="wc-btn" data-az="' + azione + '" data-i="' + i + '"' +
-      (titolo ? ' title="' + esc(titolo) + '"' : '') + (disabilitato ? ' disabled' : '') + '>' + testo + '</button>';
-  }
+     Il taglio delle lezioni invece NON si corregge più qui: si corregge nel
+     composer, sulle righe, accanto agli indici che ne nascono. Un elenco che si
+     modifica in due posti diversi diverge, e in mezzo ci sono i nomi delle
+     cartelle. */
 
-  function step3() {
+  var PROF_LEVE = [
+    ['granularita', 'Grana dei capitoli', [['atomico', '1 capitolo = 1 concetto'], ['medio', 'pochi concetti legati'], ['ampio', 'un tema intero']]],
+    ['capitoli_brevi', 'Lunghezza', [['true', 'testi corti'], ['false', 'testi distesi']]],
+    ['stile_capitoli', 'Stile', [['discorsivo', 'discorsivo'], ['schematico', 'schematico'], ['esempi', 'per esempi'], ['domande', 'per domande']]],
+    ['quiz', 'Quiz', [['frequenti', '2–3 per capitolo'], ['pochi', '1 per capitolo'], ['nessuno', 'nessuno']]],
+    ['glossario', 'Glossario', [['esteso', 'esteso'], ['essenziale', 'essenziale'], ['nessuno', 'nessuno']]],
+    ['approfondimenti', 'Approfondimenti', [['ricchi', 'ricchi, fuori dal corpo'], ['minimi', 'solo l\'essenziale']]]
+  ];
+  /* Il file usa snake_case, il serializzatore camelCase: la corrispondenza è la
+     stessa delle Impostazioni, e sta scritta una volta sola. */
+  var PROF_CHIAVI = { granularita: 'granularita', capitoli_brevi: 'capitoliBrevi', stile_capitoli: 'stileCapitoli',
+    quiz: 'quiz', glossario: 'glossario', approfondimenti: 'approfondimenti',
+    stile_corso: 'stileCorso', stile_lezioni: 'stileLezioni', esempi_concreti: 'esempiConcreti' };
+
+  function stepOpzioni() {
     var inCorso = W.plan.stato === 'in-corso';
-    var h = '<h3>Proposta dell\'indice</h3>' +
-      '<p>I materiali vengono raggruppati in corsi. La proposta è un punto di partenza: correggila finché ti somiglia, poi approvala. ' +
-      'Solo allora vengono create le cartelle sul disco.</p>';
+    var pr = W.profilo || {};
+    var h = '<h3>Con che regole scrivo</h3>' +
+      '<p>Queste opzioni valgono per <b>tutto</b> quello che il modello proporrà e scriverà in questo corso. ' +
+      'Il taglio delle lezioni lo correggi dopo, nel composer, insieme agli indici.</p>';
 
-    h += '<div class="setrow" style="margin-bottom:.8rem;">' +
-      '<label class="wz-hint">Grana&nbsp;' +
-      '<select id="wzGran">' +
-      ['atomico', 'medio', 'ampio'].map(function (g) {
-        var et = { atomico: 'fine — molti corsi piccoli', medio: 'media', ampio: 'larga — pochi corsi grandi' }[g];
+    /* le esigenze dichiarate non si toccano qui: sono sette menu per area e
+       stanno in Impostazioni, dove c'è spazio per spiegarle */
+    var tok = (pr.bisogni || []);
+    h += '<div class="wz-ok" style="margin-bottom:.9rem;">' +
+      '<b style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;">Le tue esigenze dichiarate</b><br>' +
+      (tok.length
+        ? tok.map(function (t) { return '<span class="wc-chip">' + esc(t) + '</span>'; }).join(' ')
+        : 'Nessuna dichiarata: il modello userà solo le opzioni qui sotto.') +
+      (pr.comeImparo ? '<div class="wz-hint" style="display:block;margin-top:.4rem;">«' + esc(pr.comeImparo.slice(0, 160)) + (pr.comeImparo.length > 160 ? '…' : '') + '»</div>' : '') +
+      '<div class="wz-hint" style="display:block;margin-top:.4rem;">Si cambiano in ⚙ Impostazioni › Utente.</div></div>';
+
+    h += '<div class="wz-leve">' + PROF_LEVE.map(function (l) {
+      var v = pr[l[0]];
+      if (v === true || v === false) v = String(v);
+      return '<label class="f">' + esc(l[1]) +
+        '<select class="wz-prof" data-k="' + l[0] + '">' +
+        l[2].map(function (o) {
+          return '<option value="' + esc(o[0]) + '"' + (String(v || '') === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>';
+        }).join('') + '</select></label>';
+    }).join('') + '</div>' +
+      '<p class="wz-hint" style="display:block;margin:-.4rem 0 1rem;">Si salvano nel profilo appena le cambi: valgono anche per i corsi successivi.</p>';
+
+    h += '<label class="f">Indicazioni per questo materiale <span style="font-weight:400;text-transform:none;letter-spacing:0;">(solo per questo corso)</span>' +
+      '<textarea id="wzIndicazioni2" rows="2" placeholder="Es. la parte sui test standardizzati mi serve più approfondita del resto.">' +
+      esc((W.brief && W.brief.indicazioni) || '') + '</textarea></label>';
+
+    h += '<h3 style="margin-top:1.2rem;">Quante alternative, quanto grosse</h3>';
+    h += '<div class="wz-leve">' +
+      '<label class="f">Grana delle lezioni' +
+      '<select id="wzGran">' + ['atomico', 'medio', 'ampio'].map(function (g) {
+        var et = { atomico: 'fine — molte lezioni piccole', medio: 'media', ampio: 'larga — poche lezioni grandi' }[g];
         return '<option value="' + g + '"' + (W.granularita === g ? ' selected' : '') + '>' + et + '</option>';
       }).join('') + '</select></label>' +
-      '<button type="button" class="wz-btn" id="wzProponi"' + (inCorso ? ' disabled' : '') + '>' +
-      (W.piano ? 'Rifai la proposta' : 'Proponi l\'indice') + '</button>' +
+      '<label class="f">Alternative per lezione' +
+      '<input type="number" id="wzNAlt" min="2" max="6" value="' + (W.nAlternative || 3) + '"></label>' +
+      '<label class="f">Capitoli per lezione' +
+      '<input type="number" id="wzNCap" min="2" max="30" placeholder="auto" value="' + (W.nCapitoli || '') + '"></label>' +
+      '</div>' +
+      '<p class="wz-hint" style="display:block;margin:-.4rem 0 1rem;">Le alternative sono gli indici fra cui sceglierai nel composer, uno per lezione e per personaggio. ' +
+      '«Capitoli per lezione» vuoto vuol dire che decide il modello.</p>';
+
+    h += '<div class="setrow" style="margin-bottom:.8rem;">' +
+      '<button type="button" class="wz-btn primary" id="wzProponi"' + (inCorso ? ' disabled' : '') + '>' +
+      (W.piano ? 'Rifai la proposta delle lezioni' : 'Proponi le lezioni') + '</button>' +
+      (inCorso ? '<span class="wz-hint">' + esc(W.plan.msg || 'Sto lavorando…') + '</span>' : '') +
       '</div>';
 
-    if (inCorso) h += '<p class="wz-hint">' + esc(W.plan.msg || 'Sto lavorando…') + '</p>';
     if (W.plan.errore) h += '<div class="wz-errore">Proposta non riuscita: ' + esc(W.plan.errore) + '</div>';
     if (W.plan.avviso) h += '<div class="wz-avviso">' + esc(W.plan.avviso) + '</div>';
 
-    if (W.piano && W.piano.corsi && W.piano.corsi.length) {
-      var nMat = W.piano.corsi.reduce(function (s, c) { return s + c.materiali.length; }, 0);
-      h += '<p class="wz-hint" style="display:block;margin:.6rem 0;">' + W.piano.corsi.length + ' corsi · ' + nMat + ' materiali collocati' +
-        (W.plan.origine === 'ai' ? ' · proposta rivista dal modello' : ' · proposta euristica locale') + '</p>';
-      h += '<ul class="wz-corsi">' + elencoCorsi() + '</ul>';
+    if (W.piano && W.piano.lezioni && W.piano.lezioni.length) {
+      var nMat = W.piano.lezioni.reduce(function (s, c) { return s + c.materiali.length; }, 0);
+      h += '<div class="wz-ok"><b>' + W.piano.lezioni.length + ' lezioni</b> · ' + nMat + ' materiali collocati' +
+        (W.plan.origine === 'ai' ? ' · proposta rivista dal modello' : ' · proposta euristica locale') +
+        '. Le correggi nel composer, riga per riga.</div>' +
+        '<ol class="wz-hint" style="display:block;margin:.3rem 0 0 1.2rem;padding:0;">' +
+        W.piano.lezioni.map(function (c) {
+          return '<li>' + esc(c.title) + ' <span style="opacity:.7">(' + (c.materiali || []).length + ')</span></li>';
+        }).join('') + '</ol>';
     } else if (!inCorso && !W.plan.errore) {
-      h += '<p>Nessuna proposta ancora. Premi «Proponi l\'indice».</p>';
+      h += '<p>Nessuna proposta ancora. Premi «Proponi le lezioni».</p>';
     }
     return h;
   }
 
-  /** Applica un comando dell'editor al piano in memoria e salva. */
-  function comandoPiano(azione, i) {
-    var c = W.piano && W.piano.corsi; if (!c || !c[i]) return;
-    if (azione === 'su' && i > 0) { var t = c[i - 1]; c[i - 1] = c[i]; c[i] = t; }
-    else if (azione === 'giu' && i < c.length - 1) { var u = c[i + 1]; c[i + 1] = c[i]; c[i] = u; }
-    else if (azione === 'unisci' && i < c.length - 1) {
-      c[i].materiali = c[i].materiali.concat(c[i + 1].materiali);
-      c[i].rationale = 'Unito a mano con «' + c[i + 1].title + '».';
-      c.splice(i + 1, 1);
-    } else if (azione === 'separa' && c[i].materiali.length > 1) {
-      var ultimo = c[i].materiali.pop();
-      c.splice(i + 1, 0, { folder: '', title: (ultimo.num ? ultimo.num + ' ' : '') + (ultimo.titolo || ultimo.source).toUpperCase().slice(0, 80),
-        area: c[i].area || '', rationale: 'Separato a mano da «' + c[i].title + '».', status: 'proposto', materiali: [ultimo], capitoli: [] });
-    } else if (azione === 'giu-mat' && i < c.length - 1 && c[i].materiali.length > 1) {
-      c[i + 1].materiali.unshift(c[i].materiali.pop());
-    }
-    rinumera();
-    salvaPiano();
-    render();
+  /** Le leve di forma finiscono nel profilo: si legge tutto, si cambia una chiave, si riscrive. */
+  function salvaLeva(chiaveFile, valore) {
+    if (!(window.vault && window.vault.profile)) return;
+    var p = window.vault.profile.read() || {};
+    var o = { bisogni: p.bisogni || [], bisogniAltro: p.bisogni_altro || '',
+              comeImparo: p.comeImparo || '', cosaAffatica: p.cosaAffatica || '' };
+    Object.keys(PROF_CHIAVI).forEach(function (k) {
+      var v = p[k];
+      if (v !== undefined && v !== '') o[PROF_CHIAVI[k]] = v;
+    });
+    o[PROF_CHIAVI[chiaveFile]] = (valore === 'true' || valore === 'false') ? (valore === 'true') : valore;
+    var r = window.vault.profile.save(o);
+    if (r && r.error) { toast('Profilo non salvato: ' + r.error, false); return; }
+    W.profilo = window.vault.profile.read() || {};
   }
 
-  /** Le cartelle devono restare NN-slug progressive: si rinumerano dopo ogni modifica. */
-  function rinumera() {
-    if (!W.piano) return;
-    W.piano.corsi.forEach(function (c, i) {
-      var base = String(c.title || 'corso').toLowerCase()
-        .normalize('NFD').replace(/[̀-ͯ]/g, '')
-        .replace(/^\s*\d{1,3}(\s*-\s*\d{1,3})?[\s.:·-]*/, '')
-        .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40).replace(/-+$/, '') || 'corso';
-      c.folder = String(i + 1).padStart(2, '0') + '-' + base;
-    });
+  // ------------------------------------------------------------ step COMPOSER
+  /* Il composer è una pagina piena, non un pannello: qui c'è la porta e il
+     riassunto di che cosa c'è dentro, così si sa se ci si deve entrare. */
+  function stepComposer() {
+    var lezioni = (W.piano && W.piano.lezioni) || [];
+    var st = W.comp || {};
+    var h = '<h3>Comporre i percorsi</h3>' +
+      '<p>Nel composer ogni riga è una lezione e le card sono gli indici proposti. Lì dentro correggi il taglio delle lezioni, ' +
+      'chiedi gli indici, trascini i personaggi e fai scrivere i capitoli.</p>';
+    if (!lezioni.length) return h + '<div class="wz-avviso">Prima serve la proposta delle lezioni: torna indietro e premi «Proponi le lezioni».</div>';
+
+    h += '<div class="wz-ok"><b>' + lezioni.length + ' lezioni</b>' +
+      (st.scalette ? ' · ' + st.scalette + ' con gli indici proposti' : ' · nessun indice proposto ancora') +
+      (st.percorsi ? ' · <b>' + st.percorsi + '</b> percorsi salvati' : '') +
+      (st.coppieScritte ? ' · ' + st.coppieScritte + ' cartelle di capitoli scritte' : '') + '</div>';
+
+    h += '<div style="margin-top:1rem">' +
+      '<button type="button" class="wz-btn primary" id="wzApriComposer">Apri il composer</button></div>' +
+      '<p class="wz-hint" style="display:block;margin-top:.6rem;">Il wizard si chiude mentre componi e si riapre qui quando chiudi il composer. ' +
+      '«Approva le lezioni» crea le cartelle delle lezioni senza variante: serve solo se vuoi scrivere anche i capitoli della lezione singola, al passo dopo.</p>';
+    return h;
   }
 
-  function salvaPiano() {
-    if (!W.piano || !window.vault.plan) return;
-    window.vault.plan.save(W.progetto, W.piano).then(function (r) {
-      if (r && r.error) toast('Piano non salvato: ' + r.error, false);
-    });
+  /** Il riassunto del composer, letto dal disco: senza, il pannello direbbe zero su un corso pieno. */
+  function caricaStatoComposer() {
+    if (!(window.vault && window.vault.composer)) return;
+    window.vault.composer.stato(W.corso).then(function (s) {
+      if (!s || s.error) return;
+      W.comp = { scalette: Object.keys(s.scalette || {}).length, percorsi: (s.percorsi || []).length };
+      return window.vault.percorsi.coppie(W.corso).then(function (c) {
+        if (c && !c.error) W.comp.coppieScritte = (c.coppie || []).filter(function (k) { return k.scritti; }).length;
+        if (!$('#wizard').hidden && W.step === P.COMPOSER) render();
+      });
+    }).catch(function () {});
   }
 
   function chiediProposta() {
     if (!window.vault.plan) { toast('Proposta disponibile solo nell\'app', false); return; }
     W.plan = { stato: 'in-corso', msg: 'Preparo il digest dei materiali…', errore: null, avviso: null, origine: null };
     render();
-    window.vault.plan.propose(W.progetto, W.granularita);
+    window.vault.plan.propose(W.corso, W.granularita);
   }
 
   // ---------------------------------------------------------------- step 5
-  /* I capitoli si scrivono un corso per volta. Prima si sceglie il corso, poi si
+  /* I capitoli si scrivono una lezione per volta. Prima si sceglie la lezione, poi si
      confrontano due o tre scalette alternative: cambiano ordine e raggruppamento,
      mai la copertura del materiale. Il costo si vede prima di spendere. */
-  /* Quanti capitoli ha DAVVERO ogni corso, contati sul disco.
+  /* Quanti capitoli ha DAVVERO ogni lezione, contati sul disco.
      Il piano dice il suo, ma è un registro che si può disallineare — ed è già
      successo. Le cartelle no: se ci sono cinque file .md, i capitoli sono
      cinque. La spunta si fida di quelle. */
-  function caricaStatoCorsi() {
-    if (!W.progetto || !window.vault.project || !window.vault.project.expandStato) return;
-    window.vault.project.expandStato(W.progetto).then(function (r) {
+  function caricaStatoLezioni() {
+    if (!W.corso || !window.vault.course || !window.vault.course.expandStato) return;
+    window.vault.course.expandStato(W.corso).then(function (r) {
       if (!r || r.error) return;
       var m = {};
-      (r.corsi || []).forEach(function (c) { m[c.folder] = c.capitoli || 0; });
-      W.cap.perCorso = m;
-      if (!$('#wizard').hidden && W.step === 5) render();
+      (r.lezioni || []).forEach(function (c) { m[c.folder] = c.capitoli || 0; });
+      W.cap.perLezione = m;
+      /* ⚠️ Si tiene l'elenco INTERO, non il solo conteggio. `expand:stato` torna
+         le DESTINAZIONI — le cartelle che il lettore mostra davvero — e questa è
+         l'unica lista che sappia distinguere una variante dal segnaposto della
+         sua base. La lista qui sotto si costruiva invece sul piano, che conosce
+         solo le basi: offriva i segnaposto, e da lì si generavano capitoli che
+         nessuno avrebbe visto. */
+      W.cap.destinazioni = r.lezioni || null;
+      if (!$('#wizard').hidden && W.step === P.CAPITOLI) render();
     }).catch(function () {});
   }
 
+  /**
+   * Le lezioni da offrire: le destinazioni vere se sono arrivate, il piano come
+   * ripiego finché non arrivano (la prima apertura, o `expand:stato` in errore).
+   *
+   * ⚠️ Il ripiego è il piano perché è meglio di un elenco vuoto, ma è quello che
+   * contiene i segnaposto: dura il tempo di una richiesta, e poi `render()`
+   * ridisegna con le destinazioni.
+   */
+  function lezioniDaOffrire() {
+    var d = W.cap.destinazioni;
+    if (d && d.length) {
+      return d.map(function (c) {
+        return { folder: c.folder, title: c.titolo || c.folder, variante: c.variante || '',
+                 materiali: c.materiali || [], capitoli: c.capitoli || 0 };
+      });
+    }
+    return ((W.piano && W.piano.lezioni) || []).map(function (c) {
+      return { folder: c.folder, title: c.title, variante: '', materiali: c.materiali || [],
+               capitoli: null, status: c.status };
+    });
+  }
+
   function step4() {
-    var corsi = (W.piano && W.piano.corsi) || [];
-    if (!corsi.length) return '<h3>Nessun corso approvato</h3><p>Torna indietro e approva l\'indice.</p>';
+    var lezioni = lezioniDaOffrire();
+    if (!lezioni.length) return '<h3>Nessuna lezione approvata</h3><p>Torna indietro e approva l\'indice.</p>';
 
     if (!W.cap.folder) {
-      var perCorso = W.cap.perCorso || null;
-      var scritti = corsi.filter(function (c) { return perCorso && perCorso[c.folder] > 0; }).length;
-      return '<h3>Da quale corso partiamo?</h3>' +
-        '<p>I capitoli si scrivono un corso per volta: così puoi leggere il primo e correggere il tiro prima di spendere sul resto.</p>' +
-        /* L'altra strada: guardare TUTTI gli indici proposti insieme prima di
-           scrivere qualunque cosa. Serve quando dallo stesso materiale devono
-           nascere più percorsi — non è un modo più veloce di fare la stessa cosa. */
+      var perLezione = W.cap.perLezione || null;
+      var scritti = lezioni.filter(function (c) { return perLezione && perLezione[c.folder] > 0; }).length;
+      return '<h3>La lezione singola, senza varianti</h3>' +
+        '<p>Questo passo serve ancora in due casi: scrivere i capitoli di una lezione che <b>non</b> fa parte di un percorso, ' +
+        'ed <b>estendere</b> una lezione già scritta. Se stai componendo percorsi, i capitoli si scrivono dal composer — ' +
+        'una cartella per coppia lezione+indice, condivisa fra i percorsi che scelgono lo stesso indice.</p>' +
         '<div class="wz-ok" style="display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;">' +
-        '<span style="flex:1;min-width:220px">Vuoi prima <b>vedere tutti gli indici insieme</b> e assegnarli a più percorsi ' +
-        '(stesso livello, modi di imparare diversi)? Il composer mostra una riga per corso e le sue proposte affiancate.</span>' +
-        '<button type="button" class="wz-btn" id="wzComposer">Apri il composer</button></div>' +
-        (perCorso
+        '<span style="flex:1;min-width:220px">I percorsi si compongono al passo precedente.</span>' +
+        '<button type="button" class="wz-btn" id="wzComposer">Torna al composer</button></div>' +
+        (perLezione
           ? '<p class="wz-hint" style="display:block">' + (scritti
-              ? '<b>' + scritti + '</b> corsi su ' + corsi.length + ' hanno già i capitoli scritti. Rifarli li riscrive da capo: serve a provare un taglio diverso sullo stesso materiale.'
-              : 'Nessun corso ha ancora i capitoli.') + '</p>'
+              ? '<b>' + scritti + '</b> lezioni su ' + lezioni.length + ' hanno già i capitoli scritti. Rifarli li riscrive da capo: serve a provare un taglio diverso sullo stesso materiale.'
+              : 'Nessuna lezione ha ancora i capitoli.') + '</p>'
           : '') +
-        '<ul class="wz-files">' + corsi.map(function (c) {
+        '<ul class="wz-files">' + lezioni.map(function (c) {
           // la verità sta nella cartella; il piano è solo il ripiego se il conteggio non è ancora arrivato
-          var n = perCorso ? (perCorso[c.folder] || 0)
+          var n = perLezione ? (perLezione[c.folder] || 0)
                            : ((c.status === 'generato' || c.status === 'parziale') ? -1 : 0);
           var fatto = n !== 0;
+          /* La variante nell'etichetta: due varianti della stessa lezione
+             CONDIVIDONO il titolo per costruzione, e senza il suffisso sarebbero
+             due righe identiche a vista che portano in due posti diversi. */
           return '<li><span class="dest">' + esc(c.folder.slice(0, 2)) + '</span>' +
-            '<span style="flex:1">' + esc(c.title) + ' <span class="wz-hint">(' + (c.materiali || []).length + ' materiali)</span></span>' +
+            '<span style="flex:1">' + esc(c.title) +
+            (c.variante ? ' <span class="wz-hint">— variante «' + esc(c.variante) + '»</span>' : '') +
+            ' <span class="wz-hint">(' + (c.materiali || []).length + ' materiali)</span></span>' +
             (fatto
               ? '<span class="dest">✓ ' + (n > 0 ? n + ' capitol' + (n === 1 ? 'o' : 'i') : esc(c.status)) + '</span>'
               : '<span class="wz-hint">da scrivere</span>') +
-            '<button type="button" class="wc-btn wz-corso-scelto" data-folder="' + esc(c.folder) + '">' +
+            '<button type="button" class="wc-btn wz-lezione-scelto" data-folder="' + esc(c.folder) + '">' +
             (fatto ? 'riscrivi' : 'scrivi i capitoli') + '</button></li>';
         }).join('') + '</ul>';
     }
 
-    var corso = corsi.filter(function (c) { return c.folder === W.cap.folder; })[0] || {};
-    var h = '<h3>' + esc(corso.title || W.cap.folder) + '</h3>';
+    var lezione = lezioni.filter(function (c) { return c.folder === W.cap.folder; })[0] || {};
+    var h = '<h3>' + esc(lezione.title || W.cap.folder) + '</h3>';
     if (W.cap.errore) h += '<div class="wz-errore">' + esc(W.cap.errore) + '</div>';
 
     // 1. le alternative non ci sono ancora
@@ -719,14 +819,14 @@
         '<div style="margin-top:1rem">' +
         '<button type="button" class="wz-btn primary" id="wzScalette"' + (W.cap.stato === 'scalette' ? ' disabled' : '') + '>' +
         (W.cap.stato === 'scalette' ? 'Ci penso…' : 'Proponi le scalette') + '</button> ' +
-        '<button type="button" class="wz-btn" id="wzAltroCorso">Cambia corso</button></div>';
+        '<button type="button" class="wz-btn" id="wzAltroLezione">Cambia lezione</button></div>';
     }
 
     // 2. confronto e scelta
     h += '<p>' + W.cap.alternative.length + ' modi di organizzare lo stesso materiale. Leggi la differenza, non i titoli.</p>';
-    h += '<ul class="wz-corsi">' + W.cap.alternative.map(function (a, i) {
+    h += '<ul class="wz-lezioni">' + W.cap.alternative.map(function (a, i) {
       var sel = W.cap.scelta === i;
-      return '<li class="wz-corso" style="' + (sel ? 'border-color:var(--teal-strong)' : '') + '">' +
+      return '<li class="wz-lezione" style="' + (sel ? 'border-color:var(--teal-strong)' : '') + '">' +
         '<div class="wc-testa"><span class="wc-num">' + (i + 1) + '</span>' +
         '<b style="flex:1">' + esc(a.nome) + '</b>' +
         '<span class="wc-chip">' + a.capitoli.length + ' capitoli</span>' +
@@ -761,7 +861,7 @@
       }).join('') + '</ul>';
     }
     if (W.cap.accoda) {
-      h += '<div class="wz-ok">Il corso ha gi\u00e0 <b>' + (W.cap.giaScritti || 0) + '</b> capitoli: i nuovi partiranno dal <b>' +
+      h += '<div class="wz-ok">La lezione ha gi\u00e0 <b>' + (W.cap.giaScritti || 0) + '</b> capitoli: i nuovi partiranno dal <b>' +
         (W.cap.daOrdine || '?') + '\u00b0</b> e si aggiungeranno in fondo. Nessun capitolo esistente viene rinumerato o riscritto.</div>';
     }
     if (W.cap.esito) {
@@ -776,11 +876,11 @@
         ? '<button type="button" class="wz-btn" id="wzGenStop">Ferma dopo questo capitolo</button>'
         : '<button type="button" class="wz-btn primary" id="wzGenVia"' + (W.cap.scelta < 0 ? ' disabled' : '') + '>' +
           (W.cap.esito ? 'Riscrivi' : 'Scrivi i capitoli') + '</button>') +
-      ' <button type="button" class="wz-btn" id="wzAltroCorso">Cambia corso</button></div>';
+      ' <button type="button" class="wz-btn" id="wzAltroLezione">Cambia lezione</button></div>';
     return h;
   }
 
-  function scegliCorso(folder) {
+  function scegliLezione(folder) {
     W.cap = { folder: folder, alternative: null, scelta: -1, stato: 'fermo', prog: null, log: [], esito: null,
               stima: null, errore: null, accoda: false, daOrdine: 0, giaScritti: 0 };
     render();
@@ -788,7 +888,7 @@
   function chiediScalette() {
     if (!window.vault.scaletta) return;
     W.cap.stato = 'scalette'; W.cap.errore = null; render();
-    window.vault.scaletta.proponi(W.progetto, W.cap.folder).then(function (r) {
+    window.vault.scaletta.proponi(W.corso, W.cap.folder).then(function (r) {
       W.cap.stato = 'fermo';
       if (r && r.error) { W.cap.errore = r.error; render(); return; }
       W.cap.alternative = (r && r.alternative) || [];
@@ -799,14 +899,14 @@
   function scegliAlternativa(i) {
     W.cap.scelta = i; W.cap.stima = null; render();
     var alt = W.cap.alternative[i];
-    if (window.vault.gen) window.vault.gen.stima(W.progetto, W.cap.folder, alt.capitoli)
+    if (window.vault.gen) window.vault.gen.stima(W.corso, W.cap.folder, alt.capitoli)
       .then(function (s) { W.cap.stima = s; render(); });
   }
   function avviaGenerazione() {
     if (W.cap.scelta < 0 || !window.vault.gen) return;
     W.cap.stato = 'in-corso'; W.cap.log = []; W.cap.esito = null; W.cap.errore = null; W.cap.prog = null;
     render();
-    window.vault.gen.start(W.progetto, W.cap.folder, W.cap.alternative[W.cap.scelta].capitoli, !!W.cap.accoda);
+    window.vault.gen.start(W.corso, W.cap.folder, W.cap.alternative[W.cap.scelta].capitoli, !!W.cap.accoda);
   }
 
   /* ascolto della generazione: registrato UNA VOLTA, attivo solo mentre scriviamo */
@@ -821,7 +921,7 @@
       if (W.cap.stato !== 'in-corso') return;
       W.cap.stato = 'fatto'; W.cap.esito = d || { scritti: [], scarti: [] };
       toast(W.cap.esito.scritti.length + ' capitoli scritti', !(W.cap.esito.scarti || []).length);
-      caricaStatoCorsi();          // il conteggio è cambiato: la spunta si aggiorna da sé
+      caricaStatoLezioni();          // il conteggio è cambiato: la spunta si aggiorna da sé
       pittaCap();
     });
   }
@@ -829,60 +929,78 @@
   function pittaCap() {
     if (attesaCap) return;
     attesaCap = true;
-    setTimeout(function () { attesaCap = false; if (!$('#wizard').hidden && W.step === 5) render(); }, 120);
+    setTimeout(function () { attesaCap = false; if (!$('#wizard').hidden && W.step === P.CAPITOLI) render(); }, 120);
   }
 
+  /**
+   * Crea le cartelle delle lezioni «senza variante» e passa alla scrittura della
+   * lezione singola. Non è più il passaggio obbligato che era: chi lavora a
+   * percorsi scrive dal composer, in cartelle `lezione--indice` che nascono da
+   * sé. Qui si passa solo se serve ancora la lezione unica.
+   */
   function approva() {
     if (!W.piano || !window.vault.plan) return;
     $('#wzNext').disabled = true;
-    window.vault.plan.approve(W.progetto).then(function (r) {
+    window.vault.plan.approve(W.corso).then(function (r) {
       $('#wzNext').disabled = false;
       if (r && r.error) { toast('Approvazione fallita: ' + r.error, false); return; }
-      toast((r.creati || []).length + ' corsi creati sul disco', true);
-      W.step = 5; W.cap.folder = null; render(); caricaStatoCorsi();
+      toast((r.creati || []).length + ' lezioni create sul disco', true);
+      W.step = P.CAPITOLI; W.cap.folder = null; render(); caricaStatoLezioni();
     });
   }
 
   function aggiornaHint() {
     var h = $('#wzHint');
     if (!h) return;
-    h.textContent = W.step === 0
-      ? (W.progetto ? 'Le modifiche al brief vengono salvate ora' : 'Il progetto viene creato ora, prima di qualunque elaborazione')
-      : (W.step === 2 && W.ing.stato === 'in-corso' ? 'Puoi chiudere: l\'elaborazione prosegue' : '');
+    h.textContent = W.step === P.CORSO
+      ? (W.corso ? 'Le modifiche al brief vengono salvate ora' : 'Il corso viene creato ora, prima di qualunque elaborazione')
+      : (W.step === P.ELABORAZIONE && W.ing.stato === 'in-corso' ? 'Puoi chiudere: l\'elaborazione prosegue' : '');
   }
 
   function avanti() {
-    if (W.step === 0) {
+    if (W.step === P.CORSO) {
       $('#wzNext').disabled = true;
       salvaStep0().then(function (id) {
         $('#wzNext').disabled = false;
-        toast('Progetto «' + id + '» pronto', true);
-        W.step = 1; render();
+        toast('Corso «' + id + '» pronto', true);
+        W.step = P.MATERIALI; render();
       }).catch(function (e) {
         $('#wzNext').disabled = false;
         toast('Non salvato: ' + e.message, false);
       });
       return;
     }
-    if (W.step === 1) {
-      W.step = 2; render();
-      if (window.vault.corpus) window.vault.corpus.list(W.progetto).then(function (c) { W.corpus = c || []; render(); });
+    if (W.step === P.MATERIALI) {
+      W.step = P.ELABORAZIONE; render();
+      if (window.vault.corpus) window.vault.corpus.list(W.corso).then(function (c) { W.corpus = c || []; render(); });
       return;
     }
-    if (W.step === 2) { W.step = 3; render(); caricaStatoSchede(); return; }
-    if (W.step === 5) {                               // ultimo passo: il tasto chiude e ricarica il lettore
-      close();
-      setTimeout(function () { location.reload(); }, 400);
-      return;
-    }
-    if (W.step === 3) {
-      W.step = 4; render();
-      if (window.vault.plan) window.vault.plan.get(W.progetto).then(function (p) {
-        if (p && p.corsi) { W.piano = p; W.granularita = p.granularity || W.granularita; W.plan.origine = p.origine; render(); }
+    if (W.step === P.ELABORAZIONE) { W.step = P.ANALISI; render(); caricaStatoSchede(); return; }
+    if (W.step === P.ANALISI) {
+      W.step = P.OPZIONI; render();
+      caricaProfilo();
+      if (window.vault.plan) window.vault.plan.get(W.corso).then(function (p) {
+        if (p && p.lezioni) { W.piano = p; W.granularita = p.granularity || W.granularita; W.plan.origine = p.origine; render(); }
       });
       return;
     }
-    approva();
+    if (W.step === P.OPZIONI) { W.step = P.COMPOSER; render(); caricaStatoComposer(); return; }
+    if (W.step === P.COMPOSER) { approva(); return; }   // le cartelle delle lezioni senza variante
+    // ultimo passo: il tasto chiude e ricarica il lettore
+    close();
+    setTimeout(function () { location.reload(); }, 400);
+  }
+
+  /** Il profilo, per il recap del passo «Opzioni». Si rilegge a ogni ingresso: può essere cambiato altrove. */
+  function caricaProfilo() {
+    if (!(window.vault && window.vault.profile)) return;
+    W.profilo = window.vault.profile.read() || {};
+    try {
+      var pr = (window.vault.prefs && window.vault.prefs.read()) || {};
+      W.nAlternative = Number(pr.nAlternative) || 3;
+      W.nCapitoli = Number(pr.capitoliPerLezione) || 0;
+    } catch (e) {}
+    if (!$('#wizard').hidden && W.step === P.OPZIONI) render();
   }
 
   // ------------------------------------------------------------------ wiring
@@ -901,33 +1019,55 @@
     if (e.target.closest('#wzProponi')) { chiediProposta(); return; }
     if (e.target.closest('#wzSchede')) { avviaSchede(false); return; }
     if (e.target.closest('#wzSchedeTutto')) { avviaSchede(true); return; }
-    var sc = e.target.closest('.wz-corso-scelto');
-    if (sc) { scegliCorso(sc.getAttribute('data-folder')); return; }
+    var sc = e.target.closest('.wz-lezione-scelto');
+    if (sc) { scegliLezione(sc.getAttribute('data-folder')); return; }
     var al = e.target.closest('.wz-alt');
     if (al) { scegliAlternativa(Number(al.getAttribute('data-i'))); return; }
     if (e.target.closest('#wzScalette')) { chiediScalette(); return; }
-    if (e.target.closest('#wzComposer')) {
+    if (e.target.closest('#wzApriComposer') || e.target.closest('#wzComposer')) {
       // il wizard si chiude: il composer è una pagina piena, e due modali sovrapposte
       // si contendono Escape e il fondo cliccabile
-      var p = W.progetto; close();
-      if (window.studiaComposer) window.studiaComposer.apri(p);
+      var p = W.corso, tornaA = W.step; close();
+      if (window.studiaComposer) window.studiaComposer.apri(p, { tornaAlWizard: tornaA });
       return;
     }
-    if (e.target.closest('#wzAltroCorso')) { W.cap.folder = null; render(); return; }
+    if (e.target.closest('#wzAltroLezione')) { W.cap.folder = null; render(); return; }
     if (e.target.closest('#wzGenVia')) { avviaGenerazione(); return; }
-    if (e.target.closest('#wzGenStop')) { window.vault.gen.cancel(W.progetto); toast('Mi fermo dopo questo capitolo', true); return; }
-    var b = e.target.closest('.wc-btn');
-    if (b) { comandoPiano(b.getAttribute('data-az'), Number(b.getAttribute('data-i'))); return; }
-    if (e.target.closest('#newCourseBtn')) { open(null); return; }
+    if (e.target.closest('#wzGenStop')) { window.vault.gen.cancel(W.corso); toast('Mi fermo dopo questo capitolo', true); return; }
+
+    if (e.target.closest('#newLessonBtn')) { open(null); return; }
     if (e.target === $('#wizard')) { close(); return; }
   });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !$('#wizard').hidden) close();
   });
-  // titolo del corso e grana: si applicano appena cambiano
+  // titolo della lezione e grana: si applicano appena cambiano
   document.addEventListener('change', function (e) {
     if (!e.target.closest) return;
     if (e.target.id === 'wzGran') { W.granularita = e.target.value; return; }
+    if (e.target.classList && e.target.classList.contains('wz-prof')) {
+      salvaLeva(e.target.getAttribute('data-k'), e.target.value);
+      return;
+    }
+    if (e.target.id === 'wzNAlt' || e.target.id === 'wzNCap') {
+      var alt = e.target.id === 'wzNAlt';
+      var n = Number(e.target.value) || 0;
+      if (alt) W.nAlternative = Math.min(6, Math.max(2, n || 3)); else W.nCapitoli = n;
+      if (window.vault && window.vault.prefs) {
+        var pf = window.vault.prefs.read() || {};
+        if (alt) pf.nAlternative = W.nAlternative; else pf.capitoliPerLezione = W.nCapitoli || null;
+        var x = window.vault.prefs.save(pf);
+        if (x && x.error) toast('Opzione non salvata: ' + x.error, false);
+      }
+      return;
+    }
+    if (e.target.id === 'wzIndicazioni2') {
+      var testo = e.target.value.slice(0, 1200);
+      W.brief = Object.assign({}, W.brief, { indicazioni: testo });
+      if (W.corso && window.vault.brief) window.vault.brief.set(W.corso, { indicazioni: testo })
+        .then(function (x) { if (x && x.error) toast('Indicazioni non salvate: ' + x.error, false); });
+      return;
+    }
     if (e.target.id === 'wzLingua' || e.target.id === 'wzLinguaOut') {
       var out = e.target.id === 'wzLinguaOut';
       if (out) W.linguaOut = e.target.value; else W.lingua = e.target.value;
@@ -944,15 +1084,11 @@
     if (e.target.classList && e.target.classList.contains('wz-ruolo')) {
       var num = e.target.getAttribute('data-num'), r = e.target.value;
       if (r) W.fonti[num] = r; else delete W.fonti[num];
-      if (W.progetto && window.vault.fonti) window.vault.fonti.set(W.progetto, W.fonti)
+      if (W.corso && window.vault.fonti) window.vault.fonti.set(W.corso, W.fonti)
         .then(function (x) { if (x && x.error) toast('Ruolo non salvato: ' + x.error, false); });
       return;
     }
-    var t = e.target.closest('.wc-titolo');
-    if (t && W.piano) {
-      var i = Number(t.getAttribute('data-i'));
-      if (W.piano.corsi[i]) { W.piano.corsi[i].title = t.value.slice(0, 120); rinumera(); salvaPiano(); }
-    }
+
   });
 
   /* ---- esiti della proposta (canali con disiscrizione, come da piano) ---- */
@@ -968,15 +1104,15 @@
       W.plan.avviso = (d && d.avviso) || null;
       W.plan.errore = null;
       pitta3();
-      toast('Proposta pronta: ' + ((W.piano && W.piano.corsi.length) || 0) + ' corsi', true);
+      toast('Proposta pronta: ' + ((W.piano && W.piano.lezioni.length) || 0) + ' lezioni', true);
     });
     window.vault.plan.onError(function (m) {
       W.plan.stato = 'errore'; W.plan.errore = String(m || 'errore sconosciuto');
       pitta3(); toast('Proposta non riuscita', false);
     });
   }
-  function pitta3() { if (!$('#wizard').hidden && W.step === 4) render(); }
-  function pittaAnalisi() { if (!$('#wizard').hidden && W.step === 3) render(); }
+  function pitta3() { if (!$('#wizard').hidden && W.step === P.OPZIONI) render(); }
+  function pittaAnalisi() { if (!$('#wizard').hidden && W.step === P.ANALISI) render(); }
 
   /* ---- esiti dell'analisi dei materiali (stadio 0) ---- */
   if (window.vault && window.vault.schede) {
@@ -1003,22 +1139,22 @@
   }
 
   /**
-   * Espansione: si riapre un progetto già finito per aggiungergli capitoli.
+   * Espansione: si riapre un corso già finito per aggiungergli capitoli.
    * Differenza unica ma decisiva rispetto a una generazione normale: i capitoli
    * scritti si ACCODANO a quelli che ci sono. Rinumerare romperebbe i rimandi
-   * [[NN-corso]] degli altri corsi, che nessuno si accorgerebbe finché un
+   * [[NN-lezione]] delle altre lezioni, di cui nessuno si accorgerebbe finché un
    * allievo non ci clicca sopra.
    */
-  function espandi(progetto, folder) {
-    open(progetto);
-    W.step = STEPS.length - 1;
-    caricaStatoCorsi();                       // pannello «Capitoli»
+  function espandi(corso, folder) {
+    open(corso);
+    W.step = P.CAPITOLI;
+    caricaStatoLezioni();                       // pannello «Capitoli»
     if (folder) {
-      scegliCorso(folder);
+      scegliLezione(folder);
       W.cap.accoda = true;
-      if (window.vault.project && window.vault.project.expandStato) {
-        window.vault.project.expandStato(progetto).then(function (r) {
-          var c = r && (r.corsi || []).find(function (x) { return x.folder === folder; });
+      if (window.vault.course && window.vault.course.expandStato) {
+        window.vault.course.expandStato(corso).then(function (r) {
+          var c = r && (r.lezioni || []).find(function (x) { return x.folder === folder; });
           if (c) { W.cap.daOrdine = c.prossimoOrdine; W.cap.giaScritti = c.capitoli; render(); }
         }).catch(function () {});
       }

@@ -1,10 +1,16 @@
-# TD74 «I DSA» — Architettura definitiva dei corsi ✅ BLOCCATA (2026-07-23)
+# TD74 «I DSA» — Architettura definitiva delle lezioni ✅ BLOCCATA (2026-07-23)
 
 > Esito della verifica sul CONTENUTO REALE dei 40 materiali (3 agenti) + 3 decisioni dell'utente.
 > Questo è il documento sorgente: da qui si generano i vault `.md`. Modello storage:
-> [PIANO-VAULT-MD-EDITOR.md](PIANO-VAULT-MD-EDITOR.md). Progetto = `TD74-DSA`. Copertura **40/40**.
+> [PIANO-VAULT-MD-EDITOR.md](PIANO-VAULT-MD-EDITOR.md). Copertura **40/40**.
+>
+> Il corso è `TD74-DSA`, e ciò che segue è l'architettura delle sue **lezioni**: il livello
+> intermedio, quello che sta fra il corso e i capitoli. Fino alla rinomina del 9 agosto 2026
+> quel livello si chiamava «corso», e da lì veniva il vecchio titolo di questo documento
+> (`ARCHITETTURA-CORSI.md`). I tre livelli sono oggi **Corso › Lezione › Capitolo**; il
+> contratto della rinomina sta in [RINOMINA-GLOSSARIO.md](RINOMINA-GLOSSARIO.md).
 
-## Struttura: 6 aree · 15 corsi + 1 modulo-fonte
+## Struttura: 6 aree · 15 lezioni + 1 modulo-fonte
 
 ### AREA 1 — Fondamenti e quadro scientifico-diagnostico
 - **C1 · `01 FONDAMENTI · Cosa sono i DSA`** — 01, 03, 28
@@ -12,7 +18,7 @@
     funzioni esecutive portano un **rimando esplicito a C15** (metodo). Non spezzato.
 - **RIF · `39-40 QUADRO SCIENTIFICO-DIAGNOSTICO (ISS/Min. Salute)`** — 39, 40
   - **Modulo-fonte consultabile** *(decisione utente)*, capitoli = quesiti (A/B/C/D per 39; 1-9 per 40).
-    Non corso lineare. Etichetta **diagnostico** (la normativa scolastica L.170/PDP è nel video 27).
+    Non una lezione lineare. Etichetta **diagnostico** (la normativa scolastica L.170/PDP è nel video 27).
 
 ### AREA 2 — Presa in carico e documentazione
 - **C2 · `02 LA CONSULENZA ALLA FAMIGLIA`** — 02
@@ -51,8 +57,8 @@
 
 ## Decisioni prese (2026-07-23)
 - **A — 28:** intero in C1 (Fondamenti) + rimandi a C15. ✅
-- **B — 17:** corso a sé (C9), sequenziato **dopo** la comprensione (13→14→15→16→17). ✅
-- **C — 39/40:** modulo-fonte consultabile (capitoli = quesiti), non corso lineare. ✅
+- **B — 17:** lezione a sé (C9), sequenziata **dopo** la comprensione (13→14→15→16→17). ✅
+- **C — 39/40:** modulo-fonte consultabile (capitoli = quesiti), non una lezione lineare. ✅
 
 ## Note di pipeline
 - Ogni materiale ha i **capitoli proposti con minutaggi/pagine** (dalla verifica dei 3 agenti) → alimentano i `.md` e i link ai minuti.
