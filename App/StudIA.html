@@ -1345,7 +1345,11 @@
   #uiModal[open]{ display:flex; }
   #uiModal .um-card{ background:var(--panel); border:1px solid var(--line); box-shadow:var(--sh-3d); padding:1.1rem 1.2rem; width:min(420px,92vw); }
   #uiModal h3{ font-size:12px; text-transform:uppercase; letter-spacing:.12em; margin:0 0 .7rem; }
-  #uiModal input{ width:100%; border:1px solid var(--line); background:var(--bg); color:var(--ink); padding:.55rem .6rem; font-size:14px; }
+  #uiModal input, #uiModal select{ width:100%; border:1px solid var(--line); background:var(--bg); color:var(--ink); padding:.55rem .6rem; font-size:14px; }
+  /* il campo in più (oggi: da quale documento nasce un appunto dello zaino) */
+  #uiModal #umExtra{ margin-top:.8rem; }
+  #uiModal #umExtra[hidden]{ display:none; }
+  #uiModal .um-lab{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin:0 0 .35rem; }
   #uiModal .um-row{ display:flex; gap:.5rem; justify-content:flex-end; margin-top:.9rem; }
   #uiModal button{ border:1px solid var(--line); background:var(--panel); cursor:pointer; padding:.45rem .9rem; font-size:12px; font-weight:700; }
   #uiModal button.primary{ background:color-mix(in srgb, var(--teal) 22%, var(--panel)); border-color:transparent; color:var(--teal-strong); }
@@ -4421,6 +4425,12 @@ function openPdf(pdf,page,label){
   // il dock non c'è più: si chiede al banco di fare posto allo strumento
   try{ bancoMostra('fonte'); }catch(e){}
   aggiornaBarraPagina();
+  /* Nello ZAINO il documento aperto è ciò che nei corsi è il capitolo (Z6):
+     cambiandolo cambiano il chip «da dove nasce l'appunto» e i gruppi della
+     tendina, e nessun altro li rimetterebbe a posto — `notesReload` scatta
+     quando cambia l'ELENCO, non quando cambia ciò che stai leggendo. Nei corsi
+     questa chiamata ridisegna le stesse cose con lo stesso contenuto. */
+  try{ refreshNoteUI(); }catch(e){}
 
   // stesso documento, altra pagina: ci si sposta, non si ricarica
   if(stesso){ vaiAPagina(pg); return; }
@@ -4480,6 +4490,9 @@ function closePdf(){ document.documentElement.dataset.pdf='';
   var tt=$('#pdfTitle'); if(tt) tt.textContent='Fonte';
   var hh=$('#pdfHost'); if(hh) hh.hidden=true;
   aggiornaBarraPagina();
+  // chiuso il documento, nello zaino il posto degli appunti torna a essere il
+  // vuoto: i PERSONALI sono «qui», gli altri «altrove» (stessa ragione di openPdf)
+  try{ refreshNoteUI(); }catch(e){}
   if(document.documentElement.dataset.editor!=='1') document.documentElement.dataset.dock='';
   pdfChiudiDoc(); pdfStato('');
   var v=$('#mediaVideo'); if(v){ try{v.pause();}catch(e){} v.removeAttribute('src'); if(v.load) v.load(); } }
@@ -4569,18 +4582,56 @@ var VAULT_META={};            // idLezione -> {courseId, lessonTitle, chapters:[
    dov'è nato l'appunto). listCourse/listError descrivono l'ultima lettura. */
 var NOTES={ list:[], cur:null, mde:null, dirty:false, timer:null, courseId:null, listCourse:null, listError:'', caricando:false };
 
-/* Electron non implementa window.prompt() (solleva un'eccezione): modale nostra. */
-function askText(titolo, def){
+/**
+ * La tendina in più della modale, costruita quando serve e spenta quando no.
+ *
+ * Nasce da JS invece di stare nel markup perché è di UNA domanda sola — «da
+ * quale documento nasce questo appunto» — e un campo scritto nella pagina e
+ * nascosto per tutta la vita è un campo che prima o poi compare dove non deve.
+ * `campo` = { etichetta, voci:[{valore,testo}], valore }.
+ */
+function umCampo(campo){
+  var inp=$('#umInput'); if(!inp) return null;
+  var box=$('#umExtra');
+  if(!campo){ if(box) box.hidden=true; return null; }
+  if(!box){
+    box=document.createElement('div'); box.id='umExtra';
+    box.innerHTML='<label class="um-lab" for="umSel"></label><select id="umSel"></select>';
+    inp.parentNode.insertBefore(box, inp.nextSibling);
+  }
+  box.hidden=false;
+  box.querySelector('.um-lab').textContent=campo.etichetta||'';
+  var sel=box.querySelector('#umSel');
+  sel.innerHTML=(campo.voci||[]).map(function(v){
+    return '<option value="'+escHtml(v.valore)+'">'+escHtml(v.testo)+'</option>';
+  }).join('');
+  sel.value=campo.valore||'';
+  // valore che non è fra le voci: si torna alla prima invece di mostrarne una a caso
+  if(sel.value!==(campo.valore||'')) sel.selectedIndex=0;
+  return sel;
+}
+/**
+ * Electron non implementa window.prompt() (solleva un'eccezione): modale nostra.
+ *
+ * ⚠️ Con `campo` la promessa NON si scioglie in una stringa ma in
+ * `{ testo, scelta }` — annullare resta `null` in tutti e due i casi. Due forme
+ * di ritorno da una funzione sola è un prezzo, e si paga per non avere due
+ * modali: due finestre che chiedono la stessa cosa divergono su un tasto
+ * (l'Invio, l'Escape, il click fuori) e chi studia se ne accorge.
+ */
+function askText(titolo, def, campo){
   return new Promise(function(resolve){
     var m=$('#uiModal'), inp=$('#umInput'), ttl=$('#umTitle');
-    if(!m||!inp){ resolve(def||''); return; }
+    if(!m||!inp){ resolve(campo ? { testo:(def||''), scelta:(campo.valore||'') } : (def||'')); return; }
     ttl.textContent=titolo||'Titolo'; inp.value=def||'';
+    var sel=umCampo(campo);
     m.setAttribute('open','');
     setTimeout(function(){ inp.focus(); inp.select(); },20);
-    function done(v){ m.removeAttribute('open'); cleanup(); resolve(v); }
-    function onKey(e){ if(e.key==='Enter'){ e.preventDefault(); done(inp.value); } else if(e.key==='Escape'){ e.preventDefault(); done(null); } }
+    function esito(){ return campo ? { testo:inp.value, scelta:(sel?sel.value:'') } : inp.value; }
+    function done(v){ m.removeAttribute('open'); umCampo(null); cleanup(); resolve(v); }
+    function onKey(e){ if(e.key==='Enter'){ e.preventDefault(); done(esito()); } else if(e.key==='Escape'){ e.preventDefault(); done(null); } }
     function onClick(e){
-      if(e.target.closest('#umOk')) done(inp.value);
+      if(e.target.closest('#umOk')) done(esito());
       else if(e.target.closest('#umCancel') || e.target===m) done(null);
     }
     function cleanup(){ inp.removeEventListener('keydown',onKey); m.removeEventListener('click',onClick); }
@@ -5388,6 +5439,15 @@ async function zainoNavAggiorna(){
     }), 'Nessuna mappa. Si disegnano nel blocco «Mappa».', eMappe);
 }
 
+/** I documenti di un contenitore: una strada sola, per tutti quelli che li
+ *  chiedono — la barra delle fonti, e la tendina della rinomina di un appunto.
+ *  Chi ne apre una seconda si ritrova con due elenchi della stessa cosa, che
+ *  divergono al primo documento aggiunto da una parte. */
+async function documentiPdf(id){
+  try{ return ((await window.vault.corpus.list(id))||[]).filter(function(m){ return m.tipo==='pdf'; }); }
+  catch(e){ return []; }
+}
+
 /* ===== Il selettore del documento nella barra delle fonti =================
  * Elenca i PDF del contenitore aperto e ne apre uno. L'elenco è lo stesso della
  * sidebar (`corpus.list`): due elenchi della stessa cosa divergono al primo
@@ -5398,9 +5458,7 @@ async function pdfDocApri(ancora){
   var id=corsoAttivo();
   pop.innerHTML='<div class="pd-vuoto">Cerco i documenti…</div>';
   popAt(pop, ancora);
-  var lista=[];
-  try{ lista=((await window.vault.corpus.list(id))||[]).filter(function(m){ return m.tipo==='pdf'; }); }
-  catch(e){ lista=[]; }
+  var lista=await documentiPdf(id);
   if(!lista.length){
     pop.innerHTML='<div class="pd-vuoto">Nessun documento in questo zaino.</div>';
     return;
@@ -5751,13 +5809,20 @@ function curMeta(){
 }
 function curCtx(){
   var m=curMeta(); if(!m) return null;
-  /* Nello zaino il contesto è il contenitore e basta: niente lezione, niente
-     capitolo. I campi restano, vuoti, perché un appunto ha sempre la stessa
-     forma — e un giorno `materiale` e `pagina` prenderanno il posto che qui
-     tengono `lezione` e `capitolo` (Z6). */
+  /* Nello zaino non ci sono lezioni né capitoli: il posto che quelli tengono
+     nei corsi lo prendono il DOCUMENTO aperto e la sua pagina (Z6 — è la riga
+     che questo commento prometteva). I campi della lezione restano, vuoti,
+     perché un appunto ha sempre la stessa forma e mezza interfaccia li legge.
+     ⚠️ La verità su che cosa si sta leggendo la tiene `ANTEPRIMA`, non la
+     sidebar: la sidebar segna l'ultimo click, l'anteprima è ciò che hai
+     davanti adesso — e la pagina scorre sotto le dita senza passare di lì
+     (`pagechanging` aggiorna `ANTEPRIMA.page`, la sidebar no).
+     Nessun PDF aperto: `materiale` resta vuoto e l'appunto nasce PERSONALE. */
   if(modoAttivo()==='zaino'){
-    return { courseId:m.courseId, lezione:'', lezioneId:'',
-             capitolo:'', capitoloId:'', capitoloFile:'' };
+    var pdf = (typeof ANTEPRIMA!=='undefined' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf') ? (ANTEPRIMA.file||'') : '';
+    return { courseId:m.courseId, modo:'zaino', lezione:'', lezioneId:'',
+             capitolo:'', capitoloId:'', capitoloFile:'',
+             materiale:pdf, pagina:(pdf ? String(ANTEPRIMA.page||1) : '') };
   }
   var c=LESSON.chapters[state.current]; if(!c) return null;
   var ch=m.chapters[state.current]||{};
@@ -5770,9 +5835,17 @@ function curCtx(){
 var noteStessoLezione = AppuntiElenco.noteStessoLezione;
 var noteInChapter = AppuntiElenco.noteInChapter;
 var noteEtichetta = AppuntiElenco.noteEtichetta;
-var noteDove = AppuntiElenco.noteDove;
-var noteEtichettaAltrove = AppuntiElenco.noteEtichettaAltrove;
 var noteGroups = AppuntiElenco.noteGroups;
+var PERSONALE = AppuntiElenco.PERSONALE;
+/* Queste tre chiedono al modulo cose che il modulo da solo non sa: in che
+   modalità siamo — nello zaino il posto del capitolo lo tiene il documento — e
+   come si accorcia il nome di un file nel titolo leggibile, che è mestiere del
+   renderer (`titoloMateriale`). Si avvolgono qui, con la firma di prima, così i
+   dieci punti che le chiamano non cambiano e nessuno può dimenticarsi un
+   argomento per strada. */
+function noteDove(n){ return AppuntiElenco.noteDove(n, modoAttivo(), titoloMateriale); }
+function noteEtichettaAltrove(n){ return AppuntiElenco.noteEtichettaAltrove(n, modoAttivo(), titoloMateriale); }
+function noteMateriale(n){ return AppuntiElenco.noteMateriale(n, titoloMateriale); }
 
 
 function notesReload(){
@@ -5918,8 +5991,14 @@ async function noteNew(anchor, origine, stile){
   var title=await askText('Titolo dell’appunto', 'APPUNTI');
   if(title===null) return; title=(title||'APPUNTI').trim()||'APPUNTI';
   var body=anchor? frammentoAppuntato(anchor, ctx, origine, stile) : '';
+  /* ⚠️ `materiale`/`pagina` arrivano dal CONTESTO e non da `origine`: sono i due
+     campi con cui, nello zaino, l'appunto dice da dove nasce (Z6), e devono
+     valere anche quando si crea un appunto vuoto — cioè quando `origine` non
+     c'è perché non si è selezionato niente. Nei corsi il contesto non li ha,
+     restano '' e `serialize` non li scrive nemmeno. */
   var meta={ title:title, lezione:ctx.lezione, lezioneId:ctx.lezioneId, capitolo:ctx.capitolo,
-             capitoloId:ctx.capitoloId, capitoloFile:ctx.capitoloFile, anchor:anchor||'' };
+             capitoloId:ctx.capitoloId, capitoloFile:ctx.capitoloFile,
+             materiale:ctx.materiale||'', pagina:ctx.pagina||'', anchor:anchor||'' };
   var res=api.save(ctx.courseId, null, meta, body);
   if(!res || res.error){ toast('Salvataggio fallito: '+((res&&res.error)||'?'),false); return; }
   NOTES.courseId=ctx.courseId;
@@ -6082,6 +6161,23 @@ function noteInserisci(md){
   noteSave(true);
   return true;
 }
+/**
+ * Il frontmatter di un appunto, ricostruito da quello che il renderer ha in mano.
+ *
+ * ⚠️ Ogni salvataggio RISCRIVE il frontmatter intero: una chiave che manca qui
+ * non è una chiave che resta com'era, è una chiave cancellata — in silenzio, al
+ * primo autosalvataggio, 1,8 s dopo il primo tasto battuto. È la stessa
+ * trappola della lista bianca `CHIAVI` in `lib/appunti.js`, e le due liste
+ * devono restare d'accordo.
+ * `materiale`/`pagina` sono il legame dello ZAINO: da quale documento e da
+ * quale pagina l'appunto è nato (Z6).
+ */
+function noteMeta(n){
+  var meta={};
+  ['title','lezione','lezioneId','capitolo','capitoloId','capitoloFile',
+   'materiale','pagina','anchor','creato'].forEach(function(k){ meta[k]=(n && n[k])||''; });
+  return meta;
+}
 function noteSave(silent){
   if(!NOTES.cur || !NOTES.mde) return;
   var api=notesApi(); if(!api) return;
@@ -6092,7 +6188,7 @@ function noteSave(silent){
   if(!pid){ if(!silent) toast('Nessun corso aperto: appunto non salvato',false); return; }
   clearTimeout(NOTES.timer); NOTES.timer=null;
   var body=NOTES.mde.value();
-  var meta={}; ['title','lezione','lezioneId','capitolo','capitoloId','capitoloFile','anchor','creato'].forEach(function(k){ meta[k]=NOTES.cur[k]||''; });
+  var meta=noteMeta(NOTES.cur);
   var res;
   try{ res=api.save(pid, NOTES.cur.file, meta, body); }
   catch(err){ console.error('appunti/save:',err); toast('Salvataggio fallito: '+err.message,false); return; }
@@ -6117,6 +6213,25 @@ function noteDelete(){
   toast('Appunto eliminato',true);
 }
 /**
+ * Le voci della tendina «documento» della rinomina, nello zaino.
+ *
+ * ⚠️ Se l'appunto punta a un documento che nello zaino non c'è più (tolto,
+ * rinominato fuori dall'app) la sua voce si aggiunge lo stesso, in coda: senza,
+ * la tendina si aprirebbe su un'altra voce e confermare riscriverebbe il
+ * riferimento con qualcosa che chi studia non ha scelto. Un elenco che non
+ * contiene il valore corrente non è un elenco: è una riassegnazione.
+ */
+function noteDocVoci(lista, corrente){
+  var voci=[{ valore:'', testo:PERSONALE + ' — nessun documento' }];
+  var visto={};
+  (lista||[]).forEach(function(m){
+    visto[m.name]=1;
+    voci.push({ valore:m.name, testo:(titoloMateriale(m.name)||m.name) });
+  });
+  if(corrente && !visto[corrente]) voci.push({ valore:corrente, testo:(titoloMateriale(corrente)||corrente)+' (non più nello zaino)' });
+  return voci;
+}
+/**
  * Rinomina l'appunto aperto: cambia il titolo dentro il file **e** il nome del
  * file, in un gesto solo. Erano due cose che si potevano solo separare — si
  * cambiava il titolo scrivendolo nel frontmatter e il nome restava quello del
@@ -6125,6 +6240,13 @@ function noteDelete(){
  * ⚠️ Prima si scrive quello che è in canna (`noteFlush`): la rinomina lavora
  * sul file, e un autosalvataggio in ritardo tornerebbe a scrivere sul nome
  * vecchio — cioè farebbe rinascere l'appunto appena spostato.
+ *
+ * Nello ZAINO la finestra chiede una cosa in più: da quale DOCUMENTO nasce
+ * l'appunto (Z6). È l'unico modo di correggere un riferimento nato storto —
+ * appuntato con il PDF sbagliato davanti, o senza PDF — e di dichiarare
+ * PERSONALE un appunto che con i documenti non c'entra. Le due modifiche
+ * viaggiano insieme perché sono un gesto solo per chi studia: «questo appunto
+ * si chiama così e viene di lì».
  */
 async function noteRename(){
   if(!NOTES.cur){ toast('Nessun appunto aperto da rinominare', false); return; }
@@ -6133,12 +6255,51 @@ async function noteRename(){
   var m=curMeta(), pid=NOTES.courseId || (m?m.courseId:null);
   if(!pid){ toast('Nessun corso aperto', false); return; }
   var vecchio=NOTES.cur.title||'';
-  var t=await askText('Nuovo titolo dell’appunto', vecchio);
-  if(t===null) return;
+  /* Nello zaino la finestra chiede una cosa in più: da quale documento nasce
+     l'appunto. È il campo che nei corsi non ha senso — là il legame col
+     capitolo lo decide dove stavi leggendo, e spostarlo a mano vorrebbe dire
+     mentire su dove la frase è stata presa. */
+  var zaino = modoAttivo()==='zaino';
+  var matVecchio = String(NOTES.cur.materiale||'');
+  var campo = zaino
+    ? { etichetta:'Nasce dal documento', valore:matVecchio,
+        voci:noteDocVoci(await documentiPdf(pid), matVecchio) }
+    : null;
+  var r0=await askText('Nuovo titolo dell’appunto', vecchio, campo);
+  if(r0===null) return;
+  var t=(zaino ? r0.testo : r0);
+  var matNuovo = zaino ? String(r0.scelta||'') : matVecchio;
   t=(t||'').trim();
   if(!t){ toast('Il titolo non può essere vuoto', false); return; }
-  if(t===vecchio) return;
+  if(t===vecchio && matNuovo===matVecchio) return;
   noteFlush();
+  /* Il documento si cambia PRIMA della rinomina, e con un salvataggio vero:
+     `api.rename` ricopia il frontmatter che trova su disco, quindi un campo
+     cambiato solo in memoria verrebbe sovrascritto dalla copia vecchia.
+     ⚠️ Cambiando documento la PAGINA si azzera: era la pagina di un altro PDF,
+     e tenerla vorrebbe dire mandare il lettore a una pagina che con questo
+     appunto non c'entra niente. */
+  if(zaino && matNuovo!==matVecchio){
+    var pagVecchia=NOTES.cur.pagina||'';
+    NOTES.cur.materiale=matNuovo; NOTES.cur.pagina='';
+    var corpo=(NOTES.mde ? NOTES.mde.value() : (NOTES.cur.body||''));
+    var rm;
+    try{ rm=api.save(pid, NOTES.cur.file, noteMeta(NOTES.cur), corpo); }
+    catch(err2){ rm={ error:err2.message }; }
+    if(!rm || rm.error){
+      // in memoria resta la verità del disco: un riferimento cambiato a metà
+      // è peggio di uno non cambiato, perché sembra fatto
+      NOTES.cur.materiale=matVecchio; NOTES.cur.pagina=pagVecchia;
+      console.error('appunti/save:',rm&&rm.error);
+      toast('Documento non cambiato: '+((rm&&rm.error)||'errore sconosciuto'), false); return;
+    }
+    NOTES.cur.body=corpo;
+  }
+  if(t===vecchio){
+    notesReload(); noteResync(); refreshNoteUI(); refreshMyNotes();
+    toast('Appunto: nasce da «'+noteMateriale(NOTES.cur)+'»', true);
+    return;
+  }
   var res;
   try{ res=api.rename(pid, NOTES.cur.file, t); }
   catch(err){ console.error('appunti/rename:',err); toast('Appunto non rinominato: '+err.message, false); return; }
@@ -6165,12 +6326,24 @@ function refreshNoteUI(){
   tendinaViva(sel, { piccola:true, fissa:'Quaderno' });
   var ctx=curCtx();
   var g=noteGroups(NOTES.list, ctx, NOTES.cur);
+  /* Nello zaino «qui» non vuol dire «questo capitolo» ma «questo documento» —
+     e quando non c'è nessun PDF aperto vuol dire «gli appunti personali», cioè
+     quelli nati da zero. Le parole seguono la cosa: una tendina che nello zaino
+     parla di capitoli manda a cercare qualcosa che lì non esiste. */
+  var zaino = modoAttivo()==='zaino';
+  var suDoc = zaino && !!(ctx && ctx.materiale);
+  var quiEt = !zaino ? 'Questo capitolo' : (suDoc ? 'Questo documento' : 'Appunti personali');
+  var altroveEt = !zaino ? 'Altri capitoli del corso' : 'Altri appunti dello zaino';
+  var pienoEt = !zaino ? '— appunti del capitolo —'
+              : (suDoc ? '— appunti di questo documento —' : '— appunti personali —');
+  var vuotoEt = !zaino ? '— nessuno in questo capitolo —'
+              : (suDoc ? '— nessuno da questo documento —' : '— nessun appunto personale —');
   var testa = NOTES.listError ? '⚠ elenco non leggibile'
-            : g.qui.length ? '— appunti del capitolo —'
-            : (g.altrove.length ? '— nessuno in questo capitolo —' : 'nessun appunto');
+            : g.qui.length ? pienoEt
+            : (g.altrove.length ? vuotoEt : 'nessun appunto');
   var html='<option value="">'+escHtml(testa)+'</option>';
-  if(g.qui.length) html+='<optgroup label="Questo capitolo">'+g.qui.map(function(n){ return noteOpt(n,false); }).join('')+'</optgroup>';
-  if(g.altrove.length) html+='<optgroup label="Altri capitoli del corso ('+g.altrove.length+')">'+g.altrove.map(function(n){ return noteOpt(n,true); }).join('')+'</optgroup>';
+  if(g.qui.length) html+='<optgroup label="'+escHtml(quiEt)+'">'+g.qui.map(function(n){ return noteOpt(n,false); }).join('')+'</optgroup>';
+  if(g.altrove.length) html+='<optgroup label="'+escHtml(altroveEt)+' ('+g.altrove.length+')">'+g.altrove.map(function(n){ return noteOpt(n,true); }).join('')+'</optgroup>';
   if(g.orfano) html+='<optgroup label="Aperto adesso">'+noteOpt(g.orfano,true)+'</optgroup>';
   sel.innerHTML=html;
   if(NOTES.cur && NOTES.cur.file){
@@ -6178,18 +6351,27 @@ function refreshNoteUI(){
     if(sel.value!==NOTES.cur.file) sel.selectedIndex=0;   // rete: mai una tendina vuota
     sel.title=noteEtichettaAltrove(NOTES.cur)+'\n'+NOTES.cur.file;
   }else{
-    sel.value=''; sel.title=NOTES.listError ? ('Lettura degli appunti fallita: '+NOTES.listError) : 'Appunti di questo capitolo';
+    sel.value=''; sel.title=NOTES.listError ? ('Lettura degli appunti fallita: '+NOTES.listError)
+              : (zaino ? 'Appunti di questo zaino' : 'Appunti di questo capitolo');
   }
-  // dove sta l'appunto aperto, quando non è di questo capitolo
+  // dove sta l'appunto aperto, quando non è di quello che stai leggendo
   var w=$('#noteWhere');
   if(w){
-    /* ⚠️ Nello ZAINO non esistono capitoli, quindi `noteInChapter` è falsa
-       SEMPRE e il chip restava acceso a dire «↪ altro capitolo» rispetto a un
-       capitolo che non c'è. Un avviso che non può mai spegnersi non è un
-       avviso: è arredamento, e insegna a non leggere gli avvisi veri. */
-    var fuori = modoAttivo()!=='zaino' && NOTES.cur && !(ctx && noteInChapter(NOTES.cur, ctx));
+    /* ⚠️ Nello ZAINO non esistono capitoli: il chip restava acceso a dire
+       «↪ altro capitolo» rispetto a un capitolo che non c'è, e un avviso che
+       non può mai spegnersi è arredamento — insegna a non leggere gli avvisi
+       veri. Adesso quel posto lo riempie ciò che nello zaino esiste davvero: il
+       DOCUMENTO da cui l'appunto è nato, o PERSONALE se è nato da zero (Z6).
+       La condizione è la stessa dei corsi — `noteInChapter`, che nello zaino
+       confronta i documenti — quindi il chip si spegne quando l'appunto e il
+       PDF aperto sono d'accordo, PERSONALI compresi (nessun PDF aperto e
+       nessun documento nell'appunto: sono lo stesso posto, il vuoto). */
+    var fuori = NOTES.cur && !(ctx && noteInChapter(NOTES.cur, ctx));
     w.hidden=!fuori;
-    if(fuori){ w.textContent='↪ altro capitolo'; w.title='Stai scrivendo su «'+noteEtichetta(NOTES.cur)+'» ('+(noteDove(NOTES.cur)||'altro capitolo')+'), non sul capitolo aperto.'; }
+    if(fuori){
+      w.textContent = zaino ? ('↪ '+noteMateriale(NOTES.cur)) : '↪ altro capitolo';
+      w.title='Stai scrivendo su «'+noteEtichetta(NOTES.cur)+'» ('+(noteDove(NOTES.cur)||'altro capitolo')+'), non sul '+(zaino?'documento':'capitolo')+' aperto.';
+    }
   }
 }
 /* blocco "I miei appunti" dentro il capitolo (iniettato a runtime, non scritto nel .md) */
