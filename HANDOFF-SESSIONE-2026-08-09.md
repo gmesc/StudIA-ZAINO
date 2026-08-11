@@ -381,3 +381,7 @@ pagina**. Oggi `ANTEPRIMA.page` comanda l'iframe e `citaCorrente()` cita quello 
 domani `pagechanging` alimenta `ANTEPRIMA.page` e si cita quello che l'utente **guarda**.
 
 Poi: ⌘⇧C verso la mappa (che impone di spezzare `citaCorrente()` in `puntoCorrente()`), B3, L6.
+
+> **La sessione successiva ha un file suo**: [HANDOFF-SESSIONE-2026-08-10.md](HANDOFF-SESSIONE-2026-08-10.md)
+> — mappe concettuali, figure nei capitoli, viewer pdf.js, e le prove che smettono di toccare la
+> casa dell'utente.

@@ -85,9 +85,9 @@ Stato consegnato: **1260 controlli verdi** (`npm test`), app funzionante, tre co
 > dai file del corso, con quattro motori di disposizione, provata su tutti i 210 capitoli di
 > TD74-DSA. Le altre fasi (export PDF, estrazione, ritagli, focus) sono in fondo al §10.
 >
-> Resta aperto da prima il **§9**: Chandra è installato e la rilettura dei PDF funziona fino
-> all'indice, ma le figure **non entrano ancora nel capitolo**. È descritto in fondo al §9 sotto
-> «Che cosa resta».
+> ~~Resta aperto da prima il §9~~ — **chiuso il 10 agosto 2026**: le figure entrano nel capitolo, si
+> aprono sul documento alla pagina giusta e viaggiano nell'esportazione. La rilettura con Chandra
+> resta facoltativa e su richiesta, come è sempre stata.
 >
 > Le lezioni di `ai-literacy-anthropic` e `digital-education-outlook-conference-2026-oecd` restano
 > **cancellate di proposito** (`LEZIONI/`, `_piano.json`, `scarti/` → Cestino): l'utente rigenera da
@@ -734,12 +734,23 @@ trascrizioni e devono viaggiare col corso.
 
 Verificato: `ocr:leggi` **rifiuta** TD74-DSA (protetto) e l'indice resta intatto.
 
-### Che cosa resta (la metà del capitolo)
+### ~~Che cosa resta (la metà del capitolo)~~ → **fatta il 10 agosto 2026**
 
-`capitolo.schema.json` non ha nessun campo immagine e `validateCapitolo` **vieta l'HTML grezzo** in
-`contenuto`. Da scrivere: la sintassi `![didascalia](fig:03#p=7&i=2)` in `_mdInline` (resa come `<figure>`
-cliccabile che riusa `openPdf`), il campo nello schema, `mdser` + `reader-parser`, l'offerta delle figure
-al modello in `genera.testoFonti`, e `lib/pacchetto.js` perché i `.webp` viaggino nell'esportazione.
+> Questa metà era il primo punto della coda del §6 e non c'è più: la sintassi
+> `![didascalia](fig:03#p=7&i=2)`, il campo nello schema, il validatore, `mdser`, la raccolta dei
+> rimandi, l'offerta delle figure al modello e il conteggio nell'esportazione sono scritti e provati
+> (`test/figure.js`, 32 controlli). Il verbale sta in
+> [HANDOFF-SESSIONE-2026-08-10.md §3.4](HANDOFF-SESSIONE-2026-08-10.md).
+>
+> ⚠️ Due cose scoperte scrivendola, che questo paragrafo non prevedeva: `srcUrl` doveva imparare a
+> cercare anche in `MATERIALI/Figure/` (senza, casella vuota e nessuna causa visibile), e la figura
+> si rende con uno `<span role="figure">` e **non** con un `<figure>` — dentro un `<p>` è markup
+> illegale e il browser spezza il paragrafo per conto suo.
+
+Il testo originale, per memoria: *«`capitolo.schema.json` non ha nessun campo immagine e
+`validateCapitolo` vieta l'HTML grezzo in `contenuto`. Da scrivere: la sintassi in `_mdInline`, il
+campo nello schema, `mdser` + `reader-parser`, l'offerta delle figure al modello in
+`genera.testoFonti`, e `lib/pacchetto.js` perché i `.webp` viaggino nell'esportazione.»*
 
 ### Disegno concordato per la figura nel capitolo (non ancora scritto)
 
@@ -1017,7 +1028,7 @@ parallelo, l'interfaccia in fila dopo perché converge tutta in un file solo.
 | registro «Mie» (lotto L1) | `App/StudIA.html` | ✅ **fatto e verificato** l'8 agosto: elenco, apertura, «+ Nuova», «Modifica una copia», salvataggio automatico, pallino di modifica |
 | i gesti sulla tela (lotto L2) | `App/StudIA.html`, `App/assets/mappa/disegna.js` | ✅ **fatto e verificato** l'8 agosto: crea, figlio/fratello, rinomina, trascina, elimina, ⌘Z etichettato, cestino della mappa |
 | archi e menu (lotti L3–L4) | `App/StudIA.html`, `disegna.js`, `relazioni.js` | ✅ **fatto e verificato** il 9 agosto: porta di trascinamento, «Collega a…», linking word col vocabolario condiviso, menu contestuale unico, colori con cascata, cestino |
-| interfaccia, il resto | `App/StudIA.html` | **DA FARE: L5 estrazione, L6 ritaglio, e il lotto G1–G3 del §13** |
+| interfaccia, il resto | `App/StudIA.html` | L5 ✅ · **G1–G2 ✅ il 10 agosto** (le generate parlano di concetti) · **DA FARE: L6 ritaglio e G3 (i verbi dal modello)** |
 
 ⚠️ **`App/assets/mappa/modifica.js` non era caricato dalla pagina.** I tag in testa a `StudIA.html`
 caricavano gli altri cinque moduli: nel renderer `MappaModifica` era `undefined`, cioè 582 righe
