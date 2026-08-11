@@ -72,6 +72,14 @@ sezione('E le evidenze dei capitoli non cambiano id (nessuna migrazione)');
   const suCapitolo = { capitoloId: 'c01', exact: 'memoria', prefix: 'la ', suffix: ' di lavoro' };
   check('l\'id di un\'evidenza di capitolo è quello di sempre',
     '2b4488da0195', E.identita(suCapitolo));
+  /* ⚠️ E lo stesso vale per il seme del documento. Il separatore fra i campi è
+     il byte NUL, che nel sorgente è scritto come sequenza di escape ('\u0000') e
+     non come byte letterale: un NUL nel file renderebbe `lib/evidenze.js`
+     binario per git — niente diff, niente blame, merge irrisolvibile. Le due
+     forme danno lo stesso byte a runtime, e questa riga è ciò che lo dimostra:
+     se qualcuno cambia il separatore, il valore qui sotto smette di tornare. */
+  check('l\'id di un\'evidenza di documento è quello di sempre',
+    '47d7d03b9c20', E.identita(suPdf('03 dispensa.pdf', 3, 'memoria')));
   /* Un capitolo e un documento non si scambiano id nemmeno per caso. */
   check('capitolo e documento vivono in due spazi', false,
     E.identita(suCapitolo) === E.identita(suPdf('x.pdf', 1, 'memoria')));
