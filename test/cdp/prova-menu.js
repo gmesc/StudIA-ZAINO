@@ -130,8 +130,13 @@ async function esc() {
   ok('la barra è comparsa', true,
     await val(`(()=>{const b=document.getElementById('selBarra');
       return !!b && b.classList.contains('aperta');})()`));
-  ok('con le quattro azioni', ['cancella', 'appunta', 'mappa', 'copia'],
-    await val(`[...document.querySelectorAll('#selBarra .sb-az')].map(b=>b.dataset.az)`));
+  /* ⚠️ Non più quattro icone: la barra mostra LO STESSO menu del tasto destro
+     (`selMenuHTML`), quindi le voci sono quelle, nell'ordine del menu. Che le
+     due superfici non possano divergere lo prova `prova-selezione-menu.js`;
+     qui si controlla solo che la barra le porti tutte. */
+  ok('con le voci del menu, nell\'ordine del menu',
+    ['appunta', 'mappa', 'keyword', 'cancella', 'copia'],
+    await val(`[...document.querySelectorAll('#selBarra .ctx-item')].map(b=>b.dataset.az)`));
   ok('e la tavolozza: cinque preset più il picker', [5, 1],
     await val(`[document.querySelectorAll('#selBarra .ctx-col').length,
                 document.querySelectorAll('#selBarra input[type=color]').length]`));
@@ -143,7 +148,7 @@ async function esc() {
       return r.left>=-1 && r.top>=-1 && r.right<=window.innerWidth+1 && r.bottom<=window.innerHeight+1;})()`));
 
   console.log('\n== Copia, dalla barra');
-  await clicca('#selBarra .sb-az[data-az="copia"]'); await pausa(400);
+  await clicca('#selBarra .ctx-item[data-az="copia"]'); await pausa(400);
   ok('la barra si chiude dopo la scelta', false,
     await val(`document.getElementById('selBarra').classList.contains('aperta')`));
   ok('il testo è finito negli appunti di sistema', s2.testo,
@@ -153,7 +158,7 @@ async function esc() {
   const quanti = () => val('NOTES.list.length');
   const prima = await quanti();
   await mostraBarra();
-  await clicca('#selBarra .sb-az[data-az="appunta"]'); await pausa(500);
+  await clicca('#selBarra .ctx-item[data-az="appunta"]'); await pausa(500);
   /* Senza un appunto aperto si ricade su `noteNew`, che il titolo lo CHIEDE:
      è l'unico momento in cui la domanda ha senso, e va risposta come la
      risponderebbe una persona. */
@@ -166,7 +171,7 @@ async function esc() {
   ok('e il frammento porta il rimando al capitolo', true, /\(cap:[A-Za-z0-9._-]+\)/.test(corpo1));
 
   await mostraBarra();
-  await clicca('#selBarra .sb-az[data-az="appunta"]'); await pausa(800);
+  await clicca('#selBarra .ctx-item[data-az="appunta"]'); await pausa(800);
   ok('col medesimo appunto aperto NON ne nasce un secondo', prima + 1, await quanti());
   const corpo2 = await val('NOTES.mde ? NOTES.mde.value() : ""');
   ok('il secondo frammento si accoda al primo', true, corpo2.length > corpo1.length);
@@ -227,7 +232,7 @@ async function esc() {
      un tasto che si può premere quando non c'è niente da cancellare sarebbe un
      gesto che non fa niente senza dirlo. */
   ok('la barra si accorge che qui c\'è già una parola chiave', false,
-    await val(`document.querySelector('#selBarra .sb-az[data-az="cancella"]').disabled`));
+    await val(`document.querySelector('#selBarra .ctx-item[data-az="cancella"]').disabled`));
   await clicca('#selBarra .ctx-col:nth-of-type(3)'); await pausa(700);
   ok('ricolorare non aggiunge una riga', evPrima + 1, await quanteEv());
   ok('e l\'identità resta la stessa', idEv,
@@ -238,13 +243,13 @@ async function esc() {
   ok('dopo un ridisegno del capitolo si riaccende da sé', true, await val(`CSS.highlights.has('ev-0')`));
 
   await mostraBarra();
-  await clicca('#selBarra .sb-az[data-az="cancella"]'); await pausa(700);
+  await clicca('#selBarra .ctx-item[data-az="cancella"]'); await pausa(700);
   ok('cancellare la toglie dal disco', evPrima, await quanteEv());
   ok('e il colore si spegne', false, await val(`CSS.highlights.has('ev-0')`));
 
   console.log('\n== L5: il frammento diventa un nodo della mappa');
   const s4 = await mostraBarra();
-  await clicca('#selBarra .sb-az[data-az="mappa"]'); await pausa(2500);
+  await clicca('#selBarra .ctx-item[data-az="mappa"]'); await pausa(2500);
   ok('la mappa è entrata in scena da sé', true, await val('mappaAperta()'));
   ok('nel registro «Mie», non nella generata', 'mie', await val('MAPPA.registro'));
   ok('ed è nata una mappa col solo frammento', 1, await val('(MAPPA.mia.grafo&&MAPPA.mia.grafo.nodi||[]).length'));
@@ -263,7 +268,7 @@ async function esc() {
   const quanteMappe = () => val('MAPPA.elenco.length');
   const mappePrima = await quanteMappe();
   await mostraBarra();
-  await clicca('#selBarra .sb-az[data-az="mappa"]'); await pausa(900);
+  await clicca('#selBarra .ctx-item[data-az="mappa"]'); await pausa(900);
   ok('il secondo frammento si aggiunge alla mappa aperta', 2,
     await val('(MAPPA.mia.grafo&&MAPPA.mia.grafo.nodi||[]).length'));
   ok('senza creare una seconda mappa', mappePrima, await quanteMappe());

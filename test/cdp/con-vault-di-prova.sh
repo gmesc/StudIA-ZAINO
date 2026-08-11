@@ -28,7 +28,7 @@
 # ripristinare, che è il modo più sicuro di ripristinare.
 #
 #   ./test/cdp/con-vault-di-prova.sh                     tutte le prove
-#   ./test/cdp/con-vault-di-prova.sh prova-menu.js       una sola
+#   ./test/cdp/con-vault-di-prova.sh prova-menu.js prova-selezione-menu.js       una sola
 #
 set -u
 

@@ -1366,21 +1366,20 @@
      si giri su qualcosa di più vecchio — vedi `selBarraPosiziona`. */
   #selAncora{ position:fixed; anchor-name:--selezione; pointer-events:none;
     width:0; height:0; z-index:-1; }
-  #selBarra{ position:fixed; z-index:210; display:none; align-items:center; gap:.3rem;
-    padding:.3rem; background:var(--panel); border:1px solid var(--line); box-shadow:var(--sh-3d);
+  /* ⚠️ È lo STESSO menu del tasto destro, non una barra a parte. Prima era una
+     fila di icone (`✎ ◯ ⌫`) e il tasto destro apriva un elenco di voci a
+     parole: due disegni per le stesse cinque azioni, e chi imparava l'uno non
+     riconosceva l'altro. Qui restano solo le due cose che davvero la
+     distinguono — DOVE si posa (ancorata alla selezione, non al puntatore) e
+     che arriva da sé. Il resto — fondo, cornice, ombra, voci, righe di colore e
+     di riquadro — lo eredita da `.ctxmenu`, che è la classe che porta.
+     `z-index` più alto del menu: se sono aperti entrambi per un istante, quello
+     chiesto col tasto destro vince (vedi `selMenuApri`, che la spegne). */
+  #selBarra{ position:fixed; z-index:210; display:none;
     position-anchor:--selezione; position-area:block-start;
     position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
-    margin-block:6px; max-width:min(96vw,420px); flex-wrap:nowrap; }
-  #selBarra.aperta{ display:flex; }
-  #selBarra .sb-az{ display:inline-flex; align-items:center; justify-content:center;
-    width:26px; height:24px; border:1px solid transparent; background:transparent; cursor:pointer;
-    color:var(--ink); font-size:13px; line-height:1; padding:0; }
-  #selBarra .sb-az:hover{ background:var(--hover); border-color:var(--line); }
-  #selBarra .sb-az[disabled]{ opacity:.35; cursor:not-allowed; }
-  #selBarra .sb-az[disabled]:hover{ background:transparent; border-color:transparent; }
-  #selBarra .sb-sep{ width:1px; height:18px; background:var(--line); margin:0 .15rem; flex:0 0 auto; }
-  #selBarra .ctx-col{ width:16px; height:16px; }
-  #selBarra input[type=color]{ width:20px; height:16px; }
+    margin-block:6px; }
+  #selBarra.aperta{ display:block; }
   #mediaVideo{ flex:1; width:100%; border:0; background:#000; }
   .vids{ margin:2rem 0; padding:1rem 1.1rem; background:color-mix(in srgb, var(--teal) 7%, var(--panel)); }
   .vids > b{ display:flex; align-items:center; gap:.5rem; font-size:11px; text-transform:uppercase; letter-spacing:.16em; color:var(--muted); margin-bottom:.7rem; font-weight:700; }
@@ -1604,7 +1603,6 @@
   .pdfpag{ display:inline-flex; align-items:center; gap:.2rem; }
   /* la classe con display batte lo stile predefinito di [hidden]: va riaffermato */
   .pdfpag[hidden]{ display:none!important; }
-  .pdfpag .iconbtn{ min-width:26px; width:26px; height:26px; font-size:13px; }
   .pdfpag #pdfPagN{ font-size:11px; font-weight:700; color:var(--muted); min-width:44px; text-align:center; }
   /* selettore dei materiali da citare */
   #matPop{ width:min(460px,94vw); padding:.5rem; }
@@ -6428,7 +6426,11 @@ function refreshNoteUI(){
   // dove sta l'appunto aperto, quando non è di questo capitolo
   var w=$('#noteWhere');
   if(w){
-    var fuori = NOTES.cur && !(ctx && noteInChapter(NOTES.cur, ctx));
+    /* ⚠️ Nello ZAINO non esistono capitoli, quindi `noteInChapter` è falsa
+       SEMPRE e il chip restava acceso a dire «↪ altro capitolo» rispetto a un
+       capitolo che non c'è. Un avviso che non può mai spegnersi non è un
+       avviso: è arredamento, e insegna a non leggere gli avvisi veri. */
+    var fuori = modoAttivo()!=='zaino' && NOTES.cur && !(ctx && noteInChapter(NOTES.cur, ctx));
     w.hidden=!fuori;
     if(fuori){ w.textContent='↪ altro capitolo'; w.title='Stai scrivendo su «'+noteEtichetta(NOTES.cur)+'» ('+(noteDove(NOTES.cur)||'altro capitolo')+'), non sul capitolo aperto.'; }
   }
@@ -6555,36 +6557,21 @@ function selBarraPosiziona(range){
   barra.style.left=Math.max(8, Math.min(r.left, window.innerWidth-b.width-8))+'px';
   barra.style.top =Math.max(8, r.top-b.height-6)+'px';
 }
+/**
+ * La barra che compare da sé sulla selezione mostra **lo stesso menu** del tasto
+ * destro: stesse voci, stesse parole, stesso vestito. Cambia solo COME arriva —
+ * si posa sulla selezione invece di aspettare un click destro.
+ *
+ * ⚠️ Prima erano due costruzioni diverse: qui una fila di icone (`✎ ◯ ⌫`), là un
+ * elenco di voci a parole. Due disegni per le stesse cinque azioni vogliono dire
+ * due volte le condizioni che le accendono e le spengono — e il giorno in cui
+ * una delle due dimentica un `disabled`, offre un comando che l'altra nega.
+ * Adesso il menu lo scrive `selMenuHTML()` e le due porte lo mostrano.
+ */
 function selBarraApri(sel){
   var barra=$('#selBarra'); if(!barra||!sel) return;
   SELMENU.testo=sel.testo; SELMENU.range=sel.range;
-  var conVault=!!(notesApi() && curMeta());
-  /* Su un documento «Alla mappa» e «Appunta» funzionano (il testo e la frase
-     attorno ci sono), «Keyword» pure: quello che cambia sono i campi con cui
-     l'evidenza dice dove sta, e li sceglie `evidenzia()` guardando il range. */
-  var supMenu=selSup(sel);
-  var conEvidenze=!!corsoAttivo() && evidenzePronte() && !!supMenu && !!evIndirizzo(supMenu);
-  var conMappa=!!(mappeApi() && corsoAttivo() && mappaPronta());
-  var sopra=conEvidenze ? evidenzaSotto(sel.range) : null;
-  function az(nome, segno, titolo, spento){
-    return '<button class="sb-az" type="button" data-az="'+nome+'"'+(spento?' disabled':'')+
-      ' title="'+escHtml(titolo)+'" aria-label="'+escHtml(titolo)+'">'+segno+'</button>';
-  }
-  var h='';
-  (mappaColori()||[]).forEach(function(c){
-    h+='<button class="ctx-col" type="button" data-evcol="'+escHtml(c)+'" style="background:'+escHtml(c)+
-       '" title="Evidenzia con questo colore" aria-label="Evidenzia con questo colore"'+
-       (conEvidenze?'':' disabled')+'></button>';
-  });
-  h+='<input type="color" class="ev-pick" value="'+escHtml(evidenzeColore())+
-     '" title="Un altro colore" aria-label="Scegli un altro colore">';
-  h+='<span class="sb-sep" aria-hidden="true"></span>';
-  h+=az('cancella','&#9003;', sopra? 'Cancella l’evidenziatura' : 'Qui non c’è una parola chiave', !sopra);
-  h+=az('appunta','&#9998;', conVault? 'Appunta negli appunti' : 'Serve un capitolo del vault', !conVault);
-  h+=appuntaRiga(origineDaRange(sel.range), !conVault);
-  h+=az('mappa','&#9711;', conMappa? 'Porta sulla mappa' : 'Serve un corso aperto', !conMappa);
-  h+=az('copia','&#10697;','Copia', false);
-  barra.innerHTML=h;
+  barra.innerHTML=selMenuHTML(sel);
   barra.classList.add('aperta');
   selBarraPosiziona(sel.range);
 }
@@ -6702,9 +6689,14 @@ function siStaRidimensionando(){
   var d=document.documentElement.dataset;
   return d.bresize==='1' || d.splitresize==='1' || d.paneresize==='1';
 }
-function selMenuApri(x, y, sel){
-  var m=$('#selMenu'); if(!m || !sel) return;
-  SELMENU.testo=sel.testo; SELMENU.range=sel.range;
+/**
+ * Il menu della selezione, in HTML. **Una funzione sola**, perché le superfici
+ * che lo mostrano sono due — il tasto destro (`#selMenu`) e la barra che compare
+ * da sé (`#selBarra`) — e devono offrire esattamente le stesse cose, accese e
+ * spente dalle stesse condizioni. È la regola di casa: due strade che portano
+ * allo stesso posto passano per la stessa porta.
+ */
+function selMenuHTML(sel){
   var conVault=!!(notesApi() && curMeta());
   /* Le voci non ancora costruite si dichiarano e si spengono, come fa il
      registro degli strumenti del banco: se comparissero solo quando esistono,
@@ -6736,8 +6728,7 @@ function selMenuApri(x, y, sel){
     righeColore+='</div>';
   }
   var origineMenu=origineDaRange(sel.range);
-  m.innerHTML=
-    '<div class="ctx-head">'+escHtml(breve)+'</div>'+
+  return '<div class="ctx-head">'+escHtml(breve)+'</div>'+
     voce('appunta','Appunta', conVault? '' : 'serve un capitolo del vault')+
     /* La riga dei riquadri sta SOTTO «Appunta» come quella dei colori sta sotto
        «Keyword»: stesso posto, stesso patto — scegliere fa il gesto e diventa
@@ -6750,8 +6741,13 @@ function selMenuApri(x, y, sel){
     voce('cancella','Cancella evidenziatura', sopra? '' : 'qui non ce n’è')+
     '<div class="ctx-sep"></div>'+
     voce('copia','Copia','');
-  /* ⚠️ Il bottone flottante ha lo STESSO z-index dei menu contestuali (200) e
-     sta dopo nel DOM: a parità vince chi viene dopo, quindi coprirebbe il menu
+}
+function selMenuApri(x, y, sel){
+  var m=$('#selMenu'); if(!m || !sel) return;
+  SELMENU.testo=sel.testo; SELMENU.range=sel.range;
+  m.innerHTML=selMenuHTML(sel);
+  /* ⚠️ La barra sulla selezione ha lo STESSO z-index dei menu contestuali (200)
+     e sta dopo nel DOM: a parità vince chi viene dopo, quindi coprirebbe il menu
      che ha appena aperto. Si spegne. */
   selBarraChiudi();
   m.classList.add('open');
@@ -6797,7 +6793,7 @@ function selAzione(az, testo, range){
    resto dell'app. */
 document.addEventListener('click', function(e){
   if(!e.target.closest) return;
-  var it=e.target.closest('#selMenu .ctx-item, #selBarra .sb-az');
+  var it=e.target.closest('#selMenu .ctx-item, #selBarra .ctx-item');
   if(!it){
     /* ⚠️ `#selBarra` va esclusa, o il menu si chiude nell'istante in cui si apre.
        La barra è servita da un listener registrato PRIMA di questo, sullo
@@ -12510,7 +12506,12 @@ window.addEventListener('keydown', function(e){
      Serve perché il posizionamento ancorato del CSS lega un elemento a un ALTRO
      elemento, e una selezione non è un elemento. -->
 <div id="selAncora" aria-hidden="true"></div>
-<div id="selBarra" role="toolbar" aria-label="Azioni sulla selezione"></div>
+<!-- ⚠️ `ctxmenu selmenu`: la barra sulla selezione È il menu del tasto destro,
+     mostrato da sé e ancorato alla selezione invece che al puntatore. Le classi
+     sono quelle, così il vestito non può divergere; `#selBarra` aggiunge solo il
+     posizionamento. Il ruolo è `menu`, non `toolbar`: dentro ci sono voci
+     (`role="menuitem"`), non comandi di barra. -->
+<div id="selBarra" class="ctxmenu selmenu" role="menu" aria-label="Azioni sulla selezione"></div>
 <!-- Il foglio di stampa: vuoto finché non si stampa, e figlio diretto di `body`
      perché la regola in `@media print` è «di body si stampa solo questo». -->
 <div id="stampaFoglio" aria-hidden="true"></div>
