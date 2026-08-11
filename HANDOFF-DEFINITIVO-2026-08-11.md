@@ -330,11 +330,59 @@ perché lo scrivono tre file di prova; il giorno che chiameranno i moduli per no
 - ⚠️ **Misurare le righe di una barra dai bordi alti conta righe che non ci sono**: una barretta da
   16 dentro una riga da 33 ha il `top` più basso pur stando sulla stessa riga. Si contano i centri.
 
+### 9.3-bis Il tardo pomeriggio: togliere una fonte senza staccarne il lavoro
+
+Fino a oggi una fonte si poteva solo **aggiungere**: per toglierla si andava nel
+Finder, lasciando dietro un indice orfano — una lente che trova pagine di un
+documento che non c'è.
+
+Il problema vero però non è cancellare, è **il ritorno**. Il legame fra una fonte
+e il lavoro che ci sta sopra (evidenze, ritagli, appunti, nodi di mappa) è il
+NOME, perché è il nome che compare nei rimandi `pdf:03#p=7`. Reimportando lo
+stesso PDF prendeva il numero successivo libero, e per l'app era un altro
+documento: tutto restava orfano **avendo davanti il file giusto**.
+
+**La lapide.** `MATERIALI/_rimossi.json` conserva l'IMPRONTA DEL CONTENUTO (sha1)
+insieme al nome che la fonte aveva. Se quel contenuto torna, riprende nome e
+numero di prima e tutto si riaggancia da sé, senza riscrivere un file
+dell'utente.
+
+- ⚠️ **L'impronta è del contenuto, non del nome**: sul nome, le evidenze di
+  «dispensa.pdf» finirebbero attaccate a un dispensa.pdf qualunque.
+- ⚠️ **Il numero si riusa SOLO su impronta uguale.** È la stessa azione con
+  l'esito opposto: riciclarlo in generale farebbe puntare i vecchi `pdf:03` a un
+  documento diverso.
+- ⚠️ **Le lapidi prenotano il loro numero.** Difetto trovato scrivendo la prova,
+  non a schermo: senza prenotazione il documento importato dopo prendeva il
+  numero liberato, e al ritorno c'erano due «01». `dimentica()` è il gesto
+  separato — l'unico irreversibile — con cui si dichiara che una fonte non
+  tornerà e se ne libera il numero.
+
+Nell'app: un cestino nella barra della fonte, **solo nello zaino**; la conferma
+dice quanto lavoro ci si appoggia (`fonti.usi`) e promette il ritorno prima di
+chiedere; il file va nel **Cestino di sistema**, non `unlink`. Se un file non si
+è potuto leggere non si toglie niente — «non lo so» non è «no», la regola di
+`albumElimina`.
+
+Nella stessa fascia: **«Nasce dal documento»** è arrivato anche nella rinomina
+delle mappe (`materiale` in `lib/mappe.js`), e nello zaino un appunto dice da
+quale documento nasce, o `PERSONALE` (Z6, quello che `curCtx()` prometteva).
+⚠️ Tre liste bianche in un giorno hanno provato a mangiarsi il campo nuovo:
+`CHIAVI` in `lib/appunti.js`, la sua gemella nel renderer (`noteMeta`), e
+`normalizza()` in `lib/mappe.js`. Il controllo che le smaschera non è «il campo
+esiste» ma «il campo torna indietro dal disco».
+
 ### 9.4 Dove si è arrivati, e che cosa viene dopo
 
 ```
-13.072 → 12.610 righe   ·   804 → 723 KB   ·   6 moduli nuovi   ·   il `vm` sparito
+13.072 → 12.899 righe   ·   804 → 723 KB   ·   6 moduli nuovi   ·   il `vm` sparito
+2232 controlli di unità su 19 file   ·   24 prove CDP sull'app viva
 ```
+⚠️ Le righe sono risalite dopo il minimo di 12.610: le estrazioni ne hanno tolte
+510, le funzioni nuove del pomeriggio (togliere una fonte, il documento
+d'origine di appunti e mappe) ne hanno aggiunte ~290. È il motivo per cui il
+conteggio delle righe **da solo non va creduto**: il numero che conta è il
+secondo — quanta di quella logica gira in Node.
 
 Prossimo passo del piano: **M3, la ricerca** (~700 righe su 866 già pure). È la cosa che si rompe
 più silenziosamente — se l'indice smette di indicizzare qualcosa non lo dice nessuno, semplicemente
