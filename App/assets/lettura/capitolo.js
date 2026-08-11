@@ -168,7 +168,94 @@
     a.innerHTML='<span class="figmanca">Figura non disponibile — apri il documento a p. '+g.esc(pag)+'</span>';
     if(cont) cont.classList.add('figvuota');
   }
-  function _mdInline(s){ s=g.esc(s);
+  /* ====================== I richiami di nota ================================
+     Una nota si scrive `[^1]` nel testo e `[^1]: …` in fondo al capitolo.
+
+     Fino all'11 agosto 2026 il numeretto nel testo era un `<sup>` e basta,
+     colorato d'accento dal foglio di stile: sembrava un link e non lo era. Chi
+     lo premeva restava dov'era, e la nota — che sta in fondo al capitolo — se
+     la doveva ritrovare a occhio. Le definizioni in fondo, invece, i loro link
+     li avevano già. Adesso il numeretto è un'ancora alla sua voce in fondo, e
+     ogni voce porta la freccia che riporta al punto da cui si era saltati: il
+     salto senza il ritorno fa perdere il segno, che è il difetto di prima
+     spostato di un metro.
+
+     ⚠️ Gli id nascono dall'ID DEL CAPITOLO (`01-fondamenti-c03`) e non da un
+     contatore della resa: lo stesso capitolo reso due volte deve dare gli
+     stessi id. Un id che cambia a ogni resa romperebbe i rimandi di ciò che dal
+     capitolo è già uscito — la pagina stampata, il pezzo copiato negli appunti.
+     Ed è la stessa ragione per cui le note di due capitoli diversi non si
+     pestano i piedi: il capitolo è già dentro l'id.
+
+     ⚠️ `nota-…` e non `note-…`. `note-<capId>-<n>` è GIÀ l'id dei bottoni del
+     riquadro «Note e materiali» del renderer, che è un'altra cosa (i materiali
+     dichiarati nel frontmatter). Due elementi con lo stesso id nella stessa
+     pagina e `getElementById` ne restituisce uno solo: metà dei salti
+     finirebbe sull'elemento sbagliato, in silenzio.
+  */
+  /** Il pezzo di id che viene dal capitolo, ridotto a ciò che può stare in un
+   *  attributo e in un selettore. Un id di cartella è già così; qui ci passa
+   *  anche il nome di una lezione importata a mano, e basta uno spazio. */
+  function notaCap(capId){ return String(capId == null ? '' : capId).replace(/[^A-Za-z0-9._-]+/g, '-'); }
+  /**
+   * Il contesto delle note di UN capitolo: chi è il capitolo, quali note sono
+   * davvero definite in fondo, e quante volte ciascuna è già stata richiamata.
+   *
+   * ⚠️ È un parametro che si passa, non una variabile del modulo. Il conteggio
+   * dei richiami è stato di una resa: tenuto nel modulo, due capitoli resi
+   * nella stessa passata si conterebbero a vicenda, e una resa interrotta a
+   * metà lascerebbe il contesto sporco addosso alla successiva.
+   *
+   * Senza contesto — gli appunti, il glossario, un testo qualunque — i richiami
+   * restano il `<sup>` muto di prima: un'ancora verso una nota che lì non
+   * esiste sarebbe un link che non porta da nessuna parte, cioè il difetto di
+   * partenza con una freccia in più.
+   */
+  function notaContesto(capId, etichette){
+    var definite = {};
+    (etichette || []).forEach(function (n) { definite[n] = true; });
+    return { cap: notaCap(capId), definite: definite, volte: {} };
+  }
+  function notaIdVoce(nota, n){ return 'nota-' + nota.cap + '-' + n; }
+  /** L'id di un richiamo. Lo stesso `[^1]` può comparire due volte nel testo:
+   *  la prima volta tiene l'id pulito — è quella a cui torna la freccia della
+   *  nota — e le altre si numerano dietro, perché due id uguali sarebbero un
+   *  salto che finisce sempre sul primo dei due. */
+  function notaIdRif(nota, n, volta){ return 'rif-' + nota.cap + '-' + n + (volta > 1 ? ('-' + volta) : ''); }
+  /** Il numeretto nel testo. `role="doc-noteref"` dice che cos'è a chi legge
+   *  con la voce; è un `<a href>`, quindi la tastiera lo raggiunge senza che si
+   *  debba inventare un `tabindex`. */
+  function notaRifHtml(n, nota){
+    if(!nota || !nota.definite[n]) return '<sup class="fnref">'+n+'</sup>';
+    var volta=nota.volte[n]=(nota.volte[n]||0)+1;
+    var bersaglio=notaIdVoce(nota,n);
+    return '<sup class="fnref"><a id="'+notaIdRif(nota,n,volta)+'" class="fnsalta" href="#'+bersaglio+'"'+
+      ' data-nota="'+bersaglio+'" role="doc-noteref" aria-label="Vai alla nota '+n+'">'+n+'</a></sup>';
+  }
+  /**
+   * Il riquadro delle note in fondo al capitolo.
+   *
+   * ⚠️ Si costruisce DOPO la resa del testo, non insieme. La freccia «torna
+   * indietro» si può scrivere solo se quel richiamo nel testo esiste davvero, e
+   * lo si sa soltanto a testo reso (`nota.volte`). Una nota definita e mai
+   * richiamata resta senza freccia, invece di averne una che cade nel vuoto.
+   *
+   * Il `tabindex="-1"` sulla voce non la mette nel giro del tabulatore: serve
+   * perché chi arriva col salto possa ricevere il fuoco, altrimenti la tastiera
+   * resta indietro sul numeretto e la lettura vocale non segue.
+   */
+  function notaRiquadroHtml(voci, nota){
+    if(!voci.length) return '';
+    return '<div class="fnotes"><b>Note</b><ol>'+voci.map(function(v){
+      var rif=notaIdRif(nota,v.n,1);
+      var torna=nota.volte[v.n]
+        ? ' <a href="#'+rif+'" class="fnback" data-nota="'+rif+'" role="doc-backlink"'+
+          ' aria-label="Torna al richiamo della nota '+v.n+'">↩</a>'
+        : '';
+      return '<li id="'+notaIdVoce(nota,v.n)+'" role="doc-endnote" tabindex="-1">'+_mdInline(v.txt, nota)+torna+'</li>';
+    }).join('')+'</ol></div>';
+  }
+  function _mdInline(s, nota){ s=g.esc(s);
     /* ⚠️ La figura si riconosce PRIMA del rimando normale: la regex dei link
        matcha anche la parte `[…](…)` che sta dopo il punto esclamativo, e
        lascerebbe un «!» orfano davanti a un link che non è più una figura. */
@@ -208,20 +295,24 @@
     s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
     s=s.replace(/(^|[^*])\*([^*\s][^*]*)\*/g,'$1<em>$2</em>');
     s=s.replace(/`([^`]+)`/g,'<code>$1</code>');
-    s=s.replace(/\[\^([0-9A-Za-z]+)\]/g, function(m,n){ return '<sup class="fnref">'+n+'</sup>'; });
+    s=s.replace(/\[\^([0-9A-Za-z]+)\]/g, function(m,n){ return notaRifHtml(n, nota); });
     return s; }
   /* aCapo=true: l'Invio singolo vale come interruzione di riga (come in Obsidian).
      Serve nei testi scritti a mano — gli appunti — dove chi scrive si aspetta di
      andare a capo premendo Invio. I capitoli generati restano al comportamento
      markdown classico: riga singola = stesso paragrafo. */
-  function mdToHtml(md, aCapo){ if(!md) return '';
+  /* `nota` è il contesto delle note del capitolo (vedi `notaContesto`): si
+     limita ad attraversare, perché a scrivere i richiami è `_mdInline` in fondo
+     alla catena. Chi non ce l'ha — gli appunti, un markdown qualunque — lo
+     lascia stare e ottiene la resa di sempre. */
+  function mdToHtml(md, aCapo, nota){ if(!md) return '';
     // il <br> va inserito DOPO la resa inline, altrimenti _mdInline lo escaperebbe
     // ripulisce solo gli spazi ordinari ai bordi: trim() porterebbe via anche
     // lo spazio insecabile, che qui è contenuto voluto (la riga vuota)
     var orli = function(s){ return String(s).replace(/^[ \t]+|[ \t]+$/g, ''); };
     var unisci = aCapo
-      ? function(righe){ return orli(righe.map(function(l){ return _mdInline(l); }).join('<br>')); }
-      : function(righe){ return _mdInline(orli(righe.join(' '))); };
+      ? function(righe){ return orli(righe.map(function(l){ return _mdInline(l, nota); }).join('<br>')); }
+      : function(righe){ return _mdInline(orli(righe.join(' ')), nota); };
     var blocks=md.replace(/\r/g,'').split(/\n{2,}/); var out=[];
     blocks.forEach(function(b){ b=b.replace(/^\n+|\n+$/g,'');
       // NB: trim() tratta lo spazio insecabile (U+00A0) come spazio, quindi una riga
@@ -244,14 +335,14 @@
           if(!gruppo.length) return;
           if(tipo==='testo'){ var t=unisci(gruppo); if(t) out.push('<p>'+t+'</p>'); }
           else if(tipo==='ul'){
-            out.push('<ul>'+gruppo.map(function(l){ return '<li>'+_mdInline(orli(l.replace(PUNTO,'')))+'</li>'; }).join('')+'</ul>');
+            out.push('<ul>'+gruppo.map(function(l){ return '<li>'+_mdInline(orli(l.replace(PUNTO,'')), nota)+'</li>'; }).join('')+'</ul>');
           } else if(tipo==='ol'){
             var inizio=parseInt((/^\s*(\d+)/.exec(gruppo[0])||[0,1])[1],10)||1;
             out.push('<ol'+(inizio!==1?' start="'+inizio+'"':'')+'>'+
-              gruppo.map(function(l){ return '<li>'+_mdInline(orli(l.replace(NUM,'')))+'</li>'; }).join('')+'</ol>');
+              gruppo.map(function(l){ return '<li>'+_mdInline(orli(l.replace(NUM,'')), nota)+'</li>'; }).join('')+'</ol>');
           } else {
             var hm=TIT.exec(gruppo[0]); var lv=Math.min(6,hm[1].length+2);
-            out.push('<h'+lv+'>'+_mdInline(hm[2])+'</h'+lv+'>');
+            out.push('<h'+lv+'>'+_mdInline(hm[2], nota)+'</h'+lv+'>');
           }
           gruppo=[]; tipo=null;
         };
@@ -271,12 +362,26 @@
   function mdChapter(raw, lessonId, order){
     var fm=parseFrontmatter(raw);
     var body=_stripFm(raw).replace(/```(?:quiz|glossario)[\s\S]*?```/g,'');
-    var fns=[]; body=body.replace(/^\[\^([0-9A-Za-z]+)\]:\s*(.*)$/gm, function(m,n,txt){ fns.push(txt); return ''; });
+    /* ⚠️ Dell'etichetta si tiene conto, non solo del testo: `[^1]` e `[^nota]`
+       devono ritrovarsi, e il numero che si vede nel riquadro lo fa l'`<ol>`
+       contando le voci — che è un'altra cosa dall'etichetta con cui la nota si
+       richiama nel testo. */
+    var fns=[]; body=body.replace(/^\[\^([0-9A-Za-z]+)\]:\s*(.*)$/gm, function(m,n,txt){ fns.push({ n:n, txt:txt }); return ''; });
+    /* L'id del capitolo si calcola QUI e si usa due volte — per le note e per
+       il campo `id` che si restituisce — perché sono lo stesso identificatore:
+       calcolarlo due volte è il modo in cui due verità divergono. */
+    var capId=lessonId+'-c'+String(order).padStart(2,'0');
+    /* Il contesto delle note vale per «In breve» e per «Contenuto» insieme:
+       finiscono nella stessa pagina, e un richiamo scritto nel sommario deve
+       saltare alla stessa voce in fondo di uno scritto nel testo. I punti
+       chiave e il glossario restano com'erano — là un `[^1]` non si scrive, e
+       cambiarne la resa sarebbe un secondo cambiamento dentro il primo. */
+    var nota=notaContesto(capId, fns.map(function(f){ return f.n; }));
     var sec={}; var parts=body.split(/^##\s+(.+)$/m);
     for(var i=1;i<parts.length;i+=2){ sec[parts[i].trim()]=(parts[i+1]||''); }
-    var brief=mdToHtml((sec['In breve']||'').trim());
-    var html=mdToHtml((sec['Contenuto']||'').trim());
-    if(fns.length){ html+='<div class="fnotes"><b>Note</b><ol>'+fns.map(function(t){return '<li>'+_mdInline(t)+'</li>';}).join('')+'</ol></div>'; }
+    var brief=mdToHtml((sec['In breve']||'').trim(), false, nota);
+    var html=mdToHtml((sec['Contenuto']||'').trim(), false, nota);
+    html+=notaRiquadroHtml(fns, nota);
     var kp=[]; (sec['Punti chiave']||'').split('\n').forEach(function(l){ var m=/^\s*[-*]\s+(.*)$/.exec(l); if(m) kp.push(_mdInline(m[1])); });
     var glossary=parseFenced(raw,'glossario').map(function(g){ return {t:g.t, d:_mdInline(g.d||'')}; });
     var quiz=parseFenced(raw,'quiz').map(function(q){ var a=String(q.a).toLowerCase(); var isTf=(a==='true'||a==='false');
@@ -291,14 +396,18 @@
       var n=String(f.pdf||f.fig||'').padStart(2,'0');
       return { pdf:(g.pdfNum()[n]||n), numero:n, page:parseInt(f.p||f.page,10)||1,
                i:parseInt(f.i,10)||1, label:f.label||'' }; });
-    return { id:lessonId+'-c'+String(order).padStart(2,'0'), title:(fm.title||('Capitolo '+order)), brief:brief, html:html, keypoints:kp, glossary:glossary, quiz:quiz, videoRefs:videoRefs, sources:sources, figure:figure }; }
+    return { id:capId, title:(fm.title||('Capitolo '+order)), brief:brief, html:html, keypoints:kp, glossary:glossary, quiz:quiz, videoRefs:videoRefs, sources:sources, figure:figure }; }
 
     return {
       parseFrontmatter: parseFrontmatter, parseFenced: parseFenced,
       mdToHtml: mdToHtml, mdChapter: mdChapter,
       _mdInline: _mdInline, _stripFm: _stripFm,
       figuraHtml: figuraHtml, albumHtml: albumHtml, figFile: figFile,
-      figuraRotta: figuraRotta, _unq: _unq, _splitFlow: _splitFlow, _flowMap: _flowMap
+      figuraRotta: figuraRotta, _unq: _unq, _splitFlow: _splitFlow, _flowMap: _flowMap,
+      /* Serve alle prove e a chi rende un pezzo di capitolo fuori da
+         `mdChapter`: senza contesto i richiami di nota restano muti, e senza
+         questa esportazione non ci sarebbe modo di dargliene uno. */
+      notaContesto: notaContesto
     };
   }
 
