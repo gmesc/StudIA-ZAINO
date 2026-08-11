@@ -642,6 +642,32 @@ async function modelloFinto(o) {
   check('lo scarto è in quarantena con gli errori accanto', true,
     fs.existsSync(path.join(VF, 'Corsi', 'P', '_lavorazione', 'scarti', scarto)));
 
+  /* Wikilink: la causa per cui gli stessi capitoli finivano negli scarti a ogni
+     riscrittura. L'elenco delle lezioni vere ora è nel prompt, e un rimando
+     inventato non costa più il capitolo intero. */
+  const msg = generaLib.messaggio(VF, lezioneTest, capitoloTest, 1, 2, {}, { lezioni: ['01-fondamenti', '02-pratica'] });
+  check('il prompt elenca le lezioni a cui si può rimandare', true,
+    /\[\[01-fondamenti\]\]/.test(msg) && /\[\[02-pratica\]\]/.test(msg));
+  check('senza elenco non si inventa la sezione', false, /rimandi ammessi/.test(
+    generaLib.messaggio(VF, lezioneTest, capitoloTest, 1, 2, {}, {})));
+  check('il wikilink rotto diventa il suo testo, quello buono resta',
+    'vedi le comorbilità e poi [[01-fondamenti]] e delegation chi fa cosa',
+    generaLib.togliWikilinkRotti('vedi [[09-inesistente|le comorbilità]] e poi [[01-fondamenti]] e [[05-delegation-chi-fa-cosa]]',
+      ['01-fondamenti', '02-pratica']));
+
+  let giriW = 0;
+  async function modelloConWikilink(o) {
+    giriW++;
+    const base = await modelloFinto(o);
+    if (giriW > 2) return base;
+    base.dati = Object.assign({}, base.dati, { contenuto: base.dati.contenuto + '\n\nVedi [[07-mai-esistita]].' });
+    return base;
+  }
+  const g4 = await generaLib.generaCapitolo(VF, lezioneTest, capitoloTest, 1, 2, dgF.materiali,
+    { chiama: modelloConWikilink }, { lezioni: ['01-fondamenti'] });
+  check('due giri di wikilink rotti non buttano il capitolo', [], g4.errori);
+  check('il capitolo salvato è quello riparato', true, !!g4.riparato && !/\[\[/.test(g4.dati.contenuto));
+
   // prezzi: si stima solo ciò che è a listino, il resto è dichiarato non stimabile
   check('costo di un uso noto', 0.035, Number(providerLib.costoUsd({ modello: 'claude-opus-5', inputTokens: 2000, outputTokens: 1000 }).toFixed(4)));
   check('modello fuori listino: nessuna cifra inventata', null, providerLib.costoUsd({ modello: 'modello-ignoto', inputTokens: 1000, outputTokens: 1000 }));
@@ -1015,6 +1041,83 @@ async function modelloFinto(o) {
   check('l\'etichetta dopo la barra non confonde il controllo', 0,
     esp.wikilinkRotti([{ file: 'x', contenuto: '[[01-a|con etichetta]]' }], ['01-a']).length);
 
+  /* --- le due liste: che cosa si PUÒ citare, e che cosa si RAGGIUNGE ---
+     È la distinzione che è costata otto rimandi morti: chi guardava il disco
+     vedeva esistere il segnaposto di una lezione variantizzata (solo
+     `_lezione.md`, zero capitoli) e dichiarava sano un rimando che nel lettore
+     non apriva niente. */
+  const perc = require('../lib/percorsi');
+  const lezVar = [
+    { folder: '01-intro', capitoli: 4 },
+    { folder: '04-delega', capitoli: 0 },                  // il segnaposto della variantizzata
+    { folder: '04-delega--scaletta-a', capitoli: 5 },
+    { folder: '04-delega--per-domande', capitoli: 5 },
+    { folder: '09-mai-scritta', capitoli: 0 }              // pianificata, non ancora scritta
+  ];
+  check('si cita la base, mai la variante', '01-intro,04-delega,09-mai-scritta',
+    perc.nomiRimandabili(lezVar).join(','));
+  check('la lezione non ancora scritta resta citabile: il rimando in avanti è il punto', true,
+    perc.nomiRimandabili(lezVar).indexOf('09-mai-scritta') >= 0);
+  check('ma raggiungibile no: là non c\'è ancora niente da aprire', '01-intro,04-delega',
+    perc.nomiRaggiungibili(lezVar).join(','));
+  check('la base senza capitoli è raggiungibile GRAZIE alla sua variante', true,
+    perc.nomiRaggiungibili(lezVar).indexOf('04-delega') >= 0);
+  check('un elenco di soli nomi di cartella funziona lo stesso', '04-delega',
+    perc.nomiRimandabili(['04-delega--scaletta-a', '04-delega']).join(','));
+
+  /* --- dove si possono accodare capitoli ---
+     Il segnaposto di una lezione variantizzata è una cartella vera sul disco, e
+     la tendina la offriva accanto alla variante col solo nome della cartella:
+     sceglierla genera capitoli che il lettore non mostrerà mai. Denaro speso per
+     testo invisibile, e nessuno lo dice. */
+  /* ⚠️ La domanda non è «questa cartella ha capitoli»: è **se genero qui, il
+     testo si vedrà?** — e la risposta la danno i percorsi, non il disco. La
+     prima versione di questa regola guardava i capitoli e sembrava giusta sul
+     corso senza varianti; misurato, bastava creare UN percorso su TD74-DSA per
+     offrire 16 cartelle che il lettore non mostra. */
+  const P = (scelte) => [{ scelte: Object.fromEntries(Object.entries(scelte).map(([b, c]) => [b, { cartella: c }])) }];
+  const dest = (l, p) => esp.destinazioni(l, p).map((x) => x.folder);
+
+  const variantizzata = [{ folder: '04-delega', capitoli: 0 },
+    { folder: '04-delega--scaletta-a', capitoli: 5 }, { folder: '04-delega--per-domande', capitoli: 5 }];
+  check('si offre la cartella che il percorso fa leggere, non le altre',
+    ['04-delega--scaletta-a'], dest(variantizzata, P({ '04-delega': '04-delega--scaletta-a' })));
+  check('una variante che nessun percorso legge è un segnaposto travestito',
+    ['04-delega--per-domande'], dest(variantizzata, P({ '04-delega': '04-delega--per-domande' })));
+  check('due percorsi, due varianti: sono destinazioni tutte e due', 2,
+    dest(variantizzata, P({ '04-delega': '04-delega--scaletta-a' })
+      .concat(P({ '04-delega': '04-delega--per-domande' }))).length);
+
+  /* ⚠️ Questo caso ha smentito la prima regola. La base HA capitoli suoi, quindi
+     «ha del testo» — ma se il percorso legge la variante, quel testo non lo vede
+     nessuno, e accodarne altro è denaro buttato. */
+  const mista = [{ folder: '03-mista', capitoli: 2 }, { folder: '03-mista--altra', capitoli: 6 }];
+  check('la base con capitoli suoi NON è una destinazione se il percorso legge la variante',
+    ['03-mista--altra'], dest(mista, P({ '03-mista': '03-mista--altra' })));
+  check('ma lo è quando i percorsi tacciono su di lei: là vince la base',
+    ['03-mista'], dest(mista, P({ '99-altra': '99-altra' })));
+  check('e senza nessun percorso salvato il lettore non filtra: si offre tutto',
+    ['03-mista', '03-mista--altra'], dest(mista, []));
+
+  check('una lezione senza varianti resta, anche se non ha ancora capitoli',
+    ['09-mai-scritta'], dest([{ folder: '09-mai-scritta', capitoli: 0 }], P({ '01-a': '01-a' })));
+  check('e i campi che servono alla tendina non si perdono per strada',
+    { folder: '04-delega--scaletta-a', capitoli: 5, titolo: 'Delegation', prossimoOrdine: 6 },
+    esp.destinazioni([{ folder: '04-delega', capitoli: 0 },
+      { folder: '04-delega--scaletta-a', capitoli: 5, titolo: 'Delegation', prossimoOrdine: 6 }],
+    P({ '04-delega': '04-delega--scaletta-a' }))[0]);
+  check('un percorso che dice «non lo so» non decide niente: la base resta',
+    ['05-x'], dest([{ folder: '05-x', capitoli: 3 }], [{ scelte: { '05-x': { cartella: null } } }]));
+
+  const capVar = [{ file: '01-intro/01-x.md', contenuto: 'Vedi [[04-delega]] e [[09-mai-scritta]].' }];
+  check('il rimando alla base di una lezione variantizzata NON è rotto', 1,
+    esp.wikilinkRotti(capVar, perc.nomiRaggiungibili(lezVar)).length);
+  check('e quello che resta rotto è la lezione senza capitoli', '09-mai-scritta',
+    esp.wikilinkRotti(capVar, perc.nomiRaggiungibili(lezVar))[0].target);
+  check('un rimando scritto col nome della variante non viene chiamato rotto', 0,
+    esp.wikilinkRotti([{ file: 'x', contenuto: '[[04-delega--scaletta-a]]' }],
+      perc.nomiRaggiungibili(lezVar)).length);
+
   // il validatore ora boccia il rimando verso una lezione che non c'è
   const capConRimando = {
     schema: 1, tipo: 'capitolo', id: 'x', title: 'T', durata: 5,
@@ -1027,6 +1130,85 @@ async function modelloFinto(o) {
       { lezioni: ['01-a', '02-b'] }).errors.some((x) => /non c'è una lezione/.test(x)));
   check('senza elenco lezioni il controllo non si inventa errori', false,
     validateCapitolo(capConRimando, {}).errors.some((x) => /non c'è una lezione/.test(x)));
+
+  /* --- l'altra metà: dal rimando alla lezione da APRIRE ---
+     Il blocco puro è preso dal renderer vero (`@lezioni-puro-*` in StudIA.html),
+     non da una copia: se il gestore del click e questi controlli divergono, qui
+     si rompe. Sono i rami che dal DOM non si provano — «due varianti e nessun
+     percorso che sceglie» non si mette in scena a mano. */
+  sezione('Rimandi fra lezioni: dalla base alla variante che il percorso rivendica');
+  const rl = require('../lib/reader-parser').loadLezioni();
+  const LZ = { '01-intro': 1, '04-delega--scaletta-a': 1, '04-delega--per-domande': 1 };
+  const MT = {
+    '01-intro': { courseId: 'C', base: '01-intro', variante: '' },
+    '04-delega--scaletta-a': { courseId: 'C', base: '04-delega', variante: 'scaletta-a' },
+    '04-delega--per-domande': { courseId: 'C', base: '04-delega', variante: 'per-domande' }
+  };
+  const cx = (extra) => Object.assign({ lezioni: LZ, meta: MT, corso: 'C' }, extra || {});
+
+  check('base e variante di una cartella', { base: '04-delega', variante: 'scaletta-a' },
+    rl.scomponiLezione('04-delega--scaletta-a'));
+  check('una cartella senza variante è tutta base', { base: '01-intro', variante: '' },
+    rl.scomponiLezione('01-intro'));
+  check('il nome esatto di una lezione senza varianti si apre', '01-intro',
+    rl.risolviLezione('01-intro', cx()));
+  check('la BASE apre la variante che il percorso attivo rivendica', '04-delega--per-domande',
+    rl.risolviLezione('04-delega', cx({ scelte: { '04-delega': '04-delega--per-domande' } })));
+  check('cambia il percorso, cambia la variante aperta: stesso testo, stesso rimando',
+    '04-delega--scaletta-a',
+    rl.risolviLezione('04-delega', cx({ scelte: { '04-delega': '04-delega--scaletta-a' } })));
+  /* ⚠️ Il caso che ha generato tutto: senza questo la toast diceva «Lezione non
+     trovata» su un rimando che il validatore aveva approvato. */
+  check('con una sola variante caricata non serve nemmeno un percorso', '04-delega--scaletta-a',
+    rl.risolviLezione('04-delega', { lezioni: { '04-delega--scaletta-a': 1 }, meta: MT, corso: 'C' }));
+  check('due varianti e nessuna scelta: si sceglie in modo deterministico, non a caso',
+    rl.risolviLezione('04-delega', cx()), rl.risolviLezione('04-delega', cx()));
+  check('un percorso che rivendica una cartella non caricata non fa perdere il rimando',
+    true, !!rl.risolviLezione('04-delega', cx({ scelte: { '04-delega': '04-delega--sparita' } })));
+  check('il nome per esteso di una variante torna comunque nel percorso attivo',
+    '04-delega--per-domande',
+    rl.risolviLezione('04-delega--scaletta-a', cx({ scelte: { '04-delega': '04-delega--per-domande' } })));
+  check('l\'etichetta dopo la barra non entra nel nome', '01-intro',
+    rl.risolviLezione('01-intro|la prima lezione', cx()));
+  check('una lezione di un ALTRO corso non si apre di soppiatto', null,
+    rl.risolviLezione('04-delega', cx({ corso: 'ALTRO' })));
+  check('una lezione che non c\'è resta un rimando rotto, e lo dice', null,
+    rl.risolviLezione('09-mai-scritta', cx()));
+  check('un target vuoto non apre niente', null, rl.risolviLezione('', cx()));
+  check('una lezione importata da JSON, senza meta, si apre per id', 'lezione-1',
+    rl.risolviLezione('lezione-1', { lezioni: { 'lezione-1': 1 }, meta: {}, corso: 'C' }));
+
+  /* --- il percorso che tace: la lezione si vede lo stesso ---
+     `conCartelle` scriveva `cartella: null` dentro i percorsi salvati ogni volta
+     che la cache delle scalette non c'era, e il lettore chiedeva
+     `scelte[base]===folder`: nessuna cartella lo soddisfaceva, e la lezione
+     spariva dalla tendina con i capitoli intatti sul disco. */
+  const IDS = Object.keys(LZ);
+  check('col percorso muto ogni lezione ha comunque una cartella da mostrare', 2,
+    Object.keys(rl.cartelleScelte(IDS, MT, {})).length);
+  check('e nessuna resta senza', true,
+    Object.values(rl.cartelleScelte(IDS, MT, {})).every((x) => !!x));
+  check('col percorso muto la scelta è stabile fra due chiamate',
+    rl.cartelleScelte(IDS, MT, {})['04-delega'], rl.cartelleScelte(IDS, MT, {})['04-delega']);
+  check('quando il percorso parla, comanda lui', '04-delega--per-domande',
+    rl.cartelleScelte(IDS, MT, { '04-delega': '04-delega--per-domande' })['04-delega']);
+  check('una cartella rivendicata ma non caricata non fa sparire la lezione', true,
+    !!rl.cartelleScelte(IDS, MT, { '04-delega': '04-delega--sparita' })['04-delega']);
+  check('la cartella base, se ha capitoli suoi, batte una variante non rivendicata',
+    '04-delega',
+    rl.preferitaFra(['04-delega', '04-delega--scaletta-a'], '04-delega', {}));
+  check('la tendina e i rimandi scelgono la stessa cartella, sempre',
+    rl.cartelleScelte(IDS, MT, {})['04-delega'],
+    rl.risolviLezione('04-delega', cx()));
+
+  /* e il lato che SCRIVE: la cache persa non azzera la scelta dell'utente */
+  const percSalva = require('../lib/percorsi');
+  const finto = [{ id: 'gufo', scelte: { '04-delega': { indice: 0, cartella: '04-delega--scaletta-a' } } }];
+  check('senza scalette la cartella già scelta resta', '04-delega--scaletta-a',
+    percSalva.conCartelle(finto, {})[0].scelte['04-delega'].cartella);
+  check('e con le scalette si ricalcola davvero', '04-delega--per-domande',
+    percSalva.conCartelle(finto, { '04-delega': { alternative: [{ nome: 'Per domande' }] } })[0]
+      .scelte['04-delega'].cartella);
 
   fs.rmSync(VF, { recursive: true, force: true });
 
@@ -2315,11 +2497,23 @@ async function modelloFinto(o) {
       GEN.daCapitolo({ title: 'T', brief: '', html: '', keypoints: ['a'], glossary: [] }, {})
         .nodi.find((n) => n.testo === 'Note e materiali'));
 
-    // la mappa della lezione: i capitoli in ordine, ognuno sa dove portare
-    const lezione = { title: 'Lezione', chapters: [cap, { title: 'Secondo', brief: '', html: '', keypoints: [], glossary: [] }] };
+    /* La mappa della lezione ha cambiato oggetto (§13 del piano): non è più
+       l'indice dei capitoli — i contenitori — ma i CONCETTI che il testo mette
+       in rilievo. Restava qui il vecchio contratto, che chiedeva un nodo
+       `genere:'capitolo'` per capitolo: pretendeva esattamente la cosa che il
+       §13 ordina di togliere. Quello che deve restare vero, e resta, è che un
+       nodo sappia a quale capitolo porta — altrimenti la mappa non riporta al
+       testo, e una mappa da cui non si torna alla fonte è un disegno. */
+    const lezione = { title: 'Lezione', chapters: [cap, { title: 'Secondo', brief: '',
+      html: '<p>Il <strong>criterio della discrepanza</strong> regge la diagnosi.</p>',
+      keypoints: [], glossary: [] }] };
     const gk = GEN.daLezione(lezione, {});
-    check('ogni capitolo è un nodo che sa a quale capitolo porta', [0, 1],
-      gk.nodi.filter((n) => n.genere === 'capitolo').map((n) => n.capitolo));
+    check('la lezione è una mappa di concetti, non l\'indice dei capitoli', 0,
+      gk.nodi.filter((n) => n.genere === 'capitolo').length);
+    check('e ogni concetto sa da quale capitolo viene', true,
+      gk.nodi.filter((n) => n.genere !== 'radice').every((n) => n.capitolo != null));
+    check('i capitoli citati sono quelli veri', [0, 1],
+      Array.from(new Set(gk.nodi.filter((n) => n.capitolo != null).map((n) => n.capitolo))).sort());
 
     // il disegno: markup autoconsistente, colori negli attributi
     const svg = DIS.svg(ML2.run(gc, { motore: 'albero' }), { titolo: 'x' });
@@ -2417,10 +2611,14 @@ async function modelloFinto(o) {
         ['a→b', 'a→c'], capi);
       /* Il filo si disegna, ma non si prende: `pointer-events="none"` su ogni
          suo segmento. (Non si può distinguerlo per i capi: il percorso passa
-         anche dove un legame vero esiste già, ed è giusto così.) */
+         anche dove un legame vero esiste già, ed è giusto così.)
+         ⚠️ La regex guarda i `<path>`, non tutto l'SVG: `pointer-events="none"`
+         lo portano anche le linking word, e contarle qui faceva fallire questo
+         controllo il giorno in cui le etichette sono comparse anche sul
+         Percorso — cioè per una ragione che con il filo non c'entra niente. */
       check('e il filo si vede ma non si afferra',
         (rp.archi || []).filter((x) => x.e && x.e._filo).length,
-        (sp.match(/pointer-events="none"/g) || []).length);
+        (sp.match(/<path[^>]*pointer-events="none"/g) || []).length);
       check('il numero del passo resta, che è il senso del motore', true,
         !!rp.passo && Object.keys(rp.passo).length === 3);
 
