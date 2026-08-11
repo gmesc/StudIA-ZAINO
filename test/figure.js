@@ -5,9 +5,11 @@
  * `ocr.py` ha davvero scritto su disco, e che l'elenco delle figure di un
  * capitolo non si perda per strada fra testo, frontmatter e riquadro delle fonti.
  *
- * ⚠️ Il parser NON è una copia: `lib/reader-parser.js` estrae le funzioni vere
- * da `App/StudIA.html` e le esegue in Node. Se un giorno la resa cambia
- * nell'app, questi controlli lo sanno.
+ * ⚠️ Il parser NON è una copia: è `App/assets/lettura/capitolo.js`, lo STESSO
+ * modulo che carica l'app. Se un giorno la resa cambia nell'app, questi
+ * controlli lo sanno. (Fino all'11 agosto 2026 `lib/reader-parser.js` lo
+ * ritagliava dal sorgente dell'HTML e lo eseguiva in un sandbox `vm`: adesso lo
+ * carica e basta.)
  */
 const path = require('path');
 const RP = require('../lib/reader-parser.js');
