@@ -231,6 +231,37 @@ scuro non arriva alla pagina (`pageColors` non passato), la stampa del PDF dall'
 
 ---
 
+## 8. Dove sta il codice
+
+```
+lib/zaini.js            il contenitore ZAINO: radice, cartella, guardie, elenco, creazione
+lib/fonti.js            i documenti che entrano: numero, nome, copia, indice per pagina
+lib/lettura.js          il segno di lettura (_lettura.json), per contenitore
+lib/evidenze.js         le parole chiave: identità a due spazi (capitolo | documento+pagina)
+lib/corsi.js            ⚠️ cartella(): il perno — risolve `Corsi/` e `Zaini/`
+lib/materiali.js        contenitoriConMateriali(): i materiali seguono lo stesso perno
+main.js                 zaino:* · fonti:* · lettura:*
+preload.js              numeriPerCorso() sulle due radici · webUtils.getPathForFile
+App/StudIA.html         MODO · corsoAttivo() · evSup* (le due superfici dell'evidenziatore)
+                        albumRendi() ⚠️ conversione PDF→viewport · barreSeparatori()
+                        i token --tb-* / --tb-piu e `.tbar`, il vestito di TUTTE le barre
+                        selMenuHTML() ⚠️ una funzione, due superfici sulla selezione
+
+App/assets/lettura/capitolo.js   il parser dei capitoli (era ritagliato dall'HTML in un `vm`)
+App/assets/lettura/lezioni.js    rimando → lezione, varianti comprese
+App/assets/tts/segmenta.js       testo → segmenti da leggere
+App/assets/appunti/elenco.js     appunto ↔ capitolo, i tre gruppi
+App/assets/dati/{icone,emoji}.js dati, non codice
+lib/reader-parser.js    ⚠️ non ritaglia più niente: carica i quattro moduli. 53 righe
+```
+
+Prove più recenti: `prova-modo` (le due modalità) · `prova-zaino` (la sidebar a tre sezioni) ·
+`prova-evidenze-pdf` (l'evidenziatore sul documento, zoom compreso) · `prova-fonti` (barra, selettore
+e segno di lettura) · `prova-import` (import, indice, lente) · `prova-album` (⚠️ il confronto pixel
+del ritaglio) · `prova-tendine` (lo stile delle barre).
+
+---
+
 ## 9. Il pomeriggio: il monolite comincia a smontarsi
 
 ### 9.1 Perché, in tre cifre
@@ -315,32 +346,3 @@ vivono attaccate ai capitoli e la cui storia di ripasso è il dato più costoso 
 ricostruire, vanno costruite DOPO quel rimedio.
 
 ---
-
-## 8. Dove sta il codice
-
-```
-lib/zaini.js            il contenitore ZAINO: radice, cartella, guardie, elenco, creazione
-lib/fonti.js            i documenti che entrano: numero, nome, copia, indice per pagina
-lib/lettura.js          il segno di lettura (_lettura.json), per contenitore
-lib/evidenze.js         le parole chiave: identità a due spazi (capitolo | documento+pagina)
-lib/corsi.js            ⚠️ cartella(): il perno — risolve `Corsi/` e `Zaini/`
-lib/materiali.js        contenitoriConMateriali(): i materiali seguono lo stesso perno
-main.js                 zaino:* · fonti:* · lettura:*
-preload.js              numeriPerCorso() sulle due radici · webUtils.getPathForFile
-App/StudIA.html         MODO · corsoAttivo() · evSup* (le due superfici dell'evidenziatore)
-                        albumRendi() ⚠️ conversione PDF→viewport · barreSeparatori()
-                        i token --tb-* / --tb-piu e `.tbar`, il vestito di TUTTE le barre
-                        selMenuHTML() ⚠️ una funzione, due superfici sulla selezione
-
-App/assets/lettura/capitolo.js   il parser dei capitoli (era ritagliato dall'HTML in un `vm`)
-App/assets/lettura/lezioni.js    rimando → lezione, varianti comprese
-App/assets/tts/segmenta.js       testo → segmenti da leggere
-App/assets/appunti/elenco.js     appunto ↔ capitolo, i tre gruppi
-App/assets/dati/{icone,emoji}.js dati, non codice
-lib/reader-parser.js    ⚠️ non ritaglia più niente: carica i quattro moduli. 53 righe
-```
-
-Prove più recenti: `prova-modo` (le due modalità) · `prova-zaino` (la sidebar a tre sezioni) ·
-`prova-evidenze-pdf` (l'evidenziatore sul documento, zoom compreso) · `prova-fonti` (barra, selettore
-e segno di lettura) · `prova-import` (import, indice, lente) · `prova-album` (⚠️ il confronto pixel
-del ritaglio) · `prova-tendine` (lo stile delle barre).
