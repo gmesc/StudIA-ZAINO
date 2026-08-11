@@ -350,7 +350,7 @@ pulisci();
 
   const vuota = M.salva(VAULT, PROG, 'Vuota.json', { titolo: 'Vuota' });
   check('una mappa senza nodi ha comunque la forma piena',
-    ['formato', 'titolo', 'corso', 'lezioneId', 'capitoloId', 'origine', 'creato', 'aggiornato', 'nodi', 'archi', 'vista'],
+    ['formato', 'titolo', 'corso', 'lezioneId', 'capitoloId', 'origine', 'creato', 'aggiornato', 'nodi', 'archi', 'vista', 'memorie'],
     Object.keys(vuota.mappa).filter((k) => k !== 'file'));
   check('e origine «utente» quando non viene da una generata', 'utente', vuota.mappa.origine);
 }
@@ -666,6 +666,42 @@ sezione('Dalla modifica al disegno, passando dal disco');
 }
 
 try { fs.rmSync(VAULT, { recursive: true, force: true }); } catch (e) {}
+
+/* ---------------- le cinque memorie di disposizione -------------------------
+   Cinque slot FISSI: il terzo bottone è il terzo bottone, e la mano lo ritrova
+   senza leggere. Un array di lunghezza variabile farebbe apparire e sparire
+   bottoni sotto il dito. */
+sezione('Cinque slot, sempre cinque');
+{
+  const vuota = M.entroFormato({ titolo: 'X' });
+  check('una mappa nuova ha cinque slot vuoti', [5, [null, null, null, null, null]],
+    [vuota.memorie.length, vuota.memorie]);
+
+  const piena = M.entroFormato({ titolo: 'X', memorie: [
+    { nome: 'Visione d\'insieme', vista: { motore: 'anelli' }, posizioni: { n1: { x: 10, y: 20 } } },
+    null, null, null, null, { nome: 'sesta', vista: { motore: 'dag' } }
+  ] });
+  check('la sesta cade: gli slot sono cinque', 5, piena.memorie.length);
+  check('la prima si conserva', ['Visione d\'insieme', 'anelli', { x: 10, y: 20 }],
+    [piena.memorie[0].nome, piena.memorie[0].vista.motore, piena.memorie[0].posizioni.n1]);
+
+  /* ⚠️ Una memoria senza vista non è una memoria: sarebbe uno slot che sembra
+     pieno e non ripristina niente. */
+  check('senza vista lo slot resta vuoto', null,
+    M.entroFormato({ titolo: 'X', memorie: [{ nome: 'finta' }] }).memorie[0]);
+  check('e le posizioni non numeriche cadono, il resto resta', {},
+    M.entroFormato({ titolo: 'X', memorie: [{ vista: {}, posizioni: { n1: { x: 'qui', y: 2 } } }] })
+      .memorie[0].posizioni);
+
+  /* Il giro completo dal disco: una memoria deve sopravvivere alla scrittura,
+     o è una funzione che funziona finché non chiudi l'app. */
+  const giro = M.parse(M.serializza(piena));
+  check('sopravvive al giro sul disco', ['Visione d\'insieme', { x: 10, y: 20 }],
+    [giro.memorie[0].nome, giro.memorie[0].posizioni.n1]);
+  check('e lo slot protetto resta protetto', true,
+    M.parse(M.serializza(M.entroFormato({ titolo: 'X', memorie: [{ vista: {}, protetta: true }] })))
+      .memorie[0].protetta);
+}
 
 console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
 process.exit(ko ? 1 : 0);

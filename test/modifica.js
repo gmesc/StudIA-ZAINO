@@ -629,5 +629,93 @@ sezione('una sessione vera, in catena');
   check('un solo annulla riporta a prima di tutto', JSON.stringify(base()), JSON.stringify(rimesso.grafo));
 }
 
+/* ---------------- un nodo che È un'immagine ---------------------------------
+   `disegna.js` sapeva già disegnare `nodo.immagine`, ma nessuno la metteva: il
+   campo esisteva solo per chi lo legge. Ora l'album può appenderci un ritaglio. */
+sezione('Un nodo può essere un\'immagine dell\'album');
+{
+  let g = M.creaNodo({ nodi: [], archi: [] }, { testo: 'Figura 3', immagine: { id: 'ab12cd34', w: 476, h: 420 } });
+  const n = g.nodi[0];
+  check('l\'immagine arriva sul nodo', { id: 'ab12cd34', w: 476, h: 420 }, n.immagine);
+
+  /* ⚠️ Si COPIA, non si condivide: due nodi che puntassero allo stesso oggetto
+     divergerebbero al primo salvataggio, ed è la regola già scritta per
+     `rimando`. */
+  const fonte = { id: 'ab12cd34', w: 10, h: 10 };
+  const g2 = M.creaNodo({ nodi: [], archi: [] }, { testo: 'x', immagine: fonte });
+  fonte.w = 999;
+  check('è una copia, non l\'oggetto di chi chiama', 10, g2.nodi[0].immagine.w);
+
+  /* Senza id non è un'immagine: `disegna.js` promette un ritaglio solo se sa
+     quale, e un campo vuoto farebbe apparire un segnaposto che nessuno può
+     riempire. Ciò che è vuoto non si scrive — la stessa regola del colore. */
+  check('senza id non si scrive niente', undefined,
+    M.creaNodo({ nodi: [], archi: [] }, { testo: 'x', immagine: { w: 10, h: 10 } }).nodi[0].immagine);
+  check('e nemmeno con un\'immagine che non è un oggetto', undefined,
+    M.creaNodo({ nodi: [], archi: [] }, { testo: 'x', immagine: 'ab12cd34' }).nodi[0].immagine);
+  check('le misure storte cadono, l\'id resta', { id: 'ab12cd34' },
+    M.creaNodo({ nodi: [], archi: [] }, { testo: 'x', immagine: { id: 'ab12cd34', w: 0, h: -3 } }).nodi[0].immagine);
+
+  /* `estrai` è la porta che usa l'album: deve portarsi dietro l'immagine
+     insieme al rimando che riporta alla pagina. */
+  /* Il ridimensionamento è sempre PROPORZIONALE: un numero solo. */
+  let gk = M.creaNodo({ nodi: [], archi: [] }, { testo: 'x', immagine: { id: 'aa11bb' } });
+  const idk = gk.nuovo;
+  check('di fabbrica la scala non si scrive', undefined, gk.nodi[0].immagine.scala);
+  gk = M.ridimensionaImmagine(gk, idk, 1.5);
+  check('ingrandire la scrive', 1.5, gk.nodi[0].immagine.scala);
+  gk = M.ridimensionaImmagine(gk, idk, 1);
+  check('e tornare a uno la toglie: ciò che è di fabbrica non sporca il file',
+    undefined, gk.nodi[0].immagine.scala);
+  check('oltre il tetto si ferma al tetto', 3,
+    M.ridimensionaImmagine(gk, idk, 99).nodi[0].immagine.scala);
+  check('e sotto il pavimento al pavimento', 0.5,
+    M.ridimensionaImmagine(gk, idk, 0.01).nodi[0].immagine.scala);
+  /* Ridimensionare ciò che non è un'immagine non vuol dire niente: inventare il
+     campo su un nodo di testo lo farebbe disegnare come un ritaglio senza
+     sorgente, cioè un segnaposto che nessuno ha chiesto. */
+  const soloTesto = M.creaNodo({ nodi: [], archi: [] }, { testo: 'nudo' });
+  check('un nodo senza immagine resta identico', JSON.stringify(soloTesto),
+    JSON.stringify(M.ridimensionaImmagine(soloTesto, soloTesto.nuovo, 2)));
+
+  const e = M.estrai({ nodi: [], archi: [] }, {
+    testo: 'Il ciclo', immagine: { id: 'beef00', w: 100, h: 50 },
+    rimando: { type: 'pdf', file: 'd.pdf', page: 7 }
+  });
+  check('estrai porta immagine e rimando insieme', ['beef00', 7, 'fonte'],
+    [e.nodi[0].immagine.id, e.nodi[0].rimando.page, e.nodi[0].origine]);
+}
+
+/* ---------------- l'annulla si porta dietro anche le LEVE -------------------
+   Richiamare una disposizione salvata cambia solo la vista: una pila che
+   copiasse il solo grafo riporterebbe indietro i nodi lasciando il motore
+   dov'era — un annulla che annulla per metà, cioè peggio di uno che non c'è. */
+sezione('La pila degli annullamenti conosce anche ciò che non è grafo');
+{
+  const g0 = base();
+  const p = M.pila(5);
+  M.annullabile(p, 'Richiama «Visione d\'insieme»', g0,
+    { vista: { motore: 'albero', orient: 'td' }, memorie: [null, { nome: 'X' }] });
+  const r = M.annulla(p);
+  check('le leve tornano indietro col grafo', { motore: 'albero', orient: 'td' }, r.extra.vista);
+  /* ⚠️ E anche le disposizioni salvate. La prima versione copiava le sole leve,
+     e svuotare uno slot mostrava un toast che PROMETTEVA «⌘Z lo riporta» mentre
+     l'annulla non aveva le memorie: una promessa scritta e non mantenuta. */
+  check('e con loro tutto il resto di ciò che si può perdere', 'X', r.extra.memorie[1].nome);
+  check('e l\'etichetta dice che cosa si annulla', 'Richiama «Visione d\'insieme»', r.etichetta);
+
+  /* Assente vuol dire «questa operazione non toccava le leve», non «leve vuote»:
+     chi annulla deve poter distinguere i due casi, o rimetterebbe una vista
+     vuota su una mappa che ne aveva una. */
+  M.annullabile(p, 'Aggiungi nodo', g0);
+  check('un\'operazione che tocca il solo grafo non inventa stato', undefined, M.annulla(p).extra);
+
+  /* Si COPIA: l'oggetto è di chi chiama, e fra un annulla e l'altro cambia. */
+  const viva = { vista: { motore: 'dag' } };
+  M.annullabile(p, 'x', g0, viva);
+  viva.vista.motore = 'anelli';
+  check('lo stato messo da parte è una copia profonda', 'dag', M.annulla(p).extra.vista.motore);
+}
+
 console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
 process.exit(ko ? 1 : 0);

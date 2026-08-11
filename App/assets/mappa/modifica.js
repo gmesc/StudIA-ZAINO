@@ -205,11 +205,62 @@
    *                          Con `rimando` è l'altro modo di rendere navigabile
    *                          un nodo: `disegna.js` accende il segno della fonte
    *                          se c'è l'uno OPPURE l'altro.
+   * @param opt.immagine     un ritaglio dell'album: `{id, w, h}`. Un nodo può
+   *                          ESSERE un'immagine — `disegna.js` lo sa già fare —
+   *                          ma finora nessuno gliela metteva.
+   *                          ⚠️ Si copia, non si condivide, per la stessa ragione
+   *                          di `rimando`: due nodi che puntano allo stesso
+   *                          oggetto divergerebbero al primo salvataggio. E senza
+   *                          `id` non si scrive niente: `disegna.js` promette
+   *                          un'immagine solo se sa quale, altrimenti un nodo
+   *                          mostrerebbe un segnaposto che nessuno può riempire.
    * @param opt.x, opt.y      posizione fissata a mano (vedi `sposta`)
    * @param opt.colore        colore scelto a mano
    * @returns un grafo nuovo; l'id del nodo appena creato è in `.nuovo`
    *          (proprietà non enumerabile: non finisce su disco)
    */
+  /**
+   * Un ritaglio dell'album ridotto a ciò che il disegno usa: `{id, w, h}`.
+   * `null` se non c'è un id — le misure da sole non identificano niente.
+   */
+  function copiaImmagine(im) {
+    if (!im || typeof im !== 'object') return null;
+    var id = String(im.id == null ? '' : im.id).trim();
+    if (!id) return null;
+    var out = { id: id };
+    var w = Number(im.w), h = Number(im.h);
+    if (isFinite(w) && w > 0) out.w = Math.round(w);
+    if (isFinite(h) && h > 0) out.h = Math.round(h);
+    /* La scala del riquadro sulla mappa, in multipli della card. Un solo numero:
+       il ridimensionamento è sempre proporzionale, perché due manopole
+       separate vorrebbero dire poter deformare uno schema — e uno schema
+       deformato non si legge. `1` non si scrive: ciò che è di fabbrica non
+       sporca il file, come già per il colore. */
+    var k = Number(im.scala);
+    if (isFinite(k) && k > 0 && Math.round(k * 100) !== 100) {
+      out.scala = Math.max(0.5, Math.min(3, Math.round(k * 100) / 100));
+    }
+    return out;
+  }
+
+  /**
+   * Ridimensiona il ritaglio di un nodo, sempre in proporzione.
+   * Torna il grafo invariato se il nodo non porta un'immagine: ridimensionare
+   * ciò che non è un'immagine non vuol dire niente, e inventare un campo su un
+   * nodo di testo lo farebbe disegnare come un ritaglio senza sorgente.
+   */
+  function ridimensionaImmagine(g, id, scala) {
+    var out = copia(g), i = indiceNodo(out, id);
+    if (i < 0 || !out.nodi[i].immagine) return g;
+    var k = Number(scala);
+    if (!isFinite(k) || k <= 0) return g;
+    k = Math.max(0.5, Math.min(3, Math.round(k * 100) / 100));
+    var im = Object.assign({}, out.nodi[i].immagine);
+    if (Math.round(k * 100) === 100) delete im.scala; else im.scala = k;
+    out.nodi[i].immagine = im;
+    return out;
+  }
+
   function creaNodo(g, opt) {
     opt = opt || {};
     var out = copia(g);
@@ -230,6 +281,8 @@
     var nx = coordinata(opt.x), ny = coordinata(opt.y);
     if (nx !== null && ny !== null) { n.x = nx; n.y = ny; }
     if (opt.colore) n.colore = String(opt.colore);
+    var im = copiaImmagine(opt.immagine);
+    if (im) n.immagine = im;
     out.nodi.push(n);
 
     var padre = null;
@@ -527,23 +580,41 @@
    * annulla che non lo dice costringe a provarlo per saperlo, e provarlo su una
    * mappa vuol dire farle fare un salto sotto gli occhi.
    */
-  function annullabile(p, etichettaAzione, g) {
+  /* ⚠️ `extra` è il quarto argomento: TUTTO ciò che si può perdere con quel
+     gesto e che non sta nel grafo. Oggi sono le leve della vista e le
+     disposizioni salvate; domani sarà quello che si aggiunge al documento.
+     È facoltativo perché non ogni operazione le tocca — aggiungere un nodo
+     cambia il grafo e basta.
+     Il nome non è `vista` di proposito, e ci sono già cascato: la prima versione
+     copiava solo le leve, e svuotare uno slot mostrava un toast che PROMETTEVA
+     «⌘Z lo riporta» mentre l'annulla non aveva le memorie. Una promessa scritta
+     e non mantenuta è peggio di una funzione che manca. Se un pezzo di stato può
+     sparire con un gesto, o entra qui o quel gesto non è annullabile.
+     Si copia in profondità: è roba di chi chiama, e fra un annulla e l'altro
+     cambia sotto. */
+  function annullabile(p, etichettaAzione, g, extra) {
     if (!p || !p.stati) return p;
-    p.stati.push({ etichetta: String(etichettaAzione == null ? '' : etichettaAzione), grafo: copia(g) });
+    var voce = { etichetta: String(etichettaAzione == null ? '' : etichettaAzione), grafo: copia(g) };
+    if (extra && typeof extra === 'object') { try { voce.extra = JSON.parse(JSON.stringify(extra)); } catch (e) {} }
+    p.stati.push(voce);
     while (p.stati.length > p.max) p.stati.shift();   // il più vecchio se ne va per primo
     return p;
   }
 
   /**
    * Torna indietro di un passo.
-   * @returns {{grafo, etichetta}} oppure `null` se non c'è più niente da
+   * @returns {{grafo, etichetta, extra}} oppure `null` se non c'è più niente da
    *          annullare — `null` e non un grafo vuoto: chi chiama deve poter
    *          distinguere «non c'è nulla da fare» da «ecco la mappa, ora è vuota».
+   *          `extra` c'è solo se chi ha messo lo stato l'aveva dato: assente vuol
+   *          dire «questa operazione toccava il solo grafo», non «stato vuoto».
    */
   function annulla(p) {
     if (!p || !p.stati || !p.stati.length) return null;
     var s = p.stati.pop();
-    return { grafo: s.grafo, etichetta: s.etichetta };
+    var out = { grafo: s.grafo, etichetta: s.etichetta };
+    if (s.extra) out.extra = s.extra;
+    return out;
   }
 
   /** Che cosa annullerebbe il prossimo ⌘Z, per scriverlo nel menu. `''` se la
@@ -571,6 +642,7 @@
 
   return {
     copia: copia, prossimoId: prossimoId, trovaArco: trovaArco,
+    ridimensionaImmagine: ridimensionaImmagine,
     creaNodo: creaNodo, estrai: estrai, rinomina: rinomina, eliminaNodo: eliminaNodo,
     creaArco: creaArco, eliminaArco: eliminaArco, inverti: inverti,
     etichetta: etichetta, direzione: direzione,

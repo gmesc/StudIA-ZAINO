@@ -20,6 +20,16 @@
 
   function idDi(x) { return (x && typeof x === 'object') ? x.id : x; }
 
+  /** Il numero che arriva da uno slider o da una voce di menu, o `null` se non
+   *  è un numero. `null`, `undefined` e la stringa vuota NON sono zero: sono
+   *  «niente», e uno zero preso per errore poterebbe l'intera mappa — è la
+   *  stessa trappola di `fissato` qui sotto, `Number(null)` fa 0. */
+  function numeroOpt(x) {
+    if (x === null || x === undefined || x === '') return null;
+    var n = Number(x);
+    return isFinite(n) ? n : null;
+  }
+
   /**
    * Un nodo è FISSATO se e solo se ha `x` e `y`, ed entrambe sono numeri
    * finiti: nessun flag accanto, la presenza delle coordinate È il flag.
@@ -232,34 +242,76 @@
 
   /* ------------------------------------------------------- sotto-grafi (focus) */
 
-  /** Nodo + tutto ciò che tocca a un salto, in entrambi i versi. */
-  function vicini(g, id) {
-    var es = archi(g), fuori = {};
-    fuori[id] = true;
+  /**
+   * Un salto in tutte le direzioni: da ogni id del `bordo` si entra in ciò che
+   * gli sta attaccato, in entrambi i versi. Torna SOLO i nuovi arrivati, che
+   * sono il bordo del salto dopo.
+   *
+   * Sta da solo perché un salto e dieci salti sono la stessa mossa ripetuta:
+   * `vicini` è il caso a uno, il vicinato allargato del focus è il caso a n, e
+   * la regola su che cosa tocca che cosa è scritta qui una volta.
+   */
+  function unSalto(es, bordo, dentro) {
+    var era = {}, nuovi = [];
+    bordo.forEach(function (i) { era[i] = true; });
     es.forEach(function (e) {
-      if (e.da === id) fuori[e.a] = true;
-      if (e.a === id) fuori[e.da] = true;
+      if (era[e.da] && !dentro[e.a]) { dentro[e.a] = true; nuovi.push(e.a); }
+      if (era[e.a] && !dentro[e.da]) { dentro[e.da] = true; nuovi.push(e.da); }
     });
+    return nuovi;
+  }
+
+  /** Il nodo e ciò che lo tocca entro `salti` salti, in entrambi i versi.
+   *  `salti` mancante vale 1; zero è legittimo e vuol dire «solo questo nodo». */
+  function intorno(g, id, salti) {
+    var n = numeroOpt(salti);
+    n = (n === null) ? 1 : Math.max(0, Math.floor(n));
+    var es = archi(g), dentro = {}, bordo = [id];
+    dentro[id] = true;
+    for (var i = 0; i < n && bordo.length; i++) bordo = unSalto(es, bordo, dentro);
+    return Object.keys(dentro);
+  }
+
+  /** Nodo + tutto ciò che tocca a un salto, in entrambi i versi. */
+  function vicini(g, id) { return intorno(g, id, 1); }
+
+  /** Chiusura lungo gli archi in UN verso solo: `pred` risale, `succ` scende.
+   *  Il visitato non è un'ottimizzazione: senza, un ciclo non finirebbe più. */
+  function catena(dir, id) {
+    var visti = {}, pila = [id];
+    while (pila.length) {
+      var u = pila.pop();
+      (dir[u] || []).forEach(function (v) { if (!visti[v]) { visti[v] = true; pila.push(v); } });
+    }
+    return visti;
+  }
+
+  /** Il nodo, e poi l'unione degli insiemi passati. L'ordine mette sempre lui
+   *  per primo: è quello di cui si sta parlando. */
+  function conIlNodo(id, insiemi) {
+    var fuori = {};
+    fuori[id] = true;
+    insiemi.forEach(function (m) { Object.keys(m).forEach(function (k) { fuori[k] = true; }); });
     return Object.keys(fuori);
   }
 
   /** Nodo + antenati + discendenti: la linea di sangue intera. */
   function parentela(g, id) {
-    var es = archi(g);
-    var inc = incidenze(g.nodi || [], es);
-    function risali(mappa) {
-      var visti = {}, pila = [id];
-      while (pila.length) {
-        var u = pila.pop();
-        (mappa[u] || []).forEach(function (v) { if (!visti[v]) { visti[v] = true; pila.push(v); } });
-      }
-      return visti;
-    }
-    var su = risali(inc.pred), giu = risali(inc.succ), fuori = {};
-    fuori[id] = true;
-    Object.keys(su).forEach(function (k) { fuori[k] = true; });
-    Object.keys(giu).forEach(function (k) { fuori[k] = true; });
-    return Object.keys(fuori);
+    var inc = incidenze(g.nodi || [], archi(g));
+    return conIlNodo(id, [catena(inc.pred, id), catena(inc.succ, id)]);
+  }
+
+  /**
+   * Metà parentela: solo in su (`pred`) o solo in giù (`succ`).
+   *
+   * ⚠️ Segue TUTTI gli archi, come `parentela` di cui è la metà esatta, e non
+   * la foresta portante di `discendenti`: quella serve al colore, che deve
+   * scendere lungo l'albero che si vede, mentre qui si chiede «da dove viene» e
+   * «dove va» questo concetto, e la risposta sono i legami, tutti.
+   */
+  function lungoGliArchi(g, id, dir) {
+    var inc = incidenze(g.nodi || [], archi(g));
+    return conIlNodo(id, [catena(inc[dir], id)]);
   }
 
   /** Ritaglia il grafo su un insieme di id (nodi e archi con entrambi i capi). */
@@ -272,16 +324,99 @@
     };
   }
 
-  /** Discendenti di un nodo lungo la foresta portante (per il colore a cascata). */
-  function discendenti(g, id) {
-    var s = sanitizza(g);
-    var out = [], pila = (s.figli[id] || []).slice();
+  /** Il sottoalbero di `id` lungo la foresta portante, lui escluso.
+   *  Il visitato serve davvero: la foresta di un grafo storto può richiudersi
+   *  su sé stessa, e senza guardia il giro non finirebbe mai. */
+  function sottoalbero(figli, id) {
+    var visti = {}, out = [], pila = (figli[id] || []).slice();
     while (pila.length) {
       var u = pila.pop();
-      out.push(u);
-      (s.figli[u] || []).forEach(function (v) { pila.push(v); });
+      if (visti[u]) continue;
+      visti[u] = true; out.push(u);
+      (figli[u] || []).forEach(function (v) { pila.push(v); });
     }
     return out;
+  }
+
+  /** Discendenti di un nodo lungo la foresta portante (per il colore a cascata). */
+  function discendenti(g, id) {
+    return sottoalbero(sanitizza(g).figli, id);
+  }
+
+  /* ------------------------------------------------------------- le potature
+
+     Tre modi di mostrare meno mappa: il FUOCO su un nodo (`focus`), la SOGLIA
+     di profondità (`entroProfondita`), i RAMI CHIUSI (`senzaRami`). Nell'app si
+     applicano in fila — focus → profondità → rami — e perché quella fila stia
+     in piedi senza che nessuna delle tre sappia delle altre, tutte e tre
+     rispettano le stesse regole:
+
+     · stesso contratto in uscita: { grafo, nascosti, quanti, frontiera };
+     · INDIPENDENTI: ognuna riparte da `sanitizza` sul grafo che RICEVE e non
+       porta con sé niente della precedente. Nessuno stato passa fra loro,
+       quindi l'ordine si può cambiare senza riscriverle;
+     · IDEMPOTENTI: riapplicata al proprio risultato non toglie più niente, e
+       allora restituisce LO STESSO oggetto. È ciò che permette a chi disegna di
+       chiedere `out.grafo === g` invece di confrontare due liste di nodi.
+
+     Da dove si contano i livelli dopo un fuoco. `entroProfondita` non legge il
+     `livello` scritto nei nodi: lo fa ricalcolare da `sanitizza` sul grafo che
+     ha in mano, e lo zero sono le sorgenti di QUEL grafo. Dopo un fuoco «figli»
+     o «vicini» la sorgente è il nodo messo a fuoco, e lo slider conta da lui —
+     che è ciò che uno si aspetta guardando una mappa già ridotta a un nodo.
+     Dopo «genitori» o «parentela», invece, gli antenati sono rimasti dentro e
+     la vecchia radice varrebbe ancora zero: lo slider taglierebbe via per primo
+     proprio il nodo che l'utente ha appena scelto. Per questo c'è `opt.da`, che
+     rimette l'origine sul nodo a fuoco e mette al riparo tutto ciò che gli sta
+     SOPRA (livello negativo, mai oltre la soglia). L'origine è il nodo che
+     l'utente ha in mano, non la radice di un albero che ha smesso di guardare.
+
+     ⚠️ Il livello di cui si parla qui è quello TOPOLOGICO del modello. Il
+     `livello` che i motori scrivono in `res.pos[id]` è un'altra cosa (in
+     «anelli» è la distanza dal centro): quello è disposizione, questo è
+     struttura. */
+
+  /** Nessuna potatura: LO STESSO oggetto che è arrivato, e i tre conti vuoti.
+   *  Se non si nasconde niente non si costruisce niente — è la regola che rende
+   *  confrontabile per identità il grafo di ritorno. */
+  function intatto(g) { return { grafo: g, nascosti: {}, quanti: {}, frontiera: [] }; }
+
+  /** Il nodo sanitizzato con quell'id, o null. Serve a due domande diverse —
+   *  «esiste?» e «a che livello sta?» — che sono la stessa ricerca. */
+  function nodoDi(s, id) {
+    if (id == null) return null;
+    for (var i = 0; i < s.nodi.length; i++) if (s.nodi[i].id === id) return s.nodi[i];
+    return null;
+  }
+
+  /**
+   * Il pezzo comune alle tre potature: dato l'insieme dei nodi da togliere,
+   * costruisce il ritaglio e i due conti che l'interfaccia deve mostrare.
+   *
+   * `quanti` e `frontiera` guardano la FORESTA PORTANTE, la stessa che disegna
+   * l'albero: il segno «+3» va messo sul nodo sotto cui quei tre si vedevano,
+   * e nel disegno quello è il loro genitore, non un qualunque capo d'arco.
+   *
+   * @returns {{grafo, nascosti, quanti, frontiera}}
+   *   `frontiera` = gli id RIMASTI che hanno almeno un figlio nascosto: è
+   *   l'elenco esatto dei segni da disegnare, nell'ordine dei nodi del grafo.
+   *   `quanti[id]` esiste per quegli id soli, e dice quanti nodi sono spariti
+   *   sotto di lui.
+   */
+  function pota(g, s, nascosti) {
+    if (!Object.keys(nascosti).length) return intatto(g);
+    var visibili = [], frontiera = [], quanti = {};
+    s.nodi.forEach(function (n) {
+      if (nascosti[n.id]) return;
+      visibili.push(n.id);
+      var tagliato = (s.figli[n.id] || []).some(function (f) { return !!nascosti[f]; });
+      if (!tagliato) return;
+      frontiera.push(n.id);
+      var persi = 0;
+      sottoalbero(s.figli, n.id).forEach(function (u) { if (nascosti[u]) persi++; });
+      quanti[n.id] = persi;
+    });
+    return { grafo: ritaglia(g, visibili), nascosti: nascosti, quanti: quanti, frontiera: frontiera };
   }
 
   /**
@@ -293,39 +428,96 @@
    *
    * @param chiusi  oggetto o array di id. Gli id sconosciuti si ignorano: la
    *                mappa può essersi rigenerata sotto, e non è un errore.
-   * @returns {{grafo, nascosti, quanti, chiudibili, figli}}
+   * @returns {{grafo, nascosti, quanti, frontiera, chiudibili, figli}}
    *          `chiudibili` è id → 'aperto' | 'chiuso' per i soli nodi VISIBILI
-   *          che hanno figli: è l'elenco esatto dei tasti da disegnare.
+   *          che hanno figli: è l'elenco esatto dei tasti da disegnare, ed è
+   *          `frontiera` letta al contrario — chi ha figli nascosti è chiuso,
+   *          chi ha figli e non li ha nascosti è aperto.
    */
   function senzaRami(g, chiusi) {
     var s = sanitizza(g);
     var lista = Array.isArray(chiusi) ? chiusi : Object.keys(chiusi || {});
-    var nascosti = {}, quanti = {};
+    var nascosti = {};
     lista.forEach(function (id) {
-      var f = s.figli[id];
-      if (!f || !f.length) return;
-      var pila = f.slice(), n = 0;
-      while (pila.length) {
-        var u = pila.pop();
-        if (nascosti[u]) continue;
-        nascosti[u] = true; n++;
-        (s.figli[u] || []).forEach(function (w) { pila.push(w); });
-      }
-      quanti[id] = n;
+      sottoalbero(s.figli, id).forEach(function (u) { nascosti[u] = true; });
     });
-    var visibili = s.nodi.filter(function (n) { return !nascosti[n.id]; }).map(function (n) { return n.id; });
+    var p = pota(g, s, nascosti);
+    var chiuso = {};
+    p.frontiera.forEach(function (id) { chiuso[id] = true; });
     var chiudibili = {};
-    visibili.forEach(function (id) {
-      if (s.figli[id] && s.figli[id].length) chiudibili[id] = quanti[id] ? 'chiuso' : 'aperto';
+    s.nodi.forEach(function (n) {
+      if (nascosti[n.id]) return;
+      if (s.figli[n.id] && s.figli[n.id].length) chiudibili[n.id] = chiuso[n.id] ? 'chiuso' : 'aperto';
     });
     return {
-      grafo: Object.keys(nascosti).length ? ritaglia(g, visibili) : g,
-      nascosti: nascosti, quanti: quanti, chiudibili: chiudibili, figli: s.figli
+      grafo: p.grafo, nascosti: p.nascosti, quanti: p.quanti, frontiera: p.frontiera,
+      chiudibili: chiudibili, figli: s.figli
     };
+  }
+
+  /**
+   * Slider di profondità: via tutto ciò che sta più in giù del livello `max`.
+   *
+   * Il livello è quello TOPOLOGICO ricalcolato da `sanitizza`, non quello
+   * dichiarato nel file: un livello dichiarato è un'opinione, e una mappa
+   * ridotta in base a un'opinione sbagliata taglia i nodi sbagliati.
+   *
+   * @param max    la soglia. Nulla, vuota, non numerica o negativa vuol dire
+   *               «nessuna soglia»; una soglia oltre la profondità massima non
+   *               nasconde niente. In tutti questi casi torna LO STESSO oggetto.
+   * @param opt.da id da prendere come origine (tipicamente il nodo a fuoco): i
+   *               livelli si contano da lui, e chi gli sta sopra non si tocca
+   *               mai. Un id sconosciuto si ignora e l'origine torna la radice.
+   * @returns {{grafo, nascosti, quanti, frontiera}}
+   */
+  function entroProfondita(g, max, opt) {
+    var soglia = numeroOpt(max);
+    if (soglia === null || soglia < 0) return intatto(g);
+    var s = sanitizza(g);
+    var da = nodoDi(s, opt && opt.da);
+    var zero = da ? da.livello : 0;
+    var nascosti = {};
+    s.nodi.forEach(function (n) { if (n.livello - zero > soglia) nascosti[n.id] = true; });
+    return pota(g, s, nascosti);
+  }
+
+  /** L'insieme dei nodi che il fuoco tiene, secondo il modo. `null` = modo che
+   *  non si conosce, e allora non si taglia niente: fra togliere mezza mappa
+   *  per un modo scritto male e non fare nulla, non fare nulla si vede. */
+  function insiemeFuoco(g, id, modo, opt) {
+    if (modo === 'vicini') return intorno(g, id, opt && opt.salti);
+    if (modo === 'parentela') return parentela(g, id);
+    if (modo === 'genitori') return lungoGliArchi(g, id, 'pred');
+    if (modo === 'figli') return lungoGliArchi(g, id, 'succ');
+    return null;
+  }
+
+  /**
+   * Modalità focus: resta il nodo scelto e la sua cerchia, il resto sparisce.
+   *
+   * @param modo  'vicini'    il nodo e ciò che tocca entro `opt.salti` salti
+   *                          (default 1), in entrambi i versi;
+   *              'parentela' antenati E discendenti, la linea di sangue intera;
+   *              'genitori'  solo gli antenati — «da dove viene questo»;
+   *              'figli'     solo i discendenti — «dove porta questo».
+   * @param opt.salti  quanti salti per 'vicini'. Zero è legittimo: solo il nodo.
+   * @returns {{grafo, nascosti, quanti, frontiera}} — id sconosciuto o modo
+   *          sconosciuto restituiscono il grafo intatto, senza lanciare.
+   */
+  function focus(g, id, modo, opt) {
+    var s = sanitizza(g);
+    if (!nodoDi(s, id)) return intatto(g);
+    var tenuti = insiemeFuoco(g, id, modo, opt);
+    if (!tenuti) return intatto(g);
+    var dentro = {};
+    tenuti.forEach(function (i) { dentro[i] = true; });
+    var nascosti = {};
+    s.nodi.forEach(function (n) { if (!dentro[n.id]) nascosti[n.id] = true; });
+    return pota(g, s, nascosti);
   }
 
   return { idDi: idDi, fissato: fissato, archi: archi, mappaNodi: mappaNodi, adiacenza: adiacenza, incidenze: incidenze,
            rompiCicli: rompiCicli, profondita: profondita, foresta: foresta, sanitizza: sanitizza,
            vicini: vicini, parentela: parentela, ritaglia: ritaglia, discendenti: discendenti,
-           senzaRami: senzaRami };
+           senzaRami: senzaRami, entroProfondita: entroProfondita, focus: focus };
 }));

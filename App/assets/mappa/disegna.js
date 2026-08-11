@@ -14,6 +14,12 @@
    Per la stessa ragione le frecce sono TRIANGOLI DISEGNATI e non `<marker>`:
    i marker sono la prima cosa che i convertitori SVG→PDF sbagliano.
 
+   Un nodo può anche ESSERE un'immagine (`nodo.immagine`: un ritaglio dell'album
+   del corso). La regola non cambia di una virgola: si disegna con un `<image>` e
+   i suoi attributi, mai con un `foreignObject` — che a schermo sarebbe comodo e
+   in PDF non arriva vivo. E la sorgente non si va a cercare sul disco: il modulo
+   resta puro, l'indirizzo lo dà chi chiama con `opt.srcImmagine`.
+
    I colori arrivano da fuori (`opt.tema`, `opt.gruppi`): il modulo non sa
    nulla del tema chiaro o scuro, e il renderer glieli passa leggendoli dalle
    variabili CSS vere — così cambiando tema la mappa cambia con l'app.
@@ -72,6 +78,61 @@
     return colore(nodo, gruppi);
   }
 
+  /**
+   * Le fonti che un nodo dichiara, ripulite.
+   *
+   * Le mappe concettuali nuove appendono al nodo un ARRAY (`nodo.fonti`),
+   * perché un concetto onesto cita più di un punto: il minuto del video E la
+   * tabella della dispensa dicono la stessa cosa, e tenerne una sola vorrebbe
+   * dire scegliere al posto di chi studia. `rimando` e `capitolo` restano la via
+   * vecchia — una fonte sola, quella dell'estrazione — e chi arriva di lì si
+   * disegna esattamente come prima: il campo nuovo non cambia una virgola alle
+   * mappe già salvate.
+   *
+   * Le voci vuote cadono QUI, una volta per tutte, e la funzione è esportata
+   * apposta: il numero scritto sul segno è la promessa di quante righe troverà
+   * chi apre la bolla, e la bolla la riempie il renderer. Se filtrasse con una
+   * legge sua si arriverebbe a un «3» sul nodo e a due voci nel menu — cioè al
+   * dubbio che la terza fonte sia andata persa.
+   */
+  function fontiDi(nodo) {
+    return (nodo && Array.isArray(nodo.fonti)) ? nodo.fonti.filter(Boolean) : [];
+  }
+
+  /**
+   * Il ritaglio che un nodo porta addosso (`{id, w, h}`), se c'è davvero.
+   *
+   * Basta l'`id` — il nome con cui l'album ritrova il file — perché il nodo sia
+   * un nodo-immagine. Le misure servono solo al rapporto d'aspetto e possono
+   * mancare: si ritaglia con un rapporto di ripiego, che è meno bello ma è
+   * ancora il ritaglio giusto.
+   *
+   * ⚠️ Un `immagine` SENZA id non è un'immagine che non si trova: è un campo che
+   * non vuol dire niente, e la card torna a essere una card qualsiasi. Il
+   * segnaposto è riservato a chi un ritaglio ce l'ha e non si riesce a
+   * mostrarlo: metterlo anche qui prometterebbe un'immagine che nessuno ha mai
+   * messo lì.
+   *
+   * È esportata come `fontiDi` e per la stessa ragione: il renderer deve poter
+   * decidere le stesse cose che decide il disegno, senza rifare la regola.
+   */
+  function immagineDi(nodo) {
+    var im = nodo && nodo.immagine;
+    if (!im || typeof im !== 'object') return null;
+    return (im.id != null && String(im.id).trim() !== '') ? im : null;
+  }
+
+  /** Quanto è grande il riquadro di un ritaglio, in multipli della card.
+   *  ⚠️ Sempre PROPORZIONALE: un solo numero per larghezza e altezza. Due
+   *  manopole separate vorrebbero dire poter deformare uno schema, e uno schema
+   *  deformato non si legge — è la stessa ragione dello `slice` sull'immagine. */
+  var SCALA_MIN = 0.5, SCALA_MAX = 3;
+  function scalaImmagine(im) {
+    var k = Number(im && im.scala);
+    if (!isFinite(k) || k <= 0) return 1;
+    return Math.max(SCALA_MIN, Math.min(SCALA_MAX, k));
+  }
+
   /** Manda a capo su una larghezza data. Helvetica non è monospazio: 0.55em per
    *  carattere è la media misurata sul testo italiano, e sbagliare in difetto
    *  taglia le parole — meglio una riga in più che una parola mangiata. */
@@ -101,12 +162,136 @@
      bersaglio del proprio legame — cioè proprio dove la mano va a cercarlo — e
      il menu contestuale sull'arco non si apriva se lo si prendeva per la
      parola. Il segno resta visibile; a rispondere è l'arco che gli sta sotto. */
+  /* `ancora` e `peso` sono aggiunte facoltative, e stanno qui invece che in una
+     seconda funzione perché l'alone deve restare UNO: due copie della stessa
+     ricetta divergerebbero al primo ritocco, e la prima a scolorire sarebbe
+     quella usata meno. Senza di loro l'uscita è identica a prima, byte per
+     byte — chi le omette non si accorge che esistono. */
   function testoConAlone(x, y, s, opt) {
-    var comune = 'x="' + n1(x) + '" y="' + n1(y) + '" text-anchor="middle" font-family="' + esc(opt.font) +
-      '" font-size="' + opt.fs + '" dominant-baseline="middle" pointer-events="none"';
+    var comune = 'x="' + n1(x) + '" y="' + n1(y) + '" text-anchor="' + (opt.ancora || 'middle') +
+      '" font-family="' + esc(opt.font) +
+      '" font-size="' + opt.fs + '" dominant-baseline="middle" pointer-events="none"' +
+      (opt.peso ? ' font-weight="' + opt.peso + '"' : '');
     return '<text ' + comune + ' fill="' + opt.alone + '" stroke="' + opt.alone +
       '" stroke-width="3.5" stroke-linejoin="round">' + esc(s) + '</text>' +
       '<text ' + comune + ' fill="' + opt.colore + '">' + esc(s) + '</text>';
+  }
+
+  /* Quanto stanno dentro dal bordo l'immagine e la sua didascalia. Cinque e non
+     quattro: la barra d'accento è spessa 4px e corre sul bordo alto (td) o su
+     quello sinistro (lr), e con quattro l'immagine la toccherebbe — il colore
+     del ramo è la prima cosa che si legge su una mappa, e non deve stare sotto
+     un ritaglio. */
+  var PAD_IMM = 5;
+
+  /**
+   * Come si spartisce una card che porta un'immagine: il riquadro del ritaglio
+   * sopra, la fascia della didascalia sotto.
+   *
+   * ⚠️ La card NON cresce. L'altezza la decide `layouts`, uguale per tutte, e un
+   * nodo che si allargasse per far posto alla sua immagine sfonderebbe la
+   * griglia di tutti gli altri: qui si divide lo spazio che c'è, non se ne
+   * chiede dell'altro.
+   *
+   * La didascalia non prende mai più di metà: `layouts` accetta card alte fino a
+   * 24px, e là una riga di testo a corpo pieno si mangerebbe il ritaglio
+   * lasciando un nodo con la cornice e dentro niente.
+   */
+  /** La barra d'accento: lo stesso spessore che hanno tutte le card. */
+  var BARRA = 4;
+
+  /**
+   * Le misure di un nodo-immagine: **le detta il ritaglio**, non la griglia.
+   *
+   * ⚠️ È il rovescio della regola di prima, ed è una scelta dell'utente. Fino a
+   * ieri il rapporto d'aspetto non entrava MAI nella geometria: la card era
+   * quella di tutte le altre e il ritaglio si tagliava per starci dentro
+   * (`slice`). Il guadagno era una griglia perfettamente regolare; il prezzo era
+   * che di uno schema si vedeva un pezzo — e uno schema di cui si vede un pezzo
+   * non è uno schema. Adesso il nodo prende la forma dell'immagine e la mostra
+   * INTERA.
+   *
+   * La larghezza parte da quella della card (per scala), l'altezza la ricava il
+   * rapporto. ⚠️ Con un tetto: un ritaglio molto alto e stretto — una colonna di
+   * testo presa da una dispensa — darebbe un nodo più alto dell'intera mappa. Al
+   * tetto si arriva stringendo la LARGHEZZA, mai schiacciando l'altezza: il
+   * rapporto non si tocca, o si torna alla deformazione da cui si scappava.
+   *
+   * Senza misure (`w`/`h` a zero, cioè «non si sa») si ricade sul rapporto della
+   * card: un numero inventato darebbe una forma sbagliata con la stessa
+   * sicurezza di una giusta.
+   */
+  function misureImmagine(im, W, H, k, conDidascalia, fs) {
+    var hDid = conDidascalia ? Math.min(fs * 1.35, H * 0.34) : 0;
+    var wi = Math.max(1, W * k - BARRA);
+    var rap = (im && im.w > 0 && im.h > 0) ? (im.w / im.h) : (wi / Math.max(1, H * k - hDid));
+    var hi = wi / rap;
+    var tetto = H * k * 5;
+    if (hi > tetto) { hi = tetto; wi = hi * rap; }
+    return { wi: wi, hi: hi, hDid: hDid, W: wi + BARRA, H: hi + hDid };
+  }
+
+  function riquadroImmagine(x, y, m) {
+    /* ⚠️ Un nodo-immagine non ha la cornice della card: tre lati sono nudi e a
+       sinistra resta la sola barra del colore. Quindi il ritaglio non si ritira
+       da un bordo che non c'è — parte subito dopo la barra e arriva ai tre lati. */
+    return {
+      x: x + BARRA, y: y,
+      w: Math.max(1, m.wi),
+      h: Math.max(1, m.hi),
+      cyDid: y + m.hi + m.hDid / 2
+    };
+  }
+
+  /** Quello che si legge — e quello che si sente leggere — quando il ritaglio non
+   *  si riesce a mostrare. Una frase sola, in un posto solo: il segnaposto
+   *  disegnato e l'etichetta della card devono dire la stessa cosa, altrimenti
+   *  chi guarda e chi ascolta si troverebbero davanti a due nodi diversi. */
+  var SEGNAPOSTO = 'immagine non disponibile';
+
+  /**
+   * Il riquadro dentro la card: o il ritaglio, o il segnaposto che dice perché
+   * non c'è.
+   *
+   * ⚠️ Senza sorgente NON si emette un `<image>`. Un'immagine senza indirizzo è
+   * un buco muto a schermo e un errore in conversione, e chi guarda non ha modo
+   * di distinguerla da un nodo vuoto: al suo posto va un segnaposto, che almeno
+   * dice che lì un ritaglio ci sarebbe e non lo si è trovato.
+   *
+   * `href` E `xlink:href` con lo stesso valore: i browser leggono il primo
+   * (SVG 2), i convertitori in PDF cercano ancora il secondo (SVG 1.1), e questo
+   * file esiste per servire tutti e due. La ripetizione è anche la ragione per
+   * cui `srcImmagine` dovrebbe tornare un indirizzo CORTO — un `file://`, un
+   * protocollo dell'app — e non un `data:` in base64, che finirebbe scritto due
+   * volte per ogni nodo.
+   *
+   * `preserveAspectRatio="xMidYMid slice"`: il ritaglio RIEMPIE il riquadro e ciò
+   * che avanza si taglia, invece di schiacciarsi per starci dentro. Uno schema
+   * deformato non si legge; uno schema tagliato sì. Il taglio è simmetrico, così
+   * ciò che si perde è la cornice e non il centro. Non serve nessun `clipPath`:
+   * un `<image>` si limita da sé al proprio riquadro, e un riferimento a un
+   * `clipPath` è proprio il genere di indirezione che i convertitori perdono.
+   */
+  function pezzoImmagine(r, src, tema, font, fs) {
+    var box = 'x="' + n1(r.x) + '" y="' + n1(r.y) + '" width="' + n1(r.w) + '" height="' + n1(r.h) + '"';
+    if (src) {
+      /* Nessun filo di contorno attorno al ritaglio: la cornice della card non
+         c'è più, e un rettangolo attorno all'immagine ne rifarebbe una — cioè
+         proprio ciò che si è tolto. Dove finisce l'immagine lo dice l'immagine.
+         `pointer-events="none"`: a rispondere al click resta il rettangolo del
+         nodo, che sta sotto e copre tutto. */
+      /* `meet` e non più `slice`: il riquadro ha ormai il rapporto dell'immagine,
+         quindi non c'è niente da tagliare — e se le misure non si sapevano, far
+         vedere tutto con una fascia vuota è meglio che nascondere un pezzo di
+         schema senza dirlo. */
+      return '<image ' + box + ' preserveAspectRatio="xMidYMid meet" href="' + esc(src) +
+        '" xlink:href="' + esc(src) + '" pointer-events="none"/>';
+    }
+    var fsSeg = Math.max(8, fs - 3);
+    return '<rect ' + box + ' fill="' + tema.bg + '" stroke="' + tema.line +
+      '" stroke-width="1" stroke-dasharray="3 3" pointer-events="none"/>' +
+      testoConAlone(r.x + r.w / 2, r.y + r.h / 2, righe(SEGNAPOSTO, r.w, fsSeg, 1)[0] || '',
+        { fs: fsSeg, font: font, colore: tema.muted, alone: tema.bg });
   }
 
   /** Punta della freccia: triangolo pieno sull'ultimo segmento della polilinea. */
@@ -177,7 +362,7 @@
   /**
    * @param res  risultato di layouts.run
    * @param opt  { tema, gruppi, fsNodo, fsRel, etichette:'complete'|'brevi',
-   *               evidenzia:id, font, titolo, margine }
+   *               evidenzia:id, font, titolo, margine, srcImmagine:fn }
    * @returns {{markup, viewBox, bbox}}
    */
   function svg(res, opt) {
@@ -257,9 +442,20 @@
 
     // 3. linking words — dopo gli archi, prima delle card: una parola coperta da
     //    una card sarebbe peggio di una parola assente, perché sembra un errore
+    /* ⚠️ Anche quelle della FILIGRANA (`res.extra`), non solo di `res.archi`.
+       Nel motore Percorso i legami veri stanno lì — `res.archi` sono i segmenti
+       del filo numerato — e iterando i soli `archi` il Percorso restava l'unico
+       motore muto: gli archi c'erano, colorati per famiglia, ma senza il verbo
+       sopra. È la stessa svista che aveva reso incliccabili i suoi legami
+       (guasto 5.6): chi scrive un ciclo sugli archi dimentica che su un motore
+       su quattro gli archi si chiamano `extra`.
+       Il filo resta muto per costruzione — `rel` vuoto e `_filo` addosso — e va
+       bene così: il numero del passo lo dice già la card, e una parola su ogni
+       segmento del serpente sarebbe rumore su ciò che si legge per primo. */
     if (opt.etichette !== 'no') {
-      (res.archi || []).forEach(function (a) {
-        if (!a.e.rel || a.e._filo) return;
+      (res.archi || []).concat(res.extra || []).forEach(function (a) {
+        // in filigrana può esserci anche un tracciato senza legame dietro
+        if (!a || !a.e || !a.e.rel || a.e._filo || !a.meta) return;
         var s = opt.etichette === 'brevi' ? String(a.e.rel).split(/\s+/)[0] : a.e.rel;
         out.push(testoConAlone(a.meta.x, a.meta.y, s,
           { fs: fsRel, font: font, colore: R.coloreDi(a.e.rel), alone: tema.panel }));
@@ -273,30 +469,92 @@
       var x = p.x - W / 2, y = p.y - H / 2;
       var acceso = opt.evidenzia && opt.evidenzia === id;
       var suo = nodo.origine === 'utente';
-      var apribile = !!nodo.rimando || nodo.capitolo != null;
+      var nFonti = fontiDi(nodo).length;
+      // le tre vie che rendono un nodo apribile: l'elenco nuovo, il rimando
+      // dell'estrazione, il capitolo. Basta una
+      var apribile = nFonti > 0 || !!nodo.rimando || nodo.capitolo != null;
       var stato = opt.chiudibili && opt.chiudibili[id];
       var testoN = nodo.testo || '';
+      /* Il ritaglio dell'album, se il nodo ne porta uno. L'indirizzo lo dà chi
+         chiama: qui non si sa né dove stia l'album né come lo si legga, e la
+         funzione può anche tornare vuoto — un file cancellato fuori dall'app è
+         un caso normale, non un guasto. */
+      var imm = immagineDi(nodo);
+      var srcImm = (imm && typeof opt.srcImmagine === 'function') ? String(opt.srcImmagine(imm) || '') : '';
+      /* ⚠️ Un nodo-immagine ha le SUE misure: larghezza dalla card per la scala
+         scelta, altezza dal rapporto del ritaglio, centrato sulla posizione che
+         il motore gli ha dato. Il motore non lo sa: spaziature e attacchi degli
+         archi restano calcolati sulla card di fabbrica.
+         E NON è un debito da pagare. I nodi-immagine esistono solo sulle mappe
+         dell'utente — `mappaNodoImmagine` è l'unica porta che li crea e sulla
+         mappa generata rifiuta, e `genera.js` non emette mai `immagine` — cioè
+         proprio dove la disposizione la fa la mano e non il motore. Insegnare le
+         misure per nodo a quattro motori vorrebbe dire riscrivere la geometria
+         su cui poggia tutto il resto del disegno per un caso che, per decisione
+         dell'utente (10 agosto 2026), non si presenta. Chi legge questo commento
+         cercando il debito: non c'è. */
+      var kImm = imm ? scalaImmagine(imm) : 1;
+      var mImm = imm ? misureImmagine(imm, W, H, kImm, !!(nodo.testo || '').trim(), fsNodo) : null;
+      var Wn = imm ? mImm.W : W, Hn = imm ? mImm.H : H;
+      if (imm) { x = p.x - Wn / 2; y = p.y - Hn / 2; }
+      var riq = imm ? riquadroImmagine(x, y, mImm) : null;
       // il tasto del ramo sta SUL BORDO, fuori dallo specchio del testo: la
       // riga non si accorcia per fargli posto
-      var ls = righe(testoN, W - 18, fsNodo, Math.max(1, Math.floor((H - 10) / (fsNodo * 1.25))));
-      var y0 = p.y - (ls.length - 1) * fsNodo * 0.62;
+      /* Con un'immagine il testo del nodo scende sotto e diventa DIDASCALIA: una
+         riga sola, tagliata, nella fascia che il riquadro ha lasciato libera. Non
+         è un ripiego — è la gerarchia giusta, perché su un nodo-immagine ciò che
+         si legge per primo è lo schema, e la frase serve a dire quale schema è. */
+      var ls = imm
+        ? righe(testoN, Wn - 18, fsNodo, 1)
+        : righe(testoN, W - 18, fsNodo, Math.max(1, Math.floor((H - 10) / (fsNodo * 1.25))));
+      var y0 = imm ? riq.cyDid : p.y - (ls.length - 1) * fsNodo * 0.62;
 
       // il <title> è il suggerimento del sistema: su una card il testo è
       // troncato a due o tre righe, e questo è l'unico modo di leggerlo intero
       // senza aprire nulla
       var suggerimento = testoN + (nodo.nota ? '\n\n' + nodo.nota : '');
+      /* L'etichetta della card dice anche QUANTE fonti ci sono. La mappa si
+         percorre da tastiera, un nodo per volta, e senza il numero un concetto
+         che cita tre punti si annuncia identico a uno che non ne cita nessuno:
+         chi non vede lo schermo non ha modo di sapere che lì sotto c'è un menu
+         da aprire invece di un rimando solo.
+         Il conto lo dà unicamente il campo nuovo: sulla via vecchia (`rimando`,
+         `capitolo`) l'etichetta resta il testo nudo, come è sempre stata. */
+      /* ⚠️ E dice anche che la card È un'immagine. La mappa si percorre da
+         tastiera, un nodo per volta: senza questa aggiunta un nodo che mostra uno
+         schema si annuncerebbe con la sola didascalia — cioè come un nodo di
+         testo qualsiasi, per giunta troncato — e chi non vede lo schermo non
+         avrebbe modo di sapere che lì c'è un'immagine. Quando il ritaglio non si
+         riesce a mostrare lo dice con le stesse parole che compaiono nel
+         segnaposto: ciò che si legge e ciò che si sente devono coincidere. */
+      var etichettaCard = testoN +
+        (imm ? ' — ' + (srcImm ? 'immagine' : SEGNAPOSTO) : '') +
+        (nFonti ? ' — ' + nFonti + (nFonti === 1 ? ' fonte' : ' fonti') : '');
       var g = ['<g class="mnodo" data-id="' + esc(id) + '"' + (apribile ? ' data-apri="1"' : '') +
-        ' role="listitem" aria-label="' + esc(testoN) + '"><title>' + esc(suggerimento) + '</title>'];
-      g.push('<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + W + '" height="' + H + '" fill="' + tema.panel +
-        '" stroke="' + (acceso ? col : tema.line) + '" stroke-width="' + (acceso ? 2.5 : 1) + '"' +
-        (suo ? ' stroke-dasharray="4 3"' : '') + '/>');
-      // barra d'accento sul lato da cui il ramo entra: dice il gruppo senza
-      // colorare il fondo, che renderebbe illeggibile il testo in tema scuro
-      g.push(o.orient === 'lr'
-        ? '<rect x="' + n1(x) + '" y="' + n1(y) + '" width="4" height="' + H + '" fill="' + col + '"/>'
-        : '<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + W + '" height="4" fill="' + col + '"/>');
+        ' role="listitem" aria-label="' + esc(etichettaCard) + '"><title>' + esc(suggerimento) + '</title>'];
+      /* ⚠️ Il nodo-immagine non ha la cornice: tre lati nudi, e a sinistra la
+         sola barra del colore, dello stesso spessore delle altre card. Il
+         rettangolo resta — è il bersaglio del click e il fondo su cui poggia la
+         didascalia — ma senza tratto. Quando è selezionato il tratto torna: la
+         selezione è un fatto momentaneo, non una cornice. */
+      g.push('<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + n1(Hn) + '" fill="' + tema.panel +
+        '" stroke="' + (acceso ? col : (imm ? 'none' : tema.line)) + '" stroke-width="' + (acceso ? 2.5 : 1) + '"' +
+        (suo && !imm ? ' stroke-dasharray="4 3"' : '') + '/>');
+      /* La barra d'accento dice il gruppo senza colorare il fondo, che renderebbe
+         illeggibile il testo in tema scuro. Su una card sta sul lato da cui il
+         ramo entra; su un'immagine sta SEMPRE a sinistra, perché lì è l'unica
+         cosa che resta del riquadro e deve stare sempre nello stesso posto. */
+      g.push(imm || o.orient === 'lr'
+        ? '<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + BARRA + '" height="' + n1(Hn) + '" fill="' + col + '"/>'
+        : '<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + BARRA + '" fill="' + col + '"/>');
+      /* Il ritaglio va DENTRO la card, subito dopo il fondo e la barra: sotto ci
+         deve restare il rettangolo che risponde al click, sopra ci passeranno il
+         numero del passo e la didascalia. La card resta `.mnodo` e la sua
+         identità non cambia di una virgola — un nodo-immagine si preme come
+         qualunque altro nodo. */
+      if (riq) g.push(pezzoImmagine(riq, srcImm, tema, font, fsNodo));
       if (res.passo && res.passo[id] != null) {
-        g.push('<text x="' + n1(x + 7) + '" y="' + n1(y + H - 7) + '" font-family="' + esc(font) +
+        g.push('<text x="' + n1(x + 7) + '" y="' + n1(y + Hn - 7) + '" font-family="' + esc(font) +
           '" font-size="' + Math.max(8, fsRel - 1) + '" font-weight="700" fill="' + tema.muted + '">' +
           res.passo[id] + '</text>');
       }
@@ -312,12 +570,48 @@
          chiudendo un ramo.
          Il segno non cambia: resta il cerchietto piccolo nell'angolo, quello
          che già oggi dice «qui sotto c'è una fonte». Cambia solo che ora si può
-         premere, con un bersaglio invisibile abbastanza largo da centrarlo. */
+         premere, con un bersaglio invisibile abbastanza largo da centrarlo.
+
+         PIÙ FONTI SULLO STESSO NODO — `data-fonti="N"`.
+         Chi preme deve sapere prima di premere che cosa succederà: con una
+         fonte sola si apre l'anteprima, con tre si apre una bolla e si sceglie.
+         Il numero sta in un `data-*` e non nel testo dell'etichetta perché lo
+         legge il renderer, non un umano, e leggerlo da una frase vorrebbe dire
+         analizzare l'italiano per decidere un ramo di codice.
+         ⚠️ L'attributo compare SOLO se il nodo porta l'elenco nuovo. Sulla via
+         vecchia (`rimando`, `capitolo`) non c'è: un `data-fonti="1"` messo lì
+         per simmetria direbbe al renderer che esiste una lista da cui pescare,
+         e la lista non c'è.
+
+         Il caso multi-fonte si dice a colpo d'occhio con un NUMERINO alla
+         sinistra del pallino — non con un pallino più grosso, che sarebbe
+         cresciuto verso la porta (i due centri distano 15,8px: vedi sotto), e
+         non con due pallini, che oltre il due non sanno contare. Il numerino
+         cresce verso l'interno della card (`text-anchor="end"`), dove non c'è
+         nessun altro bersaglio, e porta l'alone bianco perché lì sotto passa il
+         testo del nodo. Oltre il nove diventa «9+»: la card di fabbrica è larga
+         168px, e un conto che si allarga senza limite entra nelle parole.
+         ⚠️ La GEOMETRIA DEL BERSAGLIO non cambia di un pixel: resta il cerchio
+         invisibile r=11 centrato in (x+W−9, y+11), e il numerino è
+         `pointer-events="none"` come ogni testo di questo file. Un segno che
+         cambia dimensione a seconda del contenuto sposterebbe il punto in cui
+         la mano ha imparato a premere. */
+      var etichettaFonte = nFonti > 1
+        ? nFonti + ' fonti — scegli quale aprire'
+        : 'Apri la fonte';
+      var cxF = n1(x + Wn - 9), cyF = n1(y + 11);
       var fonte = apribile
-        ? '<g class="mfonte" data-id="' + esc(id) + '" role="button" tabindex="0" aria-label="Apri la fonte">' +
-          '<title>Apri la fonte</title>' +
-          '<circle cx="' + n1(x + W - 9) + '" cy="' + n1(y + 11) + '" r="11" fill="#ffffff" fill-opacity="0"/>' +
-          '<circle cx="' + n1(x + W - 9) + '" cy="' + n1(y + 11) + '" r="3" fill="' + col + '"/></g>'
+        ? '<g class="mfonte" data-id="' + esc(id) + '"' + (nFonti ? ' data-fonti="' + nFonti + '"' : '') +
+          ' role="button" tabindex="0" aria-label="' + esc(etichettaFonte) + '">' +
+          '<title>' + esc(etichettaFonte) + '</title>' +
+          '<circle cx="' + cxF + '" cy="' + cyF + '" r="11" fill="#ffffff" fill-opacity="0"/>' +
+          '<circle cx="' + cxF + '" cy="' + cyF + '" r="3" fill="' + col + '"/>' +
+          (nFonti > 1
+            ? testoConAlone(x + Wn - 15, y + 11, nFonti > 9 ? '9+' : String(nFonti),
+                { fs: Math.max(8, fsRel - 1), font: font, colore: col, alone: tema.panel,
+                  ancora: 'end', peso: 700 })
+            : '') +
+          '</g>'
         : '';
       ls.forEach(function (riga, i) {
         g.push('<text x="' + n1(p.x) + '" y="' + n1(y0 + i * fsNodo * 1.25) + '" text-anchor="middle" ' +
@@ -352,9 +646,32 @@
          bersagli invisibili si sovrappongono: in SVG vince l'ultimo disegnato,
          e la porta ruberebbe i click alla fonte. La fonte è il bersaglio più
          piccolo e più preciso dei due — la porta le cede la parte comune. */
+      /* Le maniglie agli angoli di un nodo-immagine: si prende un angolo e si
+         trascina per ingrandire.
+         ⚠️ Solo sul nodo SELEZIONATO, e solo se è un'immagine. Quattro pallini
+         su ogni ritaglio competerebbero con il ritaglio — che è la cosa che si
+         deve leggere per prima — e su una mappa piena sarebbero decine di segni
+         che nessuno ha chiesto. Si sceglie il nodo, poi lo si ridimensiona: è
+         l'ordine in cui la mano già lavora.
+         Fuori dal gruppo della card, come la porta e il pallino della fonte:
+         dentro erediterebbero il click che seleziona, e prendere un angolo
+         sposterebbe il nodo invece di ridimensionarlo. */
+      if (imm && acceso && opt.maniglie) {
+        [['nw', x, y], ['ne', x + Wn, y], ['sw', x, y + Hn], ['se', x + Wn, y + Hn]]
+          .forEach(function (a) {
+            out.push('<g class="mscala" data-id="' + esc(id) + '" data-ang="' + a[0] + '" ' +
+              'role="button" tabindex="-1" aria-label="Ridimensiona l\'immagine">' +
+              '<title>Trascina per ridimensionare</title>' +
+              /* Bersaglio invisibile largo: un angolo si mira male, e 5px di
+                 quadratino non si prendono con il trackpad. */
+              '<circle cx="' + n1(a[1]) + '" cy="' + n1(a[2]) + '" r="11" fill="#ffffff" fill-opacity="0"/>' +
+              '<rect x="' + n1(a[1] - 3.5) + '" y="' + n1(a[2] - 3.5) + '" width="7" height="7" ' +
+                'fill="' + tema.panel + '" stroke="' + col + '" stroke-width="1.5"/></g>');
+          });
+      }
       if (opt.maniglie) {
         var dPorta = versoDellaPorta(versoDeiFigli(res, p));
-        var pPorta = sulBordo(p, dPorta, W, H);
+        var pPorta = sulBordo(p, dPorta, Wn, Hn);
         out.push('<g class="mporta" data-id="' + esc(id) + '" role="button" tabindex="0" ' +
           'aria-label="Trascina da qui per collegare"><title>Trascina da qui per collegare</title>' +
           // bersaglio invisibile: sta fra i 13 del ramo e gli 11 della fonte —
@@ -379,7 +696,7 @@
         var d = versoDeiFigli(res, p);
         // il bordo nella direzione dei figli: per td è il basso, per lr la
         // destra, per gli anelli il punto rivolto all'esterno del cerchio
-        var pT = sulBordo(p, d, W, H);
+        var pT = sulBordo(p, d, Wn, Hn);
         var px2 = pT.x, py2 = pT.y;
         var quanti = (opt.nascosti && opt.nascosti[id]) || 0;
         var etichetta = stato === 'chiuso'
@@ -407,6 +724,8 @@
   }
 
   return { svg: svg, righe: righe, esc: esc, colore: colore, coloreNodo: coloreNodo,
+           fontiDi: fontiDi, immagineDi: immagineDi, riquadroImmagine: riquadroImmagine,
+           SEGNAPOSTO: SEGNAPOSTO,
            versoDeiFigli: versoDeiFigli, versoDellaPorta: versoDellaPorta, sulBordo: sulBordo,
            TEMA: TEMA, GRUPPI: GRUPPI };
 }));
