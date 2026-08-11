@@ -55,6 +55,7 @@
      prima dell'inline perché il renderer le legge appena parte. -->
 <script src="assets/dati/icone.js"></script>
 <script src="assets/dati/emoji.js"></script>
+<script src="assets/ricerca/indice.js"></script>
 <style>
   /* OpenMoji come font emoji dell'app (self-hosted, offline) — eccezione dichiarata per questa app al default Noto */
   @font-face{ font-family:'OpenMoji'; src:url('assets/fonts/OpenMoji-color.woff2') format('woff2');
@@ -7584,11 +7585,10 @@ window.addEventListener('focus', function(){
 /* ===================== RICERCA nel corso attivo (indice JS puro) =====================
    Nessuna dipendenza esterna: indice in memoria su 200-300 capitoli, ricostruito al cambio corso. */
 var SEARCH={ docs:null, courseId:undefined, percorso:undefined, sel:-1, last:[] };
-// normalizzazione che PRESERVA la lunghezza (serve per ritagliare lo snippet sul testo originale)
-function sNorm(s){ return String(s==null?'':s).toLowerCase()
-  .replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e').replace(/[ìíîï]/g,'i')
-  .replace(/[òóôõö]/g,'o').replace(/[ùúûü]/g,'u').replace(/[ç]/g,'c').replace(/[ñ]/g,'n')
-  .replace(/[’‘]/g,"'").replace(/[“”]/g,'"'); }
+/* L'indice, il punteggio e il frammento stanno in `assets/ricerca/indice.js` —
+   la testata di quel file dice perché. Qui resta ciò che è PAGINA: da dove
+   arrivano i capitoli, come si disegna l'elenco, come si salta al punto. */
+var sNorm = RicercaIndice.sNorm;
 /**
  * L'indice della ricerca: i capitoli del corso attivo, nella versione che si sta
  * studiando.
@@ -7611,11 +7611,7 @@ function searchBuild(){
   if(modoAttivo()==='zaino'){
     (FONTI.indici||[]).forEach(function(d){
       var titolo=titoloMateriale(d.pdf)||d.pdf;
-      (d.pagine||[]).forEach(function(p){
-        SEARCH.docs.push({ materiale:d.pdf, pagina:p.page, lessonTitle:titolo,
-          title:'p. '+p.page, idx:p.page, text:p.text,
-          ntext:sNorm(p.text), ntitle:sNorm(titolo) });
-      });
+      (d.pagine||[]).forEach(function(p){ SEARCH.docs.push(RicercaIndice.docPagina(d.pdf, titolo, p)); });
     });
     return;
   }
@@ -7623,11 +7619,7 @@ function searchBuild(){
     var cid=c.id;
     var co=LESSONS[cid]; if(!co||!co.chapters) return;
     co.chapters.forEach(function(ch,idx){
-      var text=[ch.title, stripHtml(ch.brief||''), stripHtml(ch.html||''),
-        (ch.keypoints||[]).map(stripHtml).join(' '),
-        (ch.glossary||[]).map(function(g){ return g.t+' '+stripHtml(g.d||''); }).join(' ')].join('  ');
-      SEARCH.docs.push({ lessonId:cid, lessonTitle:co.title, idx:idx, title:ch.title,
-        text:text, ntext:sNorm(text), ntitle:sNorm(ch.title) });
+      SEARCH.docs.push(RicercaIndice.docCapitolo(ch, { lessonId:cid, lessonTitle:co.title, idx:idx }, stripHtml));
     });
   });
 }
@@ -7636,36 +7628,9 @@ function searchRun(q){
   /* Cambiare percorso cambia QUALI capitoli esistono per chi cerca: l'indice va
      rifatto, o si continuerebbe a cercare dentro la variante di prima. */
   if(!SEARCH.docs || SEARCH.courseId!==pid || SEARCH.percorso!==((percorsoScelto()||{}).id||null)) searchBuild();
-  var toks=sNorm(q).split(/\s+/).filter(Boolean); if(!toks.length) return [];
-  var out=[];
-  SEARCH.docs.forEach(function(d){
-    var score=0, pos=-1, ok=true, hits=[];
-    for(var i=0;i<toks.length;i++){
-      var t=toks[i], at=d.ntext.indexOf(t);
-      if(at<0){ ok=false; break; }
-      var n=d.ntext.split(t).length-1;
-      score+=n; if(d.ntitle.indexOf(t)>=0) score+=30;   // il titolo pesa di più
-      hits.push(t); if(pos<0||at<pos) pos=at;
-    }
-    if(ok) out.push({ d:d, score:score, pos:pos, toks:hits });
-  });
-  out.sort(function(a,b){ return (b.score-a.score) || a.d.lessonTitle.localeCompare(b.d.lessonTitle) || (a.d.idx-b.d.idx); });
-  return out.slice(0,40);
+  return RicercaIndice.cerca(SEARCH.docs, q);
 }
-function searchSnippet(r){
-  var t=r.d.text, start=Math.max(0, r.pos-45), end=Math.min(t.length, r.pos+115);
-  var s=(start>0?'… ':'')+t.slice(start,end).replace(/\s+/g,' ')+(end<t.length?' …':'');
-  var h=escHtml(s), ns=sNorm(s);
-  // evidenzia i termini senza rompere l'escaping: lavoro sugli indici della stringa normalizzata
-  r.toks.slice().sort(function(a,b){ return b.length-a.length; }).forEach(function(tok){
-    var acc='', i=0, hn=sNorm(h);
-    while(true){ var at=hn.indexOf(tok,i); if(at<0){ acc+=h.slice(i); break; }
-      if(h.slice(0,at).lastIndexOf('<mark>')>h.slice(0,at).lastIndexOf('</mark>')){ acc+=h.slice(i,at+tok.length); i=at+tok.length; continue; }
-      acc+=h.slice(i,at)+'<mark>'+h.slice(at,at+tok.length)+'</mark>'; i=at+tok.length; }
-    h=acc;
-  });
-  return h;
-}
+function searchSnippet(r){ return RicercaIndice.frammento(r, escHtml); }
 function searchRender(res,q){
   var box=$('#searchRes'); if(!box) return;
   SEARCH.last=res; SEARCH.sel=-1;

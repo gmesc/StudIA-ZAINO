@@ -153,6 +153,13 @@ Sezioni sopra le 120 righe, misurate. La colonna **verdetto** è la decisione di
 Totale stimato che può uscire: **~2.600 righe di logica** (il 37% del codice, non dei commenti),
 più ~70 KB di dati.
 
+⚠️ **La stima per sezione è ottimista, e M3 lo ha misurato.** «La ricerca: ~700 righe su 866»
+contava la SEZIONE; le funzioni che davvero non toccano il DOM erano **81** — il resto (disegnare
+l'elenco, saltare al risultato, evidenziare a schermo) è pagina, e resta. Il rapporto vero
+osservato è **circa 1 a 5**: su cento righe di sezione ne escono venti. Chi pianifica il prossimo
+passo tolga cinque volte prima di promettere, e conti quello che esce **con le sue prove**, non le
+righe che spariscono dal file.
+
 ---
 
 ## 6. Dove va a finire
@@ -221,7 +228,7 @@ pagano da soli.
 |---|---|---|---|---|
 | **M1** | `lettura/capitolo.js` — il parser markdown | 241 | ⚠️ elimina il `vm` di `lib/reader-parser.js`: 915 controlli di `roundtrip` smettono di dipendere da due `indexOf` | `roundtrip`, `prova-wikilink` |
 | **M2** | `dati/icone.js` + `dati/emoji.js` | ~200 righe, 69 KB | la riga da 59.706 caratteri esce dal file; nessuna logica coinvolta, rischio quasi nullo | `prova-menu`, avvio |
-| **M3** | `ricerca/indice.js` | ~700 di 866 | è già puro e non lo sa; la ricerca è la cosa che si rompe più silenziosamente | `prova-import` (la lente nello zaino) |
+| **M3** | `ricerca/indice.js` | **~150** di 866 ✅ | è già puro e non lo sa; la ricerca è la cosa che si rompe più silenziosamente | `prova-import` (la lente nello zaino) + `test/ricerca.js` (36 controlli, prima **zero**) |
 | **M4** | `tts/segmenta.js` | ~450 di 1.165 | la sezione più grossa; le regole su sigle, cifre e abbreviazioni sono tabelle + funzioni pure, e oggi non hanno **nessuna** prova | nuova prova di unità; `prova-l1` |
 | **M5** | `album/geometria.js` | ~180 di 705 | ⚠️ ci vive il guasto del ritaglio ribaltato (§4.1 dell'handoff dell'11): la conversione PDF→viewport merita una prova in Node, oggi ce l'ha solo il confronto pixel | `prova-album` |
 | **M6** | `rimandi/sintassi.js` | ~150 | i rimandi si scrivono in cinque punti diversi; tre dei guasti dell'11 agosto nascono lì | `prova-wikilink`, `prova-keyword` |
