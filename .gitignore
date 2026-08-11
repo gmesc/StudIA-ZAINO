@@ -19,3 +19,8 @@ __pycache__/
 Progetti/
 StudIA - file/
 config.json
+
+# I worktree degli agenti: cartelle di lavoro temporanee create da Claude Code
+# per far girare un lavoro in parallelo senza toccare questa copia. Sono
+# repository dentro il repository — versionarle non ha senso e git protesta.
+.claude/worktrees/
