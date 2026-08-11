@@ -296,12 +296,19 @@ Tutte già pagate almeno una volta in questo progetto.
 
 Quattro numeri, da riportare nell'handoff a ogni passo:
 
-| metrica | oggi | obiettivo |
-|---|---|---|
-| righe di `App/StudIA.html` | 13.072 | < 9.000 |
-| righe di logica del renderer provabili in Node | ~0 | ~2.600 |
-| suite di unità | 17 | 26 |
-| moduli che `lib/reader-parser.js` ritaglia con `indexOf` | 1 | **0** (dopo M1) |
+| metrica | all'inizio | **11 ago, sera** | obiettivo |
+|---|---|---|---|
+| righe di `App/StudIA.html` | 13.072 | **12.866** | < 9.000 |
+| righe di logica del renderer provabili in Node | ~0 | **1.138** | ~2.600 |
+| suite di unità | 17 | **21** | 26 |
+| moduli ritagliati da `reader-parser` con `indexOf` o sentinelle | 4 | **0** ✅ | 0 |
+
+Fatti: **M1** (parser + i tre blocchi del `vm`), **M2** (icone ed emoji), **M3** (ricerca),
+**M6** (rimandi). Restano M4 (TTS, la parte oltre il blocco già uscito), M5 (album), M7 (evidenze),
+M8 (memorie), M9 (archi).
+
+⚠️ Le righe del renderer scendono poco e a volte risalgono: le estrazioni ne tolgono, le funzioni
+nuove ne aggiungono, e i commenti di aggancio restano. **La riga che conta è la seconda.**
 
 ⚠️ **Il numero di righe da solo non dice niente.** Se scendesse spostando codice in moduli senza
 prove, il lavoro avrebbe peggiorato le cose: gli stessi difetti, più file in cui cercarli. La riga
