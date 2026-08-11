@@ -38,9 +38,10 @@
    progetto usa — `require` in Node, il globale nel browser — e nell'`<head>`
    `sintassi.js` va caricata PRIMA di questo file. */
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('../rimandi/sintassi.js'));
-  else root.LetturaCapitolo = factory(root.RimandiSintassi);
-}(typeof self !== 'undefined' ? self : this, function (Rimandi) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory(require('../rimandi/sintassi.js'), require('./identita.js'));
+  } else root.LetturaCapitolo = factory(root.RimandiSintassi, root.LetturaIdentita);
+}(typeof self !== 'undefined' ? self : this, function (Rimandi, Identita) {
   'use strict';
 
   /** L'escape di ripiego: chi non passa il gancio non resta senza. */
@@ -376,10 +377,15 @@
        contando le voci — che è un'altra cosa dall'etichetta con cui la nota si
        richiama nel testo. */
     var fns=[]; body=body.replace(/^\[\^([0-9A-Za-z]+)\]:\s*(.*)$/gm, function(m,n,txt){ fns.push({ n:n, txt:txt }); return ''; });
-    /* L'id del capitolo si calcola QUI e si usa due volte — per le note e per
-       il campo `id` che si restituisce — perché sono lo stesso identificatore:
-       calcolarlo due volte è il modo in cui due verità divergono. */
-    var capId=lessonId+'-c'+String(order).padStart(2,'0');
+    /* ⚠️ L'id del capitolo si PRENDE, non si inventa: quello scritto nel
+       frontmatter è l'unico che una rigenerazione può conservare, mentre uno
+       calcolato dalla posizione cambia appena qualcuno infila un capitolo in
+       mezzo — e con lui si staccano appunti, evidenze e nodi di mappa scritti
+       prima. Il posizionale resta come ALIAS, perché è il nome con cui tutto
+       quello che l'utente ha scritto finora chiama questo capitolo. La catena
+       sta in `lettura/identita.js`, e il perché con lei. */
+    var ident=Identita.di(fm, lessonId, order);
+    var capId=ident.id;
     /* Il contesto delle note vale per «In breve» e per «Contenuto» insieme:
        finiscono nella stessa pagina, e un richiamo scritto nel sommario deve
        saltare alla stessa voce in fondo di uno scritto nel testo. I punti
@@ -405,7 +411,7 @@
       var n=String(f.pdf||f.fig||'').padStart(2,'0');
       return { pdf:(g.pdfNum()[n]||n), numero:n, page:parseInt(f.p||f.page,10)||1,
                i:parseInt(f.i,10)||1, label:f.label||'' }; });
-    return { id:capId, title:(fm.title||('Capitolo '+order)), brief:brief, html:html, keypoints:kp, glossary:glossary, quiz:quiz, videoRefs:videoRefs, sources:sources, figure:figure }; }
+    return { id:capId, idLegacy:Identita.posizionale(lessonId, order), alias:ident.alias, title:(fm.title||('Capitolo '+order)), brief:brief, html:html, keypoints:kp, glossary:glossary, quiz:quiz, videoRefs:videoRefs, sources:sources, figure:figure }; }
 
     return {
       parseFrontmatter: parseFrontmatter, parseFenced: parseFenced,

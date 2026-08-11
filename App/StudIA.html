@@ -50,6 +50,9 @@
 <!-- ⚠️ PRIMA di `lettura/capitolo.js`, che la usa per leggere i rimandi: qui
      l'ordine dei `<script>` è l'unica dipendenza dichiarata che abbiamo. -->
 <script src="assets/rimandi/sintassi.js"></script>
+<!-- ⚠️ Anche questa PRIMA di `capitolo.js`: è chi decide che nome ha un capitolo,
+     e la testata di quel file dice perché i nomi sono più d'uno. -->
+<script src="assets/lettura/identita.js"></script>
 <script src="assets/lettura/capitolo.js"></script>
 <script src="assets/lettura/lezioni.js"></script>
 <script src="assets/tts/segmenta.js"></script>
@@ -5892,8 +5895,21 @@ function curCtx(){
   }
   var c=LESSON.chapters[state.current]; if(!c) return null;
   var ch=m.chapters[state.current]||{};
+  /* ⚠️ `capitoloAlias` viaggia col contesto perché chi confronta deve poter
+     riconoscere anche il nome POSIZIONALE con cui questo capitolo era chiamato
+     prima dell'11 agosto 2026: è quello scritto in tutti gli appunti e in tutte
+     le evidenze fatte finora. Chi scrive un riferimento NUOVO usa `capitoloId`,
+     che è l'id stabile; chi confronta usa tutti e due. */
   return { courseId:m.courseId, lezione:m.lessonTitle, lezioneId:LESSON.id,
-           capitolo:c.title, capitoloId:c.id, capitoloFile:ch.file||'' };
+           capitolo:c.title, capitoloId:c.id, capitoloAlias:LetturaIdentita.nomi(c),
+           capitoloFile:ch.file||'' };
+}
+/** Un'evidenza parla del capitolo di questo contesto? Passa dalla catena dei
+ *  nomi, che è l'unica cosa che tiene vive le evidenze scritte prima. */
+function evStessoCapitolo(e, ctx){
+  if(!e || !ctx) return false;
+  var nomi=(ctx.capitoloAlias && ctx.capitoloAlias.length) ? ctx.capitoloAlias : [ctx.capitoloId];
+  return !!e.capitoloId && nomi.indexOf(e.capitoloId)>=0;
 }
 
 /* Appunti: il codice sta in `assets/appunti/elenco.js` — il perché è nella testata di quel
@@ -7093,7 +7109,9 @@ function evidenzeCarica(){
 }
 function evidenzeDelCapitolo(){
   var ctx=curCtx(); if(!ctx) return [];
-  return EVIDENZE.elenco.filter(function(e){ return e.capitoloId===ctx.capitoloId; });
+  /* Stessa catena dei rimandi: un'evidenza salvata prima porta il nome di
+     allora, e `===` la lascerebbe spenta sul testo che ha evidenziato lei. */
+  return EVIDENZE.elenco.filter(function(e){ return evStessoCapitolo(e, ctx); });
 }
 /**
  * Le evidenze di una superficie.
@@ -7113,7 +7131,7 @@ function evidenzeDi(sup){
   }
   var ctx=sup.ctx || curCtx(); if(!ctx) return [];
   return (EVIDENZE.elenco||[]).filter(function(e){
-    return !e.materiale && e.capitoloId===ctx.capitoloId;
+    return !e.materiale && evStessoCapitolo(e, ctx);
   });
 }
 /** Una regola `::highlight()` per ogni colore in uso. Si generano invece di
@@ -7916,11 +7934,16 @@ function buildVaultCourses(){
  * costa niente — sono qualche centinaio di capitoli in memoria — e regge
  * qualunque schema di id.
  */
+/* ⚠️ Il confronto passa da `LetturaIdentita.stesso`, non da `===`: un rimando
+   scritto mesi fa porta il nome POSIZIONALE che il lettore usava allora, e
+   pretendere l'id di oggi vorrebbe dire dichiararlo morto. La catena dei nomi,
+   e il perché, stanno in `assets/lettura/identita.js`. */
 function trovaCapitolo(capId){
   if(!capId) return null;
   for(var lid in LESSONS){
     var ch=(LESSONS[lid]||{}).chapters||[];
-    for(var i=0;i<ch.length;i++) if(ch[i] && ch[i].id===capId) return { lezione:lid, indice:i };
+    var i=LetturaIdentita.indiceDi(capId, ch);
+    if(i>=0) return { lezione:lid, indice:i };
   }
   return null;
 }

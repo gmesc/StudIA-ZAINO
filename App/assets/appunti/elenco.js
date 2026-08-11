@@ -54,7 +54,13 @@
   function noteInChapter(n, ctx){
     if(!n || !ctx) return false;
     if(ctx.modo==='zaino') return String(n.materiale||'')===String(ctx.materiale||'');
-    if(n.capitoloId && ctx.capitoloId && n.capitoloId===ctx.capitoloId) return true;
+    /* ⚠️ Non `===` ma l'appartenenza alla catena dei nomi: un appunto scritto
+       prima dell'11 agosto 2026 porta l'id POSIZIONALE del capitolo, e quello di
+       oggi è l'id stabile scritto nel frontmatter. Confrontare solo il primo
+       manderebbe sotto «altri capitoli» ogni appunto mai preso. Il contesto
+       porta i nomi con sé (`capitoloAlias`); se non li porta, vale l'id solo. */
+    var nomiCap=(ctx.capitoloAlias && ctx.capitoloAlias.length) ? ctx.capitoloAlias : [ctx.capitoloId];
+    if(n.capitoloId && nomiCap.indexOf(n.capitoloId)>=0) return true;
     if(!noteStessoLezione(n, ctx)) return false;
     if(n.capitoloFile && ctx.capitoloFile && n.capitoloFile===ctx.capitoloFile) return true;
     if(n.capitolo && ctx.capitolo && n.capitolo===ctx.capitolo) return true;
