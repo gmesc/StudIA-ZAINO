@@ -90,6 +90,16 @@ riesce solo perché Electron gli concede il suo protocollo, e la stessa cosa per
 significherebbe un server locale o un bundler — cioè il non-obiettivo n.1. UMD funziona oggi, senza
 niente.
 
+**Un modulo che ne usa un altro** lo dichiara nei due modi, ed è la forma da copiare (la usa
+`lettura/capitolo.js` con `rimandi/sintassi.js`):
+
+```js
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('../rimandi/sintassi.js'));
+  else root.NomeModulo = factory(root.RimandiSintassi);
+}(typeof self !== 'undefined' ? self : this, function (Dip) { … }));
+```
+
 ⚠️ **L'ordine dei `<script>` è l'unica dipendenza dichiarata che abbiamo.** Non c'è un grafo: se
 `disegna.js` usa `grafo.js`, deve stare dopo. Ogni modulo nuovo va inserito nel punto giusto
 dell'`<head>` e il punto va motivato in un commento, o il prossimo che riordina rompe l'avvio.
@@ -231,7 +241,7 @@ pagano da soli.
 | **M3** | `ricerca/indice.js` | **~150** di 866 ✅ | è già puro e non lo sa; la ricerca è la cosa che si rompe più silenziosamente | `prova-import` (la lente nello zaino) + `test/ricerca.js` (36 controlli, prima **zero**) |
 | **M4** | `tts/segmenta.js` | ~450 di 1.165 | la sezione più grossa; le regole su sigle, cifre e abbreviazioni sono tabelle + funzioni pure, e oggi non hanno **nessuna** prova | nuova prova di unità; `prova-l1` |
 | **M5** | `album/geometria.js` | ~180 di 705 | ⚠️ ci vive il guasto del ritaglio ribaltato (§4.1 dell'handoff dell'11): la conversione PDF→viewport merita una prova in Node, oggi ce l'ha solo il confronto pixel | `prova-album` |
-| **M6** | `rimandi/sintassi.js` | ~150 | i rimandi si scrivono in cinque punti diversi; tre dei guasti dell'11 agosto nascono lì | `prova-wikilink`, `prova-keyword` |
+| **M6** | `rimandi/sintassi.js` | ~115 ✅ | i rimandi si scrivevano in cinque punti diversi; tre dei guasti dell'11 agosto nascono lì | `prova-wikilink`, `prova-keyword` + `test/rimandi.js` (30 controlli) |
 | **M7** | `evidenze/elenco.js` | ~200 di 411 | ordinamento, filtro, orfane: pura logica di elenco | `prova-keyword` |
 | **M8** | `mappa/memorie.js` | ~250 di 477 | stato puro, cinque caselle | `prova-memorie` |
 | **M9** | `mappa/archi.js` | ~350 di 1.084 | la parte più intricata: **ultimo**, quando la ricetta è rodata | `prova-l3l4`, `prova-mappe-ui` |

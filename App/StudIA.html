@@ -47,6 +47,9 @@
      in Node lo ritagliavano dal sorgente con due `indexOf`: adesso l'app e
      `test/roundtrip.js` caricano lo STESSO file. Non ha dipendenze: sta qui in
      fondo solo per leggibilità. -->
+<!-- ⚠️ PRIMA di `lettura/capitolo.js`, che la usa per leggere i rimandi: qui
+     l'ordine dei `<script>` è l'unica dipendenza dichiarata che abbiamo. -->
+<script src="assets/rimandi/sintassi.js"></script>
 <script src="assets/lettura/capitolo.js"></script>
 <script src="assets/lettura/lezioni.js"></script>
 <script src="assets/tts/segmenta.js"></script>
@@ -3582,10 +3585,9 @@ document.addEventListener('click',function(e){
 /* Stato di ciò che è aperto nell'anteprima: serve a «cita il punto corrente».
    Il numero del materiale non sta nel nome del file, si ricava dalle mappe NN→file. */
 var ANTEPRIMA={ tipo:null, file:null, num:null, label:null, page:1 };
-function numDiFile(file, mappa){
-  for(var k in mappa){ if(mappa[k]===file) return k; }
-  return null;
-}
+/* Il nome di prima, la funzione di `rimandi/sintassi.js`: il numero di un
+   materiale è parte della grammatica dei rimandi, non una cosa a sé. */
+var numDiFile = RimandiSintassi.numeroDi;
 /* ======================= Il visualizzatore dei documenti ==================
    Fino a ieri il PDF stava dentro un `<iframe>` e a mostrarlo era il
    visualizzatore di Chromium. Funzionava, e per questo era rimasto — ma da
@@ -5057,13 +5059,13 @@ function inserisciImmagine(didascalia, schema){
 /** Link al video a un dato secondo. */
 function citaVideo(num, sec, etichetta){
   if(!num){ toast('Questo materiale non ha un numero: rinominalo con «NN » davanti',false); return; }
-  return inserisciLink(etichetta||etichettaMinuto(sec), 'video:'+num+'#t='+Math.max(0,Math.floor(sec||0)));
+  return inserisciLink(etichetta||etichettaMinuto(sec), RimandiSintassi.scriviVideo(num, sec));
 }
 /** Link al PDF a una data pagina. */
 function citaPdf(num, pagina, etichetta){
   if(!num){ toast('Questo materiale non ha un numero: rinominalo con «NN » davanti',false); return; }
   var p=Math.max(1,parseInt(pagina,10)||1);
-  return inserisciLink(etichetta||('p. '+p), 'pdf:'+num+'#p='+p);
+  return inserisciLink(etichetta||('p. '+p), RimandiSintassi.scriviPdf(num, p));
 }
 
 /** 🔖 — cita esattamente ciò che si sta guardando. */
@@ -6093,10 +6095,10 @@ function frammentoAppuntato(testo, ctx, origine, stile){
     var titolo=titoloMateriale(origine.file)||origine.file;
     dovePdf=titolo+(origine.pagina ? ', p. '+origine.pagina : '');
     var num=numDiFile(origine.file, (typeof _pdfNum==='function'?_pdfNum():PDF_BY_NUM));
-    rimandoPdf=num ? ('['+dovePdf+'](pdf:'+num+(origine.pagina ? '#p='+origine.pagina : '')+')') : dovePdf;
+    rimandoPdf=num ? RimandiSintassi.link(dovePdf, RimandiSintassi.scriviPdf(num, origine.pagina)) : dovePdf;
   }
   var dàCap=(ctx && ctx.capitolo) ? ctx.capitolo : 'il capitolo';
-  var rimandoCap=(ctx && ctx.capitoloId) ? ('['+dàCap+'](cap:'+ctx.capitoloId+')') : '';
+  var rimandoCap=(ctx && ctx.capitoloId) ? RimandiSintassi.link(dàCap, RimandiSintassi.scriviCap(ctx.capitoloId)) : '';
   var daPdf=!!rimandoPdf;
   var rimando=daPdf ? rimandoPdf : rimandoCap;
   if(st){
@@ -7190,9 +7192,9 @@ function kwMarkdown(e){
   if(e.materiale){
     var n=numDiFile(e.materiale, (typeof _pdfNum==='function'?_pdfNum():PDF_BY_NUM));
     if(!n) return e.exact;
-    return '['+e.exact+'](pdf:'+n+(e.pagina!==''&&e.pagina!=null ? '#p='+e.pagina : '')+')';
+    return RimandiSintassi.link(e.exact, RimandiSintassi.scriviPdf(n, e.pagina));
   }
-  return e.capitoloId ? ('['+e.exact+'](cap:'+e.capitoloId+')') : e.exact;
+  return e.capitoloId ? RimandiSintassi.link(e.exact, RimandiSintassi.scriviCap(e.capitoloId)) : e.exact;
 }
 function keywordDisegna(){
   var host=document.getElementById('kwLista'); if(!host) return;

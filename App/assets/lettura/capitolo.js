@@ -32,10 +32,15 @@
    blocco girava nel sandbox, ed è la ragione per cui l'estrazione è sicura —
    codice che gira in un `vm` senza DOM non ha dipendenze nascoste dal DOM.
    ============================================================================ */
+/* ⚠️ Questo modulo DIPENDE da `rimandi/sintassi.js`: la grammatica dei rimandi
+   sta lì, e leggerla qui con espressioni regolari proprie sarebbe la sesta
+   copia della stessa cosa. La dipendenza si dichiara nei due modi che questo
+   progetto usa — `require` in Node, il globale nel browser — e nell'`<head>`
+   `sintassi.js` va caricata PRIMA di questo file. */
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.LetturaCapitolo = factory();
-}(typeof self !== 'undefined' ? self : this, function () {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('../rimandi/sintassi.js'));
+  else root.LetturaCapitolo = factory(root.RimandiSintassi);
+}(typeof self !== 'undefined' ? self : this, function (Rimandi) {
   'use strict';
 
   /** L'escape di ripiego: chi non passa il gancio non resta senza. */
@@ -270,10 +275,15 @@
     s=s.replace(/!\[([^\]]*)\]\(fig:(\d+)#p=(\d+)\)/g, function(m,cap,nn,pg){
       return figuraHtml(cap, nn, pg, 1); });
     s=s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(m,txt,urlv){
-      var mv=/^video:(\d+)#t=(\d+)/.exec(urlv);
-      if(mv){ var f=g.mediaNum()[mv[1].padStart(2,"0")]||''; return '<a href="#" class="vlink" data-file="'+g.esc(f)+'" data-t="'+mv[2]+'" data-label="'+txt+'">'+txt+'</a>'; }
-      var mp=/^pdf:(\d+)#p=(\d+)/.exec(urlv);
-      if(mp){ var pf=g.pdfNum()[mp[1].padStart(2,"0")]||''; return '<a href="#" class="plink" data-file="'+g.esc(pf)+'" data-page="'+mp[2]+'" data-label="'+txt+'">'+txt+'</a>'; }
+      /* La grammatica la legge `rimandi/sintassi.js`: qui si decide solo che
+         ANCORA disegnarci attorno. ⚠️ Il numero torna già a due cifre, che è la
+         forma delle mappe NN→file — dimenticare quel `padStart` era il modo in
+         cui un rimando smetteva di aprire senza sollevare niente. */
+      var rif=Rimandi.leggi(urlv);
+      if(rif && rif.tipo==='video'){ var f=g.mediaNum()[rif.numero]||'';
+        return '<a href="#" class="vlink" data-file="'+g.esc(f)+'" data-t="'+rif.t+'" data-label="'+txt+'">'+txt+'</a>'; }
+      if(rif && rif.tipo==='pdf'){ var pf=g.pdfNum()[rif.numero]||'';
+        return '<a href="#" class="plink" data-file="'+g.esc(pf)+'" data-page="'+rif.pagina+'" data-label="'+txt+'">'+txt+'</a>'; }
       /* Rimando a un CAPITOLO preciso, che è cosa diversa dal wiki-link: `[[…]]`
          arriva alla lezione e `loadLesson` riparte dal primo capitolo, quindi non
          sa dire «quel punto lì». Serviva perché ogni frammento che si estrae dal
@@ -287,9 +297,8 @@
          È un difetto che gli appunti hanno già oggi, non uno che nasce qui — ma
          va scritto, perché il giorno che si darà un'identità stabile ai capitoli
          questo è uno dei posti da correggere. */
-      var mc=/^cap:([A-Za-z0-9][A-Za-z0-9._-]*)$/.exec(urlv);
-      if(mc){ return '<a href="#" class="clink" data-cap="'+g.esc(mc[1])+'">'+txt+'</a>'; }
-      if(/^https?:/.test(urlv)) return '<a href="'+urlv+'" target="_blank" rel="noopener">'+txt+'</a>';
+      if(rif && rif.tipo==='cap'){ return '<a href="#" class="clink" data-cap="'+g.esc(rif.capitoloId)+'">'+txt+'</a>'; }
+      if(rif && rif.tipo==='esterno') return '<a href="'+rif.url+'" target="_blank" rel="noopener">'+txt+'</a>';
       return txt; });
     s=s.replace(/\[\[([0-9]{2}-[a-z0-9-]+)(?:\|([^\]]+))?\]\]/g, function(m,folder,label){ return '<a href="#" class="wlink" data-lesson="'+folder+'">'+(label||folder)+'</a>'; });
     s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
