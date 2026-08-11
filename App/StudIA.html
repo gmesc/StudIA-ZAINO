@@ -1750,6 +1750,27 @@
   #content .fnotes b{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.3rem; }
   #content .fnotes ol{ margin:0; padding-left:1.3rem; } #content .fnotes li{ margin:.15rem 0; }
   #content sup.fnref{ color:var(--accent,#2a6ef0); font-weight:700; padding:0 .1em; }
+  /* Il numeretto era già colorato d'accento — cioè già vestito da link — ma non
+     lo era: adesso dentro c'è un'ancora vera, e il colore lo eredita da lui
+     invece di ridichiararlo. Il fuoco si vede, perché da tastiera è l'unico
+     modo di sapere dove si è. */
+  #content sup.fnref a{ color:inherit; text-decoration:none; cursor:pointer; }
+  #content sup.fnref a:hover{ text-decoration:underline; }
+  #content sup.fnref a:focus-visible{ outline:2px solid var(--accent,#2a6ef0); outline-offset:2px; }
+  /* La freccia del ritorno: piccola e a fine voce, perché è un comando e non
+     testo della nota. La voce raggiunta lampeggia con la stessa animazione del
+     riquadro «Note e materiali» — un solo modo di dire «è questa qui». */
+  #content .fnotes .fnback{ color:var(--accent,#2a6ef0); text-decoration:none; margin-left:.25em; }
+  #content .fnotes .fnback:focus-visible{ outline:2px solid var(--accent,#2a6ef0); outline-offset:2px; }
+  /* La voce riceve il fuoco quando ci si salta, ma il contorno si vede solo se
+     al salto ci si è arrivati da tastiera: col mouse sarebbe una cornice che
+     compare da sola su un pezzo di testo, e non dice niente a nessuno. */
+  #content .fnotes li{ scroll-margin:1rem; } #content .fnotes li:focus{ outline:none; }
+  #content .fnotes li:focus-visible{ outline:2px solid var(--accent,#2a6ef0); outline-offset:2px; }
+  #content .fnotes li.flash{ animation:noteflash 1.3s ease; }
+  /* Anche il ritorno lampeggia: risalire a metà capitolo senza un segno vuol
+     dire ricominciare a cercare la riga, che è il difetto da cui si è partiti. */
+  #content sup.fnref a.flash{ animation:noteflash 1.3s ease; }
 
   /* ---- Le figure ritagliate dai documenti ----
      Un `<span>` che si comporta da blocco: dentro un `<p>` un `<figure>` sarebbe
@@ -3777,6 +3798,32 @@ function wireNoteMarkers(c){
     sup.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); act(); } });
   });
 }
+/* ---- I richiami di nota del markdown: `[^1]` ⇄ la voce in fondo al capitolo --
+   Il markup lo scrive `assets/lettura/capitolo.js`; qui c'è solo il salto, e
+   una volta sola per tutti e due i versi — il numeretto che scende alla nota e
+   la freccia che risale al punto del testo sono lo stesso gesto in due
+   direzioni, e `data-nota` dice ogni volta dov'è l'altro capo.
+
+   ⚠️ Delegato e con `preventDefault`, non lasciato all'`href`. Da quando c'è il
+   banco la pagina non scorre: scorre il corpo del blocco (`.bcorpo`). La
+   navigazione nativa del frammento scriverebbe anche l'hash — che in
+   quest'app non è l'indirizzo di niente e resterebbe appiccicato alla finestra
+   dopo il salto. `scrollIntoView` sull'elemento vero fa scorrere il contenitore
+   che scorre, qualunque sia, e lo mette al centro invece che al bordo.
+
+   Il fuoco segue il salto: senza, chi naviga da tastiera scende con gli occhi e
+   resta col cursore dov'era, e il tabulatore successivo lo riporta di colpo
+   sopra. Il lampeggio è lo stesso di «Note e materiali» — un solo modo di dire
+   «è questa qui». */
+document.addEventListener('click',function(e){
+  if(!e.target.closest) return;
+  var a=e.target.closest('a.fnsalta, a.fnback'); if(!a) return;
+  e.preventDefault();
+  var b=document.getElementById(a.getAttribute('data-nota')); if(!b) return;
+  b.scrollIntoView({ block:'center', behavior: document.documentElement.dataset.reduce==='1'?'auto':'smooth' });
+  if(b.focus) b.focus({preventScroll:true});
+  b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash');
+});
 /* Stato di ciò che è aperto nell'anteprima: serve a «cita il punto corrente».
    Il numero del materiale non sta nel nome del file, si ricava dalle mappe NN→file. */
 var ANTEPRIMA={ tipo:null, file:null, num:null, label:null, page:1 };
