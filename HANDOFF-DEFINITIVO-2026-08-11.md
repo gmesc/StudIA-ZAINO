@@ -215,10 +215,14 @@ mai più un pixel a mano. Guardie: `prova-tbar` (le cinque barre sono la stessa 
 
 ### 7.2 Dei corsi (dall'handoff del 10 agosto, ancora valido)
 
-1. ⚠️ **L'unico modo rimasto di perdere lavoro dell'utente**: l'identità dei capitoli è
-   `cartella + ordine`, e una rigenerazione che ne infila uno in mezzo stacca evidenze, appunti e
-   nodi-mappa. Nello zaino il problema non esiste (l'ancora è pagina + citazione): **il rimedio
-   provato là si può retro-portare qui**.
+1. ~~L'unico modo rimasto di perdere lavoro dell'utente~~ — **CHIUSO l'11 agosto**, vedi §9.5. Il
+   lettore non inventa più l'id dalla posizione: prende quello scritto nel frontmatter e tiene il
+   posizionale come alias, così i riferimenti scritti prima continuano a valere. La pipeline
+   conserva l'id invece di ricalcolarlo.
+   ⚠️ Restano due limiti, dichiarati e non nascosti: un capitolo di cui cambia il TITOLO non si
+   riconosce e prende un id nuovo (l'identità vera andrebbe data alla scaletta, prima che il
+   capitolo esista); e i riferimenti scritti prima di oggi restano legati alla posizione — quel
+   danno storico non si disfa a posteriori, ma da adesso non se ne produce di nuovo.
 2. **La forma delle mappe di corso**: 65.158 × 358 px non è una mappa, è un nastro. Va prima di G3.
 3. **G3**: i verbi sugli archi dal modello.
 4. **Il ripasso** (AREA 3 di PIANO-BRAYNR): lo stato di apprendimento vive solo in memoria e si
@@ -388,9 +392,32 @@ Prossimo passo del piano: **M3, la ricerca** (~700 righe su 866 già pure). È l
 più silenziosamente — se l'indice smette di indicizzare qualcosa non lo dice nessuno, semplicemente
 non lo trovi più — e oggi non ha nemmeno una prova in Node.
 
-⚠️ E resta vero il §7.2: **l'identità dei capitoli (`cartella + ordine`) è ancora l'unico modo di
-perdere lavoro dell'utente**. Il refactoring non la peggiora e non la risolve. Le flashcard, che
-vivono attaccate ai capitoli e la cui storia di ripasso è il dato più costoso dell'app da
-ricostruire, vanno costruite DOPO quel rimedio.
+**Le flashcard adesso hanno su cosa stare.** L'identità dei capitoli è chiusa (§9.5): la storia di
+ripasso — il dato più costoso dell'app da ricostruire — può attaccarsi ai capitoli senza staccarsi
+alla prima rigenerazione. Il primo passo resta P3.1 di PIANO-BRAYNR: lo stato su disco, in
+`RIPASSO/stato.json`. Oggi `state.learn` vive solo in memoria e si azzera a ogni `loadLesson`.
+
+### 9.5 L'identità dei capitoli, chiusa
+
+Il lettore **si inventava** l'id di un capitolo dalla posizione, buttando quello scritto nel
+frontmatter. Appunti, evidenze, nodi di mappa e rimandi `cap:…` nominano un capitolo con quell'id:
+una rigenerazione che ne infila uno in mezzo li staccava tutti, in silenzio.
+
+⚠️ E la soluzione ovvia — usare l'id del disco — sarebbe stata il danno stesso. Contato: tutti i 243
+capitoli ne hanno uno, ma in TD74-DSA (210 su 210) NON coincide col posizionale, perché porta il
+prefisso del corso. Tutto ciò che l'utente ha scritto lì porta il nome vecchio.
+
+Quindi una **catena di nomi** (`App/assets/lettura/identita.js`): id stabile + alias posizionale, e
+un riferimento combacia con l'uno o con l'altro. `lib/genera.js` conserva l'id se un capitolo con
+quel titolo c'era già, e ne assegna uno che non collida se è nuovo.
+
+Verificato sui dati veri: i due appunti di TD74-DSA che portano `01-fondamenti-c01` restano sotto
+«Questo capitolo» del capitolo che oggi si chiama `td74-01-fondamenti-c01`.
+
+⚠️ Tre difetti trovati dalle prove mentre si scriveva, non a schermo: le virgolette del frontmatter
+rilette dentro l'id lo raddoppiavano a ogni giro; il capitolo nuovo infilato in mezzo ereditava
+l'id di quello che aveva scalato (due capitoli con lo stesso id — il danno riprodotto dal rimedio);
+e una cifra sbagliata nella documentazione appena scritta («nessuno dei 243 coincide»: i 33 di
+ai-literacy coincidono).
 
 ---
