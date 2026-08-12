@@ -1,4 +1,9 @@
-# Handoff definitivo — 12 agosto 2026
+# Handoff definitivo — 12 agosto 2026 (mattina)
+
+> ⚠️ **SUPERATO da [HANDOFF-DEFINITIVO-2026-08-12b.md](HANDOFF-DEFINITIVO-2026-08-12b.md)**, della
+> sera dello stesso giorno: quello è il punto d'ingresso. Questo resta valido per ciò che l'altro
+> non ripete — le barre come token unico, lo smontaggio del monolite, l'identità dei capitoli,
+> P3.1. **Il «lavoro che continua per primo» qui sotto (P3.3) è fatto.**
 
 > **A chi arriva adesso, in una chat nuova: questo file basta per ripartire.**
 > Racconta la sessione dell'11-12 agosto — il **riordino delle barre**, lo **smontaggio del
