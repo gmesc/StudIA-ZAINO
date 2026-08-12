@@ -355,6 +355,86 @@ spariscono al primo `+`.
 Per gli appunti serve una chiave in più in `appunti.CHIAVI` (`materiale`, `pagina`): è un elenco
 tenuto a mano, ed è in un posto solo.
 
+### Z8 — Il player: video e audio nello zaino ✅ *fatto il 12 agosto 2026*
+
+Si trascinano dentro dei video e degli audio come si trascinano i PDF, si aprono in uno
+strumento loro, e con un tasto si segna il minuto negli appunti.
+
+**Una voce sola in tendina, «Player».** Video e audio sono lo stesso gesto — apri, scorri,
+segna il minuto — e un audio è un video senza immagine: due voci vorrebbero dire due
+pannelli, due stati e due strade per ogni cosa, per un guadagno che non c'è (due media non
+si ascoltano insieme). Il tipo cambia il vestito (`#plHost[data-tipo]`), non il motore.
+
+⚠️ **Il `<video>` è USCITO da `#pdfPane`.** Stava dentro il riquadro del documento, e i due
+si spegnevano a vicenda: aprire la dispensa di cui la lezione parla zittiva la lezione. Ora
+sono due strumenti del banco, affiancabili — ed è la ragione per cui questo lavoro esiste.
+Vale anche nei corsi: un rimando `video:NN#t=` apre il blocco Player invece del riquadro
+delle fonti.
+
+⚠️ **Conseguenza sullo stato, ed è quella che si sarebbe pagata dopo.** `ANTEPRIMA` adesso
+descrive **solo il documento**: con due riquadri accesi «che cosa è in anteprima» non ha una
+risposta sola. Il media ce l'ha `PLAYER`. Da lì la regola delle citazioni, dichiarata invece
+che indovinata: 🔖 negli appunti cita il documento se c'è e il minuto se no; ✎ nel player
+(⌘⇧M) cita sempre e solo il minuto. Un tasto per cosa, invece di un tasto che cambia
+mestiere a seconda di dove hai cliccato per ultimo.
+
+**Sul disco**, dentro `Zaini/<id>/`:
+
+```
+MATERIALI/Video/   NN nome.mp4      copiati, mai linkati
+MATERIALI/Audio/   NN nome.m4a
+_ascolto.json      per ogni media: l'ultimo secondo
+```
+
+⚠️ **Il numero è UNO per contenitore, condiviso fra video e audio**: nel rimando `video:03`
+il tipo non compare, e due «03» in due cartelle diverse sarebbero due risposte alla stessa
+domanda — a decidere finirebbe l'ordine di lettura delle cartelle. E si prende dal massimo,
+non dal conteggio, per la stessa ragione dei documenti.
+
+⚠️ **`_ascolto.json` è un file suo, non una chiave in più in `_lettura.json`**: una pagina è
+un intero ≥ 1 che il documento contiene, un secondo è un tempo che comincia da zero. E il
+giorno in cui un materiale ha tutti e due i segni devono poter convivere invece di
+escludersi. Lo zero **esiste**: «riportato all'inizio» è un fatto, al contrario della pagina.
+
+⚠️ **Qui non si trascrive niente.** Un video importato è un video che si guarda e si cita al
+secondo: la trascrizione costa minuti di macchina, è un derivato, e nello zaino scrive solo
+l'utente (§1.5). Chi la vuole passa dalla pipeline dei corsi.
+
+**I tasti rapidi**, e la differenza è dove sono le mani:
+- **⌘⇧M** vale sempre, **anche mentre si scrive** — è il gesto per cui lo strumento esiste,
+  e per questo è una combinazione e non una lettera. Fa tre cose in ordine: mette in pausa
+  (o si scrive mentre la lezione va avanti), si assicura che un appunto ci sia — creandolo,
+  invece di dire «apri prima un appunto», che a metà lezione è un vicolo cieco — e lascia la
+  riga `- [14:10](video:03#t=850) `, col cursore dove si continua a scrivere;
+- **K/spazio** play-pausa, **J/L** −10/+10 s, **&lt;/&gt;** velocità, le **frecce** ±5 s col
+  fuoco dentro il player. ⚠️ Valgono solo quando NON si sta scrivendo: sono lettere sole, e
+  una lettera sola dentro un editor è la lettera che si voleva scrivere — senza la guardia,
+  digitare «job» in un appunto farebbe saltare la lezione indietro due volte.
+
+**Il codice, separato per responsabilità**: `lib/media.js` (che cosa è un file, dove va,
+che numero prende, che cosa non entra e perché), `lib/ascolto.js` (il segno), e
+`App/assets/player/lettore.js` — modulo puro, provato in Node — per le quattro cose che
+sbagliate non sollevano niente: il tipo, la forma del tempo, il salto stretto alla durata,
+la riga che finisce nell'appunto. Nel renderer restano i comandi, uno per funzione.
+
+⚠️ **Le estensioni sono scritte due volte** — `lib/materiali.js` per la pipeline,
+`lettore.js` per il browser, che non può leggere `lib/`. È una copia **dichiarata**, e
+`test/player.js` la inchioda confrontando le due liste **e** i due verdetti: se divergono, la
+prova diventa rossa prima che un `.opus` trascinato sparisca senza dire dov'è finito.
+
+`test/media.js` (34), `test/ascolto.js` (29), `test/player.js` (34) dentro `npm test`;
+`test/cdp/prova-player.js` (26 sull'app viva, nella suite — che adesso conta 27 prove).
+⚠️ Due controlli di `prova-album.js` sono stati riscritti, e non perché fossero sbagliati:
+dicevano cose vere del mondo in cui il media viveva dentro il riquadro del documento («lo
+zoom sparisce quando c'è un video», «alla fonte riapre e `ANTEPRIMA.tipo` è video»). Con due
+riquadri quelle frasi non possono più diventare verdi, e la cosa da provare è un'altra —
+che lo zoom appartenga al documento, e che il ritaglio riapra il materiale da cui viene.
+
+**Resta fuori, e si sa**: i media non compaiono nelle tre sezioni della sidebar (si aprono
+dal selettore «Media» nella barra del player), non c'è un «togli questo media» con la lapide
+come per le fonti, e il Player non è nella disposizione di fabbrica dello zaino — lo si
+sceglie dalla tendina di un blocco.
+
 ### Z7 — Impostazioni › ZAINO
 Scheda nuova (`.set-tab` / `.set-pane`, il meccanismo c'è). Dentro: stato di `ocrmypdf`, scarico
 delle lingue, e la spiegazione di quando serve.

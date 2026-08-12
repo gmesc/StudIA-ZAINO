@@ -55,6 +55,11 @@
 <script src="assets/lettura/identita.js"></script>
 <script src="assets/lettura/capitolo.js"></script>
 <script src="assets/lettura/lezioni.js"></script>
+<!-- ⚠️ DOPO `rimandi/sintassi.js`: la factory di `lettore.js` legge
+     `RimandiSintassi` al momento del caricamento, non alla prima chiamata.
+     Invertiti, il player scriverebbe negli appunti righe senza rimando — e non
+     solleverebbe niente. -->
+<script src="assets/player/lettore.js"></script>
 <script src="assets/tts/segmenta.js"></script>
 <script src="assets/appunti/elenco.js"></script>
 <!-- Dati, non codice: le icone in base64 e la tavolozza delle emoji. Stanno
@@ -540,6 +545,7 @@
      il dock con `--dock-split`, che qui non c'è più. Sono regole di
      collocazione, non di aspetto: il resto del loro stile è invariato. */
   .bcorpo > #pdfPane{ display:flex!important; height:100%; }
+  .bcorpo > #playerPane{ display:flex!important; height:100%; }
   .bcorpo > #notePane{ display:flex!important; height:100%; flex:1 1 auto; }
   .bcorpo > #mappaView{ display:flex!important; height:100%; }
   .bcorpo > #keywordPane{ display:flex!important; height:100%; }
@@ -853,7 +859,7 @@
     font-family:var(--font-text),var(--emoji-font),sans-serif;
     text-transform:uppercase; letter-spacing:.12em; text-align:center; padding:0 2rem;
     border:3px dashed var(--teal); pointer-events:none; }
-  html[data-drop="pdf"]::after{ content:"Rilascia qui i PDF da mettere nello zaino"; }
+  html[data-drop="pdf"]::after{ content:"Rilascia qui i documenti, i video e gli audio da mettere nello zaino"; }
   html[data-drop="json"]::after{ content:"Rilascia qui il file della lezione (.json)"; }
 
   /* ---- Fonti (sorgenti PDF) + anteprima split view ---- */
@@ -1067,14 +1073,17 @@
   /* Il selettore del documento vive nello ZAINO: in un corso i documenti si
      aprono dai rimandi del capitolo, che dicono anche la pagina. */
   html:not([data-modo="zaino"]) #pdfDoc{ display:none!important; }
-  #pdfDocPop{ padding:.3rem; width:min(360px,92vw); max-height:60vh; overflow:auto; }
-  #pdfDocPop .pd-voce{ display:block; width:100%; text-align:left; border:0; background:transparent;
+  /* ⚠️ Un solo vestito per i due pannellini che scelgono un materiale — i
+     documenti e i media. Sono la stessa cosa vista da due strumenti, e due
+     fogli di stile per la stessa lista divergono al primo ritocco. */
+  #pdfDocPop, #plMediaPop{ padding:.3rem; width:min(360px,92vw); max-height:60vh; overflow:auto; }
+  #pdfDocPop .pd-voce, #plMediaPop .pd-voce{ display:block; width:100%; text-align:left; border:0; background:transparent;
     color:var(--ink); cursor:pointer; padding:.5rem .6rem; font-size:13px; font-family:inherit;
     border-bottom:1px solid var(--line-weak); overflow-wrap:anywhere; }
-  #pdfDocPop .pd-voce:last-child{ border-bottom:0; }
-  #pdfDocPop .pd-voce:hover{ background:var(--hover); }
-  #pdfDocPop .pd-voce.attivo{ font-weight:700; border-left:3px solid var(--teal); }
-  #pdfDocPop .pd-vuoto{ padding:.6rem; font-size:12px; color:var(--muted); }
+  #pdfDocPop .pd-voce:last-child, #plMediaPop .pd-voce:last-child{ border-bottom:0; }
+  #pdfDocPop .pd-voce:hover, #plMediaPop .pd-voce:hover{ background:var(--hover); }
+  #pdfDocPop .pd-voce.attivo, #plMediaPop .pd-voce.attivo{ font-weight:700; border-left:3px solid var(--teal); }
+  #pdfDocPop .pd-vuoto, #plMediaPop .pd-vuoto{ padding:.6rem; font-size:12px; color:var(--muted); }
   #pdfPane .pdfzoom #pdfZoomLvl{ width:auto; padding:0 .4rem; font-size:11px; font-weight:700;
     font-variant-numeric:tabular-nums; }
   #searchInput{ height:var(--ctl-h); width:min(420px,80vw); background:var(--panel); color:var(--ink);
@@ -1403,7 +1412,33 @@
     position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
     margin-block:6px; }
   #selBarra.aperta{ display:block; }
-  #mediaVideo{ flex:1; width:100%; border:0; background:#000; }
+  /* ---- il player: un riquadro del banco, come le fonti ---- */
+  #playerPane{ display:none; flex-direction:column; min-height:0; height:100%; }
+  #playerPane .plbar strong{ font-size:12px; font-weight:700; overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap; min-width:0; }
+  #playerPane .plbar #plScegli{ white-space:nowrap; max-width:min(38cqw,260px); overflow:hidden; text-overflow:ellipsis; }
+  #playerPane .plcmd{ display:flex; align-items:center; gap:0; }
+  #playerPane .plcmd #plTempo{ font-size:11px; font-variant-numeric:tabular-nums; padding:0 .3rem;
+    color:var(--muted); white-space:nowrap; }
+  #playerPane .plbar #plPlay[aria-pressed="true"]{ background:var(--teal-strong,#0d9488); color:#fff; }
+  /* Il palco. ⚠️ `position:relative` regge lo stato vuoto, che sta sopra e non
+     nel flusso: un vuoto che spinge il video di qualche pixel lo fa saltare
+     nel momento in cui il media arriva. */
+  #plHost{ position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center;
+    background:#000; }
+  #mediaVideo{ width:100%; height:100%; border:0; background:#000; display:block; }
+  /* Un audio è lo stesso elemento senza immagine: restano i comandi, alti quanto
+     bastano, su fondo di pannello — il nero di un video sarebbe un buco. */
+  #plHost[data-tipo="audio"]{ background:var(--panel); }
+  #plHost[data-tipo="audio"] #mediaVideo{ height:auto; background:transparent; }
+  /* Senza media non c'è niente da mostrare: si spegne l'elemento, non lo si
+     svuota — un `<video>` senza sorgente disegna un rettangolo nero che sembra
+     un guasto. */
+  #plHost:not([data-tipo]) #mediaVideo{ display:none; }
+  #plHost:not([data-tipo]){ background:var(--panel); }
+  .plvuoto{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:.4rem; text-align:center; padding:1.4rem; font-size:12px; color:var(--muted); }
+  #plHost[data-tipo] .plvuoto{ display:none; }
   .vids{ margin:2rem 0; padding:1rem 1.1rem; background:color-mix(in srgb, var(--teal) 7%, var(--panel)); }
   .vids > b{ display:flex; align-items:center; gap:.5rem; font-size:11px; text-transform:uppercase; letter-spacing:.16em; color:var(--muted); margin-bottom:.7rem; font-weight:700; }
   .vidchips{ display:flex; flex-wrap:wrap; gap:.5rem; }
@@ -3372,10 +3407,7 @@ function readLessonFile(f){
     /* Nello ZAINO trascinare vuol dire «porta dentro questi documenti». Fuori
        resta il gesto di prima — un `.json` di lezione — che è l'unico che aveva
        senso quando lo zaino non esisteva. */
-    if(modoAttivo()==='zaino' && files.some(function(f){ return /\.pdf$/i.test(f.name); })){
-      fontiTrascinate(files);
-      return;
-    }
+    if(modoAttivo()==='zaino' && zainoTrascinati(files)) return;
     readLessonFile(files[0]);
   });
   refreshLessonSelect();
@@ -3411,13 +3443,18 @@ var FONTI={ inCorso:false, indici:null, corso:'' };
  * preload costruisce la mappa: qui si rifà la stessa cosa con i nomi che si
  * hanno per le mani, e la si tiene aggiornata a ogni cambio di contenitore.
  */
-function numeriRegistra(id, nomi){
+/* `dove` è `'pdf'` o `'media'`: le due mappe hanno la stessa forma e la stessa
+   regola (il numero è nel nome), e scriverle due volte sarebbe la solita
+   seconda copia che diverge. Chi non lo passa parla dei documenti, che erano
+   l'unico caso quando questa funzione è nata. */
+function numeriRegistra(id, nomi, dove){
   if(!id || !nomi || !nomi.length) return;
+  var quale=(dove==='media') ? 'media' : 'pdf';
   var m=NUM_CORSI[id] || (NUM_CORSI[id]={ media:{}, pdf:{} });
-  if(!m.pdf) m.pdf={};
+  if(!m[quale]) m[quale]={};
   nomi.forEach(function(nome){
     var mm=/^(\d{1,3})\b/.exec(String(nome||''));
-    if(mm) m.pdf[mm[1].padStart(2,'0')]=nome;
+    if(mm) m[quale][mm[1].padStart(2,'0')]=nome;
   });
 }
 function fontiIndiciCarica(){
@@ -3501,6 +3538,75 @@ async function fontiTrascinate(files){
   }
 }
 
+/* ===== I MEDIA CHE ENTRANO NELLO ZAINO ===================================
+ *
+ * Stesso gesto dei documenti, altra destinazione: un video o un audio
+ * trascinato sulla finestra viene COPIATO in `MATERIALI/Video` o
+ * `MATERIALI/Audio` e NUMERATO — ed è quel numero che rende scrivibile un
+ * rimando `video:03#t=850`, cioè quel che lega un appunto al minuto da cui
+ * nasce.
+ *
+ * ⚠️ Qui non si trascrive niente, e non è una dimenticanza: la trascrizione è
+ * un derivato che costa minuti di macchina, e nello zaino scrive solo l'utente.
+ * Chi la vuole passa dalla pipeline dei corsi.
+ */
+var MEDIAIMP={ inCorso:false };
+
+/**
+ * Smista quello che è caduto sulla finestra: i documenti alle fonti, i video e
+ * gli audio al player.
+ *
+ * ⚠️ Non «o l'uno o l'altro»: un gesto solo può portare tutti e due — si
+ * trascina la cartella di una lezione con dentro la dispensa e la registrazione
+ * — e scegliere un ramo solo avrebbe ingoiato l'altra metà in silenzio.
+ * Torna `true` se qualcosa era per noi, così chi chiama sa se deve provare il
+ * gesto di prima (il `.json` di una lezione).
+ */
+function zainoTrascinati(files){
+  var lista=[].slice.call(files||[]);
+  var pdf=lista.filter(function(f){ return /\.pdf$/i.test(f.name); });
+  var media=lista.filter(function(f){ return !!Lettore.tipoDi(f.name); });
+  if(pdf.length) fontiTrascinate(pdf);
+  if(media.length) mediaTrascinati(media);
+  return !!(pdf.length || media.length);
+}
+
+/** Il gesto: dei media trascinati sopra la finestra, in modalità zaino. */
+async function mediaTrascinati(files){
+  var api=(window.vault && window.vault.media) || null;
+  var id=corsoAttivo();
+  if(!api || !id){ toast('Apri uno zaino prima di trascinare i media', false); return; }
+  if(MEDIAIMP.inCorso){ toast('Sto ancora importando: un momento', false); return; }
+  /* ⚠️ Da Electron 32 un `File` trascinato non ha più `.path`: il percorso vero
+     lo dà `webUtils.getPathForFile`, esposto dal preload. Senza, di un video da
+     due giga si avrebbe solo il contenuto — e copiarlo leggendolo e
+     riscrivendolo sarebbe la stessa cosa fatta molto peggio. */
+  var percorsi=files.map(function(f){ return api.percorsoDi(f); }).filter(Boolean);
+  if(!percorsi.length){ toast('Non riesco a leggere il percorso di questi file', false); return; }
+  MEDIAIMP.inCorso=true;
+  var r;
+  try{ r=await api.importa(id, percorsi); }
+  catch(e){ r={ error:(e && e.message) || 'import non riuscito' }; }
+  MEDIAIMP.inCorso=false;
+  if(!r || r.error){ toast('Import non riuscito: '+((r&&r.error)||'?'), false); return; }
+  var entrati=r.copiati||[];
+  if(entrati.length) toast(entrati.length===1 ? 'Aggiunto: '+entrati[0].nome
+                                              : entrati.length+' media aggiunti', true);
+  /* Ciò che non è entrato si dice, col motivo: un import che ingoia in silenzio
+     lascia a cercare un file che non c'è. */
+  (r.scartati||[]).forEach(function(x){ toast('Fuori: '+x.file+' — '+x.motivo, false); });
+  /* I numeri valgono da SUBITO: la mappa NN→file la costruisce il preload
+     leggendo il disco all'avvio, e un video importato adesso non ci sarebbe —
+     il primo `video:03#t=` scritto dal tasto rapido resterebbe un rimando che
+     non apre niente, senza dire perché. */
+  numeriRegistra(id, entrati.map(function(x){ return x.nome; }), 'media');
+  try{ MATERIALI.lista=null; }catch(e){}     // l'elenco in cache è di un istante fa
+  try{ zainoNavAggiorna(); }catch(e){}
+  if(entrati.length){
+    playerApri(entrati[0].nome, null, titoloMateriale(entrati[0].nome)||entrati[0].nome);
+  }
+}
+
 /* ===== IL SEGNO DI LETTURA: a che pagina si era arrivati =================
  *
  * Il dato vive nel vault (`_lettura.json`, dentro il corso o lo zaino), ma il
@@ -3574,7 +3680,16 @@ function letturaFlush(){
 /* ---- Fonti PDF + anteprima split view ---- */
 const PDF_BASE='../Fonti/';
 const VIDEO_BASE='../Media/';
-function fmtTime(s){ s=Math.max(0,Math.floor(s||0)); var m=Math.floor(s/60), ss=s%60; return m+':'+(ss<10?'0':'')+ss; }
+/* ⚠️ Il tempo lo scrive `Lettore`, e questa resta il nome di prima per le
+   dodici chiamate che ci sono in giro. Due formattatori vorrebbero dire due
+   forme dello stesso minuto nello stesso appunto — e quello di `Lettore` sa
+   anche l'ora, che una lezione registrata supera regolarmente. Il ripiego serve
+   solo se il modulo non fosse caricato: meglio un tempo brutto che nessun
+   tempo. */
+function fmtTime(s){
+  if(typeof Lettore!=='undefined') return Lettore.tempo(s);
+  s=Math.max(0,Math.floor(s||0)); var m=Math.floor(s/60), ss=s%60; return m+':'+(ss<10?'0':'')+ss;
+}
 function positionPane(){ var tb=document.querySelector('.topbar'); var h=tb?Math.round(tb.getBoundingClientRect().height):0; var pane=$('#dock'); if(pane){ pane.style.top=h+'px'; pane.style.height='calc(100vh - '+h+'px)'; } }
 /* ---- Note unificate (PDF + video), marcatori inline + sezione in fondo ---- */
 function escHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(ch){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]; }); }
@@ -3891,9 +4006,10 @@ function pdfZoomAggiorna(){
   var box=$('#pdfZoom'), lvl=$('#pdfZoomLvl'), find=$('#pdfFindBtn'), rit=$('#pdfRitaglia');
   var attivo = ANTEPRIMA.tipo==='pdf' && PDFJS.pronto && !!PDFJS.doc;
   /* Le forbici valgono anche sul video: un fermo immagine è un ritaglio quanto
-     un'area di pagina. Zoom e ricerca no — sono leve del documento. */
-  var vid=$('#mediaVideo');
-  var conVideo = ANTEPRIMA.tipo==='video' && vid && !vid.hidden;
+     un'area di pagina. Zoom e ricerca no — sono leve del documento.
+     ⚠️ Da quando il media ha un riquadro suo, «c'è un video?» lo sa il player e
+     non `ANTEPRIMA`: qui si chiede a lui. */
+  var conVideo = (typeof playerAperto==='function') && playerAperto();
   if(box) box.hidden=!attivo;
   if(find) find.hidden=!attivo;
   if(rit) rit.hidden=!(attivo || conVideo);
@@ -4039,9 +4155,15 @@ function albumPaginaSotto(x, y){
 /** Accende o spegne le forbici. */
 function albumRitaglioModo(on){
   ALBUM.attivo=(on==null) ? !ALBUM.attivo : !!on;
-  var h=$('#pdfHost'), b=$('#pdfRitaglia');
-  if(h) h.classList.toggle('ritaglio', ALBUM.attivo);
-  if(b) b.setAttribute('aria-pressed', ALBUM.attivo?'true':'false');
+  /* ⚠️ I riquadri su cui si ritaglia sono DUE — la pagina e il fotogramma — e
+     il modo è UNO. Accendere solo quello del documento lasciava il cursore
+     normale sopra il video e il bottone del player spento mentre le forbici
+     erano attive: due verità sullo stesso stato. */
+  [['#pdfHost','#pdfRitaglia'], ['#plHost','#plRitaglia']].forEach(function(coppia){
+    var h=$(coppia[0]), b=$(coppia[1]);
+    if(h) h.classList.toggle('ritaglio', ALBUM.attivo);
+    if(b) b.setAttribute('aria-pressed', ALBUM.attivo?'true':'false');
+  });
   if(!ALBUM.attivo) albumRettTogli();
   if(ALBUM.attivo) toast('Trascina un rettangolo sulla pagina per ritagliarla', true);
 }
@@ -4141,7 +4263,7 @@ function albumChiudiGesto(x2, y2){
     try{ img=albumRendiVideo(g, rv); }
     catch(err){ toast('Ritaglio non riuscito: '+((err&&err.message)||err), false); return; }
     var rr=window.vault.album.salva(corsoAttivo(), {
-      materiale:ANTEPRIMA.file, t:g.t, rect:rv, didascalia:'',
+      materiale:PLAYER.file, t:g.t, rect:rv, didascalia:'',
       dati:img.dati, w:img.w, h:img.h
     });
     if(rr.error){ toast('Ritaglio non salvato: '+rr.error, false); return; }
@@ -4494,32 +4616,368 @@ function pdfChiudiDoc(){
   if(PDFJS.doc){ try{ PDFJS.doc.destroy(); }catch(e){} PDFJS.doc=null; }
 }
 
-function openVideo(file,t,label){
+/* ========================= IL PLAYER =====================================
+ *
+ * Uno strumento del banco per ciò che scorre nel tempo: un video, un audio, e
+ * un elemento solo che li riproduce.
+ *
+ * ⚠️ **Prima il media suonava dentro `#pdfPane`**, cioè nello stesso riquadro
+ * del documento: aprire una dispensa spegneva la lezione, e ascoltare la
+ * lezione faceva sparire la dispensa. Sono le due cose che si studiano
+ * insieme. Adesso sono due strumenti affiancabili.
+ *
+ * ⚠️ **`ANTEPRIMA` non parla più di video.** Descrive il DOCUMENTO, e basta —
+ * quale, a che pagina — perché con due riquadri accesi «che cosa è in
+ * anteprima» non ha una risposta sola. Il media ce l'ha `PLAYER`, ed è la
+ * ragione per cui ognuna delle due barre cita la propria cosa: 🔖 negli appunti
+ * cita il documento se c'è e il minuto se no; ✎ nel player cita sempre il
+ * minuto. Un solo stato per due riquadri sarebbe un pulsante che fa una cosa
+ * diversa a seconda di che cosa hai toccato per ultimo.
+ *
+ * Ogni comando è una funzione a sé: il tasto rapido, il bottone della barra e
+ * il gesto passano tutti per lo stesso punto — che è la regola di questo
+ * progetto, e l'unico modo perché non divergano.
+ */
+var PLAYER={ file:'', tipo:'', num:null, label:'', vel:1 };
+
+function playerEl(){ return $('#mediaVideo'); }
+/** C'è qualcosa da riprodurre? È la domanda che accende mezza barra. */
+function playerAperto(){ return !!PLAYER.file && !!playerEl(); }
+
+/** Il nome di prima, per i rimandi `video:NN#t=` dei capitoli: la porta è una. */
+function openVideo(file,t,label){ playerApri(file,t,label); }
+
+/**
+ * Apre un media nel player.
+ *
+ * `t` assente vuol dire «dove eravamo rimasti»: chi ha un rimando con il
+ * secondo dentro (`video:03#t=850`) lo passa e vince lui, perché quel minuto è
+ * il senso del rimando. È la stessa regola di `openPdf` con la pagina.
+ */
+function playerApri(file, t, label){
   if(!file) return;
-  ANTEPRIMA={ tipo:'video', file:file, num:numDiFile(file, (typeof _mediaNum==='function'?_mediaNum():MEDIA_BY_NUM)), label:label||file, page:1 };
-  var base=(window.vault&&window.vault.srcUrl)?window.vault.srcUrl(file):(VIDEO_BASE+encodeURIComponent(file));
-  var host=$('#pdfHost'); if(host) host.hidden=true;
-  /* ⚠️ Prima la ricerca, poi il documento: `setDocument(null)` azzera il
-     controller, e un `findbarclose` mandato dopo resta parcheggiato su una
-     promessa che non si risolverà — per poi eseguirsi sul documento SUCCESSIVO
-     e azzerargli un conto appena calcolato. */
-  pdfFindChiudi();
-  pdfChiudiDoc();
-  var v=$('#mediaVideo');
-  if(v){
-    v.hidden=false; v.src=base+(t?('#t='+t):'');
-    var seek=function(){ try{ if(t) v.currentTime=t; }catch(e){} v.removeEventListener('loadedmetadata',seek); };
-    v.addEventListener('loadedmetadata',seek);
-    v.play().catch(function(){});
+  var v=playerEl(); if(!v) return;
+  var tipo=(typeof Lettore!=='undefined') ? Lettore.tipoDi(file) : 'video';
+  /* ⚠️ Un file che non sappiamo riprodurre si dice: un `<video>` con dentro un
+     PDF non solleva niente — resta nero, e sembra un guasto dell'app. */
+  if(!tipo){ toast('Non so riprodurre «'+(titoloMateriale(file)||file)+'»', false); return; }
+  var stesso=(PLAYER.file===file);
+  /* Cambiando media, il segno di quello di prima si scrive ADESSO: dopo,
+     `PLAYER.file` è già un altro e non si saprebbe più a chi appartiene. */
+  if(!stesso) ascoltoFlush();
+  var sec = (t!=null && t!=='') ? Math.max(0, Math.floor(Number(t)||0))
+                                : (stesso ? playerSecondo() : (ascoltoSecondo(file)||0));
+  PLAYER={ file:file, tipo:tipo,
+           num:numDiFile(file, (typeof _mediaNum==='function'?_mediaNum():MEDIA_BY_NUM)),
+           label:label||titoloMateriale(file)||file, vel:PLAYER.vel||1 };
+  var host=$('#plHost'); if(host) host.dataset.tipo=tipo;
+  if(stesso) playerVaiA(sec);
+  else {
+    var base=(window.vault&&window.vault.srcUrl)?window.vault.srcUrl(file):(VIDEO_BASE+encodeURIComponent(file));
+    v.src=base;
+    /* ⚠️ Il salto si fa quando i metadati ci sono: `currentTime` scritto su un
+       media non ancora caricato viene ignorato in silenzio, e la lezione
+       ripartirebbe dall'inizio ogni volta. */
+    var alPunto=function(){ try{ if(sec) v.currentTime=sec; }catch(e){} v.removeEventListener('loadedmetadata',alPunto); };
+    v.addEventListener('loadedmetadata', alPunto);
   }
-  pdfZoomAggiorna();
-  var tt=$('#pdfTitle'); if(tt) tt.textContent=(label||file)+(t!=null?(' \u2014 '+fmtTime(t)):'');
-  var nt=$('#pdfNewtab'); if(nt) nt.href=base+(t?('#t='+t):'');
-  document.documentElement.dataset.pdf='1';
-  // il dock non c'è più: si chiede al banco di fare posto allo strumento
-  try{ bancoMostra('fonte'); }catch(e){}
-  aggiornaBarraPagina();
+  try{ v.playbackRate=PLAYER.vel; }catch(e){}
+  v.play().catch(function(){});
+  try{ bancoMostra('player'); }catch(e){}
+  playerBarraAggiorna();
+  try{ pdfZoomAggiorna(); }catch(e){}     // le forbici valgono anche su un fotogramma
 }
+
+/** Chiude il player: il media si molla, il documento accanto resta dov'è. */
+function playerChiudi(){
+  ascoltoFlush();
+  var v=playerEl();
+  if(v){ try{ v.pause(); }catch(e){} v.removeAttribute('src'); try{ v.load(); }catch(e){} }
+  var host=$('#plHost'); if(host) delete host.dataset.tipo;
+  PLAYER={ file:'', tipo:'', num:null, label:'', vel:PLAYER.vel };
+  /* Senza media le forbici non hanno un fotogramma su cui lavorare: si spengono
+     da sé, o resterebbero accese sopra un riquadro vuoto. */
+  if(ALBUM.attivo && (typeof ANTEPRIMA==='undefined' || ANTEPRIMA.tipo!=='pdf')) albumRitaglioModo(false);
+  playerBarraAggiorna();
+  try{ pdfZoomAggiorna(); }catch(e){}
+}
+
+/** Il secondo a cui sta il player adesso (0 se non c'è niente). */
+function playerSecondo(){
+  var v=playerEl();
+  return (playerAperto() && v && isFinite(v.currentTime)) ? Math.floor(v.currentTime) : 0;
+}
+/** La durata, o `NaN` finché i metadati non sono arrivati. */
+function playerDurata(){ var v=playerEl(); return v ? Number(v.duration) : NaN; }
+
+/** Va a un secondo preciso. */
+function playerVaiA(sec){
+  var v=playerEl(); if(!playerAperto() || !v) return;
+  try{ v.currentTime=Math.max(0, Math.floor(Number(sec)||0)); }catch(e){}
+  playerBarraAggiorna();
+}
+/** Salta avanti o indietro. La regola di dove si arriva sta in `Lettore`. */
+function playerSalta(delta){
+  if(!playerAperto()) return;
+  playerVaiA(Lettore.salto(playerSecondo(), delta, playerDurata()));
+}
+/** Riproduce o mette in pausa. */
+function playerPlayPausa(){
+  var v=playerEl(); if(!playerAperto() || !v) return;
+  if(v.paused) v.play().catch(function(){}); else v.pause();
+  playerBarraAggiorna();
+}
+/** Mette in pausa e basta: lo chiede chi sta per scrivere. */
+function playerPausa(){
+  var v=playerEl(); if(!playerAperto() || !v || v.paused) return;
+  v.pause();
+  playerBarraAggiorna();
+}
+/** Cambia velocità di uno scalino, nel verso chiesto. */
+function playerVelocita(verso){
+  var v=playerEl(); if(!playerAperto() || !v) return;
+  PLAYER.vel=Lettore.velocita(v.playbackRate, verso);
+  try{ v.playbackRate=PLAYER.vel; }catch(e){}
+  playerBarraAggiorna();
+}
+
+/** La barra dice quello che c'è: titolo, tempo, velocità — e i comandi accesi
+ *  solo quando hanno qualcosa su cui agire. */
+function playerBarraAggiorna(){
+  var c=playerAperto();
+  var t=$('#plTitle'); if(t) t.textContent=c ? PLAYER.label : 'Player';
+  var b=$('#plScegli');
+  if(b){
+    b.textContent=(c ? PLAYER.label : 'Media')+' ▾';
+    b.title=c ? ('In riproduzione: '+PLAYER.label+' — premi per cambiare') : 'Scegli il video o l’audio';
+  }
+  var cmd=$('#plComandi'); if(cmd) cmd.hidden=!c;
+  var vel=$('#plVel'); if(vel){ vel.hidden=!c; vel.textContent=String(PLAYER.vel).replace('.',',')+'×'; }
+  var nota=$('#plNota'); if(nota) nota.hidden=!c;
+  var rit=$('#plRitaglia'); if(rit) rit.hidden=!(c && PLAYER.tipo==='video');
+  var tp=$('#plTempo');
+  if(tp){
+    var dur=playerDurata();
+    tp.textContent=Lettore.tempo(playerSecondo())+((isFinite(dur)&&dur>0) ? (' / '+Lettore.tempo(dur)) : '');
+  }
+  var v=playerEl(), play=$('#plPlay');
+  if(play){
+    var suona=!!(c && v && !v.paused);
+    play.setAttribute('aria-pressed', String(suona));
+    play.innerHTML=suona ? '&#10073;&#10073;' : '&#9654;';
+  }
+  try{ barreSeparatori(); }catch(e){}
+}
+
+/* ---- il segno di ascolto: a che secondo si era arrivati ----
+ * Copia in memoria e scrittura col respiro, esattamente come il segno di
+ * lettura: `playerApri` è sincrona e il canale è asincrono, e aspettare il
+ * disco lì dentro vorrebbe dire far ripartire la lezione da zero per poi farla
+ * saltare un istante dopo, sotto gli occhi di chi guarda. */
+var ASCOLTO={ corso:'', media:{}, timer:null, attesa:null };
+function ascoltoApi(){ try{ return (window.vault && window.vault.ascolto) || null; }catch(e){ return null; } }
+function ascoltoCarica(){
+  var api=ascoltoApi(), corso=corsoAttivo();
+  if(!api || !corso){ ASCOLTO.media={}; ASCOLTO.corso=''; return Promise.resolve(); }
+  return api.leggi(corso).then(function(r){
+    r=r||{};
+    if(r.error) console.error('ascolto:', r.error);
+    ASCOLTO.media=r.media||{}; ASCOLTO.corso=corso;
+  }).catch(function(e){ console.error('ascolto:', e); ASCOLTO.media={}; ASCOLTO.corso=corso; });
+}
+/** Il secondo ricordato per un media, o `null`. */
+function ascoltoSecondo(file){
+  if(ASCOLTO.corso!==corsoAttivo()) return null;      // la copia è di un altro contenitore
+  var v=ASCOLTO.media[String(file||'')];
+  return v && v.secondo!=null ? v.secondo : null;
+}
+/**
+ * Segna il secondo, con un respiro.
+ *
+ * ⚠️ Il timer è UNO, e vale la trappola già pagata dal segno di lettura: se
+ * quello in attesa riguarda un altro media o un altro contenitore va scritto
+ * ADESSO invece che annullato, o cambiando zaino a metà lezione il segno di
+ * prima sparirebbe. Qui la scrittura arriva da `timeupdate`, cioè quattro volte
+ * al secondo: senza il respiro sarebbero quattro scritture su disco al secondo.
+ */
+function ascoltoSegna(file, sec){
+  var api=ascoltoApi(), corso=corsoAttivo();
+  if(!api || !corso || !file || !(sec>=0)) return;
+  var att=ASCOLTO.attesa;
+  if(att && (att.corso!==corso || att.file!==String(file))) ascoltoFlush();
+  ASCOLTO.corso=corso;
+  ASCOLTO.media[String(file)]={ secondo:Math.floor(sec), quando:new Date().toISOString() };
+  ASCOLTO.attesa={ corso:corso, file:String(file), secondo:Math.floor(sec) };
+  clearTimeout(ASCOLTO.timer);
+  ASCOLTO.timer=setTimeout(ascoltoFlush, 900);
+}
+/** Scrive subito il segno in attesa. Sta accanto a `noteFlush` e `letturaFlush`. */
+function ascoltoFlush(){
+  var att=ASCOLTO.attesa, api=ascoltoApi();
+  clearTimeout(ASCOLTO.timer); ASCOLTO.timer=null; ASCOLTO.attesa=null;
+  if(!att || !api) return;
+  api.segna(att.corso, att.file, att.secondo).then(function(r){
+    if(r && r.error) console.error('ascolto/segna:', r.error);
+  }).catch(function(e){ console.error('ascolto/segna:', e); });
+}
+
+/* ---- i comandi del player: bottoni, tempo che scorre, pannellino ----
+   ⚠️ Delegati sul documento come tutti gli altri: `#playerPane` sta in fondo
+   alla pagina, dopo questo script, e un `getElementById` qui tornerebbe `null`
+   — il listener non nascerebbe, e i bottoni sarebbero muti senza un errore. */
+(function(){
+  document.addEventListener('click', function(e){
+    if(!e.target.closest) return;
+    if(e.target.closest('#plClose')){ playerChiudi(); return; }
+    if(e.target.closest('#plPlay')){ playerPlayPausa(); return; }
+    if(e.target.closest('#plGiu')){ playerSalta(-10); return; }
+    if(e.target.closest('#plSu')){ playerSalta(10); return; }
+    if(e.target.closest('#plVel')){ playerVelocita(1); return; }
+    if(e.target.closest('#plNota')){ playerAppunta(); return; }
+    if(e.target.closest('#plRitaglia')){ albumRitaglioModo(); return; }
+    var bm=e.target.closest('#plScegli');
+    if(bm){
+      var pop=document.getElementById('plMediaPop');
+      if(pop && pop.hasAttribute('open')) closePops(); else playerScegliApri(bm);
+      return;
+    }
+    var voce=e.target.closest('#plMediaPop .pd-voce');
+    if(voce){
+      closePops();
+      /* Senza secondo: lo sceglie `playerApri` dal segno di ascolto. */
+      playerApri(voce.dataset.media, null, titoloMateriale(voce.dataset.media)||voce.dataset.media);
+      return;
+    }
+  });
+  /* Il tempo che scorre si legge dall'elemento, non da un contatore nostro: un
+     secondo tenuto a parte diverge al primo salto fatto con i comandi nativi
+     del `<video>`, che sono lì e si usano. */
+  var v=document.getElementById('mediaVideo');
+  if(v){
+    v.addEventListener('timeupdate', function(){
+      playerBarraAggiorna();
+      if(playerAperto()) ascoltoSegna(PLAYER.file, playerSecondo());
+    });
+    ['play','pause','loadedmetadata','ratechange'].forEach(function(ev){
+      v.addEventListener(ev, function(){ playerBarraAggiorna(); });
+    });
+    /* Alla fine il segno torna all'inizio: una lezione finita e riaperta al suo
+       ultimo secondo mostrerebbe i titoli di coda e sembrerebbe rotta. */
+    v.addEventListener('ended', function(){ if(playerAperto()) ascoltoSegna(PLAYER.file, 0); });
+  }
+})();
+
+/** I media di un contenitore. L'elenco è quello di sempre (`corpus.list`): due
+ *  elenchi della stessa cosa divergono al primo file aggiunto da una parte. */
+async function mediaDelContenitore(id){
+  try{ return ((await window.vault.corpus.list(id))||[]).filter(function(m){ return m.tipo==='media'; }); }
+  catch(e){ return []; }
+}
+
+/** Il pannellino che sceglie il media: stessa forma di quello dei documenti. */
+async function playerScegliApri(ancora){
+  var pop=document.getElementById('plMediaPop'); if(!pop) return;
+  var id=corsoAttivo();
+  pop.innerHTML='<div class="pd-vuoto">Cerco i media…</div>';
+  popAt(pop, ancora);
+  var lista=await mediaDelContenitore(id);
+  if(!lista.length){
+    pop.innerHTML='<div class="pd-vuoto">Nessun video e nessun audio qui dentro.<br>Trascinane uno sulla finestra.</div>';
+    popAt(pop, ancora);
+    return;
+  }
+  pop.innerHTML=lista.map(function(m){
+    /* Il minuto ricordato accanto al nome: è l'unica cosa che distingue una
+       lezione cominciata da una mai aperta. */
+    var s=ascoltoSecondo(m.name);
+    var tipo=Lettore.tipoDi(m.name);
+    return '<button class="pd-voce'+(m.name===PLAYER.file?' attivo':'')+'" role="menuitem" type="button"'+
+      ' data-media="'+escHtml(m.name)+'" title="'+escHtml(m.name)+'">'+
+      (tipo==='audio' ? '♪ ' : '▶ ')+
+      escHtml(titoloMateriale(m.name)||m.name)+
+      (s ? ' <span class="set-note">— '+Lettore.tempo(s)+'</span>' : '')+'</button>';
+  }).join('');
+  popAt(pop, ancora);   // l'altezza è cambiata: si riposiziona
+  /* ⚠️ `aria-expanded` DOPO l'ultimo `popAt`, che comincia con `closePops()` e
+     lo rimetterebbe a «chiuso» con il pannellino aperto davanti. */
+  var btn=document.getElementById('plScegli'); if(btn) btn.setAttribute('aria-expanded','true');
+}
+
+/**
+ * ✎ / ⌘⇧M — segna questo minuto negli appunti.
+ *
+ * Un gesto solo che fa tre cose, in quest'ordine: **mette in pausa** — o si
+ * scrive mentre la lezione va avanti, che è tutta la fatica di prendere appunti
+ * su un video —, **si assicura che un appunto ci sia**, creandolo invece di
+ * dire «apri prima un appunto», che a metà lezione è un vicolo cieco, e infine
+ * **lascia la riga**, col cursore dove è giusto continuare a scrivere.
+ *
+ * ⚠️ La riga la scrive `Lettore.rigaAppunto`, cioè il modulo puro: la forma di
+ * ciò che finisce negli appunti è provata in Node, e il rimando lo monta
+ * `RimandiSintassi` come tutti gli altri.
+ */
+async function playerAppunta(){
+  if(!playerAperto()){ toast('Apri prima un video o un audio nel player', false); return; }
+  playerPausa();
+  var sec=playerSecondo();
+  if(!NOTES.cur || !NOTES.mde){
+    /* ⚠️ Si ASPETTA che l'appunto esista: `noteNew` chiede il titolo e apre
+       l'editor, e scrivere prima vorrebbe dire lasciare la riga nel buffer di
+       nessuno un istante prima che l'appunto nasca. */
+    await noteNew(null, null, '');
+    if(!NOTES.cur || !NOTES.mde) return;      // annullato: niente da scrivere
+  }
+  var cm=NOTES.mde.codemirror;
+  cm.replaceSelection(Lettore.rigaAppunto({ secondo:sec, numero:PLAYER.num, testo:cm.getSelection() }));
+  cm.focus();
+  if(!PLAYER.num) toast('Minuto segnato. ⚠️ Questo materiale non ha un numero: il rimando non si è potuto scrivere', false);
+}
+
+/**
+ * I tasti rapidi del player.
+ *
+ * Due famiglie, e la differenza è dove sono le mani.
+ *
+ * 1. **⌘⇧M** vale SEMPRE, anche mentre si scrive: è il gesto per cui questo
+ *    strumento esiste — sentire una cosa e segnarla senza staccare le mani
+ *    dalla tastiera. Per questo è una combinazione e non una lettera.
+ * 2. **K / J / L / spazio / < / >** valgono solo quando NON si sta scrivendo.
+ *    Sono lettere sole, e una lettera sola dentro un editor è la lettera che si
+ *    voleva scrivere: ⚠️ senza questa guardia, digitare «job» in un appunto
+ *    farebbe saltare la lezione indietro di dieci secondi due volte.
+ */
+function scriveraDaTastiera(el){
+  if(!el) return false;
+  if(el.isContentEditable) return true;
+  var tag=(el.tagName||'').toLowerCase();
+  if(tag==='input' || tag==='textarea' || tag==='select') return true;
+  return !!(el.closest && el.closest('.CodeMirror'));
+}
+window.addEventListener('keydown', function(e){
+  var mod = e.metaKey || e.ctrlKey;
+  if(mod && e.shiftKey && (e.key==='m' || e.key==='M')){
+    e.preventDefault(); playerAppunta(); return;
+  }
+  if(mod || e.altKey) return;                     // le scorciatoie del sistema restano del sistema
+  if(!playerAperto()) return;
+  if(scriveraDaTastiera(document.activeElement)) return;
+  switch(e.key){
+    case 'k': case 'K': case ' ': e.preventDefault(); playerPlayPausa(); return;
+    case 'j': case 'J': e.preventDefault(); playerSalta(-10); return;
+    case 'l': case 'L': e.preventDefault(); playerSalta(10); return;
+    case '<': e.preventDefault(); playerVelocita(-1); return;
+    case '>': e.preventDefault(); playerVelocita(1); return;
+  }
+  /* Le frecce spostano di 5 secondi, ma SOLO col fuoco dentro il player: fuori
+     di lì sono le frecce del capitolo e della pagina del documento, e rubarle
+     vorrebbe dire un'app in cui la stessa freccia fa due cose. */
+  if((e.key==='ArrowLeft' || e.key==='ArrowRight') &&
+     document.activeElement && document.activeElement.closest &&
+     document.activeElement.closest('#playerPane')){
+    e.preventDefault(); playerSalta(e.key==='ArrowLeft' ? -5 : 5);
+  }
+});
+
 /**
  * Apre un documento nell'anteprima.
  *
@@ -4546,7 +5004,9 @@ function openPdf(pdf,page,label){
      documento precedente si cercherebbero nel testo di questo. */
   if(ANTEPRIMA.file!==pdf) evPdfScade();
   ANTEPRIMA={ tipo:'pdf', file:pdf, num:numDiFile(pdf, (typeof _pdfNum==='function'?_pdfNum():PDF_BY_NUM)), label:label||pdf, page:pg };
-  var v=$('#mediaVideo'); if(v){ try{v.pause();}catch(e){} v.hidden=true; v.removeAttribute('src'); if(v.load) v.load(); }
+  /* ⚠️ Qui il media si fermava. Era giusto finché documento e video vivevano
+     nello stesso riquadro; adesso sono due strumenti, e aprire la dispensa di
+     cui la lezione sta parlando non deve zittire la lezione. */
   var url=(window.vault&&window.vault.srcUrl)?window.vault.srcUrl(pdf):(PDF_BASE+encodeURIComponent(pdf));
   var host=$('#pdfHost'); if(host) host.hidden=false;
   var t=$('#pdfTitle'); if(t) t.textContent=(label||pdf)+(pg?(' \u2014 p.'+pg):'');
@@ -4626,8 +5086,7 @@ function closePdf(){ document.documentElement.dataset.pdf='';
   // vuoto: i PERSONALI sono «qui», gli altri «altrove» (stessa ragione di openPdf)
   try{ refreshNoteUI(); }catch(e){}
   if(document.documentElement.dataset.editor!=='1') document.documentElement.dataset.dock='';
-  pdfChiudiDoc(); pdfStato('');
-  var v=$('#mediaVideo'); if(v){ try{v.pause();}catch(e){} v.removeAttribute('src'); if(v.load) v.load(); } }
+  pdfChiudiDoc(); pdfStato(''); }
 // NB: #pdfPane sta dopo questo <script> nel DOM, quindi $('#pdfClose') qui sarebbe null.
 // Delego sul document cosicché la X funzioni indipendentemente dall'ordine di parsing.
 (function(){
@@ -4942,12 +5401,13 @@ function closePops(){
      leggere), cioè quella che non funzionava. */
   var fp=$('#pdfFindPop');
   if(fp && fp.hasAttribute('open') && typeof pdfFindChiudi==='function') pdfFindChiudi();
-  ['#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#pdfFindPop','#zainoPop','#pdfDocPop']
+  ['#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#pdfFindPop','#zainoPop','#pdfDocPop','#plMediaPop']
     .forEach(function(s){ var e=$(s); if(e) e.removeAttribute('open'); });
   /* Chi apre un pannellino lo dichiara con `aria-expanded`: chiuderlo senza
      rimetterlo a posto lascerebbe il bottone a promettere un riquadro aperto. */
   var zn=$('#zainoNuovo'); if(zn) zn.setAttribute('aria-expanded','false');
   var pd=$('#pdfDoc'); if(pd) pd.setAttribute('aria-expanded','false');
+  var pm=$('#plScegli'); if(pm) pm.setAttribute('aria-expanded','false');
   /* I risultati della ricerca sono un secondo riquadro, fuori dal pannellino
      perché devono poter essere più larghi e scorrere: se sparisce il campo
      devono sparire anche loro, o resterebbero a mezz'aria senza più niente che
@@ -5154,11 +5614,9 @@ function leggiMinuto(testo){
   return null;
 }
 
-/** Il secondo corrente del video in anteprima (0 se non sta suonando niente). */
-function secondoCorrente(){
-  var v=$('#mediaVideo');
-  return (v && !v.hidden && isFinite(v.currentTime)) ? Math.floor(v.currentTime) : 0;
-}
+/** Il secondo corrente del player (0 se non sta suonando niente). Il nome di
+ *  prima, per chi lo chiamava: la verità sta in una funzione sola. */
+function secondoCorrente(){ return (typeof playerSecondo==='function') ? playerSecondo() : 0; }
 
 /** Scrive nell'editor, usando l'eventuale selezione come etichetta del link. */
 function inserisciLink(etichetta, schema){
@@ -5198,14 +5656,25 @@ function citaPdf(num, pagina, etichetta){
 }
 
 /** 🔖 — cita esattamente ciò che si sta guardando. */
+/**
+ * ⚠️ Con due riquadri accesi «il punto corrente» sono due punti. La precedenza
+ * è dichiarata qui: **il documento se c'è, il minuto se no**. Il documento
+ * vince perché questo tasto sta nella barra degli appunti accanto alla
+ * scrittura, e chi scrive guardando una pagina cita quella; per il minuto c'è
+ * ✎ nel player (⌘⇧M), che cita sempre e solo il media — un tasto per cosa,
+ * invece di un tasto che cambia mestiere a seconda di dove hai cliccato prima.
+ */
 function citaCorrente(){
-  if(!ANTEPRIMA.tipo){ toast('Apri prima un video o un PDF nell’anteprima',false); return; }
-  if(ANTEPRIMA.tipo==='video'){
-    var sec=secondoCorrente();
-    if(citaVideo(ANTEPRIMA.num, sec)) toast('Citato il minuto '+etichettaMinuto(sec),true);
+  if(ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file){
+    if(citaPdf(ANTEPRIMA.num, ANTEPRIMA.page)) toast('Citata la pagina '+ANTEPRIMA.page,true);
     return;
   }
-  if(citaPdf(ANTEPRIMA.num, ANTEPRIMA.page)) toast('Citata la pagina '+ANTEPRIMA.page,true);
+  if(typeof playerAperto==='function' && playerAperto()){
+    var sec=secondoCorrente();
+    if(citaVideo(PLAYER.num, sec)) toast('Citato il minuto '+etichettaMinuto(sec),true);
+    return;
+  }
+  toast('Apri prima un documento o un media',false);
 }
 
 /* ---- comandi di pagina del PDF: lo stato lo tiene l'app ---- */
@@ -5452,6 +5921,9 @@ function modoAggiorna(){
   /* E con lei il segno di lettura, che è del contenitore: la copia in memoria
      di un altro zaino direbbe pagine di documenti che qui non ci sono. */
   try{ letturaCarica(); }catch(e){ console.error('lettura:', e); }
+  /* E con lui il segno di ascolto, per la stessa ragione: la copia in memoria
+     di un altro contenitore direbbe minuti di lezioni che qui non ci sono. */
+  try{ ascoltoCarica(); }catch(e){ console.error('ascolto:', e); }
   try{ fontiIndiciCarica(); }catch(e){ console.error('indici:', e); }
   /* Cambiando modalità cambia CHI c'è in testata (la fila dei corsi o quella
      dello zaino): le barrette che restano senza niente a fianco vanno spente,
@@ -5510,6 +5982,7 @@ function cambiaZaino(id, silenzioso){
 function contenitoreMolla(){
   try{ if(typeof noteFlush==='function') noteFlush(); }catch(e){}
   try{ if(typeof letturaFlush==='function') letturaFlush(); }catch(e){}
+  try{ if(typeof ascoltoFlush==='function') ascoltoFlush(); }catch(e){}
   try{
     if(typeof MAPPA!=='undefined' && MAPPA && MAPPA.registro==='mie'){
       mappaFlush();
@@ -5979,7 +6452,7 @@ function scegliMateriale(nome, tipo, num){
     return;
   }
   if(tipo==='html'){ toast('Le pagine web si citano con il link https',false); return; }
-  var sDef = (ANTEPRIMA.tipo==='video' && ANTEPRIMA.file===nome) ? secondoCorrente() : 0;
+  var sDef = (typeof playerAperto==='function' && playerAperto() && PLAYER.file===nome) ? secondoCorrente() : 0;
   askText('Minuto di «'+nome+'» (m:ss oppure secondi)', etichettaMinuto(sDef)).then(function(v){
     if(v===null) return;
     var sec=leggiMinuto(v);
@@ -9287,6 +9760,12 @@ function bancoStrumenti(){
        l'elenco dei formati che sa aprire. Erano due parole che invecchiavano —
        il giorno che entra un terzo tipo di materiale, l'etichetta mente. */
     fonte:     { nome:'Fonti',           famiglia:'fonte',    sel:'#pdfPane' },
+    /* Il player è UNA voce sola per il video e per l'audio. Sono lo stesso
+       gesto — apri, scorri, segna il minuto — e l'audio è un video senza
+       immagine: due voci vorrebbero dire due pannelli, due stati e due strade
+       per ogni cosa (il segno d'ascolto, la citazione, i tasti rapidi), per un
+       guadagno che non c'è — due media non si ascoltano insieme. */
+    player:    { nome:'Player',          famiglia:'fonte',    sel:'#playerPane' },
     appunti:   { nome:'Appunti',         famiglia:'quaderno', sel:'#notePane' },
     mappa:     { nome:'Mappa',           famiglia:'quaderno', sel:'#mappaView' },
     keyword:   { nome:'Parole chiave',   famiglia:'quaderno', sel:'#keywordPane' },
@@ -12323,7 +12802,52 @@ window.addEventListener('keydown', function(e){
   <div id="pdfHost">
     <div id="pdfFrame" tabindex="0" aria-label="Documento"><div class="pdfViewer"></div></div>
   </div>
-  <video id="mediaVideo" controls preload="metadata" hidden></video>
+</section>
+<!-- ============================ IL PLAYER ==================================
+     Ciò che scorre nel tempo — un video, un audio — in uno strumento suo.
+     ⚠️ Il `<video>` stava DENTRO `#pdfPane`, e quel riquadro mostrava o un
+     documento o un media, mai tutti e due: era un solo posto per due cose che
+     si studiano insieme (la dispensa aperta mentre la lezione parla). Ora sono
+     due strumenti del banco, affiancabili — e c'è un elemento SOLO che
+     riproduce, quindi nessun dubbio su chi risponde a 🔖 e ai tasti rapidi.
+     Un `<video>` suona anche l'audio: il tipo cambia il vestito
+     (`#plHost[data-tipo]`), non il motore. -->
+<section id="playerPane" aria-label="Player: video e audio">
+  <div class="tbar plbar">
+    <strong id="plTitle">Player</strong>
+    <!-- La porta per aprire un media: stessa forma del selettore dei documenti
+         nella barra delle fonti, e per la stessa ragione — è una leva del
+         MATERIALE, non della lezione. -->
+    <button class="tbtn" id="plScegli" type="button" aria-haspopup="menu" aria-expanded="false"
+            title="Scegli il video o l’audio" aria-label="Scegli il video o l’audio">Media &#9662;</button>
+    <span class="tbspazio"></span>
+    <i class="tbsep" aria-hidden="true"></i>
+    <span class="plcmd" id="plComandi" hidden>
+      <button class="tbtn" id="plGiu" type="button" title="Indietro di 10 secondi (J)" aria-label="Indietro di 10 secondi">&#8249;&#8249;</button>
+      <button class="tbtn" id="plPlay" type="button" aria-pressed="false" title="Riproduci o metti in pausa (K)" aria-label="Riproduci o metti in pausa">&#9654;</button>
+      <button class="tbtn" id="plSu" type="button" title="Avanti di 10 secondi (L)" aria-label="Avanti di 10 secondi">&#8250;&#8250;</button>
+      <span id="plTempo">0:00</span>
+    </span>
+    <i class="tbsep" aria-hidden="true"></i>
+    <!-- ⚠️ Niente `aria-label` sulla velocità: coprirebbe il testo visibile —
+         cioè il valore — e chi ascolta lo schermo sentirebbe «velocità» senza
+         mai sapere quale. Stessa regola del livello di zoom. -->
+    <button class="tbtn" id="plVel" type="button" hidden title="Velocità di riproduzione (&lt; e &gt;)">1&times;</button>
+    <i class="tbsep" aria-hidden="true"></i>
+    <!-- Le forbici: un fermo immagine è un ritaglio quanto un'area di pagina, e
+         accendono lo stesso modo dell'album. Solo sul video — un audio non ha
+         niente da inquadrare. -->
+    <button class="tbtn" id="plRitaglia" type="button" hidden aria-pressed="false"
+            title="Ritaglia un fermo immagine" aria-label="Ritaglia un fermo immagine">&#9986;</button>
+    <button class="tbtn" id="plNota" type="button" hidden title="Segna questo minuto negli appunti (⌘⇧M)"
+            aria-label="Segna questo minuto negli appunti">&#9998;</button>
+    <button class="tbtn" id="plClose" type="button" aria-label="Chiudi il player">&#10005;</button>
+  </div>
+  <div id="plHost">
+    <video id="mediaVideo" controls preload="metadata"></video>
+    <!-- Lo stato vuoto dice che cosa fare, non che non c'è niente. -->
+    <div class="plvuoto" id="plVuoto">Nessun media aperto.<br>Trascina qui un video o un audio, oppure scegli <b>Media</b>.</div>
+  </div>
 </section>
 <div id="dockSplit" role="separator" aria-orientation="horizontal" aria-label="Ridimensiona anteprima ed editor" title="Trascina per ridimensionare"></div>
 <section id="notePane" aria-label="Editor degli appunti">
@@ -12480,6 +13004,7 @@ window.addEventListener('keydown', function(e){
 <!-- Creare uno zaino: un campo e un bottone, aperti dal «+» accanto alla
      tendina che li elenca. -->
 <div id="pdfDocPop" class="popmenu" role="menu" aria-label="Documenti dello zaino"></div>
+<div id="plMediaPop" class="popmenu" role="menu" aria-label="Video e audio del contenitore"></div>
 <div id="zainoPop" class="popmenu" role="dialog" aria-label="Crea uno zaino">
   <label class="zp-lab" for="zainoNome">Nome della materia</label>
   <div class="zp-riga">

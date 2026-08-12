@@ -336,8 +336,15 @@ const RIQUADRO = `(()=>{ const v=PDFJS.viewer; if(!v) return null;
           return (v && v.videoWidth>0) ? v.videoWidth : null; })()`, 20000);
         ok('il video si carica', 320, pronto);
         ok('le forbici valgono anche qui', false, await val("document.getElementById('pdfRitaglia').hidden"));
-        ok('lo zoom invece no: è una leva del documento', true,
-          await val("document.getElementById('pdfZoom').hidden"));
+        /* ⚠️ Questo controllo è cambiato con il PLAYER. Diceva «lo zoom sparisce
+           quando è in scena un video», e valeva finché il media suonava DENTRO
+           il riquadro del documento: aprirlo chiudeva il PDF, e con lui i suoi
+           comandi. Ora sono due strumenti affiancabili — se un documento è
+           aperto, il suo zoom deve restare acceso mentre il video va. La
+           promessa vera è sempre la stessa, ed è questa: lo zoom appartiene al
+           documento, e nella barra del player non c'è. */
+        ok('lo zoom resta al documento: nella barra del player non c\'è', true,
+          await val("!document.querySelector('#playerPane .pdfzoom, #playerPane #pdfZoom')"));
 
         await val('albumRitaglioModo(true), 1'); await pausa(300);
         /* ⚠️ Si trascina dentro l'IMMAGINE, non dentro l'elemento: un video sta
@@ -368,7 +375,12 @@ const RIQUADRO = `(()=>{ const v=PDFJS.viewer; if(!v) return null;
         await val('albumRitaglioModo(false), 1');
         await val(`albumAzione('fonte', ${'`'}${'$'}{0}${'`'}), 1`.replace('`${0}`', JSON.stringify(vv.id)));
         await pausa(600);
-        ok('«Alla fonte» riapre il VIDEO, non un documento', 'video', await val('ANTEPRIMA.tipo'));
+        /* ⚠️ Si chiede al PLAYER, non ad `ANTEPRIMA`: da quando i riquadri sono
+           due, `ANTEPRIMA` descrive il documento e il media ce l'ha `PLAYER`.
+           Chiedere qui `ANTEPRIMA.tipo==='video'` vorrebbe dire una prova che
+           non può più diventare verde — e la cosa da provare è un'altra: che il
+           ritaglio riapra il MATERIALE da cui viene. */
+        ok('«Alla fonte» riapre il VIDEO, non un documento', nome, await val('PLAYER.file'));
         /* ⚠️ Non si chiede «a che secondo sei ADESSO»: `openVideo` fa partire il
            video, quindi mezzo secondo dopo è già più avanti — e la prima
            versione di questo controllo accusava il salto per una cosa che è il

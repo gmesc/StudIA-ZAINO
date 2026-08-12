@@ -383,6 +383,26 @@ ipcMain.handle('lettura:leggi', (e, { corso } = {}) => letturaLib.leggi(vaultDir
 ipcMain.handle('lettura:segna', (e, { corso, file, pagina } = {}) =>
   letturaLib.segna(vaultDir(), corso, file, pagina));
 
+/* ---- il segno di ascolto: a che secondo si era arrivati ----
+ * Il gemello del segno di lettura, per ciò che scorre nel tempo. Due canali e
+ * non uno solo con un campo in più: una pagina e un secondo si somigliano da
+ * lontano, e un canale che chiede «pagina o secondo?» a ogni chiamata è la
+ * prima riga di un ramo che si biforca ovunque. */
+const ascoltoLib = require('./lib/ascolto');
+ipcMain.handle('ascolto:leggi', (e, { corso } = {}) => ascoltoLib.leggi(vaultDir(), corso));
+ipcMain.handle('ascolto:segna', (e, { corso, file, secondo } = {}) =>
+  ascoltoLib.segna(vaultDir(), corso, file, secondo));
+
+/* ---- i media di un contenitore: video e audio che entrano ----
+ * ⚠️ Qui non si trascrive niente. Un video importato è un video che si guarda e
+ * si cita al secondo: la trascrizione costa minuti di macchina, è un derivato,
+ * e chi la vuole la chiede alla pipeline dei corsi. Lo zaino resta il posto in
+ * cui scrive solo l'utente. */
+const mediaLib = require('./lib/media');
+ipcMain.handle('media:importa', (e, { corso, percorsi } = {}) =>
+  mediaLib.importa(vaultDir(), corso, percorsi));
+ipcMain.handle('media:elenco', (e, { corso } = {}) => mediaLib.elenco(vaultDir(), corso));
+
 /* ---- le fonti di un contenitore: import e indici ----
  * ⚠️ L'indice per pagina lo costruisce il RENDERER con pdf.js — il
  * visualizzatore è già nell'app, e così un documento entra senza Python e senza

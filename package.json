@@ -8,7 +8,7 @@
   "scripts": {
     "start": "electron .",
     "dist:mac": "electron-builder --mac --arm64",
-    "test": "node test/roundtrip.js && node test/mappe.js && node test/modifica.js && node test/evidenze.js && node test/grafo-focus.js && node test/disegna-fonti.js && node test/appunti-rinomina.js && node test/appunti-zaino.js && node test/genera-concetti.js && node test/figure.js && node test/mappa-immagini.js && node test/album.js && node test/ritentativi.js && node test/costi.js && node test/zaini.js && node test/evidenze-pdf.js && node test/lettura.js && node test/fonti.js && node test/note.js && node test/ricerca.js && node test/rimandi.js && node test/identita.js && node test/ripasso.js",
+    "test": "node test/roundtrip.js && node test/mappe.js && node test/modifica.js && node test/evidenze.js && node test/grafo-focus.js && node test/disegna-fonti.js && node test/appunti-rinomina.js && node test/appunti-zaino.js && node test/genera-concetti.js && node test/figure.js && node test/mappa-immagini.js && node test/album.js && node test/ritentativi.js && node test/costi.js && node test/zaini.js && node test/evidenze-pdf.js && node test/lettura.js && node test/fonti.js && node test/ascolto.js && node test/media.js && node test/player.js && node test/note.js && node test/ricerca.js && node test/rimandi.js && node test/identita.js && node test/ripasso.js",
     "studia": "node bin/studia.js"
   },
   "devDependencies": {

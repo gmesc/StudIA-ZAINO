@@ -466,6 +466,24 @@ contextBridge.exposeInMainWorld('vault', {
     leggi: (corso) => ipcRenderer.invoke('lettura:leggi', { corso }),
     segna: (corso, file, pagina) => ipcRenderer.invoke('lettura:segna', { corso, file, pagina })
   },
+  /* Il segno di ASCOLTO: lo stesso patto del segno di lettura, per i secondi.
+     Sta nel vault e non nel `localStorage` perché è un fatto del materiale, non
+     della macchina: lo zaino aperto su un altro computer riprende la lezione
+     dov'era rimasta. */
+  ascolto: {
+    leggi: (corso) => ipcRenderer.invoke('ascolto:leggi', { corso }),
+    segna: (corso, file, secondo) => ipcRenderer.invoke('ascolto:segna', { corso, file, secondo })
+  },
+  /* I media di un contenitore: i video e gli audio che l'utente porta dentro.
+     ⚠️ `percorsoDi` è quello delle fonti, e per la stessa ragione — da Electron
+     32 un `File` trascinato non ha più `.path`. Sta anche qui perché chi
+     trascina un video non deve sapere che la funzione vive sotto «fonti»: due
+     gesti gemelli, due porte gemelle. */
+  media: {
+    percorsoDi: (file) => { try { return webUtils.getPathForFile(file); } catch (e) { return ''; } },
+    importa: (corso, percorsi) => ipcRenderer.invoke('media:importa', { corso, percorsi }),
+    elenco: (corso) => ipcRenderer.invoke('media:elenco', { corso })
+  },
   /* Composer degli indici: righe = lezioni, colonne = indici proposti, e gli otto
      personaggi che si trascinano sulle card. Lo stato arriva in un colpo solo —
      piano, scalette in cache, percorsi già salvati — perché il composer si apre
