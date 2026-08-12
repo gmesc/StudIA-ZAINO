@@ -7,8 +7,8 @@
 >
 > ✅ **Committato il 12 agosto a notte, nei tre commit previsti dal §5** — `01b608e` la scorciatoia,
 > `8a90ff0` le parole chiave, `2ab9b03` il tratto. `App/StudIA.html` e `test/evidenze.js` sono stati
-> spezzati per righe, non buttati in un lotto solo: i tre commit si leggono uno per uno. Resta la
-> copia di sicurezza in `~/Claude/StudIA/lavoro-evidenze-keyword-2026-08-12.patch`, ormai superflua.
+> spezzati per righe, non buttati in un lotto solo: i tre commit si leggono uno per uno. La copia di
+> sicurezza (`lavoro-evidenze-keyword-2026-08-12.patch`) è stata cancellata: il codice è in git.
 >
 > **Regola di lettura**: dove c'è ⚠️ c'è un guasto già pagato — successo davvero, misurato, col
 > rimedio accanto. È la parte utile.
