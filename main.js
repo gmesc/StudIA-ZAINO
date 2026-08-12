@@ -446,6 +446,16 @@ ipcMain.handle('ripasso:registra', (e, { corso, capitolo, domanda, esito, quando
   return scritto.error ? { error: scritto.error } : { error: '', id, carte };
 });
 /**
+ * Gli id di un elenco di carte vive — e basta: non tocca il disco.
+ *
+ * ⚠️ Serve alla vista di ripasso (P3.3), che deve appaiare le domande che ci
+ * sono ADESSO nel corso con la storia scritta su disco, e non può calcolare
+ * l'identità da sé: nel renderer non c'è `crypto`. Stessa ragione di
+ * `ripasso:registra` — la formula dell'identità sta in un posto solo.
+ */
+ipcMain.handle('ripasso:ids', (e, { vive } = {}) =>
+  ({ ids: (vive || []).map((v) => ripassoLib.identita(v && v.capitolo, v && v.domanda)) }));
+/**
  * Toglie lo stato delle carte che non esistono più, e dice quante ne ha tolte.
  * Si chiama all'apertura di un corso: è lì che si scopre che una rigenerazione
  * ha riscritto un quiz. `vive` è l'elenco `{capitolo, domanda}` delle carte che

@@ -78,6 +78,98 @@ sezione('Il giro sul disco');
   check('la storia si ferma a venti risposte', 20, tante[id].storia.length);
 }
 
+sezione('⭐ Gli intervalli (P3.3): quando rivedere una carta');
+{
+  const iv = (storia, esito) => R.prossimoIntervallo(storia, esito);
+  const st = (...esiti) => esiti.map((e) => ({ quando: '2026-08-12T10:00:00.000Z', esito: e }));
+
+  /* La prima volta gli intervalli sono la TABELLA dei gradini, non una formula:
+     una carta appena vista non ha una storia da cui dedurre alcunché. */
+  check('carta nuova: i quattro tempi sono i gradini', [1, 5, 10, 1440],
+    R.anteprima([]).map((b) => b.minuti));
+  check('e i bottoni sono nell\'ordine dichiarato', R.ESITI, R.anteprima([]).map((b) => b.esito));
+
+  /* ⚠️ «Di nuovo» rimanda la carta fra un minuto E azzera le ripetizioni: una
+     carta sbagliata dopo sei mesi di intervalli non torna fra sei mesi. */
+  check('«di nuovo» riporta la carta a un minuto', 1, iv(st('buono', 'buono', 'buono'), 'di-nuovo').minuti);
+  check('e ricomincia dai gradini', [1, 5, 10, 1440],
+    R.anteprima(st('buono', 'buono', 'buono', 'di-nuovo')).map((b) => b.minuti));
+  check('azzerando le ripetizioni', 0, iv(st('buono', 'buono'), 'di-nuovo').ripetizioni);
+
+  /* La scala: 10 min → 1 giorno → poi × facilità. */
+  check('la scala di chi risponde sempre «buono»', ['10 min', '1 giorno', '3 giorni', '8 giorni'],
+    [iv([], 'buono').testo, iv(st('buono'), 'buono').testo,
+      iv(st('buono', 'buono'), 'buono').testo, iv(st('buono', 'buono', 'buono'), 'buono').testo]);
+  /* ⚠️ Ordine garantito: comunque vada la storia, «facile» non può proporre un
+     tempo più corto di «buono», né «buono» più corto di «difficile». È la
+     proprietà che l'utente vede sui bottoni, e l'unica che non deve mai rompersi
+     quando si ritocca la formula. */
+  let storiaccia = [];
+  let ordinati = true;
+  ['buono', 'facile', 'difficile', 'buono', 'buono', 'difficile', 'facile', 'buono'].forEach((e) => {
+    const m = R.anteprima(storiaccia).map((b) => b.minuti);
+    if (!(m[0] <= m[1] && m[1] <= m[2] && m[2] <= m[3])) ordinati = false;
+    storiaccia = storiaccia.concat(st(e));
+  });
+  check('i quattro tempi crescono sempre, a ogni passo della storia', true, ordinati);
+
+  /* La facilità si muove nei limiti dichiarati e non esce mai. */
+  const facili = st(...Array(30).fill('facile'));
+  const difficili = st(...Array(30).fill('difficile'));
+  check('la facilità ha un tetto', 2.7, Math.round(iv(facili, 'facile').ef * 100) / 100);
+  check('e un pavimento', 1.3, Math.round(iv(difficili, 'difficile').ef * 100) / 100);
+  /* ⚠️ Un intervallo di dieci anni è indistinguibile da «mai più»: si taglia a
+     un anno, altrimenti una carta risposta «facile» venti volte sparisce. */
+  check('e l\'intervallo si ferma a un anno', 365 * 1440, iv(facili, 'facile').minuti);
+
+  check('un esito che non esiste non muove niente', 0, iv([], 'fantasia').minuti);
+  check('e una storia sporca si salta senza rompere', 10,
+    iv([{ esito: 'fantasia' }, null, { quando: 'x' }], 'buono').minuti);
+
+  /* Le etichette: corte, perché stanno su un bottone. */
+  check('le etichette dei tempi', ['1 min', '45 min', '2 h', '1 giorno', '13 giorni', '2 mesi', '1 anno'],
+    [1, 45, 120, 1440, 13 * 1440, 60 * 1440, 365 * 1440].map(R.formattaIntervallo));
+
+  /* Da un intervallo a una data, e ritorno. */
+  check('la data del prossimo ripasso è visto + intervallo', '2026-08-12T10:10:00.000Z',
+    R.prossimaData([], 'buono', '2026-08-12T10:00:00.000Z'));
+  check('una data storta non produce una data inventata', '', R.prossimaData([], 'buono', 'domani forse'));
+}
+
+sezione('⭐ `prossimo` si scrive da sé, e la coda lo rispetta');
+{
+  const id = R.identita('cap-09', 'Domanda con i tempi');
+  /* ⚠️ Il campo non è più a carico di chi chiama: lo riempie `registra`, usando
+     la storia di PRIMA di questa risposta. Un campo che ogni chiamante deve
+     ricordarsi di riempire è un campo che prima o poi resta vuoto. */
+  let carte = R.registra({}, id, 'buono', { capitolo: 'cap-09', quando: '2026-08-12T10:00:00.000Z' });
+  check('registrare riempie «prossimo»', '2026-08-12T10:10:00.000Z', carte[id].prossimo);
+  carte = R.registra(carte, id, 'buono', { quando: '2026-08-12T10:10:00.000Z' });
+  check('e alla seconda risposta l\'intervallo è cresciuto', '2026-08-13T10:10:00.000Z', carte[id].prossimo);
+  check('chi lo impone comanda lui', '2030-01-01T00:00:00.000Z',
+    R.registra({}, id, 'buono', { prossimo: '2030-01-01T00:00:00.000Z' })[id].prossimo);
+
+  check('e sopravvive al giro sul disco', '2026-08-13T10:10:00.000Z',
+    (R.salva(VAULT, CORSO, carte), R.leggi(VAULT, CORSO).carte[id].prossimo));
+
+  const ora = '2026-08-12T12:00:00.000Z';
+  check('una carta col tempo scaduto è dovuta', true, R.dovuta({ esito: 'buono', prossimo: '2026-08-12T11:00:00.000Z' }, ora));
+  check('una col tempo futuro no', false, R.dovuta({ esito: 'buono', prossimo: '2026-08-13T11:00:00.000Z' }, ora));
+  /* ⚠️ Le carte scritte prima di P3.3 hanno «prossimo» vuoto: sono dovute, e
+     passano DAVANTI. Metterle in fondo vorrebbe dire non riproporle mai, e la
+     storia che l'utente ha già pagato varrebbe zero. */
+  check('una voce senza tempo è dovuta, non futura', true, R.dovuta({ esito: 'buono', prossimo: '' }, ora));
+  check('e nemmeno una data illeggibile la mette al sicuro', true, R.dovuta({ esito: 'buono', prossimo: 'boh' }, ora));
+
+  const mazzo = {
+    vecchia: { id: 'vecchia', esito: 'buono', prossimo: '' },
+    scaduta: { id: 'scaduta', esito: 'buono', prossimo: '2026-08-12T09:00:00.000Z' },
+    futura: { id: 'futura', esito: 'buono', prossimo: '2026-08-13T09:00:00.000Z' }
+  };
+  check('la coda tiene solo le dovute, l\'arretrato per primo',
+    ['vecchia', 'scaduta'], R.coda(mazzo, ora).map((v) => v.id));
+}
+
 sezione('Ciò che non si capisce non si crede');
 {
   fs.writeFileSync(path.join(R.dir(VAULT, CORSO), R.FILE), '{ non json', 'utf-8');

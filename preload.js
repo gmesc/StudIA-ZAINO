@@ -460,7 +460,11 @@ contextBridge.exposeInMainWorld('vault', {
        posto solo (`lib/ripasso.js`), e qui si mandano capitolo e domanda. */
     registra: (corso, capitolo, domanda, esito) =>
       ipcRenderer.invoke('ripasso:registra', { corso, capitolo, domanda, esito }),
-    pota: (corso, vive) => ipcRenderer.invoke('ripasso:pota', { corso, vive })
+    pota: (corso, vive) => ipcRenderer.invoke('ripasso:pota', { corso, vive }),
+    /* Gli id delle carte che esistono adesso: la vista di ripasso ci appaia la
+       storia letta dal disco. Non tocca niente — è solo la formula, che vive di
+       là perché il renderer non ha `crypto`. */
+    ids: (vive) => ipcRenderer.invoke('ripasso:ids', { vive })
   },
   lettura: {
     leggi: (corso) => ipcRenderer.invoke('lettura:leggi', { corso }),
