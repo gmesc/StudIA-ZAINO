@@ -3368,6 +3368,20 @@ function importLessonsFromText(text){
    singola lezione. Resta il trascinamento di un .json vecchio, per chi ne ha. */
 function readLessonFile(f){
   if(!f) return;
+  /* ⚠️ Solo un `.json`, e il rifiuto dice che cosa fare. Senza questa guardia
+     qualunque file caduto qui veniva letto come TESTO e passato a `JSON.parse`:
+     un video trascinato in modalità corso rispondeva «Unexpected token '',
+     " ftypmp"… is not valid JSON» — cioè i primi byte dell'MP4 sbattuti in
+     faccia a chi voleva solo salvare una lezione registrata. Misurato il 12
+     agosto 2026, ed è il tipo di messaggio che fa credere rotta l'app. */
+  if(!/\.json$/i.test(f.name||'')){
+    if(typeof Lettore!=='undefined' && Lettore.tipoDi(f.name)){
+      toast('I video e gli audio si portano dentro uno ZAINO: passa alla modalità zaino e riprova', false);
+    } else {
+      toast('Non so che farmene di «'+(f.name||'questo file')+'»: qui si rilascia una lezione .json', false);
+    }
+    return;
+  }
   const r=new FileReader();
   r.onload=function(){ try{ importLessonsFromText(r.result); }catch(err){ toast('Import non riuscito: '+err.message, false); } };
   r.readAsText(f);
