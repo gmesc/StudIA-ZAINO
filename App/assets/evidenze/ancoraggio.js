@@ -121,6 +121,75 @@
     return testo.replace(/\s+/g, ' ');
   }
 
+  /* ------------------------------------------------ quante parole PIENE ci sono */
+
+  /**
+   * Le parole vuote: articoli e preposizioni, semplici e articolate.
+   *
+   * Non contano perché non sono quello che si evidenzia. «Stati Uniti
+   * d'America» è UN concetto di tre parole piene, e contando i token nudi ne
+   * farebbe quattro — cioè cadrebbe fuori dalla regola delle tre proprio nel
+   * caso per cui la regola è stata scritta.
+   *
+   * ⚠️ Elencate senza accenti né maiuscole perché il confronto avviene su testo
+   * già abbassato: una voce scritta «Il» qui dentro non combacerebbe mai.
+   */
+  var VUOTE = {};
+  ('il lo la i gli le l un uno una;' +
+   'di a da in con su per tra fra;' +
+   'del dello della dell dei degli delle;' +
+   'al allo alla all ai agli alle;' +
+   'dal dallo dalla dall dai dagli dalle;' +
+   'nel nello nella nell nei negli nelle;' +
+   'sul sullo sulla sull sui sugli sulle;' +
+   'col collo colla coi cogli colle;' +
+   'd n').split(/[;\s]+/).forEach(function (p) { if (p) VUOTE[p] = true; });
+
+  /**
+   * Le parole PIENE di un frammento: quelle che restano tolti articoli e
+   * preposizioni.
+   *
+   *   parolePiene("Stati Uniti d'America")  → ['Stati', 'Uniti', 'America']
+   *   parolePiene("la fotosintesi")         → ['fotosintesi']
+   *
+   * Serve alla regola «≤ 3 parole appuntate diventano anche parola chiave», e
+   * sta qui perché è testo puro — la stessa ragione per cui ci sta `normalizza`.
+   *
+   * Tre scelte, tutte e tre visibili negli esempi sopra:
+   * 1. **L'apostrofo separa**: `d'America` sono due token, e il primo è vuoto.
+   *    Splittare solo sugli spazi terrebbe l'articolo attaccato al nome e lo
+   *    conterebbe come parola piena.
+   * 2. **La punteggiatura ai bordi si toglie**: chi seleziona con un doppio
+   *    click si porta dietro la virgola, e «sinapsi,» non è una parola diversa
+   *    da «sinapsi».
+   * 3. **I trattini NON separano**: «pesco-mandorlo» è una parola sola perché
+   *    così la legge chi studia; separarli ne farebbe due e la selezione
+   *    cadrebbe fuori dalla regola per un trattino.
+   */
+  function parolePiene(testo) {
+    if (typeof testo !== 'string') return [];
+    /* Gli apostrofi tipografici (’ ‛ ´) diventano quello dritto prima di
+       tagliare: i PDF ne sono pieni, e senza questa riga `dell’acqua` resterebbe
+       un token solo — con l'articolo dentro, contato come parola piena. */
+    var grezzo = testo.replace(/[‘’ʼ´]/g, "'");
+    var pezzi = grezzo.split(/[\s']+/);
+    var piene = [];
+    pezzi.forEach(function (p) {
+      /* Via la punteggiatura ai due bordi, lasciando stare quella interna:
+         `«sinapsi,»` è la parola «sinapsi» con addosso i segni di chi l'ha
+         selezionata, e `Sig.ra` resta intera.
+         ⚠️ Il taglio è cieco ai bordi, quindi `d.C.` torna come `d.C` — il punto
+         finale se ne va con le virgolette. Non si corregge: qui si CONTA, e un
+         punto in meno non cambia né il conteggio né quello che l'utente vede
+         evidenziato (l'evidenza porta il testo selezionato, non questo). */
+      var pulito = p.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+      if (!pulito) return;
+      if (VUOTE[pulito.toLowerCase()]) return;
+      piene.push(pulito);
+    });
+    return piene;
+  }
+
   /* -------------------------------------------------------- la costruzione */
 
   /**
@@ -300,5 +369,6 @@
     return { trovate: trovate, orfane: orfane, sovrapposte: sovrapposte };
   }
 
-  return { normalizza: normalizza, daTesto: daTesto, trova: trova, risolvi: risolvi };
+  return { normalizza: normalizza, parolePiene: parolePiene,
+           daTesto: daTesto, trova: trova, risolvi: risolvi };
 }));

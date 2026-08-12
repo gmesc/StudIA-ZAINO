@@ -392,8 +392,8 @@ sezione('Purezza — niente di ciò che entra viene toccato');
   const stesso = A.daTesto(PARAGRAFO, 10, 20);
   check('e chiamare trova due volte dà due volte lo stesso esito',
     A.trova(PARAGRAFO, stesso), A.trova(PARAGRAFO, stesso));
-  check('il modulo espone quattro funzioni e nessuno stato',
-    ['daTesto', 'normalizza', 'risolvi', 'trova'], Object.keys(A).sort());
+  check('il modulo espone cinque funzioni e nessuno stato',
+    ['daTesto', 'normalizza', 'parolePiene', 'risolvi', 'trova'], Object.keys(A).sort());
 }
 
 sezione('Il confine: qui dentro non entra il DOM');
@@ -548,6 +548,37 @@ sezione('Un file illeggibile non si spaccia per «nessuna evidenza»');
   const r = E.leggi(VAULT, 'corso-rotto');
   check('lo dice invece di tacere', 'il file non è JSON valido', r.error);
   check('e non inventa evidenze', 0, r.evidenze.length);
+}
+
+/* La regola «≤ 3 parole appuntate diventano anche parola chiave» si gioca tutta
+   su questo conteggio: se sbaglia, la selezione giusta non diventa keyword — o,
+   peggio, mezza frase ci diventa. Qui si prova il conteggio, non l'interfaccia
+   che lo consulta. */
+sezione('Quante parole PIENE ha un frammento');
+{
+  check('una parola sola', ['fotosintesi'], A.parolePiene('fotosintesi'));
+  check('l\'articolo non conta', ['fotosintesi'], A.parolePiene('la fotosintesi'));
+  check('l\'apostrofo separa, e l\'articolo apostrofato non conta',
+    ['Stati', 'Uniti', 'America'], A.parolePiene("Stati Uniti d'America"));
+  check('anche con l\'apostrofo tipografico dei PDF',
+    ['acqua'], A.parolePiene('dell’acqua'));
+  check('le preposizioni articolate non contano',
+    ['legge', 'gravitazione'], A.parolePiene('la legge della gravitazione'));
+  check('la punteggiatura ai bordi si toglie', ['sinapsi'], A.parolePiene('«sinapsi,»'));
+  check('quella dentro la parola resta', ['d.C'], A.parolePiene('d.C.'));
+  check('il trattino NON separa: è una parola sola',
+    ['pesco-mandorlo'], A.parolePiene('pesco-mandorlo'));
+  check('quattro piene restano quattro',
+    ['sistema', 'nervoso', 'centrale', 'periferico'],
+    A.parolePiene('il sistema nervoso centrale e periferico').filter(function (p) { return p !== 'e'; }));
+  check('gli spazi multipli non fanno parole finte', ['alfa', 'beta'], A.parolePiene('  alfa\n\n  beta  '));
+  /* ⚠️ «a» È una preposizione, e questo controllo dice che la regola non fa
+     eccezioni per le parole corte: chi evidenzia «da a b» sta evidenziando una
+     parola piena sola. */
+  check('«a» e «da» sono preposizioni anche da sole', ['b'], A.parolePiene('da a b'));
+  neutro('un ingresso che non è una stringa dà elenco vuoto', [], function () { return A.parolePiene(null); });
+  neutro('e una stringa di soli articoli pure', [], function () { return A.parolePiene('il la di'); });
+  puro('parolePiene', ['x'], function (x) { A.parolePiene('la casa'); return x; });
 }
 
 try { fs.rmSync(VAULT, { recursive: true, force: true }); } catch (e) { /* la cartella era temporanea */ }

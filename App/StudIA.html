@@ -857,6 +857,14 @@
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
   .toast.ok{ border-left:5px solid var(--teal); }
   .toast.no{ border-left:5px solid var(--yellow-strong); }
+  /* Il toast che si può spegnere porta dentro una casella da spuntare, e una
+     casella dentro un elemento `pointer-events:none` non si clicca: la deroga
+     vale SOLO per questa variante, o qualunque toast comincerebbe a rubare i
+     click al testo che ci sta sotto. */
+  .toast--azione{ pointer-events:auto; }
+  .toast__spegni{ display:flex; align-items:center; gap:.4rem; margin-top:.5rem;
+    font-size:11px; color:var(--ink-soft,var(--ink)); opacity:.85; cursor:pointer; }
+  .toast__spegni input{ cursor:pointer; }
   /* Il velo del trascinamento.
      ⚠️ Compare SOLO quando quello che arriva sono FILE. Prima si accendeva a
      ogni `dragover`, quindi anche spostando una parola chiave sulla mappa o
@@ -3840,6 +3848,55 @@ function toast(msg,ok){
   t.textContent=msg; t.className='toast '+(ok?'ok':'no')+' show';
   clearTimeout(t._t); t._t=setTimeout(function(){ t.className='toast'; },3400);
 }
+/**
+ * Un toast che si può spegnere per sempre.
+ *
+ * Serve agli avvisi che spiegano una REGOLA — perché una selezione è diventata
+ * parola chiave e un'altra no: la prima volta è la cosa che rende la regola
+ * visibile, la ventesima è rumore addosso a un gesto che si fa venti volte in
+ * una lezione. Chi ha capito lo spegne, e chi non l'ha ancora capito continua
+ * a leggerlo.
+ *
+ * ⚠️ Due differenze dal toast normale, e nessuna è un vezzo:
+ * 1. **Resta più a lungo e si ferma sotto il mouse.** 3,4 s bastano a leggere
+ *    una riga, non a decidere di spegnerla e centrare una casella da 13px.
+ * 2. **`pointer-events` torna attivo** (`.toast--azione`): senza, la casella
+ *    c'è, si vede, e non si clicca.
+ * La preferenza vive in `localStorage` sotto la chiave passata: è una scelta di
+ * comodità di questo computer, non un dato del vault — se ne va con la cache e
+ * non c'è niente da migrare.
+ */
+function toastSpento(chiave){
+  try{ return localStorage.getItem('studia.avvisi.'+chiave)==='no'; }catch(e){ return false; }
+}
+function toastSpegnibile(msg, ok, chiave, etichetta){
+  if(toastSpento(chiave)) return;
+  var t=$('#toast');
+  if(!t){ t=document.createElement('div'); t.id='toast'; document.body.appendChild(t); }
+  t.innerHTML='';
+  var riga=document.createElement('div'); riga.textContent=msg; t.appendChild(riga);
+  var lab=document.createElement('label'); lab.className='toast__spegni';
+  var box=document.createElement('input'); box.type='checkbox';
+  box.setAttribute('data-toast-spegni', chiave);
+  lab.appendChild(box);
+  lab.appendChild(document.createTextNode(etichetta||'Non avvisarmi più'));
+  t.appendChild(lab);
+  t.className='toast toast--azione '+(ok?'ok':'no')+' show';
+  var chiudi=function(){ t.className='toast toast--azione'; };
+  clearTimeout(t._t); t._t=setTimeout(chiudi, 7000);
+  /* Il mouse sopra sospende: si sta leggendo, o si sta per spegnere. */
+  t.onmouseenter=function(){ clearTimeout(t._t); };
+  t.onmouseleave=function(){ clearTimeout(t._t); t._t=setTimeout(chiudi, 2200); };
+}
+/* La casella parla con `change`, delegato come tutto il resto dell'app: il nodo
+   del toast si riscrive a ogni avviso, e un listener attaccato al momento
+   morirebbe col nodo che l'ha visto nascere. */
+document.addEventListener('change', function(e){
+  var b=e.target && e.target.getAttribute && e.target.getAttribute('data-toast-spegni');
+  if(!b) return;
+  try{ localStorage.setItem('studia.avvisi.'+b, e.target.checked?'no':'si'); }catch(err){}
+  if(e.target.checked){ var t=$('#toast'); if(t) t.className='toast toast--azione'; }
+});
 function importLessonsFromText(text){
   const data=JSON.parse(text);
   const list=Array.isArray(data)?data:((data && Array.isArray(data.lessons))?data.lessons:[data]);
@@ -7169,11 +7226,15 @@ function noteOpen(file){
   try{ refreshNoteUI(); }catch(e){}
   setTimeout(function(){ mde.codemirror.refresh(); mde.codemirror.focus(); },60);
 }
+/* ⚠️ Torna `true` solo se l'appunto è nato davvero. Serve a chi appunta una
+   selezione: la regola delle parole chiave si applica DOPO, e deve poter
+   distinguere «creato» da «annullato al titolo» — un'evidenza accesa dopo un
+   annullamento sarebbe un giallo comparso dal nulla. */
 async function noteNew(anchor, origine, stile){
-  var ctx=curCtx(); if(!ctx){ toast('Apri un capitolo del vault per prendere appunti',false); return; }
-  var api=notesApi(); if(!api){ toast('Appunti disponibili solo nell’app',false); return; }
+  var ctx=curCtx(); if(!ctx){ toast('Apri un capitolo del vault per prendere appunti',false); return false; }
+  var api=notesApi(); if(!api){ toast('Appunti disponibili solo nell’app',false); return false; }
   var title=await askText('Titolo dell’appunto', 'APPUNTI');
-  if(title===null) return; title=(title||'APPUNTI').trim()||'APPUNTI';
+  if(title===null) return false; title=(title||'APPUNTI').trim()||'APPUNTI';
   var body=anchor? frammentoAppuntato(anchor, ctx, origine, stile) : '';
   /* ⚠️ `materiale`/`pagina` arrivano dal CONTESTO e non da `origine`: sono i due
      campi con cui, nello zaino, l'appunto dice da dove nasce (Z6), e devono
@@ -7184,10 +7245,11 @@ async function noteNew(anchor, origine, stile){
              capitoloId:ctx.capitoloId, capitoloFile:ctx.capitoloFile,
              materiale:ctx.materiale||'', pagina:ctx.pagina||'', anchor:anchor||'' };
   var res=api.save(ctx.courseId, null, meta, body);
-  if(!res || res.error){ toast('Salvataggio fallito: '+((res&&res.error)||'?'),false); return; }
+  if(!res || res.error){ toast('Salvataggio fallito: '+((res&&res.error)||'?'),false); return false; }
   NOTES.courseId=ctx.courseId;
   notesReload(); refreshNoteUI(); noteOpen(res.file);
   toast('Appunto creato',true);
+  return true;
 }
 /**
  * Come si presenta, dentro un appunto, un frammento estratto dal capitolo.
@@ -7315,13 +7377,85 @@ function origineDaRange(range){
  */
 async function noteAppend(testo, origine, stile){
   var t=String(testo==null?'':testo).trim();
-  if(!t) return;
-  var ctx=curCtx(); if(!ctx){ toast('Apri un corso o uno zaino per prendere appunti',false); return; }
-  if(!notesApi()){ toast('Appunti disponibili solo nell’app',false); return; }
+  if(!t) return false;
+  var ctx=curCtx(); if(!ctx){ toast('Apri un corso o uno zaino per prendere appunti',false); return false; }
+  if(!notesApi()){ toast('Appunti disponibili solo nell’app',false); return false; }
   if(!NOTES.cur || !NOTES.mde){ return noteNew(t, origine, stile); }   // niente di aperto: se ne crea uno
   noteInserisci(frammentoAppuntato(t, ctx, origine, stile));
   toast('Appuntato in «'+((NOTES.cur&&NOTES.cur.title)||'appunto')+'»', true);
+  return true;
 }
+/**
+ * Quante parole piene può avere un frammento perché appuntarlo lo renda anche
+ * una parola chiave. Tre: è la misura di un concetto — «membrana plasmatica»,
+ * «Stati Uniti d'America» — mentre quattro sono già un pezzo di frase, e una
+ * lista di parole chiave fatta di pezzi di frase non è più una lista di parole
+ * chiave.
+ */
+var KW_MAX_PAROLE = 3;
+
+/**
+ * «Appunta» sulla selezione: scrive nell'appunto e, se il frammento è corto,
+ * lo evidenzia anche — cioè lo fa entrare nelle parole chiave.
+ *
+ * Il gesto è uno solo perché l'intenzione è una sola: chi porta tre parole
+ * negli appunti sta segnando un termine, e chiedergli un secondo gesto
+ * («Keyword») per dire la stessa cosa è un passaggio che si dimentica — e una
+ * lista di parole chiave a metà è peggio di una lista che non c'è, perché
+ * sembra completa.
+ *
+ * ⚠️ Sta in una funzione sua e non dentro `noteAppend` per due ragioni:
+ * `noteAppend` non ha il `Range` (ha solo l'origine, che è un indirizzo), e
+ * soprattutto è la porta da cui passa OGNI scrittura negli appunti — compresa
+ * quella della parola chiave portata nell'appunto, che da lì rientrerebbe qui
+ * e si evidenzierebbe da sola in un giro chiuso.
+ *
+ * Le parole si contano **piene**: articoli e preposizioni non contano
+ * (`EvidenzeAncoraggio.parolePiene`), altrimenti «la legge della gravitazione»
+ * sarebbe quattro parole e resterebbe fuori proprio nel caso per cui la regola
+ * esiste.
+ *
+ * ⚠️ Si evidenzia DOPO aver scritto l'appunto, e solo se l'appunto è andato:
+ * `noteAppend` può fermarsi (nessun corso, creazione annullata), e un'evidenza
+ * accesa senza l'appunto che l'ha causata sarebbe un giallo comparso dal nulla.
+ */
+async function appuntaSelezione(testo, range, stile){
+  var piene=(typeof EvidenzeAncoraggio!=='undefined')
+    ? EvidenzeAncoraggio.parolePiene(testo) : [];
+  var breve=piene.length>0 && piene.length<=KW_MAX_PAROLE;
+  /* ⚠️ L'ancoraggio si prepara ADESSO, col `Range` ancora vivo e prima di
+     qualunque attesa: vedi `evidenzaPrepara`. Il colore è quello corrente, lo
+     stesso della voce «Keyword» e della riga dei colori — la parola nata così
+     non deve distinguersi da una segnata a mano, è la stessa cosa con un gesto
+     in meno.
+     Se non si riesce ad ancorare torna `null` in silenzio: l'appunto si scrive
+     lo stesso — è il gesto che l'utente ha chiesto — e il motivo lo dice il
+     toast finale, dopo, invece di anticipare un errore sulle evidenze a chi ha
+     premuto «Appunta». */
+  var prep=breve ? evidenzaPrepara(range, null, { silenzioso:true }) : null;
+
+  var esito=await noteAppend(testo, origineDaRange(range), stile);
+  if(esito===false) return;                       // l'appunto non c'è: niente da segnare
+
+  if(!piene.length) return;                       // solo punteggiatura: non è una parola chiave
+  if(!breve){
+    toastSpegnibile('Appuntato. Troppo lungo per una parola chiave: '+piene.length+
+      ' parole piene, il massimo è '+KW_MAX_PAROLE+'.', true, 'kwAuto');
+    return;
+  }
+  if(!prep){
+    /* Corto quanto basta, ma qui non si può evidenziare: capita nella pagina di
+       un documento che non è del corso aperto, o prima che il modulo delle
+       evidenze sia pronto. Lo si dice invece di lasciar credere che la regola
+       delle tre parole non funzioni. */
+    toastSpegnibile('Appuntato. Qui non si può aggiungere una parola chiave.', true, 'kwAuto');
+    return;
+  }
+  if(evidenzaScrivi(prep, { silenzioso:true })){
+    toastSpegnibile('Appuntato, e aggiunto alle parole chiave.', true, 'kwAuto');
+  }
+}
+
 /**
  * Accoda del markdown all'appunto aperto.
  *
@@ -7912,7 +8046,7 @@ function selAzione(az, testo, range){
       function(){ toast('Copia non riuscita',false); });
     return;
   }
-  if(az==='appunta'){ noteAppend(testo, origineDaRange(range)); return; }
+  if(az==='appunta'){ appuntaSelezione(testo, range); return; }
   if(az==='keyword'){ evidenzia(range, evidenzeColore()); return; }
   if(az==='cancella'){ evidenzaCancella(range); return; }
   if(az==='mappa'){ mappaEstrai(testo, range); return; }
@@ -7946,7 +8080,10 @@ document.addEventListener('click', function(e){
   var k=b.getAttribute('data-app')||'', testo=SELMENU.testo, range=SELMENU.range;
   selMenuChiudi(); selBarraChiudi();
   appuntaStileScegli(k);
-  noteAppend(testo, origineDaRange(range), k);
+  /* Anche appuntare DENTRO un riquadro è appuntare: la regola delle parole
+     chiave vale qui come nella voce «Appunta», o dipenderebbe da quale dei due
+     bottoni si è premuto. */
+  appuntaSelezione(testo, range, k);
 });
 /* La riga dei colori: sceglierne uno evidenzia CON quello e lo rende il colore
    di adesso. Due gesti in uno perché sono la stessa intenzione — «questa parola
@@ -8301,6 +8438,28 @@ function evidenzeDisegna(){
    un elenco. */
 var KW={ ordine:'alfa', filtro:'' };
 function kwOrfana(e){ return (EVIDENZE.orfaneId||[]).indexOf(e.id)>=0; }
+/**
+ * Quali evidenze sono PAROLE CHIAVE, e non semplici sottolineature.
+ *
+ * Evidenziare e fare una parola chiave sono due gesti diversi con lo stesso
+ * strumento: si sottolinea una frase per ritrovarla rileggendo, si segna un
+ * termine perché è un termine. Il colore serve a entrambi; l'elenco no — una
+ * lista di parole chiave che contiene periodi interi non è più una lista di
+ * parole chiave, ed è esattamente quello che si vedeva.
+ *
+ * Il metro è lo stesso di «Appunta» (`KW_MAX_PAROLE`, parole PIENE): un solo
+ * numero decide chi entra nell'elenco, da qualunque strada l'evidenza sia nata.
+ *
+ * ⚠️ Filtra la VISTA, non il file: le sottolineature lunghe restano su disco e
+ * restano accese nel testo, semplicemente non affollano l'elenco. Niente da
+ * migrare, e alzando la soglia domani tornerebbero da sole.
+ */
+function kwEParolaChiave(e){
+  if(!e || typeof e.exact!=='string') return false;
+  if(typeof EvidenzeAncoraggio==='undefined') return true;   // senza il modulo non si nasconde niente
+  var n=EvidenzeAncoraggio.parolePiene(e.exact).length;
+  return n>0 && n<=KW_MAX_PAROLE;
+}
 /** Il markdown che un chip lascia cadere: la parola con il rimando al suo
  *  capitolo. Una funzione sua perché la usano il trascinamento e — domani —
  *  qualunque altro modo di travasare una parola chiave altrove. */
@@ -8323,16 +8482,26 @@ function keywordDisegna(){
          b.title=(KW.ordine==='alfa'?'In ordine alfabetico — premi per ordinare per data'
                                     :'Per data di aggiunta — premi per ordinare in alfabetico'); }
   var q=KW.filtro.trim().toLowerCase();
-  var lista=(EVIDENZE.elenco||[]).filter(function(e){
+  /* Prima il metro delle parole chiave, poi la ricerca dell'utente: cercare non
+     deve far comparire una frase che l'elenco non mostrerebbe comunque. */
+  var chiavi=(EVIDENZE.elenco||[]).filter(kwEParolaChiave);
+  var lista=chiavi.filter(function(e){
     return !q || e.exact.toLowerCase().indexOf(q)>=0 || String(e.capitolo||'').toLowerCase().indexOf(q)>=0;
   });
   lista.sort(KW.ordine==='alfa'
     ? function(a,b2){ return a.exact.localeCompare(b2.exact, 'it'); }
     : function(a,b2){ return String(b2.creato||'').localeCompare(String(a.creato||'')); });
   if(!lista.length){
-    host.innerHTML='<div class="kwvuoto">'+((EVIDENZE.elenco||[]).length
-      ? 'Nessuna parola chiave con questo testo.'
-      : 'Nessuna parola chiave. Selezionane una nel capitolo o in un documento e scegli «Keyword».')+'</div>';
+    /* Tre vuoti diversi, e vanno detti diversi. Il terzo è quello nuovo: ci sono
+       sottolineature, ma sono tutte frasi — senza questa riga l'elenco sembra
+       rotto proprio a chi ha appena evidenziato qualcosa. */
+    var quante=(EVIDENZE.elenco||[]).length;
+    var msg;
+    if(q && chiavi.length) msg='Nessuna parola chiave con questo testo.';
+    else if(quante) msg='Nessuna parola chiave: le sottolineature che hai fatto sono più lunghe di '+
+      KW_MAX_PAROLE+' parole. Restano accese nel testo; nell’elenco entrano i termini brevi.';
+    else msg='Nessuna parola chiave. Selezionane una nel capitolo o in un documento e scegli «Keyword».';
+    host.innerHTML='<div class="kwvuoto">'+msg+'</div>';
     return;
   }
   host.innerHTML=lista.map(function(e){
@@ -8527,28 +8696,79 @@ function evidenzeColoreScegli(c){
  * dai titoli — e l'evidenza è idempotente: lo stesso punto ha lo stesso id, e
  * ri-evidenziarlo cambia solo il colore.
  */
-function evidenzia(range, colore){
-  var api=evidenzeApi(); if(!api){ toast('Evidenze disponibili solo nell’app',false); return; }
-  if(!corsoAttivo()){ toast('Apri un corso o uno zaino',false); return; }
-  if(!evidenzePronte()){ toast('Modulo delle evidenze non caricato',false); return; }
+/**
+ * Il primo tempo: dal `Range` VIVO al selettore, senza scrivere niente.
+ *
+ * ⚠️ Esiste separato per una ragione precisa. `appuntaSelezione` scrive prima
+ * l'appunto — che è `await`, e nel frattempo l'editor si apre e il layout
+ * cambia — e solo dopo evidenzia. Ma un `Range` punta a NODI del DOM, e pdf.js
+ * ricostruisce il text layer delle pagine quando lo spazio cambia: al ritorno
+ * dall'`await` quei nodi possono essere già stati buttati, e l'ancoraggio
+ * fallirebbe con «non riesco ad ancorare» su una selezione che c'era.
+ * Il selettore invece è testo — `{exact, prefix, suffix}` — e non ha nodi da
+ * perdere: preparato PRIMA dell'attesa, resta valido anche se il DOM sotto è
+ * stato rifatto.
+ *
+ * Torna `null` avendo già detto perché, come faceva `evidenzia` prima — salvo
+ * `opt.silenzioso`, che serve a chi prepara per conto di un ALTRO gesto:
+ * appuntando, questa funzione gira prima che l'appunto sia scritto, e chi ha
+ * chiesto «Appunta» non deve ricevere come primo messaggio un errore sulle
+ * evidenze. Là il motivo lo dice il toast finale, dopo, in una frase sola.
+ */
+function evidenzaPrepara(range, colore, opt){
+  var muto=!!(opt && opt.silenzioso);
+  function no(msg){ if(!muto) toast(msg,false); return null; }
+  var api=evidenzeApi(); if(!api){ return no('Evidenze disponibili solo nell’app'); }
+  if(!corsoAttivo()){ return no('Apri un corso o uno zaino'); }
+  if(!evidenzePronte()){ return no('Modulo delle evidenze non caricato'); }
   /* Su quale superficie si sta evidenziando lo dice il `Range`, non lo stato
      dell'app: la stessa funzione serve il capitolo e la pagina di un documento,
      e in un corso possono essere a schermo tutti e due nello stesso momento. */
   var q=evMappaPerRange(range);
-  if(!q){ toast('Qui non si può evidenziare',false); return; }
+  if(!q){ return no('Qui non si può evidenziare'); }
   var indirizzo=evIndirizzo(q.sup);
-  if(!indirizzo){ toast('Apri un capitolo del vault',false); return; }
+  if(!indirizzo){ return no('Apri un capitolo del vault'); }
   var m=q.m, pos=offsetDaRange(m, range);
-  if(!pos){ toast('Non riesco ad ancorare questa selezione',false); return; }
+  if(!pos){ return no('Non riesco ad ancorare questa selezione'); }
   var sel=EvidenzeAncoraggio.daTesto(m.testo, pos.inizio, pos.fine);
-  if(!sel){ toast('Selezione troppo corta',false); return; }
-  var r=api.aggiungi(corsoAttivo(), Object.assign({
-    exact:sel.exact, prefix:sel.prefix, suffix:sel.suffix, colore:colore||evidenzeColore()
-  }, indirizzo));
-  if(r && r.error){ toast('Non salvata: '+r.error,false); return; }
-  EVIDENZE.elenco=r.evidenze; EVIDENZE.corso=corsoAttivo();
+  if(!sel){ return no('Selezione troppo corta'); }
+  /* Il corso si porta dietro adesso: fra il primo e il secondo tempo l'utente
+     può averne aperto un altro, e l'evidenza andrebbe a finire nel corso
+     sbagliato — o in un corso che non c'è più. */
+  return { corso:corsoAttivo(), indirizzo:indirizzo, sel:sel,
+           colore: colore || evidenzeColore() };
+}
+/**
+ * Il secondo tempo: scrive. `opt.silenzioso` tace SOLO il «Parola chiave
+ * aggiunta» della riuscita — gli avvisi di guasto restano, perché un'evidenza
+ * che non si è salvata deve dirlo anche quando la chiama qualcun altro.
+ */
+function evidenzaScrivi(prep, opt){
+  if(!prep) return false;
+  var api=evidenzeApi(); if(!api) return false;
+  if(prep.corso!==corsoAttivo()){ toast('Il corso è cambiato: parola chiave non aggiunta',false); return false; }
+  var r=api.aggiungi(prep.corso, Object.assign({
+    exact:prep.sel.exact, prefix:prep.sel.prefix, suffix:prep.sel.suffix,
+    colore:prep.colore
+  }, prep.indirizzo));
+  if(r && r.error){ toast('Non salvata: '+r.error,false); return false; }
+  EVIDENZE.elenco=r.evidenze; EVIDENZE.corso=prep.corso;
   evidenzeDisegna();
-  toast('Parola chiave aggiunta',true);
+  /* ⚠️ Il messaggio dice quello che è successo davvero. Una frase lunga si
+     evidenzia — il colore c'è, nel testo si vede — ma NON entra nell'elenco
+     (`kwEParolaChiave`): annunciarla come «parola chiave aggiunta» manderebbe a
+     cercarla in una lista dove non c'è. */
+  if(!(opt && opt.silenzioso)){
+    toast(kwEParolaChiave({ exact:prep.sel.exact })
+      ? 'Parola chiave aggiunta'
+      : 'Sottolineato. Troppo lungo per l’elenco delle parole chiave', true);
+  }
+  return true;
+}
+/** I due tempi insieme, che è il gesto normale: «Keyword» e la riga dei colori
+ *  evidenziano subito, senza niente in mezzo. */
+function evidenzia(range, colore, opt){
+  return evidenzaScrivi(evidenzaPrepara(range, colore, opt), opt);
 }
 /** Quale evidenza sta sotto la selezione: serve a «Cancella», che altrimenti
  *  dovrebbe chiedere all'utente quale delle sovrapposte intende. Vince quella
