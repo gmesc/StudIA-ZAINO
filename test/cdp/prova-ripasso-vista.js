@@ -262,7 +262,7 @@ function ok(n, atteso, avuto) {
     const inTestata=!!(b && b.closest('.topbar'));
     return { c_e:!!b, inTestata:inTestata, nascosto:b?b.hidden:null,
              numero:b?Number((b.querySelector('.ripn')||{}).textContent||0):0,
-             titolo:b?b.title:'',
+             titolo:b?(b.dataset.tip||''):'', titleSistema:b?(b.getAttribute('title')||''):'',
              etichetta:b?((b.querySelector('.riplab')||{}).textContent||''):'',
              conti:{ mai:RIPCONTO.mai, attesa:RIPCONTO.attesa, oggi:RIPCONTO.oggi, totale:RIPCONTO.totale } }; })()`);
   console.log('   ' + conto.conti.oggi + ' oggi · ' + conto.conti.mai + ' mai · ' + conto.conti.attesa + ' in attesa');
@@ -276,11 +276,15 @@ function ok(n, atteso, avuto) {
   ok('il numero è ciò che urge', atteso, conto.numero);
   ok('e la parola dice di che numero si tratta',
     conto.conti.oggi > 0 ? 'da rivedere' : 'carte nuove', conto.etichetta);
-  /* I tre numeri di P3.6 stanno nel title: in testata tre cifre affiancate
-     obbligherebbero a fare una sottrazione per sapere se fermarsi. */
+  /* I tre numeri di P3.6 stanno nel suggerimento: in testata tre cifre affiancate
+     obbligherebbero a fare una sottrazione per sapere se fermarsi.
+     ⚠️ E il suggerimento è NOSTRO (`data-tip`), non il `title` del sistema:
+     quello compare dopo un secondo e si appende al puntatore, quindi chi lo
+     cerca non sa dove tenere fermo il mouse. Segnalato a schermo dall'utente. */
   ok('e i tre numeri si leggono nel suggerimento', true,
     conto.titolo.indexOf('da rivedere oggi') >= 0 && conto.titolo.indexOf('mai studiate') >= 0
     && conto.titolo.indexOf('in attesa') >= 0);
+  ok('che non è il title del sistema, o comparirebbero tutti e due', '', conto.titleSistema);
   /* ⚠️ Il conteggio è del CORSO, non dell'ambito scelto nella vista: cambiare
      ambito a «questo capitolo» non deve far calare il contatore in testata, o
      direbbe che non c'è più niente da fare quando invece c'è. */
@@ -319,6 +323,47 @@ function ok(n, atteso, avuto) {
   await pausa(400);
   ok('azzerata la storia, il contatore torna al totale delle carte',
     [azzerato.totale, 0, 0], [azzerato.numero, azzerato.oggi, azzerato.attesa]);
+
+  console.log('\n== ⭐ «Azzera avanzamento» aggiorna TUTTE le facce, non due su quattro');
+  /* ⚠️ Guasto vero, visto a schermo il 12 agosto: `doReset()` chiamava
+     `refreshToc()` e `updateProgress()` e basta. I pallini dell'indice si
+     spegnevano, il contatore in testata restava fermo ai numeri di prima, e chi
+     guardava non poteva sapere se il disco fosse stato ripulito davvero. Il
+     rimedio è passare dal punto unico (`ripassoRifletti`), e questa prova è ciò
+     che se ne accorge se qualcuno tornasse ad aggiornare le facce a mano. */
+  const reset = await val(`(async()=>{
+    /* si risponde a due carte, così c'è una storia vera da azzerare */
+    RIP.ambito='corso'; RIP.chiave=''; await ripassoCostruisci();
+    await ripassoRispondi('buono');
+    await new Promise(s=>setTimeout(s,500));
+    await ripassoRispondi('facile');
+    await new Promise(s=>setTimeout(s,700));
+    const prima={ scritte:Object.keys(RIPASSO.carte||{}).length,
+                  badge:Number((document.querySelector('#ripassoBtn .ripn')||{}).textContent||0),
+                  attesa:RIPCONTO.attesa };
+    /* il gesto vero, senza la conferma del sistema (che in CDP non si può premere) */
+    const vero=window.confirm; window.confirm=function(){ return true; };
+    try{ doReset(); } finally { window.confirm=vero; }
+    await new Promise(s=>setTimeout(s,900));
+    const r=await window.vault.ripasso.leggi(corsoAttivo());
+    return { prima:prima,
+             suDisco:Object.keys((r&&r.carte)||{}).length,
+             inMemoria:Object.keys(RIPASSO.carte||{}).length,
+             badge:Number((document.querySelector('#ripassoBtn .ripn')||{}).textContent||0),
+             conti:{ oggi:RIPCONTO.oggi, mai:RIPCONTO.mai, attesa:RIPCONTO.attesa, totale:RIPCONTO.totale },
+             pallini:document.querySelectorAll('#toc li[class*="st-"]').length,
+             etichetta:(document.querySelector('#ripassoBtn .riplab')||{}).textContent||'' }; })()`);
+  await pausa(400);
+  ok('prima c\'era una storia da perdere', 2, reset.prima.scritte);
+  ok('il disco è pulito', 0, reset.suDisco);
+  ok('e la memoria pure', 0, reset.inMemoria);
+  /* ⚠️ IL CONTROLLO CHE VALE: la testata non resta indietro. Era esattamente
+     questo il difetto — «193 carte nuove · 14 in attesa» dopo aver azzerato. */
+  ok('la testata dice il totale, non i numeri di prima', reset.conti.totale, reset.badge);
+  ok('e le carte in attesa sono zero', [0, 0], [reset.conti.attesa, reset.conti.oggi]);
+  ok('la parola torna «carte nuove»', 'carte nuove', reset.etichetta);
+  /* I pallini dell'indice si spegnevano già prima: che continuino a farlo. */
+  ok('e i pallini dell\'indice si spengono', 0, reset.pallini);
 
   console.log(ko ? '\n✗ ' + ko + ' controlli falliti' : '\n✓ tutti i controlli passati');
   process.exit(ko ? 1 : 0);

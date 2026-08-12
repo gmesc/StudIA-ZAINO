@@ -619,6 +619,10 @@
   /* reset in fondo alla sidebar */
   .sidebar{ display:flex; flex-direction:column; }
   .sidebar-foot{ margin-top:auto; padding:1rem 1.1rem; border-top:1px solid var(--line-weak); }
+  /* La riga dei conteggi in Impostazioni → Studio: gli stessi tre numeri della
+     testata, per esteso, accanto al comando che li azzera. */
+  .ripstato-set{ font-size:13px; line-height:1.6; padding:.7rem .9rem; margin:.2rem 0 .6rem;
+    background:var(--hover); border-left:3px solid var(--primary); }
 
   /* menu contestuale (click destro su un capitolo) */
   .ctxmenu{ position:fixed; z-index:200; min-width:190px; padding:.3rem; display:none;
@@ -1276,8 +1280,22 @@
      stati li dà quella classe — con in più il numero in evidenza. Il colore è
      quello di «da ripassare» della segnaletica, non un rosso da notifica: dice
      «c'è del lavoro», non «è successo qualcosa di brutto». */
+  #ripassoBtn{ position:relative; }
   #ripassoBtn .ripn{ font-weight:700; color:var(--teal-strong); margin-right:.15rem; }
   #ripassoBtn:hover .ripn{ color:inherit; }
+  /* Il dettaglio dei tre numeri: ancorato al BOTTONE e immediato. Il `title` di
+     sistema arriva dopo un secondo e si appende al puntatore, quindi chi lo
+     cerca non sa dove tenere fermo il mouse — segnalato a schermo, non in prova. */
+  #ripassoBtn::after{
+    content:attr(data-tip) " — apre il Ripasso";
+    position:absolute; top:calc(100% + 6px); right:0; z-index:120;
+    white-space:nowrap; padding:.45rem .6rem;
+    background:var(--panel); color:var(--ink); border:1px solid var(--line);
+    box-shadow:var(--sh-3d,0 4px 14px rgba(0,0,0,.12));
+    font-size:11px; text-transform:none; letter-spacing:0; font-weight:400;
+    opacity:0; visibility:hidden; transition:opacity var(--speed); pointer-events:none; }
+  #ripassoBtn:hover::after, #ripassoBtn:focus-visible::after{ opacity:1; visibility:visible; }
+  html[data-reduce="1"] #ripassoBtn::after{ transition:none; }
 
   .ripvuoto{ color:var(--muted); font-size:13px; line-height:1.6; margin:auto 0; }
   .ripvuoto b{ color:var(--ink); }
@@ -2203,7 +2221,10 @@
          contiene — le fonti caricate, gli appunti scritti, le mappe disegnate.
          La riempie `zainoNavAggiorna()`. -->
     <div class="znav" id="zainoNav" hidden></div>
-    <div class="sidebar-foot"><span class="reset" id="resetWrap"></span></div>
+    <!-- ⚠️ Qui c'era «Azzera avanzamento». Un gesto irreversibile non sta in
+         fondo alla cosa che si usa tutti i giorni: è passato in Impostazioni →
+         Studio, dove ha lo spazio per dire che cosa si perde. -->
+
   </nav>
   <!-- Il banco. I blocchi B, C e D nascono vuoti: gli strumenti ci entrano da
        JS (`bancoMonta`), perché sono pezzi di DOM che esistono già altrove e
@@ -2579,12 +2600,20 @@ function ripassoContoDisegna(){
   var n=b.querySelector('.ripn'); if(n) n.textContent=String(quante);
   var l=b.querySelector('.riplab');
   if(l) l.textContent = scaduto ? 'da rivedere' : (quante===1 ? 'carta nuova' : 'carte nuove');
-  b.title = quante
-    ? (RIPCONTO.oggi+' da rivedere oggi · '+RIPCONTO.mai+' mai studiate · '+RIPCONTO.attesa+' in attesa'
-       +'\nApre il Ripasso')
+  /* ⚠️ Il dettaglio NON passa dal `title` del sistema: compare dopo un secondo,
+     appeso al puntatore invece che al bottone, e chi lo cerca non sa dove tenere
+     fermo il mouse. È un riquadro nostro (`data-tip`), ancorato al bottone e
+     immediato — la stessa ragione per cui le tendine dell'app sono `.tendina` e
+     non `<select>` di sistema. Il `title` resta vuoto, o comparirebbero tutti e
+     due. */
+  b.removeAttribute('title');
+  b.dataset.tip = quante
+    ? (RIPCONTO.oggi+' da rivedere oggi · '+RIPCONTO.mai+' mai studiate · '+RIPCONTO.attesa+' in attesa')
     : 'Niente da rivedere adesso';
   b.setAttribute('aria-label', quante+(scaduto?' carte da rivedere adesso':' carte mai studiate')+', apre il Ripasso');
   if(typeof barreSeparatori==='function'){ try{ barreSeparatori(); }catch(e){} }
+  /* Gli stessi numeri, per esteso, accanto al comando che li azzera. */
+  try{ ripassoStatoImpostazioni(); }catch(e){}
 }
 
 /** Ricalcola i conteggi del corso aperto. Un giro solo sul main per l'intero
@@ -3558,24 +3587,15 @@ document.addEventListener('keydown',e=>{
   if(e.key==='ArrowLeft') go(state.current-1);
 });
 
-/* ---- Azzera avanzamento ---- */
-const resetWrap=$('#resetWrap');
-function renderResetBtn(){
-  resetWrap.innerHTML=`<button class="resetbtn" id="resetBtn" type="button" aria-label="Azzera l'avanzamento">${ic('reset')}Azzera avanzamento</button>`;
-  $('#resetBtn').addEventListener('click',askReset);
-}
-function askReset(){
-  resetWrap.innerHTML=`<span class="confirm">Azzerare l'avanzamento?</span> <button class="yes" id="resetYes" type="button">Sì</button> <button class="no" id="resetNo" type="button">Annulla</button>`;
-  $('#resetYes').addEventListener('click',doReset);
-  $('#resetNo').addEventListener('click',renderResetBtn);
-}
 /**
  * «Azzera avanzamento»: cancella la storia dei ripassi di QUESTO corso, sul
- * disco.
+ * disco. Il comando vive in Impostazioni → Studio.
  *
- * ⚠️ Adesso è un gesto vero, non più la pulizia di una variabile che si sarebbe
+ * ⚠️ È un gesto vero, non più la pulizia di una variabile che si sarebbe
  * azzerata da sé alla prossima apertura. Per questo si chiede conferma dicendo
  * quante carte si stanno buttando: prima non c'era niente da perdere, ora sì.
+ * ⚠️ E per questo non sta più in fondo all'indice dei capitoli, dove passava la
+ * mano tutti i giorni: la conferma difende dal click, non dalla vicinanza.
  */
 function doReset(){
   var quante=Object.keys(RIPASSO.carte||{}).length;
@@ -3590,11 +3610,38 @@ function doReset(){
       if(r && r.error) toast('Storia non azzerata sul disco: '+r.error, false);
     }).catch(function(){});
   }
-  refreshToc(); updateProgress();
-  resetWrap.innerHTML=`<span class="donemsg">${ic('check')}Avanzamento azzerato</span>`;
-  setTimeout(renderResetBtn,2400);
+  /* ⚠️ Qui c'erano `refreshToc()` e `updateProgress()`, e mancavano le altre due
+     facce dello stesso dato: il contatore in testata e la coda della vista
+     restavano ferme a PRIMA dell'azzeramento. A schermo il risultato era il
+     peggiore possibile — i pallini dell'indice si spegnevano, la testata no — e
+     chi guardava non poteva sapere se il disco fosse stato ripulito davvero.
+     `ripassoRifletti()` è il punto unico che aggiorna tutte le facce: aggiornarne
+     due su quattro a mano è la trappola ④ in miniatura.
+     ⚠️ E la chiave della coda si azzera prima, altrimenti `ripassoVistaAggiorna`
+     vede un contesto immutato ed esce senza rifare niente: le carte appena
+     liberate resterebbero fuori dalla coda fino al prossimo cambio di lezione. */
+  try{ RIP.chiave=''; }catch(e){}
+  ripassoRifletti();
+  toast(quante ? 'Avanzamento azzerato: '+quante+(quante===1?' carta torna':' carte tornano')+' «mai studiata»'
+               : 'Non c\'era nessuna storia da azzerare', true);
 }
-renderResetBtn();
+
+/** La riga di stato in Impostazioni → Studio: gli stessi tre numeri della
+ *  testata, per esteso, accanto al comando che li azzera. */
+function ripassoStatoImpostazioni(){
+  var el=document.getElementById('setRipStato'); if(!el) return;
+  var corso=corsoAttivo();
+  if(!corso){ el.textContent='Nessun corso aperto.'; return; }
+  if(!RIPCONTO.totale){ el.textContent='In questo corso non ci sono ancora carte: nascono dal quiz e dal glossario dei capitoli.'; return; }
+  el.innerHTML='<b>'+RIPCONTO.totale+'</b> carte in «'+escHtml(corso)+'» — '+
+    '<b>'+RIPCONTO.oggi+'</b> da rivedere oggi · <b>'+RIPCONTO.mai+'</b> mai studiate · '+
+    '<b>'+RIPCONTO.attesa+'</b> in attesa.';
+}
+document.addEventListener('click', function(e){
+  var b=e.target.closest?e.target.closest('#setResetBtn'):null; if(!b) return;
+  doReset();
+  ripassoStatoImpostazioni();
+});
 
 /* ---- Altezza header: ci si appendono la sidebar sticky, il fantasma e la barra
    di avanzamento della lezione (`.cprog`, `top: var(--topbar-h) - 3px`).
@@ -13713,6 +13760,7 @@ window.addEventListener('keydown', function(e){
     <div class="set-tabs" role="tablist">
       <button class="set-tab" role="tab" data-tab="utente" aria-selected="true">Utente</button>
       <button class="set-tab" role="tab" data-tab="corsi" aria-selected="false">Corsi</button>
+      <button class="set-tab" role="tab" data-tab="studio" aria-selected="false">Studio</button>
       <button class="set-tab" role="tab" data-tab="ai" aria-selected="false">AI</button>
     </div>
     <div class="set-body">
@@ -13957,6 +14005,25 @@ window.addEventListener('keydown', function(e){
           </div>
           <p class="set-note">I capitoli nuovi si <b>accodano</b> a quelli esistenti: i numeri gi&agrave; assegnati non cambiano mai, cos&igrave; i rimandi <code>[[NN-lezione]]</code> delle altre lezioni restano validi.</p>
           <div id="expRotti" hidden></div>
+        </div>
+      </section>
+
+      <!-- ============ STUDIO E RIPASSO ============
+           ⚠️ «Azzera avanzamento» stava in fondo all'indice dei capitoli, cioè
+           accanto al testo che si legge tutti i giorni: un gesto irreversibile a
+           un dito di distanza dalla navigazione, e per giunta invisibile a chi
+           l'indice lo tiene chiuso. Qui sta con le altre cose che si fanno una
+           volta ogni tanto, e ha lo spazio per dire che cosa si perde davvero. -->
+      <section class="set-pane" data-pane="studio" hidden>
+        <div class="set-sec-h">Il ripasso di questo corso</div>
+        <p class="set-note">Le carte nascono dal <b>quiz</b> e dal <b>glossario</b> dei capitoli: non si copiano da nessuna parte, si rileggono ogni volta dai capitoli. Rigenerare una lezione non porta via la storia di ciò che hai già ripassato, finché la domanda resta quella.</p>
+        <div class="ripstato-set" id="setRipStato">Nessun corso aperto.</div>
+        <p class="set-note">La storia vive in <code>RIPASSO/stato.json</code> dentro la cartella del corso: è tua, la pipeline non la tocca, e si porta dietro con l'esportazione.</p>
+
+        <div class="set-sec-h" style="margin-top:1.4rem;">Azzera l'avanzamento</div>
+        <p class="set-note">Cancella la storia dei ripassi di <b>questo corso</b>: tutte le carte tornano «mai studiate» e i tempi ripartono da capo. Gli appunti, le evidenze e le mappe non si toccano. <b>Non è reversibile.</b></p>
+        <div class="setrow">
+          <button class="kr-save" id="setResetBtn" type="button">Azzera l'avanzamento di questo corso&#8230;</button>
         </div>
       </section>
 
