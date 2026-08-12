@@ -57,6 +57,7 @@ const altBottone = (sel) => val(`(()=>{const e=document.querySelector(${JSON.str
     ['appunti',       'appunti',  '#noteHost .editor-toolbar'],
     ['album',         'album',    '.albar'],
     ['parole chiave', 'keyword',  '.kwbar'],
+    ['ripasso',       'flashcard', '.ripbar'],
   ]) {
     await apriStrumento(strumento);
     await pausa(300);
@@ -79,6 +80,9 @@ const altBottone = (sel) => val(`(()=>{const e=document.querySelector(${JSON.str
   ok('…e il bottone dell\'ordine pure', 30, await altBottone('#kwOrdine'));
   await apriStrumento('album'); await pausa(300);
   ok('album: il campo di ricerca è alto 30', 30, await altBottone('#albCerca'));
+  await apriStrumento('flashcard'); await pausa(300);
+  ok('ripasso: la tendina dell\'ambito è alta 30', 30, await altBottone('#ripAmbito'));
+  ok('…e il bottone «Salta» pure', 30, await altBottone('#ripSalta'));
 
   console.log(ko ? '\n✗ ' + ko + ' controlli falliti' : '\n✓ tutti i controlli passati');
   process.exit(ko ? 1 : 0);

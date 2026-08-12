@@ -61,6 +61,10 @@
      solleverebbe niente. -->
 <script src="assets/player/lettore.js"></script>
 <script src="assets/tts/segmenta.js"></script>
+<!-- Gli intervalli fra un ripasso e l'altro (P3.3). ⚠️ Lo STESSO file che usa il
+     main per scrivere `prossimo` su disco: il tempo promesso sul bottone e il
+     tempo registrato non possono divergere perché sono la stessa funzione. -->
+<script src="assets/ripasso/intervalli.js"></script>
 <script src="assets/appunti/elenco.js"></script>
 <!-- Dati, non codice: le icone in base64 e la tavolozza delle emoji. Stanno
      prima dell'inline perché il renderer le legge appena parte. -->
@@ -550,6 +554,7 @@
   .bcorpo > #mappaView{ display:flex!important; height:100%; }
   .bcorpo > #keywordPane{ display:flex!important; height:100%; }
   .bcorpo > #albumPane{ display:flex!important; height:100%; }
+  .bcorpo > #ripassoPane{ display:flex!important; height:100%; }
   .bcorpo > main{ min-height:100%; }
   /* contenuti (articolo + nav) centrati nella colonna principale, così su schermi larghi non restano incollati a sinistra */
   main > article, main > .nav{ margin-inline:auto; }
@@ -1209,6 +1214,61 @@
   .kwchip.orfana{ opacity:.55; border-style:dashed; }
   .kwchip.orfana .kwtxt{ text-decoration:line-through; }
   .kwvuoto{ color:var(--muted); font-size:12px; padding:.6rem; }
+
+  /* ---- Il ripasso (P3.3): una carta per volta -------------------------- */
+  #ripassoPane{ display:none; flex-direction:column; height:100%; min-height:0; background:var(--panel); }
+  .ripbar{ gap:.4rem; }               /* geometria e comandi: `.tbar`, in cima */
+  /* ⚠️ La tendina deve poter RIMPICCIOLIRSI: un riquadro stretto è la norma —
+     il ripasso sta accanto al capitolo — e senza questo la barra sforava a
+     destra portandosi fuori vista il bottone «Salta». Un `min-width:0` è ciò
+     che permette a un elemento flex di scendere sotto la larghezza del suo
+     contenuto: senza, il valore più lungo della tendina detta la misura. */
+  .ripbar #ripAmbito{ flex:0 1 auto; min-width:5rem; }
+  .ripconto{ font-size:12px; color:var(--muted); white-space:nowrap; }
+  .ripcorpo{ flex:1 1 auto; min-height:0; overflow:auto; padding:1rem;
+    display:flex; flex-direction:column; gap:.7rem; }
+  .ripdove{ font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); }
+  .ripdove button{ border:0; background:none; padding:0; font:inherit; color:var(--muted);
+    text-decoration:underline; cursor:pointer; }
+  .ripdove button:hover{ color:var(--ink); }
+  /* La storia della carta in una riga. Minuscolo e spento: è un'etichetta di
+     stato, non una cosa da leggere prima della domanda. */
+  .ripstato{ font-size:11px; color:var(--muted); margin-top:-.4rem; }
+  /* ⚠️ La carta riusa `quiz callout`: fondo, intestazione e riquadro di
+     risposta sono QUELLI del quiz di fine capitolo, non una loro imitazione.
+     Qui si tolgono solo le misure da pagina — margini per un articolo largo,
+     dentro un riquadro stretto diventano vuoto sprecato. */
+  .ripcarta{ margin:0; padding:.9rem 1rem; }
+  .ripcarta .q{ margin:0; padding:0; }
+  .ripcarta .qt{ font-size:1.02rem; line-height:1.5; margin-bottom:.5rem; }
+  .riptipo{ font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); }
+  .ripcarta .fb{ margin-top:.9rem; }
+  .ripgiusta{ font-weight:700; display:block; }
+  .ripperche{ display:block; font-size:13px; margin-top:.35rem; line-height:1.5; opacity:.85; }
+  /* I comandi stanno in FONDO al riquadro — non in fondo al testo — e non si
+     muovono fra fronte e retro: il mouse trova i quattro esiti dov'era «mostra
+     risposta». Sono fuori dalla parte che scorre, quindi una domanda lunga non
+     li spinge sotto la piega. */
+  .ripazioni{ flex:0 0 auto; display:flex; gap:.4rem; padding:.6rem;
+    border-top:1px solid var(--line); background:var(--panel); }
+  .ripazioni:empty{ display:none; }
+  .ripbtn{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:.1rem;
+    padding:.5rem .3rem; border:1px solid var(--line); border-bottom-width:3px;
+    background:var(--bg); color:var(--ink); font:inherit; font-size:13px; cursor:pointer; }
+  .ripbtn:hover{ background:var(--hover); }
+  .ripbtn .riptempo{ font-size:11px; color:var(--muted); }
+  /* Gli stessi tre colori della segnaletica su indice e barra di avanzamento:
+     rosso «da studiare», verde «da ripassare», teal «appreso». Un quarto colore
+     inventato qui vorrebbe dire due vocabolari cromatici nella stessa app. */
+  .ripbtn[data-esito="di-nuovo"]{ border-bottom-color:var(--st-studiare); }
+  .ripbtn[data-esito="difficile"]{ border-bottom-color:var(--orange); }
+  .ripbtn[data-esito="buono"]{ border-bottom-color:var(--st-ripassare); }
+  .ripbtn[data-esito="facile"]{ border-bottom-color:var(--st-appreso); }
+  .ripmostra{ flex:1 1 auto; padding:.6rem; border:1px solid var(--line); background:var(--bg);
+    color:var(--ink); font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+  .ripmostra:hover{ background:var(--hover); }
+  .ripvuoto{ color:var(--muted); font-size:13px; line-height:1.6; margin:auto 0; }
+  .ripvuoto b{ color:var(--ink); }
 
   /* La barra segue la stessa regola di quella degli appunti: si misura sul
      RIQUADRO, non sulla finestra — con il dock aperto la colonna è stretta
@@ -2276,6 +2336,10 @@ function ripassoRifletti(){
     if(st) state.learn[c.id]=st;
   });
   refreshToc(); updateProgress();
+  /* La vista di ripasso è un'altra faccia dello stesso dato: si rifà la coda
+     solo se il contesto è cambiato davvero (`ripassoVistaAggiorna` esce da sé),
+     altrimenti la carta che si sta guardando sparirebbe a ogni risposta. */
+  try{ if(typeof ripassoVistaAggiorna==='function') ripassoVistaAggiorna(); }catch(e){}
 }
 /** Carica lo stato del corso aperto. ⚠️ Un file illeggibile si DICE: «non hai
  *  ancora ripassato» e «la tua storia non si è potuta leggere» sono due cose
@@ -2315,12 +2379,7 @@ async function ripassoRegistra(cap, q, esito){
 async function ripassoPota(){
   var api=ripassoApi(), corso=corsoAttivo();
   if(!api || !corso || !Object.keys(RIPASSO.carte).length) return;
-  var vive=[];
-  lezioniOrdinati().forEach(function(l){
-    ((LESSONS[l.id]||{}).chapters||[]).forEach(function(c){
-      (c.quiz||[]).forEach(function(q){ vive.push({ capitolo:c.id, domanda:String(q.q||'') }); });
-    });
-  });
+  var vive=ripassoDomandeVive('corso');
   if(!vive.length) return;   // corso non ancora caricato: potare adesso toglierebbe tutto
   try{
     var r=await api.pota(corso, vive);
@@ -2334,6 +2393,254 @@ async function ripassoPota(){
 /* Il punteggio del quiz non decide più l'etichetta del capitolo: la decidono le
    carte, una per una. Questa resta per chi la chiamava. */
 function setChapterState(id, acc){ ripassoRifletti(); }
+
+/* ===== La vista di ripasso (P3.3) =========================================
+ * Fronte → «mostra risposta» → i quattro esiti, coi tempi previsti SOPRA ogni
+ * bottone. È uno strumento del banco, non una schermata a sé: si ripassa
+ * tenendo il capitolo accanto, che è mezzo motivo per cui esiste il banco.
+ *
+ * ⚠️ Le carte NON si copiano da nessuna parte: si ricavano dal quiz dei
+ * capitoli ogni volta che si apre la vista. È la stessa regola dei mazzi di
+ * P3.4 («risolti all'apertura, contro il disco») e la ragione per cui un
+ * capitolo rigenerato con una domanda in più la fa comparire da sé, senza che
+ * nessuno debba «aggiornare il mazzo».
+ *
+ * ⚠️ E l'id lo calcola il MAIN (`ripasso:ids`): la formula dell'identità sta in
+ * un posto solo, e qui non c'è `crypto` per scriverla una seconda volta.
+ *
+ * La sorgente oggi è una — il quiz. Il glossario è P3.2 e i callout `domanda`
+ * degli appunti sono P1.3: `ripassoDomandeVive` è il punto in cui entreranno,
+ * ed è l'unico.
+ */
+var RIP={ ambito:'corso', mazzo:[], i:0, girata:false, chiave:'', caricando:false };
+
+/**
+ * Le carte che esistono ADESSO, nell'ambito chiesto. Le usano due chiamanti con
+ * bisogni diversi: la potatura, che guarda solo `capitolo` e `domanda`, e la
+ * vista, che ha bisogno anche del retro e di dove si torna.
+ */
+function ripassoDomandeVive(ambito){
+  var out=[];
+  function daCapitolo(c, lez){
+    (c.quiz||[]).forEach(function(q){
+      var opzioni = q.type==='tf' ? ['Vero','Falso'] : (q.options||[]);
+      var giusta  = q.type==='tf' ? (q.answer?0:1) : q.answer;
+      out.push({
+        capitolo:c.id, domanda:String(q.q||''),
+        tf:q.type==='tf',
+        risposta:String(opzioni[giusta]!=null?opzioni[giusta]:''),
+        spiegazione:String(q.explain||''),
+        capitoloTitolo:String(c.title||c.id),
+        lezioneTitolo:String((lez&&(lez.title||lez.id))||'')
+      });
+    });
+  }
+  if(ambito==='capitolo'){
+    var c=LESSON && LESSON.chapters ? LESSON.chapters[state.current] : null;
+    if(c) daCapitolo(c, LESSON);
+  }else if(ambito==='lezione'){
+    ((LESSON||{}).chapters||[]).forEach(function(c){ daCapitolo(c, LESSON); });
+  }else{
+    lezioniOrdinati().forEach(function(l){
+      var lez=LESSONS[l.id]||l;
+      (lez.chapters||[]).forEach(function(c){ daCapitolo(c, lez); });
+    });
+  }
+  return out;
+}
+
+/**
+ * Costruisce la coda: prima le carte SCADUTE (la più vecchia davanti), poi le
+ * mai viste nell'ordine del corso.
+ *
+ * ⚠️ L'ordine non è un dettaglio estetico. Mescolare le nuove con gli arretrati
+ * vorrebbe dire che chi ha trecento carte in ritardo non le smaltisce mai, e chi
+ * comincia oggi non capisce perché il sistema gli riproponga cose che sa. Prima
+ * il debito, poi il nuovo.
+ */
+async function ripassoCostruisci(){
+  var api=ripassoApi();
+  var vive=ripassoDomandeVive(RIP.ambito);
+  RIP.chiave=corsoAttivo()+'|'+RIP.ambito+'|'+((LESSON&&LESSON.id)||'')+'|'+state.current;
+  if(!api || !vive.length){ RIP.mazzo=[]; RIP.i=0; RIP.girata=false; ripassoVistaDisegna(); return; }
+  RIP.caricando=true;
+  try{
+    var r=await api.ids(vive.map(function(v){ return { capitolo:v.capitolo, domanda:v.domanda }; }));
+    var ids=(r&&r.ids)||[];
+    var dovute=[], nuove=[];
+    vive.forEach(function(v, k){
+      v.id=ids[k]||'';
+      var voce=RIPASSO.carte[v.id]||null;
+      v.storia=(voce&&voce.storia)||[];
+      /* Le due date servono alla riga di stato: da sole dicono quanto era lungo
+         l'ultimo intervallo (`prossimo − visto`) e da quanto la carta aspetta. */
+      v.visto=(voce&&voce.visto)||'';
+      v.prossimo=(voce&&voce.prossimo)||'';
+      if(!voce || !voce.esito) nuove.push(v);
+      else if(RipassoIntervalli.dovuta(voce)) dovute.push({ v:v, q:voce.prossimo||'' });
+    });
+    dovute.sort(function(a,b){
+      /* Una voce senza `prossimo` è arretrato di prima di P3.3: passa davanti. */
+      if(!a.q && !b.q) return 0;
+      if(!a.q) return -1;
+      if(!b.q) return 1;
+      return a.q.localeCompare(b.q);
+    });
+    RIP.mazzo=dovute.map(function(x){ return x.v; }).concat(nuove);
+    RIP.i=0; RIP.girata=false;
+  }catch(e){ RIP.mazzo=[]; console.error('ripasso/costruisci:', e); }
+  RIP.caricando=false;
+  ripassoVistaDisegna();
+}
+
+/** La vista è a schermo? (Lo strumento può essere in magazzino.) */
+function ripassoVistaVisibile(){
+  return typeof bancoVisibile==='function' && bancoVisibile('flashcard');
+}
+/** Ricostruisce la coda se il contesto è cambiato — o se non c'è ancora. */
+function ripassoVistaAggiorna(){
+  if(!ripassoVistaVisibile()) return;
+  var chiave=corsoAttivo()+'|'+RIP.ambito+'|'+((LESSON&&LESSON.id)||'')+'|'+state.current;
+  /* ⚠️ Il capitolo corrente entra nella chiave SOLO quando l'ambito è il
+     capitolo: altrimenti sfogliare il corso rifarebbe la coda a ogni pagina, e
+     la carta che si stava guardando sparirebbe sotto le dita.
+     ⚠️ E si confronta la CHIAVE, non «la coda è vuota»: una coda finita è un
+     esito legittimo, e rifarla ogni volta che qualcosa ridisegna il banco
+     vorrebbe dire un giro sul main a ogni ridimensionamento della finestra.
+     A rimetterla in moto c'è «Ricontrolla», che è un gesto dell'utente. */
+  if(RIP.ambito!=='capitolo') chiave=chiave.replace(/\|\d+$/,'');
+  if(RIP.chiave.replace(RIP.ambito!=='capitolo'?/\|\d+$/:/$/,'')===chiave) return;
+  ripassoCostruisci();
+}
+
+/**
+ * Che cosa è già successo a questa carta, in una riga.
+ *
+ * ⚠️ Esiste perché senza di lei gli intervalli sono INVISIBILI. I tempi sui
+ * bottoni crescono davvero — la storia sul disco lo dice — ma una carta risposta
+ * esce dalla coda per dieci minuti, e in una sessione sola non si vede mai il
+ * secondo gradino: a schermo sembrava sempre lo stesso sistema fermo. Qui la
+ * crescita si legge subito: «l'ultimo intervallo era 10 min» accanto ai bottoni
+ * che adesso ne propongono uno più lungo.
+ */
+function ripassoStatoCarta(c){
+  var n=(c.storia||[]).length;
+  if(!n) return 'mai vista';
+  var pezzi=['vista '+n+(n===1?' volta':' volte')];
+  var t0=c.visto?new Date(c.visto).getTime():NaN;
+  var t1=c.prossimo?new Date(c.prossimo).getTime():NaN;
+  if(!isNaN(t0) && !isNaN(t1) && t1>t0)
+    pezzi.push('ultimo intervallo '+RipassoIntervalli.formattaIntervallo(Math.round((t1-t0)/60000)));
+  if(!isNaN(t1)){
+    var attesa=Math.round((Date.now()-t1)/60000);
+    pezzi.push(attesa>=1 ? 'scaduta '+RipassoIntervalli.formattaIntervallo(attesa)+' fa' : 'scaduta adesso');
+  }
+  return pezzi.join(' · ');
+}
+
+function ripassoVistaDisegna(){
+  var host=document.getElementById('ripCorpo'); if(!host) return;
+  var pie=document.getElementById('ripPie');
+  var sel=document.getElementById('ripAmbito'); if(sel && sel.value!==RIP.ambito) sel.value=RIP.ambito;
+  var conto=document.getElementById('ripConto');
+  var salta=document.getElementById('ripSalta');
+  var c=RIP.mazzo[RIP.i]||null;
+  if(conto) conto.textContent = RIP.caricando ? 'un attimo…'
+    : (RIP.mazzo.length ? (RIP.i+1)+' di '+RIP.mazzo.length : '');
+  if(salta) salta.disabled = RIP.mazzo.length<2;
+  if(!c){
+    var quante=ripassoDomandeVive(RIP.ambito).length;
+    host.innerHTML='<div class="ripvuoto">'+(RIP.caricando ? 'Preparo le carte…' : (quante
+      ? '<b>Per adesso non c\'è niente da rivedere.</b><br>Le '+quante+' carte di questo ambito hanno tutte un appuntamento più in là. '+
+        'Cambia ambito qui sopra, oppure <button type="button" data-ricarica="1">ricontrolla</button>.'
+      : '<b>Nessuna carta qui.</b><br>Le carte nascono dal quiz dei capitoli: aprine uno che ne abbia, oppure allarga l\'ambito a tutto il corso.'))+'</div>';
+    if(pie) pie.innerHTML='';
+    return;
+  }
+  var dove='<div class="ripdove">'+escHtml(c.lezioneTitolo? c.lezioneTitolo+' · ':'')+escHtml(c.capitoloTitolo)+
+    ' — <button type="button" data-vai="'+escHtml(c.capitolo)+'">vedi il capitolo</button></div>';
+  dove+='<div class="ripstato">'+escHtml(ripassoStatoCarta(c))+'</div>';
+  /* ⚠️ La carta È il quiz di fine capitolo, non una cosa che gli somiglia:
+     stesse classi (`quiz callout`, `.q`, `.qt`, `.fb ok`), quindi stesso fondo
+     teal, stessa intestazione, stesso riquadro di risposta. Ricopiare quei
+     colori qui sarebbe la seconda tavolozza che diverge al primo ritocco — la
+     stessa ragione per cui le barre sono un token solo.
+     Le classi `ripfronte`/`ripretro` restano ADDOSSO agli stessi elementi: sono
+     i nomi con cui le prove trovano la domanda e la risposta. */
+  function carta(dentro){
+    return '<div class="quiz callout ripcarta"><b>'+ic('brain')+'<span>Metti alla prova</span></b>'+
+      '<div class="q">'+dentro+'</div></div>';
+  }
+  var fronte='<div class="qt ripfronte">'+escHtml(c.domanda)+'</div>'+
+    (c.tf?'<div class="riptipo">vero o falso?</div>':'');
+  if(!RIP.girata){
+    host.innerHTML=dove+carta(fronte);
+    if(pie) pie.innerHTML='<button type="button" class="ripmostra" data-mostra="1">Mostra risposta</button>';
+    return;
+  }
+  /* Il riquadro della risposta è quello del quiz quando ci si azzecca (`fb ok`):
+     è la stessa cosa che dice — questa è la risposta giusta. */
+  var retro='<div class="fb ok show ripretro">'+ic('check')+
+    '<span><span class="ripgiusta">'+escHtml(c.risposta)+'</span>'+
+    (c.spiegazione?'<span class="ripperche">'+escHtml(c.spiegazione)+'</span>':'')+'</span></div>';
+  /* ⚠️ I tempi li dà il modulo, sulla storia di QUESTA carta: sono gli stessi
+     minuti che il main scriverà in `prossimo`, perché è la stessa funzione. */
+  var etichette={ 'di-nuovo':'Di nuovo', difficile:'Difficile', buono:'Buono', facile:'Facile' };
+  var bottoni=RipassoIntervalli.anteprima(c.storia||[]).map(function(b){
+    return '<button type="button" class="ripbtn" data-esito="'+escHtml(b.esito)+'">'+
+      '<span class="riptempo">'+escHtml(b.testo)+'</span>'+
+      '<span>'+escHtml(etichette[b.esito]||b.esito)+'</span></button>';
+  }).join('');
+  host.innerHTML=dove+carta(fronte+retro);
+  if(pie) pie.innerHTML=bottoni;
+  /* ⚠️ Con una domanda lunga la risposta nasce sotto la piega, e chi ha appena
+     premuto «mostra risposta» si trova la carta uguale a prima: sembra che il
+     bottone non abbia fatto niente. Si porta il retro sotto gli occhi — dentro
+     il riquadro, non muovendo la pagina. */
+  /* ⚠️ Non `offsetTop`: il retro è annidato in due riquadri e `#ripCorpo` non è
+     posizionato, quindi quel numero è misurato rispetto a un antenato che non
+     c'entra — la prima versione non scorreva mai. Si va in fondo e basta: se
+     non c'è niente da scorrere, `scrollTop` resta zero da sé. */
+  host.scrollTop=host.scrollHeight;
+}
+
+/** Registra l'esito e passa alla prossima. La carta risposta esce dalla coda:
+ *  rivederla ADESSO non dice niente su quanto la si ricorda. */
+async function ripassoRispondi(esito){
+  var c=RIP.mazzo[RIP.i]; if(!c) return;
+  await ripassoRegistra({ id:c.capitolo }, { q:c.domanda }, esito);
+  RIP.mazzo.splice(RIP.i,1);
+  if(RIP.i>=RIP.mazzo.length) RIP.i=0;
+  RIP.girata=false;
+  ripassoVistaDisegna();
+}
+/** Rimanda la carta in fondo SENZA registrare niente: «non adesso» non è un
+ *  giudizio su quanto la si ricorda, e non deve spostarne i tempi. */
+function ripassoSalta(){
+  if(RIP.mazzo.length<2) return;
+  RIP.mazzo.push(RIP.mazzo.splice(RIP.i,1)[0]);
+  if(RIP.i>=RIP.mazzo.length) RIP.i=0;
+  RIP.girata=false;
+  ripassoVistaDisegna();
+}
+
+document.addEventListener('click', function(e){
+  var t=e.target.closest?e.target.closest('#ripPie [data-mostra],#ripPie [data-esito],#ripCorpo [data-vai],#ripCorpo [data-ricarica],#ripSalta'):null;
+  if(!t) return;
+  if(t.id==='ripSalta'){ ripassoSalta(); return; }
+  if(t.dataset.ricarica){ ripassoCostruisci(); return; }
+  if(t.dataset.mostra){ RIP.girata=true; ripassoVistaDisegna(); return; }
+  if(t.dataset.vai){
+    if(!vaiAlCapitolo(t.dataset.vai)) toast('Capitolo non trovato: forse la lezione è stata rigenerata', false);
+    return;
+  }
+  if(t.dataset.esito) ripassoRispondi(t.dataset.esito);
+});
+document.addEventListener('change', function(e){
+  var s=e.target.closest?e.target.closest('#ripAmbito'):null; if(!s) return;
+  RIP.ambito=s.value; RIP.mazzo=[]; RIP.chiave='';
+  ripassoCostruisci();
+});
 
 /* ---- Render capitolo ---- */
 function render(){
@@ -9784,7 +10091,10 @@ function bancoStrumenti(){
     mappa:     { nome:'Mappa',           famiglia:'quaderno', sel:'#mappaView' },
     keyword:   { nome:'Parole chiave',   famiglia:'quaderno', sel:'#keywordPane' },
     album:     { nome:'Album',           famiglia:'quaderno', sel:'#albumPane' },
-    flashcard: { nome:'Flashcard',       famiglia:'quaderno', sel:null, arriva:'arrivano col ripasso (P3)' }
+    /* «Ripasso» e non «Flashcard»: la chiave resta `flashcard` perché è quella
+       scritta nelle disposizioni già salvate, e cambiarla svuoterebbe il blocco
+       a chi l'aveva scelto. Il nome in tendina dice che cosa si fa. */
+    flashcard: { nome:'Ripasso',         famiglia:'quaderno', sel:'#ripassoPane' }
   };
 }
 function bancoStrumento(id){ return bancoStrumenti()[id] || null; }
@@ -10019,6 +10329,11 @@ function bancoDopoLayout(){
      nuovo — o può essere cambiato il corso. */
   try{ if(typeof albumAggiorna==='function' && bancoVisibile('album')) albumAggiorna(); }
   catch(e){ console.error('banco/album:', e); }
+  /* Il ripasso: stessa ragione degli altri due. In più la coda si costruisce
+     chiedendo gli id al main, quindi è un giro asincrono che non ha senso fare
+     finché lo strumento sta in magazzino. */
+  try{ if(typeof ripassoVistaAggiorna==='function') ripassoVistaAggiorna(); }
+  catch(e){ console.error('banco/ripasso:', e); }
   /* ⚠️ Gli appunti: la barra deve esserci ANCHE quando appunti non ce ne sono.
      Prima `ensureMde` girava solo aprendo un appunto, quindi scegliendo
      «Appunti» in un blocco vuoto si vedeva la frase «nessun appunto» e nessun
@@ -12920,6 +13235,31 @@ window.addEventListener('keydown', function(e){
   </div>
   <div id="kwLista" class="kwlista" role="list"></div>
 </section>
+<!-- IL RIPASSO (P3.3): una carta per volta, il fronte, «mostra risposta», e i
+     quattro esiti coi tempi previsti sopra. È uno strumento del banco come gli
+     appunti e la mappa — sta a livello di pagina e `bancoMonta` lo sposta nel
+     blocco che lo ospita, così si può ripassare TENENDO IL CAPITOLO ACCANTO. -->
+<section id="ripassoPane" aria-label="Ripasso">
+  <div class="tbar ripbar">
+    <select id="ripAmbito" aria-label="Che cosa ripassare">
+      <option value="capitolo">Questo capitolo</option>
+      <option value="lezione">Questa lezione</option>
+      <option value="corso" selected>Tutto il corso</option>
+    </select>
+    <span id="ripConto" class="ripconto" aria-live="polite"></span>
+    <!-- ⚠️ Niente `.tbspazio` qui. Con lo spazio elastico «Salta» finiva contro
+         il bordo destro del riquadro, e lì passa la barra di scorrimento del
+         blocco: l'ultima lettera restava sotto. I comandi stanno a sinistra,
+         come nella barra delle parole chiave. -->
+    <button class="tbtn" id="ripSalta" type="button" title="Rimanda questa carta alla fine della coda, senza registrare niente">Salta</button>
+  </div>
+  <div id="ripCorpo" class="ripcorpo"></div>
+  <!-- ⚠️ I comandi stanno FUORI dal corpo che scorre. Dentro, una domanda lunga
+       — o un riquadro basso — li spingeva sotto la piega: per rispondere si
+       doveva prima scorrere, cioè il gesto centrale dell'app dipendeva
+       dall'altezza del testo. Qui sono sempre a portata di pollice. -->
+  <div id="ripPie" class="ripazioni"></div>
+</section>
 <!-- La mappa è uno strumento del banco come la fonte e gli appunti: sta qui a
      livello di pagina, e `bancoMonta` la sposta nel blocco che la ospita.
      ⚠️ Prima viveva dentro l'elemento `main`, che però è a sua volta lo
@@ -13349,9 +13689,12 @@ window.addEventListener('keydown', function(e){
             <select id="profCapitoliBrevi"><option value="true">Sì — testi corti</option><option value="false">No — testi distesi</option></select>
           </label>
           <label>Quiz
+            <!-- I numeri stanno nell'etichetta perché sono la cosa che si sta
+                 scegliendo: «frequenti» da solo non dice quante domande escono,
+                 e il ripasso ne fa carte una per una. -->
             <select id="profQuiz">
-              <option value="frequenti">Frequenti</option>
-              <option value="pochi">Pochi</option>
+              <option value="frequenti">Frequenti — 5-6 per capitolo</option>
+              <option value="pochi">Pochi — 2 per capitolo</option>
               <option value="nessuno">Nessuno</option>
             </select>
           </label>
