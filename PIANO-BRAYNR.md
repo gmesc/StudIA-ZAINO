@@ -354,7 +354,33 @@ primo rimando del capitolo (v1 onesta; v2: il rimando più vicino al paragrafo d
 nasce, quando `rimandiDa` saprà legare quiz e paragrafo). «Vedi mappa» alla Braynr arriva gratis
 *se* P2 esiste e un nodo cita la stessa domanda — non è un requisito, è un incontro.
 
-**P3.6 — La home dice quando ripassare.**
+**P3.6 — La home dice quando ripassare.** ✅ **FATTO il 12 agosto 2026**, con due correzioni di
+rotta che vale la pena leggere prima di toccarlo:
+
+- ⚠️ **«La home» non esiste**: StudIA si apre sul lettore, i corsi stanno in una tendina in
+  testata. Il contatore quindi vive **in testata**, accanto a «Banco», e non dentro lo strumento
+  di ripasso: la domanda a cui risponde è «devo aprirlo?», e un numero che si vede solo dopo
+  averlo aperto non la risponde. Premerlo apre il Ripasso — passa da `bancoMostra`, la stessa
+  funzione della tendina del blocco.
+- ⚠️ **Solo il CORSO APERTO**, e non è pigrizia: i capitoli stanno nelle cartelle-variante dei
+  percorsi, e contare i corsi chiusi vorrebbe dire rifare nel main la regola di quali
+  cartelle-lezione sono visibili con quale percorso attivo — una seconda copia di una logica
+  delicata (invariante 5) per un numero che nessuno ha ancora chiesto. Quando servirà, la regola
+  delle sorgenti è già in un modulo condiviso.
+- ⚠️ **Numero e parola devono dire la stessa cosa.** La prima versione mostrava «207 da rivedere»
+  per carte mai studiate: il numero era la coda intera, la parola parlava di scadenze, e insieme
+  mentivano. Ora il badge mostra **ciò che urge** — le scadute — e ripiega su «N carte nuove»
+  solo quando di arretrato non ce n'è. I tre numeri di P3.6 per intero stanno nel suggerimento,
+  perché in testata tre cifre affiancate obbligherebbero a fare una sottrazione per sapere se
+  fermarsi.
+- Nato per strada: **`App/assets/ripasso/sorgenti.js`**. Quali campi di un capitolo diventano
+  carte decide tre cose insieme — che cosa entra nella coda, che cosa si conta, e **quali carte
+  risultano vive alla potatura**. Finché stava dentro `ripassoDomandeVive()`, nel mezzo del
+  renderer, era anche l'unico pezzo del ripasso che nessuna prova di unità poteva toccare. Ora è
+  puro e provato in Node, e il patto che conta — *ogni carta della coda ha la sua chiave, o al
+  primo avvio la sua storia sparisce* — è un controllo, non una speranza.
+
+Il testo originale della proposta, per riferimento:
 Conteggi per corso: mai studiate / in attesa / **da ripassare oggi** — il badge d'avanzamento
 per corso è già in coda all'HANDOFF (§6.5): questa è una colonna in più di quel lavoro, non un
 lavoro a sé. 🐘 *Ripassatore* smette di essere solo una preferenza di scaletta: è il percorso che
@@ -369,7 +395,7 @@ vere sono poche.
 
 | # | lavoro | dipende da | taglia | note |
 |---|---|---|---|---|
-| 1 | ~~P3.1~~ ✅ ~~P3.3~~ ✅ ~~P3.2 glossario~~ ✅ + **P3.6** — ripasso persistente sui contenuti già generati | — | M | il valore c'è dal giorno uno, su 243 capitoli |
+| 1 | ~~P3.1~~ ✅ ~~P3.3~~ ✅ ~~P3.2 glossario~~ ✅ ~~P3.6~~ ✅ — ripasso persistente sui contenuti già generati | — | M | **chiuso il 12 ago 2026**: storia su disco, intervalli, due sorgenti, contatore in testata |
 | 2 | **P1.2 tag + P1.3 callout `domanda`** | — | S | sblocca la terza sorgente di carte |
 | 3 | **P3.4 mazzi-query** (+ appunti come sorgente) | 1, 2 | S/M | i «mazzi viventi» veri e propri |
 | 4 | **P1.1 evidenze** | — | M | indipendente; riusa i marker |

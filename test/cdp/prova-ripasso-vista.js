@@ -252,6 +252,74 @@ function ok(n, atteso, avuto) {
      silenzio, al primo avvio, per centinaia di carte. */
   ok('e la potatura NON se la porta via', true, potatura.resta);
 
+  console.log('\n== ⭐ Il contatore in testata dice se c\'è da fare (P3.6)');
+  /* ⚠️ La domanda a cui risponde è «devo aprire il ripasso?»: un numero che si
+     vede solo dopo aver aperto non la risponde. Quindi il controllo non è che il
+     numero esista, ma che stia in TESTATA e che sia quello vero. */
+  await val(`(async()=>{ await ripassoContoAggiorna(); return 1; })()`);
+  await pausa(500);
+  const conto = await val(`(()=>{ const b=document.getElementById('ripassoBtn');
+    const inTestata=!!(b && b.closest('.topbar'));
+    return { c_e:!!b, inTestata:inTestata, nascosto:b?b.hidden:null,
+             numero:b?Number((b.querySelector('.ripn')||{}).textContent||0):0,
+             titolo:b?b.title:'',
+             etichetta:b?((b.querySelector('.riplab')||{}).textContent||''):'',
+             conti:{ mai:RIPCONTO.mai, attesa:RIPCONTO.attesa, oggi:RIPCONTO.oggi, totale:RIPCONTO.totale } }; })()`);
+  console.log('   ' + conto.conti.oggi + ' oggi · ' + conto.conti.mai + ' mai · ' + conto.conti.attesa + ' in attesa');
+  ok('il contatore sta in testata, non dentro lo strumento', [true, true], [conto.c_e, conto.inTestata]);
+  ok('e si vede, perché c\'è del lavoro', false, conto.nascosto);
+  /* ⚠️ Il numero e la parola devono dire la stessa cosa: il badge mostra ciò che
+     URGE — le scadute — e ripiega sulle mai studiate solo se di arretrato non ce
+     n'è. La prima versione scriveva «207 da rivedere» per carte mai viste: il
+     numero era la coda intera e la parola parlava di scadenze. */
+  const atteso = conto.conti.oggi > 0 ? conto.conti.oggi : conto.conti.mai;
+  ok('il numero è ciò che urge', atteso, conto.numero);
+  ok('e la parola dice di che numero si tratta',
+    conto.conti.oggi > 0 ? 'da rivedere' : 'carte nuove', conto.etichetta);
+  /* I tre numeri di P3.6 stanno nel title: in testata tre cifre affiancate
+     obbligherebbero a fare una sottrazione per sapere se fermarsi. */
+  ok('e i tre numeri si leggono nel suggerimento', true,
+    conto.titolo.indexOf('da rivedere oggi') >= 0 && conto.titolo.indexOf('mai studiate') >= 0
+    && conto.titolo.indexOf('in attesa') >= 0);
+  /* ⚠️ Il conteggio è del CORSO, non dell'ambito scelto nella vista: cambiare
+     ambito a «questo capitolo» non deve far calare il contatore in testata, o
+     direbbe che non c'è più niente da fare quando invece c'è. */
+  const dopoAmbito = await val(`(async()=>{
+    RIP.ambito='capitolo'; RIP.chiave=''; await ripassoCostruisci();
+    await ripassoContoAggiorna();
+    const b=document.getElementById('ripassoBtn');
+    const n=Number((b.querySelector('.ripn')||{}).textContent||0);
+    RIP.ambito='corso'; RIP.chiave=''; await ripassoCostruisci();
+    return { numero:n, coda:RIP.mazzo.length }; })()`);
+  await pausa(500);
+  ok('e non cambia se si restringe l\'ambito della vista', conto.numero, dopoAmbito.numero);
+
+  /* Rispondere fa calare il lavoro che resta: è il segno che il contatore è vivo.
+     Si guardano i conti, non il numero sul badge: una carta nuova risposta toglie
+     una «mai studiata» e non tocca le scadute, e il badge mostra una cosa sola. */
+  const lavoroPrima = conto.conti.oggi + conto.conti.mai;
+  await val(`(()=>{ RIP.girata=true; ripassoVistaDisegna(); return 1; })()`);
+  await pausa(300);
+  await clicca('#ripPie .ripbtn[data-esito="facile"]');
+  await pausa(1200);
+  const lavoroDopo = await val(`RIPCONTO.oggi + RIPCONTO.mai`);
+  ok('rispondere fa calare di uno il lavoro che resta', lavoroPrima - 1, lavoroDopo);
+  /* E quella carta è passata «in attesa»: ha un appuntamento, non è sparita. */
+  ok('e la carta risposta è passata in attesa', conto.conti.attesa + 1,
+    await val(`RIPCONTO.attesa`));
+
+  /* Con la storia azzerata tutte le carte tornano «mai studiate»: il contatore
+     risale al totale, e non resta indietro. */
+  const azzerato = await val(`(async()=>{
+    await window.vault.ripasso.salva(corsoAttivo(), {});
+    await ripassoCarica();
+    await ripassoContoAggiorna();
+    return { numero:Number((document.querySelector('#ripassoBtn .ripn')||{}).textContent||0),
+             totale:RIPCONTO.totale, oggi:RIPCONTO.oggi, attesa:RIPCONTO.attesa }; })()`);
+  await pausa(400);
+  ok('azzerata la storia, il contatore torna al totale delle carte',
+    [azzerato.totale, 0, 0], [azzerato.numero, azzerato.oggi, azzerato.attesa]);
+
   console.log(ko ? '\n✗ ' + ko + ' controlli falliti' : '\n✓ tutti i controlli passati');
   process.exit(ko ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

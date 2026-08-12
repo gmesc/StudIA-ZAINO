@@ -78,6 +78,58 @@ sezione('Il giro sul disco');
   check('la storia si ferma a venti risposte', 20, tante[id].storia.length);
 }
 
+sezione('⭐ Quali pezzi di un capitolo diventano carte (P3.2 + P3.6)');
+{
+  /* ⚠️ Questa regola decide tre cose insieme: che cosa entra nella coda, che
+     cosa si conta in testata, e — la più pericolosa — quali carte risultano VIVE
+     alla potatura. Una sorgente dimenticata lì cancella storie dell'utente in
+     silenzio. Finché stava dentro il renderer, nessuna prova di unità poteva
+     toccarla: si misurava solo dall'app viva. */
+  const S = require('../App/assets/ripasso/sorgenti');
+  const cap = {
+    id: 'cap-01',
+    quiz: [
+      { q: 'I DSA implicano un deficit intellettivo.', type: 'tf', answer: false, explain: 'Il funzionamento è nella norma.' },
+      { q: 'Quale definizione è corretta?', options: ['La prima', 'La seconda'], answer: 1, explain: '' }
+    ],
+    glossary: [
+      { t: 'Dislessia', d: 'Disturbo specifico della <em>lettura</em>.' },
+      { t: '   ', d: 'una voce senza termine non è una carta' }
+    ]
+  };
+  const carte = S.daCapitolo(cap);
+  check('quiz e glossario, in questo ordine', ['quiz', 'quiz', 'glossario'], carte.map((c) => c.sorgente));
+  check('una voce di glossario senza termine si scarta', 3, carte.length);
+  /* Il fronte del vero/falso è l'affermazione; la risposta è Vero o Falso. */
+  check('il vero/falso porta la sua risposta', ['Falso', true], [carte[0].risposta, carte[0].tf]);
+  check('la scelta multipla porta l\'opzione giusta', ['La seconda', false], [carte[1].risposta, carte[1].tf]);
+  /* ⚠️ Il fronte di una carta di glossario è il TERMINE, ed è quello che entra
+     nell'identità: una rigenerazione che riscrive la definizione conserva la
+     storia, come un quiz a cui cambia il «perché» resta la stessa carta. */
+  check('il glossario: fronte il termine, retro la definizione',
+    ['Dislessia', 'Disturbo specifico della <em>lettura</em>.'], [carte[2].domanda, carte[2].risposta]);
+  check('e la definizione resta HTML, non si escapa qui', true, carte[2].risposta.indexOf('<em>') >= 0);
+
+  /* Le chiavi sono la forma che vogliono l'identità e la potatura. */
+  const chiavi = S.chiaviDi('cap-01', cap);
+  check('le chiavi sono capitolo + domanda', ['cap-01', 'Dislessia'],
+    [chiavi[2].capitolo, chiavi[2].domanda]);
+  check('e sono tante quante le carte', carte.length, chiavi.length);
+
+  /* ⚠️ Il patto con la potatura: ogni carta della coda DEVE comparire fra le
+     chiavi, o al primo avvio la sua storia sparisce. Sono la stessa funzione,
+     e questa riga è ciò che se ne accorge se un giorno smettessero di esserlo. */
+  check('ogni carta ha la sua chiave, nello stesso ordine',
+    carte.map((c) => c.domanda), chiavi.map((k) => k.domanda));
+
+  check('un capitolo senza niente non produce carte', 0, S.daCapitolo({ id: 'vuoto' }).length);
+  check('e nemmeno un capitolo che non esiste', 0, S.daCapitolo(null).length);
+  /* Il nome del campo cambia fra il parser del lettore (`glossary`) e la
+     serializzazione su disco (`glossario`): tutti e due sono glossario. */
+  check('il glossario si riconosce con tutti e due i nomi', 1,
+    S.daCapitolo({ glossario: [{ t: 'Termine', d: 'Definizione.' }] }).length);
+}
+
 sezione('⭐ Gli intervalli (P3.3): quando rivedere una carta');
 {
   const iv = (storia, esito) => R.prossimoIntervallo(storia, esito);

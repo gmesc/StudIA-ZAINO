@@ -65,6 +65,10 @@
      main per scrivere `prossimo` su disco: il tempo promesso sul bottone e il
      tempo registrato non possono divergere perché sono la stessa funzione. -->
 <script src="assets/ripasso/intervalli.js"></script>
+<!-- Quali campi di un capitolo diventano carte. ⚠️ Lo stesso file che usa il
+     main per contare le carte dei corsi CHIUSI: due elenchi di sorgenti
+     divergono, e quello dimenticato fa cancellare storie alla potatura. -->
+<script src="assets/ripasso/sorgenti.js"></script>
 <script src="assets/appunti/elenco.js"></script>
 <!-- Dati, non codice: le icone in base64 e la tavolozza delle emoji. Stanno
      prima dell'inline perché il renderer le legge appena parte. -->
@@ -1268,6 +1272,13 @@
   .ripmostra{ flex:1 1 auto; padding:.6rem; border:1px solid var(--line); background:var(--bg);
     color:var(--ink); font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
   .ripmostra:hover{ background:var(--hover); }
+  /* Il contatore in testata (P3.6): è un `.iconbtn` come gli altri — geometria e
+     stati li dà quella classe — con in più il numero in evidenza. Il colore è
+     quello di «da ripassare» della segnaletica, non un rosso da notifica: dice
+     «c'è del lavoro», non «è successo qualcosa di brutto». */
+  #ripassoBtn .ripn{ font-weight:700; color:var(--teal-strong); margin-right:.15rem; }
+  #ripassoBtn:hover .ripn{ color:inherit; }
+
   .ripvuoto{ color:var(--muted); font-size:13px; line-height:1.6; margin:auto 0; }
   .ripvuoto b{ color:var(--ink); }
 
@@ -2161,6 +2172,13 @@
          ogni blocco ha già la sua tendina per sceglierli (`select.bsel`). Due
          porte per la stessa stanza, di cui una in una barra che non ci stava. -->
     <button class="iconbtn" id="bancoBtn" type="button" title="Come dividere lo schermo" aria-label="Disposizione dei blocchi" aria-haspopup="dialog">&#9707; Banco</button>
+    <!-- P3.6: quante carte aspettano OGGI. Sta in testata e non dentro lo
+         strumento di ripasso perché la domanda a cui risponde è «devo aprirlo?»:
+         un contatore che si vede solo dopo aver aperto non la risponde. Nasce
+         nascosto e compare solo quando c'è davvero qualcosa da rivedere — un
+         badge fermo su «0» diventa arredamento, e smette di significare. -->
+    <button class="iconbtn ripbadge" id="ripassoBtn" type="button" hidden
+            aria-label="Carte da ripassare"><span class="ripn">0</span> <span class="riplab"></span></button>
     <button class="iconbtn" id="videoBtn" type="button" hidden>Video</button>
     <button class="iconbtn" id="ingestBtn" type="button" hidden>Elabora sorgenti</button>
     <button class="iconbtn" id="settingsBtn" type="button" hidden aria-label="Impostazioni e chiavi API" title="Impostazioni · chiavi API e costi">⚙</button>
@@ -2341,6 +2359,9 @@ function ripassoRifletti(){
      solo se il contesto è cambiato davvero (`ripassoVistaAggiorna` esce da sé),
      altrimenti la carta che si sta guardando sparirebbe a ogni risposta. */
   try{ if(typeof ripassoVistaAggiorna==='function') ripassoVistaAggiorna(); }catch(e){}
+  /* E il contatore in testata è la terza faccia: si aggiorna sempre, perché è
+     lui a dire se c'è ancora qualcosa da fare — anche a strumento chiuso. */
+  try{ if(typeof ripassoContoAggiorna==='function') ripassoContoAggiorna(); }catch(e){}
 }
 /** Carica lo stato del corso aperto. ⚠️ Un file illeggibile si DICE: «non hai
  *  ancora ripassato» e «la tua storia non si è potuta leggere» sono due cose
@@ -2422,37 +2443,18 @@ var RIP={ ambito:'corso', mazzo:[], i:0, girata:false, chiave:'', caricando:fals
  */
 function ripassoDomandeVive(ambito){
   var out=[];
+  /* ⚠️ QUALI campi diventano carte lo dice `RipassoSorgenti`, non questa
+     funzione: la stessa regola serve al main per contare le carte dei corsi che
+     non sono aperti (P3.6), e due elenchi paralleli divergono al primo che
+     aggiunge una sorgente da un lato solo — con la potatura che poi cancella in
+     silenzio le storie della sorgente dimenticata. Qui resta ciò che il modulo
+     non può sapere: da quale capitolo e da quale lezione viene la carta. */
   function daCapitolo(c, lez){
-    var dove={ capitoloTitolo:String(c.title||c.id),
+    var dove={ capitolo:c.id,
+               capitoloTitolo:String(c.title||c.id),
                lezioneTitolo:String((lez&&(lez.title||lez.id))||'') };
-    (c.quiz||[]).forEach(function(q){
-      var opzioni = q.type==='tf' ? ['Vero','Falso'] : (q.options||[]);
-      var giusta  = q.type==='tf' ? (q.answer?0:1) : q.answer;
-      out.push(Object.assign({
-        sorgente:'quiz',
-        capitolo:c.id, domanda:String(q.q||''),
-        tf:q.type==='tf',
-        risposta:String(opzioni[giusta]!=null?opzioni[giusta]:''),
-        spiegazione:String(q.explain||'')
-      }, dove));
-    });
-    /* ⚠️ Il glossario (P3.2): `t`/`d` è un fronte-retro già scritto in tutti i
-       capitoli — nessun contenuto nuovo da generare, solo una lettura diversa di
-       quello che c'è. L'identità della carta è il TERMINE: una rigenerazione che
-       riscrive la definizione conserva la storia, esattamente come un quiz a cui
-       cambia il «perché» resta la stessa carta.
-       ⚠️ `d` è già passato per `_mdInline` nel parser: è HTML, non testo. Da qui
-       esce così com'è, e chi disegna la carta lo sa (vedi `ripassoVistaDisegna`). */
-    (c.glossary||[]).forEach(function(g){
-      var t=String((g&&g.t)||'').trim();
-      if(!t) return;
-      out.push(Object.assign({
-        sorgente:'glossario',
-        capitolo:c.id, domanda:t,
-        tf:false,
-        risposta:String((g&&g.d)||''),
-        spiegazione:''
-      }, dove));
+    RipassoSorgenti.daCapitolo(c).forEach(function(k){
+      out.push(Object.assign({}, k, dove));
     });
   }
   if(ambito==='capitolo'){
@@ -2478,6 +2480,30 @@ function ripassoDomandeVive(ambito){
  * comincia oggi non capisce perché il sistema gli riproponga cose che sa. Prima
  * il debito, poi il nuovo.
  */
+/**
+ * Le stesse carte, legate alla loro storia sul disco.
+ *
+ * ⚠️ L'id lo calcola il MAIN: la formula dell'identità sta in un posto solo, e
+ * qui non c'è `crypto`. È un giro solo per elenco, non uno per carta.
+ */
+async function ripassoConStoria(vive){
+  var api=ripassoApi();
+  if(!api || !vive.length) return [];
+  var r=await api.ids(vive.map(function(v){ return { capitolo:v.capitolo, domanda:v.domanda }; }));
+  var ids=(r&&r.ids)||[];
+  vive.forEach(function(v, k){
+    v.id=ids[k]||'';
+    var voce=RIPASSO.carte[v.id]||null;
+    v.voce=voce;
+    v.storia=(voce&&voce.storia)||[];
+    /* Le due date servono alla riga di stato: da sole dicono quanto era lungo
+       l'ultimo intervallo (`prossimo − visto`) e da quanto la carta aspetta. */
+    v.visto=(voce&&voce.visto)||'';
+    v.prossimo=(voce&&voce.prossimo)||'';
+  });
+  return vive;
+}
+
 async function ripassoCostruisci(){
   var api=ripassoApi();
   var vive=ripassoDomandeVive(RIP.ambito);
@@ -2485,17 +2511,10 @@ async function ripassoCostruisci(){
   if(!api || !vive.length){ RIP.mazzo=[]; RIP.i=0; RIP.girata=false; ripassoVistaDisegna(); return; }
   RIP.caricando=true;
   try{
-    var r=await api.ids(vive.map(function(v){ return { capitolo:v.capitolo, domanda:v.domanda }; }));
-    var ids=(r&&r.ids)||[];
+    var carte=await ripassoConStoria(vive);
     var dovute=[], nuove=[];
-    vive.forEach(function(v, k){
-      v.id=ids[k]||'';
-      var voce=RIPASSO.carte[v.id]||null;
-      v.storia=(voce&&voce.storia)||[];
-      /* Le due date servono alla riga di stato: da sole dicono quanto era lungo
-         l'ultimo intervallo (`prossimo − visto`) e da quanto la carta aspetta. */
-      v.visto=(voce&&voce.visto)||'';
-      v.prossimo=(voce&&voce.prossimo)||'';
+    carte.forEach(function(v){
+      var voce=v.voce;
       if(!voce || !voce.esito) nuove.push(v);
       else if(RipassoIntervalli.dovuta(voce)) dovute.push({ v:v, q:voce.prossimo||'' });
     });
@@ -2511,6 +2530,75 @@ async function ripassoCostruisci(){
   }catch(e){ RIP.mazzo=[]; console.error('ripasso/costruisci:', e); }
   RIP.caricando=false;
   ripassoVistaDisegna();
+}
+
+/* ===== I conteggi in testata (P3.6) ======================================
+ * ⚠️ La domanda a cui questo contatore risponde è «devo aprire il ripasso?».
+ * Un numero che si vede solo DOPO aver aperto lo strumento non la risponde: per
+ * questo sta in testata, sempre, e non nella barra della vista.
+ *
+ * Il numero grande è ciò che troveresti aprendo — le scadute più le mai
+ * studiate, cioè la coda — e i tre numeri di P3.6 (mai studiate / in attesa /
+ * da rivedere oggi) stanno nel `title`. Mettere in testata tre cifre affiancate
+ * vorrebbe dire chiedere a chi passa di fare una sottrazione per sapere se deve
+ * fermarsi.
+ *
+ * ⚠️ Sul CORSO APERTO soltanto. I capitoli degli altri corsi il renderer non li
+ * ha in memoria, e contarli dal main vorrebbe dire rifare di là la regola delle
+ * varianti — quale cartella-lezione è visibile con quale percorso attivo — cioè
+ * una seconda copia di una logica delicata per un numero che nessuno ha ancora
+ * chiesto. Quando servirà, `RipassoSorgenti` è già dalla parte giusta.
+ */
+var RIPCONTO={ mai:0, attesa:0, oggi:0, totale:0, corso:'' };
+
+/** I tre numeri di P3.6, da un elenco di carte già legate alla loro storia. */
+function ripassoConteggiDa(carte){
+  var c={ mai:0, attesa:0, oggi:0, totale:(carte||[]).length };
+  (carte||[]).forEach(function(v){
+    var voce=v.voce;
+    if(!voce || !voce.esito) c.mai++;
+    else if(RipassoIntervalli.dovuta(voce)) c.oggi++;
+    else c.attesa++;
+  });
+  return c;
+}
+
+function ripassoContoDisegna(){
+  var b=document.getElementById('ripassoBtn'); if(!b) return;
+  /* ⚠️ Il numero e la parola devono dire la STESSA cosa. La prima versione
+     scriveva «207 da rivedere» quando quelle 207 carte non erano mai state
+     studiate: il numero era la coda intera, la parola parlava di scadenze, e
+     insieme mentivano. Adesso il badge mostra ciò che URGE — le scadute, se ce
+     ne sono — e ripiega sulle mai studiate solo quando di arretrato non ce n'è.
+     I tre numeri per intero restano nel suggerimento. */
+  var scaduto=RIPCONTO.oggi>0;
+  var quante=scaduto ? RIPCONTO.oggi : RIPCONTO.mai;
+  /* Nasce e resta nascosto finché non c'è niente da fare: un badge fermo su
+     zero diventa arredamento, e smette di voler dire qualcosa. */
+  b.hidden = !quante;
+  var n=b.querySelector('.ripn'); if(n) n.textContent=String(quante);
+  var l=b.querySelector('.riplab');
+  if(l) l.textContent = scaduto ? 'da rivedere' : (quante===1 ? 'carta nuova' : 'carte nuove');
+  b.title = quante
+    ? (RIPCONTO.oggi+' da rivedere oggi · '+RIPCONTO.mai+' mai studiate · '+RIPCONTO.attesa+' in attesa'
+       +'\nApre il Ripasso')
+    : 'Niente da rivedere adesso';
+  b.setAttribute('aria-label', quante+(scaduto?' carte da rivedere adesso':' carte mai studiate')+', apre il Ripasso');
+  if(typeof barreSeparatori==='function'){ try{ barreSeparatori(); }catch(e){} }
+}
+
+/** Ricalcola i conteggi del corso aperto. Un giro solo sul main per l'intero
+ *  corso: la coda della vista è un sottoinsieme di questi stessi dati. */
+async function ripassoContoAggiorna(){
+  var api=ripassoApi(), corso=corsoAttivo();
+  if(!api || !corso){ RIPCONTO={ mai:0, attesa:0, oggi:0, totale:0, corso:'' }; ripassoContoDisegna(); return; }
+  try{
+    var carte=await ripassoConStoria(ripassoDomandeVive('corso'));
+    var c=ripassoConteggiDa(carte);
+    c.corso=corso;
+    RIPCONTO=c;
+  }catch(e){ /* un conteggio che non riesce non deve rompere il lettore */ }
+  ripassoContoDisegna();
 }
 
 /** La vista è a schermo? (Lo strumento può essere in magazzino.) */
@@ -2660,6 +2748,13 @@ function ripassoSalta(){
   ripassoVistaDisegna();
 }
 
+/* Il contatore in testata è una PORTA, non un'insegna: dice che c'è da fare e
+   ci porta. Passa da `bancoMostra`, la stessa funzione della tendina del blocco —
+   due strade, un rito solo. */
+document.addEventListener('click', function(e){
+  var b=e.target.closest?e.target.closest('#ripassoBtn'):null; if(!b) return;
+  if(typeof bancoMostra==='function') bancoMostra('flashcard');
+});
 document.addEventListener('click', function(e){
   var t=e.target.closest?e.target.closest('#ripPie [data-mostra],#ripPie [data-esito],#ripCorpo [data-vai],#ripCorpo [data-ricarica],#ripSalta'):null;
   if(!t) return;
