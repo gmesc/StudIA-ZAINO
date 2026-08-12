@@ -550,6 +550,38 @@ sezione('Un file illeggibile non si spaccia per «nessuna evidenza»');
   check('e non inventa evidenze', 0, r.evidenze.length);
 }
 
+/* Il TRATTO — sottolineatura o fondo pieno — è aspetto, come il colore. Le due
+   cose che devono restare vere: le evidenze scritte prima che il campo
+   esistesse non cambiano faccia, e cambiare tratto non fa nascere una seconda
+   evidenza (l'id non dipende da come si vede). */
+sezione('Il tratto: come si segna');
+{
+  check('un tratto sconosciuto ricade sul default', 'sotto', E.trattoValido('fosforescente'));
+  check('e così un campo che non c\'è', 'sotto', E.trattoValido(undefined));
+  check('«overlay» si accetta', 'overlay', E.trattoValido('overlay'));
+  check('anche scritto storto', 'overlay', E.trattoValido('  OVERLAY '));
+  check('una voce senza tratto ne prende uno', 'sotto', E.normalizzaVoce({ exact: 'x' }).tratto);
+  check('il tratto NON entra nell\'identità: stessa parola, stesso id',
+    E.identita({ capitoloId: 'c1', exact: 'sinapsi', prefix: '', suffix: '' }),
+    E.identita({ capitoloId: 'c1', exact: 'sinapsi', prefix: '', suffix: '', tratto: 'overlay' }));
+
+  const C = 'corso-tratto';
+  E.aggiungi(VAULT, C, { exact: 'sinapsi', capitoloId: 'c1', colore: '#a16207' }, QUANDO);
+  const uno = E.leggi(VAULT, C).evidenze;
+  check('nasce sottolineata', ['sotto'], uno.map((e) => e.tratto));
+  const r = E.tratta(VAULT, C, uno[0].id, 'overlay');
+  check('e si può passare al fondo pieno', 'overlay', r.evidenza.tratto);
+  check('senza duplicare l\'elenco', 1, r.evidenze.length);
+  check('il tratto sopravvive alla rilettura', 'overlay', E.leggi(VAULT, C).evidenze[0].tratto);
+  check('cambiare tratto a una che non c\'è lo dice',
+    'evidenza non trovata', E.tratta(VAULT, C, 'inesistente', 'overlay').error);
+  /* ⚠️ Il controllo che vale per i vault già in giro: una riga scritta prima di
+     questo campo si legge come sottolineata, non come «senza tratto». */
+  fs.writeFileSync(E.percorso(VAULT, C),
+    JSON.stringify({ evidenze: [{ id: 'vecchia', exact: 'mitocondrio', capitoloId: 'c1' }] }), 'utf-8');
+  check('una voce vecchia resta sottolineata', 'sotto', E.leggi(VAULT, C).evidenze[0].tratto);
+}
+
 /* La regola «≤ 3 parole appuntate diventano anche parola chiave» si gioca tutta
    su questo conteggio: se sbaglia, la selezione giusta non diventa keyword — o,
    peggio, mezza frase ci diventa. Qui si prova il conteggio, non l'interfaccia

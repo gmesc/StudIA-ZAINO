@@ -283,6 +283,12 @@ contextBridge.exposeInMainWorld('vault', {
       if (!vaultPath) return { evidenza: null, evidenze: [], error: 'nessuna cartella vault impostata' };
       try { return evidenzeLib.colora(vaultPath, courseId, id, colore); }
       catch (e) { return { evidenza: null, evidenze: [], error: e.message }; }
+    },
+    // il gemello di `colora`, per il TRATTO: sottolineatura o fondo pieno
+    tratta: (courseId, id, tratto) => {
+      if (!vaultPath) return { evidenza: null, evidenze: [], error: 'nessuna cartella vault impostata' };
+      try { return evidenzeLib.tratta(vaultPath, courseId, id, tratto); }
+      catch (e) { return { evidenza: null, evidenze: [], error: e.message }; }
     }
   },
   /* L'album delle immagini ritagliate dai documenti (ALBUM/ + _album.json).

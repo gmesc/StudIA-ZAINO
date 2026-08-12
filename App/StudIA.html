@@ -1409,6 +1409,20 @@
   .ctxmenu .ctx-col:hover{ box-shadow:var(--sh-3d); }
   .ctxmenu .ctx-col.nessuno{ background:var(--panel); position:relative; }
   .ctxmenu input[type=color]{ width:22px; height:18px; padding:0; border:1px solid var(--line); background:var(--panel); cursor:pointer; }
+  /* I due tratti — sottolineatura o fondo pieno — sotto la riga dei colori.
+     Stessa famiglia dei bottoni di quel menu, ma con l'etichetta accanto: qui
+     un campione da solo direbbe «giallo», non «in che modo». Il campione porta
+     il tratto che rappresenta, così si sceglie guardando invece che provando. */
+  .ctxmenu .ctx-tratti{ display:flex; align-items:center; gap:.35rem; padding:.25rem .6rem .35rem; }
+  .ctxmenu .ctx-tratto{ display:flex; align-items:center; gap:.3rem; flex:1 1 0; justify-content:center;
+    padding:.25rem .35rem; border:1px solid var(--line); background:var(--panel); color:var(--ink);
+    font:inherit; font-size:11px; cursor:pointer; }
+  .ctxmenu .ctx-tratto:hover{ box-shadow:var(--sh-3d); }
+  .ctxmenu .ctx-tratto.scelto{ border-color:var(--ink); }
+  .ctxmenu .ctx-tratto[disabled]{ opacity:.45; cursor:not-allowed; }
+  .ctxmenu .ctx-tratto__ex{ font-weight:700; }
+  .ctxmenu .ctx-tratto .ex-sotto{ text-decoration:underline var(--yellow-strong) .18em; text-underline-offset:.12em; }
+  .ctxmenu .ctx-tratto .ex-overlay{ background:color-mix(in srgb, var(--yellow-strong) 34%, transparent); }
   .mapmenu .ctx-casc{ display:flex; align-items:center; gap:.4rem; font-size:11px; color:var(--muted);
     padding:.1rem .6rem .4rem; cursor:pointer; }
   /* La bolla delle fonti: un menu, ma di NOMI — quindi più larga del menu dei
@@ -7323,6 +7337,33 @@ function appuntaStileAttivo(origine){
   return (origine && origine.tipo==='pdf') ? '' : 'nota';
 }
 /** La riga dei riquadri, per il menu e per la barra: la stessa in tutte e due. */
+/**
+ * La riga dei due TRATTI: sottolineatura o fondo pieno.
+ *
+ * Sta accanto alla riga dei colori e ha lo stesso patto — **scegliere fa il
+ * gesto e diventa il modo di farlo** — perché è la stessa domanda posta su un
+ * altro asse: là «di che colore», qui «in che modo».
+ *
+ * ⚠️ Una funzione sola per le due superfici che la mostrano (il menu della
+ * selezione e quello del chip): due costruzioni vorrebbero dire due etichette
+ * che un giorno divergono, ed è la lezione già pagata da `selMenuHTML`.
+ * I campioni sono disegnati col tratto che rappresentano: un bottone che dice
+ * «Evidenzia» e non mostra come, si prova e basta.
+ */
+function trattoRiga(attivo, spento, marca){
+  var att=(EV_TRATTI.indexOf(attivo)>=0)?attivo:'sotto';
+  var voci=[{ k:'sotto', et:'Sottolinea', tip:'Una riga spessa sotto il testo' },
+            { k:'overlay', et:'Evidenzia', tip:'Fondo pieno, come un evidenziatore' }];
+  var h='<div class="ctx-tratti" role="group" aria-label="Come segnare">';
+  voci.forEach(function(v){
+    h+='<button class="ctx-tratto'+(att===v.k?' scelto':'')+'" type="button"'+
+       ' data-'+(marca||'tratto')+'="'+v.k+'" aria-pressed="'+(att===v.k?'true':'false')+'"'+
+       (spento?' disabled':'')+' title="'+escHtml(v.tip)+'" aria-label="'+escHtml(v.et)+': '+escHtml(v.tip)+'">'+
+       '<span class="ctx-tratto__ex ex-'+v.k+'">Aa</span>'+escHtml(v.et)+'</button>';
+  });
+  return h+'</div>';
+}
+
 function appuntaRiga(origine, spento){
   var attivo=appuntaStileAttivo(origine);
   var h='<div class="ctx-cals" role="group" aria-label="Come appuntare">';
@@ -7988,6 +8029,9 @@ function selMenuHTML(sel){
     righeColore+='<input type="color" class="ev-pick" value="'+escHtml(evidenzeColore())+
       '" title="Un altro colore" aria-label="Scegli un altro colore">';
     righeColore+='</div>';
+    /* I due tratti sotto i colori: prima QUALE colore, poi IN CHE MODO. Sopra il
+       colore, la prima cosa che si incontra sarebbe la meno urgente. */
+    righeColore+=trattoRiga(sopra? evTrattoDi(sopra) : evidenzeTratto(), false);
   }
   var origineMenu=origineDaRange(sel.range);
   return '<div class="ctx-head">'+escHtml(breve)+'</div>'+
@@ -8094,6 +8138,19 @@ document.addEventListener('click', function(e){
   var b=e.target.closest('#selMenu .ctx-col, #selBarra .ctx-col'); if(!b || b.disabled) return;
   var c=b.getAttribute('data-evcol'), range=SELMENU.range;
   selMenuChiudi(); selBarraChiudi(); evidenzeColoreScegli(c); evidenzia(range, c);
+});
+/* La riga dei tratti: stesso patto di quella dei colori — scegliere segna QUI e
+   diventa il modo di segnare da adesso in poi. Su un'evidenza che c'è già,
+   `evidenzia` è idempotente (stesso punto, stesso id): cambia il tratto invece
+   di aggiungerne una seconda. */
+document.addEventListener('click', function(e){
+  if(!e.target.closest) return;
+  var b=e.target.closest('#selMenu .ctx-tratto, #selBarra .ctx-tratto'); if(!b || b.disabled) return;
+  var t=b.getAttribute('data-tratto'), range=SELMENU.range;
+  selMenuChiudi(); selBarraChiudi(); evidenzeTrattoScegli(t);
+  /* Colore `null`: questo comando parla del TRATTO, e il colore lo decide chi
+     c'era prima — l'evidenza che sta lì, o la memoria se il punto è vergine. */
+  evidenzia(range, null, { tratto:t });
 });
 /* Il picker nativo parla con `change`, non con `click`: un `click` arriverebbe
    all'apertura della tavolozza, quando un colore non è ancora stato scelto. */
@@ -8376,14 +8433,33 @@ function evidenzeDi(sup){
 /** Una regola `::highlight()` per ogni colore in uso. Si generano invece di
  *  scriverle a mano perché il picker può produrre un colore qualunque, e
  *  cinque regole fisse coprirebbero solo i preset. */
-function evidenzeStile(colori){
+/**
+ * Le regole CSS delle evidenze accese, una per gruppo.
+ *
+ * Un gruppo non è più un colore ma una COPPIA colore+tratto (`'#a16207|sotto'`):
+ * lo stesso giallo può segnare per sottolineatura in un punto e a fondo pieno in
+ * un altro, e un `::highlight()` porta una regola sola.
+ *
+ * ⚠️ Il fondo pieno usa il colore **diluito** (`color-mix`, 34%) e non il colore
+ * nudo: i preset sono tinte sature scelte per una linea sotto il testo, e stese
+ * dietro le lettere lascerebbero un testo scuro su fondo scuro. Il 34% è quello
+ * che tiene il contrasto della prosa sopra il minimo restando riconoscibile come
+ * evidenziatore.
+ */
+function evidenzeStile(chiavi){
   var el=document.getElementById('evStile');
   if(!el){ el=document.createElement('style'); el.id='evStile'; document.head.appendChild(el); }
-  el.textContent=colori.map(function(c,i){
-    /* Sottolineatura spessa e non fondo pieno: il fondo litigherebbe con il
-       giallo che la lettura vocale accende sul paragrafo in corso, e chi legge
-       lentamente — il pubblico di quest'app — è proprio chi userebbe le due
-       cose insieme. Il colore resta il canale che distingue le keyword. */
+  el.textContent=chiavi.map(function(k,i){
+    var taglio=String(k).lastIndexOf('|');
+    var c=taglio<0 ? k : String(k).slice(0,taglio);
+    var tratto=taglio<0 ? 'sotto' : String(k).slice(taglio+1);
+    if(tratto==='overlay'){
+      /* Niente `color` imposto: il testo resta quello del tema, e con il fondo
+         al 34% si legge in chiaro e in scuro senza due palette da mantenere. */
+      return '::highlight(ev-'+i+'){ background-color: color-mix(in srgb, '+c+' 34%, transparent); }';
+    }
+    /* La sottolineatura spessa resta il default, e la ragione è scritta in
+       `evidenzeTratto`: il fondo pieno litiga col giallo della lettura vocale. */
     return '::highlight(ev-'+i+'){ text-decoration: underline '+c+' 0.22em; text-underline-offset:0.14em; }';
   }).join('\n');
 }
@@ -8414,16 +8490,21 @@ function evidenzeDisegna(){
     r.orfane.forEach(function(v){ EVIDENZE.orfaneId.push(v.id); });
     r.trovate.forEach(function(t){
       var rg=rangeDaOffset(m, t.inizio, t.fine); if(!rg) return;
+      /* La chiave del gruppo è colore + tratto: due evidenze dello stesso giallo
+         ma segnate diversamente vogliono due regole CSS, quindi due highlight.
+         Il separatore è in fondo (`lastIndexOf`) perché un colore può contenerlo
+         — `color-mix(...)` no oggi, ma `var(--x, a|b)` sì domani. */
       var c=t.voce.colore || 'currentColor';
-      if(!perColore[c]){ perColore[c]=[]; ordine.push(c); }
-      perColore[c].push(rg); quante++;
+      var k=c+'|'+evTrattoDi(t.voce);
+      if(!perColore[k]){ perColore[k]=[]; ordine.push(k); }
+      perColore[k].push(rg); quante++;
     });
   });
   if(!quante){ evidenzeStile(ordine); keywordDisegna(); return; }
   evidenzeStile(ordine);
-  ordine.forEach(function(c,i){
+  ordine.forEach(function(k,i){
     var h=new Highlight();
-    perColore[c].forEach(function(rg){ h.add(rg); });
+    perColore[k].forEach(function(rg){ h.add(rg); });
     var nome='ev-'+i;
     CSS.highlights.set(nome, h); EVIDENZE.nomi.push(nome);
   });
@@ -8604,6 +8685,10 @@ document.addEventListener('contextmenu', function(e){
   });
   h+='<input type="color" id="kwColPick" value="'+escHtml(ev.colore||'#a16207')+'" aria-label="Un altro colore">';
   h+='</div>';
+  /* Il tratto si cambia da qui come il colore: sono i due modi in cui una parola
+     chiave si vede, e governarli in due posti diversi vorrebbe dire cercarne uno
+     nel menu dove non c'è. */
+  h+=trattoRiga(evTrattoDi(ev), false, 'kwtratto');
   /* «Vai al capitolo» dice il posto sbagliato quando la parola viene da un
      documento: là si torna al PDF, alla sua pagina. */
   h+='<button class="ctx-item" role="menuitem" data-kwaz="vai">'+
@@ -8647,11 +8732,24 @@ function kwRicolora(id, colore){
   if(r && r.error){ toast('Non cambiata: '+r.error, false); return; }
   EVIDENZE.elenco=r.evidenze; evidenzeDisegna();
 }
+/** Il gemello per il tratto. Cambia QUESTA parola chiave e basta: la memoria
+ *  dell'ultima scelta la muove chi evidenzia, non chi ritocca una voce già
+ *  fatta — altrimenti sistemare una vecchia evidenza cambierebbe di nascosto il
+ *  modo in cui si segnano le prossime. */
+function kwCambiaTratto(id, tratto){
+  var api=evidenzeApi(); if(!api) return;
+  if(!api.tratta){ toast('Aggiorna l’app per cambiare il tratto', false); return; }
+  var r=api.tratta(corsoAttivo(), id, tratto);
+  if(r && r.error){ toast('Non cambiata: '+r.error, false); return; }
+  EVIDENZE.elenco=r.evidenze; evidenzeDisegna();
+}
 document.addEventListener('click', function(e){
   if(!e.target.closest) return;
   var m=document.getElementById('kwMenu'); if(!m) return;
   var col=e.target.closest('#kwMenu .ctx-col');
   if(col){ var id=m.dataset.kw; kwMenuChiudi(); kwRicolora(id, col.getAttribute('data-kwcol')); return; }
+  var tr=e.target.closest('#kwMenu .ctx-tratto');
+  if(tr){ var idT=m.dataset.kw; kwMenuChiudi(); kwCambiaTratto(idT, tr.getAttribute('data-kwtratto')); return; }
   var it=e.target.closest('#kwMenu .ctx-item');
   if(!it){ if(kwMenuAperto() && !e.target.closest('#kwMenu')) kwMenuChiudi(); return; }
   var az=it.getAttribute('data-kwaz'), ev=kwDaId(m.dataset.kw);
@@ -8691,6 +8789,34 @@ function evidenzeColoreScegli(c){
   try{ localStorage.setItem('studia.evidenze.colore', EVIDENZE.colore); }catch(e){}
 }
 /**
+ * Come si segna: `sotto` (sottolineatura spessa) o `overlay` (fondo pieno, alla
+ * Stabilo). Stessa forma della memoria del colore — l'ultima scelta resta, e
+ * resta su QUESTO computer: è una preferenza di lettura, non un dato del vault.
+ *
+ * ⚠️ Il default è `sotto` e non per abitudine: il fondo pieno litiga col giallo
+ * che la lettura vocale accende sul paragrafo in corso, e chi legge lentamente —
+ * il pubblico di quest'app — è proprio chi usa le due cose insieme. Chi vuole
+ * l'evidenziatore vero adesso può sceglierlo; chi non tocca niente continua a
+ * vedere quello che vedeva.
+ */
+var EV_TRATTI=['sotto','overlay'];
+function evidenzeTratto(){
+  if(EVIDENZE.tratto) return EVIDENZE.tratto;
+  try{ EVIDENZE.tratto=localStorage.getItem('studia.evidenze.tratto')||''; }catch(e){}
+  if(EV_TRATTI.indexOf(EVIDENZE.tratto)<0) EVIDENZE.tratto='sotto';
+  return EVIDENZE.tratto;
+}
+function evidenzeTrattoScegli(t){
+  EVIDENZE.tratto=(EV_TRATTI.indexOf(t)>=0)?t:'sotto';
+  try{ localStorage.setItem('studia.evidenze.tratto', EVIDENZE.tratto); }catch(e){}
+}
+/** Il tratto di una voce letta da disco: le evidenze scritte prima che questo
+ *  campo esistesse non ne hanno uno, e devono restare come sono sempre state. */
+function evTrattoDi(e){
+  var t=e && e.tratto;
+  return (EV_TRATTI.indexOf(t)>=0) ? t : 'sotto';
+}
+/**
  * Evidenzia la selezione. Il selettore si costruisce dalla stringa del
  * capitolo — non da `selection.toString()`, che in Chromium arriva maiuscolo
  * dai titoli — e l'evidenza è idempotente: lo stesso punto ha lo stesso id, e
@@ -8715,6 +8841,17 @@ function evidenzeColoreScegli(c){
  * chiesto «Appunta» non deve ricevere come primo messaggio un errore sulle
  * evidenze. Là il motivo lo dice il toast finale, dopo, in una frase sola.
  */
+/**
+ * ⚠️ Colore e tratto seguono la stessa precedenza, ed è la riga che impedisce a
+ * un gesto di rovinare l'altro: **quello che il chiamante dichiara**, poi
+ * **quello che l'evidenza già lì ha addosso**, poi la memoria globale.
+ *
+ * Senza il passaggio di mezzo, cliccare «Evidenzia» su una parola segnata di
+ * verde la faceva diventare gialla — il colore corrente — e cliccare un colore
+ * su una parola a fondo pieno la riportava sottolineata. Misurato cliccando sul
+ * menu vero, non dedotto: i due attributi sono indipendenti e ciascun comando
+ * deve toccare soltanto il suo.
+ */
 function evidenzaPrepara(range, colore, opt){
   var muto=!!(opt && opt.silenzioso);
   function no(msg){ if(!muto) toast(msg,false); return null; }
@@ -8735,8 +8872,13 @@ function evidenzaPrepara(range, colore, opt){
   /* Il corso si porta dietro adesso: fra il primo e il secondo tempo l'utente
      può averne aperto un altro, e l'evidenza andrebbe a finire nel corso
      sbagliato — o in un corso che non c'è più. */
+  /* Che cosa c'è già in questo punto: `evidenzaSotto` risponde con la voce, o
+     `null` se il punto è vergine. È l'anello che rende indipendenti i due
+     comandi (vedi la nota sopra). */
+  var gia=evidenzaSotto(range);
   return { corso:corsoAttivo(), indirizzo:indirizzo, sel:sel,
-           colore: colore || evidenzeColore() };
+           colore: colore || (gia && gia.colore) || evidenzeColore(),
+           tratto: (opt && opt.tratto) || (gia && evTrattoDi(gia)) || evidenzeTratto() };
 }
 /**
  * Il secondo tempo: scrive. `opt.silenzioso` tace SOLO il «Parola chiave
@@ -8749,7 +8891,7 @@ function evidenzaScrivi(prep, opt){
   if(prep.corso!==corsoAttivo()){ toast('Il corso è cambiato: parola chiave non aggiunta',false); return false; }
   var r=api.aggiungi(prep.corso, Object.assign({
     exact:prep.sel.exact, prefix:prep.sel.prefix, suffix:prep.sel.suffix,
-    colore:prep.colore
+    colore:prep.colore, tratto:prep.tratto||evidenzeTratto()
   }, prep.indirizzo));
   if(r && r.error){ toast('Non salvata: '+r.error,false); return false; }
   EVIDENZE.elenco=r.evidenze; EVIDENZE.corso=prep.corso;
