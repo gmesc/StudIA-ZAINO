@@ -1,5 +1,9 @@
 # Handoff definitivo — 12 agosto 2026, sera
 
+> 🆕 **Dopo questo c'è [HANDOFF-DEFINITIVO-2026-08-12c.md](HANDOFF-DEFINITIVO-2026-08-12c.md)**
+> (notte), che NON lo sostituisce: si occupa solo delle **evidenze e delle parole chiave** e della
+> scorciatoia del player. Quel lavoro è provato e **committato** (`01b608e`, `8a90ff0`, `2ab9b03`).
+
 > **A chi arriva adesso, in una chat nuova: questo file basta per ripartire.**
 > Racconta la giornata del 12 agosto — il **ripasso che diventa un sistema vero** (P3.3, P3.2,
 > P3.6, cioè tutta la riga 1 di PIANO-BRAYNR), la **guida dell'architetto** e le due skill che la
