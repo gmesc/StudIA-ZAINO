@@ -11,8 +11,9 @@
 ## 1. Le decisioni, prese e da rispettare
 
 1. **Uno zaino è l'equivalente di un corso**, e sul disco vive in `Zaini/<id>/`.
-2. **Niente OCR di serie.** I PDF sono nativi. Per quelli fotografati c'è `ocrmypdf`, opzionale,
-   a richiesta, su una **copia** — mai sull'originale.
+2. **Niente OCR di serie.** I PDF sono nativi. Per quelli fotografati c'è il riconoscimento
+   **proposto, mai imposto** (12/8/26: fatto, con `tesseract.js` — non più `ocrmypdf`, vedi Z7):
+   agisce sulla **copia** nel vault, mai sull'originale dell'utente.
 3. **Non esiste una superficie di testo.** Si legge il PDF. Gli strumenti lavorano sul layer di
    testo del viewer.
 4. **L'identità di un'annotazione è `materiale + pagina + citazione`**, non `capitolo + ordine`.
@@ -435,15 +436,29 @@ dal selettore «Media» nella barra del player), non c'è un «togli questo medi
 come per le fonti, e il Player non è nella disposizione di fabbrica dello zaino — lo si
 sceglie dalla tendina di un blocco.
 
-### Z7 — Impostazioni › ZAINO
-Scheda nuova (`.set-tab` / `.set-pane`, il meccanismo c'è). Dentro: stato di `ocrmypdf`, scarico
-delle lingue, e la spiegazione di quando serve.
-⚠️ `ocrmypdf` scrive un layer di testo invisibile **dentro una copia** del PDF: da quel momento il
-documento è indistinguibile da un nativo e tutto il resto del codice non cambia. Il motore si scrive
-nell'indice (`motore: 'pypdf' | 'tesseract'`), come già fa `lib/ocr.js` — o fra un mese ci sono
-indici di tre provenienze e nessun modo di sapere quale.
-**Crediti**: `ocrmypdf` (MPL-2.0) e `Tesseract OCR` (Apache-2.0) entrano in `CREDITI`, accanto a
-pypdf e PDF.js.
+### Z7 — Il riconoscimento del testo (OCR) — ✅ fatto il 12/8/26, con un motore diverso
+Il cuore di Z7 è consegnato, ma **non con `ocrmypdf`**: con **`tesseract.js` + `pdf-lib`**, tutto
+dentro l'app. Due ragioni, misurate il 12/8/26:
+1. **licenza** — `ocrmypdf` si porta dietro Ghostscript (**AGPL-3.0**): distribuirlo in un'app
+   commerciale vorrebbe dire licenza Artifex a pagamento. tesseract.js/tessdata/pdf-lib sono
+   Apache-2.0/MIT. (Per lo stesso motivo il layer non può farlo Chandra: dà i bbox dei **blocchi**,
+   mai delle parole — il suo parser li butta, «not needed in open source» — e i pesi hanno il tetto
+   dei 2 M$ di fatturato.)
+2. **dipendenze** — niente Python, niente brew: gli studenti non ce li hanno. Le lingue (ita+eng,
+   ~18 MB) sono vendorizzate in `App/assets/tesseract/`.
+
+Com'è fatto: il drop di un PDF fotografato (indice: `scansione`, soglia `CAR_SCANSIONE` in
+`lib/ocr.js`) **propone** il riconoscimento; il gesto si rifà dal bottone **Aa↗** nella barra del
+documento. Il renderer rasterizza con pdf.js, il main riconosce (`lib/ocrpdf.js`) e scrive il layer
+invisibile **nella copia** del vault — verifica con pdf.js PRIMA del rename, mai sull'originale
+dell'utente. L'indice ricorda chi ha letto (`ocr: {motore, quando, improntaOriginale}`) e
+l'impronta di prima impedisce il doppione al ritrascinamento (`gemelloOcr`).
+⚠️ Il layer scrive le parole a **qualunque confidenza**: un buco nel layer sposta la selezione di
+tutta la riga, testo brutto è meglio di testo slittato.
+**Resta di Z7**: la scheda Impostazioni › ZAINO (stato del componente, spiegazione di quando
+serve) — il gesto oggi vive tutto nel flusso del documento.
+**Crediti**: fatti — `tesseract.js`, `Tesseract OCR (tessdata)` (Apache-2.0) e `pdf-lib` (MIT) in
+`CREDITI`, accanto a pypdf e PDF.js.
 
 ---
 
