@@ -265,7 +265,35 @@ La terza sorgente è il ciclo di Braynr (le *tue* domande diventano carte) ed è
 mazzi personali e non solo generati. Le prime due rendono il sistema utile dal primo giorno,
 senza che l'utente abbia scritto nulla.
 
-**P3.3 — Ripasso: quattro esiti, intervalli SM-2.**
+**P3.3 — Ripasso: quattro esiti, intervalli SM-2.** ✅ **FATTO il 12 agosto 2026**
+(`App/assets/ripasso/intervalli.js`, la vista nel renderer, `test/ripasso.js`,
+`test/cdp/prova-ripasso-vista.js`). Com'è andata in pratica:
+
+- ⚠️ **L'algoritmo non sta in `lib/`, sta in un modulo UMD**: i tempi servono in due posti — il
+  main che scrive `prossimo` su disco, il renderer che li stampa sopra i bottoni — e due copie
+  vorrebbero dire un bottone che promette dieci minuti e un file che ne registra quindici, senza
+  che nessuno se ne accorga perché nessuno confronta. `lib/ripasso.js` lo `require()`, l'app lo
+  carica con `<script src>`, è lo **stesso file**. La prova CDP misura proprio quell'uguaglianza.
+- ⚠️ **Facilità e ripetizioni non si scrivono**: si ricalcolano ogni volta dalla `storia`, che è
+  l'unico dato vero. Un contatore salvato accanto sarebbe un secondo posto che diverge — e
+  cambiando la formula domani si ricalcola anche il passato invece di lasciare metà archivio
+  coi numeri vecchi.
+- **`registra()` riempie `prossimo` da sé**: non è più a carico di chi chiama. Un campo che ogni
+  chiamante deve ricordarsi di riempire è un campo che prima o poi resta vuoto.
+- **La coda**: prima gli arretrati (il più scaduto davanti), poi le mai viste. Chi ha trecento
+  carte in ritardo deve poterle smaltire; le voci senza `prossimo` — scritte prima di oggi —
+  contano come arretrato, non come futuro.
+- La vista è uno **strumento del banco** (chiave `flashcard`, nome «Ripasso»), non una schermata:
+  si ripassa col capitolo accanto. I comandi stanno in un piede fisso fuori dalla parte che
+  scorre — dentro, una domanda lunga li spingeva sotto la piega.
+- ⚠️ Trovato per strada: `lib/ripasso.js` conteneva un **byte NUL letterale** come separatore
+  dell'identità (`join('\0')` scritto per davvero), che per git rendeva il file binario — niente
+  `diff`, niente `blame`. Stesso male di `lib/evidenze.js` l'11 agosto: **quando si trova, si
+  cerca subito anche altrove.** Sostituito con la sequenza di escape, id invariati (verificati).
+- Sorgente delle carte: **il quiz**. Glossario (P3.2) e callout `domanda` (P1.3) entrano in
+  `ripassoDomandeVive()`, che è l'unico punto da toccare.
+
+Il testo originale della proposta, per riferimento:
 Di nuovo / Difficile / Buono / Facile → SM-2 semplificato (una pura funzione
 `prossimoIntervallo(storia, esito)` in `lib/ripasso.js`, testata coi casi limite; l'algoritmo è
 documentato e bastano poche decine di righe — la sofisticazione di FSRS non ripaga la complessità
@@ -318,7 +346,7 @@ vere sono poche.
 
 | # | lavoro | dipende da | taglia | note |
 |---|---|---|---|---|
-| 1 | ~~P3.1~~ ✅ + **P3.2 (glossario) + P3.3 + P3.6** — ripasso persistente sui contenuti già generati | — | M | il valore c'è dal giorno uno, su 243 capitoli |
+| 1 | ~~P3.1~~ ✅ ~~P3.3~~ ✅ + **P3.2 (glossario) + P3.6** — ripasso persistente sui contenuti già generati | — | M | il valore c'è dal giorno uno, su 243 capitoli |
 | 2 | **P1.2 tag + P1.3 callout `domanda`** | — | S | sblocca la terza sorgente di carte |
 | 3 | **P3.4 mazzi-query** (+ appunti come sorgente) | 1, 2 | S/M | i «mazzi viventi» veri e propri |
 | 4 | **P1.1 evidenze** | — | M | indipendente; riusa i marker |
@@ -329,10 +357,12 @@ vere sono poche.
 
 Tre avvertenze trasversali, dalle trappole già pagate:
 
-1. **Niente seconda copia di una logica** (④): il renderer non può richiamare `lib/`, quindi ogni
-   regola condivisa fra lettore e processo principale (parsing carte, layout mappe) nasce in `lib/`
-   pura e, dove il renderer deve ripeterla, un test confronta le due implementazioni — com'è già
-   per `titoloMateriale`.
+1. **Niente seconda copia di una logica** (④). ⚠️ **Aggiornata il 12 agosto**: il rimedio non è più
+   «due implementazioni e un test che le confronta», è **un file solo**. Una regola pura che serve
+   di qua e di là nasce come modulo **UMD** in `App/assets/…` — `<script src>` nel browser,
+   `require()` in Node — e `lib/` lo richiama. Così ha fatto `ripasso/intervalli.js`, ed è la
+   strada per chiunque venga dopo. Il confronto fra due copie resta solo dove una copia è
+   inevitabile perché tocca `crypto` o `fs` (l'identità delle carte sta nel main, e basta).
 2. **Ogni campo previsto ha un riempitore dichiarato** (①-bis): `rimando` nei nodi di mappa,
    `tags` negli appunti, `prossimo` nello stato di ripasso — per ciascuno, scrivere *chi* lo
    popola, e se la risposta è «il modello, se se ne ricorda», ricavarlo deterministicamente.

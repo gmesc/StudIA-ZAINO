@@ -197,7 +197,14 @@ App/
     evidenze/            (già ancoraggio.js) + elenco.js  (ordina, filtra, orfane)
     rimandi/
       sintassi.js        pdf:NN#p=7 · video:NN#t=90 · cap:… — scrittura e lettura
+    ripasso/
+      intervalli.js      ⭐ SM-2 semplificato: i tempi sui bottoni E il campo su disco
 ```
+
+⚠️ **`ripasso/intervalli.js` è nato qui, non è uscito dal monolite** — ed è il primo modulo che
+serve al MAIN prima ancora che al renderer (`lib/ripasso.js` lo `require()`). Vale come precedente:
+una regola pura che serve di qua e di là non si scrive in `lib/` con una copia nel lettore, si
+scrive **una volta** in `assets/` e la si richiama dai due lati.
 
 **Budget dichiarato**: `StudIA.html` sotto le **9.000 righe** a fine lavoro, e nessun modulo nuovo
 sopra le 600. Non è un obiettivo estetico: è il numero sotto il quale il file torna a entrare in una
