@@ -5403,7 +5403,7 @@ async function playerScegliApri(ancora){
 }
 
 /**
- * ✎ / ⌘⇧M — segna questo minuto negli appunti.
+ * ✎ / ⌘⇧C — segna questo minuto negli appunti.
  *
  * Un gesto solo che fa tre cose, in quest'ordine: **mette in pausa** — o si
  * scrive mentre la lezione va avanti, che è tutta la fatica di prendere appunti
@@ -5437,7 +5437,7 @@ async function playerAppunta(){
  *
  * Due famiglie, e la differenza è dove sono le mani.
  *
- * 1. **⌘⇧M** vale SEMPRE, anche mentre si scrive: è il gesto per cui questo
+ * 1. **⌘⇧C** vale SEMPRE, anche mentre si scrive: è il gesto per cui questo
  *    strumento esiste — sentire una cosa e segnarla senza staccare le mani
  *    dalla tastiera. Per questo è una combinazione e non una lettera.
  * 2. **K / J / L / spazio / < / >** valgono solo quando NON si sta scrivendo.
@@ -5454,7 +5454,7 @@ function scriveraDaTastiera(el){
 }
 window.addEventListener('keydown', function(e){
   var mod = e.metaKey || e.ctrlKey;
-  if(mod && e.shiftKey && (e.key==='m' || e.key==='M')){
+  if(mod && e.shiftKey && (e.key==='c' || e.key==='C')){
     e.preventDefault(); playerAppunta(); return;
   }
   if(mod || e.altKey) return;                     // le scorciatoie del sistema restano del sistema
@@ -6026,7 +6026,7 @@ var GUIDA=[
   { nome:'Paragrafo dentro il riquadro', sintassi:'> [!definizione] Decodifica\n> Trasformare i segni in suoni.\n>\n> È diverso dal capire il testo.', nota:'Una riga con il solo «>».' },
   { nome:'Riga vuota dentro il riquadro', sintassi:'> [!nota] Con lo stacco\n> Prima frase.\n> '+NBSP_GUIDA+'\n> Seconda frase.', nota:'Il «>» seguito da uno spazio insecabile: ⌥+Spazio.' },
   { sezione:'Collegamenti' },
-  { nome:'Vai al minuto del video', sintassi:'Vedi [2:12](video:05#t=132) della lezione.', nota:'Non serve scriverlo a mano: con il video in riproduzione premi 🔖 (⌘⇧C) e il minuto esatto entra da sé. Con 📎 scegli il materiale da un elenco.' },
+  { nome:'Vai al minuto del video', sintassi:'Vedi [2:12](video:05#t=132) della lezione.', nota:'Non serve scriverlo a mano: con il video in riproduzione premi ✎ (⌘⇧C) e il minuto esatto entra da sé. Con 📎 scegli il materiale da un elenco.' },
   { nome:'Vai alla pagina del PDF', sintassi:'Vedi la [p. 7](pdf:03#p=7) della dispensa.', nota:'Le frecce ‹ › nella barra dell\'anteprima cambiano pagina; 🔖 cita quella corrente.' },
   { nome:'Rimando a un\'altra lezione', sintassi:'Il tema prosegue in [[02-comorbidita]].', nota:'Il nome della cartella della lezione. Con «|» si cambia l\'etichetta: [[02-comorbidita|le comorbilità]].' },
   { nome:'Rimando a un capitolo preciso', sintassi:'Ne parla [il capitolo sulla decodifica](cap:05-dislessia-decodifica-c02).', nota:'Il wiki-link porta all\'inizio della lezione; questo al capitolo esatto. Non serve scriverlo a mano: lo mette «Appunta» quando estrai un frammento dal testo.' },
@@ -6160,7 +6160,7 @@ function citaPdf(num, pagina, etichetta){
  * è dichiarata qui: **il documento se c'è, il minuto se no**. Il documento
  * vince perché questo tasto sta nella barra degli appunti accanto alla
  * scrittura, e chi scrive guardando una pagina cita quella; per il minuto c'è
- * ✎ nel player (⌘⇧M), che cita sempre e solo il media — un tasto per cosa,
+ * ✎ nel player (⌘⇧C), che cita sempre e solo il media — un tasto per cosa,
  * invece di un tasto che cambia mestiere a seconda di dove hai cliccato prima.
  */
 function citaCorrente(){
@@ -7099,7 +7099,7 @@ function ensureMde(){
       { name:'emoji', title:'Inserisci un\'emoji (OpenMoji)', className:'ncb-emoji',
         action:function(ed){ openEmojiPop(host.querySelector('.ncb-emoji')); } },
       '|',
-      { name:'cita', title:'Cita il punto che stai guardando (⌘⇧C)', className:'ncb-cita',
+      { name:'cita', title:'Cita il punto che stai guardando', className:'ncb-cita',
         action:function(){ citaCorrente(); } },
       { name:'materiali', title:'Cita un materiale del corso', className:'ncb-mat',
         action:function(){ apriMateriali(host.querySelector('.ncb-mat')); } },
@@ -13346,7 +13346,7 @@ window.addEventListener('keydown', function(e){
          niente da inquadrare. -->
     <button class="tbtn" id="plRitaglia" type="button" hidden aria-pressed="false"
             title="Ritaglia un fermo immagine" aria-label="Ritaglia un fermo immagine">&#9986;</button>
-    <button class="tbtn" id="plNota" type="button" hidden title="Segna questo minuto negli appunti (⌘⇧M)"
+    <button class="tbtn" id="plNota" type="button" hidden title="Segna questo minuto negli appunti (⌘⇧C)"
             aria-label="Segna questo minuto negli appunti">&#9998;</button>
     <button class="tbtn" id="plClose" type="button" aria-label="Chiudi il player">&#10005;</button>
   </div>

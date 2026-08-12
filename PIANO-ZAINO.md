@@ -375,7 +375,7 @@ delle fonti.
 descrive **solo il documento**: con due riquadri accesi «che cosa è in anteprima» non ha una
 risposta sola. Il media ce l'ha `PLAYER`. Da lì la regola delle citazioni, dichiarata invece
 che indovinata: 🔖 negli appunti cita il documento se c'è e il minuto se no; ✎ nel player
-(⌘⇧M) cita sempre e solo il minuto. Un tasto per cosa, invece di un tasto che cambia
+(⌘⇧C) cita sempre e solo il minuto. Un tasto per cosa, invece di un tasto che cambia
 mestiere a seconda di dove hai cliccato per ultimo.
 
 **Sul disco**, dentro `Zaini/<id>/`:
@@ -401,7 +401,7 @@ secondo: la trascrizione costa minuti di macchina, è un derivato, e nello zaino
 l'utente (§1.5). Chi la vuole passa dalla pipeline dei corsi.
 
 **I tasti rapidi**, e la differenza è dove sono le mani:
-- **⌘⇧M** vale sempre, **anche mentre si scrive** — è il gesto per cui lo strumento esiste,
+- **⌘⇧C** vale sempre, **anche mentre si scrive** — è il gesto per cui lo strumento esiste,
   e per questo è una combinazione e non una lettera. Fa tre cose in ordine: mette in pausa
   (o si scrive mentre la lezione va avanti), si assicura che un appunto ci sia — creandolo,
   invece di dire «apri prima un appunto», che a metà lezione è un vicolo cieco — e lascia la
