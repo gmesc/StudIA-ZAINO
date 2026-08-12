@@ -477,11 +477,52 @@ ipcMain.handle('fonti:rimossi', (e, { corso } = {}) => fontiLib.rimossi(vaultDir
 ipcMain.handle('fonti:usi', (e, { corso, file } = {}) => fontiLib.usi(vaultDir(), corso, file));
 ipcMain.handle('fonti:dimentica', (e, { corso, impronta } = {}) =>
   fontiLib.dimentica(vaultDir(), corso, impronta));
-ipcMain.handle('fonti:indiceScrivi', (e, { corso, file, pagine, motore } = {}) =>
-  fontiLib.scriviIndice(vaultDir(), corso, file, pagine, motore));
+ipcMain.handle('fonti:indiceScrivi', (e, { corso, file, pagine, motore } = {}) => {
+  const r = fontiLib.scriviIndice(vaultDir(), corso, file, pagine, motore);
+  /* Il verdetto «sembra una scansione» viaggia con l'esito della scrittura: è
+     il momento in cui il renderer ha appena indicizzato un documento nuovo ed
+     è l'unico in cui ha senso proporre il riconoscimento del testo. La soglia
+     sta in lib/ocr, il renderer riceve solo il conto. */
+  if (r && !r.error) Object.assign(r, ocrLib.eScansione(pagine));
+  return r;
+});
 ipcMain.handle('fonti:indiceServe', (e, { corso, file } = {}) =>
   ({ serve: !fontiLib.haIndice(vaultDir(), corso, file) }));
 ipcMain.handle('fonti:indici', (e, { corso } = {}) => fontiLib.leggiIndici(vaultDir(), corso));
+
+/* ---- il testo dentro le fotografie: riconoscimento e layer ----
+ * Il renderer rasterizza (pdf.js e il canvas stanno da lui) e qui si riconosce
+ * e si scrive: tesseract.js e pdf-lib vivono nel main perché servono `fs` e la
+ * sostituzione atomica del file. Vedi lib/ocrpdf.js per le tre scelte di fondo. */
+const ocrpdfLib = require('./lib/ocrpdf');
+ipcMain.handle('ocrpdf:apri', () =>
+  ocrpdfLib.apri(path.join(__dirname, 'App', 'assets', 'tesseract'),
+    path.join(app.getPath('userData'), 'tesseract-cache')));
+ipcMain.handle('ocrpdf:pagina', (e, { png } = {}) =>
+  ocrpdfLib.riconosci(Buffer.from(png || [])));
+ipcMain.handle('ocrpdf:chiudi', () => ocrpdfLib.chiudi());
+ipcMain.handle('ocrpdf:applica', async (e, { corso, file, pagine } = {}) => {
+  if (!vaultDir()) return { error: 'nessuna cartella vault impostata' };
+  const nome = path.basename(String(file || ''));
+  if (!nome || !/\.pdf$/i.test(nome)) return { error: 'documento non valido' };
+  const percorso = path.join(fontiLib.dirPdf(vaultDir(), corso), nome);
+  const r = await ocrpdfLib.scriviLayer(percorso, pagine);
+  if (r.error) return r;
+  /* L'indice ricorda subito CHI ha riconosciuto e l'impronta di prima: la
+     reindicizzazione che il renderer farà tra un attimo riscrive le pagine ma
+     conserva questo campo (vedi scriviIndice). Senza l'impronta, ritrascinare
+     l'originale creerebbe il doppione.
+     ⚠️ Il JSON si legge GREZZO e non con leggiIndici, che filtra via le pagine
+     senza testo: riscritte da lì, un indice di quindici pagine fotografate ne
+     dichiarerebbe zero fino alla reindicizzazione. */
+  let vecchio = {};
+  try { vecchio = JSON.parse(fs.readFileSync(fontiLib.percorsoIndice(vaultDir(), corso, nome), 'utf-8')) || {}; }
+  catch (e2) { /* indice non ancora scritto: il campo entra con la reindicizzazione */ }
+  fontiLib.scriviIndice(vaultDir(), corso, nome,
+    Array.isArray(vecchio.pages) ? vecchio.pages : [], vecchio.motore || 'pdfjs',
+    { motore: 'tesseract.js', quando: new Date().toISOString(), improntaOriginale: r.improntaPrima });
+  return r;
+});
 
 // ---- pacchetto: un corso in un file solo, e ritorno ----
 // Il caso d'uso è un docente che passa il corso agli allievi: dentro ci va tutto

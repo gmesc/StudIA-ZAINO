@@ -4047,7 +4047,10 @@ async function fontiIndicizza(nomeFile){
   if(!pdfjsAvvia()) return { error: 'il visualizzatore dei documenti non si è avviato' };
   var api=(window.vault && window.vault.fonti) || null;
   if(!api) return { error: 'disponibile solo nell’app' };
-  var url=window.vault.srcUrl(nomeFile);
+  /* ⚠️ La query rompe la cache dei `file://` di Chromium, e QUI si rompe
+     sempre: l'indice si costruisce solo su un file appena entrato o appena
+     cambiato (OCR), quindi la cache non può che servire byte vecchi. */
+  var url=window.vault.srcUrl(nomeFile)+'?v='+Date.now();
   var doc;
   try{ doc=await pdfjsLib.getDocument({ url:url, isEvalSupported:false }).promise; }
   catch(e){ return { error:(e && e.message) || 'documento non leggibile' }; }
@@ -4093,10 +4096,15 @@ async function fontiTrascinate(files){
   fuori.forEach(function(x){ toast('Fuori: '+x.file+' — '+x.motivo, false); });
   try{ zainoNavAggiorna(); }catch(e){}
   /* L'indice si costruisce dopo, uno per volta: è la parte lenta, e intanto il
-     documento è già lì e si può aprire. */
+     documento è già lì e si può aprire. Se l'indice dice «scansione» — foto di
+     un testo, niente da selezionare — lo si tiene da parte per proporre il
+     riconoscimento DOPO, a import finito: una domanda in mezzo alla coda
+     bloccherebbe i documenti che seguono. */
+  var scansioni=[];
   for(var i=0;i<entrati.length;i++){
     var esito=await fontiIndicizza(entrati[i].nome);
     if(esito && esito.error) console.error('indice:', entrati[i].nome, esito.error);
+    else if(esito && esito.scansione) scansioni.push({ nome:entrati[i].nome, vuote:esito.pagineVuote, npagine:esito.npagine });
   }
   // i numeri dei documenti appena entrati valgono da subito
   numeriRegistra(id, entrati.map(function(x){ return x.nome; }));
@@ -4106,7 +4114,164 @@ async function fontiTrascinate(files){
     try{ openPdf(entrati[0].nome, null, titoloMateriale(entrati[0].nome)||entrati[0].nome); }catch(e){}
     try{ zainoNavAggiorna(); }catch(e){}
   }
+  /* La proposta, un documento per volta: chi rifiuta ritrova il gesto nel
+     bottone Aa↗ della barra del documento. */
+  for(var k=0;k<scansioni.length;k++){
+    var s=scansioni[k];
+    if(!confirm('«'+s.nome+'» sembra fotografato: '+s.vuote+' pagine su '+s.npagine+
+        ' senza testo selezionabile.\n\nRiconosco il testo per poterlo selezionare, evidenziare e cercare?\n'+
+        'Circa '+ocrDurataStima(s.npagine)+'. Puoi fermare quando vuoi, e rifarlo dal bottone Aa↗ della barra del documento.')) continue;
+    await ocrRiconosci(s.nome);
+  }
 }
+
+/* ===== IL TESTO DENTRO LE FOTOGRAFIE (OCR) ================================
+ *
+ * Gli studenti spesso non ricevono i PDF: fotografano le schede, e il telefono
+ * ne fa un PDF di sole immagini — si vede, non si seleziona. Qui c'è il gesto
+ * che lo ripara: le pagine si rasterizzano con pdf.js (che è già qui), il main
+ * riconosce le parole con Tesseract e scrive un layer di testo invisibile
+ * dentro la copia del PDF. Da quel momento il documento è indistinguibile da
+ * un nativo: evidenze, parole chiave e lente funzionano senza sapere niente.
+ *
+ * Due porte, una funzione (`ocrRiconosci`): la proposta dopo il trascinamento
+ * e il bottone Aa↗ nella barra del documento. La regola di chi compare la dice
+ * l'INDICE (`scansione`, soglia in lib/ocr): il renderer non conta caratteri.
+ */
+var OCRZ={ inCorso:false, ferma:false, doc:'' };
+
+/* ~3 s a pagina misurati con tesseract.js su Apple Silicon: serve alla
+   proposta, non alla contabilità. Meglio dire «circa un minuto» che un numero
+   con la virgola che promette una precisione che non c'è. */
+function ocrDurataStima(npagine){
+  var sec=Math.max(5, (npagine||1)*3);
+  if(sec<50) return 'mezzo minuto';
+  if(sec<90) return 'un minuto';
+  return Math.round(sec/60)+' minuti';
+}
+
+/** Il documento aperto è una scansione? Lo dice l'indice già caricato per la
+ *  lente: nessun giro su disco per mostrare un bottone. */
+function ocrDocScansione(nome){
+  if(!nome || !FONTI.indici) return false;
+  var d=FONTI.indici.filter(function(x){ return x.pdf===nome; })[0];
+  return !!(d && d.scansione);
+}
+
+/** Il bottone Aa↗: visibile solo nello zaino, su un documento che l'indice
+ *  dichiara scansione — o durante la corsa, quando diventa «ferma». */
+function pdfOcrAggiorna(){
+  var b=$('#pdfOcr'); if(!b) return;
+  var nome=ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file;
+  if(OCRZ.inCorso){ b.hidden=false; b.setAttribute('aria-pressed','true');
+    b.title='Ferma il riconoscimento del testo'; b.setAttribute('aria-label', b.title); return; }
+  b.setAttribute('aria-pressed','false');
+  b.title='Riconosci il testo di questo documento fotografato';
+  b.setAttribute('aria-label', b.title);
+  b.hidden=!(modoAttivo()==='zaino' && nome && ocrDocScansione(nome));
+}
+
+/**
+ * Il gesto intero: rasterizza → riconosci → scrivi il layer → reindicizza.
+ *
+ * ⚠️ Il canvas si rasterizza a ~300 DPI ma con un tetto in pixel: una pagina
+ * A3 fotografata a 300 DPI vera sarebbe un'immagine da mezzo gigabyte di RAM,
+ * e Tesseract sopra i ~3500 px di lato non legge meglio — legge solo più
+ * lentamente.
+ *
+ * ⚠️ «Ferma» APPLICA le pagine già riconosciute invece di buttarle: è la
+ * stessa regola della lettura avanzata dei corsi («ciò che è già stato letto
+ * resta»), e il bottone ricompare per finire il lavoro un'altra volta.
+ */
+async function ocrRiconosci(nome){
+  var api=(window.vault && window.vault.ocrpdf) || null;
+  if(!api){ toast('Riconoscimento disponibile solo nell’app', false); return; }
+  var id=corsoAttivo();
+  if(!id || modoAttivo()!=='zaino'){ toast('Apri lo zaino del documento', false); return; }
+  if(OCRZ.inCorso){ toast('Sto già riconoscendo: un momento', false); return; }
+  if(!pdfjsAvvia()){ toast('Il visualizzatore dei documenti non si è avviato', false); return; }
+  OCRZ.inCorso=true; OCRZ.ferma=false; OCRZ.doc=nome;
+  pdfOcrAggiorna();
+  var esito=null, fermato=false;
+  try{
+    toast('Preparo il riconoscimento del testo…', true);
+    var av=await api.apri();
+    if(av && av.error){ toast('Motore OCR non partito: '+av.error, false); return; }
+    var doc;
+    try{ doc=await pdfjsLib.getDocument({ url:window.vault.srcUrl(nome), isEvalSupported:false }).promise; }
+    catch(e){ toast('Documento non leggibile: '+((e&&e.message)||'?'), false); return; }
+    var pagine=[];
+    try{
+      for(var n=1;n<=doc.numPages;n++){
+        if(OCRZ.ferma){ fermato=true; break; }
+        toast('Riconosco la pagina '+n+' di '+doc.numPages+'…', true);
+        var pg=await doc.getPage(n);
+        var v1=pg.getViewport({ scale:1 });
+        var scala=Math.min(300/72, 3500/Math.max(v1.width, v1.height));
+        var vp=pg.getViewport({ scale:scala });
+        var canvas=document.createElement('canvas');
+        canvas.width=Math.round(vp.width); canvas.height=Math.round(vp.height);
+        await pg.render({ canvasContext:canvas.getContext('2d'), viewport:vp }).promise;
+        var blob=await new Promise(function(res){ canvas.toBlob(res, 'image/png'); });
+        canvas.width=canvas.height=0;                    // la RAM si restituisce subito
+        if(!blob){ toast('Pagina '+n+' non rasterizzata', false); continue; }
+        var png=new Uint8Array(await blob.arrayBuffer());
+        var r=await api.pagina(png);
+        if(r && r.error){ toast('Pagina '+n+': '+r.error, false); }
+        else if(r && r.parole && r.parole.length){
+          pagine.push({ n:n, larghezzaPx:canvasLarghezza(vp), parole:r.parole });
+        }
+        try{ pg.cleanup(); }catch(e){}
+      }
+    } finally { try{ doc.destroy(); }catch(e){} }
+    if(!pagine.length){
+      toast(fermato ? 'Fermato: nessuna pagina completata' : 'Nessun testo riconosciuto in questo documento', !fermato);
+      return;
+    }
+    toast('Scrivo il testo dentro il documento…', true);
+    esito=await api.applica(id, nome, pagine);
+    if(esito && esito.error){ toast('Non applicato: '+esito.error, false); return; }
+    /* Il documento è cambiato sul disco: l'indice si rifà (e adesso trova il
+       testo), la lente si aggiorna, e il viewer si riapre per avere il layer. */
+    await fontiIndicizza(nome);
+    await fontiIndiciCarica();
+    if(ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file===nome){
+      /* ⚠️ `openPdf` sullo STESSO file si sposta e basta, senza ricaricare —
+         giusto per sfogliare, sbagliato adesso: il file sul disco è un altro.
+         Azzerare `file` gli fa fare la strada intera, compresa la scadenza
+         della cache delle evidenze (`evPdfScade`), che puntava a un testo che
+         non c'è più. */
+      var pagCorr=pdfPaginaCorrente();
+      ANTEPRIMA.file='';
+      try{ openPdf(nome, pagCorr, titoloMateriale(nome)||nome); }catch(e){}
+    }
+    toast(fermato
+      ? 'Fermato: il testo riconosciuto finora ('+pagine.length+' pagine) è dentro. Aa↗ per finire.'
+      : 'Fatto: ora il testo si seleziona, si evidenzia e si cerca.', true);
+  } finally {
+    OCRZ.inCorso=false; OCRZ.ferma=false; OCRZ.doc='';
+    try{ api.chiudi(); }catch(e){}
+    pdfOcrAggiorna();
+  }
+}
+
+/* La larghezza che il main userà per la scala: quella del canvas VERO, non del
+ * viewport con la virgola — `canvas.width` è stato arrotondato, e la scala si
+ * deve calcolare sugli stessi pixel su cui Tesseract ha misurato. */
+function canvasLarghezza(vp){ return Math.round(vp.width); }
+
+/* La pagina corrente del viewer, per riaprire il documento dov'era. */
+function pdfPaginaCorrente(){
+  try{ return (PDFJS.viewer && PDFJS.viewer.currentPageNumber) || null; }catch(e){ return null; }
+}
+
+document.addEventListener('click', function(e){
+  if(!e.target.closest) return;
+  if(!e.target.closest('#pdfOcr')) return;
+  if(OCRZ.inCorso){ OCRZ.ferma=true; toast('Mi fermo alla fine di questa pagina…', true); return; }
+  var nome=ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file;
+  if(nome) ocrRiconosci(nome);
+});
 
 /* ===== I MEDIA CHE ENTRANO NELLO ZAINO ===================================
  *
@@ -4575,6 +4740,9 @@ function pdfZoomRicorda(v){ try{ localStorage.setItem(PDFZOOM.CHIAVE, String(v))
 function pdfZoomAggiorna(){
   var box=$('#pdfZoom'), lvl=$('#pdfZoomLvl'), find=$('#pdfFindBtn'), rit=$('#pdfRitaglia');
   var attivo = ANTEPRIMA.tipo==='pdf' && PDFJS.pronto && !!PDFJS.doc;
+  /* Il bottone del riconoscimento segue le stesse stagioni dello zoom: questa
+     funzione è già chiamata a ogni apertura, chiusura e cambio di documento. */
+  try{ pdfOcrAggiorna(); }catch(e){}
   /* Le forbici valgono anche sul video: un fermo immagine è un ritaglio quanto
      un'area di pagina. Zoom e ricerca no — sono leve del documento.
      ⚠️ Da quando il media ha un riquadro suo, «c'è un video?» lo sa il player e
@@ -5578,6 +5746,16 @@ function openPdf(pdf,page,label){
      nello stesso riquadro; adesso sono due strumenti, e aprire la dispensa di
      cui la lezione sta parlando non deve zittire la lezione. */
   var url=(window.vault&&window.vault.srcUrl)?window.vault.srcUrl(pdf):(PDF_BASE+encodeURIComponent(pdf));
+  /* ⚠️ Chromium tiene in cache i `file://` per URL: dopo il riconoscimento del
+     testo il file sul disco è un altro, ma il visualizzatore riaprirebbe i
+     byte di prima — misurato nella prova CDP: l'indice leggeva il testo nuovo
+     e il viewer no. La versione del documento È il momento dell'OCR: entra
+     nella query, così la chiave di cache cambia solo quando è cambiato lui. */
+  var verOcr=(function(){ try{
+    var d=(FONTI.indici||[]).filter(function(x){ return x.pdf===pdf; })[0];
+    return (d && d.ocr && d.ocr.quando) || '';
+  }catch(e){ return ''; } })();
+  if(verOcr) url+=(url.indexOf('?')<0?'?v=':'&v=')+encodeURIComponent(verOcr);
   var host=$('#pdfHost'); if(host) host.hidden=false;
   var t=$('#pdfTitle'); if(t) t.textContent=(label||pdf)+(pg?(' \u2014 p.'+pg):'');
   // il collegamento "apri in una scheda" resta al visualizzatore di sistema, e
@@ -6125,7 +6303,13 @@ var CREDITI=[
      Il giorno che si passa a Electron 41+ si può tornare alla build moderna
      e risparmiare 58 KB — ma va verificato, non dedotto. */
   { nome:'PDF.js', ruolo:'visualizzatore dei PDF', url:'https://github.com/mozilla/pdf.js', licenza:'Apache-2.0' },
-  { nome:'Ajv', ruolo:'validazione degli schemi', url:'https://github.com/ajv-validator/ajv', licenza:'MIT' }
+  { nome:'Ajv', ruolo:'validazione degli schemi', url:'https://github.com/ajv-validator/ajv', licenza:'MIT' },
+  /* La pila dell'OCR dello zaino è tutta Apache/MIT di proposito: ocrmypdf si
+     porterebbe dietro Ghostscript (AGPL), e i pesi di Chandra hanno un tetto
+     di fatturato. Vedi lib/ocrpdf.js. Le lingue stanno in App/assets/tesseract/. */
+  { nome:'tesseract.js', ruolo:'riconoscimento del testo nei documenti fotografati', url:'https://github.com/naptha/tesseract.js', licenza:'Apache-2.0' },
+  { nome:'Tesseract OCR (tessdata)', ruolo:'i modelli di lingua del riconoscimento (ita, eng)', url:'https://github.com/tesseract-ocr/tessdata', licenza:'Apache-2.0' },
+  { nome:'pdf-lib', ruolo:'scrive il layer di testo invisibile nei PDF riconosciuti', url:'https://github.com/Hopding/pdf-lib', licenza:'MIT' }
 ];
 
 function guidaRighe(){
@@ -13650,6 +13834,13 @@ window.addEventListener('keydown', function(e){
     <i class="tbsep" aria-hidden="true"></i>
     <button class="tbtn" id="pdfRitaglia" type="button" hidden aria-pressed="false" title="Ritaglia un'area della pagina" aria-label="Ritaglia un'area della pagina">&#9986;</button>
     <button class="tbtn" id="pdfFindBtn" type="button" hidden aria-expanded="false" title="Cerca nel documento (⌘F)" aria-label="Cerca nel documento">&#128269;</button>
+    <!-- Il riconoscimento del testo: compare SOLO quando il documento aperto è
+         una scansione (lo dice l'indice, non un'euristica del renderer). Durante
+         la corsa diventa «ferma»: un lavoro di minuti senza un modo di fermarlo
+         obbligherebbe a chiudere l'app. -->
+    <button class="tbtn" id="pdfOcr" type="button" hidden aria-pressed="false"
+            title="Riconosci il testo di questo documento fotografato"
+            aria-label="Riconosci il testo di questo documento fotografato">Aa&#8599;</button>
     <i class="tbsep" aria-hidden="true"></i>
     <a id="pdfNewtab" href="#" target="_blank" rel="noopener">Apri in una scheda &#8599;</a>
     <!-- ⚠️ Togliere una fonte è l'unico gesto dell'app che tocca un file portato

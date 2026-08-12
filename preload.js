@@ -453,6 +453,15 @@ contextBridge.exposeInMainWorld('vault', {
       ipcRenderer.invoke('fonti:indiceScrivi', { corso, file, pagine, motore }),
     indici: (corso) => ipcRenderer.invoke('fonti:indici', { corso })
   },
+  /* Il testo dentro le fotografie: il renderer rasterizza le pagine (pdf.js e
+     il canvas stanno da lui), il main riconosce con Tesseract e scrive il layer
+     invisibile nella copia del PDF. Vedi lib/ocrpdf.js. */
+  ocrpdf: {
+    apri: () => ipcRenderer.invoke('ocrpdf:apri'),
+    pagina: (png) => ipcRenderer.invoke('ocrpdf:pagina', { png }),
+    chiudi: () => ipcRenderer.invoke('ocrpdf:chiudi'),
+    applica: (corso, file, pagine) => ipcRenderer.invoke('ocrpdf:applica', { corso, file, pagine })
+  },
   /* Il ripasso: la storia di che cosa hai già risposto, e come. Vive in
      `RIPASSO/stato.json` dentro il contenitore — cartella dell'utente, come gli
      appunti: una rigenerazione del corso non la tocca. */
