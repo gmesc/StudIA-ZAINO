@@ -170,11 +170,33 @@ async function selezionaUnaRiga(indice) {
   console.log('   ' + JSON.stringify(dip3));
   ok('tornando sulla pagina l\'evidenza si riaccende', true, !!dip3 && dip3.conRettangolo >= 1);
 
-  sezione('La parola chiave entra nell\'elenco, e sa tornare a casa');
-  const chip = await val(`(()=>{ const c=document.querySelectorAll('#kwLista .kwchip');
-    if(!c.length) return null;
-    return { quanti:c.length, titolo:c[0].title }; })()`);
-  ok('il chip c\'è', true, !!chip && chip.quanti === 1);
+  sezione('L\'elenco filtra: la frase resta nel testo, il termine fa il chip');
+  /* ⚠️ Regola delle 3 parole (12/8/26, commit 8a90ff0): la riga evidenziata qui
+     sopra è una FRASE — accesa nel testo e scritta su disco, come provato — ma
+     nell'elenco delle parole chiave non entra. Questa sezione misurava la
+     promessa vecchia («ogni evidenza fa un chip») ed è rimasta rossa alla prima
+     corsa della suite dopo quel commit: la suite viva non era stata rieseguita. */
+  const chipFrase = await val(`document.querySelectorAll('#kwLista .kwchip').length`);
+  ok('la frase lunga NON fa un chip', 0, chipFrase);
+  ok('e il vuoto spiega il filtro invece di fingere un guasto', true,
+    await val(`(()=>{ const v=document.querySelector('#kwLista .kwvuoto');
+      return !!v && v.textContent.indexOf('più lunghe') >= 0; })()`));
+  /* Il termine breve invece entra, e il chip sa tornare a casa. Si scrive dal
+     canale vero (aggiungi) con l'indirizzo del documento: selezionare col mouse
+     ESATTAMENTE una parola su un PDF è un altro esercizio, non la promessa di
+     questa sezione. E si toglie subito: le sezioni dopo contano i record. */
+  const chip = await val(`(()=>{ const r=window.vault.evidenze.aggiungi(corsoAttivo(),
+      { exact:'sinapsi', prefix:'', suffix:'', colore:'#a16207',
+        materiale:${JSON.stringify(PDF)}, pagina:${PAGINA} });
+    if(r.error) return { errore:r.error };
+    EVIDENZE.elenco=r.evidenze; keywordDisegna();
+    const c=document.querySelectorAll('#kwLista .kwchip');
+    const esito={ quanti:c.length, titolo:c.length?c[0].title:'' };
+    const via=r.evidenze.filter(function(e){ return e.exact==='sinapsi'; })[0];
+    const r2=window.vault.evidenze.rimuovi(corsoAttivo(), via.id);
+    EVIDENZE.elenco=r2.evidenze; keywordDisegna();
+    return esito; })()`);
+  ok('il termine breve fa un chip, uno solo', 1, chip && chip.quanti);
   ok('e il suo titolo dice documento e pagina', true,
     !!chip && chip.titolo.indexOf('p. ' + PAGINA) >= 0);
   /* Il markdown che il chip lascia cadere: il rimando al documento, non a un
