@@ -1244,6 +1244,7 @@
   .riptipo{ font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); }
   .ripcarta .fb{ margin-top:.9rem; }
   .ripgiusta{ font-weight:700; display:block; }
+  .ripgiusta.ripdef{ font-weight:400; line-height:1.5; }
   .ripperche{ display:block; font-size:13px; margin-top:.35rem; line-height:1.5; opacity:.85; }
   /* I comandi stanno in FONDO al riquadro — non in fondo al testo — e non si
      muovono fra fronte e retro: il mouse trova i quattro esiti dov'era «mostra
@@ -2408,7 +2409,7 @@ function setChapterState(id, acc){ ripassoRifletti(); }
  * ⚠️ E l'id lo calcola il MAIN (`ripasso:ids`): la formula dell'identità sta in
  * un posto solo, e qui non c'è `crypto` per scriverla una seconda volta.
  *
- * La sorgente oggi è una — il quiz. Il glossario è P3.2 e i callout `domanda`
+ * Le sorgenti sono due — il quiz e il glossario (P3.2). I callout `domanda`
  * degli appunti sono P1.3: `ripassoDomandeVive` è il punto in cui entreranno,
  * ed è l'unico.
  */
@@ -2422,17 +2423,36 @@ var RIP={ ambito:'corso', mazzo:[], i:0, girata:false, chiave:'', caricando:fals
 function ripassoDomandeVive(ambito){
   var out=[];
   function daCapitolo(c, lez){
+    var dove={ capitoloTitolo:String(c.title||c.id),
+               lezioneTitolo:String((lez&&(lez.title||lez.id))||'') };
     (c.quiz||[]).forEach(function(q){
       var opzioni = q.type==='tf' ? ['Vero','Falso'] : (q.options||[]);
       var giusta  = q.type==='tf' ? (q.answer?0:1) : q.answer;
-      out.push({
+      out.push(Object.assign({
+        sorgente:'quiz',
         capitolo:c.id, domanda:String(q.q||''),
         tf:q.type==='tf',
         risposta:String(opzioni[giusta]!=null?opzioni[giusta]:''),
-        spiegazione:String(q.explain||''),
-        capitoloTitolo:String(c.title||c.id),
-        lezioneTitolo:String((lez&&(lez.title||lez.id))||'')
-      });
+        spiegazione:String(q.explain||'')
+      }, dove));
+    });
+    /* ⚠️ Il glossario (P3.2): `t`/`d` è un fronte-retro già scritto in tutti i
+       capitoli — nessun contenuto nuovo da generare, solo una lettura diversa di
+       quello che c'è. L'identità della carta è il TERMINE: una rigenerazione che
+       riscrive la definizione conserva la storia, esattamente come un quiz a cui
+       cambia il «perché» resta la stessa carta.
+       ⚠️ `d` è già passato per `_mdInline` nel parser: è HTML, non testo. Da qui
+       esce così com'è, e chi disegna la carta lo sa (vedi `ripassoVistaDisegna`). */
+    (c.glossary||[]).forEach(function(g){
+      var t=String((g&&g.t)||'').trim();
+      if(!t) return;
+      out.push(Object.assign({
+        sorgente:'glossario',
+        capitolo:c.id, domanda:t,
+        tf:false,
+        risposta:String((g&&g.d)||''),
+        spiegazione:''
+      }, dove));
     });
   }
   if(ambito==='capitolo'){
@@ -2553,7 +2573,7 @@ function ripassoVistaDisegna(){
     host.innerHTML='<div class="ripvuoto">'+(RIP.caricando ? 'Preparo le carte…' : (quante
       ? '<b>Per adesso non c\'è niente da rivedere.</b><br>Le '+quante+' carte di questo ambito hanno tutte un appuntamento più in là. '+
         'Cambia ambito qui sopra, oppure <button type="button" data-ricarica="1">ricontrolla</button>.'
-      : '<b>Nessuna carta qui.</b><br>Le carte nascono dal quiz dei capitoli: aprine uno che ne abbia, oppure allarga l\'ambito a tutto il corso.'))+'</div>';
+      : '<b>Nessuna carta qui.</b><br>Le carte nascono dal quiz e dal glossario dei capitoli: aprine uno che ne abbia, oppure allarga l\'ambito a tutto il corso.'))+'</div>';
     if(pie) pie.innerHTML='';
     return;
   }
@@ -2567,12 +2587,19 @@ function ripassoVistaDisegna(){
      stessa ragione per cui le barre sono un token solo.
      Le classi `ripfronte`/`ripretro` restano ADDOSSO agli stessi elementi: sono
      i nomi con cui le prove trovano la domanda e la risposta. */
+  /* ⚠️ E una carta di glossario prende il vestito del RIQUADRO GLOSSARIO del
+     capitolo — libro, blu — non quello del quiz: chi ripassa deve riconoscere da
+     dove viene la carta senza leggerla. Cambiano l'icona, l'etichetta e la
+     classe del riquadro; la struttura resta la stessa. */
+  var glo=c.sorgente==='glossario';
   function carta(dentro){
-    return '<div class="quiz callout ripcarta"><b>'+ic('brain')+'<span>Metti alla prova</span></b>'+
+    return '<div class="'+(glo?'glossary':'quiz')+' callout ripcarta">'+
+      '<b>'+ic(glo?'book':'brain')+'<span>'+(glo?'Glossario':'Metti alla prova')+'</span></b>'+
       '<div class="q">'+dentro+'</div></div>';
   }
   var fronte='<div class="qt ripfronte">'+escHtml(c.domanda)+'</div>'+
-    (c.tf?'<div class="riptipo">vero o falso?</div>':'');
+    (c.tf?'<div class="riptipo">vero o falso?</div>':'')+
+    (glo?'<div class="riptipo">che cosa significa?</div>':'');
   if(!RIP.girata){
     host.innerHTML=dove+carta(fronte);
     if(pie) pie.innerHTML='<button type="button" class="ripmostra" data-mostra="1">Mostra risposta</button>';
@@ -2580,8 +2607,17 @@ function ripassoVistaDisegna(){
   }
   /* Il riquadro della risposta è quello del quiz quando ci si azzecca (`fb ok`):
      è la stessa cosa che dice — questa è la risposta giusta. */
+  /* ⚠️ La definizione di glossario è HTML, non testo: il parser l'ha già passata
+     per `_mdInline`, quindi porta corsivi, grassetti e rimandi VIVI (`pdf:`,
+     `cap:`…), che i gestori delegati fanno funzionare senza una riga in più.
+     Escaparla mostrerebbe i tag a schermo. La risposta di un quiz invece è
+     un'opzione, testo nudo: quella si escapa come sempre. */
+  var rispostaHtml = glo ? String(c.risposta||'') : escHtml(c.risposta);
+  /* Il grassetto dice «ecco la risposta» quando la risposta è una parola («Falso»,
+     un'opzione). Una definizione è una frase intera: in grassetto diventa un
+     blocco che si legge peggio, non meglio. */
   var retro='<div class="fb ok show ripretro">'+ic('check')+
-    '<span><span class="ripgiusta">'+escHtml(c.risposta)+'</span>'+
+    '<span><span class="ripgiusta'+(glo?' ripdef':'')+'">'+rispostaHtml+'</span>'+
     (c.spiegazione?'<span class="ripperche">'+escHtml(c.spiegazione)+'</span>':'')+'</span></div>';
   /* ⚠️ I tempi li dà il modulo, sulla storia di QUESTA carta: sono gli stessi
      minuti che il main scriverà in `prossimo`, perché è la stessa funzione. */

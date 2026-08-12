@@ -181,6 +181,77 @@ function ok(n, atteso, avuto) {
   await pausa(400);
   ok('un capitolo solo non ha più carte di tutto il corso', true, ambiti.cap <= ambiti.corso);
 
+  console.log('\n== ⭐ Il glossario è la seconda sorgente di carte (P3.2)');
+  /* ⚠️ CHE COSA SI DIFENDE QUI. Una sorgente nuova ha un modo silenzioso di fare
+     danno: se entra nella CODA ma non nell'elenco dei vivi che si manda alla
+     potatura, al primo avvio del corso la potatura non la riconosce e cancella
+     la storia di quelle carte — lavoro dell'utente, perso senza un errore. È il
+     motivo per cui la sorgente sta in `ripassoDomandeVive` e in nessun altro
+     posto, e la prova che conta è l'ultima di questa sezione. */
+  const glo = await val(`(async()=>{
+    RIP.ambito='corso'; RIP.chiave=''; await ripassoCostruisci();
+    const g=RIP.mazzo.filter(c=>c.sorgente==='glossario');
+    const q=RIP.mazzo.filter(c=>c.sorgente==='quiz');
+    const primo=g[0]||null;
+    return { quante:g.length, quiz:q.length,
+             haRisposta:!!(primo&&primo.risposta), tf:primo?primo.tf:null,
+             indice:primo?RIP.mazzo.indexOf(primo):-1,
+             id:primo?primo.id:'', domanda:primo?primo.domanda:'' }; })()`);
+  await pausa(400);
+  console.log('   carte: ' + glo.quiz + ' da quiz · ' + glo.quante + ' da glossario');
+  if (!glo.quante) { console.log('  ✗ nessuna carta di glossario: la prova non può provare niente'); process.exit(1); }
+  ok('le voci di glossario sono diventate carte', true, glo.quante > 0);
+  ok('e ognuna porta la sua definizione', true, glo.haRisposta);
+  /* Una definizione non è un vero/falso: la carta non deve chiedere di sceglierlo. */
+  ok('non sono vero/falso', false, glo.tf);
+
+  /* Il fronte mostra il termine e NON la definizione: è il punto della carta. */
+  await val(`(()=>{ RIP.i=${glo.indice}; RIP.girata=false; ripassoVistaDisegna(); return 1; })()`);
+  await pausa(300);
+  const fronteGlo = await val(`(()=>({
+    testata:(document.querySelector('#ripCorpo .ripcarta b span')||{}).textContent||'',
+    riquadro:!!document.querySelector('#ripCorpo .ripcarta.glossary'),
+    termine:(document.querySelector('#ripCorpo .ripfronte')||{}).textContent||'',
+    tipo:(document.querySelector('#ripCorpo .riptipo')||{}).textContent||'',
+    definizione:!!document.querySelector('#ripCorpo .ripretro') }))()`);
+  ok('la carta si dichiara di glossario', 'Glossario', fronteGlo.testata);
+  /* ⚠️ Il vestito è quello del riquadro Glossario del capitolo, non del quiz:
+     chi ripassa riconosce da dove viene la carta senza doverla leggere. */
+  ok('e ne porta il vestito, non quello del quiz', true, fronteGlo.riquadro);
+  ok('il fronte è il termine', glo.domanda, fronteGlo.termine);
+  ok('con la domanda implicita scritta', 'che cosa significa?', fronteGlo.tipo);
+  ok('e la definizione non è nel DOM prima di chiederla', false, fronteGlo.definizione);
+
+  await clicca('#ripPie [data-mostra]');
+  await pausa(400);
+  const retroGlo = await val(`(()=>{ const r=document.querySelector('#ripCorpo .ripretro');
+    return { c_e:!!r, testo:r?r.textContent.trim():'',
+             tagRimasti:r?/&lt;|&amp;lt;/.test(r.innerHTML):false }; })()`);
+  ok('girata, la definizione c\'è', true, retroGlo.c_e);
+  /* ⚠️ La definizione arriva dal parser già come HTML (`_mdInline`): escaparla
+     mostrerebbe i tag a schermo invece del corsivo. */
+  ok('e non mostra tag a schermo', false, retroGlo.tagRimasti);
+
+  console.log('\n== ⭐ E la potatura NON porta via le carte di glossario');
+  const potatura = await val(`(async()=>{
+    /* si risponde alla carta di glossario: da qui in poi ha una storia da perdere */
+    await ripassoRispondi('buono');
+    await new Promise(s=>setTimeout(s,600));
+    const prima=await window.vault.ripasso.leggi(corsoAttivo());
+    const c_era=!!(prima&&prima.carte&&prima.carte[${JSON.stringify(glo.id)}]);
+    /* la potatura è ciò che gira all'apertura di un corso */
+    await ripassoPota();
+    await new Promise(s=>setTimeout(s,600));
+    const dopo=await window.vault.ripasso.leggi(corsoAttivo());
+    return { c_era:c_era, resta:!!(dopo&&dopo.carte&&dopo.carte[${JSON.stringify(glo.id)}]),
+             prossimo:((dopo.carte||{})[${JSON.stringify(glo.id)}]||{}).prossimo||'' }; })()`);
+  ok('la risposta alla carta di glossario è su disco', true, potatura.c_era);
+  ok('col suo appuntamento', true, !!potatura.prossimo);
+  /* ⚠️ IL CONTROLLO CHE VALE PIÙ DI TUTTI: se la sorgente nuova fosse entrata
+     nella coda ma non nell'elenco dei vivi, qui la storia sarebbe sparita — in
+     silenzio, al primo avvio, per centinaia di carte. */
+  ok('e la potatura NON se la porta via', true, potatura.resta);
+
   console.log(ko ? '\n✗ ' + ko + ' controlli falliti' : '\n✓ tutti i controlli passati');
   process.exit(ko ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

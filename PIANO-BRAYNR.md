@@ -253,7 +253,30 @@ rigenerazione riscrive il quiz, la carta è *nuova* e riparte da zero — corret
 è cambiata — e lo stato orfano si pulisce **dicendolo** (toast «N carte non esistono più»), lo
 stesso patto di `percorsi.invalida()`: si è persa una storia, non lo si nasconde.
 
-**P3.2 — Le tre sorgenti di carte.**
+**P3.2 — Le tre sorgenti di carte.** ✅ **GLOSSARIO FATTO il 12 agosto 2026** (la terza sorgente,
+i callout `domanda`, aspetta P1.3). Com'è andata in pratica:
+
+- Il glossario entra in `ripassoDomandeVive()` e **in nessun altro posto**: è il punto unico che
+  la vista e la potatura condividono. Zero righe in `lib/`, `main.js`, `preload.js` — l'identità
+  della carta è già generica (`hash(capitolo + domanda)`, e per il glossario «domanda» è il
+  termine).
+- ⚠️ **Il rischio vero di una sorgente nuova non è che le carte non compaiano**: è che entrino
+  nella coda ma non nell'elenco dei vivi mandato alla potatura. Al primo avvio del corso la
+  potatura non le riconoscerebbe e **cancellerebbe la storia dell'utente in silenzio**, per
+  centinaia di carte. Il punto unico lo previene per costruzione; la prova CDP lo misura
+  (risponde a una carta di glossario, chiama `ripassoPota()`, verifica che la storia resti).
+- **L'identità è il TERMINE, non la definizione**: una rigenerazione che riscrive la definizione
+  conserva la storia — come un quiz a cui cambia il «perché» resta la stessa carta.
+- ⚠️ **La definizione è HTML, non testo**: il parser l'ha già passata per `_mdInline`, quindi
+  porta corsivi e rimandi vivi (`pdf:`, `cap:`) che i gestori delegati fanno funzionare senza una
+  riga in più. Escaparla mostrerebbe i tag a schermo.
+- La carta prende il vestito del **riquadro Glossario del capitolo** (libro, blu), non quello del
+  quiz: si riconosce da dove viene senza leggerla. La definizione non è in grassetto — il
+  grassetto dice «ecco la risposta» quando la risposta è una parola, non quando è una frase.
+- Misurato su ai-literacy: **93 carte da quiz, 114 da glossario**. Il glossario più che raddoppia
+  il mazzo, senza generare un contenuto nuovo.
+
+Il testo originale della proposta, per riferimento:
 
 | sorgente | fronte | retro | esiste già? |
 |---|---|---|---|
@@ -346,7 +369,7 @@ vere sono poche.
 
 | # | lavoro | dipende da | taglia | note |
 |---|---|---|---|---|
-| 1 | ~~P3.1~~ ✅ ~~P3.3~~ ✅ + **P3.2 (glossario) + P3.6** — ripasso persistente sui contenuti già generati | — | M | il valore c'è dal giorno uno, su 243 capitoli |
+| 1 | ~~P3.1~~ ✅ ~~P3.3~~ ✅ ~~P3.2 glossario~~ ✅ + **P3.6** — ripasso persistente sui contenuti già generati | — | M | il valore c'è dal giorno uno, su 243 capitoli |
 | 2 | **P1.2 tag + P1.3 callout `domanda`** | — | S | sblocca la terza sorgente di carte |
 | 3 | **P3.4 mazzi-query** (+ appunti come sorgente) | 1, 2 | S/M | i «mazzi viventi» veri e propri |
 | 4 | **P1.1 evidenze** | — | M | indipendente; riusa i marker |
