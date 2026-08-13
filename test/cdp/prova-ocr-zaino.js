@@ -163,6 +163,37 @@ async function fixture(dove) {
     return g.length ? Math.max.apply(null, g) : null; })()`);
   ok('sulla pagina dritta i glifi restano dritti', true, dirittura !== null && dirittura < 0.5);
 
+  sezione('⚠️ I rettangoli dell\'evidenza non hanno buchi fra le parole');
+  /* pdf.js non scala gli span di solo spazio del textLayer: senza il rimedio
+     (pdfSpaziaLayer) l'evidenza usciva a chiazze — coperta la parola, buco sul
+     vuoto, coperta la prossima. Qui si evidenzia una frase di più parole e si
+     pretende che i suoi rettangoli si tocchino. */
+  /* si aspetta che il layer della pagina 1 sia disegnato E spaziato: misurare
+     mentre il render è in volo è la trappola di sempre */
+  await finoA(`(()=>{ const t=document.querySelector('#pdfFrame .page[data-page-number="1"] .textLayer');
+    return t && t.querySelectorAll('span').length > 5 ? 1 : 0; })()`, 20000);
+  await pausa(900);
+  const buchi = await val(`(async()=>{
+    const tl=document.querySelector('#pdfFrame .page[data-page-number="1"] .textLayer');
+    if(!tl) return { errore:'niente textLayer' };
+    const sup={ tipo:'pdf', radice:tl, salta:'', file:ANTEPRIMA.file, pagina:1 };
+    const m=evMappaDi(sup);
+    const fr='memoria di lavoro ha una capienza';
+    const i=m.testo.indexOf(fr);
+    if(i<0) return { errore:'frase non nel modello' };
+    const r=rangeDaOffset(m, i, i+fr.length);
+    const rects=[...r.getClientRects()].map(q=>({x:q.x,w:q.width})).filter(q=>q.w>0.5)
+      .sort((a,b)=>a.x-b.x);
+    const buchi=[];
+    for(let k=1;k<rects.length;k++){
+      const gap=rects[k].x-(rects[k-1].x+rects[k-1].w);
+      if(gap>2) buchi.push(Math.round(gap));
+    }
+    return { rettangoli:rects.length, buchi };
+  })()`);
+  ok('la frase evidenziata è coperta senza chiazze', [],
+    (buchi && buchi.buchi) || ['errore: '+JSON.stringify(buchi)]);
+
   sezione('Dopo: non è più una scansione, e il doppione non entra');
   await val('fontiIndiciCarica()'); await pausa(400);
   const doc = await val(`FONTI.indici.filter(d=>d.pdf===${JSON.stringify(nome)})[0]`);

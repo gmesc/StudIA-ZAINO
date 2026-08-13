@@ -4724,6 +4724,7 @@ function pdfjsAvvia(){
        Quindi: la mappa di QUELLA pagina scade, e si ridisegna. */
     PDFJS.bus.on('textlayerrendered', function(e){
       try{
+        pdfSpaziaLayer(e && e.pageNumber);
         evPdfScade(e && e.pageNumber);
         evidenzeDisegna();
       }catch(err){ console.error('evidenze/pdf:', err); }
@@ -8504,6 +8505,41 @@ function capitoloTesto(){ return testoDaRadice(document.getElementById('content'
  *  il DOM: ricostruirla a ogni gesto costerebbe una passata su tutto il testo. */
 function evMappa(){ if(!EVIDENZE.mappa) EVIDENZE.mappa=capitoloTesto(); return EVIDENZE.mappa; }
 function evScade(){ EVIDENZE.mappa=null; }
+
+/**
+ * Gli span di SOLO SPAZIO del layer di testo, allargati fino alla parola dopo.
+ *
+ * ⚠️ pdf.js scala ogni span del textLayer perché copra la larghezza vera del
+ * suo pezzo di testo — ma NON gli span di solo whitespace, che restano larghi
+ * quanto uno spazio tipografico (misurato: 5 px su un vuoto di 72). Sono gli
+ * spazi che il layer OCR mette fra le parole: i rettangoli di selezione e le
+ * evidenze saltavano quei tratti, e il risultato era il patchwork a chiazze
+ * degli screenshot di Giacomo. Qui si dà a quegli span la larghezza del vuoto
+ * che rappresentano, componendo lo scaleX con quello che pdf.js ha già messo.
+ * Ne guadagna anche il mouse: il buco fra due parole diventa selezionabile.
+ */
+function pdfSpaziaLayer(pagina){
+  var sel='#pdfFrame .page'+(pagina?('[data-page-number="'+pagina+'"]'):'')+' .textLayer';
+  document.querySelectorAll(sel).forEach(function(tl){
+    var spans=tl.querySelectorAll('span');
+    for(var i=0;i<spans.length;i++){
+      var s=spans[i];
+      if(!/^\s+$/.test(s.textContent||'')) continue;
+      var dopo=spans[i+1]; if(!dopo) continue;
+      var r=s.getBoundingClientRect(), rd=dopo.getBoundingClientRect();
+      if(!r.width || !rd.width) continue;
+      /* stessa riga: un salto verticale è un a-capo, non un vuoto da coprire */
+      if(Math.abs(rd.y-r.y) > r.height*0.8) continue;
+      var vuoto=rd.x-r.x;
+      if(!(vuoto > r.width*1.15) || vuoto<=0) continue;
+      var f=vuoto/r.width;
+      var t=s.style.transform||'';
+      var m=t.match(/scaleX\(([\d.]+)\)/);
+      s.style.transform = m ? t.replace(m[0], 'scaleX('+(parseFloat(m[1])*f)+')')
+                            : (t+' scaleX('+f+')').trim();
+    }
+  });
+}
 
 /* ===== LE DUE SUPERFICI SU CUI SI EVIDENZIA: il capitolo e il documento =====
  *
