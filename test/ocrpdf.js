@@ -307,6 +307,32 @@ async function conMotore() {
       testuali.every((w) => w.rigaAlto >= (w.y1 - w.y0) - 0.01));
   }
 
+  /* ⚠️ I FILETTI DI TRATTINI della dattilografia: Tesseract li legge come
+     parole di due lettere («Em» per 404 px di filetto, misurato sul contratto
+     vero), e il glifo che ne nasce copre un decimo del suo riquadro — la
+     selezione ci cascava dentro. Il riquadro si riempie con gli spazi, che
+     sono testo selezionabile quanto le lettere: qui si pretende che una parola
+     larga il quadruplo del suo glifo arrivi comunque in fondo al suo posto. */
+  sezione('Un filetto di trattini è coperto per quanto è lungo');
+  {
+    const larga = { testo: 'Em', x0: 200, x1: 1000, y0: 400, y1: 420,
+                    base: 420, rigaAlto: 30, angoloRiga: 0, riga: 1 };
+    const vicina = { testo: 'fine', x0: 1040, x1: 1180, y0: 396, y1: 424,
+                     base: 420, rigaAlto: 30, angoloRiga: 0, riga: 1 };
+    const f = path.join(QUI, 'filetto.pdf');
+    fs.copyFileSync(originale, f);
+    const e2 = await O.scriviLayer(f, [{ n: 1, larghezzaPx: W, parole: [larga, vicina] }]);
+    check('il layer si scrive', '', e2.error);
+    const v2 = await O.verifica(f, [{ n: 1 }]);
+    const its = (v2.items || []).filter((i) => i.w > 0);
+    const dx = its.length ? (Math.max.apply(null, its.map((i) => i.x + i.w)) -
+                             Math.min.apply(null, its.map((i) => i.x))) : 0;
+    /* dall'inizio della parola larga alla fine della vicina, in punti */
+    const atteso = (1180 - 200) / SCALA;
+    check('la riga copre il suo tratto per intero (≥90%)', true, dx >= atteso * 0.9);
+    check('e non sborda (≤115%)', true, dx <= atteso * 1.15);
+  }
+
   /* ⚠️ La strada della SECONDA PASSATA, provata senza canvas: si prendono
      parole vere, le si porta in uno spazio «raddrizzato» con `aRuotato` — cioè
      si finge di averle lette su un'immagine girata — e si pretende che il layer
