@@ -955,6 +955,16 @@
   #pdfHost[data-stato]::after{ content:attr(data-stato); position:absolute; inset:0;
     display:grid; place-items:center; font-size:12px; color:var(--muted);
     background:var(--hover); pointer-events:none; }
+  /* Senza fonte aperta il posto del visualizzatore lo prende `.pdfvuoto`:
+     `data-pdf` è già il segnale che `openPdf`/`closePdf` accendono e spengono.
+     Il rettangolo grigio di `#pdfHost` senza niente dentro sembrava un guasto
+     — stessa ragione del `#mediaVideo` spento nel player. */
+  html:not([data-pdf="1"]) #pdfHost{ display:none; }
+  .pdfvuoto{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:.4rem; text-align:center; padding:1.4rem; font-size:12px; color:var(--muted); }
+  html[data-pdf="1"] .pdfvuoto{ display:none; }
+  html[data-modo="zaino"] .pdfvuoto .pv-corso{ display:none; }
+  html:not([data-modo="zaino"]) .pdfvuoto .pv-zaino{ display:none; }
   @media (max-width:900px){ #dock{ width:100vw; } html[data-dock="1"] .wrap{ padding-right:0; } #pdfResizer{ display:none; } }
 
   /* ===== Editor appunti (EasyMDE) ===== */
@@ -6781,7 +6791,7 @@ async function cambiaModo(m){
   /* Il banco ha una disposizione per modalità: cambiando modo si rilegge la
      sua, e si ridisegna. Senza, resterebbe a schermo quella dell'altra metà
      dell'app — nello zaino, il capitolo di un corso. */
-  try{ bancoCarica(); bancoDisegna(); }catch(e){ console.error('banco/cambioModo:', e); }
+  bancoRicarica();
   if(nuovo==='zaino') await zainiAggiorna();
   else{
     /* Tornando ai corsi si riapre quello che c'era: il valore non è mai stato
@@ -7028,7 +7038,15 @@ async function zainoCrea(nome){
   try{ MODO.zaino=localStorage.getItem('studia.zaino')||null; }catch(e){}
   if(salvato==='zaino'){
     zainiAggiorna().then(function(lista){
-      if(lista.length){ MODO.ora='zaino'; modoAggiorna(); }
+      if(lista.length){
+        MODO.ora='zaino'; modoAggiorna();
+        /* ⚠️ Il banco è già stato disegnato con la chiave dei corsi: quando
+           questo `.then` arriva, `modoAttivo()` è appena diventato «zaino» e la
+           SUA disposizione va riletta, come fa `cambiaModo`. Senza questa
+           chiamata l'app riapriva sul banco dell'altra metà — il capitolo di
+           un corso, vuoto, dentro lo zaino. */
+        bancoRicarica();
+      }
       else { MODO.ora='corso'; try{ localStorage.setItem('studia.modo','corso'); }catch(e){} modoAggiorna(); }
     });
   } else modoAggiorna();
@@ -10880,6 +10898,18 @@ function bancoCarica(){
 function bancoSalva(){
   try{ localStorage.setItem(bancoChiave(), JSON.stringify(BANCO.stato)); }catch(e){}
 }
+/**
+ * Rilegge la disposizione della modalità di ADESSO e ridisegna. La chiamano
+ * `cambiaModo` e il ripristino all'avvio: due chiamanti, una funzione — la
+ * trappola ④. ⚠️ Il ripristino della modalità di ieri NON passa da
+ * `cambiaModo` (arriva ad app già disegnata, con lo zaino da verificare
+ * prima), e finché non chiamava nessuno il banco restava con la chiave dei
+ * corsi: nello zaino si apriva il capitolo di un corso, e la tendina del
+ * blocco — che «capitolo» in zaino non lo offre — ripiegava sulla prima voce
+ * mostrando «Fonti» sopra un blocco che ospitava altro. */
+function bancoRicarica(){
+  try{ bancoCarica(); bancoDisegna(); }catch(e){ console.error('banco/ricarica:', e); }
+}
 function bancoStato(){
   if(!BANCO.stato) bancoCarica();
   return BANCO.stato;
@@ -10993,8 +11023,24 @@ function bancoAggiornaTestate(){
       o.disabled=!bancoDisponibile(id) && id!==attuale;
       sel.appendChild(o);
     });
+    /* ⚠️ Il blocco può ospitare uno strumento che la tendina non offre — un
+       «capitolo» rimasto nello stato mentre si è nello zaino. La voce si
+       aggiunge lo stesso, spenta: la testata deve dire quello che il blocco
+       ospita DAVVERO. Prima qui c'era `selectedIndex=0`, e la tendina mentiva:
+       sopra un blocco col capitolo (vuoto, in zaino) compariva «Fonti» — senza
+       la barra delle fonti, e la fonte cliccata in sidebar apriva un secondo
+       blocco invece di atterrare lì. */
+    if(attuale && !reg[attuale]){
+      var st=bancoStrumento(attuale);
+      var fuori=document.createElement('option');
+      fuori.value=attuale; fuori.textContent=(st&&st.nome)||attuale; fuori.disabled=true;
+      sel.appendChild(fuori);
+    }
     sel.value=attuale;
-    if(sel.value!==attuale) sel.selectedIndex=0;   // la rete di `noteSelect`
+    /* Un blocco VUOTO si dice col trattino di `tendinaViva`, non ripiegando
+       sulla prima voce: anche quello era un modo di mostrare uno strumento
+       che non c'era. */
+    if(sel.value!==attuale) sel.selectedIndex=-1;
     /* Il guscio si mette una volta sola (`tendinaViva` esce se c'è già): qui
        passa ogni ricostruzione delle testate, ed è il posto in cui i blocchi
        esistono di sicuro. */
@@ -11283,8 +11329,7 @@ document.addEventListener('change', function(e){
 (function(){
   function avvia(){
     if(!bancoPronto()){ console.error('banco: assets/banco/forme.js non caricato'); return; }
-    bancoCarica();
-    bancoDisegna();
+    bancoRicarica();
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', avvia); else avvia();
 })();
@@ -13878,6 +13923,15 @@ window.addEventListener('keydown', function(e){
        un rettangolo, che sono le due cose per cui questo lavoro esiste. -->
   <div id="pdfHost">
     <div id="pdfFrame" tabindex="0" aria-label="Documento"><div class="pdfViewer"></div></div>
+  </div>
+  <!-- Nessuna fonte aperta: il riquadro lo dice e dice DOVE si apre, come fa
+       il player col suo «Nessun media aperto». È la regola del §5 del piano
+       del banco: un blocco vuoto non lascia un buco muto. Due frasi, una per
+       modalità: la porta giusta nello zaino («Documenti ▾», la sidebar) non
+       esiste nei corsi, dove la fonte si apre dal capitolo. -->
+  <div class="pdfvuoto" id="pdfVuoto">
+    <span class="pv-zaino">Nessuna fonte aperta.<br>Scegline una da <b>Documenti &#9662;</b> qui sopra, o dalle fonti nella sidebar.</span>
+    <span class="pv-corso">Nessuna fonte aperta.<br>Si apre da un rimando nel capitolo, o dalla ricerca.</span>
   </div>
 </section>
 <!-- ============================ IL PLAYER ==================================
