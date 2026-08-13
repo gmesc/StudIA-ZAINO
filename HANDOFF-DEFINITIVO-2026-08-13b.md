@@ -16,7 +16,7 @@
 | ramo | commit | suite | manca |
 |---|---|---|---|
 | `main` | `3419ae7` | ⚠️ 3 prove rosse (riparate su `deskew-ocr`) | è indietro: né OCR né mappa né questo |
-| `mappa-limiti` | `381697a` | ✅ 27 file di unità · **34 prove CDP** | la prova a mano di Giacomo (§4) |
+| `mappa-limiti` | `e5cfb87` | ✅ 27 file di unità · **34 prove CDP** | la prova a mano di Giacomo (§4) |
 
 `mappa-limiti` contiene `deskew-ocr` e il merge di `main`: unendo lei si porta dentro tutto.
 
@@ -103,7 +103,32 @@ schermo; generata con ambito «corso» → riavvio → generata su «corso».
 
 ---
 
-## 3. TD/SX: il codice di oggi funziona — misurato tre volte
+## 3. TD/SX: chiuso — erano spenti, e non lo dicevano (`e5cfb87`)
+
+**La risposta vera**, trovata leggendo la mappa di Giacomo invece di ipotizzare: la sua mappa è
+salvata sul motore **anelli**, dove il verso è spento **apposta** — gli anelli si dispongono
+attorno a un centro, non lungo una direzione.
+
+⚠️ Il difetto non era la regola: era il **silenzio**. Sulle mappe tue i quattro motori escono
+dalla barra (al loro posto ci sono le memorie), quindi non si vede nemmeno **quale** motore è
+attivo; e un bottone `disabled` non emette il click, quindi non può spiegarsi. Il suggerimento
+c'era, ma sta sotto il puntatore — e chi preme un tasto che non fa niente non passa il mouse
+sopra: riprova.
+
+Adesso i due tasti sono spenti con `aria-disabled` (stessa veste, ma il click arriva) e premerli
+**risponde**: perché non hanno un verso, e **dove** si cambia motore — tasto destro sulla tela.
+Il rifiuto sta dentro `mappaOrientamento`, non nel gestore del click, così vale da qualunque
+porta arrivi. Prova: sezione nuova in `prova-mappa-trascina.js`.
+
+Misurato sulla mappa VERA di Giacomo, copiata nel vault di prova: motore anelli, tasto a
+opacità .6, clic → messaggio, verso invariato; cambiato motore in albero, il verso funziona e i
+nodi si ridispongono.
+
+**Aperto, ed è una decisione sua**: su una mappa tua il motore attivo resta invisibile finché non
+si apre il menu della tela. Un'etichetta in barra («Anelli») lo direbbe, ma rimetterebbe in
+barra ciò che era stato tolto di proposito.
+
+### Il contorno: sul codice di oggi il verso funziona — misurato tre volte
 
 Era il punto §5 dell'handoff precedente («Giacomo dice che nell'app non funzionano»). Sul ramo
 `mappa-limiti`, nell'app viva:
@@ -114,15 +139,16 @@ Era il punto §5 dell'handoff precedente («Giacomo dice che nell'app non funzio
 - **mappa tua** (`prova-mappa-trascina.js`, sezione «Il VERSO cambia davvero»): verso cambiato,
   posizioni a mano azzerate e dichiarate, disegno ridisposto, ⌘Z che le rimette.
 
-Quindi resta in piedi l'ipotesi 1 dell'handoff precedente: **l'app di Giacomo era partita prima
-del commit** `dcb5765` (Electron legge i file all'avvio). Adesso non c'è nessuna istanza sua in
-esecuzione: al prossimo avvio prenderà sia quel commit sia questo. Se dopo il riavvio TD/SX non
-si muovono ancora, le due cose da guardare, in ordine: **quale motore è attivo** (sugli *anelli* i
-due tasti sono spenti apposta, e il `title` lo dice) e se la mappa è **tua** o **generata**.
+⚠️ E qui la lezione di metodo: tre misure verdi dicevano «funziona», e l'utente diceva di no.
+**Avevano ragione tutti e due** — le mie prove giravano su mappe con motore *albero*, la sua è
+sugli anelli. Finché non ho aperto il SUO file (`Zaini/…/MAPPE/*.json`, campo `vista.motore`) ho
+inseguito ipotesi (app stantia, barra stretta) tutte plausibili e tutte false. **Quando una
+misura e l'utente si contraddicono, il dato dell'utente è un file: aprilo.**
 
-⚠️ **Aperto, e piccolo**: sugli anelli i due tasti sono disabilitati perché «non hanno un verso»,
-ma il motore, chiamato a mano, **cambia davvero il disegno** (`td` ≠ `lr`, deterministico). O la
-frase è sbagliata o lo è la disabilitazione: è una decisione, non un guasto, e non l'ho toccata.
+⚠️ E una nota che era rimasta aperta ieri, ora chiusa in senso opposto: chiamando
+`mappaOrientamento` a mano sugli anelli il disegno *cambiava lo stesso* (le card ruotano
+`along`/`across`, quindi i raggi respirano). Non è un verso, è un effetto collaterale: adesso il
+rifiuto è esplicito, e quella strada non esiste più.
 
 ---
 
@@ -132,7 +158,8 @@ frase è sbagliata o lo è la disabilitazione: è una decisione, non un guasto, 
    fonte, apri una **mappa tua**, ingrandisci il suo blocco a tutto banco, chiudi l'app, riaprila.
    Deve tornare **a tutto banco, sulla mappa tua**; scegliendo «Fonti» in un blocco, il documento
    è lì alla sua pagina.
-2. **TD/SX**, dopo un avvio nuovo (§3). Se ancora fermi, dire quale motore è attivo.
+2. **TD/SX sulla tua mappa sugli anelli** (§3): premere SX deve dire perché non fa niente e dove
+   si cambia motore; cambiato motore (tasto destro sulla tela → Motore → Albero), deve ridisporre.
 3. **La prova a mano dell'OCR**, mai completata (§6 dell'handoff precedente): togliere la fonte,
    ritrascinare, riconoscere, e guardare il bordo destro e l'altezza sui filetti.
 4. **Il merge**, quando 1-3 sono verdi: `git checkout main && git merge mappa-limiti`.
@@ -161,6 +188,12 @@ frase è sbagliata o lo è la disabilitazione: è una decisione, non un guasto, 
   mappa guardavi, `prova-menu` — che il registro lo cambiava e non lo rimetteva — ha fatto cadere
   `prova-mappe-ui`. Non era un guasto dell'app: era una prova che lasciava lo stato addosso alla
   prossima, e prima nessuno se ne accorgeva perché il reload cancellava le tracce.
+- **Un comando spento che non può parlare**: `disabled` non emette il click, quindi un comando
+  che ha una *ragione* per non fare niente va spento con `aria-disabled` — la veste è la stessa,
+  ma il click arriva e la ragione si può dire. Il `title` non basta: chi preme un tasto morto non
+  ci passa sopra col mouse, riprova.
+- **Quando una misura e l'utente si contraddicono, apri il suo file**: tre prove verdi contro
+  «non funziona» — la differenza era un campo (`vista.motore`) dentro la sua mappa.
 - **Chi ricorda deve dire chi scrive**: il segno di ciò che era aperto lo scrive solo un gesto.
   Se lo scrivesse anche chi *ripristina* o chi *monta*, il ripristino successivo troverebbe il
   proprio riflesso invece della scelta dell'utente. Vale per il banco e per la mappa, ed è la
