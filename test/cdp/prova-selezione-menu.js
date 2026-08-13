@@ -69,6 +69,15 @@ const firma = (sel) => val(`(()=>{const e=document.querySelector(${JSON.stringif
   console.log('\n== La barra compare da sé sulla selezione');
   const p = await selezionaNelCapitolo();
   ok('c\'è un capitolo con del testo', true, !!p);
+  /* ⚠️ Che il trascinamento abbia SELEZIONATO si chiede subito, e prima di
+     tutto il resto: se il capitolo non è in vista il mouse cade su ciò che lo
+     copre, non si seleziona niente, e tutti i controlli sotto — barra, testata,
+     menu — vanno in rosso accusando pezzi che non hanno colpa. Costato un
+     pomeriggio il 13 agosto: il rosso diceva «la barra è aperta: no», e la
+     verità era «non c'è nessuna selezione». */
+  ok('il trascinamento ha davvero selezionato del testo', true,
+    await val(`(()=>{ const s=getSelection();
+      return !!(s.rangeCount && !s.isCollapsed && s.getRangeAt(0).toString().trim().length>3); })()`));
   const barra = await firma('#selBarra');
   ok('la barra è aperta', true, await val(`document.querySelector('#selBarra').classList.contains('aperta')`));
   ok('e porta le classi del menu contestuale', true,
