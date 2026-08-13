@@ -201,13 +201,20 @@ async function fixture(dove) {
      (schermo di Giacomo). Il corpo di una riga è la mediana, e comunque mai
      più della distanza dalla riga sopra: qui si pretende che il riquadro di
      ogni span stia dentro il passo fra le righe. */
+  /* la solita attesa: il viewer si è appena riaperto sul file nuovo, e il
+     layer della pagina 1 può essere ancora in volo */
+  await finoA(`(()=>{ const t=document.querySelector('#pdfFrame .page[data-page-number="1"] .textLayer');
+    return t && t.querySelectorAll('span').length > 5 ? 1 : 0; })()`, 20000);
+  await pausa(600);
   const invadenti = await val(`(()=>{
     const tl=document.querySelector('#pdfFrame .page[data-page-number="1"] .textLayer');
     if(!tl) return { errore:'niente textLayer' };
     const box=[...tl.querySelectorAll('span')].filter(s=>s.textContent.trim())
       .map(s=>{ const r=s.getBoundingClientRect(); return { t:s.textContent.slice(0,12), y:r.y, h:r.height, b:r.y+r.height }; })
       .filter(q=>q.h>0);
-    if(box.length<4) return { errore:'pochi span' };
+    /* tre frasi possono benissimo essere TRE span: le righe fuse in un item
+       ciascuna sono il caso buono, non un errore del metro */
+    if(box.length<2) return { errore:'pochi span' };
     /* ⚠️ Le righe si RAGGRUPPANO per vicinanza, non si quantizzano: le basi di
        una riga differiscono di qualche pixel (inclinazione, discendenti), e un
        arrotondamento le conta come righe distinte a quattro pixel l'una
