@@ -5435,6 +5435,7 @@ function playerApri(file, t, label){
   PLAYER={ file:file, tipo:tipo,
            num:numDiFile(file, (typeof _mediaNum==='function'?_mediaNum():MEDIA_BY_NUM)),
            label:label||titoloMateriale(file)||file, vel:PLAYER.vel||1 };
+  apertoScrivi('media', file);
   var host=$('#plHost'); if(host) host.dataset.tipo=tipo;
   if(stesso) playerVaiA(sec);
   else {
@@ -5456,6 +5457,7 @@ function playerApri(file, t, label){
 /** Chiude il player: il media si molla, il documento accanto resta dov'è. */
 function playerChiudi(){
   ascoltoFlush();
+  apertoScrivi('media','');
   var v=playerEl();
   if(v){ try{ v.pause(); }catch(e){} v.removeAttribute('src'); try{ v.load(); }catch(e){} }
   var host=$('#plHost'); if(host) delete host.dataset.tipo;
@@ -5584,6 +5586,87 @@ function ascoltoFlush(){
   api.segna(att.corso, att.file, att.secondo).then(function(r){
     if(r && r.error) console.error('ascolto/segna:', r.error);
   }).catch(function(e){ console.error('ascolto/segna:', e); });
+}
+
+/* ===== IL SEGNO DI CIÒ CHE ERA APERTO ====================================
+ *
+ * Lettura e ascolto ricordano DOVE si era in un documento; questo ricorda
+ * QUALE documento e quale media erano aperti, contenitore per contenitore.
+ * È il pezzo che mancava al «l'app riapre come l'hai lasciata» del §5 del
+ * piano del banco: la disposizione senza il contenuto era una scrivania
+ * apparecchiata vuota. E vale a ogni cambio di contenitore, non solo al
+ * riavvio: da uno zaino all'altro, da un corso all'altro, fra le due metà.
+ *
+ * Vive in `localStorage` — come la disposizione, non come i segni: parla di
+ * riquadri aperti su questa macchina, non di lavoro fatto nel vault.
+ * Una mappa id → { fonte, media }: le voci di contenitori spariti non fanno
+ * male a nessuno, e il ripristino controlla comunque l'elenco vero.
+ */
+var APERTO={ ripristinato:'', mollando:false };
+function apertoLeggi(){
+  try{ return JSON.parse(localStorage.getItem('studia.aperto')||'{}')||{}; }catch(e){ return {}; }
+}
+/** Segna (o toglie, con valore vuoto) ciò che è aperto ADESSO, per il
+ *  contenitore di adesso. La chiamano le quattro porte vere: `openPdf`,
+ *  `closePdf`, `playerApri`, `playerChiudi`. */
+function apertoScrivi(campo, valore){
+  /* ⚠️ Mollare il contenitore CHIUDE documento e media, ma non è un gesto
+     dell'utente: il suo segno resta, o il cambio di zaino dimenticherebbe
+     proprio quello che deve ricordare. */
+  if(APERTO.mollando) return;
+  var id=corsoAttivo(); if(!id) return;
+  var tutto=apertoLeggi(), mio=tutto[id]||{};
+  if(valore) mio[campo]=String(valore); else delete mio[campo];
+  if(Object.keys(mio).length) tutto[id]=mio; else delete tutto[id];
+  try{ localStorage.setItem('studia.aperto', JSON.stringify(tutto)); }catch(e){}
+}
+/** Chiude documento e media SENZA toccare i segni: è il gesto meccanico del
+ *  cambio di contenitore, non una scelta di chi studia. Prima non chiudeva
+ *  nessuno, e il documento dello zaino di prima restava a schermo nel nuovo. */
+function apertoMolla(){
+  APERTO.mollando=true;
+  try{ if(typeof ANTEPRIMA!=='undefined' && ANTEPRIMA && ANTEPRIMA.file) closePdf(); }catch(e){}
+  try{ if(typeof PLAYER!=='undefined' && PLAYER && PLAYER.file) playerChiudi(); }catch(e){}
+  APERTO.mollando=false;
+}
+/**
+ * Riapre nel contenitore di adesso ciò che vi era rimasto aperto. Idempotente
+ * per contenitore (`APERTO.ripristinato`): le porte che possono chiamarla sono
+ * cinque — i due avvii, `cambiaModo`, `cambiaZaino`, `cambiaCorso` — e una
+ * guardia costa meno che pretendere che si coordinino.
+ */
+async function apertoRipristina(){
+  /* All'avvio dei corsi questa parte mentre lo script è ancora in corsa, e i
+     riquadri stanno più in basso nel DOM: si aspetta il documento intero. */
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', function(){ apertoRipristina(); }, { once:true });
+    return;
+  }
+  var id=corsoAttivo();
+  if(!id || APERTO.ripristinato===id) return;
+  APERTO.ripristinato=id;
+  var mio=apertoLeggi()[id]||{};
+  if(!mio.fonte && !mio.media) return;
+  /* Prima i segni del punto — pagina e secondo — o si riaprirebbe a pagina 1
+     per poi saltare sotto gli occhi: `openPdf` legge la copia in memoria. */
+  try{ await letturaCarica(); }catch(e){}
+  try{ await ascoltoCarica(); }catch(e){}
+  /* L'elenco vero del contenitore: un segno può parlare di un file tolto da
+     fuori. «Non lo so» non è «non c'è» — senza elenco si prova lo stesso, e
+     al peggio il riquadro dice che non riesce ad aprire. */
+  var nomi=null;
+  try{
+    nomi={};
+    ((await window.vault.corpus.list(id))||[]).forEach(function(m){ nomi[m.name]=1; });
+  }catch(e){ nomi=null; }
+  if(id!==corsoAttivo()) return;   // il contenitore è cambiato mentre si leggeva il disco
+  if(mio.fonte && (!nomi || nomi[mio.fonte])) openPdf(mio.fonte, null, titoloMateriale(mio.fonte)||mio.fonte);
+  if(mio.media && (!nomi || nomi[mio.media])){
+    playerApri(mio.media, null, titoloMateriale(mio.media)||mio.media);
+    /* Riaprire non è premere play: la lezione riparte quando lo decide chi
+       studia, dal secondo in cui era. */
+    playerPausa();
+  }
 }
 
 /* ---- i comandi del player: bottoni, tempo che scorre, pannellino ----
@@ -5789,6 +5872,7 @@ function openPdf(pdf,page,label){
   // la' la pagina si dice ancora col frammento #page=
   var nt=$('#pdfNewtab'); if(nt) nt.href=url+(pg?('#page='+pg):'');
   document.documentElement.dataset.pdf='1';
+  apertoScrivi('fonte', pdf);
   // il dock non c'è più: si chiede al banco di fare posto allo strumento
   try{ bancoMostra('fonte'); }catch(e){}
   aggiornaBarraPagina();
@@ -5846,6 +5930,7 @@ function openPdf(pdf,page,label){
   });
 }
 function closePdf(){ document.documentElement.dataset.pdf='';
+  apertoScrivi('fonte','');
   pdfFindChiudi();
   /* ⚠️ `ANTEPRIMA` va azzerata, non solo il documento. Nel banco il riquadro
      resta a schermo (`.bcorpo > #pdfPane` vince su `data-pdf`), quindi dopo la ✕
@@ -6746,6 +6831,7 @@ function cambiaZaino(id, silenzioso){
   MODO.zaino=id;
   try{ localStorage.setItem('studia.zaino', id); }catch(e){}
   modoAggiorna();
+  apertoRipristina();
   if(!silenzioso){
     var z=MODO.zaini.filter(function(x){ return x.id===id; })[0];
     toast('Zaino: ' + ((z&&z.title)||id), true);
@@ -6778,6 +6864,10 @@ function contenitoreMolla(){
   try{ ALBUMVISTA.voci=[]; ALBUMVISTA.filtro=''; var ac=$('#albCerca'); if(ac) ac.value='';
        if(typeof albumChiudiMenu==='function') albumChiudiMenu();
        if(typeof albumAggiorna==='function') albumAggiorna(); }catch(e){}
+  /* Per ultimo, a segni ormai scritti: il documento e il media del contenitore
+     che si sta lasciando escono di scena — senza dimenticare che erano aperti.
+     Prima restavano a schermo, ed erano il documento di un ALTRO zaino. */
+  try{ apertoMolla(); }catch(e){}
 }
 
 /** Commuta. È l'unica porta: il click sul logo passa di qui, e nient'altro. */
@@ -6799,6 +6889,9 @@ async function cambiaModo(m){
     try{ if(typeof aggiornaVarianti==='function') aggiornaVarianti(); }catch(e){}
     try{ if(typeof render==='function') render(); }catch(e){}
   }
+  /* E il contenuto torna con la disposizione: la fonte e il media che erano
+     aperti in QUESTA metà dell'app. */
+  apertoRipristina();
 }
 
 /* ===================== LA SIDEBAR DELLO ZAINO =====================
@@ -7048,8 +7141,11 @@ async function zainoCrea(nome){
         bancoRicarica();
       }
       else { MODO.ora='corso'; try{ localStorage.setItem('studia.modo','corso'); }catch(e){} modoAggiorna(); }
+      /* Con la disposizione torna il contenuto: la fonte e il media rimasti
+         aperti nel contenitore con cui si riapre — qualunque dei due sia. */
+      apertoRipristina();
     });
-  } else modoAggiorna();
+  } else { modoAggiorna(); apertoRipristina(); }
 })();
 
 /**
@@ -7061,6 +7157,9 @@ async function zainoCrea(nome){
  */
 function cambiaCorso(id){
   if(!id) return;
+  /* Rieleggere il corso di adesso non è un cambio: mollare e riaprire il
+     documento per niente lo farebbe lampeggiare sotto gli occhi. */
+  var stessoCorso=(id===corsoAttivo());
   /* ⚠️ Una mappa dell'utente appartiene a un CORSO, e il corso sta per
      cambiare sotto. Prima si scrive quello che c'è in canna — nel corso
      giusto, che è ancora quello di adesso — e poi si lascia andare il
@@ -7082,6 +7181,9 @@ function cambiaCorso(id){
       if(mappaAperta()) toast('Cambiato corso: la mappa è stata salvata e chiusa', true);
     }
   }catch(e){ console.error('mappe/cambioCorso:', e); }
+  /* Documento e media del corso che si lascia: fuori scena, col segno intatto.
+     PRIMA che `studia.corso` cambi, o la chiusura parlerebbe del corso nuovo. */
+  if(!stessoCorso){ try{ apertoMolla(); }catch(e){} }
   try{ localStorage.setItem('studia.corso', id); }catch(e){}
   try{ MATERIALI.lista=null; }catch(e){}      // i materiali sono di un altro corso
   try{ letturaFlush(); letturaCarica(); }catch(e){}   // il segno in canna si scrive, poi si rileggono i suoi
@@ -7115,6 +7217,8 @@ function cambiaCorso(id){
       mappaCaricaVista(); mappaSincronizzaComandi(); mappaAmbiti(); mappaAdatta(); mappaRidisegna();
     }
   }catch(e){ console.error('mappe/cambioCorso:', e); }
+  /* E il contenuto del corso nuovo torna dov'era: la sua fonte, il suo media. */
+  if(!stessoCorso) apertoRipristina();
 }
 
 /**
@@ -11146,6 +11250,10 @@ function bancoDopoLayout(){
 
 function bancoForma(f){
   if(!bancoPronto() || !BancoForme.FORME[f]) return;
+  /* Una forma scelta dal pannello dice «adesso si sta così»: la memoria del
+     ritorno dall'ingrandimento parla di una disposizione più vecchia di questa
+     scelta, e riportarcisi sarebbe una sorpresa, non un ritorno. */
+  bancoZoomScrivi(null);
   var nuovo=BancoForme.cambiaForma(bancoStato(), f);
   var usciti=(nuovo.usciti||[]).map(function(u){
     var st=bancoStrumento(u.strumento);
@@ -11196,6 +11304,54 @@ function bancoTogli(strumento){
   if(!bancoPronto()) return;
   var b=bancoBloccoDi(strumento);
   if(b) bancoAssegna(b, '');
+}
+/* ---- a tutto banco e ritorno: il doppio click sulla testata ----
+ *
+ * Un gesto solo per il bisogno più frequente — «questo blocco, grande» — senza
+ * passare dal pannello delle otto forme. Il ritorno è lo STESSO gesto sulla
+ * stessa testata: non un'altra cosa da imparare.
+ *
+ * La memoria del ritorno è l'intera disposizione di prima (forma, strumenti,
+ * divisori), per modalità come la disposizione stessa, e persistente: chiudere
+ * l'app da ingrandito non deve rendere il ritorno un salto nel buio. Scegliere
+ * una forma DAL PANNELLO la invalida: quel gesto dice «adesso si sta così»,
+ * e tornare a una disposizione più vecchia di quella scelta sarebbe una
+ * sorpresa, non un ritorno. */
+function bancoZoomChiave(){ return bancoChiave()+'.zoom'; }
+function bancoZoomLeggi(){
+  try{ return JSON.parse(localStorage.getItem(bancoZoomChiave())||'null'); }catch(e){ return null; }
+}
+function bancoZoomScrivi(s){
+  try{
+    if(s) localStorage.setItem(bancoZoomChiave(), JSON.stringify(s));
+    else localStorage.removeItem(bancoZoomChiave());
+  }catch(e){}
+}
+/** Ingrandisce il blocco a tutto banco — o, se il banco è già «uno», torna. */
+function bancoZoom(blocco){
+  if(!bancoPronto()) return;
+  var s=bancoStato();
+  if(s.forma==='uno'){ bancoZoomTorna(); return; }
+  var strumento=bancoStrumentoIn(blocco);
+  bancoZoomScrivi(s);
+  var nuovo=BancoForme.cambiaForma(s, 'uno');
+  /* Lo strumento del blocco premuto va in A, che in «uno» è l'unico a schermo;
+     un blocco vuoto si ingrandisce vuoto, ed è coerente — il gesto parla del
+     BLOCCO, non del suo contenuto. */
+  if(strumento) nuovo=BancoForme.assegna(nuovo, 'A', strumento);
+  BANCO.stato=nuovo;
+  bancoSalva(); bancoDisegna();
+  /* Niente «fuori dal banco»: qui gli strumenti non escono di scena — aspettano
+     il ritorno, che è lo stesso doppio click. Si dice il gesto, una volta. */
+  toast('A tutto banco — doppio click sulla testata per tornare', true);
+}
+/** Ripristina la disposizione di prima dell'ingrandimento, se c'è. */
+function bancoZoomTorna(){
+  var prima=bancoZoomLeggi();
+  if(!prima) return;
+  bancoZoomScrivi(null);
+  BANCO.stato=BancoForme.normalizzaStato(prima);
+  bancoSalva(); bancoDisegna();
 }
 /**
  * Dichiara su `<html>` quali strumenti sono a schermo, perché il CSS possa
@@ -11278,6 +11434,16 @@ document.addEventListener('change', function(e){
   var sel=e.target && e.target.closest && e.target.closest('.bsel');
   if(!sel) return;
   bancoAssegna(sel.dataset.blocco, sel.value);
+});
+/* Il doppio click sulla testata: a tutto banco, e ritorno con lo stesso gesto.
+   ⚠️ La tendina è esclusa: un doppio click lì è un click impaziente sul menu
+   dello strumento, non una richiesta di ingrandire il blocco. */
+document.addEventListener('dblclick', function(e){
+  if(!e.target.closest) return;
+  if(e.target.closest('.tendina') || e.target.closest('.bsel')) return;
+  var h=e.target.closest('.bhead'); if(!h) return;
+  var blocco=h.closest('.blocco'); if(!blocco) return;
+  bancoZoom(blocco.dataset.blocco);
 });
 
 /* Trascinamento dei divisori. Le frazioni si salvano come frazioni, mai in
