@@ -152,10 +152,13 @@ file è già stata pagata due volte.
 
 # 5. Che cosa si ricorda
 
-**Una disposizione sola, globale** *(scelta dell'utente, 9 agosto)*. L'app riapre come l'hai
-lasciata, ovunque tu sia. Vive in `localStorage`, come le leve della vista mappa — che invece
-restano **per corso**, e va bene così: sono due cose diverse, la taratura di uno strumento e la
-forma del banco.
+**Una disposizione per contenitore** *(scelta dell'utente, 13 agosto; era «una sola, globale»
+il 9 agosto, poi «una per modalità»)*. Ogni corso e ogni zaino ricorda il SUO banco, il SUO
+contenuto aperto (fonte, media, appunto — `studia.aperto`) e la SUA memoria di ritorno dello
+zoom. La misura che ha deciso: con la chiave di modalità, i tre riquadri aperti per un video in
+uno zaino comparivano anche nello zaino dopo, che un video non l'aveva. Un contenitore mai
+toccato parte dalla forma di fabbrica della sua modalità. Vive in `localStorage`, come le leve
+della vista mappa.
 
 ⚠️ Un blocco che ospita uno strumento non ancora costruito (o una mappa cancellata) non deve
 lasciare un buco muto: mostra il suo stato vuoto e dice come riempirlo. Vale la regola già scritta

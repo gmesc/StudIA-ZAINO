@@ -50,6 +50,12 @@ async function capitoloConNote() {
 
 (async () => {
   await collega(); await partiPulito(); await pausa(400);
+  /* ⚠️ Dal 13 agosto la disposizione è del CONTENITORE: la prova prima di
+     questa può aver lasciato il corso con un banco senza capitolo, e i
+     richiami di nota vivono lì. Si chiede alla porta vera, come ogni gesto. */
+  await val(`(async()=>{ if(modoAttivo()==='zaino') await cambiaModo('corso');
+    try{ bancoMostra('capitolo'); }catch(e){} return 1; })()`);
+  await pausa(400);
 
   const trovato = await capitoloConNote();
   if (!trovato) {

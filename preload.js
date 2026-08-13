@@ -27,10 +27,15 @@ function loadLessons() {
    il lettore li chiede per nome, esattamente come chiede un video o un PDF. Senza
    questa voce un capitolo con una figura mostrerebbe una casella vuota — e la
    causa (una cartella non cercata) non si vedrebbe da nessuna parte. */
-function srcUrl(file) {
+/* ⚠️ `corso` è il contenitore ATTIVO, e va passato: `trova` mette le sue
+   cartelle davanti a tutte. Senza, due zaini con un file omonimo aprivano
+   quello del primo in ordine alfabetico — misurato il 13 agosto, quando due
+   prove hanno copiato lo stesso PDF in due zaini e `srcUrl` ha risposto con
+   lo zaino sbagliato. */
+function srcUrl(file, corso) {
   if (!vaultPath) return '../Fonti/' + encodeURIComponent(file);
   for (const sub of ['Fonti', 'Media', 'Figure']) {
-    const p = mat.trova(vaultPath, sub, file);
+    const p = mat.trova(vaultPath, sub, file, corso);
     if (p) return url.pathToFileURL(p).href;
   }
   return url.pathToFileURL(path.join(vaultPath, 'Fonti', file)).href;
@@ -428,7 +433,8 @@ contextBridge.exposeInMainWorld('vault', {
      l'id dello zaino al posto di quello del corso. */
   zaino: {
     list: () => ipcRenderer.invoke('zaino:list'),
-    create: (nome) => ipcRenderer.invoke('zaino:create', { nome })
+    create: (nome) => ipcRenderer.invoke('zaino:create', { nome }),
+    elimina: (id) => ipcRenderer.invoke('zaino:elimina', { id })
   },
   /* Il segno di lettura di ogni documento. Sta nel vault e non nel
      `localStorage` perché è un fatto del documento, non della macchina: lo
@@ -501,7 +507,9 @@ contextBridge.exposeInMainWorld('vault', {
   media: {
     percorsoDi: (file) => { try { return webUtils.getPathForFile(file); } catch (e) { return ''; } },
     importa: (corso, percorsi) => ipcRenderer.invoke('media:importa', { corso, percorsi }),
-    elenco: (corso) => ipcRenderer.invoke('media:elenco', { corso })
+    elenco: (corso) => ipcRenderer.invoke('media:elenco', { corso }),
+    elimina: (corso, file) => ipcRenderer.invoke('media:elimina', { corso, file }),
+    usi: (corso, file) => ipcRenderer.invoke('media:usi', { corso, file })
   },
   /* Composer degli indici: righe = lezioni, colonne = indici proposti, e gli otto
      personaggi che si trascinano sulle card. Lo stato arriva in un colpo solo —
