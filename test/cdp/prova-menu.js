@@ -273,8 +273,14 @@ async function esc() {
     await val('(MAPPA.mia.grafo&&MAPPA.mia.grafo.nodi||[]).length'));
   ok('senza creare una seconda mappa', mappePrima, await quanteMappe());
 
-  // si lascia il vault come lo si è trovato
+  /* Si lascia il vault come lo si è trovato — e anche l'APP: questa prova ha
+     portato il registro su «Mie» creando una mappa dal frammento, e da quando
+     l'app ricorda quale mappa guardavi quel registro sopravvive al riavvio.
+     ⚠️ Toglieva il file e basta: la prova dopo si trovava lo scaffale sbagliato
+     aperto su una mappa che non esiste più. */
   await val('(async()=>{ const f=MAPPA.mia.file; if(f) await window.vault.mappe.rimuovi(corsoAttivo(), f); })()');
+  await pausa(600);
+  await val('(()=>{ try{ mappaRegistro("generata"); }catch(e){} return 1; })()');
   await pausa(600);
 
   console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ menu contestuale verde dalla porta principale'));

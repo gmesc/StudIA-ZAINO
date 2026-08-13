@@ -1,4 +1,4 @@
-/* Riaprire NON ridispone il banco.
+/* Riaprire NON ridispone il banco — e ci rimette dentro quello che guardavi.
  *
  * ⚠️ Che cosa difende. Chiudendo l'app con la mappa a tutto banco («uno») e una
  * fonte aperta, all'avvio `apertoRipristina` chiamava `openPdf`, che chiama
@@ -8,6 +8,12 @@
  * scelta era già sovrascritta sul disco. Dal lato di chi studia si vedevano due
  * cose insieme: «il banco non tiene la disposizione» e «la pagina del documento
  * invece sì» — perché la pagina sta nel vault e nessuno la riscriveva.
+ *
+ * ⚠️ E il seguito, dallo stesso giro: il banco ricordava il RIQUADRO, ma dentro
+ * il riquadro tornava sempre la mappa GENERATA anche a chi aveva lasciato a
+ * schermo una mappa sua. `MAPPA.mia.file` bastava dentro la sessione, ma viveva
+ * in memoria: un riavvio la portava via. Ora il segno di QUALE mappa sta in
+ * `studia.aperto`, accanto a fonte, media e appunto.
  *
  * La riapertura è vera: `location.reload()`, così passa dal boot — è lì che sta
  * il guasto, non nelle funzioni prese una per una.
@@ -105,7 +111,50 @@ async function finoA(expr, quanto) {
   const disegnata = await finoA(`document.querySelectorAll('#pdfHost .page').length ? 1 : 0`, 20000);
   ok('il documento si disegna appena il suo strumento rientra', 1, disegnata);
 
+  /* ⚠️ Il banco ricorda il RIQUADRO; dentro il riquadro tornava sempre la mappa
+     GENERATA anche a chi aveva lasciato a schermo una mappa sua. `MAPPA.mia.file`
+     bastava dentro la sessione, ma viveva in memoria: un riavvio la portava via. */
+  sezione('E la mappa che stavi guardando è la tua, non la generata');
+  await val(`(()=>{ bancoAssegna('A','mappa'); return 1; })()`);
+  await pausa(600);
+  const mappaNata = await val(`(async()=>{
+    if(!mappaPronta()) return 'moduli non pronti';
+    let g={ nodi:[], archi:[] };
+    for(const t of ['Radice','Uno','Due']) g=MappaModifica.creaNodo(g,{ testo:t });
+    const r=await window.vault.mappe.salva(corsoAttivo(), null,
+      { titolo:'Prova ripristino', corso:corsoAttivo(), nodi:g.nodi, archi:g.archi, vista:{} });
+    if(r.error) return r.error;
+    await mappaRegistro('mie');
+    await new Promise(s=>setTimeout(s,600));
+    await mappaApriMia(r.file);
+    return r.file;
+  })()`);
+  if (!mappaNata || /error|non pronti/i.test(String(mappaNata))) {
+    console.log('  ✗ non riesco a preparare la mappa: ' + mappaNata);
+    process.exit(1);
+  }
+  await pausa(600);
+  const M = JSON.stringify(mappaNata);
+  ok('la mappa tua è aperta e segnata', ['mie', mappaNata, 'mie:' + mappaNata],
+    await val(`[MAPPA.registro, MAPPA.mia.file,
+      (JSON.parse(localStorage.getItem('studia.aperto')||'{}')[corsoAttivo()]||{}).mappa]`));
+
+  try { await val(`(setTimeout(()=>location.reload(),80),1)`); } catch (e) {}
+  await pausa(2500);
+  await collega();
+  await finoA(`(typeof MAPPA!=='undefined' && MAPPA) ? 1 : 0`, 20000);
+  const tornata = await finoA(`(MAPPA.registro==='mie' && MAPPA.mia.file===${M}) ? 1 : 0`, 15000);
+  ok('riaprendo si torna sulla mappa TUA, non sulla generata', 1, tornata);
+  /* ⚠️ Non «almeno tre nodi»: anche la generata ne ha, e il controllo sarebbe
+     verde pure sulla mappa sbagliata. Si cerca un nodo che solo QUESTA mappa ha. */
+  const disegnataMappa = await finoA(`[...document.querySelectorAll('#mappaSvg .mnodo')]
+    .some(g=>/Radice/.test(g.textContent||'')) ? 1 : 0`, 15000);
+  ok('ed è disegnata: a schermo ci sono i SUOI nodi', 1, disegnataMappa);
+
   sezione('Pulizia: quello che questa prova ha portato dentro, questa prova lo toglie');
+  await val(`(async()=>{ try{ await window.vault.mappe.rimuovi(corsoAttivo(), ${M}); }catch(e){}
+    try{ await mappaRegistro('generata'); }catch(e){} return 1; })()`);
+  await pausa(600);
   await val(`(()=>{ try{ closePdf(); }catch(e){} bancoForma('due-col');
     bancoAssegna('A','capitolo'); return 1; })()`);
   if (dentro.importata) {

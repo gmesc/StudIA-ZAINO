@@ -34,8 +34,13 @@ const visibile = (sel) => val(`(()=>{const e=document.querySelector(${JSON.strin
   await collega();
 
   /* Stato di fabbrica. Senza, il primo controllo misura l'uso di ieri invece
-     della promessa di oggi: è il falso allarme costato tempo su `prova-b1`. */
+     della promessa di oggi: è il falso allarme costato tempo su `prova-b1`.
+     ⚠️ `studia.aperto` ne fa parte da quando ci sta anche il segno di QUALE
+     mappa si stava guardando: una prova passata prima che abbia aperto una
+     mappa dell'utente la farebbe riaprire, e qui il primo controllo — la
+     tendina della mappa GENERATA — misurerebbe l'altro registro. */
   await val(`localStorage.removeItem('studia.banco');
+             localStorage.removeItem('studia.aperto');
              localStorage.removeItem('studia.mappa.'+(localStorage.getItem('studia.corso')||'-')); 1`);
   await val('location.reload(), 1'); await pausa(1600);
   await collega(); await pausa(600);

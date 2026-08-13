@@ -5713,7 +5713,12 @@ async function apertoRipristina(){
   if(!id || APERTO.ripristinato===id) return;
   APERTO.ripristinato=id;
   var mio=apertoLeggi()[id]||{};
-  if(!mio.fonte && !mio.media) return;
+  /* ⚠️ Si esce solo se non c'è NIENTE da rimettere. La condizione guardava le
+     sole fonte e media, e da quando il segno porta anche l'appunto e la mappa
+     quello era un ripristino che non partiva mai per chi aveva lasciato aperti
+     soltanto quelli. Un campo nuovo qui va aggiunto anche in questa riga: è la
+     trappola delle liste bianche, in forma di guardia. */
+  if(!mio.fonte && !mio.media && !mio.appunto && !mio.mappa) return;
   /* Prima i segni del punto — pagina e secondo — o si riaprirebbe a pagina 1
      per poi saltare sotto gli occhi: `openPdf` legge la copia in memoria. */
   try{ await letturaCarica(); }catch(e){}
@@ -5751,6 +5756,11 @@ async function apertoRipristina(){
         if((NOTES.list||[]).some(function(n){ return n.file===mio.appunto; })) noteOpen(mio.appunto);
       }catch(e){ console.error('aperto/appunto:', e); }
     }
+    /* E QUALE mappa: il banco ricorda il riquadro, ma dentro il riquadro
+       tornava sempre la generata anche a chi aveva lasciato una mappa sua.
+       Il file può non esserci più (tolto da fuori): `mappaApri` e
+       `mappaRegistro` ripiegano sulla più recente, che è già la loro regola. */
+    if(mio.mappa){ try{ mappaRipristinaSegno(mio.mappa); }catch(e){ console.error('aperto/mappa:', e); } }
   } finally { APERTO.ripristinando=false; }
 }
 
@@ -11990,6 +12000,59 @@ function mappaSalvaVista(){
   }catch(e){}
 }
 
+/* ---- QUALE mappa stavi guardando ----------------------------------------
+ *
+ * Le leve dicono COME la guardavi; questo dice QUALE. Sono due domande diverse
+ * e vivono in due posti diversi: le leve per corso in `mappaChiave()`, questo
+ * insieme alle altre cose aperte nel contenitore (`studia.aperto`), che è già
+ * il posto che risponde a «che cosa era aperto qui».
+ *
+ * ⚠️ Senza, riaprendo l'app si tornava sempre sulla mappa GENERATA anche a chi
+ * aveva lasciato a schermo una mappa sua: il banco ricordava il riquadro, la
+ * mappa dentro no. `MAPPA.mia.file` bastava a ritrovarla dentro la sessione
+ * (`mappaApri` la riapre), ma viveva in memoria, e un riavvio la portava via.
+ *
+ * La forma è una stringa breve — `mie:<file>` · `mie` · `gen:<ambito>` — perché
+ * i vicini in `studia.aperto` sono stringhe: un oggetto qui obbligherebbe chi
+ * legge quel file a distinguere due formati.
+ */
+function mappaSegnoOra(){
+  if(mappaMie()) return MAPPA.mia.file ? 'mie:'+MAPPA.mia.file : 'mie';
+  return 'gen:'+(MAPPA.ambito||'');
+}
+/** Segna che cosa si sta guardando ADESSO. La chiamano i punti in cui QUELLO
+ *  cambia per una scelta: aprire una mappa tua, cambiare registro, cambiare
+ *  ambito. ⚠️ NON la chiama `mappaApri`: entrare in scena non è scegliere, e
+ *  scrivere da lì vorrebbe dire che il banco, montando la mappa all'avvio,
+ *  sovrascrive il segno prima ancora che il ripristino lo legga. */
+function mappaSegna(){ try{ apertoScrivi('mappa', mappaSegnoOra()); }catch(e){} }
+/**
+ * Rimette la mappa che era a schermo in questo contenitore.
+ *
+ * Due strade, e la differenza è se la mappa è già a schermo: il banco si
+ * disegna mentre questo ripristino aspetta il disco, quindi può aver già
+ * aperto la generata. Se la mappa non è nel banco basta lo STATO — `mappaApri`
+ * lo userà quando lo strumento rientra; se invece è aperta si passa dalla porta
+ * vera (`mappaRegistro`), che ricarica l'elenco e apre il file.
+ */
+function mappaRipristinaSegno(segno){
+  if(typeof MAPPA==='undefined' || !MAPPA) return;
+  var pezzi=String(segno||'').split(':');
+  var reg = pezzi[0]==='mie' ? 'mie' : 'generata';
+  var resto = pezzi.slice(1).join(':');
+  if(reg==='mie'){ if(resto) MAPPA.mia.file=resto; }
+  else if(resto) MAPPA.ambito=resto;
+  if(reg===MAPPA.registro){
+    /* Stesso registro: resta l'ambito della generata, che è l'unica cosa che
+       può essere cambiata sotto. Se la mappa non è a schermo non c'è niente da
+       ridisegnare — la disegnerà chi la monta. */
+    if(reg==='generata' && mappaAperta()){ try{ mappaAmbiti(); mappaAdatta(); mappaRidisegna(); }catch(e){} }
+    return;
+  }
+  if(!mappaAperta() && !MAPPA.mia.grafo){ MAPPA.registro=reg; return; }
+  try{ mappaRegistro(reg); }catch(e){ console.error('mappe/ripristino:', e); }
+}
+
 /* La biforcazione delle leve, e l'unica porta da cui passano tutti i comandi
    della vista. Per la mappa generata restano dove sono sempre state — in
    `localStorage`, per corso, perché la mappa non esiste su disco e due
@@ -12339,6 +12402,7 @@ function mappaApriMia(file){
     // la vista è la sua: leve, zoom e rami chiusi tornano com'erano
     mappaVistaDaFile(m.vista);
     MAPPA.identita=null;   // forza il ricalcolo SENZA azzerare i chiusi appena letti
+    mappaSegna();          // è questa che stavi guardando: l'app deve ritrovarla domani
     mappaSegnoSporco(); mappaSincronizzaComandi(); mappaAmbiti(); mappaRidisegna();
   }).catch(function(e){
     console.error('mappe/apri:', e); toast('Mappa non aperta: '+((e&&e.message)||e), false);
@@ -12427,6 +12491,7 @@ function mappaRegistro(reg){
       // della mappa, e lasciarle qui le farebbe scrivere nel localStorage
       mappaCaricaVista();
       MAPPA.z={k:1,x:0,y:0}; MAPPA.chiusi={};
+      mappaSegna();
       mappaSegnoSporco(); mappaSincronizzaComandi(); mappaAmbiti(); mappaRidisegna();
       return;
     }
@@ -12438,7 +12503,11 @@ function mappaRegistro(reg){
         ? MAPPA.mia.file
         : (MAPPA.elenco.filter(function(m){ return !m.errore; })[0]||{}).file;
       MAPPA.mia.file=''; MAPPA.mia.grafo=null;
-      if(voluta) return mappaApriMia(voluta);
+      if(voluta) return mappaApriMia(voluta);   // `mappaApriMia` segna da sé quale
+      /* Registro «Mie» senza nessuna mappa: si segna comunque il registro, o
+         riaprendo l'app si tornerebbe sulla generata pur avendo scelto l'altro
+         scaffale. */
+      mappaSegna();
       mappaRidisegna();
     });
   });
@@ -13324,6 +13393,9 @@ function mappaEliminaMappa(){
       var prossima=(MAPPA.elenco.filter(function(m){ return !m.errore; })[0]||{}).file;
       toast('Mappa «'+titolo+'» eliminata', true);
       if(prossima) return mappaApriMia(prossima);
+      /* Nessuna mappa rimasta: il segno non deve continuare a indicare il file
+         appena eliminato — riaprendo l'app cercherebbe un fantasma. */
+      mappaSegna();
       mappaRidisegna();
     });
   }).catch(function(e){
@@ -14212,7 +14284,7 @@ document.addEventListener('change', function(e){
       if(!e.target.value){ mappaAmbiti(); return; }
       mappaApriMia(e.target.value); return;
     }
-    MAPPA.ambito=e.target.value; mappaAdatta(); mappaRidisegna(); return;
+    MAPPA.ambito=e.target.value; mappaSegna(); mappaAdatta(); mappaRidisegna(); return;
   }
   if(e.target.id==='mLinee'){ MAPPA.vista.linee=e.target.value; mappaVistaCambiata(); mappaRidisegna(); return; }
   if(e.target.id==='mEtichette'){ MAPPA.vista.etichette=e.target.value; mappaVistaCambiata(); mappaRidisegna(); return; }
