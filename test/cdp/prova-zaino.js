@@ -106,7 +106,10 @@ const ZAINO = 'zaino-di-prova';
      cartelle dei contenitori, e senza gli zaini fra quelli ripiegherebbe in
      silenzio su `<vault>/Fonti/`, cioè aprirebbe un ALTRO file con lo stesso
      nome — o niente, senza dire perché. */
-  const url = await val(`window.vault.srcUrl(${JSON.stringify(unPdf)})`);
+  /* Dal 13 agosto `srcUrl` vuole il contenitore attivo: senza, un omonimo in
+     un ALTRO zaino vince per ordine alfabetico — è successo qui, quando due
+     prove hanno copiato lo stesso PDF in due zaini. */
+  const url = await val(`window.vault.srcUrl(${JSON.stringify(unPdf)}, corsoAttivo())`);
   ok('e il file aperto è quello DELLO ZAINO', true, decodeURIComponent(url).indexOf('/Zaini/' + ZAINO + '/') > 0);
   ok('la voce si accende come aperta', true,
     await val(`!!document.querySelector('#zainoNav .zn-fonte.attivo')`));

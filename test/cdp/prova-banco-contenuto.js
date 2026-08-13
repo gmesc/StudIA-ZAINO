@@ -161,7 +161,59 @@ const ZAINO = 'contenuto-di-prova';
   ok('il pannello ha parlato: niente memoria di ritorno', null,
     await val(`(()=>{ try{ return JSON.parse(localStorage.getItem(bancoZoomChiave())); }catch(e){ return 'illeggibile'; } })()`));
 
+  sezione('La disposizione è del CONTENITORE: ogni zaino la sua');
+  await val(`(()=>{ bancoForma('tre-sopra'); return 1; })()`);
+  await val(`(()=>{ cambiaZaino('vuoto-di-prova'); return 1; })()`);
+  await pausa(600);
+  const formaAltrui = await val(`bancoStato().forma`);
+  ok('lo zaino vuoto NON eredita i tre riquadri dell\'altro', true, formaAltrui!=='tre-sopra');
+  await val(`(()=>{ cambiaZaino('${ZAINO}'); return 1; })()`);
+  await finoA(`bancoStato().forma==='tre-sopra' ? 1 : 0`, 6000);
+  ok('rientrando, lo zaino ritrova la SUA forma', 'tre-sopra', await val(`bancoStato().forma`));
+
+  sezione('Cinque parole senza appunto: la finestra di battesimo, col documento');
+  await val(`(()=>{ try{ bancoMostra('appunti'); }catch(e){} return 1; })()`);
+  await pausa(400);
+  ok('nessun appunto aperto: si parte dal foglio anonimo', true, await val(`!NOTES.cur && !!NOTES.mde`));
+  await val(`(()=>{ NOTES.mde.value('uno due tre quattro cinque'); return 1; })()`);
+  const modale = await finoA(`document.getElementById('uiModal').hasAttribute('open') ? 1 : 0`, 6000);
+  ok('alla quinta parola la finestra si apre', 1, modale);
+  ok('e nello zaino chiede da quale documento nasce', true,
+    await val(`(()=>{ const b=document.getElementById('umExtra'), s=document.getElementById('umSel');
+      return !!b && !b.hidden && !!s && s.options.length>0; })()`));
+  await val(`(()=>{ document.getElementById('umInput').value='Prova battesimo'; return 1; })()`);
+  await clicca('#umOk');
+  const nato = await finoA(`(NOTES.cur && NOTES.cur.title==='Prova battesimo') ? 1 : 0`, 8000);
+  ok('l\'appunto nasce col nome dato e il testo scritto', 1, nato);
+  ok('e il corpo è quello battuto', true,
+    await val(`NOTES.mde.value().indexOf('uno due tre quattro cinque')>=0`));
+
+  sezione('Il quaderno segue lo zaino: di là vuoto, di qua l\'appunto riaperto');
+  await val(`(()=>{ cambiaZaino('vuoto-di-prova'); return 1; })()`);
+  await pausa(700);
+  ok('nello zaino vuoto l\'editor è vuoto e senza appunto', true,
+    await val(`!NOTES.cur && (NOTES.mde ? NOTES.mde.value()==='' : true)`));
+  ok('e l\'elenco del quaderno non elenca appunti altrui', 0, await val(`NOTES.list.length`));
+  await val(`(()=>{ cambiaZaino('${ZAINO}'); return 1; })()`);
+  const appuntoTorna = await finoA(`(NOTES.cur && NOTES.cur.title==='Prova battesimo') ? 1 : 0`, 8000);
+  ok('rientrando, l\'ultimo appunto è di nuovo davanti', 1, appuntoTorna);
+
+  sezione('Annullare il battesimo non insiste');
+  await val(`(()=>{ cambiaZaino('vuoto-di-prova'); return 1; })()`);
+  await pausa(700);
+  await val(`(()=>{ NOTES.mde.value('sei sette otto nove dieci'); return 1; })()`);
+  await finoA(`document.getElementById('uiModal').hasAttribute('open') ? 1 : 0`, 6000);
+  await clicca('#umCancel');
+  await pausa(300);
+  ok('annullato: il testo resta, l\'appunto no', true,
+    await val(`!NOTES.cur && NOTES.mde.value().indexOf('sei sette')>=0`));
+  await val(`(()=>{ NOTES.mde.value('sei sette otto nove dieci undici'); return 1; })()`);
+  await pausa(500);
+  ok('scrivere ancora non riapre la finestra', false,
+    await val(`document.getElementById('uiModal').hasAttribute('open')`));
+
   /* Si lascia l'app in ordine per la prova successiva. */
+  await val(`(()=>{ try{ NOTES.mde.value(''); }catch(e){} return 1; })()`);
   await val(`(()=>{ try{ closePdf(); }catch(e){} return 1; })()`);
   await val(`(async()=>{ await cambiaModo('corso'); return 1; })()`);
 

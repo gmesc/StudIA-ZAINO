@@ -54,7 +54,10 @@ const TESTATA = (b) => `(()=>{ const lab=document.querySelector('.blocco[data-bl
   await val(`(()=>{ bancoForma('tre-sopra');
     bancoAssegna('A','fonte'); bancoAssegna('B','appunti'); bancoAssegna('D','keyword');
     return 1; })()`);
-  const salvata = await val(`(()=>{ try{ return JSON.parse(localStorage.getItem('studia.banco.zaino')).forma; }catch(e){ return String(e); } })()`);
+  /* La chiave giusta la dice `bancoChiave()`: dal 13 agosto è del CONTENITORE
+     (studia.banco.c.<id>), non della modalità. La prova passa dalla stessa
+     porta dell'app, così non diverge alla prossima migrazione. */
+  const salvata = await val(`(()=>{ try{ return JSON.parse(localStorage.getItem(bancoChiave())).forma; }catch(e){ return String(e); } })()`);
   ok('la disposizione dello zaino è sul disco, con la sua chiave', 'tre-sopra', salvata);
 
   sezione('Si riapre l\'app: il banco deve tornare COME ERA, non di fabbrica');
