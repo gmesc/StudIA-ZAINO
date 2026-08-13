@@ -317,7 +317,11 @@
   .tbtn[aria-pressed="true"], .mtoolbar .mbtn[aria-pressed="true"],
   .tbar-lg .iconbtn[aria-pressed="true"]{
     background:color-mix(in srgb, var(--teal) 26%, var(--panel)); color:var(--teal-strong); }
-  .tbtn:disabled, .mtoolbar .mbtn:disabled{ opacity:.45; cursor:not-allowed; }
+  /* Spento si vede allo stesso modo che sia `disabled` o `aria-disabled`: il
+     secondo è per i comandi che il click lo vogliono ricevere apposta, per
+     spiegare perché non fanno niente — un bottone `disabled` non lo emette. */
+  .tbtn:disabled, .mtoolbar .mbtn:disabled,
+  .tbtn[aria-disabled="true"], .mtoolbar .mbtn[aria-disabled="true"]{ opacity:.45; cursor:not-allowed; }
   /* La barretta che separa due gruppi di comandi. Una sola classe per tutte le
      barre: `.msep` resta come alias di quella della mappa, che la usava già. */
   .tbsep, .mtoolbar .msep{ width:1px; height:16px; flex:0 0 auto;
@@ -1341,9 +1345,19 @@
   /* corpo, peso e maiuscole: dal token `--tb-*` (blocco in cima) */
   .mseg button{ border:0; background:transparent; color:var(--ink); cursor:pointer;
     padding:0 var(--tb-pad-x); height:100%; transition:background var(--speed); }
-  .mseg button:hover:not(:disabled){ background:var(--hover); }
+  .mseg button:hover:not(:disabled):not([aria-disabled="true"]){ background:var(--hover); }
   .mseg button[aria-pressed="true"]{ background:color-mix(in srgb, var(--teal) 26%, var(--panel)); color:var(--teal-strong); }
-  .mseg button:disabled{ color:var(--muted); cursor:not-allowed; opacity:.6; }
+  /* ⚠️ Spento in due modi: `disabled` per i comandi che non hanno niente da
+     dire, `aria-disabled` per quelli che il click lo vogliono ricevere APPOSTA,
+     per spiegare perché non fanno niente (il verso sugli anelli: un bottone
+     `disabled` resta grigio e muto, e su una mappa tua il motore non si vede
+     nemmeno in barra). La veste è la stessa: spento è spento. */
+  .mseg button:disabled,
+  .mseg button[aria-disabled="true"]{ color:var(--muted); cursor:not-allowed; opacity:.6; }
+  /* …ma spento e ACCESO insieme esiste: sugli anelli «TD» resta il verso in
+     uso. Il fondo del premuto vince sul grigio, o il bottone direbbe di essere
+     spento e basta. */
+  .mseg button[aria-disabled="true"][aria-pressed="true"]{ color:var(--teal-strong); }
   /* ⚠️ `--tb-h`, non `calc(--ctl-h - 10px)`: era la stessa cifra per caso, e due
      modi di scrivere la stessa misura divergono al primo che ne cambia uno.
      Vale anche per il `<select>` trasparente dentro una tendina, che sta steso
@@ -11970,6 +11984,11 @@ var MAPPA = {
           profondita:0 }
 };
 var MAPPA_LEVE=['gapLivello','gapNodo','w','fsNodo','fsRel','linee','etichette','glossario','fonti','motore','orient','profondita','soglia'];
+/* La frase che spiega i due tasti spenti. Sta in un posto solo perché la dicono
+   in due — il suggerimento sul tasto e il messaggio di chi lo preme — e due
+   copie della stessa spiegazione divergono al primo ripensamento. Dice anche
+   DOVE si cambia: sulle mappe tue i motori non sono in barra. */
+var MAPPA_SENZA_VERSO='Gli anelli si dispongono attorno a un centro: non hanno un verso — il motore si cambia col tasto destro sulla tela';
 
 /* Tutti e sei, non tre: `MappaGrafo` serve al ridisegno (`senzaRami`) e
    `MappaModifica` al registro «Mie». Controllarne solo una parte vuol dire
@@ -12829,10 +12848,20 @@ function mappaSincronizzaComandi(){
   /* Sugli anelli l'orientamento non vuol dire niente — si dispongono attorno a
      un centro, non lungo un verso. Lasciare i due tasti accesi prometterebbe un
      effetto che non c'è. */
+  /* ⚠️ SPENTI, non `disabled`, e la differenza è tutta qui: un bottone
+     `disabled` non emette il click, quindi non può dire NIENTE — resta grigio e
+     muto. Sulle mappe TUE i quattro motori escono dalla barra (al loro posto ci
+     sono le memorie), quindi chi ha una mappa salvata sugli anelli vede due
+     tasti che non fanno niente e non ha modo di scoprire perché: né quale
+     motore è attivo, né dove si cambia. Successo davvero, 13 agosto: «TD/SX non
+     funzionano sulle mie mappe» — ed era una mappa sugli anelli.
+     Ora il tasto si preme e RISPONDE (`mappaOrientamento` lo intercetta): il
+     motivo e la strada per cambiarlo si leggono senza cercarli. */
   var senzaVerso=(v.motore==='anelli');
   document.querySelectorAll('#mOrient button').forEach(function(b){
-    b.disabled=senzaVerso;
-    b.title=senzaVerso ? 'Gli anelli si dispongono attorno a un centro: non hanno un verso'
+    b.disabled=false;
+    if(senzaVerso) b.setAttribute('aria-disabled','true'); else b.removeAttribute('aria-disabled');
+    b.title=senzaVerso ? MAPPA_SENZA_VERSO
                        : (b.getAttribute('data-orient')==='td' ? 'Dall’alto verso il basso' : 'Da sinistra verso destra');
   });
   [['mGapLivello','gapLivello','px'],['mGapNodo','gapNodo','px'],['mFsNodo','fsNodo','px'],
@@ -13848,6 +13877,10 @@ function mappaMotore(nome){
  */
 function mappaOrientamento(verso){
   if(!verso || verso===MAPPA.vista.orient){ mappaSincronizzaComandi(); return; }
+  /* Sugli anelli il verso non vuol dire niente, e chi lo chiede deve sentirselo
+     dire: il rifiuto sta QUI e non nel gestore del click, così vale da qualunque
+     porta arrivi — il tasto, una scorciatoia futura, la console. */
+  if(MAPPA.vista.motore==='anelli'){ toast(MAPPA_SENZA_VERSO, false); return; }
   MAPPA.vista.orient=verso;
   if(mappaMie() && MAPPA.mia.grafo){
     var quante=MAPPA.mia.grafo.nodi.filter(MappaGrafo.fissato).length;

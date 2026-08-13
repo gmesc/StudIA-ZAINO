@@ -182,6 +182,40 @@ async function trascina(da, aX, aY, passi) {
     await val(`MAPPA.mia.grafo.nodi.filter(function(n){
       return Number.isFinite(n.x) && Number.isFinite(n.y); }).length`));
 
+  sezione('⚠️ Sugli anelli il verso è spento — e lo DICE, invece di restare muto');
+  /* Sulle mappe tue i quattro motori escono dalla barra (al loro posto ci sono
+     le memorie), quindi chi ha una mappa salvata sugli anelli vede due tasti
+     che non fanno niente e non ha modo di scoprire perché. Successo davvero il
+     13 agosto: «TD/SX non funzionano sulle mie mappe» — ed era una mappa sugli
+     anelli. Un bottone `disabled` non emette il click, quindi non può
+     spiegarsi: ora è spento con `aria-disabled` e risponde. */
+  await val(`(()=>{ mappaMotore('anelli'); return 1; })()`);
+  await pausa(900);
+  const versoAnelli = await val(`MAPPA.vista.orient`);
+  /* ⚠️ Si preme il verso OPPOSTO a quello in uso: premere quello già attivo è
+     un no-op per costruzione (`mappaOrientamento` esce subito), e la prova
+     misurerebbe il silenzio giusto per la ragione sbagliata. Costato un rosso
+     nella suite, dove la sezione prima lascia il verso girato. */
+  const altroAnelli = versoAnelli === 'lr' ? 'td' : 'lr';
+  const spento = await val(`(()=>{ const b=document.querySelector('#mOrient button[data-orient=${JSON.stringify(altroAnelli)}]');
+    return { aria:b.getAttribute('aria-disabled'), disabled:b.disabled,
+             opaco:getComputedStyle(b).opacity!=='1' }; })()`);
+  ok('i due tasti sono spenti, ma il click lo ricevono', { aria: 'true', disabled: false, opaco: true }, spento);
+  await clicca('#mOrient button[data-orient="' + altroAnelli + '"]');
+  await pausa(500);
+  ok('premendoli il verso NON cambia', versoAnelli, await val(`MAPPA.vista.orient`));
+  const detto = await val(`(()=>{ const t=document.getElementById('toast');
+    return { visto:!!t && /show/.test(t.className||''), dice:(t&&t.textContent)||'' }; })()`);
+  ok('e si sente dire perché', true, detto.visto && /anelli/i.test(detto.dice));
+  /* ⚠️ Il messaggio deve dire anche DOVE si cambia motore: su una mappa tua non
+     è in barra, e senza quella riga il rifiuto è un vicolo cieco. */
+  ok('e dove si cambia il motore', true, /tasto destro/i.test(detto.dice));
+  await val(`(()=>{ mappaMotore('albero'); return 1; })()`);
+  await pausa(900);
+  await clicca('#mOrient button[data-orient="' + altroAnelli + '"]');
+  await pausa(900);
+  ok('cambiato motore, il verso torna a funzionare', altroAnelli, await val(`MAPPA.vista.orient`));
+
   sezione('Pulizia: quello che questa prova ha creato, questa prova lo toglie');
   await val(`(()=>{ if(window.vault && window.vault.mappe) window.vault.mappe.rimuovi(corsoAttivo(), ${JSON.stringify(file)}); return 1; })()`);
   await pausa(400);
