@@ -155,17 +155,17 @@ rifiuto è esplicito, e quella strada non esiste più.
 
 ## 4. Che cosa fare, in ordine
 
-1. **La prova a mano del banco e della mappa** (è l'unica che manca a questo lavoro): apri una
-   fonte, apri una **mappa tua**, ingrandisci il suo blocco a tutto banco, chiudi l'app, riaprila.
-   Deve tornare **a tutto banco, sulla mappa tua**; scegliendo «Fonti» in un blocco, il documento
-   è lì alla sua pagina.
-2. **TD/SX sulla tua mappa sugli anelli** (§3): premere SX deve dire perché non fa niente e dove
-   si cambia motore; cambiato motore (tasto destro sulla tela → Motore → Albero), deve ridisporre.
+1. ✅ **Fatta da Giacomo (14 agosto)** — banco a tutto schermo e mappa: riaprendo l'app la
+   disposizione e la mappa tua tornano com'erano.
+2. ✅ **Fatta da Giacomo (14 agosto)** — TD/SX: sugli anelli dicono perché non si muovono,
+   cambiato motore ridispongono.
 3. **La prova a mano dell'OCR**, mai completata (§6 dell'handoff precedente): togliere la fonte,
    ritrascinare, riconoscere, e guardare il bordo destro e l'altezza sui filetti.
-4. **Il merge**, quando 1-3 sono verdi: `git checkout main && git merge mappa-limiti`.
-   ⚠️ La condizione (d) — `main` ferma — va **riverificata**: una sessione parallela l'ha già
-   mossa una volta oggi.
+4. **Il merge**, quando anche la 3 è verde: `git checkout main && git merge mappa-limiti`.
+   Stato delle quattro condizioni al 14 agosto: (a) suite verdi ✅ · (b) gesti provati a mano —
+   banco, mappa e TD/SX ✅, **OCR no** ⚠️ · (c) piani e handoff aggiornati ✅ · (d) `main` ferma
+   a `3419ae7` ✅, verificato: è antenato di `mappa-limiti`, quindi il merge è un fast-forward.
+   ⚠️ La (d) va **riverificata al momento**: una sessione parallela l'ha già mossa una volta.
 
 ---
 
