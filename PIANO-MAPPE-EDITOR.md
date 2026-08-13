@@ -547,6 +547,32 @@ Le altre decisioni:
    i campi di testo per `tagName`, ma dentro un SVG il bersaglio è un `<g>`: si cambiava pagina
    sfiorando una freccia mentre si lavorava sulla tela.
 
+### ⚠️ La cornice e il verso — riparati il 13 agosto 2026
+
+**La cornice segue la struttura, non la mano.** La vista è a due strati: il `viewBox`, che
+`disegna.js` ricava dal rettangolo di tutti i nodi (senza stato, non salvato, adattato dal
+browser), e lo zoom dell'utente (`MAPPA.z`, con stato, salvato, l'unico che rotella e ⤢ toccano).
+Il trascinamento campionava il punto di partenza in coordinate del `viewBox` mentre
+`mappaRidisegna` lo rifaceva a ogni `pointermove`: nodo che esce → cornice più grande → tutto
+rimpicciolisce → lo stesso pixel vale più unità → il nodo corre di più. Un anello, non un
+rimpicciolimento. E ⤢ non salvava, perché agiva sull'altro strato.
+Regola nuova: **il `viewBox` si rifà quando cambia la struttura — quanti nodi, quanti archi — non
+quando la mano sistema le posizioni.** Scioglie il congelamento «Adatta alla vista» (che ora
+scioglie E ridisegna), un cambio di vista, e la struttura che cambia, riconosciuta da una FIRMA e
+non da un elenco di chiamanti. Provato in `prova-mappa-trascina.js` — il gesto centrale
+dell'editor, che fino a quel giorno non aveva nessuna prova.
+**Non fatto, e per ora non serve**: il limite del nodo all'area visibile. Con la cornice ferma il
+difetto sparisce; resta qui come rete se un giorno si riuscisse ancora a perdere un nodo.
+
+**Il verso (TD/SX) era acceso e inerte.** Il cambio motore aveva la sua funzione e dentro la
+regola che conta per le mappe tue — ogni nodo ha una posizione a mano, un motore non muove ciò che
+è fissato, quindi prima si liberano le posizioni, si dichiara quante e si mette un passo nella
+pila. L'orientamento stava in tre righe dentro il gestore del click e quella regola non l'aveva
+mai vista: premere TD/SX cambiava la leva e lasciava il disegno identico. Ora è
+`mappaOrientamento(verso)`, gemella di `mappaMotore` — **la dimostrazione che «un gesto è una
+funzione chiamabile, non un gestore di eventi» non è pedanteria**: è esattamente lì che le due
+strade sono divergute. ⚠️ I due versi si chiamano `td` e `lr`, non «sx».
+
 ### L3 — archi e linking words (§4.2–4.3)
 
 La porta di trascinamento è un **fratello** della card nell'SVG, mai un figlio: dentro erediterebbe

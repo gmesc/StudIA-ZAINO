@@ -1,5 +1,9 @@
 # Handoff — 12 agosto 2026, notte
 
+> 🆕 **Dopo questo c'è [HANDOFF-DEFINITIVO-2026-08-13.md](HANDOFF-DEFINITIVO-2026-08-13.md)**, che
+> è il punto d'ingresso: l'OCR finito sul contratto vero, l'unione con la linea banco/zaini, la
+> mappa che non si rimpicciolisce. Questo file resta valido per evidenze, parole chiave e tratto.
+
 > **Si AGGIUNGE a [HANDOFF-DEFINITIVO-2026-08-12b.md](HANDOFF-DEFINITIVO-2026-08-12b.md), non lo
 > sostituisce.** Quello racconta la giornata (il ripasso come sistema, la guida dell'architetto, il
 > tetto dei quiz) e resta valido per tutto ciò che qui non si nomina. Questo file copre una cosa
