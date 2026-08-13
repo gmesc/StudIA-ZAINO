@@ -455,6 +455,26 @@ dell'utente. L'indice ricorda chi ha letto (`ocr: {motore, quando, improntaOrigi
 l'impronta di prima impedisce il doppione al ritrascinamento (`gemelloOcr`).
 ⚠️ Il layer scrive le parole a **qualunque confidenza**: un buco nel layer sposta la selezione di
 tutta la riga, testo brutto è meglio di testo slittato.
+
+**Le righe storte** (13/8/26). Una foto non è mai dritta, e Tesseract dà la baseline di ogni riga
+come *segmento*: la sua pendenza **è** l'inclinazione, gratis. Due livelli:
+1. **il layer segue la riga** — ogni parola prende la sua `base` interpolata sul segmento (prima
+   prendevano tutte la y d'inizio riga: ⚠️ 26 px di deriva a fine riga a 2°) e il glifo si inclina
+   dell'angolo vero. L'altezza della riga si misura **de-inclinata**, o il riquadro storto la
+   gonfia del dislivello (49 px invece di 30) e le lettere vengono grasse il doppio;
+2. **la seconda passata** — oltre `GRADI_RADDRIZZA` (2°) la pagina *rasterizzata* si rigira e si
+   rilegge: Tesseract legge meglio righe orizzontali. Si tiene **solo se ha letto almeno quanto la
+   prima** — una miglioria che perde parole in silenzio è il guasto peggiore.
+
+⚠️ La **foto non si tocca mai**: si gira una tela di servizio, e le parole tornano sull'immagine
+vera con la rotazione inversa (`daRuotato`). Raddrizzare quello che l'utente vede sarebbe
+riscrivere la sua fotografia.
+⚠️ Convenzione degli angoli, dichiarata una volta sola in `lib/ocrpdf.js`: si misura nello spazio
+**immagine** (y verso il basso), **positivo = riga che scende a destra**; nel PDF la y cresce verso
+l'alto e il segno si inverte — è l'unica inversione del file, e sta in `scriviLayer`.
+**Non fa**: la prospettiva (foto di sbieco, righe che convergono). Servirebbe OpenCV.js/jscanify —
+licenze verificate il 13/8/26, **Apache-2.0 e MIT, vendibili** — ma è ~8 MB di WASM e riscriverebbe
+l'immagine: da decidere a parte.
 **Resta di Z7**: la scheda Impostazioni › ZAINO (stato del componente, spiegazione di quando
 serve) — il gesto oggi vive tutto nel flusso del documento.
 **Crediti**: fatti — `tesseract.js`, `Tesseract OCR (tessdata)` (Apache-2.0) e `pdf-lib` (MIT) in

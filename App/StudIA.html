@@ -4138,7 +4138,11 @@ async function fontiTrascinate(files){
  * e il bottone Aa↗ nella barra del documento. La regola di chi compare la dice
  * l'INDICE (`scansione`, soglia in lib/ocr): il renderer non conta caratteri.
  */
-var OCRZ={ inCorso:false, ferma:false, doc:'' };
+/* `raddrizzate` conta le pagine rilette girate nell'ultimo giro. Non si mostra:
+   serve a poter PROVARE che la seconda passata è avvenuta davvero — un layer
+   inclinato lo produce anche la sola misura della baseline, e senza questo
+   contatore una prova verde non distinguerebbe le due cose. */
+var OCRZ={ inCorso:false, ferma:false, doc:'', raddrizzate:0 };
 
 /* ~3 s a pagina misurati con tesseract.js su Apple Silicon: serve alla
    proposta, non alla contabilità. Meglio dire «circa un minuto» che un numero
@@ -4192,7 +4196,7 @@ async function ocrRiconosci(nome){
   if(!id || modoAttivo()!=='zaino'){ toast('Apri lo zaino del documento', false); return; }
   if(OCRZ.inCorso){ toast('Sto già riconoscendo: un momento', false); return; }
   if(!pdfjsAvvia()){ toast('Il visualizzatore dei documenti non si è avviato', false); return; }
-  OCRZ.inCorso=true; OCRZ.ferma=false; OCRZ.doc=nome;
+  OCRZ.inCorso=true; OCRZ.ferma=false; OCRZ.doc=nome; OCRZ.raddrizzate=0;
   pdfOcrAggiorna();
   var esito=null, fermato=false;
   try{
@@ -4230,14 +4234,37 @@ async function ocrRiconosci(nome){
         canvas.width=Math.round(vp.width); canvas.height=Math.round(vp.height);
         await pg.render({ canvasContext:canvas.getContext('2d'), viewport:vp }).promise;
         var blob=await new Promise(function(res){ canvas.toBlob(res, 'image/png'); });
-        canvas.width=canvas.height=0;                    // la RAM si restituisce subito
-        if(!blob){ toast('Pagina '+n+' non rasterizzata', false); continue; }
+        if(!blob){ canvas.width=canvas.height=0; toast('Pagina '+n+' non rasterizzata', false); continue; }
         var png=new Uint8Array(await blob.arrayBuffer());
-        var r=await api.pagina(png);
+        var largPx=canvasLarghezza(vp), altPx=canvasAltezza(vp);
+        var r=await api.pagina(png, largPx, altPx);
         if(r && r.error){ toast('Pagina '+n+': '+r.error, false); }
         else if(r && r.parole && r.parole.length){
-          pagine.push({ n:n, larghezzaPx:canvasLarghezza(vp), parole:r.parole });
+          var voce={ n:n, larghezzaPx:largPx, parole:r.parole };
+          /* La pagina è storta abbastanza da valere una seconda lettura? Lo ha
+             deciso il main (soglie in lib/ocrpdf): qui si gira la tela e si
+             richiede, senza sapere a quanti gradi si comincia. */
+          if(r.raddrizza && r.raddrizza.daRaddrizzare){
+            toast('Pagina '+n+': righe storte di '+Math.abs(r.raddrizza.gradi).toFixed(1)+
+                  '°, la rileggo raddrizzata…', true);
+            var dir=await ocrRaddrizzata(canvas, r.raddrizza);
+            if(dir){
+              var r2=await api.pagina(dir, largPx, altPx);
+              /* ⚠️ Il raddrizzamento si TIENE solo se ha letto ALMENO quanto la
+                 prima passata. Una «miglioria» che perde parole in silenzio è
+                 il guasto peggiore che questa funzione possa fare: meglio la
+                 pagina storta e completa che quella dritta e monca. */
+              if(r2 && !r2.error && (r2.parole||[]).length >= r.parole.length){
+                voce={ n:n, larghezzaPx:largPx, parole:r2.parole, raddrizzata:r.raddrizza };
+                OCRZ.raddrizzate++;
+              } else {
+                toast('Pagina '+n+': raddrizzata leggeva meno, tengo la prima lettura', true);
+              }
+            }
+          }
+          pagine.push(voce);
         }
+        canvas.width=canvas.height=0;                    // la RAM si restituisce subito
         try{ pg.cleanup(); }catch(e){}
       }
     } finally { try{ doc.destroy(); }catch(e){} }
@@ -4276,6 +4303,38 @@ async function ocrRiconosci(nome){
  * viewport con la virgola — `canvas.width` è stato arrotondato, e la scala si
  * deve calcolare sugli stessi pixel su cui Tesseract ha misurato. */
 function canvasLarghezza(vp){ return Math.round(vp.width); }
+function canvasAltezza(vp){ return Math.round(vp.height); }
+
+/**
+ * La stessa pagina, girata di quel tanto che rimette le righe in orizzontale.
+ *
+ * Tutti i numeri — quanto girare, quanto grande fare la tela — arrivano da
+ * `lib/ocrpdf.pianoRaddrizzamento`: qui si disegna e basta. Si gira l'immagine
+ * GIÀ rasterizzata invece di ridisegnare la pagina con pdf.js: per Tesseract il
+ * risultato è identico e costa millesimi di secondo invece di secondi.
+ *
+ * ⚠️ Questa tela serve SOLO a leggere. Il documento che l'utente vede non si
+ * tocca mai: il layer che nascerà da qui viene riportato sull'immagine vera
+ * (`riportaParole`), e le parole si inclinano dell'angolo che la foto ha
+ * davvero. Raddrizzare quello che si vede sarebbe riscrivere la sua fotografia.
+ */
+async function ocrRaddrizzata(canvas, piano){
+  try{
+    var t=document.createElement('canvas');
+    t.width=piano.larghezzaRuotataPx; t.height=piano.altezzaRuotataPx;
+    var c=t.getContext('2d');
+    /* Il bianco sotto: la tela nasce trasparente, e i quattro spicchi che
+       avanzano attorno alla foto girata diventerebbero neri per Tesseract —
+       cioè quattro triangoli di «inchiostro» ai bordi della pagina. */
+    c.fillStyle='#fff'; c.fillRect(0,0,t.width,t.height);
+    c.translate(t.width/2, t.height/2);
+    c.rotate(piano.radianti);
+    c.drawImage(canvas, -canvas.width/2, -canvas.height/2);
+    var blob=await new Promise(function(res){ t.toBlob(res, 'image/png'); });
+    t.width=t.height=0;
+    return blob ? new Uint8Array(await blob.arrayBuffer()) : null;
+  }catch(e){ return null; }
+}
 
 /* La pagina corrente del viewer, per riaprire il documento dov'era. */
 function pdfPaginaCorrente(){

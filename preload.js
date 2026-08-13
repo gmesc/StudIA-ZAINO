@@ -458,7 +458,8 @@ contextBridge.exposeInMainWorld('vault', {
      invisibile nella copia del PDF. Vedi lib/ocrpdf.js. */
   ocrpdf: {
     apri: () => ipcRenderer.invoke('ocrpdf:apri'),
-    pagina: (png) => ipcRenderer.invoke('ocrpdf:pagina', { png }),
+    pagina: (png, larghezzaPx, altezzaPx) =>
+      ipcRenderer.invoke('ocrpdf:pagina', { png, larghezzaPx, altezzaPx }),
     chiudi: () => ipcRenderer.invoke('ocrpdf:chiudi'),
     applica: (corso, file, pagine) => ipcRenderer.invoke('ocrpdf:applica', { corso, file, pagine })
   },

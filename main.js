@@ -498,8 +498,14 @@ const ocrpdfLib = require('./lib/ocrpdf');
 ipcMain.handle('ocrpdf:apri', () =>
   ocrpdfLib.apri(path.join(__dirname, 'App', 'assets', 'tesseract'),
     path.join(app.getPath('userData'), 'tesseract-cache')));
-ipcMain.handle('ocrpdf:pagina', (e, { png } = {}) =>
-  ocrpdfLib.riconosci(Buffer.from(png || [])));
+ipcMain.handle('ocrpdf:pagina', async (e, { png, larghezzaPx, altezzaPx } = {}) => {
+  const r = await ocrpdfLib.riconosci(Buffer.from(png || []));
+  /* Il verdetto «questa pagina va riletta raddrizzata» si dà QUI, con le
+     soglie di lib/ocrpdf: il renderer ha il canvas, non i numeri. Riceve anche
+     i radianti da passare a `ctx.rotate`, così là non si fa geometria. */
+  if (!r.error) r.raddrizza = ocrpdfLib.pianoRaddrizzamento(r.angoloPagina, larghezzaPx, altezzaPx);
+  return r;
+});
 ipcMain.handle('ocrpdf:chiudi', () => ocrpdfLib.chiudi());
 ipcMain.handle('ocrpdf:applica', async (e, { corso, file, pagine } = {}) => {
   if (!vaultDir()) return { error: 'nessuna cartella vault impostata' };

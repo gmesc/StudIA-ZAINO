@@ -63,11 +63,62 @@ sezione('Che cosa è una scansione (eScansione)');
   check('una pagina di soli spazi è vuota', 1, OCR.eScansione([{ page: 1, text: ' \n \t '.repeat(200) }]).pagineVuote);
 }
 
+/* ⚠️ La geometria delle righe storte si prova QUI, senza motore e senza PDF:
+   sono formule, e una formula sbagliata scoperta dentro una prova che dura
+   trenta secondi costa trenta secondi ogni volta. La convenzione — spazio
+   immagine, y verso il basso, positivo = riga che SCENDE a destra — è
+   dichiarata in lib/ocrpdf e va provata, non ricordata. */
+sezione('L\'inclinazione: gradi, mediana, soglie');
+{
+  const bl = (x0, y0, x1, y1) => ({ x0, y0, x1, y1 });
+  check('una riga orizzontale è a zero gradi', 0, O.angoloBaseline(bl(10, 100, 400, 100)));
+  check('una che SCENDE a destra è positiva', true, O.angoloBaseline(bl(10, 100, 400, 120)) > 0);
+  check('una che sale a destra è negativa', true, O.angoloBaseline(bl(10, 120, 400, 100)) < 0);
+  check('e il valore è quello vero (45°)', 45, Math.round(O.angoloBaseline(bl(0, 0, 100, 100))));
+  /* una baseline corta misura il rumore, non l'inclinazione */
+  check('una riga troppo corta non vota', null, O.angoloBaseline(bl(10, 100, 45, 103)));
+  check('e nemmeno una riga che non c\'è', null, O.angoloBaseline(null));
+
+  check('la mediana ignora l\'intestazione storta per conto suo', 2, O.mediana([2, 2, 2, 30]));
+  check('con un numero pari di righe sta in mezzo', 2.5, O.mediana([2, 3]));
+  check('senza righe è zero', 0, O.mediana([]));
+
+  const p0 = O.pianoRaddrizzamento(0.4, 1000, 800);
+  check('mezzo grado non vale una seconda passata', false, p0.daRaddrizzare);
+  const p1 = O.pianoRaddrizzamento(3, 1000, 800);
+  check('tre gradi sì', true, p1.daRaddrizzare);
+  check('e si gira dell\'OPPOSTO, per toglierla', true, p1.radianti < 0);
+  /* la tela cresce, o gli angoli del foglio uscirebbero dal bordo */
+  check('la tela ruotata è più grande dell\'originale', true,
+    p1.larghezzaRuotataPx > 1000 && p1.altezzaRuotataPx > 800);
+  check('venti gradi non sono una foto storta', false, O.pianoRaddrizzamento(20, 1000, 800).daRaddrizzare);
+  check('e nemmeno una pagina senza misure', false, O.pianoRaddrizzamento(3, 0, 0).daRaddrizzare);
+
+  /* andata e ritorno: se l'inversa non è l'inversa, ogni parola di una pagina
+     raddrizzata finisce in un punto sbagliato — e nessuno se ne accorgerebbe
+     leggendo il codice */
+  const r = O.pianoRaddrizzamento(3, 1000, 800);
+  let peggio = 0;
+  for (const q of [[0, 0], [999, 0], [500, 400], [123, 777], [1000, 800]]) {
+    const a = O.aRuotato(q[0], q[1], r);
+    const b = O.daRuotato(a.x, a.y, r);
+    peggio = Math.max(peggio, Math.abs(b.x - q[0]), Math.abs(b.y - q[1]));
+  }
+  check('andata e ritorno riportano al punto di partenza', true, peggio < 0.0001);
+
+  /* e la parola riportata indietro porta l'inclinazione della FOTO, non zero */
+  const riportate = O.riportaParole(
+    [{ testo: 'x', x0: 100, x1: 160, base: 200, rigaAlto: 20, angoloRiga: 0 }], r);
+  check('la larghezza sopravvive alla rotazione', 60, riportate[0].largPx);
+  check('e l\'altezza pure', 20, riportate[0].altoPx);
+  check('mentre il glifo si inclina di quanto la foto è storta', 3, riportate[0].angoloRiga);
+}
+
 async function conMotore() {
   /* ------------------------------------------------------------------ fixture
      Un PDF con testo vero → PNG con sips (1 pt = 1 px) → PDF di sola immagine,
      pagina a metà misura (scala 2 px/pt): è la forma di una scheda fotografata. */
-  const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
+  const { PDFDocument, StandardFonts, rgb, degrees } = require('pdf-lib');
   const W = 1240, H = 877, SCALA = 2;
   const FRASI = [
     'La fotosintesi clorofilliana avviene nei cloroplasti.',
@@ -145,6 +196,100 @@ async function conMotore() {
     }
     check('ogni riga del layer comincia e finisce coi bordi misurati', 0, sbagliate);
     check('e le righe confrontate sono tutte e tre', 3, righe);
+  }
+
+  /* ⚠️ LA PAGINA STORTA, che è il caso normale di una foto. La fixture si
+     inclina di 2° con `rotate` di pdf-lib PRIMA di rasterizzare: la verità è
+     nota al decimo di grado, che una foto storta vera non potrebbe dare. */
+  sezione('Le righe storte: si misurano, e il glifo le segue');
+  const STORTA = 2;
+  {
+    const s = await PDFDocument.create();
+    const fs2 = await s.embedFont(StandardFonts.Helvetica);
+    const pgs = s.addPage([W, H]);
+    ['La fotosintesi clorofilliana avviene nei cloroplasti.',
+     'La velocita della luce e costante nel vuoto.',
+     'Il sistema nervoso centrale comprende encefalo e midollo.'
+    ].forEach((t, i) => pgs.drawText(t, { x: 60, y: H - 160 - i * 120, size: 34, font: fs2,
+      color: rgb(0, 0, 0), rotate: degrees(STORTA) }));
+    const pdfStortoTesto = path.join(QUI, 'storta-testo.pdf');
+    fs.writeFileSync(pdfStortoTesto, await s.save());
+    const pngStorto = path.join(QUI, 'storta.png');
+    execFileSync('sips', ['-s', 'format', 'png', pdfStortoTesto, '--out', pngStorto], { stdio: 'ignore' });
+
+    const rs = await O.riconosci(fs.readFileSync(pngStorto));
+    check('la pagina storta si legge lo stesso', true, /fotosintesi/i.test(rs.testo));
+    /* Il testo SALE verso destra (rotate positivo in PDF), e nello spazio
+       dell'immagine — y verso il basso — questo è un angolo NEGATIVO. */
+    check('l\'inclinazione misurata è quella vera, col segno giusto', true,
+      Math.abs(rs.angoloPagina + STORTA) < 0.3);
+    check('e l\'hanno votata tutte e tre le righe', 3, rs.righeMisurate);
+
+    /* ⚠️ La baseline INTERPOLATA: prima le parole prendevano la y d'inizio riga
+       e l'ultima parola di una riga larga finiva ventisei pixel fuori posto.
+       Su una riga che sale, l'ultima parola deve avere una `base` più IN ALTO
+       (y minore) della prima, di quanto dice la pendenza. */
+    const riga1 = rs.parole.filter((p) => p.base < 200).sort((a, b) => a.x0 - b.x0);
+    const prima = riga1[0], ultima = riga1[riga1.length - 1];
+    const attesoDislivello = (ultima.x0 - prima.x0) * Math.tan(rs.angoloPagina * Math.PI / 180);
+    check('la base di ogni parola segue la pendenza della riga', true,
+      riga1.length > 4 && Math.abs((ultima.base - prima.base) - attesoDislivello) < 3);
+    /* …e l'altezza della riga NON si gonfia del dislivello: il riquadro di una
+       riga storta è alto quanto il testo più la salita, e tagliarci sopra il
+       corpo del glifo darebbe lettere grasse il doppio. */
+    check('l\'altezza della riga è quella del testo, non del riquadro storto', true,
+      prima.rigaAlto < 40 && prima.rigaAlto > 20);
+
+    /* Il layer sul PDF-immagine storto: i glifi devono inclinarsi come il testo
+       fotografato — cioè dell'angolo con cui la fixture è nata. */
+    const imgS = await PDFDocument.create();
+    const fotoS = await imgS.embedPng(fs.readFileSync(pngStorto));
+    imgS.addPage([W / SCALA, H / SCALA]).drawImage(fotoS, { x: 0, y: 0, width: W / SCALA, height: H / SCALA });
+    const pdfStorto = path.join(QUI, 'storta-foto.pdf');
+    fs.writeFileSync(pdfStorto, await imgS.save());
+    const esitoS = await O.scriviLayer(pdfStorto, [{ n: 1, larghezzaPx: W, parole: rs.parole }]);
+    check('il layer si scrive anche sulla pagina storta', '', esitoS.error);
+    const letturaS = await O.verifica(pdfStorto, [{ n: 1 }]);
+    check('e si rilegge', '', letturaS.error);
+    const gradiScritti = O.mediana((letturaS.items || []).map((i) => i.gradi));
+    check('i glifi sono inclinati come il testo fotografato', true,
+      Math.abs(gradiScritti - STORTA) < 0.4);
+  }
+
+  /* ⚠️ La strada della SECONDA PASSATA, provata senza canvas: si prendono
+     parole vere, le si porta in uno spazio «raddrizzato» con `aRuotato` — cioè
+     si finge di averle lette su un'immagine girata — e si pretende che il layer
+     finisca ESATTAMENTE dove finirebbe scrivendole a mano inclinate. Se
+     l'inversa non è l'inversa, qui si vede; sull'app viva si vedrebbe come
+     «l'evidenza è due centimetri più in là», senza sapere perché. */
+  sezione('La seconda passata: raddrizzata e dritta finiscono nello stesso posto');
+  {
+    const GRADI = 3;
+    const piano = O.pianoRaddrizzamento(GRADI, W, H);
+    const dirette = r.parole.map((w) => ({
+      testo: w.testo, x0: w.x0, x1: w.x1, y0: w.y0, y1: w.y1,
+      base: w.base, rigaAlto: w.rigaAlto, angoloRiga: GRADI
+    }));
+    const comeSeRuotate = r.parole.map((w) => {
+      const a = O.aRuotato(w.x0, w.base, piano);
+      return { testo: w.testo, x0: a.x, x1: a.x + (w.x1 - w.x0), base: a.y,
+               rigaAlto: w.rigaAlto, angoloRiga: 0 };
+    });
+    const A = path.join(QUI, 'dritta.pdf'), B = path.join(QUI, 'raddrizzata.pdf');
+    fs.copyFileSync(originale, A); fs.copyFileSync(originale, B);
+    await O.scriviLayer(A, [{ n: 1, larghezzaPx: W, parole: dirette }]);
+    await O.scriviLayer(B, [{ n: 1, larghezzaPx: W, parole: comeSeRuotate, raddrizzata: piano }]);
+    const la = await O.verifica(A, [{ n: 1 }]), lb = await O.verifica(B, [{ n: 1 }]);
+    check('le due strade scrivono lo stesso testo', la.testo, lb.testo);
+    let scartoMax = 0;
+    (la.items || []).forEach((it, i) => {
+      const jt = (lb.items || [])[i]; if (!jt) return;
+      scartoMax = Math.max(scartoMax, Math.abs(it.x - jt.x), Math.abs(it.y - jt.y),
+        Math.abs(it.gradi - jt.gradi));
+    });
+    check('e nello stesso punto, con la stessa inclinazione', true, scartoMax < 0.05);
+    check('inclinazione che è quella della foto', true,
+      Math.abs(O.mediana((lb.items || []).map((i) => i.gradi)) + GRADI) < 0.2);
   }
 
   sezione('Quello che va storto non tocca il documento');

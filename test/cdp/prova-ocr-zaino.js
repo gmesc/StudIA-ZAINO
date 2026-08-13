@@ -43,24 +43,39 @@ async function finoA(expr, quanto) {
 
 const ZAINO = 'zaino-ocr';
 
-/** Il PDF fotografato: testo vero → PNG (sips) → PDF che contiene SOLO l'immagine. */
+/** Il PDF fotografato: testo vero → PNG (sips) → PDF che contiene SOLO
+ *  l'immagine. DUE pagine, e la seconda è STORTA di 3 gradi: è il caso normale
+ *  di una scheda fotografata a mano, e la sola che esercita la seconda passata
+ *  raddrizzata. Una pagina dritta accanto è il controllo che il raddrizzamento
+ *  non si accenda dove non serve. */
 async function fixture(dove) {
-  const { PDFDocument, StandardFonts, rgb } = require(path.join(__dirname, '..', '..', 'node_modules', 'pdf-lib'));
+  const { PDFDocument, StandardFonts, rgb, degrees } =
+    require(path.join(__dirname, '..', '..', 'node_modules', 'pdf-lib'));
   const W = 1240, H = 877;
-  const src = await PDFDocument.create();
-  const f = await src.embedFont(StandardFonts.Helvetica);
-  const pg = src.addPage([W, H]);
-  ['La memoria di lavoro ha una capienza limitata.',
-   'Il carico cognitivo si gestisce, non si subisce.',
-   'Una mappa concettuale è una rete di proposizioni.'
-  ].forEach((t, i) => pg.drawText(t, { x: 60, y: H - 140 - i * 110, size: 34, font: f, color: rgb(0, 0, 0) }));
-  const pdfTesto = path.join(dove, 'testo.pdf');
-  fs.writeFileSync(pdfTesto, await src.save());
-  const png = path.join(dove, 'scan.png');
-  execFileSync('sips', ['-s', 'format', 'png', pdfTesto, '--out', png], { stdio: 'ignore' });
+  const foglio = async (frasi, gradi) => {
+    const src = await PDFDocument.create();
+    const f = await src.embedFont(StandardFonts.Helvetica);
+    const pg = src.addPage([W, H]);
+    frasi.forEach((t, i) => pg.drawText(t, { x: 60, y: H - 160 - i * 120, size: 34, font: f,
+      color: rgb(0, 0, 0), rotate: degrees(gradi || 0) }));
+    const p = path.join(dove, 'f' + (gradi || 0) + '.pdf');
+    fs.writeFileSync(p, await src.save());
+    const png = path.join(dove, 'f' + (gradi || 0) + '.png');
+    execFileSync('sips', ['-s', 'format', 'png', p, '--out', png], { stdio: 'ignore' });
+    return png;
+  };
+  const dritta = await foglio(['La memoria di lavoro ha una capienza limitata.',
+    'Il carico cognitivo si gestisce, non si subisce.',
+    'Una mappa concettuale è una rete di proposizioni.'], 0);
+  const storta = await foglio(['La ripetizione dilazionata batte la rilettura.',
+    'Il recupero attivo consolida piu della sottolineatura.',
+    'Ogni richiamo riscrive la traccia in memoria.'], 3);
+
   const img = await PDFDocument.create();
-  const foto = await img.embedPng(fs.readFileSync(png));
-  img.addPage([W / 2, H / 2]).drawImage(foto, { x: 0, y: 0, width: W / 2, height: H / 2 });
+  for (const png of [dritta, storta]) {
+    const foto = await img.embedPng(fs.readFileSync(png));
+    img.addPage([W / 2, H / 2]).drawImage(foto, { x: 0, y: 0, width: W / 2, height: H / 2 });
+  }
   const fuori = path.join(dove, 'scheda fotografata.pdf');
   fs.writeFileSync(fuori, await img.save());
   return fuori;
@@ -83,7 +98,7 @@ async function fixture(dove) {
   const nome = dentro.copiati[0].nome;
   const indice = await val(`fontiIndicizza(${JSON.stringify(nome)})`);
   ok('l\'esito dell\'indicizzazione porta il verdetto', true, !!indice.scansione);
-  ok('con il conto delle pagine vuote', { vuote: 1, npagine: 1 },
+  ok('con il conto delle pagine vuote', { vuote: 2, npagine: 2 },
     { vuote: indice.pagineVuote, npagine: indice.npagine });
   await val('fontiIndiciCarica()'); await pausa(400);
 
@@ -115,6 +130,38 @@ async function fixture(dove) {
   const nellIndice = await val(`(FONTI.indici.filter(d=>d.pdf===${JSON.stringify(nome)})[0]||{}).pagine`);
   ok('il testo sta nell\'indice della lente', true,
     !!(nellIndice && nellIndice[0] && /carico cognitivo/i.test(nellIndice[0].text)));
+
+  sezione('⚠️ La pagina STORTA: si legge, e il layer segue le righe');
+  /* La seconda pagina della fixture è inclinata di 3°: sopra la soglia, quindi
+     l'app deve averla riletta raddrizzata. Qui si misura l'esito — il testo
+     c'è, e i glifi del layer sono inclinati come la fotografia. */
+  ok('anche la pagina storta è finita nell\'indice', true,
+    !!(nellIndice && nellIndice[1] && /recupero\s+attivo/i.test(nellIndice[1].text)));
+  const inclinazione = await val(`(async()=>{ try{
+    const pg=await PDFJS.doc.getPage(2);
+    const tc=await pg.getTextContent();
+    const g=tc.items.filter(i=>i.str.trim())
+      .map(i=>Math.atan2(i.transform[1], i.transform[0])*180/Math.PI).sort((a,b)=>a-b);
+    if(!g.length) return null;
+    return { quanti:g.length, mediana:g[Math.floor(g.length/2)],
+             testo:tc.items.map(i=>i.str).join(' ') };
+  }catch(e){ return { errore:e.message }; } })()`, 20000);
+  ok('la pagina storta ha il suo testo', true,
+    !!inclinazione && /ripetizione\s+dilazionata/i.test(inclinazione.testo || ''));
+  ok('e i glifi sono inclinati di ~3°, non dritti', true,
+    !!inclinazione && Math.abs(inclinazione.mediana - 3) < 0.6);
+  /* ⚠️ Che la SECONDA PASSATA sia avvenuta davvero non lo dice il layer
+     inclinato — quello lo produrrebbe anche la sola misura della baseline. Lo
+     dice il contatore: una pagina riletta girata, la storta, e non l'altra. */
+  ok('la seconda passata ha girato UNA pagina, la storta', 1, await val('OCRZ.raddrizzate'));
+  /* Il controllo che il raddrizzamento non si accenda dove non serve: la prima
+     pagina è dritta e i suoi glifi devono restare dritti. */
+  const dirittura = await val(`(async()=>{ const pg=await PDFJS.doc.getPage(1);
+    const tc=await pg.getTextContent();
+    const g=tc.items.filter(i=>i.str.trim())
+      .map(i=>Math.abs(Math.atan2(i.transform[1], i.transform[0])*180/Math.PI));
+    return g.length ? Math.max.apply(null, g) : null; })()`);
+  ok('sulla pagina dritta i glifi restano dritti', true, dirittura !== null && dirittura < 0.5);
 
   sezione('Dopo: non è più una scansione, e il doppione non entra');
   await val('fontiIndiciCarica()'); await pausa(400);
