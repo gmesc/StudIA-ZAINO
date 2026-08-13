@@ -229,6 +229,38 @@ async function fixture(dove) {
   ok('nessuno span è più alto del passo fra le righe', [],
     (invadenti && invadenti.troppoAlti) || ['errore: '+JSON.stringify(invadenti)]);
 
+  sezione('⚠️ Il round-trip: un\'evidenza nata ORA si ridisegna dov\'è nata');
+  /* Le «disfunzionalità» degli screenshot del 13/8 pomeriggio erano evidenze
+     delle prove di mattina — exact con dentro la spazzatura dei layer vecchi —
+     riancorate sul layer nuovo: il motore aveva ragione, i dati erano scorie.
+     Questo controllo prova la parte nostra: creata su QUESTO layer, l'evidenza
+     deve tornare esattamente dov'è nata, testo per testo. */
+  const giro = await val(`(async()=>{
+    const tl=document.querySelector('#pdfFrame .page[data-page-number="1"] .textLayer');
+    if(!tl) return { errore:'niente textLayer' };
+    const sup={ tipo:'pdf', radice:tl, salta:'', file:ANTEPRIMA.file, pagina:1 };
+    const m=evMappaDi(sup);
+    const fr='carico cognitivo si gestisce';
+    const i=m.testo.indexOf(fr);
+    if(i<0) return { errore:'frase non nel modello' };
+    const r=rangeDaOffset(m, i, i+fr.length);
+    const ok1 = evidenzia(r, '#0f766e');
+    const api=window.vault.evidenze;
+    const su=api.leggi(corsoAttivo()).evidenze.filter(e=>e.exact.indexOf('carico cognitivo')>=0);
+    if(su.length!==1) return { errore:'attese 1 evidenza, trovate '+su.length };
+    const ris=EvidenzeAncoraggio.risolvi(m.testo, su);
+    if(ris.trovate.length!==1) return { errore:'risolte '+ris.trovate.length };
+    const t=ris.trovate[0];
+    const r2=rangeDaOffset(m, t.inizio, t.fine);
+    return { scritta: ok1===true, exact: su[0].exact,
+             ridisegnata: r2 ? r2.toString().replace(/\\s+/g,' ').trim() : null };
+  })()`);
+  ok('l\'evidenza si scrive sul layer nuovo', true, !!(giro && giro.scritta));
+  ok('l\'exact salvato è la frase selezionata', 'carico cognitivo si gestisce',
+    giro && giro.exact);
+  ok('e si ridisegna esattamente dov\'è nata', 'carico cognitivo si gestisce',
+    giro && giro.ridisegnata);
+
   sezione('Dopo: non è più una scansione, e il doppione non entra');
   await val('fontiIndiciCarica()'); await pausa(400);
   const doc = await val(`FONTI.indici.filter(d=>d.pdf===${JSON.stringify(nome)})[0]`);
