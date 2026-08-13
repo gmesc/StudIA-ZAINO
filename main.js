@@ -518,9 +518,23 @@ ipcMain.handle('ocrpdf:applica', async (e, { corso, file, pagine } = {}) => {
   let vecchio = {};
   try { vecchio = JSON.parse(fs.readFileSync(fontiLib.percorsoIndice(vaultDir(), corso, nome), 'utf-8')) || {}; }
   catch (e2) { /* indice non ancora scritto: il campo entra con la reindicizzazione */ }
+  /* ⚠️ `ocr.pagine` è la MEMORIA di quali pagine hanno già il layer, e si
+     ACCUMULA fra una corsa e l'altra («ferma» + ripresa). Non può derivarla
+     nessuno dal testo: una pagina fotografata con tre righe resta sotto la
+     soglia delle scansioni anche DOPO il riconoscimento, e senza questo elenco
+     la ripresa la rileggerebbe scrivendole addosso un secondo layer — ogni
+     parola doppia nella ricerca e nelle evidenze.
+     E `improntaOriginale` resta quella della PRIMA corsa: l'originale in casa
+     dell'utente è il file di prima di tutti i layer. */
+  const prevOcr = (vecchio.ocr && typeof vecchio.ocr === 'object') ? vecchio.ocr : null;
+  const fatteOra = (Array.isArray(pagine) ? pagine : []).map((p) => Math.trunc(+(p && p.n))).filter((n) => n > 0);
+  const fatte = Array.from(new Set((prevOcr && Array.isArray(prevOcr.pagine) ? prevOcr.pagine : []).concat(fatteOra)))
+    .sort((a, b) => a - b);
   fontiLib.scriviIndice(vaultDir(), corso, nome,
     Array.isArray(vecchio.pages) ? vecchio.pages : [], vecchio.motore || 'pdfjs',
-    { motore: 'tesseract.js', quando: new Date().toISOString(), improntaOriginale: r.improntaPrima });
+    { motore: 'tesseract.js', quando: new Date().toISOString(),
+      improntaOriginale: (prevOcr && prevOcr.improntaOriginale) || r.improntaPrima,
+      pagine: fatte });
   return r;
 });
 

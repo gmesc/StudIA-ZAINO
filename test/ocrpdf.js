@@ -50,10 +50,15 @@ sezione('Che cosa è una scansione (eScansione)');
   check('uno pieno di testo no', false, OCR.eScansione([t(1), t(2), t(3)]).scansione);
   check('metà esatta non basta: serve la maggioranza', false, OCR.eScansione([s(1), t(2)]).scansione);
   check('due su tre sì', true, OCR.eScansione([s(1), s(2), t(3)]).scansione);
-  check('il conto si dà, non solo il verdetto', { scansione: true, pagineVuote: 2, npagine: 3 },
+  check('il conto si dà, non solo il verdetto — e l\'elenco delle pagine da leggere',
+    { scansione: true, pagineVuote: 2, npagine: 3, daRiconoscere: [1, 2] },
     OCR.eScansione([s(1), s(2), t(3)]));
+  /* l'elenco è ciò che un riconoscimento fermato riprende in mano: le pagine
+     con testo NON ci stanno, o riceverebbero un secondo layer sopra il primo */
+  check('una pagina già piena non si rilegge', [2, 5],
+    OCR.eScansione([t(1), s(2), t(3), t(4), s(5)]).daRiconoscere);
   check('vuoto non è una scansione', false, OCR.eScansione([]).scansione);
-  check('e nemmeno un non-elenco', { scansione: false, pagineVuote: 0, npagine: 0 }, OCR.eScansione(null));
+  check('e nemmeno un non-elenco', { scansione: false, pagineVuote: 0, npagine: 0, daRiconoscere: [] }, OCR.eScansione(null));
   /* gli spazi non sono testo: una pagina di soli a-capo è vuota */
   check('una pagina di soli spazi è vuota', 1, OCR.eScansione([{ page: 1, text: ' \n \t '.repeat(200) }]).pagineVuote);
 }
@@ -178,6 +183,27 @@ async function conMotore() {
   check('ritrascinare l\'originale non crea il doppione', 0, ancora.copiati.length);
   check('e il motivo nomina il documento che c\'è già', true,
     ancora.scartati.length === 1 && ancora.scartati[0].motivo.indexOf(nome) >= 0);
+
+  /* ⚠️ La ripresa dopo un «ferma»: `ocr.pagine` è la memoria di quali pagine
+     hanno già il layer. Una pagina sotto soglia ma GIÀ riconosciuta — la foto
+     con tre righe — NON torna nell'elenco, o la ripresa le scriverebbe addosso
+     un secondo layer e ogni parola conterebbe doppia. Il conteggio da solo non
+     può dirlo: è successo alla prova CDP, pagina da 150 caratteri. */
+  sezione('La ripresa: si rileggono le pagine mai fatte, non quelle povere');
+  const meta2 = { motore: 'tesseract.js', quando: '2026-08-12T23:00:00.000Z',
+    improntaOriginale: 'abc123', pagine: [1] };
+  F.scriviIndice(VAULT, ZAINO, '99 finta.pdf',
+    [{ page: 1, text: 'tre righe scarse' }, { page: 2, text: '' }], 'pdfjs', meta2);
+  let parziale = F.leggiIndici(VAULT, ZAINO).documenti.filter((d) => d.pdf === '99 finta.pdf')[0];
+  check('la pagina già riconosciuta esce dall\'elenco anche se povera', [2], parziale.daRiconoscere);
+  check('e il lavoro risulta da finire', true, parziale.ocrDaFinire);
+  check('ma non è più una «scansione» da proporre', false, parziale.scansione);
+  F.scriviIndice(VAULT, ZAINO, '99 finta.pdf',
+    [{ page: 1, text: 'tre righe scarse' }, { page: 2, text: '' }], 'pdfjs',
+    Object.assign({}, meta2, { pagine: [1, 2] }));
+  parziale = F.leggiIndici(VAULT, ZAINO).documenti.filter((d) => d.pdf === '99 finta.pdf')[0];
+  check('con tutte le pagine fatte non resta niente', [], parziale.daRiconoscere);
+  check('e niente da finire', false, parziale.ocrDaFinire);
 
   try { fs.rmSync(VAULT, { recursive: true, force: true }); } catch (e) { /* temporanea */ }
 }

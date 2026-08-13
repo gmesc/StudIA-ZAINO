@@ -120,6 +120,10 @@ async function fixture(dove) {
   await val('fontiIndiciCarica()'); await pausa(400);
   const doc = await val(`FONTI.indici.filter(d=>d.pdf===${JSON.stringify(nome)})[0]`);
   ok('l\'indice non lo dice più scansione', false, !!(doc && doc.scansione));
+  /* niente pagine rimaste = niente da finire: il bottone non deve riproporre
+     un lavoro completo (ocrDaFinire esiste per i «ferma» a metà) */
+  ok('non restano pagine da riconoscere', 0, (doc && doc.daRiconoscere || []).length);
+  ok('e niente da finire', false, !!(doc && doc.ocrDaFinire));
   ok('e ricorda chi ha riconosciuto', 'tesseract.js', doc && doc.ocr && doc.ocr.motore);
   ok('con l\'impronta di prima', true, !!(doc && doc.ocr && doc.ocr.improntaOriginale));
   await pausa(400);
