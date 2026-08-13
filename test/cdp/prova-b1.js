@@ -97,8 +97,9 @@ const dentro = (sel, padre) => val(`!!document.querySelector('${padre} ${sel}')`
   const col = await val('bancoStato().col');
   ok('trascinando il divisore la colonna si stringe', true, col < colPrima);
   ok('e la misura è una FRAZIONE, non pixel', true, col > 0 && col < 1);
+  /* La chiave la dice `bancoChiave()`: dal 13 agosto è del CONTENITORE. */
   ok('lo stato è finito nel localStorage', true,
-    await val(`(JSON.parse(localStorage.getItem('studia.banco')||'{}').col||0) === bancoStato().col`));
+    await val(`(JSON.parse(localStorage.getItem(bancoChiave())||'{}').col||0) === bancoStato().col`));
 
   // ---- sopravvive alla ricarica
   await invia('Page.enable', {});

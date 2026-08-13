@@ -162,7 +162,11 @@ const ZAINO = 'contenuto-di-prova';
     await val(`(()=>{ try{ return JSON.parse(localStorage.getItem(bancoZoomChiave())); }catch(e){ return 'illeggibile'; } })()`));
 
   sezione('La disposizione è del CONTENITORE: ogni zaino la sua');
-  await val(`(()=>{ bancoForma('tre-sopra'); return 1; })()`);
+  /* ⚠️ Gli strumenti del contenuto aperto (fonte, appunti) vanno messi in
+     blocchi VISIBILI prima di salvare la forma: rientrando, il ripristino del
+     contenuto li riapre, e se non avessero un blocco farebbe crescere la
+     forma — che è giusto per l'app e falso per questo confronto. */
+  await val(`(()=>{ bancoForma('tre-sopra'); bancoAssegna('A','fonte'); bancoAssegna('B','appunti'); return 1; })()`);
   await val(`(()=>{ cambiaZaino('vuoto-di-prova'); return 1; })()`);
   await pausa(600);
   const formaAltrui = await val(`bancoStato().forma`);
