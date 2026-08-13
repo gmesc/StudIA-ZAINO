@@ -11898,6 +11898,10 @@ var MAPPA = {
      rinomina aperta, il nodo che si sta trascinando. Vivono in memoria e non nel
      file: sono lo stato del gesto in corso, non della mappa. */
   sel:null, pila:null, rinomina:null, trascinaNodo:null,
+  /* La cornice congelata mentre si sistemano le posizioni a mano: `{vb, firma}`
+     o `null`. Vedi `mappaRiquadro` — è la vista del gesto in corso, non della
+     mappa, e infatti non si salva. */
+  riquadro:null,
   // il collegamento in corso (dalla porta o dal menu), il bersaglio premuto e
   // il punto in cui si è aperto il menu: stato del gesto, non della mappa
   collega:null, giu:null, menuPunto:null, chiudibili:{},
@@ -11970,6 +11974,10 @@ function mappaSalvaVista(){
    disco venti volte al secondo per una cosa che non cambia il contenuto. Si
    segna e basta; a scrivere ci pensa il primo salvataggio vero o la chiusura. */
 function mappaVistaCambiata(){
+  /* Motore, orientamento, leve: il disegno diventa un altro, e tenersi la
+     cornice di prima vorrebbe dire guardare la mappa nuova dal buco della
+     serratura di quella vecchia. */
+  mappaRiquadroLibera();
   if(mappaMie()){ MAPPA.mia.vistaSporca=true; mappaSegnoSporco(); return; }
   mappaSalvaVista();
 }
@@ -12200,7 +12208,7 @@ function mappaRidisegna(){
                                  chiudibili:rami.chiudibili, nascosti:Object.assign(tolti, rami.quanti||{}),
                                  srcImmagine:mappaSrcImmagine,
                                  font:(getComputedStyle(document.body).fontFamily||'Helvetica Neue, Arial, sans-serif') });
-  svg.setAttribute('viewBox', out.viewBox);
+  svg.setAttribute('viewBox', mappaRiquadro(out.viewBox, g));
   svg.innerHTML=out.markup;
   // il disegno è nuovo: l'evidenziazione di prima indicava elementi che non
   // esistono più, e lasciarla accesa spegnerebbe metà mappa senza motivo
@@ -12490,7 +12498,76 @@ function mappaApplicaZoom(){
   var z=MAPPA.z;
   g.setAttribute('transform','translate('+z.x.toFixed(1)+','+z.y.toFixed(1)+') scale('+z.k.toFixed(3)+')');
 }
-function mappaAdatta(){ MAPPA.z={k:1,x:0,y:0}; mappaApplicaZoom(); }
+
+/* ===================== IL RIQUADRO SEGUE LA STRUTTURA =====================
+ *
+ * La vista della mappa è fatta di DUE strati sovrapposti, e confonderli è
+ * costato il difetto che questo blocco ripara:
+ *   1. il `viewBox` dell'SVG, che `disegna.js` ricava dal rettangolo che
+ *      contiene TUTTI i nodi. Non ha stato, non si salva, e il browser ci
+ *      adatta dentro il disegno da sé (`preserveAspectRatio` di fabbrica);
+ *   2. lo zoom e lo spostamento dell'UTENTE (`MAPPA.z`), che invece hanno
+ *      stato, si salvano nel file, e sono l'unica cosa che la rotella e ⤢
+ *      toccano.
+ *
+ * ⚠️ IL GUASTO, misurato: trascinando un nodo, `mappaRidisegna` gira a ogni
+ * `pointermove` e RIFÀ il primo strato. Ma il trascinamento campiona il punto
+ * di partenza in coordinate del `viewBox` (`MAPPA.trascinaNodo.vx`), e appena
+ * il `viewBox` cambia quelle coordinate vogliono dire un'altra cosa: lo stesso
+ * pixel di mouse vale più unità di mappa. Da lì un anello che si autoalimenta —
+ * il nodo esce → la cornice cresce → tutto rimpicciolisce → il nodo corre di
+ * più → la cornice cresce ancora — che finisce con la mappa ridotta a un
+ * francobollo e l'utente senza strada per tornare, perché ⤢ agisce sul secondo
+ * strato e il disastro è nel primo.
+ *
+ * LA REGOLA, adesso: **il riquadro si rifà quando cambia la STRUTTURA della
+ * mappa — quanti nodi, quanti archi — non quando l'utente sistema con la mano
+ * dove stanno.** Sistemare le posizioni è un lavoro di precisione: la cornice
+ * che si riadatta sotto le dita è esattamente ciò che lo rende impossibile.
+ *
+ * Chi scioglie il congelamento è dichiarato qui e in nessun altro posto:
+ *   · ⤢ «adatta alla vista» — la via di casa, che ricalcola tutto;
+ *   · un cambio di vista (motore, orientamento, leve): il disegno è un altro;
+ *   · la struttura che cambia sotto (nodo o arco creato o tolto), riconosciuta
+ *     dalla FIRMA e non da un elenco di chiamanti — un elenco si dimentica,
+ *     una firma no (invariante 6: la reazione sta in un punto solo).
+ */
+function mappaFirmaStruttura(g){
+  return ((g && g.nodi) ? g.nodi.length : 0) + '/' + ((g && g.archi) ? g.archi.length : 0);
+}
+/** Congela la cornice di adesso: la chiama chi sta per spostare a mano. */
+function mappaRiquadroFerma(){
+  var svg=$('#mappaSvg'); if(!svg) return;
+  var vb=svg.getAttribute('viewBox'); if(!vb) return;
+  MAPPA.riquadro={ vb:vb, firma:mappaFirmaStruttura(mappaGrafo()) };
+}
+/** Scioglie: la mappa può tornare a inquadrarsi da sé. */
+function mappaRiquadroLibera(){ MAPPA.riquadro=null; }
+/** Quale cornice va scritta adesso: quella congelata se vale ancora, o quella
+ *  nuova che il disegno propone. */
+function mappaRiquadro(proposto, g){
+  var r=MAPPA.riquadro;
+  if(!r) return proposto;
+  if(r.firma!==mappaFirmaStruttura(g)){ mappaRiquadroLibera(); return proposto; }
+  return r.vb;
+}
+
+/**
+ * ⤢ — la via di casa, e adesso lo è davvero.
+ *
+ * ⚠️ Prima azzerava soltanto zoom e spostamento: da un disastro della cornice
+ * non riportava niente, perché il disastro sta nell'altro strato. Ora scioglie
+ * il congelamento E ridisegna, così la mappa si reinquadra per intero.
+ * Il ridisegno costa una passata del motore; chi chiama `mappaAdatta()` seguito
+ * da `mappaRidisegna()` ne fa due, e va bene: sono gesti deliberati, uno alla
+ * volta, non cose che accadono mentre si muove la mano.
+ */
+function mappaAdatta(){
+  mappaRiquadroLibera();
+  MAPPA.z={k:1,x:0,y:0};
+  mappaApplicaZoom();
+  try{ mappaRidisegna(); }catch(e){}
+}
 
 /**
  * Fin dove si può ingrandire e rimpicciolire, deciso dal CONTENUTO.
@@ -14144,6 +14221,9 @@ document.addEventListener('input', function(e){
         var cxv=cen.x*MAPPA.z.k+MAPPA.z.x, cyv=cen.y*MAPPA.z.k+MAPPA.z.y;
         var d0=Math.hypot(ps.x-cxv, ps.y-cyv);
         if(d0>4){
+          /* stessa ragione del trascinamento: si sta lavorando di precisione
+             dentro una cornice che non deve muoversi */
+          mappaRiquadroFerma();
           MAPPA.scalaImg={ id:MAPPA.giu.id, cx:cxv, cy:cyv, d0:d0,
                            k0:Number(nod.immagine.scala)||1, g0:MAPPA.mia.grafo,
                            pid:e.pointerId, cambiato:false };
@@ -14167,6 +14247,11 @@ document.addEventListener('input', function(e){
       var pos=MAPPA.res && MAPPA.res.pos && MAPPA.res.pos[idc];
       if(pos){
         MAPPA.mosso=false;
+        /* ⚠️ La cornice si congela PRIMA di toccare il nodo: `vx/vy` qui sopra
+           sono coordinate del `viewBox`, e se il `viewBox` cambiasse a metà
+           gesto vorrebbero dire un'altra cosa — è l'anello che rimpiccioliva
+           la mappa sotto la mano (vedi `mappaRiquadro`). */
+        mappaRiquadroFerma();
         MAPPA.trascinaNodo={ id:idc, vx:p.x, vy:p.y, ox:pos.x, oy:pos.y,
                              pid:e.pointerId, spostato:false, g0:MAPPA.mia.grafo };
         document.documentElement.dataset.mtrascinanodo='1';
