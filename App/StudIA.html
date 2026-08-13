@@ -4060,7 +4060,7 @@ async function fontiIndicizza(nomeFile){
   /* ⚠️ La query rompe la cache dei `file://` di Chromium, e QUI si rompe
      sempre: l'indice si costruisce solo su un file appena entrato o appena
      cambiato (OCR), quindi la cache non può che servire byte vecchi. */
-  var url=window.vault.srcUrl(nomeFile)+'?v='+Date.now();
+  var url=window.vault.srcUrl(nomeFile, corsoAttivo())+'?v='+Date.now();
   var doc;
   try{ doc=await pdfjsLib.getDocument({ url:url, isEvalSupported:false }).promise; }
   catch(e){ return { error:(e && e.message) || 'documento non leggibile' }; }
@@ -4210,7 +4210,7 @@ async function ocrRiconosci(nome){
     var av=await api.apri();
     if(av && av.error){ toast('Motore OCR non partito: '+av.error, false); return; }
     var doc;
-    try{ doc=await pdfjsLib.getDocument({ url:window.vault.srcUrl(nome), isEvalSupported:false }).promise; }
+    try{ doc=await pdfjsLib.getDocument({ url:window.vault.srcUrl(nome, corsoAttivo()), isEvalSupported:false }).promise; }
     catch(e){ toast('Documento non leggibile: '+((e&&e.message)||'?'), false); return; }
     /* ⚠️ Si leggono SOLO le pagine che l'indice dice senza testo
        (`daRiconoscere`): una pagina che il testo ce l'ha già — nativa in mezzo
@@ -5403,7 +5403,13 @@ function pdfChiudiDoc(){
  * il gesto passano tutti per lo stesso punto — che è la regola di questo
  * progetto, e l'unico modo perché non divergano.
  */
-var PLAYER={ file:'', tipo:'', num:null, label:'', vel:1 };
+/* `pronto` è la sentinella del segno d'ascolto: diventa vero solo DOPO il
+   salto al secondo ricordato. ⚠️ Senza, il primo `timeupdate` di un media
+   appena caricato — che arriva a 0, PRIMA di `loadedmetadata` — scriveva
+   `ascoltoSegna(file, 0)` e azzerava sul disco proprio il secondo che si
+   stava per ripristinare: il video «non teneva il punto» perché era la
+   riapertura stessa a cancellarlo (misurato il 13 agosto). */
+var PLAYER={ file:'', tipo:'', num:null, label:'', vel:1, pronto:false };
 
 function playerEl(){ return $('#mediaVideo'); }
 /** C'è qualcosa da riprodurre? È la domanda che accende mezza barra. */
@@ -5434,17 +5440,19 @@ function playerApri(file, t, label){
                                 : (stesso ? playerSecondo() : (ascoltoSecondo(file)||0));
   PLAYER={ file:file, tipo:tipo,
            num:numDiFile(file, (typeof _mediaNum==='function'?_mediaNum():MEDIA_BY_NUM)),
-           label:label||titoloMateriale(file)||file, vel:PLAYER.vel||1 };
+           label:label||titoloMateriale(file)||file, vel:PLAYER.vel||1,
+           pronto:stesso };
   apertoScrivi('media', file);
   var host=$('#plHost'); if(host) host.dataset.tipo=tipo;
   if(stesso) playerVaiA(sec);
   else {
-    var base=(window.vault&&window.vault.srcUrl)?window.vault.srcUrl(file):(VIDEO_BASE+encodeURIComponent(file));
+    var base=(window.vault&&window.vault.srcUrl)?window.vault.srcUrl(file, corsoAttivo()):(VIDEO_BASE+encodeURIComponent(file));
     v.src=base;
     /* ⚠️ Il salto si fa quando i metadati ci sono: `currentTime` scritto su un
        media non ancora caricato viene ignorato in silenzio, e la lezione
-       ripartirebbe dall'inizio ogni volta. */
-    var alPunto=function(){ try{ if(sec) v.currentTime=sec; }catch(e){} v.removeEventListener('loadedmetadata',alPunto); };
+       ripartirebbe dall'inizio ogni volta. Solo DOPO il salto il segno
+       d'ascolto può fidarsi del tempo corrente (vedi `PLAYER.pronto`). */
+    var alPunto=function(){ try{ if(sec) v.currentTime=sec; }catch(e){} PLAYER.pronto=true; v.removeEventListener('loadedmetadata',alPunto); };
     v.addEventListener('loadedmetadata', alPunto);
   }
   try{ v.playbackRate=PLAYER.vel; }catch(e){}
@@ -5461,7 +5469,7 @@ function playerChiudi(){
   var v=playerEl();
   if(v){ try{ v.pause(); }catch(e){} v.removeAttribute('src'); try{ v.load(); }catch(e){} }
   var host=$('#plHost'); if(host) delete host.dataset.tipo;
-  PLAYER={ file:'', tipo:'', num:null, label:'', vel:PLAYER.vel };
+  PLAYER={ file:'', tipo:'', num:null, label:'', vel:PLAYER.vel, pronto:false };
   /* Senza media le forbici non hanno un fotogramma su cui lavorare: si spengono
      da sé, o resterebbero accese sopra un riquadro vuoto. */
   if(ALBUM.attivo && (typeof ANTEPRIMA==='undefined' || ANTEPRIMA.tipo!=='pdf')) albumRitaglioModo(false);
@@ -5667,6 +5675,15 @@ async function apertoRipristina(){
        studia, dal secondo in cui era. */
     playerPausa();
   }
+  /* E il quaderno: l'ultimo appunto che si stava guardando qui. L'elenco è
+     appena stato riletto dal cambio di contenitore; se il file non c'è più
+     (tolto da fuori), non si apre niente e il segno resta — può tornare. */
+  if(mio.appunto){
+    try{
+      if(!(NOTES.list||[]).length || NOTES.listCourse!==id) notesReload();
+      if((NOTES.list||[]).some(function(n){ return n.file===mio.appunto; })) noteOpen(mio.appunto);
+    }catch(e){ console.error('aperto/appunto:', e); }
+  }
 }
 
 /* ---- i comandi del player: bottoni, tempo che scorre, pannellino ----
@@ -5704,10 +5721,17 @@ async function apertoRipristina(){
   if(v){
     v.addEventListener('timeupdate', function(){
       playerBarraAggiorna();
-      if(playerAperto()) ascoltoSegna(PLAYER.file, playerSecondo());
+      // il segno si scrive solo a salto avvenuto: prima, il tempo è quello
+      // del caricamento (0), non quello di chi studia
+      if(playerAperto() && PLAYER.pronto) ascoltoSegna(PLAYER.file, playerSecondo());
     });
     ['play','pause','loadedmetadata','ratechange'].forEach(function(ev){
       v.addEventListener(ev, function(){ playerBarraAggiorna(); });
+    });
+    /* Fermare È il punto da ricordare: si scrive subito, senza il respiro dei
+       900 ms — chiudere l'app un istante dopo la pausa non deve perderlo. */
+    v.addEventListener('pause', function(){
+      if(playerAperto() && PLAYER.pronto){ ascoltoSegna(PLAYER.file, playerSecondo()); ascoltoFlush(); }
     });
     /* Alla fine il segno torna all'inizio: una lezione finita e riaperta al suo
        ultimo secondo mostrerebbe i titoli di coda e sembrerebbe rotta. */
@@ -5855,7 +5879,9 @@ function openPdf(pdf,page,label){
   /* ⚠️ Qui il media si fermava. Era giusto finché documento e video vivevano
      nello stesso riquadro; adesso sono due strumenti, e aprire la dispensa di
      cui la lezione sta parlando non deve zittire la lezione. */
-  var url=(window.vault&&window.vault.srcUrl)?window.vault.srcUrl(pdf):(PDF_BASE+encodeURIComponent(pdf));
+  // il contenitore attivo viaggia con la richiesta: un omonimo in un altro
+  // zaino non deve vincere per ordine alfabetico
+  var url=(window.vault&&window.vault.srcUrl)?window.vault.srcUrl(pdf, corsoAttivo()):(PDF_BASE+encodeURIComponent(pdf));
   /* ⚠️ Chromium tiene in cache i `file://` per URL: dopo il riconoscimento del
      testo il file sul disco è un altro, ma il visualizzatore riaprirebbe i
      byte di prima — misurato nella prova CDP: l'indice leggeva il testo nuovo
@@ -6791,6 +6817,11 @@ function modoAggiorna(){
      di un altro contenitore direbbe minuti di lezioni che qui non ci sono. */
   try{ ascoltoCarica(); }catch(e){ console.error('ascolto:', e); }
   try{ fontiIndiciCarica(); }catch(e){ console.error('indici:', e); }
+  /* E il quaderno: l'elenco degli appunti è del contenitore, e la tendina
+     dell'editor deve dirlo — la sidebar dello zaino se lo rilegge da sé, ma
+     `NOTES.list` nessun altro lo rimetterebbe a posto (misurato: cambiando
+     zaino l'editor elencava gli appunti di quello di prima). */
+  try{ notesReload(); noteResync(); refreshNoteUI(); }catch(e){ console.error('appunti:', e); }
   /* Cambiando modalità cambia CHI c'è in testata (la fila dei corsi o quella
      dello zaino): le barrette che restano senza niente a fianco vanno spente,
      o resta una linea a separare il vuoto dal vuoto. */
@@ -6831,6 +6862,9 @@ function cambiaZaino(id, silenzioso){
   MODO.zaino=id;
   try{ localStorage.setItem('studia.zaino', id); }catch(e){}
   modoAggiorna();
+  /* La disposizione è del CONTENITORE: prima si rilegge il banco del nuovo
+     zaino, poi il suo contenuto ci si appoggia sopra. */
+  bancoRicarica();
   apertoRipristina();
   if(!silenzioso){
     var z=MODO.zaini.filter(function(x){ return x.id===id; })[0];
@@ -6847,7 +6881,9 @@ function cambiaZaino(id, silenzioso){
  * nell'altro. Prima si scrive quello che è in canna, poi si lascia andare.
  */
 function contenitoreMolla(){
-  try{ if(typeof noteFlush==='function') noteFlush(); }catch(e){}
+  /* Non solo il flush: l'appunto aperto e l'elenco sono del contenitore che
+     si sta lasciando, e devono uscire di scena con lui. */
+  try{ if(typeof noteMolla==='function') noteMolla(); else noteFlush(); }catch(e){}
   try{ if(typeof letturaFlush==='function') letturaFlush(); }catch(e){}
   try{ if(typeof ascoltoFlush==='function') ascoltoFlush(); }catch(e){}
   try{
@@ -7181,9 +7217,10 @@ function cambiaCorso(id){
       if(mappaAperta()) toast('Cambiato corso: la mappa è stata salvata e chiusa', true);
     }
   }catch(e){ console.error('mappe/cambioCorso:', e); }
-  /* Documento e media del corso che si lascia: fuori scena, col segno intatto.
-     PRIMA che `studia.corso` cambi, o la chiusura parlerebbe del corso nuovo. */
-  if(!stessoCorso){ try{ apertoMolla(); }catch(e){} }
+  /* Documento, media e appunti del corso che si lascia: fuori scena, col segno
+     intatto. PRIMA che `studia.corso` cambi, o la chiusura parlerebbe del
+     corso nuovo. */
+  if(!stessoCorso){ try{ apertoMolla(); }catch(e){} try{ noteMolla(); }catch(e){} }
   try{ localStorage.setItem('studia.corso', id); }catch(e){}
   try{ MATERIALI.lista=null; }catch(e){}      // i materiali sono di un altro corso
   try{ letturaFlush(); letturaCarica(); }catch(e){}   // il segno in canna si scrive, poi si rileggono i suoi
@@ -7217,8 +7254,9 @@ function cambiaCorso(id){
       mappaCaricaVista(); mappaSincronizzaComandi(); mappaAmbiti(); mappaAdatta(); mappaRidisegna();
     }
   }catch(e){ console.error('mappe/cambioCorso:', e); }
-  /* E il contenuto del corso nuovo torna dov'era: la sua fonte, il suo media. */
-  if(!stessoCorso) apertoRipristina();
+  /* La disposizione è del CONTENITORE anche qui: il banco del corso nuovo,
+     e sopra il suo contenuto — la sua fonte, il suo media. */
+  if(!stessoCorso){ bancoRicarica(); apertoRipristina(); }
 }
 
 /**
@@ -7465,6 +7503,22 @@ function noteFlush(){
   clearTimeout(NOTES.timer); NOTES.timer=null;
   try{ noteSave(true); }catch(e){ console.error('appunti/flush:', e); }
 }
+/**
+ * Molla gli appunti: il contenitore sta cambiando sotto. Prima si scrive
+ * quello che è in canna, poi si svuota TUTTO — l'appunto aperto, l'elenco,
+ * l'editor. ⚠️ Prima restava tutto: l'editor di uno zaino mostrava l'appunto
+ * dello zaino di prima, col distintivo «altrove» a scusarlo — e la tendina
+ * elencava un quaderno che qui non esiste (misurato il 13 agosto).
+ */
+function noteMolla(){
+  noteFlush();
+  NOTES.cur=null; NOTES.dirty=false; NOTES.courseId=null;
+  NOTES.list=[]; NOTES.listCourse=null; NOTES.listError='';
+  NOTES.invito=false;
+  try{ noteCaricaCorpo(''); }catch(e){}
+  var d=$('#noteDirty'); if(d) d.hidden=true;
+  try{ refreshNoteUI(); }catch(e){}
+}
 function editorOpen(){ return document.documentElement.dataset.editor==='1'; }
 function openEditor(){
   ensureMde();                 // la toolbar (che ospita i comandi) deve esserci sempre
@@ -7527,7 +7581,11 @@ function ensureMde(){
   NOTES.mde.codemirror.on('change',function(){
     // caricare un corpo nell'editor emette 'change' come se avesse scritto l'utente:
     // senza la sentinella, aprire un appunto lo marcherebbe subito da salvare
-    if(NOTES.caricando || !NOTES.cur) return;
+    if(NOTES.caricando) return;
+    /* ⚠️ Senza un appunto aperto il testo battuto non appartiene a NESSUNO:
+       nessun autosave lo raccoglierà, e nessuno lo diceva. Alla quinta parola
+       si apre la finestra di battesimo, col testo già in corpo. */
+    if(!NOTES.cur){ noteInvito(); return; }
     NOTES.dirty=true; var d=$('#noteDirty'); if(d) d.hidden=false;
     clearTimeout(NOTES.timer); NOTES.timer=setTimeout(function(){ noteSave(true); },1800); // autosave
   });
@@ -7535,6 +7593,29 @@ function ensureMde(){
     'Cmd-S':function(){ noteSave(); }, 'Ctrl-S':function(){ noteSave(); }
   }));
   return NOTES.mde;
+}
+/**
+ * L'invito al battesimo: scritte CINQUE parole senza un appunto aperto — quando
+ * è chiaro che non è un tasto per sbaglio — si apre la finestra di nome e
+ * origine, e il testo già battuto diventa il corpo dell'appunto che nasce.
+ *
+ * ⚠️ Annullare NON la ripropone a ogni tasto: l'invito si riarma solo quando
+ * l'editor torna vuoto (o si passa dal «+», che è la stessa finestra). Un
+ * modale che rispunta a ogni parola è una porta che si chiude sulle dita.
+ */
+async function noteInvito(){
+  if(!NOTES.mde || NOTES.cur) return;
+  var testo=NOTES.mde.value();
+  if(!testo.trim()){ NOTES.invito=false; return; }   // svuotato: l'invito si riarma
+  if(NOTES.invito) return;
+  if(testo.trim().split(/\s+/).length<5) return;
+  NOTES.invito=true;
+  var esito=await noteChiediNomeEOrigine('APPUNTI');
+  if(esito===null){
+    toast('L’appunto non è ancora salvato: dagli un nome con «+» quando vuoi', false);
+    return;
+  }
+  noteNasce(esito, NOTES.mde.value(), '');
 }
 /* Unico modo di scrivere nell'editor per conto dell'app (apertura di un appunto,
    svuotamento dopo l'eliminazione). Alza la sentinella letta dal gestore 'change'
@@ -7557,11 +7638,56 @@ function noteOpen(file){
   NOTES.cur=n; NOTES.dirty=false;
   if(NOTES.listCourse) NOTES.courseId=NOTES.listCourse;
   else { var m0=curMeta(); if(m0) NOTES.courseId=m0.courseId; }
+  apertoScrivi('appunto', n.file);
   var d=$('#noteDirty'); if(d) d.hidden=true;
   noteCaricaCorpo(n.body);
   openEditor();
   try{ refreshNoteUI(); }catch(e){}
   setTimeout(function(){ mde.codemirror.refresh(); mde.codemirror.focus(); },60);
+}
+/**
+ * La finestra di battesimo: il NOME e — nello zaino — da quale DOCUMENTO
+ * nasce, o personale. È la stessa finestra della matitina (`noteRename`),
+ * perché il battesimo è un gesto solo comunque lo si cominci: dal «+», da una
+ * selezione appuntata, dalla quinta parola scritta nell'editor. Prima il «+»
+ * chiedeva solo il titolo, e l'origine si poteva dire soltanto DOPO, dalla
+ * matitina: due finestre per la stessa domanda.
+ * Torna { titolo, materiale } o `null` se annullata.
+ */
+async function noteChiediNomeEOrigine(defTitolo){
+  var ctx=curCtx(); if(!ctx) return null;
+  var zaino = modoAttivo()==='zaino';
+  var campo=null;
+  if(zaino){
+    var matDef=String(ctx.materiale||'');
+    campo={ etichetta:'Nasce dal documento', valore:matDef,
+            voci:docVoci(await documentiPdf(ctx.courseId), matDef) };
+  }
+  var r=await askText('Titolo dell’appunto', defTitolo||'APPUNTI', campo);
+  if(r===null) return null;
+  var t=(zaino ? r.testo : r);
+  t=(t||'APPUNTI').trim()||'APPUNTI';
+  return { titolo:t, materiale: zaino ? String(r.scelta||'') : String(ctx.materiale||'') };
+}
+/** Crea l'appunto già battezzato e lo apre. Chi lo chiama ha già la finestra
+ *  alle spalle: qui solo disco e viste. Torna `true` se è nato davvero. */
+function noteNasce(esito, body, anchor){
+  var ctx=curCtx(); if(!ctx) return false;
+  var api=notesApi(); if(!api) return false;
+  /* ⚠️ La PAGINA viaggia col documento del contesto: se la finestra ha scelto
+     un altro documento (o «personale»), la pagina di quello davanti non
+     c'entra più niente e mentirebbe. */
+  var mat=String(esito.materiale||'');
+  var pag=(mat && mat===String(ctx.materiale||'')) ? (ctx.pagina||'') : '';
+  var meta={ title:esito.titolo, lezione:ctx.lezione, lezioneId:ctx.lezioneId, capitolo:ctx.capitolo,
+             capitoloId:ctx.capitoloId, capitoloFile:ctx.capitoloFile,
+             materiale:mat, pagina:pag, anchor:anchor||'' };
+  var res=api.save(ctx.courseId, null, meta, body||'');
+  if(!res || res.error){ toast('Salvataggio fallito: '+((res&&res.error)||'?'),false); return false; }
+  NOTES.courseId=ctx.courseId;
+  notesReload(); refreshNoteUI(); noteOpen(res.file);
+  toast('Appunto creato',true);
+  return true;
 }
 /* ⚠️ Torna `true` solo se l'appunto è nato davvero. Serve a chi appunta una
    selezione: la regola delle parole chiave si applica DOPO, e deve poter
@@ -7570,23 +7696,10 @@ function noteOpen(file){
 async function noteNew(anchor, origine, stile){
   var ctx=curCtx(); if(!ctx){ toast('Apri un capitolo del vault per prendere appunti',false); return false; }
   var api=notesApi(); if(!api){ toast('Appunti disponibili solo nell’app',false); return false; }
-  var title=await askText('Titolo dell’appunto', 'APPUNTI');
-  if(title===null) return false; title=(title||'APPUNTI').trim()||'APPUNTI';
+  var esito=await noteChiediNomeEOrigine('APPUNTI');
+  if(esito===null) return false;
   var body=anchor? frammentoAppuntato(anchor, ctx, origine, stile) : '';
-  /* ⚠️ `materiale`/`pagina` arrivano dal CONTESTO e non da `origine`: sono i due
-     campi con cui, nello zaino, l'appunto dice da dove nasce (Z6), e devono
-     valere anche quando si crea un appunto vuoto — cioè quando `origine` non
-     c'è perché non si è selezionato niente. Nei corsi il contesto non li ha,
-     restano '' e `serialize` non li scrive nemmeno. */
-  var meta={ title:title, lezione:ctx.lezione, lezioneId:ctx.lezioneId, capitolo:ctx.capitolo,
-             capitoloId:ctx.capitoloId, capitoloFile:ctx.capitoloFile,
-             materiale:ctx.materiale||'', pagina:ctx.pagina||'', anchor:anchor||'' };
-  var res=api.save(ctx.courseId, null, meta, body);
-  if(!res || res.error){ toast('Salvataggio fallito: '+((res&&res.error)||'?'),false); return false; }
-  NOTES.courseId=ctx.courseId;
-  notesReload(); refreshNoteUI(); noteOpen(res.file);
-  toast('Appunto creato',true);
-  return true;
+  return noteNasce(esito, body, anchor);
 }
 /**
  * Come si presenta, dentro un appunto, un frammento estratto dal capitolo.
@@ -7889,7 +8002,8 @@ function noteDelete(){
   if(!window.confirm('Eliminare l’appunto «'+noteEtichetta(NOTES.cur)+'»? L’operazione non è reversibile.')) return;
   clearTimeout(NOTES.timer); NOTES.timer=null;
   api.remove(pid, NOTES.cur.file);
-  NOTES.cur=null; NOTES.dirty=false;
+  NOTES.cur=null; NOTES.dirty=false; NOTES.invito=false;
+  apertoScrivi('appunto','');
   noteCaricaCorpo('');
   notesReload(); refreshNoteUI(); refreshMyNotes();
   toast('Appunto eliminato',true);
@@ -7993,6 +8107,7 @@ async function noteRename(){
   if(!res || res.error){ console.error('appunti/rename:',res&&res.error); toast('Appunto non rinominato: '+((res&&res.error)||'errore sconosciuto'), false); return; }
   if(res.file) NOTES.cur.file=res.file;
   NOTES.cur.title=(res.nota&&res.nota.title)||t;
+  apertoScrivi('appunto', NOTES.cur.file);   // il segno segue il file rinominato
   notesReload(); noteResync(); refreshNoteUI(); refreshMyNotes();
   toast('Appunto rinominato: «'+NOTES.cur.title+'»', true);
 }
@@ -9380,6 +9495,14 @@ document.addEventListener('visibilitychange', function(){
   if(document.hidden){ try{ mappaFlush(); }catch(e){} }
 });
 window.addEventListener('blur', function(){ try{ mappaFlush(); }catch(e){} });
+/* I segni di lettura e ascolto hanno lo stesso patto delle mappe: passano da
+   `invoke`, quindi niente reti in `beforeunload` — si scrive quando la
+   finestra passa in secondo piano o perde il fuoco, che arriva sempre prima
+   della chiusura. Il respiro dei 900 ms non deve costare l'ultima pagina. */
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden){ try{ letturaFlush(); ascoltoFlush(); }catch(e){} }
+});
+window.addEventListener('blur', function(){ try{ letturaFlush(); ascoltoFlush(); }catch(e){} });
 /* Rientrando nella finestra si rilegge la cartella: se gli appunti sono cambiati
    sul disco (pipeline, Obsidian, un'altra finestra) l'elenco si riallinea da solo,
    senza bisogno di ricaricare l'app. */
@@ -10969,12 +11092,20 @@ function bancoDisponibile(id){ return !!bancoElemento(id); }
 
 /* ---- lo stato: uno solo, globale (scelta dell'utente, §5 del piano) ---- */
 
-/* ⚠️ Una disposizione per MODALITÀ, non una sola per l'app. Nello zaino il
-   blocco grande tiene il documento; in un corso tiene il capitolo. Con una
-   chiave sola, entrare nello zaino avrebbe riscritto la disposizione dei corsi
-   — e tornando indietro si sarebbe trovato il banco cambiato senza averlo
-   toccato. Due chiavi, due disposizioni, nessuna sorpresa. */
-function bancoChiave(){ return modoAttivo()==='zaino' ? 'studia.banco.zaino' : 'studia.banco'; }
+/* ⚠️ Una disposizione per CONTENITORE, non per modalità (misurato il 13
+   agosto: con la chiave di modalità, i tre riquadri aperti per un video in
+   uno zaino comparivano anche nello zaino dopo, che un video non l'aveva).
+   Ogni corso e ogni zaino ricorda il SUO banco; un contenitore mai toccato
+   parte dalla forma di fabbrica della sua modalità, non dall'ultima forma di
+   un altro. Le vecchie chiavi di modalità ('studia.banco', '.zaino') restano
+   sul disco, morte: rileggerle come semina avrebbe ripetuto il difetto sul
+   primo contenitore nuovo. */
+function bancoChiave(){
+  var id=corsoAttivo();
+  if(id) return 'studia.banco.c.'+id;
+  // senza un contenitore (primo avvio, zaini spariti) vale la vecchia chiave di modalità
+  return modoAttivo()==='zaino' ? 'studia.banco.zaino' : 'studia.banco';
+}
 function bancoPredefinito(){
   // ⚠️ la forma di fabbrica la dichiara il modulo: scriverla anche qui sarebbe
   // la seconda copia che diverge al primo ripensamento

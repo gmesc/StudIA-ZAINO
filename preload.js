@@ -27,10 +27,15 @@ function loadLessons() {
    il lettore li chiede per nome, esattamente come chiede un video o un PDF. Senza
    questa voce un capitolo con una figura mostrerebbe una casella vuota — e la
    causa (una cartella non cercata) non si vedrebbe da nessuna parte. */
-function srcUrl(file) {
+/* ⚠️ `corso` è il contenitore ATTIVO, e va passato: `trova` mette le sue
+   cartelle davanti a tutte. Senza, due zaini con un file omonimo aprivano
+   quello del primo in ordine alfabetico — misurato il 13 agosto, quando due
+   prove hanno copiato lo stesso PDF in due zaini e `srcUrl` ha risposto con
+   lo zaino sbagliato. */
+function srcUrl(file, corso) {
   if (!vaultPath) return '../Fonti/' + encodeURIComponent(file);
   for (const sub of ['Fonti', 'Media', 'Figure']) {
-    const p = mat.trova(vaultPath, sub, file);
+    const p = mat.trova(vaultPath, sub, file, corso);
     if (p) return url.pathToFileURL(p).href;
   }
   return url.pathToFileURL(path.join(vaultPath, 'Fonti', file)).href;
