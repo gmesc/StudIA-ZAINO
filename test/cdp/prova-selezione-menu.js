@@ -15,7 +15,7 @@
  *   ./test/cdp/con-vault-di-prova.sh prova-selezione-menu
  */
 const S = require('path').join(__dirname, 'cdp.js');
-const { collega, val, pausa, partiPulito } = require(S);
+const { collega, val, pausa, partiPulito, partiVuoto, apriStrumento } = require(S);
 
 let ko = 0;
 function ok(n, atteso, avuto) {
@@ -53,8 +53,18 @@ const firma = (sel) => val(`(()=>{const e=document.querySelector(${JSON.stringif
     vecchiStili:e.querySelectorAll('.sb-az, .sb-sep').length };})()`);
 
 (async () => {
-  await collega(); await partiPulito();
+  await collega(); /* la barra della selezione non deve trovare un appunto riaperto davanti */
+  await partiVuoto();
   await val('location.reload(), 1'); await pausa(1800); await collega(); await pausa(700);
+  /* ⚠️ Il CAPITOLO davanti, e da solo. Da quando l app ripristina all avvio la
+     disposizione del banco lasciata l ultima volta, dopo un reload il capitolo
+     può ritrovarsi coperto da un altro strumento: il mouse sintetico passa dal
+     rilevamento del bersaglio come quello vero, quindi il trascinamento
+     finisce sul riquadro sopra e non seleziona niente. La barra non compare, e
+     il rosso accusa la barra invece della disposizione. */
+  await val(`(()=>{ try{ bancoForma('uno'); }catch(e){} return 1; })()`);
+  await pausa(300);
+  await apriStrumento('capitolo');
 
   console.log('\n== La barra compare da sé sulla selezione');
   const p = await selezionaNelCapitolo();

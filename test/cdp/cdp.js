@@ -98,4 +98,36 @@ async function partiPulito() {
   await pausa(200);
 }
 
-module.exports = { collega, invia, val, clicca, pausa, apriStrumento, partiPulito, ws: () => ws };
+/**
+ * Come `partiPulito`, ma si pretende anche uno SCHERMO VUOTO.
+ *
+ * ⚠️ Da quando l app riapre da sé quello che avevi aperto — documento, media,
+ * appunto: `apertoRipristina`, col segno in `localStorage` sotto
+ * `studia.aperto` — una prova non parte più da zero: si ritrova addosso lo
+ * strascico di chi è passato prima, e per giunta DOPO il reload, quindi
+ * nessun `location.reload()` la salva. Misurato il 13 agosto con una sonda fra
+ * una prova e l altra: `prova-menu` lasciava un appunto aperto, e
+ * `prova-selezione-menu` non vedeva più comparire la barra della selezione
+ * perché quell appunto era tornato davanti.
+ *
+ * ⚠️ Sta QUI e non dentro `partiPulito` perché il ripristino non è sporcizia:
+ * è una promessa dell app, e tre prove del banco la misurano apposta. Chi
+ * chiama questa funzione dichiara di volere il caso vergine; le altre trovano
+ * il mondo com era, che è quello che devono trovare.
+ */
+async function partiVuoto() {
+  await partiPulito();
+  await val(`(()=>{
+    try{ if(typeof closePdf==='function') closePdf(); }catch(e){}
+    try{ if(typeof playerChiudi==='function') playerChiudi(); }catch(e){}
+    try{ if(typeof NOTES!=='undefined' && NOTES.cur){ NOTES.cur=null; NOTES.dirty=false;
+      if(typeof refreshNoteUI==='function') refreshNoteUI(); } }catch(e){}
+    try{ localStorage.removeItem('studia.aperto'); }catch(e){}
+    /* il guardiano del ripristino torna a zero: la prova dopo deve poterlo
+       provare da capo, se è il suo mestiere */
+    try{ if(typeof APERTO!=='undefined') APERTO.ripristinato=''; }catch(e){}
+    return 1; })()`);
+  await pausa(250);
+}
+
+module.exports = { collega, invia, val, clicca, pausa, apriStrumento, partiPulito, partiVuoto, ws: () => ws };

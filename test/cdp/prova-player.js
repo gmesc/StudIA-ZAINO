@@ -25,7 +25,7 @@
  *   ./test/cdp/con-vault-di-prova.sh prova-player.js
  */
 const S = require('path').join(__dirname, 'cdp.js');
-const { collega, val, pausa, partiPulito, apriStrumento } = require(S);
+const { collega, val, pausa, partiPulito, partiVuoto, apriStrumento } = require(S);
 
 let ko = 0;
 function ok(n, atteso, avuto) {
@@ -40,7 +40,8 @@ const FINTO_AUDIO = '02 registrazione finta.m4a';
 
 (async () => {
   await collega();
-  await partiPulito();
+  /* il riquadro del player si misura vuoto: il ripristino gli metterebbe un media in mano */
+  await partiVuoto();
 
   sezione('Il registro: «Player» è uno strumento, e lo è in tutte e due le modalità');
   {

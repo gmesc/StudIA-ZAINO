@@ -10,7 +10,7 @@
  *   ./test/cdp/con-vault-di-prova.sh prova-album.js
  */
 const S = require('path').join(__dirname, 'cdp.js');
-const { collega, val, invia, pausa, partiPulito, apriStrumento } = require(S);
+const { collega, val, invia, pausa, partiPulito, partiVuoto, apriStrumento } = require(S);
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
@@ -57,7 +57,8 @@ const RIQUADRO = `(()=>{ const v=PDFJS.viewer; if(!v) return null;
   await collega();
   await val('location.reload(), 1'); await pausa(1800);
   await collega(); await pausa(600);
-  await partiPulito();
+  /* le forbici si misurano SENZA documento: il ripristino ne riaprirebbe uno */
+  await partiVuoto();
   await val(`(()=>{ try{ bancoForma('uno'); }catch(e){} return 1; })()`);
   await pausa(400);
   await apriStrumento('fonte');
