@@ -154,8 +154,16 @@
        Node, estratto da `lib/reader-parser.js`, perché il parser dei capitoli
        resti UNO SOLO fra app e test. Là dentro `window` non esiste e la sola
        menzione del nome farebbe saltare tutto il parsing. */
+    /* ⚠️ Il CONTENITORE si passa, come lo passa il ritaglio dell'album due
+       funzioni più su: da quando `srcUrl` accetta il corso, chi non glielo dà
+       si prende il primo omonimo in ordine alfabetico fra tutti i contenitori
+       del vault — e la figura di un capitolo mostrerebbe la pagina di un altro
+       corso senza dire niente. `g.corsoAttivo` può mancare (questo file gira
+       anche in Node, dove non c'è nessun contenitore aperto): allora si chiede
+       come prima, e il ripiego è quello di sempre. */
+    var contenitore=(typeof g.corsoAttivo==='function') ? g.corsoAttivo() : undefined;
     var src=(typeof window!=='undefined' && window.vault && window.vault.srcUrl)
-      ? window.vault.srcUrl(file) : ('../Fonti/'+encodeURIComponent(file));
+      ? window.vault.srcUrl(file, contenitore) : ('../Fonti/'+encodeURIComponent(file));
     return '<span class="figura" role="figure" aria-label="'+d+'">'+
       '<a href="#" class="plink figlink" data-file="'+g.esc(pdf)+'" data-page="'+g.esc(String(pg))+'" data-label="'+d+'" '+
         'data-pdf="'+g.esc(String(nn))+'" title="Apri il documento a pagina '+g.esc(String(pg))+'">'+

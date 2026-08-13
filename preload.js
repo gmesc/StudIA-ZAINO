@@ -192,7 +192,6 @@ contextBridge.exposeInMainWorld('vault', {
      è una stringa. */
   vaultPath: vaultPath,
   choose: () => ipcRenderer.invoke('vault:choose'),
-  media: { list: () => ipcRenderer.invoke('media:list') },
   // con `corso` l'elenco è quello del corso, non di tutto il vault
   corpus: { list: (corso) => ipcRenderer.invoke('corpus:list', { corso }) },
   schede: {
@@ -405,10 +404,6 @@ contextBridge.exposeInMainWorld('vault', {
     get: (corso) => ipcRenderer.invoke('brief:get', { corso }),
     set: (corso, brief) => ipcRenderer.invoke('brief:set', { corso, brief })
   },
-  // ruolo dichiarato delle fonti: mappa numero materiale → ruolo
-  fonti: {
-    set: (corso, fonti) => ipcRenderer.invoke('fonti:set', { corso, fonti })
-  },
   // Claude Code come motore: nessuna chiave, si usa l'abbonamento
   claudecode: {
     diagnosi: () => ipcRenderer.invoke('claudecode:diagnosi')
@@ -445,6 +440,15 @@ contextBridge.exposeInMainWorld('vault', {
      quello un documento trascinato non si potrebbe copiare — si potrebbe solo
      leggerne il contenuto e riscriverlo, cioè fare la stessa cosa in peggio. */
   fonti: {
+    /* ⚠️ `set` — il ruolo dichiarato di una fonte, che scrive il wizard — stava
+       in un SECONDO blocco `fonti:` più in su nello stesso oggetto letterale.
+       Due chiavi uguali in un letterale non sono due cose: l'ultima vince e la
+       prima sparisce per intero, senza un errore. Il wizard chiamava
+       `window.vault.fonti.set(...)` dietro una guardia che controlla l'oggetto
+       `fonti` — che c'era — e moriva di TypeError sul `.set`: il ruolo scelto
+       non arrivava mai in `_corso.md`, e l'utente non vedeva niente. Il canale
+       nel main era vivo e intatto da sempre. */
+    set: (corso, fonti) => ipcRenderer.invoke('fonti:set', { corso, fonti }),
     percorsoDi: (file) => { try { return webUtils.getPathForFile(file); } catch (e) { return ''; } },
     importa: (corso, percorsi) => ipcRenderer.invoke('fonti:importa', { corso, percorsi }),
     /* Togliere una fonte: il file va nel Cestino di sistema e resta una traccia
@@ -506,6 +510,12 @@ contextBridge.exposeInMainWorld('vault', {
      trascina un video non deve sapere che la funzione vive sotto «fonti»: due
      gesti gemelli, due porte gemelle. */
   media: {
+    /* ⚠️ Stessa storia di `fonti.set`: `list` — l'elenco dei video da
+       trascrivere — viveva in un secondo blocco `media:` più in su, schiacciato
+       da questo. Il modale «Trascrivi i video» si apriva e restava piantato su
+       «Carico l'elenco…»: il TypeError è sincrono e scappa PRIMA che esista una
+       Promise, quindi nemmeno il `.catch` lo raccoglieva. */
+    list: () => ipcRenderer.invoke('media:list'),
     percorsoDi: (file) => { try { return webUtils.getPathForFile(file); } catch (e) { return ''; } },
     importa: (corso, percorsi) => ipcRenderer.invoke('media:importa', { corso, percorsi }),
     elenco: (corso) => ipcRenderer.invoke('media:elenco', { corso }),
