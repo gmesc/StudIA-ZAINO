@@ -154,8 +154,8 @@ file è già stata pagata due volte.
 
 **Una disposizione per contenitore** *(scelta dell'utente, 13 agosto; era «una sola, globale»
 il 9 agosto, poi «una per modalità»)*. Ogni corso e ogni zaino ricorda il SUO banco, il SUO
-contenuto aperto (fonte, media, appunto — `studia.aperto`) e la SUA memoria di ritorno dello
-zoom. La misura che ha deciso: con la chiave di modalità, i tre riquadri aperti per un video in
+contenuto aperto (fonte, media, appunto e **quale mappa** — `studia.aperto`) e la SUA memoria di
+ritorno dello zoom. La misura che ha deciso: con la chiave di modalità, i tre riquadri aperti per un video in
 uno zaino comparivano anche nello zaino dopo, che un video non l'aveva. Un contenitore mai
 toccato parte dalla forma di fabbrica della sua modalità. Vive in `localStorage`, come le leve
 della vista mappa.
@@ -169,6 +169,13 @@ disposizione già sovrascritta sul disco — e la diagnosi che viene in mente (�
 era falsa: salvava benissimo, ed è proprio per questo che il danno restava. Uno strumento fuori dal
 banco non è chiuso: il suo documento resta aperto alla sua pagina e compare appena lo si rimette a
 schermo. La prova che lo difende è `test/cdp/prova-banco-ripristino.js`.
+
+**E dentro il riquadro, QUALE mappa** *(13 agosto, subito dopo)*. Il banco ricordava il riquadro e
+la mappa dentro no: si riapriva sempre sulla generata. Il segno — `mie:<file>` · `mie` ·
+`gen:<ambito>` — sta in `studia.aperto` insieme agli altri. ⚠️ Lo scrive **solo un gesto** (aprire
+una mappa tua, cambiare registro o ambito), mai `mappaApri`: se lo scrivesse anche chi *monta* la
+mappa all'avvio, il banco cancellerebbe la scelta prima che il ripristino la legga — lo stesso
+guasto di due paragrafi più su, in un'altra veste.
 
 ⚠️ Un blocco che ospita uno strumento non ancora costruito (o una mappa cancellata) non deve
 lasciare un buco muto: mostra il suo stato vuoto e dice come riempirlo. Vale la regola già scritta

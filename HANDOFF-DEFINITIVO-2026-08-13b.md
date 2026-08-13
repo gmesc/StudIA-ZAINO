@@ -16,7 +16,7 @@
 | ramo | commit | suite | manca |
 |---|---|---|---|
 | `main` | `3419ae7` | ⚠️ 3 prove rosse (riparate su `deskew-ocr`) | è indietro: né OCR né mappa né questo |
-| `mappa-limiti` | `6262945` | ✅ 27 file di unità · **34 prove CDP** | la prova a mano di Giacomo (§4) |
+| `mappa-limiti` | `381697a` | ✅ 27 file di unità · **34 prove CDP** | la prova a mano di Giacomo (§4) |
 
 `mappa-limiti` contiene `deskew-ocr` e il merge di `main`: unendo lei si porta dentro tutto.
 
@@ -70,6 +70,39 @@ niente**.
 
 ---
 
+## 2-bis. ⚠️ Il seguito, dalla prova di Giacomo: QUALE mappa (`381697a`)
+
+Rimesso a posto il banco, il difetto è venuto fuori di sotto: **il riquadro tornava a tutto
+banco, ma dentro c'era la mappa GENERATA** anche a chi aveva lasciato a schermo una mappa sua.
+Il banco ricordava il riquadro; la mappa dentro no. `MAPPA.mia.file` bastava a ritrovarla dentro
+la sessione (`mappaApri` la riapre), ma viveva **in memoria**, e un riavvio la portava via.
+
+Ora il segno di QUALE mappa sta in `studia.aperto`, accanto a fonte, media e appunto — il posto
+che risponde già a «che cosa era aperto in questo contenitore». Le leve della vista restano dove
+erano (per corso, in `mappaChiave()`): dicono **come** la guardavi, questo dice **quale**.
+Forma breve, come i vicini che sono stringhe: `mie:<file>` · `mie` · `gen:<ambito>`.
+
+⚠️ **Lo scrive solo chi sceglie** — `mappaApriMia`, il cambio registro, il cambio ambito — e
+**mai `mappaApri`**: entrare in scena non è scegliere, e scrivere da lì vorrebbe dire che il
+banco, montando la mappa all'avvio, sovrascrive il segno prima ancora che il ripristino lo legga.
+È il guasto del §2 in un'altra veste, evitato prima di pagarlo.
+
+⚠️ Corretta anche la guardia d'ingresso di `apertoRipristina`: usciva se non c'erano né fonte né
+media, quindi da quando il segno porta anche **l'appunto** (e adesso la mappa) c'era un
+ripristino che per loro non partiva mai.
+
+⚠️ **Due prove ripulite, ed è il difetto stesso a chiederlo**: `prova-menu` portava il registro
+su «Mie» creando una mappa dal frammento e toglieva il file **senza rimettere lo scaffale** —
+con la memoria nuova quello stato sopravvive al reload, e `prova-mappe-ui` (che misura la tendina
+della generata) andava rossa su tre controlli. Ora `prova-menu` lascia anche l'app come l'ha
+trovata, e `prova-mappe-ui` mette `studia.aperto` fra le chiavi dello «stato di fabbrica» che
+azzera. **Una memoria nuova rende visibili le prove che sporcano**: è il prezzo, ed è giusto.
+
+Misurato con riavvii veri: mappa tua → riavvio → registro «mie», stesso file, i suoi nodi a
+schermo; generata con ambito «corso» → riavvio → generata su «corso».
+
+---
+
 ## 3. TD/SX: il codice di oggi funziona — misurato tre volte
 
 Era il punto §5 dell'handoff precedente («Giacomo dice che nell'app non funzionano»). Sul ramo
@@ -95,9 +128,10 @@ frase è sbagliata o lo è la disabilitazione: è una decisione, non un guasto, 
 
 ## 4. Che cosa fare, in ordine
 
-1. **La prova a mano del banco** (è l'unica che manca a questo lavoro): apri una fonte, ingrandisci
-   un blocco a tutto banco, chiudi l'app, riaprila. Deve tornare **a tutto banco**; scegliendo
-   «Fonti» in un blocco, il documento è lì alla sua pagina.
+1. **La prova a mano del banco e della mappa** (è l'unica che manca a questo lavoro): apri una
+   fonte, apri una **mappa tua**, ingrandisci il suo blocco a tutto banco, chiudi l'app, riaprila.
+   Deve tornare **a tutto banco, sulla mappa tua**; scegliendo «Fonti» in un blocco, il documento
+   è lì alla sua pagina.
 2. **TD/SX**, dopo un avvio nuovo (§3). Se ancora fermi, dire quale motore è attivo.
 3. **La prova a mano dell'OCR**, mai completata (§6 dell'handoff precedente): togliere la fonte,
    ritrascinare, riconoscere, e guardare il bordo destro e l'altezza sui filetti.
@@ -123,3 +157,11 @@ frase è sbagliata o lo è la disabilitazione: è una decisione, non un guasto, 
   vederla fallire (tre controlli), poi rimessa.
 - **La copia magra del vault non ha `MATERIALI/`**: chi prova qualcosa che passa da
   `corpus.list(corso)` deve portarsi dentro il materiale da sé, o misura un ramo che non gira.
+- **Una memoria nuova rende visibili le prove che sporcano**: appena l'app ha ricordato quale
+  mappa guardavi, `prova-menu` — che il registro lo cambiava e non lo rimetteva — ha fatto cadere
+  `prova-mappe-ui`. Non era un guasto dell'app: era una prova che lasciava lo stato addosso alla
+  prossima, e prima nessuno se ne accorgeva perché il reload cancellava le tracce.
+- **Chi ricorda deve dire chi scrive**: il segno di ciò che era aperto lo scrive solo un gesto.
+  Se lo scrivesse anche chi *ripristina* o chi *monta*, il ripristino successivo troverebbe il
+  proprio riflesso invece della scelta dell'utente. Vale per il banco e per la mappa, ed è la
+  stessa frase due volte.
