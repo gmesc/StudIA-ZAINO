@@ -5666,7 +5666,10 @@ function ascoltoFlush(){
  * Una mappa id → { fonte, media }: le voci di contenitori spariti non fanno
  * male a nessuno, e il ripristino controlla comunque l'elenco vero.
  */
-var APERTO={ ripristinato:'', mollando:false };
+/* `ripristinando` dura i pochi millisecondi in cui si riaprono documento,
+   media e appunto: dice a `bancoMostra` che quelle aperture non sono gesti e
+   non devono ridisporre il banco (la guardia, e il guasto, stanno lì). */
+var APERTO={ ripristinato:'', mollando:false, ripristinando:false };
 function apertoLeggi(){
   try{ return JSON.parse(localStorage.getItem('studia.aperto')||'{}')||{}; }catch(e){ return {}; }
 }
@@ -5724,22 +5727,31 @@ async function apertoRipristina(){
     ((await window.vault.corpus.list(id))||[]).forEach(function(m){ nomi[m.name]=1; });
   }catch(e){ nomi=null; }
   if(id!==corsoAttivo()) return;   // il contenitore è cambiato mentre si leggeva il disco
-  if(mio.fonte && (!nomi || nomi[mio.fonte])) openPdf(mio.fonte, null, titoloMateriale(mio.fonte)||mio.fonte);
-  if(mio.media && (!nomi || nomi[mio.media])){
-    playerApri(mio.media, null, titoloMateriale(mio.media)||mio.media);
-    /* Riaprire non è premere play: la lezione riparte quando lo decide chi
-       studia, dal secondo in cui era. */
-    playerPausa();
-  }
-  /* E il quaderno: l'ultimo appunto che si stava guardando qui. L'elenco è
-     appena stato riletto dal cambio di contenitore; se il file non c'è più
-     (tolto da fuori), non si apre niente e il segno resta — può tornare. */
-  if(mio.appunto){
-    try{
-      if(!(NOTES.list||[]).length || NOTES.listCourse!==id) notesReload();
-      if((NOTES.list||[]).some(function(n){ return n.file===mio.appunto; })) noteOpen(mio.appunto);
-    }catch(e){ console.error('aperto/appunto:', e); }
-  }
+  /* ⚠️ Da qui in giù si RIAPRE, e riaprire non è un gesto: il banco resta come
+     l'ha lasciato chi lavora (guardia in `bancoMostra`). Il tratto è tutto
+     sincrono di proposito — con un `await` in mezzo la bandierina resterebbe
+     alzata sopra un gesto vero, che merita invece di far posto allo strumento.
+     Il `finally` c'è perché una sola apertura che solleva non deve lasciarla su
+     per il resto della sessione. */
+  APERTO.ripristinando=true;
+  try{
+    if(mio.fonte && (!nomi || nomi[mio.fonte])) openPdf(mio.fonte, null, titoloMateriale(mio.fonte)||mio.fonte);
+    if(mio.media && (!nomi || nomi[mio.media])){
+      playerApri(mio.media, null, titoloMateriale(mio.media)||mio.media);
+      /* Riaprire non è premere play: la lezione riparte quando lo decide chi
+         studia, dal secondo in cui era. */
+      playerPausa();
+    }
+    /* E il quaderno: l'ultimo appunto che si stava guardando qui. L'elenco è
+       appena stato riletto dal cambio di contenitore; se il file non c'è più
+       (tolto da fuori), non si apre niente e il segno resta — può tornare. */
+    if(mio.appunto){
+      try{
+        if(!(NOTES.list||[]).length || NOTES.listCourse!==id) notesReload();
+        if((NOTES.list||[]).some(function(n){ return n.file===mio.appunto; })) noteOpen(mio.appunto);
+      }catch(e){ console.error('aperto/appunto:', e); }
+    }
+  } finally { APERTO.ripristinando=false; }
 }
 
 /* ---- i comandi del player: bottoni, tempo che scorre, pannellino ----
@@ -11638,10 +11650,25 @@ function bancoAssegna(blocco, strumento){
  * niente; se un blocco visibile ospita uno strumento che non esiste ancora, si
  * prende quello; altrimenti si cresce alla forma **più piccola** che contenga i
  * blocchi di adesso più uno.
+ *
+ * ⚠️ Ma solo per un GESTO. Il ripristino di ciò che era aperto non lo è, e non
+ * deve ridisporre il banco: vedi la guardia qui sotto.
  */
 function bancoMostra(strumento){
   if(!bancoPronto() || !bancoDisponibile(strumento)) return;
   if(bancoVisibile(strumento)) return;
+  /* ⚠️ Il guasto misurato il 13 agosto, e la ragione di questa riga.
+     Chiudendo l'app con la mappa a tutto banco («uno») e una fonte aperta,
+     all'avvio `apertoRipristina` chiama `openPdf` → qui dentro → la forma
+     CRESCE per far posto alla fonte, e `bancoAssegna` la SALVA. Con una fonte,
+     un media e un appunto aperti si riapriva in tre riquadri, e la disposizione
+     scelta era già sovrascritta sul disco. Da fuori si vedevano due cose
+     insieme: «il banco non tiene la disposizione» e «la pagina del documento
+     invece sì» — perché la pagina sta nel vault e nessuno la riscriveva.
+     La disposizione è una scelta di chi lavora: il contenuto si ripristina lo
+     stesso (segno, pagina, secondo) e compare appena il suo strumento torna a
+     schermo. */
+  if(APERTO.ripristinando) return;
   var libero=bancoBlocchiVisibili().filter(function(b){ return !bancoDisponibile(bancoStrumentoIn(b)); })[0];
   if(libero){ bancoAssegna(libero, strumento); return; }
   var cresciuta=bancoFormaPiuGrande();

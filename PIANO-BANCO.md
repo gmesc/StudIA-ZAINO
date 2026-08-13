@@ -160,6 +160,16 @@ uno zaino comparivano anche nello zaino dopo, che un video non l'aveva. Un conte
 toccato parte dalla forma di fabbrica della sua modalità. Vive in `localStorage`, come le leve
 della vista mappa.
 
+**Riaprire non ridispone** *(13 agosto, da un guasto misurato)*. Il contenuto si ripristina, la
+disposizione **no**: `apertoRipristina` alza `APERTO.ripristinando` e in quel tratto `bancoMostra`
+non fa posto a nessuno. ⚠️ Prima era il contrario, senza che nessuno l'avesse scelto: riaprendo,
+`openPdf` → `bancoMostra('fonte')` faceva CRESCERE la forma, e `bancoAssegna` la salvava. Chi
+chiudeva l'app con la mappa a tutto banco e tre cose aperte riapriva in tre riquadri, con la sua
+disposizione già sovrascritta sul disco — e la diagnosi che viene in mente («il banco non salva»)
+era falsa: salvava benissimo, ed è proprio per questo che il danno restava. Uno strumento fuori dal
+banco non è chiuso: il suo documento resta aperto alla sua pagina e compare appena lo si rimette a
+schermo. La prova che lo difende è `test/cdp/prova-banco-ripristino.js`.
+
 ⚠️ Un blocco che ospita uno strumento non ancora costruito (o una mappa cancellata) non deve
 lasciare un buco muto: mostra il suo stato vuoto e dice come riempirlo. Vale la regola già scritta
 per le mappe: l'errore prima del conteggio, e mai «non hai niente» quando la verità è «non riesco a
