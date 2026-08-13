@@ -97,6 +97,10 @@ async function conMotore() {
   check('gli accenti sopravvivono al riconoscimento', true, !!veloc && /velocità/.test(veloc.testo));
   check('ogni parola ha il suo riquadro', true,
     r.parole.every((p) => p.x1 > p.x0 && p.y1 > p.y0 && Number.isFinite(p.base)));
+  /* il corpo del glifo si taglia sull'altezza della RIGA: due parole della
+     stessa riga — con e senza aste — devono portare la stessa misura */
+  check('e l\'altezza della sua riga', true,
+    r.parole.every((p) => Number.isFinite(p.rigaAlto) && p.rigaAlto >= (p.y1 - p.y0) - 1));
 
   sezione('Il layer: si scrive, si rilegge, sta al posto giusto');
   /* la copia com'era PRIMA del layer: è il file che l'utente ha in casa sua,
@@ -113,6 +117,30 @@ async function conMotore() {
   const rilettura = await O.verifica(pdfFoto, [{ n: 1 }]);
   check('pdf.js rilegge il testo dal file sostituito', '', rilettura.error);
   check('e il testo è quello fotografato', true, /fotosintesi/.test(rilettura.testo) && /velocità/.test(rilettura.testo));
+  /* ⚠️ La LARGHEZZA, non solo la posizione: la prima versione forzava la scala
+     con un'opzione che pdf-lib non ha — inghiottita in silenzio — e l'evidenza
+     copriva «CONTRAT» di «CONTRATTO». Con le larghezze vere pdf.js FONDE le
+     parole contigue in un item per riga, come su un PDF nativo: quindi si
+     misura la riga — deve cominciare al bordo sinistro della prima parola e
+     finire al bordo destro dell'ultima (±5% e un punto: pdf.js conta anche un
+     filo d'avanzamento). Un controllo per parola qui passerebbe A VUOTO, con
+     zero confronti: è successo alla prima stesura di questa sezione. */
+  {
+    const hPagina = H / SCALA;
+    let righe = 0, sbagliate = 0;
+    for (const it of rilettura.items || []) {
+      const inLinea = r.parole.filter((w) => Math.abs((hPagina - w.base / SCALA) - it.y) < 3);
+      if (!inLinea.length) continue;
+      righe++;
+      const x0 = Math.min.apply(null, inLinea.map((w) => w.x0)) / SCALA;
+      const x1 = Math.max.apply(null, inLinea.map((w) => w.x1)) / SCALA;
+      const largAttesa = x1 - x0;
+      if (Math.abs(it.x - x0) > 1.5 ||
+          Math.abs((it.x + it.w) - x1) > largAttesa * 0.05 + 1) sbagliate++;
+    }
+    check('ogni riga del layer comincia e finisce coi bordi misurati', 0, sbagliate);
+    check('e le righe confrontate sono tutte e tre', 3, righe);
+  }
 
   sezione('Quello che va storto non tocca il documento');
   const nonPdf = path.join(QUI, 'finto.pdf');
