@@ -16,10 +16,15 @@
 
 | ramo | commit | suite | manca |
 |---|---|---|---|
-| `main` | `3419ae7` | ⚠️ 3 prove rosse (riparate su `deskew-ocr`) | è indietro: né OCR né mappa né questo |
-| `mappa-limiti` | `e5cfb87` | ✅ 27 file di unità · **34 prove CDP** | la prova a mano di Giacomo (§4) |
+| `main` | `e40520c` | ✅ 27 file di unità · **34 prove CDP** | niente: **il merge è fatto** (14 agosto) |
+| `mappa-limiti` · `deskew-ocr` | uniti in `main` | — | si possono cancellare quando si vuole |
 
-`mappa-limiti` contiene `deskew-ocr` e il merge di `main`: unendo lei si porta dentro tutto.
+**Merge fatto il 14 agosto**, in fast-forward: `main` non si era mossa da `3419ae7`, quindi il
+codice unito è **esattamente** quello su cui sono girate le suite — non c'era niente di nuovo da
+rieseguire. Le quattro condizioni erano tutte verdi: suite ✅, gesti provati a mano da Giacomo
+(banco, mappa, TD/SX **e OCR**) ✅, piani e handoff aggiornati ✅, `main` ferma ✅.
+Con questo entrano in `main` anche l'OCR dello zaino e la mappa che non si rimpicciolisce più,
+che erano rimasti fuori dal 13.
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
@@ -159,13 +164,14 @@ rifiuto è esplicito, e quella strada non esiste più.
    disposizione e la mappa tua tornano com'erano.
 2. ✅ **Fatta da Giacomo (14 agosto)** — TD/SX: sugli anelli dicono perché non si muovono,
    cambiato motore ridispongono.
-3. **La prova a mano dell'OCR**, mai completata (§6 dell'handoff precedente): togliere la fonte,
-   ritrascinare, riconoscere, e guardare il bordo destro e l'altezza sui filetti.
-4. **Il merge**, quando anche la 3 è verde: `git checkout main && git merge mappa-limiti`.
-   Stato delle quattro condizioni al 14 agosto: (a) suite verdi ✅ · (b) gesti provati a mano —
-   banco, mappa e TD/SX ✅, **OCR no** ⚠️ · (c) piani e handoff aggiornati ✅ · (d) `main` ferma
-   a `3419ae7` ✅, verificato: è antenato di `mappa-limiti`, quindi il merge è un fast-forward.
-   ⚠️ La (d) va **riverificata al momento**: una sessione parallela l'ha già mossa una volta.
+3. ✅ **Fatta da Giacomo (14 agosto)** — l'OCR sul documento vero: funziona.
+4. ✅ **Merge fatto (14 agosto)**, fast-forward su `main` (vedi §1). ⚠️ Al prossimo lavoro la
+   condizione (d) — `main` ferma — va **riverificata al momento**: una sessione parallela l'ha
+   già mossa una volta.
+
+**Che cosa resta aperto**, per chi riprende: l'etichetta del motore sulle mappe tue (§3, decisione
+di Giacomo) e il punto 2 del piano mappa — il limite all'area visibile — che resta in
+`PIANO-MAPPE-EDITOR.md` come rete, da scrivere solo se si riesce ancora a perdere un nodo.
 
 ---
 
