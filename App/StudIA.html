@@ -1659,6 +1659,9 @@
   #settingsModal[hidden], #costsModal[hidden]{ display:none!important; }
   .set-body{ padding:1rem 1.1rem; overflow-y:auto; }
   /* schede del modale impostazioni */
+  /* Le righe di Impostazioni → Zaino: nome, conto, cestino in fondo. */
+  .setzaini .zx-riga{ display:flex; align-items:center; gap:.6rem; padding:.5rem 0; border-bottom:1px solid var(--line); }
+  .setzaini .zx-riga .set-note{ flex:1 1 auto; margin:0; }
   .set-tabs{ display:flex; border-bottom:1px solid var(--line); }
   .set-tab{ flex:1; border:0; border-right:1px solid var(--line); background:transparent; cursor:pointer;
     padding:.7rem .4rem; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.14em;
@@ -2644,8 +2647,6 @@ function ripassoContoDisegna(){
     : 'Niente da rivedere adesso';
   b.setAttribute('aria-label', quante+(scaduto?' carte da rivedere adesso':' carte mai studiate')+', apre il Ripasso');
   if(typeof barreSeparatori==='function'){ try{ barreSeparatori(); }catch(e){} }
-  /* Gli stessi numeri, per esteso, accanto al comando che li azzera. */
-  try{ ripassoStatoImpostazioni(); }catch(e){}
 }
 
 /** Ricalcola i conteggi del corso aperto. Un giro solo sul main per l'intero
@@ -3621,7 +3622,8 @@ document.addEventListener('keydown',e=>{
 
 /**
  * «Azzera avanzamento»: cancella la storia dei ripassi di QUESTO corso, sul
- * disco. Il comando vive in Impostazioni → Studio.
+ * disco. Il comando vive nella barra dello strumento Ripasso, accanto alla
+ * cosa che azzera (era in Impostazioni → Studio; scelta del 13 agosto).
  *
  * ⚠️ È un gesto vero, non più la pulizia di una variabile che si sarebbe
  * azzerata da sé alla prossima apertura. Per questo si chiede conferma dicendo
@@ -3658,21 +3660,12 @@ function doReset(){
                : 'Non c\'era nessuna storia da azzerare', true);
 }
 
-/** La riga di stato in Impostazioni → Studio: gli stessi tre numeri della
- *  testata, per esteso, accanto al comando che li azzera. */
-function ripassoStatoImpostazioni(){
-  var el=document.getElementById('setRipStato'); if(!el) return;
-  var corso=corsoAttivo();
-  if(!corso){ el.textContent='Nessun corso aperto.'; return; }
-  if(!RIPCONTO.totale){ el.textContent='In questo corso non ci sono ancora carte: nascono dal quiz e dal glossario dei capitoli.'; return; }
-  el.innerHTML='<b>'+RIPCONTO.totale+'</b> carte in «'+escHtml(corso)+'» — '+
-    '<b>'+RIPCONTO.oggi+'</b> da rivedere oggi · <b>'+RIPCONTO.mai+'</b> mai studiate · '+
-    '<b>'+RIPCONTO.attesa+'</b> in attesa.';
-}
+/* Il comando sta nella barra del ripasso, accanto alla cosa che azzera: la
+   riga di stato di Impostazioni → Studio non esiste più — i suoi numeri sono
+   già nel distintivo della testata e nella conferma di `doReset`. */
 document.addEventListener('click', function(e){
-  var b=e.target.closest?e.target.closest('#setResetBtn'):null; if(!b) return;
+  var b=e.target.closest?e.target.closest('#ripAzzera'):null; if(!b) return;
   doReset();
-  ripassoStatoImpostazioni();
 });
 
 /* ---- Altezza header: ci si appendono la sidebar sticky, il fantasma e la barra
@@ -5530,6 +5523,9 @@ function playerBarraAggiorna(){
   var vel=$('#plVel'); if(vel){ vel.hidden=!c; vel.textContent=String(PLAYER.vel).replace('.',',')+'×'; }
   var nota=$('#plNota'); if(nota) nota.hidden=!c;
   var rit=$('#plRitaglia'); if(rit) rit.hidden=!(c && PLAYER.tipo==='video');
+  // il cestino solo nello zaino, dove i media sono dell'utente: nei corsi li
+  // governa la pipeline, come per i documenti
+  var eli=$('#plElimina'); if(eli) eli.hidden=!(c && modoAttivo()==='zaino');
   var tp=$('#plTempo');
   if(tp){
     var dur=playerDurata();
@@ -5694,6 +5690,7 @@ async function apertoRipristina(){
   document.addEventListener('click', function(e){
     if(!e.target.closest) return;
     if(e.target.closest('#plClose')){ playerChiudi(); return; }
+    if(e.target.closest('#plElimina')){ mediaElimina(); return; }
     if(e.target.closest('#plPlay')){ playerPlayPausa(); return; }
     if(e.target.closest('#plGiu')){ playerSalta(-10); return; }
     if(e.target.closest('#plSu')){ playerSalta(10); return; }
@@ -5717,8 +5714,18 @@ async function apertoRipristina(){
   /* Il tempo che scorre si legge dall'elemento, non da un contatore nostro: un
      secondo tenuto a parte diverge al primo salto fatto con i comandi nativi
      del `<video>`, che sono lì e si usano. */
-  var v=document.getElementById('mediaVideo');
-  if(v){
+  /* ⚠️ `#mediaVideo` sta in fondo alla pagina, DOPO questo script — lo dice
+     già la testata di questo IIFE per i bottoni. Qui l'aggancio era immediato:
+     `getElementById` tornava `null`, l'`if` saltava in silenzio, e NESSUNO di
+     questi ascoltatori è mai nato. Conseguenza misurata (13 agosto, prova
+     `prova-media-punto`): il segno d'ascolto non si scriveva MAI — né dal
+     tempo che scorre né dalla pausa — e ogni media riapriva dall'inizio.
+     L'evento del media non risale al documento come un click: si aspetta il
+     DOM e ci si aggancia all'elemento, una volta sola. */
+  function playerAscoltatori(){
+    var v=document.getElementById('mediaVideo');
+    if(!v || v.dataset.ascoltatori==='1') return;
+    v.dataset.ascoltatori='1';
     v.addEventListener('timeupdate', function(){
       playerBarraAggiorna();
       // il segno si scrive solo a salto avvenuto: prima, il tempo è quello
@@ -5737,6 +5744,8 @@ async function apertoRipristina(){
        ultimo secondo mostrerebbe i titoli di coda e sembrerebbe rotta. */
     v.addEventListener('ended', function(){ if(playerAperto()) ascoltoSegna(PLAYER.file, 0); });
   }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', playerAscoltatori);
+  else playerAscoltatori();
 })();
 
 /** I media di un contenitore. L'elenco è quello di sempre (`corpus.list`): due
@@ -6694,6 +6703,43 @@ async function fonteElimina(){
   toast(r.avviso ? ('Documento nel Cestino — ⚠️ '+r.avviso) : ('«'+nome+'» è nel Cestino: reimportandolo si riaggancia'), !r.avviso);
 }
 
+/** Il gemello di `fonteElimina` per il player: togliere un media dallo zaino.
+ *  Stessa liturgia — chi ci si appoggia, conferma, Cestino di sistema — e la
+ *  ✕ del gesto passa da `playerChiudi`, che è la porta di sempre. */
+async function mediaElimina(){
+  if(modoAttivo()!=='zaino') return;
+  var api=window.vault && window.vault.media;
+  if(!api || typeof api.elimina!=='function'){ toast('Non disponibile in questa versione', false); return; }
+  var corso=corsoAttivo(); var f=(typeof PLAYER!=='undefined' && PLAYER) ? PLAYER.file : '';
+  if(!corso || !f){ toast('Nessun media aperto', false); return; }
+  var nome=titoloMateriale(f)||f;
+  var u;
+  try{ u=await api.usi(corso, f); }
+  catch(e){ toast('Non posso controllare dove è usato: '+((e&&e.message)||e), false); return; }
+  if(u.error){ toast('Non posso controllare dove è usato: '+u.error, false); return; }
+  if(u.illeggibili && u.illeggibili.length){
+    toast('Non posso dire dove è usato ('+u.illeggibili.length+' file illeggibili): non lo tolgo', false);
+    return;
+  }
+  var pezzi=[];
+  if(u.appunti.length) pezzi.push(u.appunti.length+(u.appunti.length===1?' appunto':' appunti'));
+  if(u.mappe.length) pezzi.push(u.mappe.length+(u.mappe.length===1?' mappa':' mappe'));
+  if(u.ritagli) pezzi.push(u.ritagli+(u.ritagli===1?' fermo immagine':' fermi immagine'));
+  var msg='Togliere «'+nome+'» dallo zaino?\n\n';
+  msg += pezzi.length
+    ? ('Ci si appoggiano: '+pezzi.join(' · ')+'.\nRestano dove sono: non si perde niente di scritto.\n\n')
+    : 'Nessun tuo lavoro ci si appoggia.\n\n';
+  msg += 'Il file va nel Cestino di sistema.';
+  if(typeof confirm==='function' && !confirm(msg)) return;
+  var r;
+  try{ r=await api.elimina(corso, f); }
+  catch(e){ toast('Non tolto: '+((e&&e.message)||e), false); return; }
+  if(!r || r.error){ toast('Non tolto: '+((r&&r.error)||'?'), false); return; }
+  playerChiudi();
+  try{ await zainoNavAggiorna(); }catch(e){}
+  toast('«'+nome+'» è nel Cestino', true);
+}
+
 /** L'etichetta del selettore dei documenti: quello aperto, o l'invito. */
 function pdfDocEtichetta(){
   var b=document.getElementById('pdfDoc'); if(!b) return;
@@ -6942,7 +6988,7 @@ async function cambiaModo(m){
  * `corsi.cartella()` risolve le due radici: nessuno di quei tre canali sa che
  * gli zaini esistono, ed è la prova che il perno regge.
  */
-var ZNAV={ sezioni:null, carico:false };
+var ZNAV={ sezioni:null, carico:false, ancora:false };
 
 function znavEsc(s){ return escHtml(s); }
 
@@ -6976,15 +7022,24 @@ async function zainoNavAggiorna(){
     host.innerHTML='<div class="zs-vuoto">Nessuno zaino. Creane uno con il «+» accanto alla tendina.</div>';
     return;
   }
-  if(ZNAV.carico) return;                 // due letture in volo scriverebbero l'una sull'altra
+  /* ⚠️ Due letture in volo scriverebbero l'una sull'altra — ma SCARTARE la
+     seconda non basta: se arriva mentre la prima legge lo zaino di prima, la
+     sidebar resta a quello (misurato: [1,0,0] di un altro zaino dopo il
+     cambio). La richiesta persa si RICORDA, e a fine giro si riparte. */
+  if(ZNAV.carico){ ZNAV.ancora=true; return; }
   ZNAV.carico=true;
   var fonti=[], eFonti='', appunti=[], eAppunti='', mappe=[], eMappe='';
   try{
     var corpus = await window.vault.corpus.list(id);
-    fonti=(corpus||[]).filter(function(m){ return m.tipo==='pdf'; });
+    /* Le fonti sono TUTTO ciò che si studia: documenti E media. Un video
+       trascinato dentro finiva nel corpus ma non compariva da nessuna parte
+       in sidebar — sembrava perso, ed era solo non elencato (13 agosto). */
+    fonti=(corpus||[]).filter(function(m){ return m.tipo==='pdf' || m.tipo==='media'; });
     /* Di passaggio: i numeri dei documenti, che servono a scrivere i rimandi.
-       Qui ci sono anche quelli non ancora indicizzati. */
-    numeriRegistra(id, fonti.map(function(m){ return m.name; }));
+       Qui ci sono anche quelli non ancora indicizzati. Le due famiglie hanno
+       due numerazioni, e si registrano separate. */
+    numeriRegistra(id, fonti.filter(function(m){ return m.tipo==='pdf'; }).map(function(m){ return m.name; }));
+    numeriRegistra(id, fonti.filter(function(m){ return m.tipo==='media'; }).map(function(m){ return m.name; }), 'media');
   }catch(e){ eFonti=(e&&e.message)||String(e); }
   try{
     var r=window.vault.notes.leggi(id)||{};
@@ -6998,15 +7053,22 @@ async function zainoNavAggiorna(){
     eMappe=m.error||'';
   }catch(e3){ eMappe=(e3&&e3.message)||String(e3); }
   ZNAV.carico=false;
+  if(ZNAV.ancora){ ZNAV.ancora=false; return zainoNavAggiorna(); }
 
   var apertoPdf = (typeof ANTEPRIMA!=='undefined' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf') ? ANTEPRIMA.file : '';
+  var apertoMedia = (typeof PLAYER!=='undefined' && PLAYER) ? PLAYER.file : '';
   var apertoNota = (typeof NOTES!=='undefined' && NOTES.cur) ? NOTES.cur.file : '';
   var apertaMappa = (typeof MAPPA!=='undefined' && MAPPA && MAPPA.mia) ? MAPPA.mia.file : '';
 
   host.innerHTML =
     znavSezione('Fonti', fonti.map(function(f){
-      return { classe:'zn-fonte', quale:f.name, testo:titoloMateriale(f.name)||f.name,
-               titolo:f.name, attivo:f.name===apertoPdf };
+      var media=(f.tipo==='media');
+      /* Il segno ▶/♪ dice la famiglia senza una parola: si apre nel player,
+         non nel visualizzatore. */
+      var segno=media ? ((typeof Lettore!=='undefined' && Lettore.tipoDi(f.name)==='audio') ? '♪ ' : '▶ ') : '';
+      return { classe: media ? 'zn-fonte zn-media' : 'zn-fonte', quale:f.name,
+               testo:segno+(titoloMateriale(f.name)||f.name),
+               titolo:f.name, attivo: media ? f.name===apertoMedia : f.name===apertoPdf };
     }), 'Nessun documento in questo zaino.', eFonti) +
     znavSezione('Appunti', appunti.map(function(n){
       return { classe:'zn-appunto', quale:n.file, testo:noteEtichetta(n), attivo:n.file===apertoNota };
@@ -7056,6 +7118,54 @@ async function pdfDocApri(ancora){
      comincia con `closePops()`, che lo rimette a «chiuso». Messo prima, il
      bottone diceva «chiuso» con il pannellino aperto davanti. */
   var btn=document.getElementById('pdfDoc'); if(btn) btn.setAttribute('aria-expanded','true');
+}
+
+/** Il pannello Impostazioni → Zaino: l'elenco degli zaini, e l'unico posto da
+ *  cui se ne toglie uno. Si ridisegna a ogni apertura del tab. */
+async function setZainiDisegna(){
+  var host=document.getElementById('setZaini'); if(!host) return;
+  host.innerHTML='<div class="set-note">Leggo gli zaini…</div>';
+  var lista=[];
+  try{ lista=await window.vault.zaino.list()||[]; }
+  catch(e){ host.innerHTML='<div class="set-note">⚠ Non riesco a leggere gli zaini: '+escHtml((e&&e.message)||String(e))+'</div>'; return; }
+  if(!lista.length){ host.innerHTML='<div class="set-note">Nessuno zaino. Si creano con il «+» in barra, in modalità Zaino.</div>'; return; }
+  host.innerHTML=lista.map(function(z){
+    var conto=z.documenti ? (z.documenti+(z.documenti===1?' documento':' documenti')) : 'vuoto';
+    return '<div class="zx-riga">'+
+      '<b>'+escHtml(z.title||z.id)+'</b><span class="set-note">'+escHtml(conto)+'</span>'+
+      '<button type="button" class="tbtn zx-elimina" data-zaino="'+escHtml(z.id)+'"'+
+      ' title="Elimina «'+escHtml(z.title||z.id)+'»: la cartella intera va nel Cestino"'+
+      ' aria-label="Elimina lo zaino '+escHtml(z.title||z.id)+'">&#128465;</button></div>';
+  }).join('');
+}
+/**
+ * Elimina uno zaino: il gesto più grosso dell'app — dentro ci sono anche
+ * appunti e mappe — quindi conferma esplicita, Cestino di sistema, e la
+ * memoria locale del contenitore (disposizione, zoom, «aperto») se ne va con
+ * lui: chiavi orfane non fanno male, ma un giorno un nuovo zaino con lo
+ * stesso id le erediterebbe.
+ */
+async function zainoElimina(id){
+  if(!id) return;
+  var z=(MODO.zaini||[]).filter(function(x){ return x.id===id; })[0];
+  var nome=(z&&z.title)||id;
+  var msg='Eliminare lo zaino «'+nome+'»?\n\nLa sua cartella — documenti, media, appunti, mappe e ritagli — va nel Cestino di sistema. L’app non la vedrà più.';
+  if(typeof confirm==='function' && !confirm(msg)) return;
+  /* Se è quello aperto, prima si molla: è la cautela di ogni cambio di
+     contenitore, e qui il contenitore non sta cambiando — sta sparendo. */
+  var eraAttivo=(zainoAttivo()===id);
+  if(eraAttivo) contenitoreMolla();
+  var r;
+  try{ r=await window.vault.zaino.elimina(id); }
+  catch(e){ toast('Non eliminato: '+((e&&e.message)||e), false); return; }
+  if(!r || r.error){ toast('Non eliminato: '+((r&&r.error)||'?'), false); return; }
+  try{ localStorage.removeItem('studia.banco.c.'+id); localStorage.removeItem('studia.banco.c.'+id+'.zoom'); }catch(e){}
+  try{ var t=apertoLeggi(); delete t[id]; localStorage.setItem('studia.aperto', JSON.stringify(t)); }catch(e){}
+  if(eraAttivo){ MODO.zaino=null; try{ localStorage.removeItem('studia.zaino'); }catch(e){} }
+  await zainiAggiorna();
+  try{ bancoRicarica(); }catch(e){}
+  try{ await setZainiDisegna(); }catch(e){}
+  toast('Zaino «'+nome+'» nel Cestino', true);
 }
 
 /** Apre una mappa dello zaino dalla sidebar. */
@@ -7124,12 +7234,22 @@ async function zainoCrea(nome){
       return;
     }
     if(e.target.closest('#zainoCrea')){ zainoCrea((document.getElementById('zainoNome')||{}).value); return; }
+    var zx=e.target.closest('.zx-elimina');
+    if(zx){ zainoElimina(zx.dataset.zaino); return; }
     /* Le voci della sidebar. Ognuna passa dalla porta VERA dello strumento —
        `openPdf`, `noteOpen`, `mappaApriMia` — invece di montarlo a mano: sono
        le stesse funzioni che usano il testo, il menu e la tendina, e una quarta
        strada vorrebbe dire una quarta cosa da tenere allineata. */
+    /* Prima i media: hanno anche la classe `zn-fonte`, e l'ordine dei
+       controlli è l'unica cosa che li distingue dal documento. */
+    var md=e.target.closest('.zn-media');
+    if(md){ playerApri(md.dataset.quale, null, titoloMateriale(md.dataset.quale)||md.dataset.quale);
+            zainoNavAggiorna(); return; }
     var f=e.target.closest('.zn-fonte');
-    if(f){ openPdf(f.dataset.quale, 1, titoloMateriale(f.dataset.quale)||f.dataset.quale);
+    /* Senza pagina: la sceglie `openPdf` dal segno di lettura, come dal
+       selettore dei documenti. Il «1» fisso che c'era qui riportava sempre
+       all'inizio chi rientrava da questa porta. */
+    if(f){ openPdf(f.dataset.quale, null, titoloMateriale(f.dataset.quale)||f.dataset.quale);
            zainoNavAggiorna(); return; }
     var a=e.target.closest('.zn-appunto');
     if(a){ try{ bancoMostra('appunti'); }catch(err){}
@@ -10143,9 +10263,14 @@ try{
       modal.querySelectorAll('.set-tab').forEach(function(t){ t.setAttribute('aria-selected', String(t.dataset.tab===name)); });
       modal.querySelectorAll('.set-pane').forEach(function(p){ p.hidden = (p.dataset.pane!==name); });
       try{ localStorage.setItem('studia.settingsTab', name); }catch(e){}
+      // l'elenco si rilegge a ogni apertura del tab: i conti di ieri mentono
+      if(name==='zaino'){ try{ setZainiDisegna(); }catch(e){} }
     }
     modal.querySelectorAll('.set-tab').forEach(function(t){ t.addEventListener('click', function(){ showTab(t.dataset.tab); }); });
     var last='utente'; try{ last=localStorage.getItem('studia.settingsTab')||'utente'; }catch(e){}
+    /* Un tab ricordato che non esiste più («studio») lascerebbe il pannello
+       tutto vuoto: si torna al primo. */
+    if(!modal.querySelector('.set-pane[data-pane="'+last+'"]')) last='utente';
     showTab(last);
 
     /* --- 2. trasloco dei bottoni dalla topbar alle schede --- */
@@ -11120,13 +11245,17 @@ function bancoCarica(){
   var grezzo=null;
   try{ grezzo=JSON.parse(localStorage.getItem(bancoChiave())||'null'); }catch(e){}
   BANCO.stato=BancoForme.normalizzaStato(grezzo||bancoPredefinito());
-  /* ⚠️ Rete per una disposizione dello zaino salvata quando «Capitolo» era
-     ancora in elenco: uno strumento che la tendina non offre più resterebbe
-     montato e irraggiungibile — a schermo il capitolo di un corso, e nessun
-     modo di toglierlo se non svuotando il `localStorage`. */
+  /* ⚠️ Rete per una disposizione dello zaino salvata quando «Capitolo» o
+     «Ripasso» erano ancora in elenco: uno strumento che la tendina non offre
+     più resterebbe montato e irraggiungibile — a schermo il capitolo di un
+     corso (o un ripasso strutturalmente vuoto), e nessun modo di toglierlo se
+     non svuotando il `localStorage`. */
   if(modoAttivo()==='zaino'){
     var b=BANCO.stato.blocchi||{};
-    Object.keys(b).forEach(function(k){ if(b[k]==='capitolo') b[k]='fonte'; });
+    Object.keys(b).forEach(function(k){
+      if(b[k]==='capitolo') b[k]='fonte';
+      if(b[k]==='flashcard') b[k]='album';
+    });
     BANCO.stato=BancoForme.normalizzaStato(BANCO.stato);
   }
 }
@@ -11242,7 +11371,11 @@ function bancoStrumentiOfferti(){
   var reg=bancoStrumenti();
   if(modoAttivo()!=='zaino') return reg;
   var out={};
-  Object.keys(reg).forEach(function(id){ if(id!=='capitolo') out[id]=reg[id]; });
+  /* Nello zaino non si offrono né «Capitolo» né «Ripasso»: i capitoli sono di
+     una lezione, e le carte del ripasso nascono dal quiz e dal glossario dei
+     capitoli — in uno zaino non c'è né l'uno né l'altro, e una voce che apre
+     un riquadro strutturalmente vuoto è una promessa falsa (13 agosto). */
+  Object.keys(reg).forEach(function(id){ if(id!=='capitolo' && id!=='flashcard') out[id]=reg[id]; });
   return out;
 }
 function bancoAggiornaTestate(){
@@ -14269,6 +14402,10 @@ window.addEventListener('keydown', function(e){
             title="Ritaglia un fermo immagine" aria-label="Ritaglia un fermo immagine">&#9986;</button>
     <button class="tbtn" id="plNota" type="button" hidden title="Segna questo minuto negli appunti (⌘⇧C)"
             aria-label="Segna questo minuto negli appunti">&#9998;</button>
+    <!-- ⚠️ Come `#pdfElimina`: togliere un media tocca un file portato dentro
+         dall'utente. Compare SOLO nello zaino, dove i media sono suoi. -->
+    <button class="tbtn" id="plElimina" type="button" hidden
+            title="Togli questo media dallo zaino" aria-label="Togli questo media dallo zaino">&#128465;</button>
     <button class="tbtn" id="plClose" type="button" aria-label="Chiudi il player">&#10005;</button>
   </div>
   <div id="plHost">
@@ -14351,6 +14488,10 @@ window.addEventListener('keydown', function(e){
          blocco: l'ultima lettera restava sotto. I comandi stanno a sinistra,
          come nella barra delle parole chiave. -->
     <button class="tbtn" id="ripSalta" type="button" title="Rimanda questa carta alla fine della coda, senza registrare niente">Salta</button>
+    <!-- L'azzeramento sta accanto alla cosa che azzera, non più in
+         Impostazioni → Studio: la conferma con i conti difende dal click. -->
+    <button class="tbtn" id="ripAzzera" type="button"
+            title="Azzera l'avanzamento di questo corso: tutte le carte tornano «mai studiate». Non è reversibile.">Azzera&#8230;</button>
   </div>
   <div id="ripCorpo" class="ripcorpo"></div>
   <!-- ⚠️ I comandi stanno FUORI dal corpo che scorre. Dentro, una domanda lunga
@@ -14681,7 +14822,7 @@ window.addEventListener('keydown', function(e){
     <div class="set-tabs" role="tablist">
       <button class="set-tab" role="tab" data-tab="utente" aria-selected="true">Utente</button>
       <button class="set-tab" role="tab" data-tab="corsi" aria-selected="false">Corsi</button>
-      <button class="set-tab" role="tab" data-tab="studio" aria-selected="false">Studio</button>
+      <button class="set-tab" role="tab" data-tab="zaino" aria-selected="false">Zaino</button>
       <button class="set-tab" role="tab" data-tab="ai" aria-selected="false">AI</button>
     </div>
     <div class="set-body">
@@ -14935,17 +15076,15 @@ window.addEventListener('keydown', function(e){
            un dito di distanza dalla navigazione, e per giunta invisibile a chi
            l'indice lo tiene chiuso. Qui sta con le altre cose che si fanno una
            volta ogni tanto, e ha lo spazio per dire che cosa si perde davvero. -->
-      <section class="set-pane" data-pane="studio" hidden>
-        <div class="set-sec-h">Il ripasso di questo corso</div>
-        <p class="set-note">Le carte nascono dal <b>quiz</b> e dal <b>glossario</b> dei capitoli: non si copiano da nessuna parte, si rileggono ogni volta dai capitoli. Rigenerare una lezione non porta via la storia di ciò che hai già ripassato, finché la domanda resta quella.</p>
-        <div class="ripstato-set" id="setRipStato">Nessun corso aperto.</div>
-        <p class="set-note">La storia vive in <code>RIPASSO/stato.json</code> dentro la cartella del corso: è tua, la pipeline non la tocca, e si porta dietro con l'esportazione.</p>
-
-        <div class="set-sec-h" style="margin-top:1.4rem;">Azzera l'avanzamento</div>
-        <p class="set-note">Cancella la storia dei ripassi di <b>questo corso</b>: tutte le carte tornano «mai studiate» e i tempi ripartono da capo. Gli appunti, le evidenze e le mappe non si toccano. <b>Non è reversibile.</b></p>
-        <div class="setrow">
-          <button class="kr-save" id="setResetBtn" type="button">Azzera l'avanzamento di questo corso&#8230;</button>
-        </div>
+      <!-- ============ ZAINO ============
+           Qui c'era «Studio», cioè lo stato e l'azzeramento del ripasso: quel
+           comando ora vive nella barra dello strumento Ripasso, accanto alla
+           cosa che azzera. Questo pannello governa gli ZAINI come contenitori:
+           l'unico posto da cui se ne può togliere uno. -->
+      <section class="set-pane" data-pane="zaino" hidden>
+        <div class="set-sec-h">I tuoi zaini</div>
+        <p class="set-note">Uno zaino è la cartella dei tuoi materiali: documenti, media, appunti, mappe e ritagli. Eliminarlo manda <b>l'intera cartella nel Cestino di sistema</b> — da lì si può ancora ripescare, ma l'app non la vedrà più.</p>
+        <div id="setZaini" class="setzaini"></div>
       </section>
 
       <!-- ============ AI ============ -->
