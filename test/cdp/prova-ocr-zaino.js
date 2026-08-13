@@ -194,6 +194,41 @@ async function fixture(dove) {
   ok('la frase evidenziata è coperta senza chiazze', [],
     (buchi && buchi.buchi) || ['errore: '+JSON.stringify(buchi)]);
 
+  sezione('⚠️ Una riga non ruba il puntatore a quella sopra');
+  /* Sul contratto vero una riga con tre macchie della carta lette come parole
+     alte tre volte il testo prendeva un corpo di due righe, copriva il titolo
+     sopra e lo rendeva inselezionabile: si vedeva e non si poteva prendere
+     (schermo di Giacomo). Il corpo di una riga è la mediana, e comunque mai
+     più della distanza dalla riga sopra: qui si pretende che il riquadro di
+     ogni span stia dentro il passo fra le righe. */
+  const invadenti = await val(`(()=>{
+    const tl=document.querySelector('#pdfFrame .page[data-page-number="1"] .textLayer');
+    if(!tl) return { errore:'niente textLayer' };
+    const box=[...tl.querySelectorAll('span')].filter(s=>s.textContent.trim())
+      .map(s=>{ const r=s.getBoundingClientRect(); return { t:s.textContent.slice(0,12), y:r.y, h:r.height, b:r.y+r.height }; })
+      .filter(q=>q.h>0);
+    if(box.length<4) return { errore:'pochi span' };
+    /* ⚠️ Le righe si RAGGRUPPANO per vicinanza, non si quantizzano: le basi di
+       una riga differiscono di qualche pixel (inclinazione, discendenti), e un
+       arrotondamento le conta come righe distinte a quattro pixel l'una
+       dall'altra — un passo finto che boccia qualunque cosa. */
+    const bs=box.map(q=>q.b).sort((a,b)=>a-b);
+    const hMed=box.map(q=>q.h).sort((a,b)=>a-b)[Math.floor(box.length/2)];
+    const gruppi=[[bs[0]]];
+    for(let i=1;i<bs.length;i++){
+      const g=gruppi[gruppi.length-1];
+      if(bs[i]-g[g.length-1] <= hMed*0.6) g.push(bs[i]); else gruppi.push([bs[i]]);
+    }
+    const centri=gruppi.map(g=>g.reduce((a,b)=>a+b,0)/g.length);
+    if(centri.length<2) return { errore:'una riga sola' };
+    let passo=Infinity;
+    for(let i=1;i<centri.length;i++) passo=Math.min(passo, centri[i]-centri[i-1]);
+    const troppoAlti=box.filter(q=>q.h > passo*1.6).map(q=>q.t+'@'+Math.round(q.h)+'>'+Math.round(passo));
+    return { passo:Math.round(passo), righe:centri.length, troppoAlti };
+  })()`);
+  ok('nessuno span è più alto del passo fra le righe', [],
+    (invadenti && invadenti.troppoAlti) || ['errore: '+JSON.stringify(invadenti)]);
+
   sezione('Dopo: non è più una scansione, e il doppione non entra');
   await val('fontiIndiciCarica()'); await pausa(400);
   const doc = await val(`FONTI.indici.filter(d=>d.pdf===${JSON.stringify(nome)})[0]`);
