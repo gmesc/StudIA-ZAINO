@@ -955,6 +955,16 @@
   #pdfHost[data-stato]::after{ content:attr(data-stato); position:absolute; inset:0;
     display:grid; place-items:center; font-size:12px; color:var(--muted);
     background:var(--hover); pointer-events:none; }
+  /* Senza fonte aperta il posto del visualizzatore lo prende `.pdfvuoto`:
+     `data-pdf` è già il segnale che `openPdf`/`closePdf` accendono e spengono.
+     Il rettangolo grigio di `#pdfHost` senza niente dentro sembrava un guasto
+     — stessa ragione del `#mediaVideo` spento nel player. */
+  html:not([data-pdf="1"]) #pdfHost{ display:none; }
+  .pdfvuoto{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:.4rem; text-align:center; padding:1.4rem; font-size:12px; color:var(--muted); }
+  html[data-pdf="1"] .pdfvuoto{ display:none; }
+  html[data-modo="zaino"] .pdfvuoto .pv-corso{ display:none; }
+  html:not([data-modo="zaino"]) .pdfvuoto .pv-zaino{ display:none; }
   @media (max-width:900px){ #dock{ width:100vw; } html[data-dock="1"] .wrap{ padding-right:0; } #pdfResizer{ display:none; } }
 
   /* ===== Editor appunti (EasyMDE) ===== */
@@ -1649,6 +1659,9 @@
   #settingsModal[hidden], #costsModal[hidden]{ display:none!important; }
   .set-body{ padding:1rem 1.1rem; overflow-y:auto; }
   /* schede del modale impostazioni */
+  /* Le righe di Impostazioni → Zaino: nome, conto, cestino in fondo. */
+  .setzaini .zx-riga{ display:flex; align-items:center; gap:.6rem; padding:.5rem 0; border-bottom:1px solid var(--line); }
+  .setzaini .zx-riga .set-note{ flex:1 1 auto; margin:0; }
   .set-tabs{ display:flex; border-bottom:1px solid var(--line); }
   .set-tab{ flex:1; border:0; border-right:1px solid var(--line); background:transparent; cursor:pointer;
     padding:.7rem .4rem; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.14em;
@@ -2634,8 +2647,6 @@ function ripassoContoDisegna(){
     : 'Niente da rivedere adesso';
   b.setAttribute('aria-label', quante+(scaduto?' carte da rivedere adesso':' carte mai studiate')+', apre il Ripasso');
   if(typeof barreSeparatori==='function'){ try{ barreSeparatori(); }catch(e){} }
-  /* Gli stessi numeri, per esteso, accanto al comando che li azzera. */
-  try{ ripassoStatoImpostazioni(); }catch(e){}
 }
 
 /** Ricalcola i conteggi del corso aperto. Un giro solo sul main per l'intero
@@ -3611,7 +3622,8 @@ document.addEventListener('keydown',e=>{
 
 /**
  * «Azzera avanzamento»: cancella la storia dei ripassi di QUESTO corso, sul
- * disco. Il comando vive in Impostazioni → Studio.
+ * disco. Il comando vive nella barra dello strumento Ripasso, accanto alla
+ * cosa che azzera (era in Impostazioni → Studio; scelta del 13 agosto).
  *
  * ⚠️ È un gesto vero, non più la pulizia di una variabile che si sarebbe
  * azzerata da sé alla prossima apertura. Per questo si chiede conferma dicendo
@@ -3648,21 +3660,12 @@ function doReset(){
                : 'Non c\'era nessuna storia da azzerare', true);
 }
 
-/** La riga di stato in Impostazioni → Studio: gli stessi tre numeri della
- *  testata, per esteso, accanto al comando che li azzera. */
-function ripassoStatoImpostazioni(){
-  var el=document.getElementById('setRipStato'); if(!el) return;
-  var corso=corsoAttivo();
-  if(!corso){ el.textContent='Nessun corso aperto.'; return; }
-  if(!RIPCONTO.totale){ el.textContent='In questo corso non ci sono ancora carte: nascono dal quiz e dal glossario dei capitoli.'; return; }
-  el.innerHTML='<b>'+RIPCONTO.totale+'</b> carte in «'+escHtml(corso)+'» — '+
-    '<b>'+RIPCONTO.oggi+'</b> da rivedere oggi · <b>'+RIPCONTO.mai+'</b> mai studiate · '+
-    '<b>'+RIPCONTO.attesa+'</b> in attesa.';
-}
+/* Il comando sta nella barra del ripasso, accanto alla cosa che azzera: la
+   riga di stato di Impostazioni → Studio non esiste più — i suoi numeri sono
+   già nel distintivo della testata e nella conferma di `doReset`. */
 document.addEventListener('click', function(e){
-  var b=e.target.closest?e.target.closest('#setResetBtn'):null; if(!b) return;
+  var b=e.target.closest?e.target.closest('#ripAzzera'):null; if(!b) return;
   doReset();
-  ripassoStatoImpostazioni();
 });
 
 /* ---- Altezza header: ci si appendono la sidebar sticky, il fantasma e la barra
@@ -4050,7 +4053,7 @@ async function fontiIndicizza(nomeFile){
   /* ⚠️ La query rompe la cache dei `file://` di Chromium, e QUI si rompe
      sempre: l'indice si costruisce solo su un file appena entrato o appena
      cambiato (OCR), quindi la cache non può che servire byte vecchi. */
-  var url=window.vault.srcUrl(nomeFile)+'?v='+Date.now();
+  var url=window.vault.srcUrl(nomeFile, corsoAttivo())+'?v='+Date.now();
   var doc;
   try{ doc=await pdfjsLib.getDocument({ url:url, isEvalSupported:false }).promise; }
   catch(e){ return { error:(e && e.message) || 'documento non leggibile' }; }
@@ -4204,7 +4207,7 @@ async function ocrRiconosci(nome){
     var av=await api.apri();
     if(av && av.error){ toast('Motore OCR non partito: '+av.error, false); return; }
     var doc;
-    try{ doc=await pdfjsLib.getDocument({ url:window.vault.srcUrl(nome), isEvalSupported:false }).promise; }
+    try{ doc=await pdfjsLib.getDocument({ url:window.vault.srcUrl(nome, corsoAttivo()), isEvalSupported:false }).promise; }
     catch(e){ toast('Documento non leggibile: '+((e&&e.message)||'?'), false); return; }
     /* ⚠️ Si leggono SOLO le pagine che l'indice dice senza testo
        (`daRiconoscere`): una pagina che il testo ce l'ha già — nativa in mezzo
@@ -5453,7 +5456,13 @@ function pdfChiudiDoc(){
  * il gesto passano tutti per lo stesso punto — che è la regola di questo
  * progetto, e l'unico modo perché non divergano.
  */
-var PLAYER={ file:'', tipo:'', num:null, label:'', vel:1 };
+/* `pronto` è la sentinella del segno d'ascolto: diventa vero solo DOPO il
+   salto al secondo ricordato. ⚠️ Senza, il primo `timeupdate` di un media
+   appena caricato — che arriva a 0, PRIMA di `loadedmetadata` — scriveva
+   `ascoltoSegna(file, 0)` e azzerava sul disco proprio il secondo che si
+   stava per ripristinare: il video «non teneva il punto» perché era la
+   riapertura stessa a cancellarlo (misurato il 13 agosto). */
+var PLAYER={ file:'', tipo:'', num:null, label:'', vel:1, pronto:false };
 
 function playerEl(){ return $('#mediaVideo'); }
 /** C'è qualcosa da riprodurre? È la domanda che accende mezza barra. */
@@ -5484,16 +5493,19 @@ function playerApri(file, t, label){
                                 : (stesso ? playerSecondo() : (ascoltoSecondo(file)||0));
   PLAYER={ file:file, tipo:tipo,
            num:numDiFile(file, (typeof _mediaNum==='function'?_mediaNum():MEDIA_BY_NUM)),
-           label:label||titoloMateriale(file)||file, vel:PLAYER.vel||1 };
+           label:label||titoloMateriale(file)||file, vel:PLAYER.vel||1,
+           pronto:stesso };
+  apertoScrivi('media', file);
   var host=$('#plHost'); if(host) host.dataset.tipo=tipo;
   if(stesso) playerVaiA(sec);
   else {
-    var base=(window.vault&&window.vault.srcUrl)?window.vault.srcUrl(file):(VIDEO_BASE+encodeURIComponent(file));
+    var base=(window.vault&&window.vault.srcUrl)?window.vault.srcUrl(file, corsoAttivo()):(VIDEO_BASE+encodeURIComponent(file));
     v.src=base;
     /* ⚠️ Il salto si fa quando i metadati ci sono: `currentTime` scritto su un
        media non ancora caricato viene ignorato in silenzio, e la lezione
-       ripartirebbe dall'inizio ogni volta. */
-    var alPunto=function(){ try{ if(sec) v.currentTime=sec; }catch(e){} v.removeEventListener('loadedmetadata',alPunto); };
+       ripartirebbe dall'inizio ogni volta. Solo DOPO il salto il segno
+       d'ascolto può fidarsi del tempo corrente (vedi `PLAYER.pronto`). */
+    var alPunto=function(){ try{ if(sec) v.currentTime=sec; }catch(e){} PLAYER.pronto=true; v.removeEventListener('loadedmetadata',alPunto); };
     v.addEventListener('loadedmetadata', alPunto);
   }
   try{ v.playbackRate=PLAYER.vel; }catch(e){}
@@ -5506,10 +5518,11 @@ function playerApri(file, t, label){
 /** Chiude il player: il media si molla, il documento accanto resta dov'è. */
 function playerChiudi(){
   ascoltoFlush();
+  apertoScrivi('media','');
   var v=playerEl();
   if(v){ try{ v.pause(); }catch(e){} v.removeAttribute('src'); try{ v.load(); }catch(e){} }
   var host=$('#plHost'); if(host) delete host.dataset.tipo;
-  PLAYER={ file:'', tipo:'', num:null, label:'', vel:PLAYER.vel };
+  PLAYER={ file:'', tipo:'', num:null, label:'', vel:PLAYER.vel, pronto:false };
   /* Senza media le forbici non hanno un fotogramma su cui lavorare: si spengono
      da sé, o resterebbero accese sopra un riquadro vuoto. */
   if(ALBUM.attivo && (typeof ANTEPRIMA==='undefined' || ANTEPRIMA.tipo!=='pdf')) albumRitaglioModo(false);
@@ -5570,6 +5583,9 @@ function playerBarraAggiorna(){
   var vel=$('#plVel'); if(vel){ vel.hidden=!c; vel.textContent=String(PLAYER.vel).replace('.',',')+'×'; }
   var nota=$('#plNota'); if(nota) nota.hidden=!c;
   var rit=$('#plRitaglia'); if(rit) rit.hidden=!(c && PLAYER.tipo==='video');
+  // il cestino solo nello zaino, dove i media sono dell'utente: nei corsi li
+  // governa la pipeline, come per i documenti
+  var eli=$('#plElimina'); if(eli) eli.hidden=!(c && modoAttivo()==='zaino');
   var tp=$('#plTempo');
   if(tp){
     var dur=playerDurata();
@@ -5636,6 +5652,96 @@ function ascoltoFlush(){
   }).catch(function(e){ console.error('ascolto/segna:', e); });
 }
 
+/* ===== IL SEGNO DI CIÒ CHE ERA APERTO ====================================
+ *
+ * Lettura e ascolto ricordano DOVE si era in un documento; questo ricorda
+ * QUALE documento e quale media erano aperti, contenitore per contenitore.
+ * È il pezzo che mancava al «l'app riapre come l'hai lasciata» del §5 del
+ * piano del banco: la disposizione senza il contenuto era una scrivania
+ * apparecchiata vuota. E vale a ogni cambio di contenitore, non solo al
+ * riavvio: da uno zaino all'altro, da un corso all'altro, fra le due metà.
+ *
+ * Vive in `localStorage` — come la disposizione, non come i segni: parla di
+ * riquadri aperti su questa macchina, non di lavoro fatto nel vault.
+ * Una mappa id → { fonte, media }: le voci di contenitori spariti non fanno
+ * male a nessuno, e il ripristino controlla comunque l'elenco vero.
+ */
+var APERTO={ ripristinato:'', mollando:false };
+function apertoLeggi(){
+  try{ return JSON.parse(localStorage.getItem('studia.aperto')||'{}')||{}; }catch(e){ return {}; }
+}
+/** Segna (o toglie, con valore vuoto) ciò che è aperto ADESSO, per il
+ *  contenitore di adesso. La chiamano le quattro porte vere: `openPdf`,
+ *  `closePdf`, `playerApri`, `playerChiudi`. */
+function apertoScrivi(campo, valore){
+  /* ⚠️ Mollare il contenitore CHIUDE documento e media, ma non è un gesto
+     dell'utente: il suo segno resta, o il cambio di zaino dimenticherebbe
+     proprio quello che deve ricordare. */
+  if(APERTO.mollando) return;
+  var id=corsoAttivo(); if(!id) return;
+  var tutto=apertoLeggi(), mio=tutto[id]||{};
+  if(valore) mio[campo]=String(valore); else delete mio[campo];
+  if(Object.keys(mio).length) tutto[id]=mio; else delete tutto[id];
+  try{ localStorage.setItem('studia.aperto', JSON.stringify(tutto)); }catch(e){}
+}
+/** Chiude documento e media SENZA toccare i segni: è il gesto meccanico del
+ *  cambio di contenitore, non una scelta di chi studia. Prima non chiudeva
+ *  nessuno, e il documento dello zaino di prima restava a schermo nel nuovo. */
+function apertoMolla(){
+  APERTO.mollando=true;
+  try{ if(typeof ANTEPRIMA!=='undefined' && ANTEPRIMA && ANTEPRIMA.file) closePdf(); }catch(e){}
+  try{ if(typeof PLAYER!=='undefined' && PLAYER && PLAYER.file) playerChiudi(); }catch(e){}
+  APERTO.mollando=false;
+}
+/**
+ * Riapre nel contenitore di adesso ciò che vi era rimasto aperto. Idempotente
+ * per contenitore (`APERTO.ripristinato`): le porte che possono chiamarla sono
+ * cinque — i due avvii, `cambiaModo`, `cambiaZaino`, `cambiaCorso` — e una
+ * guardia costa meno che pretendere che si coordinino.
+ */
+async function apertoRipristina(){
+  /* All'avvio dei corsi questa parte mentre lo script è ancora in corsa, e i
+     riquadri stanno più in basso nel DOM: si aspetta il documento intero. */
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', function(){ apertoRipristina(); }, { once:true });
+    return;
+  }
+  var id=corsoAttivo();
+  if(!id || APERTO.ripristinato===id) return;
+  APERTO.ripristinato=id;
+  var mio=apertoLeggi()[id]||{};
+  if(!mio.fonte && !mio.media) return;
+  /* Prima i segni del punto — pagina e secondo — o si riaprirebbe a pagina 1
+     per poi saltare sotto gli occhi: `openPdf` legge la copia in memoria. */
+  try{ await letturaCarica(); }catch(e){}
+  try{ await ascoltoCarica(); }catch(e){}
+  /* L'elenco vero del contenitore: un segno può parlare di un file tolto da
+     fuori. «Non lo so» non è «non c'è» — senza elenco si prova lo stesso, e
+     al peggio il riquadro dice che non riesce ad aprire. */
+  var nomi=null;
+  try{
+    nomi={};
+    ((await window.vault.corpus.list(id))||[]).forEach(function(m){ nomi[m.name]=1; });
+  }catch(e){ nomi=null; }
+  if(id!==corsoAttivo()) return;   // il contenitore è cambiato mentre si leggeva il disco
+  if(mio.fonte && (!nomi || nomi[mio.fonte])) openPdf(mio.fonte, null, titoloMateriale(mio.fonte)||mio.fonte);
+  if(mio.media && (!nomi || nomi[mio.media])){
+    playerApri(mio.media, null, titoloMateriale(mio.media)||mio.media);
+    /* Riaprire non è premere play: la lezione riparte quando lo decide chi
+       studia, dal secondo in cui era. */
+    playerPausa();
+  }
+  /* E il quaderno: l'ultimo appunto che si stava guardando qui. L'elenco è
+     appena stato riletto dal cambio di contenitore; se il file non c'è più
+     (tolto da fuori), non si apre niente e il segno resta — può tornare. */
+  if(mio.appunto){
+    try{
+      if(!(NOTES.list||[]).length || NOTES.listCourse!==id) notesReload();
+      if((NOTES.list||[]).some(function(n){ return n.file===mio.appunto; })) noteOpen(mio.appunto);
+    }catch(e){ console.error('aperto/appunto:', e); }
+  }
+}
+
 /* ---- i comandi del player: bottoni, tempo che scorre, pannellino ----
    ⚠️ Delegati sul documento come tutti gli altri: `#playerPane` sta in fondo
    alla pagina, dopo questo script, e un `getElementById` qui tornerebbe `null`
@@ -5644,6 +5750,7 @@ function ascoltoFlush(){
   document.addEventListener('click', function(e){
     if(!e.target.closest) return;
     if(e.target.closest('#plClose')){ playerChiudi(); return; }
+    if(e.target.closest('#plElimina')){ mediaElimina(); return; }
     if(e.target.closest('#plPlay')){ playerPlayPausa(); return; }
     if(e.target.closest('#plGiu')){ playerSalta(-10); return; }
     if(e.target.closest('#plSu')){ playerSalta(10); return; }
@@ -5667,19 +5774,38 @@ function ascoltoFlush(){
   /* Il tempo che scorre si legge dall'elemento, non da un contatore nostro: un
      secondo tenuto a parte diverge al primo salto fatto con i comandi nativi
      del `<video>`, che sono lì e si usano. */
-  var v=document.getElementById('mediaVideo');
-  if(v){
+  /* ⚠️ `#mediaVideo` sta in fondo alla pagina, DOPO questo script — lo dice
+     già la testata di questo IIFE per i bottoni. Qui l'aggancio era immediato:
+     `getElementById` tornava `null`, l'`if` saltava in silenzio, e NESSUNO di
+     questi ascoltatori è mai nato. Conseguenza misurata (13 agosto, prova
+     `prova-media-punto`): il segno d'ascolto non si scriveva MAI — né dal
+     tempo che scorre né dalla pausa — e ogni media riapriva dall'inizio.
+     L'evento del media non risale al documento come un click: si aspetta il
+     DOM e ci si aggancia all'elemento, una volta sola. */
+  function playerAscoltatori(){
+    var v=document.getElementById('mediaVideo');
+    if(!v || v.dataset.ascoltatori==='1') return;
+    v.dataset.ascoltatori='1';
     v.addEventListener('timeupdate', function(){
       playerBarraAggiorna();
-      if(playerAperto()) ascoltoSegna(PLAYER.file, playerSecondo());
+      // il segno si scrive solo a salto avvenuto: prima, il tempo è quello
+      // del caricamento (0), non quello di chi studia
+      if(playerAperto() && PLAYER.pronto) ascoltoSegna(PLAYER.file, playerSecondo());
     });
     ['play','pause','loadedmetadata','ratechange'].forEach(function(ev){
       v.addEventListener(ev, function(){ playerBarraAggiorna(); });
+    });
+    /* Fermare È il punto da ricordare: si scrive subito, senza il respiro dei
+       900 ms — chiudere l'app un istante dopo la pausa non deve perderlo. */
+    v.addEventListener('pause', function(){
+      if(playerAperto() && PLAYER.pronto){ ascoltoSegna(PLAYER.file, playerSecondo()); ascoltoFlush(); }
     });
     /* Alla fine il segno torna all'inizio: una lezione finita e riaperta al suo
        ultimo secondo mostrerebbe i titoli di coda e sembrerebbe rotta. */
     v.addEventListener('ended', function(){ if(playerAperto()) ascoltoSegna(PLAYER.file, 0); });
   }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', playerAscoltatori);
+  else playerAscoltatori();
 })();
 
 /** I media di un contenitore. L'elenco è quello di sempre (`corpus.list`): due
@@ -5822,7 +5948,9 @@ function openPdf(pdf,page,label){
   /* ⚠️ Qui il media si fermava. Era giusto finché documento e video vivevano
      nello stesso riquadro; adesso sono due strumenti, e aprire la dispensa di
      cui la lezione sta parlando non deve zittire la lezione. */
-  var url=(window.vault&&window.vault.srcUrl)?window.vault.srcUrl(pdf):(PDF_BASE+encodeURIComponent(pdf));
+  // il contenitore attivo viaggia con la richiesta: un omonimo in un altro
+  // zaino non deve vincere per ordine alfabetico
+  var url=(window.vault&&window.vault.srcUrl)?window.vault.srcUrl(pdf, corsoAttivo()):(PDF_BASE+encodeURIComponent(pdf));
   /* ⚠️ Chromium tiene in cache i `file://` per URL: dopo il riconoscimento del
      testo il file sul disco è un altro, ma il visualizzatore riaprirebbe i
      byte di prima — misurato nella prova CDP: l'indice leggeva il testo nuovo
@@ -5839,6 +5967,7 @@ function openPdf(pdf,page,label){
   // la' la pagina si dice ancora col frammento #page=
   var nt=$('#pdfNewtab'); if(nt) nt.href=url+(pg?('#page='+pg):'');
   document.documentElement.dataset.pdf='1';
+  apertoScrivi('fonte', pdf);
   // il dock non c'è più: si chiede al banco di fare posto allo strumento
   try{ bancoMostra('fonte'); }catch(e){}
   aggiornaBarraPagina();
@@ -5896,6 +6025,7 @@ function openPdf(pdf,page,label){
   });
 }
 function closePdf(){ document.documentElement.dataset.pdf='';
+  apertoScrivi('fonte','');
   pdfFindChiudi();
   /* ⚠️ `ANTEPRIMA` va azzerata, non solo il documento. Nel banco il riquadro
      resta a schermo (`.bcorpo > #pdfPane` vince su `data-pdf`), quindi dopo la ✕
@@ -6633,6 +6763,43 @@ async function fonteElimina(){
   toast(r.avviso ? ('Documento nel Cestino — ⚠️ '+r.avviso) : ('«'+nome+'» è nel Cestino: reimportandolo si riaggancia'), !r.avviso);
 }
 
+/** Il gemello di `fonteElimina` per il player: togliere un media dallo zaino.
+ *  Stessa liturgia — chi ci si appoggia, conferma, Cestino di sistema — e la
+ *  ✕ del gesto passa da `playerChiudi`, che è la porta di sempre. */
+async function mediaElimina(){
+  if(modoAttivo()!=='zaino') return;
+  var api=window.vault && window.vault.media;
+  if(!api || typeof api.elimina!=='function'){ toast('Non disponibile in questa versione', false); return; }
+  var corso=corsoAttivo(); var f=(typeof PLAYER!=='undefined' && PLAYER) ? PLAYER.file : '';
+  if(!corso || !f){ toast('Nessun media aperto', false); return; }
+  var nome=titoloMateriale(f)||f;
+  var u;
+  try{ u=await api.usi(corso, f); }
+  catch(e){ toast('Non posso controllare dove è usato: '+((e&&e.message)||e), false); return; }
+  if(u.error){ toast('Non posso controllare dove è usato: '+u.error, false); return; }
+  if(u.illeggibili && u.illeggibili.length){
+    toast('Non posso dire dove è usato ('+u.illeggibili.length+' file illeggibili): non lo tolgo', false);
+    return;
+  }
+  var pezzi=[];
+  if(u.appunti.length) pezzi.push(u.appunti.length+(u.appunti.length===1?' appunto':' appunti'));
+  if(u.mappe.length) pezzi.push(u.mappe.length+(u.mappe.length===1?' mappa':' mappe'));
+  if(u.ritagli) pezzi.push(u.ritagli+(u.ritagli===1?' fermo immagine':' fermi immagine'));
+  var msg='Togliere «'+nome+'» dallo zaino?\n\n';
+  msg += pezzi.length
+    ? ('Ci si appoggiano: '+pezzi.join(' · ')+'.\nRestano dove sono: non si perde niente di scritto.\n\n')
+    : 'Nessun tuo lavoro ci si appoggia.\n\n';
+  msg += 'Il file va nel Cestino di sistema.';
+  if(typeof confirm==='function' && !confirm(msg)) return;
+  var r;
+  try{ r=await api.elimina(corso, f); }
+  catch(e){ toast('Non tolto: '+((e&&e.message)||e), false); return; }
+  if(!r || r.error){ toast('Non tolto: '+((r&&r.error)||'?'), false); return; }
+  playerChiudi();
+  try{ await zainoNavAggiorna(); }catch(e){}
+  toast('«'+nome+'» è nel Cestino', true);
+}
+
 /** L'etichetta del selettore dei documenti: quello aperto, o l'invito. */
 function pdfDocEtichetta(){
   var b=document.getElementById('pdfDoc'); if(!b) return;
@@ -6756,6 +6923,11 @@ function modoAggiorna(){
      di un altro contenitore direbbe minuti di lezioni che qui non ci sono. */
   try{ ascoltoCarica(); }catch(e){ console.error('ascolto:', e); }
   try{ fontiIndiciCarica(); }catch(e){ console.error('indici:', e); }
+  /* E il quaderno: l'elenco degli appunti è del contenitore, e la tendina
+     dell'editor deve dirlo — la sidebar dello zaino se lo rilegge da sé, ma
+     `NOTES.list` nessun altro lo rimetterebbe a posto (misurato: cambiando
+     zaino l'editor elencava gli appunti di quello di prima). */
+  try{ notesReload(); noteResync(); refreshNoteUI(); }catch(e){ console.error('appunti:', e); }
   /* Cambiando modalità cambia CHI c'è in testata (la fila dei corsi o quella
      dello zaino): le barrette che restano senza niente a fianco vanno spente,
      o resta una linea a separare il vuoto dal vuoto. */
@@ -6796,6 +6968,10 @@ function cambiaZaino(id, silenzioso){
   MODO.zaino=id;
   try{ localStorage.setItem('studia.zaino', id); }catch(e){}
   modoAggiorna();
+  /* La disposizione è del CONTENITORE: prima si rilegge il banco del nuovo
+     zaino, poi il suo contenuto ci si appoggia sopra. */
+  bancoRicarica();
+  apertoRipristina();
   if(!silenzioso){
     var z=MODO.zaini.filter(function(x){ return x.id===id; })[0];
     toast('Zaino: ' + ((z&&z.title)||id), true);
@@ -6811,7 +6987,9 @@ function cambiaZaino(id, silenzioso){
  * nell'altro. Prima si scrive quello che è in canna, poi si lascia andare.
  */
 function contenitoreMolla(){
-  try{ if(typeof noteFlush==='function') noteFlush(); }catch(e){}
+  /* Non solo il flush: l'appunto aperto e l'elenco sono del contenitore che
+     si sta lasciando, e devono uscire di scena con lui. */
+  try{ if(typeof noteMolla==='function') noteMolla(); else noteFlush(); }catch(e){}
   try{ if(typeof letturaFlush==='function') letturaFlush(); }catch(e){}
   try{ if(typeof ascoltoFlush==='function') ascoltoFlush(); }catch(e){}
   try{
@@ -6828,6 +7006,10 @@ function contenitoreMolla(){
   try{ ALBUMVISTA.voci=[]; ALBUMVISTA.filtro=''; var ac=$('#albCerca'); if(ac) ac.value='';
        if(typeof albumChiudiMenu==='function') albumChiudiMenu();
        if(typeof albumAggiorna==='function') albumAggiorna(); }catch(e){}
+  /* Per ultimo, a segni ormai scritti: il documento e il media del contenitore
+     che si sta lasciando escono di scena — senza dimenticare che erano aperti.
+     Prima restavano a schermo, ed erano il documento di un ALTRO zaino. */
+  try{ apertoMolla(); }catch(e){}
 }
 
 /** Commuta. È l'unica porta: il click sul logo passa di qui, e nient'altro. */
@@ -6841,7 +7023,7 @@ async function cambiaModo(m){
   /* Il banco ha una disposizione per modalità: cambiando modo si rilegge la
      sua, e si ridisegna. Senza, resterebbe a schermo quella dell'altra metà
      dell'app — nello zaino, il capitolo di un corso. */
-  try{ bancoCarica(); bancoDisegna(); }catch(e){ console.error('banco/cambioModo:', e); }
+  bancoRicarica();
   if(nuovo==='zaino') await zainiAggiorna();
   else{
     /* Tornando ai corsi si riapre quello che c'era: il valore non è mai stato
@@ -6849,6 +7031,9 @@ async function cambiaModo(m){
     try{ if(typeof aggiornaVarianti==='function') aggiornaVarianti(); }catch(e){}
     try{ if(typeof render==='function') render(); }catch(e){}
   }
+  /* E il contenuto torna con la disposizione: la fonte e il media che erano
+     aperti in QUESTA metà dell'app. */
+  apertoRipristina();
 }
 
 /* ===================== LA SIDEBAR DELLO ZAINO =====================
@@ -6863,7 +7048,7 @@ async function cambiaModo(m){
  * `corsi.cartella()` risolve le due radici: nessuno di quei tre canali sa che
  * gli zaini esistono, ed è la prova che il perno regge.
  */
-var ZNAV={ sezioni:null, carico:false };
+var ZNAV={ sezioni:null, carico:false, ancora:false };
 
 function znavEsc(s){ return escHtml(s); }
 
@@ -6897,15 +7082,24 @@ async function zainoNavAggiorna(){
     host.innerHTML='<div class="zs-vuoto">Nessuno zaino. Creane uno con il «+» accanto alla tendina.</div>';
     return;
   }
-  if(ZNAV.carico) return;                 // due letture in volo scriverebbero l'una sull'altra
+  /* ⚠️ Due letture in volo scriverebbero l'una sull'altra — ma SCARTARE la
+     seconda non basta: se arriva mentre la prima legge lo zaino di prima, la
+     sidebar resta a quello (misurato: [1,0,0] di un altro zaino dopo il
+     cambio). La richiesta persa si RICORDA, e a fine giro si riparte. */
+  if(ZNAV.carico){ ZNAV.ancora=true; return; }
   ZNAV.carico=true;
   var fonti=[], eFonti='', appunti=[], eAppunti='', mappe=[], eMappe='';
   try{
     var corpus = await window.vault.corpus.list(id);
-    fonti=(corpus||[]).filter(function(m){ return m.tipo==='pdf'; });
+    /* Le fonti sono TUTTO ciò che si studia: documenti E media. Un video
+       trascinato dentro finiva nel corpus ma non compariva da nessuna parte
+       in sidebar — sembrava perso, ed era solo non elencato (13 agosto). */
+    fonti=(corpus||[]).filter(function(m){ return m.tipo==='pdf' || m.tipo==='media'; });
     /* Di passaggio: i numeri dei documenti, che servono a scrivere i rimandi.
-       Qui ci sono anche quelli non ancora indicizzati. */
-    numeriRegistra(id, fonti.map(function(m){ return m.name; }));
+       Qui ci sono anche quelli non ancora indicizzati. Le due famiglie hanno
+       due numerazioni, e si registrano separate. */
+    numeriRegistra(id, fonti.filter(function(m){ return m.tipo==='pdf'; }).map(function(m){ return m.name; }));
+    numeriRegistra(id, fonti.filter(function(m){ return m.tipo==='media'; }).map(function(m){ return m.name; }), 'media');
   }catch(e){ eFonti=(e&&e.message)||String(e); }
   try{
     var r=window.vault.notes.leggi(id)||{};
@@ -6919,15 +7113,22 @@ async function zainoNavAggiorna(){
     eMappe=m.error||'';
   }catch(e3){ eMappe=(e3&&e3.message)||String(e3); }
   ZNAV.carico=false;
+  if(ZNAV.ancora){ ZNAV.ancora=false; return zainoNavAggiorna(); }
 
   var apertoPdf = (typeof ANTEPRIMA!=='undefined' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf') ? ANTEPRIMA.file : '';
+  var apertoMedia = (typeof PLAYER!=='undefined' && PLAYER) ? PLAYER.file : '';
   var apertoNota = (typeof NOTES!=='undefined' && NOTES.cur) ? NOTES.cur.file : '';
   var apertaMappa = (typeof MAPPA!=='undefined' && MAPPA && MAPPA.mia) ? MAPPA.mia.file : '';
 
   host.innerHTML =
     znavSezione('Fonti', fonti.map(function(f){
-      return { classe:'zn-fonte', quale:f.name, testo:titoloMateriale(f.name)||f.name,
-               titolo:f.name, attivo:f.name===apertoPdf };
+      var media=(f.tipo==='media');
+      /* Il segno ▶/♪ dice la famiglia senza una parola: si apre nel player,
+         non nel visualizzatore. */
+      var segno=media ? ((typeof Lettore!=='undefined' && Lettore.tipoDi(f.name)==='audio') ? '♪ ' : '▶ ') : '';
+      return { classe: media ? 'zn-fonte zn-media' : 'zn-fonte', quale:f.name,
+               testo:segno+(titoloMateriale(f.name)||f.name),
+               titolo:f.name, attivo: media ? f.name===apertoMedia : f.name===apertoPdf };
     }), 'Nessun documento in questo zaino.', eFonti) +
     znavSezione('Appunti', appunti.map(function(n){
       return { classe:'zn-appunto', quale:n.file, testo:noteEtichetta(n), attivo:n.file===apertoNota };
@@ -6977,6 +7178,54 @@ async function pdfDocApri(ancora){
      comincia con `closePops()`, che lo rimette a «chiuso». Messo prima, il
      bottone diceva «chiuso» con il pannellino aperto davanti. */
   var btn=document.getElementById('pdfDoc'); if(btn) btn.setAttribute('aria-expanded','true');
+}
+
+/** Il pannello Impostazioni → Zaino: l'elenco degli zaini, e l'unico posto da
+ *  cui se ne toglie uno. Si ridisegna a ogni apertura del tab. */
+async function setZainiDisegna(){
+  var host=document.getElementById('setZaini'); if(!host) return;
+  host.innerHTML='<div class="set-note">Leggo gli zaini…</div>';
+  var lista=[];
+  try{ lista=await window.vault.zaino.list()||[]; }
+  catch(e){ host.innerHTML='<div class="set-note">⚠ Non riesco a leggere gli zaini: '+escHtml((e&&e.message)||String(e))+'</div>'; return; }
+  if(!lista.length){ host.innerHTML='<div class="set-note">Nessuno zaino. Si creano con il «+» in barra, in modalità Zaino.</div>'; return; }
+  host.innerHTML=lista.map(function(z){
+    var conto=z.documenti ? (z.documenti+(z.documenti===1?' documento':' documenti')) : 'vuoto';
+    return '<div class="zx-riga">'+
+      '<b>'+escHtml(z.title||z.id)+'</b><span class="set-note">'+escHtml(conto)+'</span>'+
+      '<button type="button" class="tbtn zx-elimina" data-zaino="'+escHtml(z.id)+'"'+
+      ' title="Elimina «'+escHtml(z.title||z.id)+'»: la cartella intera va nel Cestino"'+
+      ' aria-label="Elimina lo zaino '+escHtml(z.title||z.id)+'">&#128465;</button></div>';
+  }).join('');
+}
+/**
+ * Elimina uno zaino: il gesto più grosso dell'app — dentro ci sono anche
+ * appunti e mappe — quindi conferma esplicita, Cestino di sistema, e la
+ * memoria locale del contenitore (disposizione, zoom, «aperto») se ne va con
+ * lui: chiavi orfane non fanno male, ma un giorno un nuovo zaino con lo
+ * stesso id le erediterebbe.
+ */
+async function zainoElimina(id){
+  if(!id) return;
+  var z=(MODO.zaini||[]).filter(function(x){ return x.id===id; })[0];
+  var nome=(z&&z.title)||id;
+  var msg='Eliminare lo zaino «'+nome+'»?\n\nLa sua cartella — documenti, media, appunti, mappe e ritagli — va nel Cestino di sistema. L’app non la vedrà più.';
+  if(typeof confirm==='function' && !confirm(msg)) return;
+  /* Se è quello aperto, prima si molla: è la cautela di ogni cambio di
+     contenitore, e qui il contenitore non sta cambiando — sta sparendo. */
+  var eraAttivo=(zainoAttivo()===id);
+  if(eraAttivo) contenitoreMolla();
+  var r;
+  try{ r=await window.vault.zaino.elimina(id); }
+  catch(e){ toast('Non eliminato: '+((e&&e.message)||e), false); return; }
+  if(!r || r.error){ toast('Non eliminato: '+((r&&r.error)||'?'), false); return; }
+  try{ localStorage.removeItem('studia.banco.c.'+id); localStorage.removeItem('studia.banco.c.'+id+'.zoom'); }catch(e){}
+  try{ var t=apertoLeggi(); delete t[id]; localStorage.setItem('studia.aperto', JSON.stringify(t)); }catch(e){}
+  if(eraAttivo){ MODO.zaino=null; try{ localStorage.removeItem('studia.zaino'); }catch(e){} }
+  await zainiAggiorna();
+  try{ bancoRicarica(); }catch(e){}
+  try{ await setZainiDisegna(); }catch(e){}
+  toast('Zaino «'+nome+'» nel Cestino', true);
 }
 
 /** Apre una mappa dello zaino dalla sidebar. */
@@ -7045,12 +7294,22 @@ async function zainoCrea(nome){
       return;
     }
     if(e.target.closest('#zainoCrea')){ zainoCrea((document.getElementById('zainoNome')||{}).value); return; }
+    var zx=e.target.closest('.zx-elimina');
+    if(zx){ zainoElimina(zx.dataset.zaino); return; }
     /* Le voci della sidebar. Ognuna passa dalla porta VERA dello strumento —
        `openPdf`, `noteOpen`, `mappaApriMia` — invece di montarlo a mano: sono
        le stesse funzioni che usano il testo, il menu e la tendina, e una quarta
        strada vorrebbe dire una quarta cosa da tenere allineata. */
+    /* Prima i media: hanno anche la classe `zn-fonte`, e l'ordine dei
+       controlli è l'unica cosa che li distingue dal documento. */
+    var md=e.target.closest('.zn-media');
+    if(md){ playerApri(md.dataset.quale, null, titoloMateriale(md.dataset.quale)||md.dataset.quale);
+            zainoNavAggiorna(); return; }
     var f=e.target.closest('.zn-fonte');
-    if(f){ openPdf(f.dataset.quale, 1, titoloMateriale(f.dataset.quale)||f.dataset.quale);
+    /* Senza pagina: la sceglie `openPdf` dal segno di lettura, come dal
+       selettore dei documenti. Il «1» fisso che c'era qui riportava sempre
+       all'inizio chi rientrava da questa porta. */
+    if(f){ openPdf(f.dataset.quale, null, titoloMateriale(f.dataset.quale)||f.dataset.quale);
            zainoNavAggiorna(); return; }
     var a=e.target.closest('.zn-appunto');
     if(a){ try{ bancoMostra('appunti'); }catch(err){}
@@ -7088,10 +7347,21 @@ async function zainoCrea(nome){
   try{ MODO.zaino=localStorage.getItem('studia.zaino')||null; }catch(e){}
   if(salvato==='zaino'){
     zainiAggiorna().then(function(lista){
-      if(lista.length){ MODO.ora='zaino'; modoAggiorna(); }
+      if(lista.length){
+        MODO.ora='zaino'; modoAggiorna();
+        /* ⚠️ Il banco è già stato disegnato con la chiave dei corsi: quando
+           questo `.then` arriva, `modoAttivo()` è appena diventato «zaino» e la
+           SUA disposizione va riletta, come fa `cambiaModo`. Senza questa
+           chiamata l'app riapriva sul banco dell'altra metà — il capitolo di
+           un corso, vuoto, dentro lo zaino. */
+        bancoRicarica();
+      }
       else { MODO.ora='corso'; try{ localStorage.setItem('studia.modo','corso'); }catch(e){} modoAggiorna(); }
+      /* Con la disposizione torna il contenuto: la fonte e il media rimasti
+         aperti nel contenitore con cui si riapre — qualunque dei due sia. */
+      apertoRipristina();
     });
-  } else modoAggiorna();
+  } else { modoAggiorna(); apertoRipristina(); }
 })();
 
 /**
@@ -7103,6 +7373,9 @@ async function zainoCrea(nome){
  */
 function cambiaCorso(id){
   if(!id) return;
+  /* Rieleggere il corso di adesso non è un cambio: mollare e riaprire il
+     documento per niente lo farebbe lampeggiare sotto gli occhi. */
+  var stessoCorso=(id===corsoAttivo());
   /* ⚠️ Una mappa dell'utente appartiene a un CORSO, e il corso sta per
      cambiare sotto. Prima si scrive quello che c'è in canna — nel corso
      giusto, che è ancora quello di adesso — e poi si lascia andare il
@@ -7124,6 +7397,10 @@ function cambiaCorso(id){
       if(mappaAperta()) toast('Cambiato corso: la mappa è stata salvata e chiusa', true);
     }
   }catch(e){ console.error('mappe/cambioCorso:', e); }
+  /* Documento, media e appunti del corso che si lascia: fuori scena, col segno
+     intatto. PRIMA che `studia.corso` cambi, o la chiusura parlerebbe del
+     corso nuovo. */
+  if(!stessoCorso){ try{ apertoMolla(); }catch(e){} try{ noteMolla(); }catch(e){} }
   try{ localStorage.setItem('studia.corso', id); }catch(e){}
   try{ MATERIALI.lista=null; }catch(e){}      // i materiali sono di un altro corso
   try{ letturaFlush(); letturaCarica(); }catch(e){}   // il segno in canna si scrive, poi si rileggono i suoi
@@ -7157,6 +7434,9 @@ function cambiaCorso(id){
       mappaCaricaVista(); mappaSincronizzaComandi(); mappaAmbiti(); mappaAdatta(); mappaRidisegna();
     }
   }catch(e){ console.error('mappe/cambioCorso:', e); }
+  /* La disposizione è del CONTENITORE anche qui: il banco del corso nuovo,
+     e sopra il suo contenuto — la sua fonte, il suo media. */
+  if(!stessoCorso){ bancoRicarica(); apertoRipristina(); }
 }
 
 /**
@@ -7403,6 +7683,22 @@ function noteFlush(){
   clearTimeout(NOTES.timer); NOTES.timer=null;
   try{ noteSave(true); }catch(e){ console.error('appunti/flush:', e); }
 }
+/**
+ * Molla gli appunti: il contenitore sta cambiando sotto. Prima si scrive
+ * quello che è in canna, poi si svuota TUTTO — l'appunto aperto, l'elenco,
+ * l'editor. ⚠️ Prima restava tutto: l'editor di uno zaino mostrava l'appunto
+ * dello zaino di prima, col distintivo «altrove» a scusarlo — e la tendina
+ * elencava un quaderno che qui non esiste (misurato il 13 agosto).
+ */
+function noteMolla(){
+  noteFlush();
+  NOTES.cur=null; NOTES.dirty=false; NOTES.courseId=null;
+  NOTES.list=[]; NOTES.listCourse=null; NOTES.listError='';
+  NOTES.invito=false;
+  try{ noteCaricaCorpo(''); }catch(e){}
+  var d=$('#noteDirty'); if(d) d.hidden=true;
+  try{ refreshNoteUI(); }catch(e){}
+}
 function editorOpen(){ return document.documentElement.dataset.editor==='1'; }
 function openEditor(){
   ensureMde();                 // la toolbar (che ospita i comandi) deve esserci sempre
@@ -7465,7 +7761,11 @@ function ensureMde(){
   NOTES.mde.codemirror.on('change',function(){
     // caricare un corpo nell'editor emette 'change' come se avesse scritto l'utente:
     // senza la sentinella, aprire un appunto lo marcherebbe subito da salvare
-    if(NOTES.caricando || !NOTES.cur) return;
+    if(NOTES.caricando) return;
+    /* ⚠️ Senza un appunto aperto il testo battuto non appartiene a NESSUNO:
+       nessun autosave lo raccoglierà, e nessuno lo diceva. Alla quinta parola
+       si apre la finestra di battesimo, col testo già in corpo. */
+    if(!NOTES.cur){ noteInvito(); return; }
     NOTES.dirty=true; var d=$('#noteDirty'); if(d) d.hidden=false;
     clearTimeout(NOTES.timer); NOTES.timer=setTimeout(function(){ noteSave(true); },1800); // autosave
   });
@@ -7473,6 +7773,29 @@ function ensureMde(){
     'Cmd-S':function(){ noteSave(); }, 'Ctrl-S':function(){ noteSave(); }
   }));
   return NOTES.mde;
+}
+/**
+ * L'invito al battesimo: scritte CINQUE parole senza un appunto aperto — quando
+ * è chiaro che non è un tasto per sbaglio — si apre la finestra di nome e
+ * origine, e il testo già battuto diventa il corpo dell'appunto che nasce.
+ *
+ * ⚠️ Annullare NON la ripropone a ogni tasto: l'invito si riarma solo quando
+ * l'editor torna vuoto (o si passa dal «+», che è la stessa finestra). Un
+ * modale che rispunta a ogni parola è una porta che si chiude sulle dita.
+ */
+async function noteInvito(){
+  if(!NOTES.mde || NOTES.cur) return;
+  var testo=NOTES.mde.value();
+  if(!testo.trim()){ NOTES.invito=false; return; }   // svuotato: l'invito si riarma
+  if(NOTES.invito) return;
+  if(testo.trim().split(/\s+/).length<5) return;
+  NOTES.invito=true;
+  var esito=await noteChiediNomeEOrigine('APPUNTI');
+  if(esito===null){
+    toast('L’appunto non è ancora salvato: dagli un nome con «+» quando vuoi', false);
+    return;
+  }
+  noteNasce(esito, NOTES.mde.value(), '');
 }
 /* Unico modo di scrivere nell'editor per conto dell'app (apertura di un appunto,
    svuotamento dopo l'eliminazione). Alza la sentinella letta dal gestore 'change'
@@ -7495,11 +7818,56 @@ function noteOpen(file){
   NOTES.cur=n; NOTES.dirty=false;
   if(NOTES.listCourse) NOTES.courseId=NOTES.listCourse;
   else { var m0=curMeta(); if(m0) NOTES.courseId=m0.courseId; }
+  apertoScrivi('appunto', n.file);
   var d=$('#noteDirty'); if(d) d.hidden=true;
   noteCaricaCorpo(n.body);
   openEditor();
   try{ refreshNoteUI(); }catch(e){}
   setTimeout(function(){ mde.codemirror.refresh(); mde.codemirror.focus(); },60);
+}
+/**
+ * La finestra di battesimo: il NOME e — nello zaino — da quale DOCUMENTO
+ * nasce, o personale. È la stessa finestra della matitina (`noteRename`),
+ * perché il battesimo è un gesto solo comunque lo si cominci: dal «+», da una
+ * selezione appuntata, dalla quinta parola scritta nell'editor. Prima il «+»
+ * chiedeva solo il titolo, e l'origine si poteva dire soltanto DOPO, dalla
+ * matitina: due finestre per la stessa domanda.
+ * Torna { titolo, materiale } o `null` se annullata.
+ */
+async function noteChiediNomeEOrigine(defTitolo){
+  var ctx=curCtx(); if(!ctx) return null;
+  var zaino = modoAttivo()==='zaino';
+  var campo=null;
+  if(zaino){
+    var matDef=String(ctx.materiale||'');
+    campo={ etichetta:'Nasce dal documento', valore:matDef,
+            voci:docVoci(await documentiPdf(ctx.courseId), matDef) };
+  }
+  var r=await askText('Titolo dell’appunto', defTitolo||'APPUNTI', campo);
+  if(r===null) return null;
+  var t=(zaino ? r.testo : r);
+  t=(t||'APPUNTI').trim()||'APPUNTI';
+  return { titolo:t, materiale: zaino ? String(r.scelta||'') : String(ctx.materiale||'') };
+}
+/** Crea l'appunto già battezzato e lo apre. Chi lo chiama ha già la finestra
+ *  alle spalle: qui solo disco e viste. Torna `true` se è nato davvero. */
+function noteNasce(esito, body, anchor){
+  var ctx=curCtx(); if(!ctx) return false;
+  var api=notesApi(); if(!api) return false;
+  /* ⚠️ La PAGINA viaggia col documento del contesto: se la finestra ha scelto
+     un altro documento (o «personale»), la pagina di quello davanti non
+     c'entra più niente e mentirebbe. */
+  var mat=String(esito.materiale||'');
+  var pag=(mat && mat===String(ctx.materiale||'')) ? (ctx.pagina||'') : '';
+  var meta={ title:esito.titolo, lezione:ctx.lezione, lezioneId:ctx.lezioneId, capitolo:ctx.capitolo,
+             capitoloId:ctx.capitoloId, capitoloFile:ctx.capitoloFile,
+             materiale:mat, pagina:pag, anchor:anchor||'' };
+  var res=api.save(ctx.courseId, null, meta, body||'');
+  if(!res || res.error){ toast('Salvataggio fallito: '+((res&&res.error)||'?'),false); return false; }
+  NOTES.courseId=ctx.courseId;
+  notesReload(); refreshNoteUI(); noteOpen(res.file);
+  toast('Appunto creato',true);
+  return true;
 }
 /* ⚠️ Torna `true` solo se l'appunto è nato davvero. Serve a chi appunta una
    selezione: la regola delle parole chiave si applica DOPO, e deve poter
@@ -7508,23 +7876,10 @@ function noteOpen(file){
 async function noteNew(anchor, origine, stile){
   var ctx=curCtx(); if(!ctx){ toast('Apri un capitolo del vault per prendere appunti',false); return false; }
   var api=notesApi(); if(!api){ toast('Appunti disponibili solo nell’app',false); return false; }
-  var title=await askText('Titolo dell’appunto', 'APPUNTI');
-  if(title===null) return false; title=(title||'APPUNTI').trim()||'APPUNTI';
+  var esito=await noteChiediNomeEOrigine('APPUNTI');
+  if(esito===null) return false;
   var body=anchor? frammentoAppuntato(anchor, ctx, origine, stile) : '';
-  /* ⚠️ `materiale`/`pagina` arrivano dal CONTESTO e non da `origine`: sono i due
-     campi con cui, nello zaino, l'appunto dice da dove nasce (Z6), e devono
-     valere anche quando si crea un appunto vuoto — cioè quando `origine` non
-     c'è perché non si è selezionato niente. Nei corsi il contesto non li ha,
-     restano '' e `serialize` non li scrive nemmeno. */
-  var meta={ title:title, lezione:ctx.lezione, lezioneId:ctx.lezioneId, capitolo:ctx.capitolo,
-             capitoloId:ctx.capitoloId, capitoloFile:ctx.capitoloFile,
-             materiale:ctx.materiale||'', pagina:ctx.pagina||'', anchor:anchor||'' };
-  var res=api.save(ctx.courseId, null, meta, body);
-  if(!res || res.error){ toast('Salvataggio fallito: '+((res&&res.error)||'?'),false); return false; }
-  NOTES.courseId=ctx.courseId;
-  notesReload(); refreshNoteUI(); noteOpen(res.file);
-  toast('Appunto creato',true);
-  return true;
+  return noteNasce(esito, body, anchor);
 }
 /**
  * Come si presenta, dentro un appunto, un frammento estratto dal capitolo.
@@ -7827,7 +8182,8 @@ function noteDelete(){
   if(!window.confirm('Eliminare l’appunto «'+noteEtichetta(NOTES.cur)+'»? L’operazione non è reversibile.')) return;
   clearTimeout(NOTES.timer); NOTES.timer=null;
   api.remove(pid, NOTES.cur.file);
-  NOTES.cur=null; NOTES.dirty=false;
+  NOTES.cur=null; NOTES.dirty=false; NOTES.invito=false;
+  apertoScrivi('appunto','');
   noteCaricaCorpo('');
   notesReload(); refreshNoteUI(); refreshMyNotes();
   toast('Appunto eliminato',true);
@@ -7931,6 +8287,7 @@ async function noteRename(){
   if(!res || res.error){ console.error('appunti/rename:',res&&res.error); toast('Appunto non rinominato: '+((res&&res.error)||'errore sconosciuto'), false); return; }
   if(res.file) NOTES.cur.file=res.file;
   NOTES.cur.title=(res.nota&&res.nota.title)||t;
+  apertoScrivi('appunto', NOTES.cur.file);   // il segno segue il file rinominato
   notesReload(); noteResync(); refreshNoteUI(); refreshMyNotes();
   toast('Appunto rinominato: «'+NOTES.cur.title+'»', true);
 }
@@ -9353,6 +9710,14 @@ document.addEventListener('visibilitychange', function(){
   if(document.hidden){ try{ mappaFlush(); }catch(e){} }
 });
 window.addEventListener('blur', function(){ try{ mappaFlush(); }catch(e){} });
+/* I segni di lettura e ascolto hanno lo stesso patto delle mappe: passano da
+   `invoke`, quindi niente reti in `beforeunload` — si scrive quando la
+   finestra passa in secondo piano o perde il fuoco, che arriva sempre prima
+   della chiusura. Il respiro dei 900 ms non deve costare l'ultima pagina. */
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden){ try{ letturaFlush(); ascoltoFlush(); }catch(e){} }
+});
+window.addEventListener('blur', function(){ try{ letturaFlush(); ascoltoFlush(); }catch(e){} });
 /* Rientrando nella finestra si rilegge la cartella: se gli appunti sono cambiati
    sul disco (pipeline, Obsidian, un'altra finestra) l'elenco si riallinea da solo,
    senza bisogno di ricaricare l'app. */
@@ -9993,9 +10358,14 @@ try{
       modal.querySelectorAll('.set-tab').forEach(function(t){ t.setAttribute('aria-selected', String(t.dataset.tab===name)); });
       modal.querySelectorAll('.set-pane').forEach(function(p){ p.hidden = (p.dataset.pane!==name); });
       try{ localStorage.setItem('studia.settingsTab', name); }catch(e){}
+      // l'elenco si rilegge a ogni apertura del tab: i conti di ieri mentono
+      if(name==='zaino'){ try{ setZainiDisegna(); }catch(e){} }
     }
     modal.querySelectorAll('.set-tab').forEach(function(t){ t.addEventListener('click', function(){ showTab(t.dataset.tab); }); });
     var last='utente'; try{ last=localStorage.getItem('studia.settingsTab')||'utente'; }catch(e){}
+    /* Un tab ricordato che non esiste più («studio») lascerebbe il pannello
+       tutto vuoto: si torna al primo. */
+    if(!modal.querySelector('.set-pane[data-pane="'+last+'"]')) last='utente';
     showTab(last);
 
     /* --- 2. trasloco dei bottoni dalla topbar alle schede --- */
@@ -10942,12 +11312,20 @@ function bancoDisponibile(id){ return !!bancoElemento(id); }
 
 /* ---- lo stato: uno solo, globale (scelta dell'utente, §5 del piano) ---- */
 
-/* ⚠️ Una disposizione per MODALITÀ, non una sola per l'app. Nello zaino il
-   blocco grande tiene il documento; in un corso tiene il capitolo. Con una
-   chiave sola, entrare nello zaino avrebbe riscritto la disposizione dei corsi
-   — e tornando indietro si sarebbe trovato il banco cambiato senza averlo
-   toccato. Due chiavi, due disposizioni, nessuna sorpresa. */
-function bancoChiave(){ return modoAttivo()==='zaino' ? 'studia.banco.zaino' : 'studia.banco'; }
+/* ⚠️ Una disposizione per CONTENITORE, non per modalità (misurato il 13
+   agosto: con la chiave di modalità, i tre riquadri aperti per un video in
+   uno zaino comparivano anche nello zaino dopo, che un video non l'aveva).
+   Ogni corso e ogni zaino ricorda il SUO banco; un contenitore mai toccato
+   parte dalla forma di fabbrica della sua modalità, non dall'ultima forma di
+   un altro. Le vecchie chiavi di modalità ('studia.banco', '.zaino') restano
+   sul disco, morte: rileggerle come semina avrebbe ripetuto il difetto sul
+   primo contenitore nuovo. */
+function bancoChiave(){
+  var id=corsoAttivo();
+  if(id) return 'studia.banco.c.'+id;
+  // senza un contenitore (primo avvio, zaini spariti) vale la vecchia chiave di modalità
+  return modoAttivo()==='zaino' ? 'studia.banco.zaino' : 'studia.banco';
+}
 function bancoPredefinito(){
   // ⚠️ la forma di fabbrica la dichiara il modulo: scriverla anche qui sarebbe
   // la seconda copia che diverge al primo ripensamento
@@ -10962,18 +11340,34 @@ function bancoCarica(){
   var grezzo=null;
   try{ grezzo=JSON.parse(localStorage.getItem(bancoChiave())||'null'); }catch(e){}
   BANCO.stato=BancoForme.normalizzaStato(grezzo||bancoPredefinito());
-  /* ⚠️ Rete per una disposizione dello zaino salvata quando «Capitolo» era
-     ancora in elenco: uno strumento che la tendina non offre più resterebbe
-     montato e irraggiungibile — a schermo il capitolo di un corso, e nessun
-     modo di toglierlo se non svuotando il `localStorage`. */
+  /* ⚠️ Rete per una disposizione dello zaino salvata quando «Capitolo» o
+     «Ripasso» erano ancora in elenco: uno strumento che la tendina non offre
+     più resterebbe montato e irraggiungibile — a schermo il capitolo di un
+     corso (o un ripasso strutturalmente vuoto), e nessun modo di toglierlo se
+     non svuotando il `localStorage`. */
   if(modoAttivo()==='zaino'){
     var b=BANCO.stato.blocchi||{};
-    Object.keys(b).forEach(function(k){ if(b[k]==='capitolo') b[k]='fonte'; });
+    Object.keys(b).forEach(function(k){
+      if(b[k]==='capitolo') b[k]='fonte';
+      if(b[k]==='flashcard') b[k]='album';
+    });
     BANCO.stato=BancoForme.normalizzaStato(BANCO.stato);
   }
 }
 function bancoSalva(){
   try{ localStorage.setItem(bancoChiave(), JSON.stringify(BANCO.stato)); }catch(e){}
+}
+/**
+ * Rilegge la disposizione della modalità di ADESSO e ridisegna. La chiamano
+ * `cambiaModo` e il ripristino all'avvio: due chiamanti, una funzione — la
+ * trappola ④. ⚠️ Il ripristino della modalità di ieri NON passa da
+ * `cambiaModo` (arriva ad app già disegnata, con lo zaino da verificare
+ * prima), e finché non chiamava nessuno il banco restava con la chiave dei
+ * corsi: nello zaino si apriva il capitolo di un corso, e la tendina del
+ * blocco — che «capitolo» in zaino non lo offre — ripiegava sulla prima voce
+ * mostrando «Fonti» sopra un blocco che ospitava altro. */
+function bancoRicarica(){
+  try{ bancoCarica(); bancoDisegna(); }catch(e){ console.error('banco/ricarica:', e); }
 }
 function bancoStato(){
   if(!BANCO.stato) bancoCarica();
@@ -11072,7 +11466,11 @@ function bancoStrumentiOfferti(){
   var reg=bancoStrumenti();
   if(modoAttivo()!=='zaino') return reg;
   var out={};
-  Object.keys(reg).forEach(function(id){ if(id!=='capitolo') out[id]=reg[id]; });
+  /* Nello zaino non si offrono né «Capitolo» né «Ripasso»: i capitoli sono di
+     una lezione, e le carte del ripasso nascono dal quiz e dal glossario dei
+     capitoli — in uno zaino non c'è né l'uno né l'altro, e una voce che apre
+     un riquadro strutturalmente vuoto è una promessa falsa (13 agosto). */
+  Object.keys(reg).forEach(function(id){ if(id!=='capitolo' && id!=='flashcard') out[id]=reg[id]; });
   return out;
 }
 function bancoAggiornaTestate(){
@@ -11088,8 +11486,24 @@ function bancoAggiornaTestate(){
       o.disabled=!bancoDisponibile(id) && id!==attuale;
       sel.appendChild(o);
     });
+    /* ⚠️ Il blocco può ospitare uno strumento che la tendina non offre — un
+       «capitolo» rimasto nello stato mentre si è nello zaino. La voce si
+       aggiunge lo stesso, spenta: la testata deve dire quello che il blocco
+       ospita DAVVERO. Prima qui c'era `selectedIndex=0`, e la tendina mentiva:
+       sopra un blocco col capitolo (vuoto, in zaino) compariva «Fonti» — senza
+       la barra delle fonti, e la fonte cliccata in sidebar apriva un secondo
+       blocco invece di atterrare lì. */
+    if(attuale && !reg[attuale]){
+      var st=bancoStrumento(attuale);
+      var fuori=document.createElement('option');
+      fuori.value=attuale; fuori.textContent=(st&&st.nome)||attuale; fuori.disabled=true;
+      sel.appendChild(fuori);
+    }
     sel.value=attuale;
-    if(sel.value!==attuale) sel.selectedIndex=0;   // la rete di `noteSelect`
+    /* Un blocco VUOTO si dice col trattino di `tendinaViva`, non ripiegando
+       sulla prima voce: anche quello era un modo di mostrare uno strumento
+       che non c'era. */
+    if(sel.value!==attuale) sel.selectedIndex=-1;
     /* Il guscio si mette una volta sola (`tendinaViva` esce se c'è già): qui
        passa ogni ricostruzione delle testate, ed è il posto in cui i blocchi
        esistono di sicuro. */
@@ -11195,6 +11609,10 @@ function bancoDopoLayout(){
 
 function bancoForma(f){
   if(!bancoPronto() || !BancoForme.FORME[f]) return;
+  /* Una forma scelta dal pannello dice «adesso si sta così»: la memoria del
+     ritorno dall'ingrandimento parla di una disposizione più vecchia di questa
+     scelta, e riportarcisi sarebbe una sorpresa, non un ritorno. */
+  bancoZoomScrivi(null);
   var nuovo=BancoForme.cambiaForma(bancoStato(), f);
   var usciti=(nuovo.usciti||[]).map(function(u){
     var st=bancoStrumento(u.strumento);
@@ -11245,6 +11663,54 @@ function bancoTogli(strumento){
   if(!bancoPronto()) return;
   var b=bancoBloccoDi(strumento);
   if(b) bancoAssegna(b, '');
+}
+/* ---- a tutto banco e ritorno: il doppio click sulla testata ----
+ *
+ * Un gesto solo per il bisogno più frequente — «questo blocco, grande» — senza
+ * passare dal pannello delle otto forme. Il ritorno è lo STESSO gesto sulla
+ * stessa testata: non un'altra cosa da imparare.
+ *
+ * La memoria del ritorno è l'intera disposizione di prima (forma, strumenti,
+ * divisori), per modalità come la disposizione stessa, e persistente: chiudere
+ * l'app da ingrandito non deve rendere il ritorno un salto nel buio. Scegliere
+ * una forma DAL PANNELLO la invalida: quel gesto dice «adesso si sta così»,
+ * e tornare a una disposizione più vecchia di quella scelta sarebbe una
+ * sorpresa, non un ritorno. */
+function bancoZoomChiave(){ return bancoChiave()+'.zoom'; }
+function bancoZoomLeggi(){
+  try{ return JSON.parse(localStorage.getItem(bancoZoomChiave())||'null'); }catch(e){ return null; }
+}
+function bancoZoomScrivi(s){
+  try{
+    if(s) localStorage.setItem(bancoZoomChiave(), JSON.stringify(s));
+    else localStorage.removeItem(bancoZoomChiave());
+  }catch(e){}
+}
+/** Ingrandisce il blocco a tutto banco — o, se il banco è già «uno», torna. */
+function bancoZoom(blocco){
+  if(!bancoPronto()) return;
+  var s=bancoStato();
+  if(s.forma==='uno'){ bancoZoomTorna(); return; }
+  var strumento=bancoStrumentoIn(blocco);
+  bancoZoomScrivi(s);
+  var nuovo=BancoForme.cambiaForma(s, 'uno');
+  /* Lo strumento del blocco premuto va in A, che in «uno» è l'unico a schermo;
+     un blocco vuoto si ingrandisce vuoto, ed è coerente — il gesto parla del
+     BLOCCO, non del suo contenuto. */
+  if(strumento) nuovo=BancoForme.assegna(nuovo, 'A', strumento);
+  BANCO.stato=nuovo;
+  bancoSalva(); bancoDisegna();
+  /* Niente «fuori dal banco»: qui gli strumenti non escono di scena — aspettano
+     il ritorno, che è lo stesso doppio click. Si dice il gesto, una volta. */
+  toast('A tutto banco — doppio click sulla testata per tornare', true);
+}
+/** Ripristina la disposizione di prima dell'ingrandimento, se c'è. */
+function bancoZoomTorna(){
+  var prima=bancoZoomLeggi();
+  if(!prima) return;
+  bancoZoomScrivi(null);
+  BANCO.stato=BancoForme.normalizzaStato(prima);
+  bancoSalva(); bancoDisegna();
 }
 /**
  * Dichiara su `<html>` quali strumenti sono a schermo, perché il CSS possa
@@ -11328,6 +11794,16 @@ document.addEventListener('change', function(e){
   if(!sel) return;
   bancoAssegna(sel.dataset.blocco, sel.value);
 });
+/* Il doppio click sulla testata: a tutto banco, e ritorno con lo stesso gesto.
+   ⚠️ La tendina è esclusa: un doppio click lì è un click impaziente sul menu
+   dello strumento, non una richiesta di ingrandire il blocco. */
+document.addEventListener('dblclick', function(e){
+  if(!e.target.closest) return;
+  if(e.target.closest('.tendina') || e.target.closest('.bsel')) return;
+  var h=e.target.closest('.bhead'); if(!h) return;
+  var blocco=h.closest('.blocco'); if(!blocco) return;
+  bancoZoom(blocco.dataset.blocco);
+});
 
 /* Trascinamento dei divisori. Le frazioni si salvano come frazioni, mai in
    pixel: passando a un monitor più largo il quaderno resterebbe una fessura. */
@@ -11378,8 +11854,7 @@ document.addEventListener('change', function(e){
 (function(){
   function avvia(){
     if(!bancoPronto()){ console.error('banco: assets/banco/forme.js non caricato'); return; }
-    bancoCarica();
-    bancoDisegna();
+    bancoRicarica();
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', avvia); else avvia();
 })();
@@ -13974,6 +14449,15 @@ window.addEventListener('keydown', function(e){
   <div id="pdfHost">
     <div id="pdfFrame" tabindex="0" aria-label="Documento"><div class="pdfViewer"></div></div>
   </div>
+  <!-- Nessuna fonte aperta: il riquadro lo dice e dice DOVE si apre, come fa
+       il player col suo «Nessun media aperto». È la regola del §5 del piano
+       del banco: un blocco vuoto non lascia un buco muto. Due frasi, una per
+       modalità: la porta giusta nello zaino («Documenti ▾», la sidebar) non
+       esiste nei corsi, dove la fonte si apre dal capitolo. -->
+  <div class="pdfvuoto" id="pdfVuoto">
+    <span class="pv-zaino">Nessuna fonte aperta.<br>Scegline una da <b>Documenti &#9662;</b> qui sopra, o dalle fonti nella sidebar.</span>
+    <span class="pv-corso">Nessuna fonte aperta.<br>Si apre da un rimando nel capitolo, o dalla ricerca.</span>
+  </div>
 </section>
 <!-- ============================ IL PLAYER ==================================
      Ciò che scorre nel tempo — un video, un audio — in uno strumento suo.
@@ -14013,6 +14497,10 @@ window.addEventListener('keydown', function(e){
             title="Ritaglia un fermo immagine" aria-label="Ritaglia un fermo immagine">&#9986;</button>
     <button class="tbtn" id="plNota" type="button" hidden title="Segna questo minuto negli appunti (⌘⇧C)"
             aria-label="Segna questo minuto negli appunti">&#9998;</button>
+    <!-- ⚠️ Come `#pdfElimina`: togliere un media tocca un file portato dentro
+         dall'utente. Compare SOLO nello zaino, dove i media sono suoi. -->
+    <button class="tbtn" id="plElimina" type="button" hidden
+            title="Togli questo media dallo zaino" aria-label="Togli questo media dallo zaino">&#128465;</button>
     <button class="tbtn" id="plClose" type="button" aria-label="Chiudi il player">&#10005;</button>
   </div>
   <div id="plHost">
@@ -14095,6 +14583,10 @@ window.addEventListener('keydown', function(e){
          blocco: l'ultima lettera restava sotto. I comandi stanno a sinistra,
          come nella barra delle parole chiave. -->
     <button class="tbtn" id="ripSalta" type="button" title="Rimanda questa carta alla fine della coda, senza registrare niente">Salta</button>
+    <!-- L'azzeramento sta accanto alla cosa che azzera, non più in
+         Impostazioni → Studio: la conferma con i conti difende dal click. -->
+    <button class="tbtn" id="ripAzzera" type="button"
+            title="Azzera l'avanzamento di questo corso: tutte le carte tornano «mai studiate». Non è reversibile.">Azzera&#8230;</button>
   </div>
   <div id="ripCorpo" class="ripcorpo"></div>
   <!-- ⚠️ I comandi stanno FUORI dal corpo che scorre. Dentro, una domanda lunga
@@ -14425,7 +14917,7 @@ window.addEventListener('keydown', function(e){
     <div class="set-tabs" role="tablist">
       <button class="set-tab" role="tab" data-tab="utente" aria-selected="true">Utente</button>
       <button class="set-tab" role="tab" data-tab="corsi" aria-selected="false">Corsi</button>
-      <button class="set-tab" role="tab" data-tab="studio" aria-selected="false">Studio</button>
+      <button class="set-tab" role="tab" data-tab="zaino" aria-selected="false">Zaino</button>
       <button class="set-tab" role="tab" data-tab="ai" aria-selected="false">AI</button>
     </div>
     <div class="set-body">
@@ -14679,17 +15171,15 @@ window.addEventListener('keydown', function(e){
            un dito di distanza dalla navigazione, e per giunta invisibile a chi
            l'indice lo tiene chiuso. Qui sta con le altre cose che si fanno una
            volta ogni tanto, e ha lo spazio per dire che cosa si perde davvero. -->
-      <section class="set-pane" data-pane="studio" hidden>
-        <div class="set-sec-h">Il ripasso di questo corso</div>
-        <p class="set-note">Le carte nascono dal <b>quiz</b> e dal <b>glossario</b> dei capitoli: non si copiano da nessuna parte, si rileggono ogni volta dai capitoli. Rigenerare una lezione non porta via la storia di ciò che hai già ripassato, finché la domanda resta quella.</p>
-        <div class="ripstato-set" id="setRipStato">Nessun corso aperto.</div>
-        <p class="set-note">La storia vive in <code>RIPASSO/stato.json</code> dentro la cartella del corso: è tua, la pipeline non la tocca, e si porta dietro con l'esportazione.</p>
-
-        <div class="set-sec-h" style="margin-top:1.4rem;">Azzera l'avanzamento</div>
-        <p class="set-note">Cancella la storia dei ripassi di <b>questo corso</b>: tutte le carte tornano «mai studiate» e i tempi ripartono da capo. Gli appunti, le evidenze e le mappe non si toccano. <b>Non è reversibile.</b></p>
-        <div class="setrow">
-          <button class="kr-save" id="setResetBtn" type="button">Azzera l'avanzamento di questo corso&#8230;</button>
-        </div>
+      <!-- ============ ZAINO ============
+           Qui c'era «Studio», cioè lo stato e l'azzeramento del ripasso: quel
+           comando ora vive nella barra dello strumento Ripasso, accanto alla
+           cosa che azzera. Questo pannello governa gli ZAINI come contenitori:
+           l'unico posto da cui se ne può togliere uno. -->
+      <section class="set-pane" data-pane="zaino" hidden>
+        <div class="set-sec-h">I tuoi zaini</div>
+        <p class="set-note">Uno zaino è la cartella dei tuoi materiali: documenti, media, appunti, mappe e ritagli. Eliminarlo manda <b>l'intera cartella nel Cestino di sistema</b> — da lì si può ancora ripescare, ma l'app non la vedrà più.</p>
+        <div id="setZaini" class="setzaini"></div>
       </section>
 
       <!-- ============ AI ============ -->

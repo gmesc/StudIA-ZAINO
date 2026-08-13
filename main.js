@@ -372,6 +372,11 @@ ipcMain.handle('course:list', () => {
  */
 const zainiLib = require('./lib/zaini');
 ipcMain.handle('zaino:list', () => zainiLib.elenco(vaultDir()));
+/* Eliminare uno zaino: la cartella intera nel Cestino di sistema, mai `rm`.
+   È il gesto più grosso dell'app — dentro ci sono anche appunti e mappe — e
+   la conferma con i conti la fa il renderer, che li sa dire. */
+ipcMain.handle('zaino:elimina', (e, { id } = {}) =>
+  zainiLib.elimina(vaultDir(), id, { cestina: (p) => shell.trashItem(p) }));
 ipcMain.handle('zaino:create', (e, { nome } = {}) =>
   zainiLib.crea(vaultDir(), nome, new Date().toISOString().slice(0, 10)));
 
@@ -402,6 +407,12 @@ const mediaLib = require('./lib/media');
 ipcMain.handle('media:importa', (e, { corso, percorsi } = {}) =>
   mediaLib.importa(vaultDir(), corso, percorsi));
 ipcMain.handle('media:elenco', (e, { corso } = {}) => mediaLib.elenco(vaultDir(), corso));
+/* Togliere un media dallo zaino: `shell.trashItem` e non `unlink`, per la
+   stessa ragione dei documenti — è un file dell'UTENTE, e l'irreversibile non
+   può essere un click. Il conto di chi ci si appoggia lo fa `media.usi`. */
+ipcMain.handle('media:elimina', (e, { corso, file } = {}) =>
+  mediaLib.elimina(vaultDir(), corso, file, { cestina: (p) => shell.trashItem(p) }));
+ipcMain.handle('media:usi', (e, { corso, file } = {}) => mediaLib.usi(vaultDir(), corso, file));
 
 /* ---- le fonti di un contenitore: import e indici ----
  * ⚠️ L'indice per pagina lo costruisce il RENDERER con pdf.js — il
