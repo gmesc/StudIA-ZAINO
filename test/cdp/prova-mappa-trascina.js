@@ -150,6 +150,38 @@ async function trascina(da, aX, aY, passi) {
   console.log('   cornice: ' + primaDelNodo + ' → ' + conNodo);
   ok('la cornice si è allargata per farlo entrare', true, conNodo > primaDelNodo);
 
+  sezione('⚠️ Il VERSO cambia davvero anche su una mappa tua');
+  /* Su una mappa «Mie» ogni nodo ha una posizione a mano — gliel'ha data chi
+     l'ha creato o trascinato — e il motore non può muovere ciò che è fissato:
+     premere TD/SX cambiava la leva e lasciava il disegno identico. Un comando
+     acceso che non fa niente. Adesso il verso ridispone, come il cambio
+     motore: azzera le posizioni a mano, lo dice, e ⌘Z le rimette. */
+  const fissatiPrima = await val(`MAPPA.mia.grafo.nodi.filter(function(n){
+    return Number.isFinite(n.x) && Number.isFinite(n.y); }).length`);
+  ok('i nodi hanno posizioni a mano', true, fissatiPrima > 0);
+  const posPrima = await val(`JSON.stringify(MAPPA.res.pos)`);
+  const versoPrima = await val(`MAPPA.vista.orient`);
+  /* si preme il verso OPPOSTO a quello attuale, dal bottone vero */
+  /* i due versi si chiamano `td` (dall'alto) e `lr` (da sinistra): il secondo
+     NON è «sx», e chiederlo col nome sbagliato faceva morire la prova su un
+     bottone che non esiste */
+  const altro = versoPrima === 'lr' ? 'td' : 'lr';
+  await clicca('#mOrient button[data-orient="' + altro + '"]');
+  await pausa(900);
+  ok('il verso è cambiato', true, (await val('MAPPA.vista.orient')) !== versoPrima);
+  ok('le posizioni a mano sono state azzerate, non ignorate', 0,
+    await val(`MAPPA.mia.grafo.nodi.filter(function(n){
+      return Number.isFinite(n.x) && Number.isFinite(n.y); }).length`));
+  ok('e il disegno si è davvero ridisposto', true,
+    (await val(`JSON.stringify(MAPPA.res.pos)`)) !== posPrima);
+  /* ⌘Z: la sistemazione a mano si può riprendere, o il comando sarebbe una
+     porta a senso unico su mezz'ora di lavoro */
+  await val(`mappaAnnulla()`);
+  await pausa(700);
+  ok('⌘Z rimette le posizioni a mano', fissatiPrima,
+    await val(`MAPPA.mia.grafo.nodi.filter(function(n){
+      return Number.isFinite(n.x) && Number.isFinite(n.y); }).length`));
+
   sezione('Pulizia: quello che questa prova ha creato, questa prova lo toglie');
   await val(`(()=>{ if(window.vault && window.vault.mappe) window.vault.mappe.rimuovi(corsoAttivo(), ${JSON.stringify(file)}); return 1; })()`);
   await pausa(400);

@@ -13730,6 +13730,38 @@ function mappaMotore(nome){
   mappaVistaCambiata(); mappaSincronizzaComandi(); mappaAdatta(); mappaRidisegna();
 }
 
+/**
+ * Il VERSO della disposizione: dall'alto (TD) o da sinistra (SX).
+ *
+ * ⚠️ Esiste come funzione — e non più come tre righe dentro il gestore del
+ * click — per la ragione scritta in testa a L2: un gesto è una funzione
+ * chiamabile, non un gestore di eventi. La prova che quella regola serve è
+ * proprio qui: il motore aveva la sua funzione e con lei la regola delle
+ * posizioni fissate; l'orientamento, scritto in linea, se l'era persa. Su una
+ * mappa tua — dove OGNI nodo ha una posizione a mano, perché gliel'hai data tu
+ * creandolo o trascinandolo — premere TD o SX cambiava la leva e non muoveva
+ * niente: un comando acceso che non fa nulla, cioè la cosa peggiore.
+ *
+ * Adesso vale la stessa decisione del cambio motore (§12.2 punto 3): cambiare
+ * verso è una **ridisposizione**, quindi azzera le sistemazioni a mano, lo
+ * DICHIARA con quante ne sta buttando, e mette un passo nella pila — ⌘Z le
+ * rimette tutte.
+ */
+function mappaOrientamento(verso){
+  if(!verso || verso===MAPPA.vista.orient){ mappaSincronizzaComandi(); return; }
+  MAPPA.vista.orient=verso;
+  if(mappaMie() && MAPPA.mia.grafo){
+    var quante=MAPPA.mia.grafo.nodi.filter(MappaGrafo.fissato).length;
+    if(quante){
+      mappaAnnullabile('Cambio verso: '+quante+(quante===1?' posizione azzerata':' posizioni azzerate'));
+      MAPPA.mia.grafo=MappaModifica.liberaTutte(MAPPA.mia.grafo);
+      mappaTocca();
+      toast(quante+(quante===1?' posizione a mano azzerata':' posizioni a mano azzerate')+' dal cambio verso — ⌘Z per rimetterle', true);
+    }
+  }
+  mappaVistaCambiata(); mappaSincronizzaComandi(); mappaAdatta(); mappaRidisegna();
+}
+
 /** Colora, con la cascata sul grafo INTERO (decisione 1 del §12.2): chi colora
  *  un ramo intende il ramo, non la porzione che sta guardando in quel momento —
  *  e un colore che cambia a seconda di quali rami erano aperti sarebbe
@@ -13833,7 +13865,7 @@ document.addEventListener('click', function(e){
   if(vmem){ if(!vmem.disabled) mappaMemoriaAzione(vmem.getAttribute('data-memaz'), parseInt(vmem.getAttribute('data-i'),10)); return; }
   if(!e.target.closest('#memMenu')) mappaMemoriaMenuChiudi();
   var bo=e.target.closest('#mOrient button[data-orient]');
-  if(bo){ MAPPA.vista.orient=bo.getAttribute('data-orient'); mappaVistaCambiata(); mappaSincronizzaComandi(); mappaAdatta(); mappaRidisegna(); return; }
+  if(bo){ mappaOrientamento(bo.getAttribute('data-orient')); return; }
 
   // il tasto del ramo va guardato PRIMA della card: sta sopra di essa, e
   // chiudere un ramo non deve anche aprire la fonte
