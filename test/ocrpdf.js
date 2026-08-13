@@ -182,20 +182,38 @@ async function conMotore() {
      filo d'avanzamento). Un controllo per parola qui passerebbe A VUOTO, con
      zero confronti: è successo alla prima stesura di questa sezione. */
   {
+    /* Gli item possono essere uno per riga o uno per parola (più gli spazi che
+       pdf.js mette in mezzo): quello che si misura è l'AGGREGATO di riga —
+       dove comincia il primo pezzo e dove finisce l'ultimo. */
     const hPagina = H / SCALA;
+    const perBase = {};
+    r.parole.forEach((w) => { const k = Math.round(w.base / 30); (perBase[k] = perBase[k] || []).push(w); });
     let righe = 0, sbagliate = 0;
-    for (const it of rilettura.items || []) {
-      const inLinea = r.parole.filter((w) => Math.abs((hPagina - w.base / SCALA) - it.y) < 3);
-      if (!inLinea.length) continue;
+    for (const k in perBase) {
+      const rr = perBase[k];
+      const yAtteso = hPagina - O.mediana(rr.map((w) => w.base)) / SCALA;
+      const pezzi = (rilettura.items || []).filter((i) => i.str.trim() && Math.abs(i.y - yAtteso) < 4);
+      if (!pezzi.length) { sbagliate++; continue; }
       righe++;
-      const x0 = Math.min.apply(null, inLinea.map((w) => w.x0)) / SCALA;
-      const x1 = Math.max.apply(null, inLinea.map((w) => w.x1)) / SCALA;
+      const x0 = Math.min.apply(null, rr.map((w) => w.x0)) / SCALA;
+      const x1 = Math.max.apply(null, rr.map((w) => w.x1)) / SCALA;
+      const sinistro = Math.min.apply(null, pezzi.map((i) => i.x));
+      const destro = Math.max.apply(null, pezzi.map((i) => i.x + i.w));
       const largAttesa = x1 - x0;
-      if (Math.abs(it.x - x0) > 1.5 ||
-          Math.abs((it.x + it.w) - x1) > largAttesa * 0.05 + 1) sbagliate++;
+      /* il bordo destro può SUPERARE l'ultima parola dello spazio in coda —
+         quello che dà gli spazi alla selezione — ma mai fermarsi molto prima */
+      if (Math.abs(sinistro - x0) > 1.5 ||
+          destro < x1 - (largAttesa * 0.12 + 3) ||
+          destro > x1 + (largAttesa * 0.2 + 6)) sbagliate++;
     }
     check('ogni riga del layer comincia e finisce coi bordi misurati', 0, sbagliate);
     check('e le righe confrontate sono tutte e tre', 3, righe);
+    /* ⚠️ Gli SPAZI: la selezione copia gli item incollati, senza separatori
+       suoi. La concatenazione grezza deve già contenere le frasi con i loro
+       spazi — prima dava «UZIONEDIDIRITTODIUS». */
+    const grezzo = (rilettura.items || []).map((i) => i.str).join('');
+    check('la concatenazione grezza degli item ha gli spazi fra le parole', true,
+      /fotosintesi clorofilliana avviene/.test(grezzo));
   }
 
   /* ⚠️ LA PAGINA STORTA, che è il caso normale di una foto. La fixture si
@@ -254,6 +272,39 @@ async function conMotore() {
     const gradiScritti = O.mediana((letturaS.items || []).map((i) => i.gradi));
     check('i glifi sono inclinati come il testo fotografato', true,
       Math.abs(gradiScritti - STORTA) < 0.4);
+  }
+
+  /* ⚠️ LA DATTILOGRAFIA NOTARILE: righe di trattini fra le righe di testo,
+     come nel contratto vero di Giacomo. Là Tesseract fondeva trattini e testo
+     in un'unica «riga» e l'altezza-estensione esplodeva: 179 px per parole
+     alte 35, glifi su cinque righe, selezione impossibile. Il metro robusto è
+     la mediana delle altezze: qui si pretende che NESSUNA parola porti un
+     corpo oltre il doppio del suo inchiostro. */
+  sezione('Le righe di trattini non gonfiano il corpo delle parole');
+  {
+    const s2 = await PDFDocument.create();
+    const f2 = await s2.embedFont(StandardFonts.Courier);
+    const pg2 = s2.addPage([W, H]);
+    const RIGHE = ['Locarno, 18 (diciotto) novembre 2011 (duemi-', 'laundici). Fra di loro intervengono:'];
+    let y = H - 160;
+    for (const t of RIGHE) {
+      pg2.drawText('-'.repeat(52), { x: 60, y: y + 44, size: 26, font: f2, color: rgb(0, 0, 0) });
+      pg2.drawText(t, { x: 60, y, size: 30, font: f2, color: rgb(0, 0, 0) });
+      y -= 120;
+    }
+    pg2.drawText('-'.repeat(52), { x: 60, y: y + 44, size: 26, font: f2, color: rgb(0, 0, 0) });
+    const pdfDat = path.join(QUI, 'dattilo.pdf');
+    fs.writeFileSync(pdfDat, await s2.save());
+    const pngDat = path.join(QUI, 'dattilo.png');
+    execFileSync('sips', ['-s', 'format', 'png', pdfDat, '--out', pngDat], { stdio: 'ignore' });
+    const rd = await O.riconosci(fs.readFileSync(pngDat));
+    check('la pagina dattiloscritta si legge', true, /Locarno/i.test(rd.testo) && /novembre/i.test(rd.testo));
+    const testuali = rd.parole.filter((w) => /[a-zà-ù0-9]{2}/i.test(w.testo));
+    const gonfie = testuali.filter((w) => w.rigaAlto > (w.y1 - w.y0) * 2 + 2);
+    check('nessuna parola ha un corpo oltre il doppio del suo inchiostro', [],
+      gonfie.map((w) => w.testo + '@' + Math.round(w.rigaAlto) + '/' + (w.y1 - w.y0)));
+    check('e nessuna sotto il proprio inchiostro', true,
+      testuali.every((w) => w.rigaAlto >= (w.y1 - w.y0) - 0.01));
   }
 
   /* ⚠️ La strada della SECONDA PASSATA, provata senza canvas: si prendono
