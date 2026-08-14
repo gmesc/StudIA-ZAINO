@@ -84,6 +84,9 @@
      bottone e il punto che resta sotto il puntatore. Nessuna dipendenza: qui
      dentro non c'è né DOM né viewer, solo aritmetica e stringhe. -->
 <script src="assets/fonti/zoom.js"></script>
+<!-- Che cosa entra nell'album delle foto e in che misura: formati letti dai
+     byte, tetto delle dimensioni, motivi degli scarti. Puro, provato in Node. -->
+<script src="assets/album/foto.js"></script>
 <style>
   /* OpenMoji come font emoji dell'app (self-hosted, offline) — eccezione dichiarata per questa app al default Noto */
   @font-face{ font-family:'OpenMoji'; src:url('assets/fonts/OpenMoji-color.woff2') format('woff2');
@@ -917,7 +920,7 @@
     font-family:var(--font-text),var(--emoji-font),sans-serif;
     text-transform:uppercase; letter-spacing:.12em; text-align:center; padding:0 2rem;
     border:3px dashed var(--teal); pointer-events:none; }
-  html[data-drop="pdf"]::after{ content:"Rilascia qui i documenti, i video e gli audio da mettere nello zaino"; }
+  html[data-drop="pdf"]::after{ content:"Rilascia qui documenti, video, audio e immagini da mettere nello zaino"; }
   html[data-drop="json"]::after{ content:"Rilascia qui il file della lezione (.json)"; }
 
   /* ---- Fonti (sorgenti PDF) + anteprima split view ---- */
@@ -4532,9 +4535,14 @@ function zainoTrascinati(files){
   var lista=[].slice.call(files||[]);
   var pdf=lista.filter(function(f){ return /\.pdf$/i.test(f.name); });
   var media=lista.filter(function(f){ return !!Lettore.tipoDi(f.name); });
+  /* Le immagini sono la terza popolazione, e si riconoscono dal nome SOLO per
+     smistarle: che siano davvero immagini lo dicono i byte, un attimo dopo
+     (`AlbumFoto.tipoDaiByte`). Qui basta sapere a chi consegnarle. */
+  var immagini=lista.filter(function(f){ return !!AlbumFoto.tipoDalNome(f.name); });
   if(pdf.length) fontiTrascinate(pdf);
   if(media.length) mediaTrascinati(media);
-  return !!(pdf.length || media.length);
+  if(immagini.length) fotoTrascinate(immagini);
+  return !!(pdf.length || media.length || immagini.length);
 }
 
 /** Il gesto: dei media trascinati sopra la finestra, in modalità zaino. */
@@ -4571,6 +4579,156 @@ async function mediaTrascinati(files){
   if(entrati.length){
     playerApri(entrati[0].nome, null, titoloMateriale(entrati[0].nome)||entrati[0].nome);
   }
+}
+
+/* ===== LE IMMAGINI CHE ENTRANO NELL'ALBUM FOTO ============================
+ *
+ * Si trascinano dentro delle immagini e da quel momento sono dell'app: copiate
+ * nell'archivio del contenitore (`ALBUM/`), con la loro miniatura, pronte da
+ * mettere in un appunto o in una mappa.
+ *
+ * ⚠️ PERCHÉ QUASI TUTTO SUCCEDE QUI E NON NEL MAIN. Il browser sa già fare le
+ * due cose difficili: decodificare un'immagine e RADDRIZZARLA. Un JPEG da
+ * telefono porta l'orientamento nei metadati EXIF, e `<img>` lo applica da sé —
+ * un decodificatore scritto nel main no. Ridisegnandola su un canvas
+ * l'orientamento entra nei pixel (e i metadati GPS restano fuori dal vault), e
+ * dallo stesso passaggio esce gratis la miniatura. Al main resta un lavoro
+ * solo, quello che il browser non sa fare: l'HEIC.
+ *
+ * ⚠️ E NON TUTTO PASSA DAL CANVAS. Una GIF ne uscirebbe come un fotogramma
+ * unico, cioè non sarebbe più lei; un PNG dentro il tetto non ha niente da
+ * guadagnarci. La regola sta in `AlbumFoto.daRicodificare`, provata in Node.
+ */
+var FOTOIMP = { inCorso:false };
+
+/** Legge un file come data URL. Il `FileReader` è l'unica strada per i byte di
+ *  un `File` senza passare dal disco. */
+function fotoLeggi(file){
+  return new Promise(function(ok, no){
+    var fr=new FileReader();
+    fr.onload=function(){ ok(String(fr.result||'')); };
+    fr.onerror=function(){ no(new Error('non si è potuto leggere il file')); };
+    fr.readAsDataURL(file);
+  });
+}
+/** I primi byte di un file, per guardarne la firma. */
+function fotoPrimiByte(file, quanti){
+  return new Promise(function(ok, no){
+    var fr=new FileReader();
+    fr.onload=function(){ ok(new Uint8Array(fr.result)); };
+    fr.onerror=function(){ no(new Error('non si è potuto leggere il file')); };
+    fr.readAsArrayBuffer(file.slice(0, quanti||16));
+  });
+}
+/** Un'immagine decodificata dal browser, con l'orientamento già applicato. */
+function fotoCarica(dataUrl){
+  return new Promise(function(ok, no){
+    var im=new Image();
+    im.onload=function(){ ok(im); };
+    im.onerror=function(){ no(new Error('l\'immagine non si è potuta decodificare')); };
+    im.src=dataUrl;
+  });
+}
+/** Ridisegna un'immagine alla misura chiesta e torna il data URL. */
+function fotoRidisegna(im, w, h, mime, qualita){
+  var c=document.createElement('canvas');
+  c.width=Math.max(1, w); c.height=Math.max(1, h);
+  c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+  /* PNG per ciò che era PNG (la trasparenza si perderebbe), JPEG per le foto:
+     un JPEG ricodificato in PNG triplica di peso senza guadagnare niente. */
+  return c.toDataURL(mime||'image/jpeg', qualita||AlbumFoto.QUALITA);
+}
+
+/**
+ * Il gesto: delle immagini trascinate sopra la finestra, in modalità zaino.
+ *
+ * Chi non entra lo dice, col motivo: un import che ingoia in silenzio è la
+ * trappola ④ applicata all'utente — si trascinano venti foto, ne compaiono
+ * diciassette, e non si sa quali tre mancano né perché.
+ */
+async function fotoTrascinate(files){
+  var api=(window.vault && window.vault.album) || null;
+  var id=corsoAttivo();
+  if(!api || !id){ toast('Apri uno zaino prima di trascinare le immagini', false); return; }
+  if(FOTOIMP.inCorso){ toast('Sto ancora importando: un momento', false); return; }
+
+  var lista=[].slice.call(files||[]);
+  var vaglio=AlbumFoto.accetta(lista.map(function(f){ return { nome:f.name, dimensione:f.size }; }));
+  var perNome={}; lista.forEach(function(f){ perNome[f.name]=f; });
+
+  FOTOIMP.inCorso=true;
+  var entrate=0, gia=0, scartate=vaglio.scartate.slice();
+  for(var i=0;i<vaglio.buone.length;i++){
+    var v=vaglio.buone[i], file=perNome[v.nome];
+    try{
+      var esito=await fotoImporta(id, file);
+      if(esito.error) scartate.push({ nome:v.nome, motivo:esito.error });
+      else if(esito.giaCera) gia++;
+      else entrate++;
+    }catch(e){
+      scartate.push({ nome:v.nome, motivo:(e && e.message) || 'import non riuscito' });
+    }
+  }
+  FOTOIMP.inCorso=false;
+
+  try{ fotoAggiorna(); }catch(e){}
+  if(entrate) toast(entrate===1 ? 'Immagine aggiunta' : entrate+' immagini aggiunte', true);
+  if(gia && !entrate) toast(gia===1 ? 'Quell’immagine c’era già' : 'Erano già tutte in archivio', true);
+  /* Gli scarti si dicono uno per uno finché sono pochi, e a gruppi quando sono
+     tanti: venti messaggi di fila non li legge nessuno. */
+  if(scartate.length){
+    if(scartate.length<=3) scartate.forEach(function(x){ toast(x.nome+': '+x.motivo, false); });
+    else toast(scartate.length+' file non sono entrati — il primo: '+scartate[0].nome+' ('+scartate[0].motivo+')', false);
+    console.warn('album/foto: scartati', scartate);
+  }
+}
+
+/** Una sola immagine, dal file all'archivio. `{ giaCera, error }`. */
+async function fotoImporta(corso, file){
+  var api=window.vault.album;
+  var byte=await fotoPrimiByte(file, 16);
+  var tipo=AlbumFoto.tipoDaiByte(byte);
+  /* ⚠️ Il formato lo dicono i BYTE, non il nome: un `.png` che dentro è un JPEG
+     è un file normale, e crederci vuol dire scrivere nel vault un'immagine la
+     cui estensione mente. */
+  if(!tipo) return { giaCera:false, error:'non è un\'immagine (i byte dicono altro)' };
+
+  var dati;
+  if(tipo==='heic'){
+    /* L'unico caso che il browser non sa fare da sé. Serve il PERCORSO, non i
+       byte: a convertire è `sips`, che lavora sui file. */
+    var percorso=api.percorsoDi(file);
+    if(!percorso) return { giaCera:false, error:'non si è potuto leggere il percorso del file' };
+    var conv=api.heic(percorso);
+    if(conv.error) return { giaCera:false, error:conv.error };
+    dati=conv.dati;
+    tipo={ ext:'.jpg', mime:'image/jpeg' };
+  } else {
+    dati=await fotoLeggi(file);
+  }
+
+  var im=await fotoCarica(dati);
+  var w=im.naturalWidth||im.width, h=im.naturalHeight||im.height;
+  if(!w || !h) return { giaCera:false, error:'l\'immagine non ha misure leggibili' };
+
+  var finale=dati;
+  if(AlbumFoto.daRicodificare(tipo, w, h)){
+    var m=AlbumFoto.misure(w, h, AlbumFoto.LATO_MAX);
+    finale=fotoRidisegna(im, m.w, m.h, tipo.ext==='.png' ? 'image/png' : 'image/jpeg');
+    w=m.w; h=m.h;
+  }
+  /* La miniatura esce dallo stesso passaggio: è un JPEG anche per un PNG — un
+     francobollo non ha bisogno della trasparenza, e pesa un quarto. */
+  var mm=AlbumFoto.misure(w, h, AlbumFoto.LATO_MINI);
+  var mini=fotoRidisegna(im, mm.w, mm.h, 'image/jpeg', 0.8);
+
+  var r=api.salva(corso, {
+    origine:'foto', materiale:file.name,
+    didascalia:AlbumFoto.didascaliaDa(file.name),
+    dati:finale, mini:mini, w:w, h:h
+  });
+  if(r.error) return { giaCera:false, error:r.error };
+  return { giaCera:!!r.giaCera, error:'' };
 }
 
 /* ===== IL SEGNO DI LETTURA: a che pagina si era arrivati =================
@@ -5424,37 +5582,69 @@ function albumChiudiMenu(){
   ['#albMenu','#albBolla'].forEach(function(sel){ var m=$(sel); if(m) m.classList.remove('open'); });
 }
 
-/** Rilegge l'album del corso e ridisegna la griglia. */
-function albumAggiorna(){
-  var lista=$('#albLista'), conto=$('#albConto');
+/**
+ * Le due viste dello stesso archivio.
+ *
+ * ⚠️ Sono DUE FILTRI, non due mucchi: dietro c'è un solo `ALBUM/` con un solo
+ * indice, e `album:<id>` non deve sapere che cosa ha dietro (invariante 7 — una
+ * grammatica sola per i rimandi). Qui cambiano il riquadro, l'origine e le
+ * parole; il disegno è uno.
+ */
+var ALBUMVISTE = {
+  album: { origine:'ritaglio', lista:'#albLista', conto:'#albConto', cerca:'#albCerca',
+           uno:'ritaglio', molti:'ritagli',
+           vuoto:'Nessun ritaglio, per ora.<br>Apri un documento nella <b>Fonte</b>, accendi le forbici ✂ nella sua barra (o tieni premuto ⌘) e trascina un rettangolo sulla pagina.' },
+  foto:  { origine:'foto', lista:'#fotoLista', conto:'#fotoConto', cerca:'#fotoCerca',
+           uno:'immagine', molti:'immagini',
+           vuoto:'Nessuna immagine, per ora.<br>Trascina qui sopra dei file <b>.jpg .png .gif .webp .heic</b> — o lasciali cadere sulla finestra.' }
+};
+var FOTOVISTA = { voci:[], filtro:'' };
+/** Le card delle due griglie: un selettore solo, perché i gesti sono gli stessi
+ *  (menu, tasto destro, trascinamento) e due elenchi di gestori divergerebbero
+ *  al primo ritocco. */
+var CARD_ALBUM = '#albLista .alcard, #fotoLista .alcard';
+/** Lo stato della vista: uno per riquadro, perché due griglie hanno due
+ *  ricerche e due elenchi a schermo. */
+function albumStato(quale){ return quale==='foto' ? FOTOVISTA : ALBUMVISTA; }
+
+/** Rilegge l'archivio e ridisegna la griglia di UNA vista. */
+function albumDisegnaVista(quale){
+  var cfg=ALBUMVISTE[quale]; if(!cfg) return;
+  var st=albumStato(quale);
+  var lista=$(cfg.lista), conto=$(cfg.conto);
   if(!lista) return;
   if(!(window.vault && window.vault.album && corsoAttivo())){
-    lista.innerHTML='<div class="alvuoto">L’album vive dentro un corso: aprine uno.</div>';
+    lista.innerHTML='<div class="alvuoto">Questo archivio vive dentro un corso o uno zaino: aprine uno.</div>';
     if(conto) conto.textContent='';
     return;
   }
-  var r=window.vault.album.elenco(corsoAttivo());
-  ALBUMVISTA.voci=(r && r.voci) || [];
+  var r=window.vault.album.elenco(corsoAttivo(), cfg.origine);
+  st.voci=(r && r.voci) || [];
   if(r && r.error){
     lista.innerHTML='<div class="alvuoto">'+escHtml(r.error)+'</div>';
     if(conto) conto.textContent='';
     return;
   }
-  var q=ALBUMVISTA.filtro.trim().toLowerCase();
-  var viste=q ? ALBUMVISTA.voci.filter(function(v){
+  var q=st.filtro.trim().toLowerCase();
+  var viste=q ? st.voci.filter(function(v){
     return (v.didascalia+' '+v.materiale).toLowerCase().indexOf(q)>=0;
-  }) : ALBUMVISTA.voci;
-  if(conto) conto.textContent=viste.length+(viste.length===1?' ritaglio':' ritagli')+
-    (q&&ALBUMVISTA.voci.length!==viste.length ? ' di '+ALBUMVISTA.voci.length : '');
+  }) : st.voci;
+  if(conto) conto.textContent=viste.length+' '+(viste.length===1?cfg.uno:cfg.molti)+
+    (q&&st.voci.length!==viste.length ? ' di '+st.voci.length : '');
   if(!viste.length){
     lista.innerHTML=q
-      ? '<div class="alvuoto">Nessun ritaglio con «'+escHtml(q)+'».</div>'
-      : '<div class="alvuoto">Nessun ritaglio, per ora.<br>Apri un documento nella <b>Fonte</b>, accendi le forbici ✂ nella sua barra e trascina un rettangolo sulla pagina.</div>';
+      ? '<div class="alvuoto">Niente con «'+escHtml(q)+'».</div>'
+      : '<div class="alvuoto">'+cfg.vuoto+'</div>';
     return;
   }
   var corso=corsoAttivo();
   lista.innerHTML=viste.map(function(v){
-    var src=window.vault.album.srcUrl(corso, v.id);
+    /* La MINIATURA se c'è, l'immagine vera se non c'è. ⚠️ Non è un vezzo: una
+       foto da dodici megapixel dentro una card da 104px vuol dire decodificarla
+       intera per un francobollo, e con cinquanta foto la griglia si pianta.
+       Il ripiego resta perché una miniatura può mancare (una voce vecchia, un
+       francobollo non scritto) e la card deve mostrare qualcosa lo stesso. */
+    var src=window.vault.album.srcUrl(corso, v.id, v.mini ? 'mini' : '');
     /* `draggable` sulla CARD, non sull'immagine: l'immagine è già trascinabile
        da sé (lo fa il browser) e porterebbe con sé il percorso del file, che
        negli appunti diventa un `file:///…` rotto e sulla mappa non è niente.
@@ -5462,11 +5652,23 @@ function albumAggiorna(){
        (vedi il `dragstart` più in basso). */
     return '<div class="alcard" role="listitem" data-id="'+escHtml(v.id)+'" tabindex="0" '+
       'draggable="true" title="'+escHtml(v.didascalia||v.file)+'">'+
-      '<img src="'+escHtml(src)+'" alt="'+escHtml(v.didascalia||'ritaglio')+'" loading="lazy">'+
+      '<img src="'+escHtml(src)+'" alt="'+escHtml(v.didascalia||cfg.uno)+'" loading="lazy">'+
       '<span class="alcap">'+escHtml(v.didascalia||'—')+'</span>'+
-      '<span class="alfonte">'+escHtml(v.materiale)+' · '+escHtml(albumPunto(v))+'</span>'+
+      '<span class="alfonte">'+escHtml(albumProvenienza(v))+'</span>'+
     '</div>';
   }).join('');
+}
+/** Rilegge l'album dei ritagli e ridisegna la griglia. */
+function albumAggiorna(){ albumDisegnaVista('album'); }
+/** Lo stesso, per le immagini importate. */
+function fotoAggiorna(){ albumDisegnaVista('foto'); }
+
+/** Da dove viene un'immagine, in una riga: un ritaglio dice documento e punto,
+ *  una foto dice il file da cui è entrata — l'unica cosa vera che si sa di lei. */
+function albumProvenienza(v){
+  if(!v) return '';
+  if(v.origine==='foto') return v.materiale;
+  return v.materiale+' · '+albumPunto(v);
 }
 /** Il punto da cui viene un ritaglio, scritto come lo legge chi guarda. */
 function albumPunto(v){
@@ -5474,8 +5676,10 @@ function albumPunto(v){
   if(v.t!=null) return fmtTime(Math.floor(v.t));
   return 'p.'+v.pagina;
 }
+/** Una voce per id, in QUALUNQUE delle due viste: i menu, il trascinamento e i
+ *  rimandi parlano di immagini, non di griglie. */
 function albumVoce(id){
-  return ALBUMVISTA.voci.filter(function(v){ return v.id===id; })[0] || null;
+  return ALBUMVISTA.voci.concat(FOTOVISTA.voci).filter(function(v){ return v.id===id; })[0] || null;
 }
 
 /**
@@ -5510,7 +5714,8 @@ function albumMenu(id, x, y){
   }
   var et=(v.didascalia||v.file).replace(/\s+/g,' ').trim();
   m.innerHTML='<div class="ctx-head">'+escHtml(et.length>34?et.slice(0,33)+'…':et)+'</div>'+
-    it('fonte','Alla fonte', v.materiale? '' : 'non si sa da dove viene')+
+    it('fonte','Alla fonte', v.origine==='foto' ? 'l’hai portata dentro tu'
+                             : (v.materiale ? '' : 'non si sa da dove viene'))+
     it('appunti','Metti nell’appunto aperto', (NOTES.cur && NOTES.mde)? '' : 'nessun appunto aperto')+
     it('mappa','Metti nella mappa', (typeof mappaMie==='function' && mappaMie())? '' : 'serve una mappa tua aperta')+
     '<div class="ctx-sep"></div>'+
@@ -5527,12 +5732,30 @@ function albumMenu(id, x, y){
  * la bolla del ritaglio appena fatto e il menu contestuale — perché sono gli
  * stessi verbi: due copie divergerebbero al primo comando aggiunto.
  */
+/** In quale delle due griglie vive quest'immagine. Una domanda sola, chiesta
+ *  al dato: una foto sta nell'Album Foto, un ritaglio nei Ritagli. */
+function albumVistaDi(v){ return (v && v.origine==='foto') ? 'foto' : 'album'; }
+/** Ridisegna la griglia che contiene quest'immagine — e non l'altra, che non è
+ *  cambiata. */
+function albumRidisegna(v){ albumDisegnaVista(albumVistaDi(v)); }
+
 function albumAzione(az, id){
   albumChiudiMenu();
   var corso=corsoAttivo(), v=albumVoce(id);
   if(!v && az!=='album'){ toast('Immagine non trovata nell’album', false); return; }
-  if(az==='album'){ try{ bancoMostra('album'); }catch(e){} albumAggiorna(); return; }
+  if(az==='album'){
+    var dove=albumVistaDi(v);
+    try{ bancoMostra(dove); }catch(e){}
+    albumDisegnaVista(dove);
+    if(v) albumEvidenzia(v.id);
+    return;
+  }
   if(az==='fonte'){
+    /* ⚠️ Una FOTO non ha una fonte a cui tornare: `materiale` per lei è il nome
+       del file da cui è entrata, non un documento del contenitore, e aprirlo
+       vorrebbe dire cercare un PDF che non esiste. La voce è spenta nel menu —
+       qui c'è comunque la rete, perché un menu si può chiamare anche da altrove. */
+    if(v.origine==='foto'){ toast('Questa immagine non viene da un documento: l’hai portata dentro tu', false); return; }
     /* Il punto ha due forme, e la porta per tornarci pure: un video si riapre al
        secondo, un documento alla pagina. */
     if(v.t!=null) openVideo(v.materiale, Math.floor(v.t), v.didascalia||v.materiale);
@@ -5554,7 +5777,7 @@ function albumAzione(az, id){
       if(t===null) return;
       var r=window.vault.album.rinomina(corso, id, t);
       if(r.error){ toast('Non rinominata: '+r.error, false); return; }
-      albumAggiorna(); toast('Didascalia aggiornata', true);
+      albumRidisegna(v); toast('Didascalia aggiornata', true);
     });
     return;
   }
@@ -5613,7 +5836,7 @@ function albumElimina(corso, v){
   if(!ok) return;
   var r=window.vault.album.rimuovi(corso, v.id, { insisti:true });
   if(r.error){ toast('Non eliminata: '+r.error, false); return; }
-  albumAggiorna();
+  albumRidisegna(v);
   toast('Immagine eliminata', true);
 }
 
@@ -5701,9 +5924,12 @@ function albumElimina(corso, v){
     albumModificatore(e.metaKey || e.ctrlKey);
   }, true);
 
+  /* Le due griglie hanno due ricerche, e ognuna filtra la sua: sono due elenchi
+     a schermo, non due modi di guardare lo stesso. */
   document.addEventListener('input', function(e){
-    if(!e.target.closest || !e.target.closest('#albCerca')) return;
-    ALBUMVISTA.filtro=e.target.value||''; albumAggiorna();
+    if(!e.target.closest) return;
+    if(e.target.closest('#albCerca')){ ALBUMVISTA.filtro=e.target.value||''; albumAggiorna(); return; }
+    if(e.target.closest('#fotoCerca')){ FOTOVISTA.filtro=e.target.value||''; fotoAggiorna(); return; }
   });
   document.addEventListener('click', function(e){
     if(!e.target.closest) return;
@@ -5712,15 +5938,29 @@ function albumElimina(corso, v){
     /* Un'immagine dell'album citata in un testo: il click la mostra nell'album,
        che è il posto da cui si governa (rinomina, elimina, torna alla fonte). */
     var al=e.target.closest('a.alink');
-    if(al){ e.preventDefault(); try{ bancoMostra('album'); }catch(err){}
-      ALBUMVISTA.filtro=''; var ce=$('#albCerca'); if(ce) ce.value='';
-      albumAggiorna(); albumEvidenzia(al.getAttribute('data-album')); return; }
-    var card=e.target.closest('#albLista .alcard');
+    if(al){
+      e.preventDefault();
+      /* ⚠️ In QUALE delle due griglie sta? Lo dice l'immagine, non chi clicca:
+         una foto vive nell'Album Foto e un ritaglio nei Ritagli, e portare
+         sempre nella stessa vista vorrebbe dire, una volta su due, aprire un
+         riquadro dove quell'immagine non c'è. */
+      var v=albumVoce(al.getAttribute('data-album'));
+      var dove=(v && v.origine==='foto') ? 'foto' : 'album';
+      try{ bancoMostra(dove); }catch(err){}
+      albumStato(dove).filtro='';
+      var ce=$(ALBUMVISTE[dove].cerca); if(ce) ce.value='';
+      albumDisegnaVista(dove);
+      albumEvidenzia(al.getAttribute('data-album')); return;
+    }
+    /* ⚠️ Le card delle due griglie sono la STESSA cosa: stesso menu, stesso
+       trascinamento, stessa identità. Un secondo elenco di gestori sarebbe la
+       seconda copia destinata a divergere (trappola ④). */
+    var card=e.target.closest(CARD_ALBUM);
     if(card){ albumMenu(card.getAttribute('data-id'), e.clientX, e.clientY); return; }
     if(!e.target.closest('#albMenu') && !e.target.closest('#albBolla')) albumChiudiMenu();
   });
   document.addEventListener('contextmenu', function(e){
-    var card=e.target.closest && e.target.closest('#albLista .alcard');
+    var card=e.target.closest && e.target.closest(CARD_ALBUM);
     if(!card) return;
     e.preventDefault();
     albumMenu(card.getAttribute('data-id'), e.clientX, e.clientY);
@@ -5743,7 +5983,7 @@ function albumElimina(corso, v){
    * elimina sa dire in quanti posti è usato.
    */
   document.addEventListener('dragstart', function(e){
-    var card=e.target.closest && e.target.closest('#albLista .alcard');
+    var card=e.target.closest && e.target.closest(CARD_ALBUM);
     if(!card || !e.dataTransfer) return;
     var v=albumVoce(card.getAttribute('data-id')); if(!v) return;
     e.dataTransfer.setData('application/x-studia-album', v.id);
@@ -5805,7 +6045,8 @@ function mappaSrcImmagine(im){
 
 /** Porta una card sotto gli occhi e la fa lampeggiare: «è questa». */
 function albumEvidenzia(id){
-  var c=$('#albLista .alcard[data-id="'+String(id||'').replace(/"/g,'')+'"]');
+  var sicuro=String(id||'').replace(/"/g,'');
+  var c=$('#albLista .alcard[data-id="'+sicuro+'"]') || $('#fotoLista .alcard[data-id="'+sicuro+'"]');
   if(!c) return;
   c.scrollIntoView({ block:'center' });
   c.style.outline='2px solid var(--teal-strong,#0d9488)';
@@ -7759,9 +8000,11 @@ function contenitoreMolla(){
     }
   }catch(e){ console.error('mappe/cambioContenitore:', e); }
   try{ MATERIALI.lista=null; }catch(e){}
-  try{ ALBUMVISTA.voci=[]; ALBUMVISTA.filtro=''; var ac=$('#albCerca'); if(ac) ac.value='';
+  try{ FOTOVISTA.voci=[]; FOTOVISTA.filtro=''; var fc=$('#fotoCerca'); if(fc) fc.value='';
+    ALBUMVISTA.voci=[]; ALBUMVISTA.filtro=''; var ac=$('#albCerca'); if(ac) ac.value='';
        if(typeof albumChiudiMenu==='function') albumChiudiMenu();
-       if(typeof albumAggiorna==='function') albumAggiorna(); }catch(e){}
+       if(typeof albumAggiorna==='function') albumAggiorna();
+       if(typeof fotoAggiorna==='function') fotoAggiorna(); }catch(e){}
   /* Per ultimo, a segni ormai scritti: il documento e il media del contenitore
      che si sta lasciando escono di scena — senza dimenticare che erano aperti.
      Prima restavano a schermo, ed erano il documento di un ALTRO zaino. */
@@ -8166,9 +8409,11 @@ function cambiaCorso(id){
   try{ ripassoCarica().then(function(){ return ripassoPota(); }); }catch(e){}
   /* L'album è di un corso: quello di prima resterebbe a schermo con i suoi
      ritagli, e un click ci lavorerebbe sopra nel corso sbagliato. */
-  try{ ALBUMVISTA.voci=[]; ALBUMVISTA.filtro=''; var ac=$('#albCerca'); if(ac) ac.value='';
+  try{ FOTOVISTA.voci=[]; FOTOVISTA.filtro=''; var fc=$('#fotoCerca'); if(fc) fc.value='';
+    ALBUMVISTA.voci=[]; ALBUMVISTA.filtro=''; var ac=$('#albCerca'); if(ac) ac.value='';
        if(typeof albumChiudiMenu==='function') albumChiudiMenu();
-       if(typeof albumAggiorna==='function') albumAggiorna(); }catch(e){}
+       if(typeof albumAggiorna==='function') albumAggiorna();
+       if(typeof fotoAggiorna==='function') fotoAggiorna(); }catch(e){}
   PERCORSI_ATTIVI=[];                         // e anche le varianti: filtrare con quelle di prima nasconderebbe lezioni a caso
   refreshLessonSelect();
   var t=document.getElementById('projTopSelect'); if(t && t.value!==id) t.value=id;
@@ -12115,7 +12360,17 @@ function bancoStrumenti(){
     appunti:   { nome:'Appunti',         famiglia:'quaderno', sel:'#notePane' },
     mappa:     { nome:'Mappa',           famiglia:'quaderno', sel:'#mappaView' },
     keyword:   { nome:'Parole chiave',   famiglia:'quaderno', sel:'#keywordPane' },
-    album:     { nome:'Album',           famiglia:'quaderno', sel:'#albumPane' },
+    /* «Ritagli» e non «Album»: da quando esiste l'Album Foto, «album» da solo
+       non dice più quale dei due — e qui dentro finiscono anche i fermi
+       immagine del player, quindi nemmeno «Ritagli PDF» sarebbe vero. La chiave
+       resta `album` perché è quella scritta nelle disposizioni già salvate:
+       cambiarla svuoterebbe il blocco a chi l'aveva scelto (stessa ragione di
+       `flashcard`). */
+    album:     { nome:'Ritagli',         famiglia:'quaderno', sel:'#albumPane' },
+    /* L'Album Foto vive solo negli ZAINI: le immagini si portano dentro dove si
+       studia sui propri materiali. In un corso i materiali li governa la
+       pipeline, e `bancoStrumentiOfferti` non offre questa voce. */
+    foto:      { nome:'Album Foto',      famiglia:'quaderno', sel:'#fotoPane' },
     /* «Ripasso» e non «Flashcard»: la chiave resta `flashcard` perché è quella
        scritta nelle disposizioni già salvate, e cambiarla svuoterebbe il blocco
        a chi l'aveva scelto. Il nome in tendina dice che cosa si fa. */
@@ -12282,9 +12537,16 @@ function bancoMonta(){
  * tabella — o le due liste divergerebbero al primo strumento nuovo.
  */
 function bancoStrumentiOfferti(){
-  var reg=bancoStrumenti();
-  if(modoAttivo()!=='zaino') return reg;
-  var out={};
+  var reg=bancoStrumenti(), out={};
+  if(modoAttivo()!=='zaino'){
+    /* Fuori dagli zaini l'Album Foto non si offre: le immagini si portano
+       dentro dove si studia sui propri materiali, e in un corso i materiali li
+       governa la pipeline. Una voce che apre un riquadro in cui non si può
+       far entrare niente è la stessa promessa falsa del «Capitolo» in uno
+       zaino, al contrario. */
+    Object.keys(reg).forEach(function(id){ if(id!=='foto') out[id]=reg[id]; });
+    return out;
+  }
   /* Nello zaino non si offrono né «Capitolo» né «Ripasso»: i capitoli sono di
      una lezione, e le carte del ripasso nascono dal quiz e dal glossario dei
      capitoli — in uno zaino non c'è né l'uno né l'altro, e una voce che apre
@@ -12398,6 +12660,10 @@ function bancoDopoLayout(){
      nuovo — o può essere cambiato il corso. */
   try{ if(typeof albumAggiorna==='function' && bancoVisibile('album')) albumAggiorna(); }
   catch(e){ console.error('banco/album:', e); }
+  /* Stessa ragione per l'Album Foto: montarlo è un `appendChild`, e nessuno gli
+     direbbe che adesso è a schermo e ha del contenuto da mostrare. */
+  try{ if(typeof fotoAggiorna==='function' && bancoVisibile('foto')) fotoAggiorna(); }
+  catch(e){ console.error('banco/foto:', e); }
   /* Il ripasso: stessa ragione degli altri due. In più la coda si costruisce
      chiedendo gli id al main, quindi è un giro asincrono che non ha senso fare
      finché lo strumento sta in magazzino. */
@@ -15599,6 +15865,18 @@ window.addEventListener('keydown', function(e){
     <span id="albConto" class="albconto"></span>
   </div>
   <div id="albLista" class="alblista" role="list"></div>
+</section>
+<!-- L'ALBUM FOTO: le immagini portate dentro dall'utente. Stesso archivio dei
+     ritagli (`ALBUM/` + `_album.json`) e stesso vestito — le classi sono quelle
+     dell'album, non colori che gli somigliano (invariante 8) — ma un'altra
+     origine: qui le immagini non vengono da nessuna pagina, e infatti la card
+     dice il nome del file invece del punto. -->
+<section id="fotoPane" aria-label="Album delle immagini">
+  <div class="tbar albar">
+    <input id="fotoCerca" type="search" placeholder="Cerca fra le immagini…" aria-label="Cerca fra le immagini dell'album">
+    <span id="fotoConto" class="albconto"></span>
+  </div>
+  <div id="fotoLista" class="alblista" role="list"></div>
 </section>
 <section id="keywordPane" aria-label="Parole chiave">
   <div class="tbar kwbar">

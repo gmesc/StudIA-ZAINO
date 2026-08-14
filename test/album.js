@@ -479,6 +479,91 @@ sezione('Un ritaglio può venire da un video, e allora il punto è un secondo');
       rect: { x: 1, y: 1, w: 9, h: 9 }, dati: dataUrl(png(9, 9)) }, QUANDO).error));
 }
 
+sezione('Le FOTO: stesso archivio, altra provenienza');
+{
+  pulisci();
+  const byte = png(200, 150);
+  const foto = { origine: 'foto', materiale: 'Gita al lago.jpg', dati: dataUrl(byte) };
+  const r = A.salva(VAULT, CORSO, foto, QUANDO);
+  check('una foto entra senza pagina e senza rettangolo', '', r.error);
+  check('e si dichiara per quello che è', 'foto', r.voce.origine);
+  /* ⚠️ L'identità di una foto sono i BYTE: è la sola cosa che è davvero lei. */
+  check('l\'id è l\'impronta dei byte', A.identitaByte(byte), r.voce.id);
+  check('il nome del file la distingue nel Finder', 'foto Gita al lago_' + r.voce.id + '.png', r.voce.file);
+  check('la didascalia di partenza è il nome del file', 'Gita al lago', r.voce.didascalia);
+  check('le misure sono lette dall\'immagine', [200, 150], [r.voce.w, r.voce.h]);
+
+  /* Lo STESSO file trascinato di nuovo, con un altro nome: è la stessa foto. */
+  const ancora = A.salva(VAULT, CORSO, { origine: 'foto', materiale: 'copia (1).jpg', dati: dataUrl(byte) }, QUANDO);
+  check('la stessa immagine due volte non fa due voci', true, ancora.giaCera);
+  check('e resta il nome della prima', 'Gita al lago', ancora.voce.didascalia);
+  check('sul disco c\'è un file solo', 1, suDisco().length);
+
+  /* Un'immagine diversa invece è un'altra voce, anche con lo stesso nome. */
+  const altra = A.salva(VAULT, CORSO, { origine: 'foto', materiale: 'Gita al lago.jpg', dati: dataUrl(png(40, 40)) }, QUANDO);
+  check('un\'immagine diversa è un\'altra voce', false, altra.voce.id === r.voce.id);
+
+  /* Senza il nome del file non si sa nemmeno come chiamarla. */
+  check('una foto senza provenienza viene rifiutata', true,
+    /da quale file/.test(A.salva(VAULT, CORSO, { origine: 'foto', dati: dataUrl(png(10, 10)) }, QUANDO).error));
+
+  /* Le due viste dell'app sono due filtri sullo STESSO indice. */
+  A.salva(VAULT, CORSO, ritaglio(), QUANDO);
+  check('l\'archivio le tiene tutte insieme', 3, A.elenco(VAULT, CORSO).voci.length);
+  check('«Album Foto» ne vede due', 2, A.elenco(VAULT, CORSO, 'foto').voci.length);
+  check('«Ritagli» ne vede uno', 1, A.elenco(VAULT, CORSO, 'ritaglio').voci.length);
+  check('e un filtro inventato non nasconde niente', 3, A.elenco(VAULT, CORSO, 'chissà').voci.length);
+  /* ⚠️ Il campo nuovo deve TORNARE INDIETRO DAL DISCO, non solo esistere in
+     memoria: è la trappola delle liste bianche, pagata su appunti e mappe. */
+  /* I ritagli davanti, le foto dopo: due popolazioni con due criteri di
+     ricerca — un ritaglio si cerca per «da dove viene», una foto per nome. */
+  check('e l\'origine sopravvive alla riscrittura dell\'indice', ['ritaglio', 'foto', 'foto'],
+    A.elenco(VAULT, CORSO).voci.map((v) => v.origine));
+}
+
+sezione('La miniatura di una foto: un francobollo, e se manca non è un guasto');
+{
+  pulisci();
+  const r = A.salva(VAULT, CORSO, { origine: 'foto', materiale: 'grande.jpg',
+    dati: dataUrl(png(300, 200)), mini: dataUrl(png(48, 32)) }, QUANDO);
+  check('la voce dice dove sta la sua miniatura', A.MINI + '/' + r.voce.id + '.png', r.voce.mini);
+  check('e il file c\'è', true, fs.existsSync(path.join(DIR, r.voce.mini)));
+  check('con dentro i byte del francobollo, non della foto', true,
+    fs.readFileSync(path.join(DIR, r.voce.mini)).equals(png(48, 32)));
+  check('la miniatura torna indietro dal disco', A.MINI + '/' + r.voce.id + '.png',
+    A.elenco(VAULT, CORSO, 'foto').voci[0].mini);
+
+  /* Una miniatura storta non deve impedire alla foto di entrare: chi disegna sa
+     ripiegare sull'immagine vera, ma una foto persa è persa. */
+  const senza = A.salva(VAULT, CORSO, { origine: 'foto', materiale: 'altra.jpg',
+    dati: dataUrl(png(30, 30)), mini: 'data:image/png;base64,questo-non-è-base64' }, QUANDO);
+  check('una miniatura illeggibile non fa perdere la foto', '', senza.error);
+  check('semplicemente la voce non ne dichiara una', undefined, senza.voce.mini);
+
+  /* E cancellando la foto se ne va anche il francobollo: un file orfano non si
+     vede, non dà errore, e resta nel vault per sempre. */
+  const tolto = A.rimuovi(VAULT, CORSO, r.voce.id);
+  check('la foto si toglie', true, tolto.tolto);
+  check('e la sua miniatura con lei', false, fs.existsSync(path.join(DIR, A.MINI, r.voce.id + '.png')));
+}
+
+sezione('La GIF entra com\'è: passarla da un canvas la ridurrebbe a un fotogramma');
+{
+  pulisci();
+  /* Una GIF89a minima: firma più abbastanza byte da non sembrare troncata. */
+  const gif = Buffer.concat([Buffer.from('GIF89a', 'ascii'), Buffer.alloc(20, 7)]);
+  const r = A.salva(VAULT, CORSO, { origine: 'foto', materiale: 'ciclo.gif',
+    dati: 'data:image/gif;base64,' + gif.toString('base64') }, QUANDO);
+  check('una GIF è un formato accettato', '', r.error);
+  check('e il file finisce con .gif', true, /\.gif$/.test(r.voce.file));
+  check('coi byte intatti', true, fs.readFileSync(path.join(DIR, r.voce.file)).equals(gif));
+  /* ⚠️ E una firma che non è una GIF non entra dichiarandosi tale: `firmaOk`
+     guarda i byte, non il `data:image/gif` scritto davanti. */
+  check('un finto GIF non passa', true,
+    /non sono un\'immagine/.test(A.salva(VAULT, CORSO, { origine: 'foto', materiale: 'finto.gif',
+      dati: 'data:image/gif;base64,' + Buffer.from('non una gif').toString('base64') }, QUANDO).error));
+}
+
 try { fs.rmSync(VAULT, { recursive: true, force: true }); } catch (e) { /* la cartella era temporanea */ }
 
 console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');

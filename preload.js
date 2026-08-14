@@ -6,6 +6,7 @@ const mat = require('./lib/materiali');   // materiali del corso, con ripiego su
 const corsiLib = require('./lib/corsi');  // dove stanno corsi e lezioni, anche nei vault mai migrati
 const evidenzeLib = require('./lib/evidenze'); // le parole chiave evidenziate, accanto agli appunti
 const albumLib = require('./lib/album');  // le immagini ritagliate dai documenti, per corso
+const heicLib = require('./lib/heic');    // le foto dell'iPhone, che il browser non sa disegnare
 const voceLib = require('./lib/voce');    // sintesi di sistema per la lettura ad alta voce
 
 const cfg = ipcRenderer.sendSync('cfg:get') || {};
@@ -321,11 +322,28 @@ contextBridge.exposeInMainWorld('vault', {
      Ogni metodo torna un oggetto con `error`: l'immagine che non si è salvata
      deve poterlo dire, invece di fallire in silenzio. */
   album: {
-    elenco: (corso) => {
+    /* `origine` filtra la vista: `'ritaglio'` per i Ritagli, `'foto'` per
+       l'Album Foto, niente per l'archivio intero. Il filtro lo fa la libreria,
+       così le due viste partono dalla stessa risposta. */
+    elenco: (corso, origine) => {
       if (!vaultPath) return { voci: [], error: 'nessuna cartella vault impostata' };
-      try { return albumLib.elenco(vaultPath, corso); }
+      try { return albumLib.elenco(vaultPath, corso, origine); }
       catch (e) { return { voci: [], error: e.message }; }
     },
+    /* Il percorso vero di un file trascinato dentro. ⚠️ Da Electron 32 un `File`
+       non ha più `.path`: senza questa riga, di una foto si avrebbe solo il
+       contenuto — e per l'HEIC serve il file, perché a convertirlo è `sips`.
+       È lo stesso ponte già usato dai media. */
+    percorsoDi: (file) => { try { return webUtils.getPathForFile(file); } catch (e) { return ''; } },
+    /* Una foto HEIC tradotta in JPEG, come data URL — la stessa forma che
+       `salva` accetta già. Sincrono come il resto dell'album: converte un file
+       per volta, a gesto dell'utente. */
+    heic: (percorso) => {
+      try { return heicLib.converti(percorso); }
+      catch (e) { return { dati: '', error: e.message }; }
+    },
+    heicDisponibile: () => { try { return heicLib.disponibile(); } catch (e) { return false; } },
+    SENZA_HEIC: heicLib.SENZA_SIPS,
     /* `voce` è `{ materiale, pagina, rect, didascalia, dati }`, dove `rect` è in
        coordinate della PAGINA (non dello schermo: a un altro zoom indicherebbe
        un altro punto) e `dati` è il data URL del canvas. Se quell'area era già
@@ -359,10 +377,14 @@ contextBridge.exposeInMainWorld('vault', {
        ⚠️ Vuole anche il corso, a differenza della firma abbozzata nel piano:
        l'album è di un corso, e un id da solo non individua nessun file — il nome
        del file lo dà l'indice di QUEL corso. */
-    srcUrl: (corso, id) => {
+    srcUrl: (corso, id, quale) => {
       if (!vaultPath) return '';
       try {
-        const p = albumLib.percorsoImmagine(vaultPath, corso, id);
+        /* `'mini'` chiede il francobollo, e se non c'è si torna l'immagine vera
+           invece di una stringa vuota: chi disegna una card non deve gestire il
+           caso «niente da mostrare» per una cosa che c'è. */
+        const m = quale === 'mini' ? albumLib.percorsoMini(vaultPath, corso, id) : '';
+        const p = m || albumLib.percorsoImmagine(vaultPath, corso, id);
         return p ? url.pathToFileURL(p).href : '';
       } catch (e) { return ''; }
     }
