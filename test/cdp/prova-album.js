@@ -35,15 +35,19 @@ async function finoA(expr, quanto) {
   }
 }
 
-/** Trascina col mouse VERO, come farebbe una mano. */
-async function trascina(x1, y1, x2, y2) {
-  await invia('Input.dispatchMouseEvent', { type: 'mousePressed', x: x1, y: y1, button: 'left', clickCount: 1 });
+/** Trascina col mouse VERO, come farebbe una mano. `mod` sono i modificatori
+ *  CDP tenuti premuti durante il gesto (4 = ⌘): un evento del mouse li porta con
+ *  sé, ed è così che l'app sa che si sta ritagliando. */
+async function trascina(x1, y1, x2, y2, mod) {
+  const m = mod || 0;
+  await invia('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x1, y: y1, modifiers: m });
+  await invia('Input.dispatchMouseEvent', { type: 'mousePressed', x: x1, y: y1, button: 'left', clickCount: 1, modifiers: m });
   for (let i = 1; i <= 6; i++) {
     await invia('Input.dispatchMouseEvent', { type: 'mouseMoved',
-      x: Math.round(x1 + (x2 - x1) * i / 6), y: Math.round(y1 + (y2 - y1) * i / 6), button: 'left' });
+      x: Math.round(x1 + (x2 - x1) * i / 6), y: Math.round(y1 + (y2 - y1) * i / 6), button: 'left', modifiers: m });
     await pausa(30);
   }
-  await invia('Input.dispatchMouseEvent', { type: 'mouseReleased', x: x2, y: y2, button: 'left', clickCount: 1 });
+  await invia('Input.dispatchMouseEvent', { type: 'mouseReleased', x: x2, y: y2, button: 'left', clickCount: 1, modifiers: m });
 }
 
 /** La parte della pagina che si vede DAVVERO: l'incrocio fra il riquadro della
@@ -127,34 +131,46 @@ const RIQUADRO = `(()=>{ const v=PDFJS.viewer; if(!v) return null;
   const conta = await val(`(window.vault.album.elenco(${JSON.stringify(corso)}).voci||[]).length`);
   ok('nessun doppione: l\'area è la stessa', prima + 1, conta);
 
-  sezione('⌥ tenuto premuto: forbici momentanee, senza accendere il modo');
+  sezione('⌘ tenuto premuto: forbici momentanee, senza accendere il modo');
   /* Il bottone in barra è comodo per dieci ritagli di fila; per uno solo è un
-     viaggio. Con ⌥ giù si ritaglia e basta, e mollato il tasto torna la
+     viaggio. Con ⌘ giù si ritaglia e basta, e mollato il tasto torna la
      selezione del testo — un modo che dura quanto il dito non si dimentica
-     acceso, che è il difetto di quello appiccicato. */
+     acceso, che è il difetto di quello appiccicato.
+     ⌘ e non ⌥: è il tasto di tutte le altre scorciatoie dell'app, e su Windows
+     diventa ⌃ senza un secondo gesto da imparare. */
   await val('albumRitaglioModo(false), 1'); await pausa(300);
   const spente = await val(`({ croce:document.getElementById('pdfHost').classList.contains('ritaglio'),
     bottone:document.getElementById('pdfRitaglia').getAttribute('aria-pressed') })`);
   ok('si parte con le forbici spente', { croce: false, bottone: 'false' }, spente);
 
-  async function alt(giu) {
+  async function cmd(giu) {
     await invia('Input.dispatchKeyEvent', {
-      type: giu ? 'rawKeyDown' : 'keyUp', key: 'Alt', code: 'AltLeft',
-      windowsVirtualKeyCode: 18, nativeVirtualKeyCode: 18, modifiers: giu ? 1 : 0
+      type: giu ? 'rawKeyDown' : 'keyUp', key: 'Meta', code: 'MetaLeft',
+      windowsVirtualKeyCode: 91, nativeVirtualKeyCode: 91, modifiers: giu ? 4 : 0
     });
     await pausa(250);
   }
 
-  await alt(true);
-  const conAlt = await val(`({ croce:document.getElementById('pdfHost').classList.contains('ritaglio'),
+  await cmd(true);
+  /* ⚠️ Il tasto da solo non basta, ed è un fatto dell'app e non della prova:
+     premendo ⌘ la finestra perde il fuoco per un istante (su macOS quel tasto è
+     la porta della barra dei menu) e arriva un `blur`. Lo stato si ripara dal
+     primo movimento del mouse, che porta con sé i modificatori — come farebbe
+     una mano vera, che il mouse lo muove. */
+  const dentro = await val(VISIBILE);
+  await invia('Input.dispatchMouseEvent', {
+    type: 'mouseMoved', x: dentro.x + Math.round(dentro.w / 2), y: dentro.y + Math.round(dentro.h / 2), modifiers: 4
+  });
+  await pausa(250);
+  const conMod = await val(`({ croce:document.getElementById('pdfHost').classList.contains('ritaglio'),
     bottone:document.getElementById('pdfRitaglia').getAttribute('aria-pressed'),
-    alt:ALBUM.alt, attivo:ALBUM.attivo })`);
-  ok('con ⌥ giù il riquadro passa alle forbici', true, conAlt.croce);
-  /* ⚠️ Il bottone NON deve premersi da sé: mollato ⌥ tornerebbe su, e un comando
+    mod:ALBUM.mod, attivo:ALBUM.attivo })`);
+  ok('con ⌘ giù il riquadro passa alle forbici', true, conMod.croce);
+  /* ⚠️ Il bottone NON deve premersi da sé: mollato ⌘ tornerebbe su, e un comando
      che si accende e si spegne da solo non si capisce più chi lo comanda. */
-  ok('ma il bottone in barra non si preme da sé', 'false', conAlt.bottone);
-  ok('e il modo appiccicato resta spento', { alt: true, attivo: false },
-    { alt: conAlt.alt, attivo: conAlt.attivo });
+  ok('ma il bottone in barra non si preme da sé', 'false', conMod.bottone);
+  ok('e il modo appiccicato resta spento', { mod: true, attivo: false },
+    { mod: conMod.mod, attivo: conMod.attivo });
 
   /* ⚠️ Il rettangolo si disegna dentro la parte VISIBILE della pagina, non
      dentro la pagina: a 1,4× la metà bassa sta fuori dal riquadro, e il
@@ -168,13 +184,13 @@ const RIQUADRO = `(()=>{ const v=PDFJS.viewer; if(!v) return null;
   console.log('   parte visibile della pagina: ' + JSON.stringify(box3));
   const conta2 = await val(`(window.vault.album.elenco(${JSON.stringify(corso)}).voci||[]).length`);
   await trascina(box3.x + Math.round(box3.w * 0.62), box3.y + Math.round(box3.h * 0.3),
-                 box3.x + Math.round(box3.w * 0.92), box3.y + Math.round(box3.h * 0.55));
+                 box3.x + Math.round(box3.w * 0.92), box3.y + Math.round(box3.h * 0.55), 4);
   const conta3 = await finoA(`(()=>{ const n=(window.vault.album.elenco(${JSON.stringify(corso)}).voci||[]).length;
     return n>${conta2} ? n : null; })()`, 25000);
-  ok('trascinando con ⌥ giù esce un ritaglio', conta2 + 1, conta3);
+  ok('trascinando con ⌘ giù esce un ritaglio', conta2 + 1, conta3);
 
-  await alt(false);
-  ok('mollato ⌥ il riquadro torna al testo', false,
+  await cmd(false);
+  ok('mollato ⌘ il riquadro torna al testo', false,
     await val("document.getElementById('pdfHost').classList.contains('ritaglio')"));
   /* E adesso lo stesso gesto NON deve ritagliare più niente. */
   await trascina(box3.x + Math.round(box3.w * 0.1), box3.y + Math.round(box3.h * 0.6),
@@ -183,15 +199,15 @@ const RIQUADRO = `(()=>{ const v=PDFJS.viewer; if(!v) return null;
   ok('e il trascinamento nudo non ritaglia più',
     conta3, await val(`(window.vault.album.elenco(${JSON.stringify(corso)}).voci||[]).length`));
 
-  /* ⚠️ Su macOS ⌥ serve a comporre accenti e simboli: chi sta scrivendo non sta
-     chiedendo le forbici. Con il fuoco in un campo di testo il tasto non deve
-     fare niente. */
+  /* ⚠️ ⌘ dentro un campo è la prima metà di ⌘S, ⌘F, ⌘P: chi sta salvando un
+     appunto non sta chiedendo le forbici. Con il fuoco in un campo di testo il
+     tasto non deve fare niente. */
   await val('pdfFindApri(), 1'); await pausa(300);
   ok('il fuoco è nel campo della ricerca', 'pdfFindInput', await val('document.activeElement.id'));
-  await alt(true);
-  ok('scrivendo in un campo, ⌥ non accende niente', false,
+  await cmd(true);
+  ok('scrivendo in un campo, ⌘ non accende niente', false,
     await val("document.getElementById('pdfHost').classList.contains('ritaglio')"));
-  await alt(false);
+  await cmd(false);
   await val('pdfFindChiudi(), 1');
   await val('getSelection().removeAllRanges(), 1');
 
@@ -202,7 +218,7 @@ const RIQUADRO = `(()=>{ const v=PDFJS.viewer; if(!v) return null;
   const griglia = await val(`(()=>{ const c=[...document.querySelectorAll('#albLista .alcard')];
     return { card:c.length, conImmagine:c.filter(x=>x.querySelector('img')).length,
              conto:document.getElementById('albConto').textContent }; })()`);
-  /* Due, non uno: quello del bottone e quello fatto con ⌥ giù. Il conto viene
+  /* Due, non uno: quello del bottone e quello fatto con ⌘ giù. Il conto viene
      dal disco (`conta3`), non da un numero scritto qui — così una prova nuova
      che aggiunge un ritaglio non fa arrossare questa. */
   ok('c\'è una card per ogni ritaglio', conta3, griglia.card);
