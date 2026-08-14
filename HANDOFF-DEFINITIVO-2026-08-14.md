@@ -110,14 +110,31 @@ Le regole stanno in `App/assets/stampa/foglio.js` (puro, provato in Node) e le s
 apposta: col dialogo di stampa in mezzo il foglio si potrebbe misurare solo a mano, e così ci
 passa anche la prova CDP.
 
-**Aperto, e sono due decisioni**:
-1. **le citazioni `>` restano letterali** — `mdToHtml` conosce solo i callout (`> [!nota]`), quindi
-   un `> testo` finisce in pagina col cancelletto a vista. È un difetto della RESA degli appunti,
-   non della carta: si vede anche a schermo;
-2. **gli sfondi non si stampano** se chi stampa non accende «grafica di sfondo» nel dialogo (di
-   norma è spenta). Il filo a sinistra dei riquadri regge lo stesso. Il rimedio vero è un
-   «Salva come PDF» che scriva il file dall'app — MappAI ce l'ha (`html-to-pdf` con
-   `printBackground:true`), StudIA no: è un IPC nuovo, e vale la pena solo se il beta lo chiede.
+### «Salva come PDF», scritto dall'app (`377d914`)
+
+Chiesto da Giacomo subito dopo. Due bottoni **PDF**, accanto alla stampa: nella barra
+dell'appunto e in quella della mappa (dove il §7 di `PIANO-MAPPE-EDITOR` lo prevedeva da sempre).
+
+⚠️ Non è un doppione della stampa: il dialogo di Chromium stampa **senza «grafica di sfondo»**
+finché non la si accende a mano — e i fondi dei riquadri degli appunti **sono** il codice-colore
+dei callout. Quando il file lo scrive l'app, `printBackground` è acceso e `preferCSSPageSize`
+obbedisce al nostro `@page`: due cose che non si possono più sbagliare.
+
+⚠️ Il documento va al main **già impaginato** e ripulito: via gli `<script>` (la finestra che
+stampa li *eseguirebbe*, e l'app ripartirebbe dentro il PDF), via il resto del corpo (167 KB
+invece di ~1 MB) e via i commenti; e ci si aggiunge un `<base href>`, o CSS, font e immagini non
+si trovano più. Si carica con `loadFile` e **non** come `data:` URL: quella ha origine opaca e il
+browser le nega i sotto-file `file://`.
+
+⚠️ E il riquadro dell'appunto **tiene il suo colore**: la prima stesura delle regole dipingeva
+`.ucallout` come una citazione qualunque, e i quattro tipi uscivano tutti grigi. Il colore è la
+loro unica differenza, ed è quella che si cerca sfogliando.
+
+**Aperto, una decisione**: **le citazioni `>` restano letterali** — `mdToHtml` conosce solo i
+callout (`> [!nota]`), quindi un `> testo` finisce in pagina col segno a vista. È la RESA degli
+appunti, non la carta: si vede anche a schermo, e chiuderla vuol dire insegnare il blockquote a
+`mdToHtml` (una ventina di righe in `lettura/capitolo.js` + la sua prova, e cambia anche lo
+schermo).
 
 ---
 
