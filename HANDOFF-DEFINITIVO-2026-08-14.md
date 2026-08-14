@@ -138,6 +138,36 @@ schermo).
 
 ---
 
+## 3-ter. Trascinare un ritaglio dell'album (`164d4fe`)
+
+Segnalato da Giacomo: le parole chiave si trascinano, le immagini dell'album no — né sulla mappa
+né negli appunti.
+
+⚠️ **Non mancava un pezzo: partiva il trascinamento sbagliato.** Le card dell'album non erano
+dichiarate trascinabili, quindi a muoversi era il drag NATIVO dell'immagine, che porta con sé
+`text/uri-list` e `text/html` — il **percorso del file**. Sulla mappa non vuol dire niente (il
+`drop` cercava solo le parole chiave) e in un appunto sarebbe finito un `file:///…` che si rompe
+appena il vault cambia posto. Ora la card comanda e dichiara l'**identità** del ritaglio, più il
+markdown `album:<id>` per chi capisce solo testo.
+
+Il trascinamento è la **terza porta** di due verbi che c'erano già («Metti nella mappa», «Metti
+nell'appunto»): chiama le stesse funzioni, non ne scrive di nuove. Il nodo e il testo nascono
+**dove si lascia** il ritaglio.
+
+⚠️ Gli appunti ascoltano in **cattura**: dentro il riquadro c'è CodeMirror, che il `drop` se lo
+prende per primo. Si interviene prima di lui e **solo** per i ritagli — le parole chiave, che già
+funzionavano, non cambiano di una riga.
+
+**Verificato con un trascinamento vero**, non sintetico: `Input.setInterceptDrags` consegna il
+drag nativo avviato dal mouse, e i tipi trasportati sono `text/uri-list · text/html ·
+application/x-studia-album · text/plain`. Il percorso del file c'è — a vincere è il nostro.
+
+⚠️ Trappola di metodo, pagata qui: la prova nuova lasciava a schermo album, mappa e appunti, e
+`prova-evidenze-pdf` cadeva su un controllo che col trascinamento non c'entra niente. **Una prova
+lascia il banco come l'ha trovato**, o il rosso lo prende un'altra.
+
+---
+
 ## 4. Il beta fra dieci giorni: che cosa conta davvero
 
 Lo scorporo **non è un bloccante**: è manutenzione, e il tester non lo vede. Fino al beta niente
