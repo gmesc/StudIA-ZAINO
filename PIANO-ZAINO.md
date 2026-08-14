@@ -235,6 +235,38 @@ cominciato da uno mai aperto.
 `test/lettura.js` (27 controlli, in `npm test`) e `test/cdp/prova-fonti.js` (17 sull'app viva, nella
 suite — che adesso conta 16 prove).
 
+#### Z4-bis — Il bottone dello zoom ha tre stati ✅ *fatto il 14 agosto 2026*
+
+Non è più solo una percentuale. `⟷` = adattata alla **larghezza**, `⤢` = adattata alla **pagina
+intera**, `144%` = scelta **a mano**. Il click cicla i due adattamenti; «+», «−» e **SHIFT+rotella**
+portano alla percentuale. La percentuale non si perde: quando il bottone mostra un segno, il numero
+sta nel suggerimento, insieme a dove porta il click.
+
+I due adattamenti sono **dinamici**: cambia la misura del riquadro — divisore del banco, finestra,
+forma del blocco — e la scala li segue.
+
+⚠️ **`page-width` non era un abbonamento.** pdf.js calcola la scala **una volta**, nel momento in cui
+gliela si assegna; il suo `ResizeObserver` aggiorna soltanto una variabile CSS per l'altezza. A
+riadattare i modi per nome, nel visualizzatore ufficiale, è `webViewerResize` di `app.js` — che qui
+non c'è. Un punto solo di reazione (`pdfZoomRiadatta`, su un `ResizeObserver` di `#pdfFrame`) copre
+tutte le cause, con un'**isteresi di 4px** che rompe il ping-pong della barra di scorrimento
+(adatta → compare la barra → cambia la larghezza → riadatta → sparisce la barra → …).
+
+⚠️ **`origin` di `updateScale` non è in coordinate di schermo**, benché il visualizzatore ufficiale
+gli passi `clientX/clientY`: pdf.js lo confronta con `containerTopLeft`, cioè `offsetTop/offsetLeft`.
+Là il contenitore sta subito sotto la barra e i due sistemi quasi coincidono; qui `#pdfFrame` è
+`inset:0` dentro un blocco del banco. Misurato: il punto sotto il puntatore scappava di **29px**
+(dx −25 · dy −15); convertendo le coordinate, **0**.
+
+⚠️ **I segni non sono `↔` e `↕`**: il `@font-face` di OpenMoji dichiara `U+2190-21FF`, e là dentro
+quelle frecce diventano pittogrammi colorati. `⟷` (U+27F7) e `⤢` (U+2922) cadono fuori da tutti gli
+intervalli dichiarati — verificato anche a schermo, bottone da 30px come gli altri.
+
+Il modo **non è un interruttore nostro**: è `currentScaleValue` quando non è un numero, cioè un dato
+che il viewer tiene già e che si ricorda su disco così com'è (invariante 1). L'aritmetica sta in
+`App/assets/fonti/zoom.js` (`test/zoom-fonte.js`, in `npm test`); la sezione dell'app viva è dentro
+`test/cdp/prova-pdf.js`.
+
 ### Z5 — L'import e la lente ✅ *fatto il 10 agosto 2026*
 Si trascinano dei PDF sulla finestra e, in modalità zaino, entrano: **copiati** dentro
 `MATERIALI/PDF/` (mai linkati — un file linkato è una fonte che si rompe appena lo si sposta),
