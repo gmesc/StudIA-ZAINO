@@ -1128,8 +1128,21 @@
   #pdfDocPop .pd-voce:hover, #plMediaPop .pd-voce:hover{ background:var(--hover); }
   #pdfDocPop .pd-voce.attivo, #plMediaPop .pd-voce.attivo{ font-weight:700; border-left:3px solid var(--teal); }
   #pdfDocPop .pd-vuoto, #plMediaPop .pd-vuoto{ padding:.6rem; font-size:12px; color:var(--muted); }
+  /* ⚠️ Il bottone del livello tiene la LARGHEZZA DEL CASO PEGGIORE, non quella
+     del contenuto. Ha tre etichette — «⟷», «⤢» e una percentuale — e misurate
+     erano 30px i segni contro 46px un numero: passando da un adattamento allo
+     zoom a mano il bottone si allargava di sedici pixel e si spostavano i due
+     comandi accanto. Il caso peggiore è «500%», cioè il tetto (`FontiZoom.MAX`):
+     con le cifre tabellari tutte le percentuali di tre cifre misurano uguale,
+     quindi tre cifre più il segno di percento sono lo spazio da tenere sempre.
+     `ch` e non 46px perché il conto deve seguire il corpo del token: cambiando
+     `--tb-fs` una misura in pixel resterebbe indietro in silenzio.
+     ⚠️ E non sono 4ch: le barre hanno `letter-spacing`, quindi quattro caratteri
+     occupano più di quattro larghezze di cifra. Misurato a schermo — 4,3ch dava
+     39px contro i 46 che «500%» chiede davvero: il numero giusto è **5,5ch**,
+     che con l'imbottitura fa esattamente la larghezza del caso peggiore. */
   #pdfPane .pdfzoom #pdfZoomLvl{ width:auto; padding:0 .4rem; font-size:11px; font-weight:700;
-    font-variant-numeric:tabular-nums; }
+    font-variant-numeric:tabular-nums; min-width:calc(5.5ch + .8rem); }
   #searchInput{ height:var(--ctl-h); width:min(420px,80vw); background:var(--panel); color:var(--ink);
     border:1px solid var(--line); border-radius:0; padding:0 .6rem; font-size:12px; font-family:inherit; }
   #searchInput:focus{ outline:2px solid var(--primary); outline-offset:-2px; }

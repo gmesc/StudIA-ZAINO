@@ -69,6 +69,24 @@ async function apertoA(pagina) {
   ok('e tutti i bottoni della barra ci stanno dentro',
     [tb, tb, tb, tb, tb],
     [misure.chiudi, misure.zoom, misure.livello, misure.forbici, misure.pagina]);
+
+  /* ⚠️ La LARGHEZZA del bottone del livello non deve cambiare con l'etichetta.
+     Ne ha tre — «⟷», «⤢» e una percentuale — e senza una misura riservata al
+     caso peggiore («500%», il tetto dello zoom) passare da un adattamento allo
+     zoom a mano allargava il bottone di sedici pixel, spostando i due comandi
+     accanto sotto le dita di chi stava premendo. */
+  const larghezze = await val(`(()=>{ const e=document.getElementById('pdfZoomLvl');
+    const prima=e.textContent, out=[];
+    ['⟷','⤢','25%','100%','500%'].forEach(t=>{ e.textContent=t;
+      out.push(Math.round(e.getBoundingClientRect().width)); });
+    e.textContent=prima; return out; })()`);
+  console.log('   livello: ' + JSON.stringify(larghezze));
+  ok('il bottone del livello è largo uguale con tutte le sue etichette',
+    [larghezze[0], larghezze[0], larghezze[0], larghezze[0], larghezze[0]], larghezze);
+  /* E la misura riservata dev'essere quella VERA di «500%», non una a caso più
+     grande: un bottone largo il doppio non oscilla, ma è un buco nella barra. */
+  ok('e la misura è quella che «500%» chiede davvero', true,
+    larghezze[0] >= 44 && larghezze[0] <= 50);
   /* Nei corsi il selettore del documento non c'è: lì un documento si apre dal
      rimando del capitolo, che dice anche a che pagina. */
   ok('nei corsi il selettore del documento non compare', false,
