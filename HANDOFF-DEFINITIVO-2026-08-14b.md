@@ -15,8 +15,11 @@
 
 | ramo | commit | suite |
 |---|---|---|
-| `fonte-zoom-adatta` | `41fdd97` | ✅ **29** file di unità · **36** prove CDP, tutte verdi |
-| `main` | `727476b` — **ferma**, non si è mossa | |
+| `main` | `ad57d52` (14 ago sera, dopo il merge) | ✅ **29** file di unità · **36** prove CDP |
+
+**Non c'è nessun ramo aperto.** `fonte-zoom-adatta` è entrato in `main` in **fast-forward** — `main`
+era ancora a `727476b`, quindi il codice unito è **esattamente** quello su cui erano girate le due
+suite: niente da rieseguire. Il ramo è stato cancellato con `-d`; la sua punta resta nel reflog.
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
@@ -24,11 +27,13 @@ npm test                                              # 29 file, exit 0
 STUDIA_PORTA=9334 ./test/cdp/con-vault-di-prova.sh    # 36 prove sull'app viva
 ```
 
-⚠️ **Il ramo non è ancora unito**, e non lo si unisce finché non sono vere tutte e quattro le
-condizioni del §7.2 della guida: (a) le due suite verdi — lo sono; (b) **i gesti provati a mano da
-Giacomo** — la lista è al §4 qui sotto, ed è l'unica che manca; (c) piani e handoff aggiornati —
-fatto (`PIANO-ZAINO §Z4-bis` e questo file); (d) `main` ferma — da **riverificare** al momento del
-merge, non adesso.
+Le quattro condizioni del §7.2 della guida erano tutte vere al momento del merge: (a) le due suite
+verdi; (b) i gesti provati a mano da Giacomo (§4, e da lì è uscito un difetto vero); (c)
+`PIANO-ZAINO §Z4-bis` e questo file aggiornati; (d) `main` ferma, riverificata al momento, non
+ricordata.
+
+⚠️ Il prossimo lavoro parte da un ramo nuovo (`git switch -c <nome>`), e la condizione «`main`
+ferma» va **riverificata** allora: una sessione parallela l'ha già mossa una volta.
 
 ---
 
