@@ -5,7 +5,8 @@
 > ciò che non ripete: lo stato dello smontaggio, la carta e i PDF, il trascinamento dei ritagli, e
 > soprattutto **§4, le quattro cose che contano davvero prima del beta** — quelle non sono cambiate.
 >
-> Qui c'è un lavoro solo, aperto su un ramo: **lo zoom della fonte**.
+> Qui ci sono tre lavori del 14 sera: **lo zoom della fonte** e **le forbici con ⌘** (uniti in
+> `main`), e **le foto nell'album** (F1, su un ramo aperto).
 >
 > **Regola di lettura**: dove c'è ⚠️ c'è un guasto già pagato, col rimedio accanto. È la parte utile.
 
@@ -15,16 +16,18 @@
 
 | ramo | commit | suite |
 |---|---|---|
-| `main` | `ad57d52` (14 ago sera, dopo il merge) | ✅ **29** file di unità · **36** prove CDP |
+| `main` | `9570480` (14 ago sera) | ✅ 29 file di unità · 36 prove CDP |
+| `foto-album` | `2ad3721` — **aperto**, gesti da provare | ✅ **31** file di unità · **37** prove CDP |
 
-**Non c'è nessun ramo aperto.** `fonte-zoom-adatta` è entrato in `main` in **fast-forward** — `main`
+**Un ramo aperto: `foto-album`** (F1, le foto). I gesti a mano sono al §4-bis; finché non sono
+provati non si unisce. `fonte-zoom-adatta` è entrato in `main` in **fast-forward** — `main`
 era ancora a `727476b`, quindi il codice unito è **esattamente** quello su cui erano girate le due
 suite: niente da rieseguire. Il ramo è stato cancellato con `-d`; la sua punta resta nel reflog.
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
-npm test                                              # 29 file, exit 0
-STUDIA_PORTA=9334 ./test/cdp/con-vault-di-prova.sh    # 36 prove sull'app viva
+npm test                                              # 31 file sul ramo, exit 0
+STUDIA_PORTA=9334 ./test/cdp/con-vault-di-prova.sh    # 37 prove sull'app viva
 ```
 
 Le quattro condizioni del §7.2 della guida erano tutte vere al momento del merge: (a) le due suite
@@ -104,6 +107,44 @@ un modo tenuto da un modificatore, la verità è la mano — non la memoria di c
 Gesti provati a mano da Giacomo il 14 sera: ⌘+trascinamento ritaglia, mollato torna la selezione,
 ⌘S in un appunto non accende niente.
 
+## 2-ter. Le foto entrano nel vault (F1) — ramo `foto-album`
+
+Le immagini che l'utente porta dentro da fuori sono una popolazione nuova accanto ai ritagli. In uno
+zaino si trascinano sulla finestra — `.jpg .png .gif .webp .heic` — ed entrano nell'archivio del
+contenitore con la loro miniatura; da lì si trascinano in una mappa o in un appunto, che è il
+trascinamento che c'era già. Il dettaglio sta in [PIANO-FOTO.md](PIANO-FOTO.md); qui la sostanza:
+
+**Un archivio solo, due viste.** `ALBUM/` e `_album.json` restano uno; le voci dichiarano `origine`
+(`ritaglio` · `foto`) e i due strumenti sono due **filtri**. «Album» si chiama adesso **Ritagli** —
+lì dentro finiscono anche i fermi immagine del player — e la chiave resta `album`, o le disposizioni
+salvate perderebbero il blocco.
+
+**L'identità di una foto sono i suoi byte**: la stessa immagine due volte non fa due voci, comunque
+si chiamasse il file la seconda volta.
+
+⚠️ **Il formato lo dicono i byte, non il nome** — un `.png` che dentro è un JPEG è un file normale.
+
+⚠️ **L'orientamento EXIF è la trappola che si sarebbe pagata dopo**: `<img>` raddrizza da sé, un
+`canvas` no. Senza ricodificare, un ritaglio fatto su una foto da telefono avrebbe preso l'area
+ruotata di novanta gradi — e sarebbe sembrato un difetto del ritaglio. Ricodificando, l'orientamento
+entra nei pixel e i metadati GPS restano fuori dal vault.
+
+⚠️ **Ma non tutto passa dal canvas**: una GIF ne uscirebbe come un fotogramma solo.
+
+⚠️ **La miniatura non è un vezzo**: una card è alta 104px, e una foto da dodici megapixel dentro
+quel francobollo è una decodifica intera per niente.
+
+⚠️ **E `mini` è un percorso, non un data URL**: chi salva passa i due con lo stesso nome di campo, e
+senza validazione il data URL finiva scritto nell'indice come se fosse un file. Trovato dalla prova
+mentre la si scriveva — stessa forma della difesa già in piedi sul campo `file`.
+
+Prove nuove: `test/foto.js` · `test/heic.js` (unità, ora **31** file) e `test/cdp/prova-foto.js`
+(**37** prove sull'app viva), registrata DENTRO `PROVE=(`.
+
+⚠️ E la prova rimette a posto **modalità e banco**: senza, `prova-modo` e `prova-evidenze-pdf`
+diventavano rosse perché si ritrovavano uno zaino attivo. *Una prova lascia il banco come l'ha
+trovato* — terza volta che si paga, e stavolta con un sintomo che non c'entrava niente col colpevole.
+
 ## 3. ⚠️ Le trappole pagate qui (la parte che vale oltre questo caso)
 
 1. **`page-width` non è un abbonamento.** pdf.js calcola la scala **una volta**, quando gliela si
@@ -153,6 +194,20 @@ allargava cambiando etichetta (§2), rimediato e coperto da una prova. **Restano
 7. Con le forbici accese, un ritaglio in corso non deve saltare per una rotellata.
 
 ---
+
+## 4-bis. I gesti da provare a mano sulle FOTO (quello che manca per unire `foto-album`)
+
+1. In uno zaino, trascina sulla finestra **un `.jpg` da telefono ruotato**: entra **dritto**.
+2. Trascina un **`.heic`**: entra convertito (e nell'archivio non resta l'originale).
+3. Trascina una **GIF animata**: nella griglia si muove.
+4. Trascina **lo stesso file due volte**: una card sola.
+5. Trascina **un PDF e un'immagine insieme**: il PDF va nelle fonti, l'immagine nell'Album Foto.
+6. Trascina un **`.txt`**: te lo dice, col motivo.
+7. In un **corso** «Album Foto» non compare nella tendina; «Album» adesso si chiama **«Ritagli»** e
+   contiene i ritagli di prima.
+8. Trascina una foto **dentro un appunto** e **dentro una mappa**: compare.
+9. Dal menu di una foto, **«Alla fonte» è spenta** e dice perché; **«Rinomina la didascalia»**
+   funziona.
 
 ## 5. Che cosa resta aperto
 
