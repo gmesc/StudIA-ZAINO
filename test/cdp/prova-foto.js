@@ -156,6 +156,26 @@ const FABBRICA = `
   console.log('   avviso a schermo: ' + JSON.stringify(avviso));
   ok('e l\'app lo dice', true, /finta\.png|note\.txt|immagine/.test(avviso));
 
+  sezione('⚠️ Un file che non entra dice che cosa entra DOVE SI È');
+  /* Prima rispondeva «qui si rilascia una lezione .json» anche dentro uno
+     zaino, dove le lezioni non si rilasciano affatto: un rifiuto che manda a
+     cercare una porta che in quella modalità non esiste. */
+  await val(`(async()=>{ const f=window.__foto;
+    const files=[ f.file(f.testo('due righe'), 'appunti.txt') ];
+    /* ⚠️ Si passa dal gestore della caduta, non da fotoTrascinate: il messaggio
+       che si vuole misurare lo scrive lui, quando nessuno vuole quel file.
+       ⚠️⚠️ E niente apici inversi in questo commento: sta dentro un template
+       letterale e uno di quelli lo chiude a metà. È l'ottava volta. */
+    const dt=new DataTransfer(); files.forEach(x=>dt.items.add(x));
+    window.dispatchEvent(new DragEvent('drop', { dataTransfer:dt, bubbles:true, cancelable:true }));
+    return 1; })()`);
+  await pausa(800);
+  const rifiuto = await val("(()=>{ const t=document.getElementById('toast'); return t?t.textContent:''; })()");
+  console.log('   ' + JSON.stringify(rifiuto));
+  ok('il rifiuto nomina il file', true, /appunti\.txt/.test(rifiuto));
+  ok('e dice che cosa entra in uno zaino', true, /pdf/i.test(rifiuto) && /immagini/i.test(rifiuto));
+  ok('senza parlare di lezioni, che qui non si rilasciano', false, /lezione/i.test(rifiuto));
+
   sezione('Una foto non ha una fonte a cui tornare, e il menu lo dichiara');
   const id = (voci || [])[0].id;
   await val(`albumMenu(${JSON.stringify(id)}, 200, 200), 1`);

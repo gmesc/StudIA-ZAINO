@@ -4135,7 +4135,16 @@ function readLessonFile(f){
     /* Nello ZAINO trascinare vuol dire «porta dentro questi documenti». Fuori
        resta il gesto di prima — un `.json` di lezione — che è l'unico che aveva
        senso quando lo zaino non esisteva. */
-    if(modoAttivo()==='zaino' && zainoTrascinati(files)) return;
+    if(modoAttivo()==='zaino'){
+      if(zainoTrascinati(files)) return;
+      /* ⚠️ E qui NON si passa la palla a `readLessonFile`: in uno zaino le
+         lezioni non si rilasciano affatto, e il suo «qui si rilascia una lezione
+         .json» mandava a cercare una porta che in questa modalità non esiste.
+         Un rifiuto deve dire che cosa entra DAVVERO dove si è. */
+      var chi=(files[0] && files[0].name) || 'questo file';
+      toast('In uno zaino entrano documenti .pdf, video, audio e immagini — «'+chi+'» no', false);
+      return;
+    }
     readLessonFile(files[0]);
   });
   refreshLessonSelect();
@@ -5008,6 +5017,18 @@ function pdfjsAvvia(){
          nomi esportati dalla build — e senza layer di testo non si seleziona
          niente, che è metà del motivo di tutto questo lavoro. */
       textLayerMode:1,
+      /* -1 = AnnotationEditorType.DISABLE, e anche questo numero è grezzo perché
+         l'enum non è fra i nomi esportati dalla build.
+         ⚠️ SENZA QUESTA RIGA pdf.js si prende le immagini trascinate. Il valore
+         di fabbrica è NONE (0), che NON vuol dire «niente»: monta comunque
+         l'`annotationEditorLayer`, e quel layer accetta il `drop` di
+         un'immagine e la incolla sulla pagina come «timbro» — misurato con una
+         sonda il 15 agosto: sotto il punto in cui Giacomo lasciava una foto
+         c'era `annotationEditorLayer stampEditing`, e l'immagine restava
+         appiccicata sopra la fonte senza un modo per toglierla. L'app non offre
+         l'annotazione dei PDF: quel layer non è una funzione spenta, è una
+         funzione che non abbiamo mai voluto. */
+      annotationEditorMode:-1,
       imageResourcesPath:'assets/pdfjs/images/'
     });
     PDFJS.link.setViewer(PDFJS.viewer);

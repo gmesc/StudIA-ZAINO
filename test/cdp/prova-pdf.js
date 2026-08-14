@@ -123,6 +123,16 @@ async function finoA(expr, quanto) {
   ok('il viewer e l\'app dicono la stessa pagina', true,
     await val('PDFJS.viewer.currentPageNumber===ANTEPRIMA.page'));
 
+  sezione('⚠️ pdf.js non deve prendersi le immagini trascinate');
+  /* Il valore di fabbrica di `annotationEditorMode` è NONE, che non vuol dire
+     «niente»: monta comunque l'`annotationEditorLayer`, e quel layer accetta il
+     `drop` di un'immagine e la incolla sulla pagina come «timbro». Misurato con
+     una sonda il 15 agosto: una foto lasciata cadere sopra una fonte restava
+     appiccicata lì, senza un modo per toglierla. L'app non offre l'annotazione
+     dei PDF, quindi il layer non deve proprio esistere. */
+  ok('il layer degli editor di annotazioni non c\'è', 0,
+    await val("document.querySelectorAll('#pdfFrame .annotationEditorLayer').length"));
+
   sezione('Il CSS di pdf.js resta nel suo riquadro');
   /* Il foglio del viewer ha una sua `.sidebar` e 46 variabili in `:root`:
      incapsulato male, riscriverebbe l'indice dei capitoli dell'app. */
