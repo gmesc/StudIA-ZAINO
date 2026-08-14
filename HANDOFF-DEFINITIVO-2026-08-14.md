@@ -81,6 +81,46 @@ seconda).
 
 ---
 
+## 3-bis. La carta: i PDF di appunti e mappe (`6ed4e66`)
+
+Richiesta di Giacomo: «i PDF hanno bisogno di margini e di un layout migliore — guarda in MappAI
+se c'è qualcosa da adattare». Misurato prima di toccare niente, sul PDF vero (reso a 150 dpi,
+cercando il riquadro dell'inchiostro — non a occhio):
+
+| misura | prima | adesso |
+|---|---|---|
+| foglio | **215,9 × 279,4 mm (Letter)** | 210 × 297 (A4) |
+| colonna di testo | 188 mm (~110 battute per riga) | **170 mm** (~80) |
+| corpo | 10,9 pt | **12 pt** |
+| numeri di pagina | nessuno | «pagina 1 di 3», dalla prima |
+| mappa coricata | 132 mm di 184, ancorata in alto | **190 mm** |
+
+⚠️ **Il foglio Letter non era una scelta**: `@page` dichiarava solo il margine, e senza `size`
+decide Chromium — il cui default è la carta americana. E il `@page mappa` **con nome** non veniva
+applicato: la mappa usciva sul foglio verticale del testo.
+
+**Che cosa si è preso da MappAI**: il metodo, non il codice (`mappai-doc-head.js` e il blocco di
+stampa di `mappai-doc-bar.js`). Tre lezioni, tutte già pagate là: il piè vive nei **margin-box di
+`@page`**, unico posto da cui `counter(page)` funziona — `position:fixed` salta la prima pagina e
+il `footerTemplate` esiste solo per i PDF che scrive l'app; i **corpi in punti**, derivati da uno
+solo; l'**imbottitura dei riquadri si somma** al margine di `@page` e va azzerata.
+
+Le regole stanno in `App/assets/stampa/foglio.js` (puro, provato in Node) e le scrive
+`stampaPrepara()` al momento, per TIPO di foglio. ⚠️ `stampaPrepara` è separata da `stampaFoglio`
+apposta: col dialogo di stampa in mezzo il foglio si potrebbe misurare solo a mano, e così ci
+passa anche la prova CDP.
+
+**Aperto, e sono due decisioni**:
+1. **le citazioni `>` restano letterali** — `mdToHtml` conosce solo i callout (`> [!nota]`), quindi
+   un `> testo` finisce in pagina col cancelletto a vista. È un difetto della RESA degli appunti,
+   non della carta: si vede anche a schermo;
+2. **gli sfondi non si stampano** se chi stampa non accende «grafica di sfondo» nel dialogo (di
+   norma è spenta). Il filo a sinistra dei riquadri regge lo stesso. Il rimedio vero è un
+   «Salva come PDF» che scriva il file dall'app — MappAI ce l'ha (`html-to-pdf` con
+   `printBackground:true`), StudIA no: è un IPC nuovo, e vale la pena solo se il beta lo chiede.
+
+---
+
 ## 4. Il beta fra dieci giorni: che cosa conta davvero
 
 Lo scorporo **non è un bloccante**: è manutenzione, e il tester non lo vede. Fino al beta niente

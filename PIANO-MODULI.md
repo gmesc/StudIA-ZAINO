@@ -307,13 +307,13 @@ Quattro numeri, da riportare nell'handoff a ogni passo:
 |---|---|---|---|---|
 | righe di `App/StudIA.html` | 13.072 | 12.866 | **15.503** ⚠️ | < 9.000 |
 | righe di logica del renderer provabili in Node | ~0 | 1.138 | **~1.700** | ~2.600 |
-| suite di unità | 17 | 21 | **27** ✅ | 26 |
+| suite di unità | 17 | 21 | **28** ✅ | 26 |
 | moduli ritagliati da `reader-parser` con `indexOf` o sentinelle | 4 | **0** ✅ | **0** ✅ | 0 |
 
 Fatti: **M1** (parser + i tre blocchi del `vm`), **M2** (icone ed emoji), **M3** (ricerca),
 **M6** (rimandi). A metà: **M4** (`tts/segmenta.js`, 205 righe delle ~450 previste).
 Restano M5 (album), M7 (evidenze), M8 (memorie), M9 (archi).
-Fuori piano, usciti «sul percorso» in altre sessioni: `lettura/lezioni.js`, `lettura/identita.js`,
+Fuori piano, usciti «sul percorso»: `stampa/foglio.js` (14 ago, la carta: formato, margini, scala e piè — nato aprendo la stampa per un difetto, che è il modo dichiarato al §12); e in altre sessioni: `lettura/lezioni.js`, `lettura/identita.js`,
 `appunti/elenco.js`, `player/lettore.js`, `ripasso/{intervalli,sorgenti}.js`.
 
 ⚠️ **Il monolite è CRESCIUTO di 2.637 righe fra l'11 e il 14**, e non è un fallimento del piano:

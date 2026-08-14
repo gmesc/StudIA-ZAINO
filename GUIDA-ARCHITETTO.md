@@ -93,7 +93,7 @@ stata pagata almeno una volta.
 ```
 App/StudIA.html          il guscio: markup, <style>, e il renderer che CABLA i moduli.
                          Monolite in smontaggio controllato: criterio e metriche in PIANO-MODULI.md
-App/assets/…             i moduli UMD (lettura, mappa, banco, evidenze, rimandi, ripasso, tts,
+App/assets/…             i moduli UMD (lettura, mappa, banco, evidenze, rimandi, ripasso, tts, stampa,
                          appunti, ricerca, player, dati). Provabili in Node, caricati con <script src>
 lib/                     logica Node del main: corsi, appunti, evidenze, fonti, ripasso, genera,
                          mdser (serializzazione .md), validate (ajv), profilo, percorsi, pacchetto…
