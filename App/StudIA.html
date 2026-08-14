@@ -80,6 +80,10 @@
      chiede le regole al momento di stampare, e perché il suo `@page` deve
      entrare in un <style> che nasce vuoto (subito sotto, `#stampaRegole`). -->
 <script src="assets/stampa/foglio.js"></script>
+<!-- Lo zoom del documento: passo, ciclo dei due adattamenti, etichetta del
+     bottone e il punto che resta sotto il puntatore. Nessuna dipendenza: qui
+     dentro non c'è né DOM né viewer, solo aritmetica e stringhe. -->
+<script src="assets/fonti/zoom.js"></script>
 <style>
   /* OpenMoji come font emoji dell'app (self-hosted, offline) — eccezione dichiarata per questa app al default Noto */
   @font-face{ font-family:'OpenMoji'; src:url('assets/fonts/OpenMoji-color.woff2') format('woff2');
@@ -4721,6 +4725,11 @@ function pdfjsAvvia(){
       PDFFIND.scalaPronta=true;
       try{ PDFJS.viewer.currentScaleValue=pdfZoomSalvato(); }
       catch(e){ try{ PDFJS.viewer.currentScaleValue='page-width'; }catch(e2){} }
+      /* La larghezza su cui si è adattato adesso: è il riferimento dell'isteresi
+         che tiene fermo il riadattamento (`pdfZoomRiadatta`). Senza, il primo
+         movimento del riquadro sarebbe misurato contro la larghezza del
+         documento PRECEDENTE. */
+      PDFZOOM.larghezza=pdfFrameLargo();
       if(ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.page>1){
         try{ PDFJS.viewer.currentPageNumber=ANTEPRIMA.page; }catch(e){}
       }
@@ -4803,29 +4812,26 @@ function pdfjsAvvia(){
    già `currentScale`, e il `viewBox` del PDF può cambiare da pagina a pagina.
    Tenere un contatore parallelo significa che il primo `page-width` calcolato
    dal viewer lo fa divergere, e da lì il «100%» mostrato mente. Si legge e si
-   scrive sempre la sua scala. */
-var PDFZOOM = { MIN: 0.25, MAX: 5, PASSO: 1.1, CHIAVE: 'studia.pdf.zoom' };
+   scrive sempre la sua scala.
 
-/** Il livello salvato, o `page-width` la prima volta. È una leva della vista, quindi si ricorda. */
-/* I modi di adattamento che pdf.js accetta per nome. Sono validi tutti, ma solo
-   questi: qualunque altra stringa lo fa uscire dal `default` con un
-   `console.error` e SENZA sollevare — quindi un `catch` non se ne accorgerebbe. */
-var PDFZOOM_MODI = ['page-width','page-fit','page-height','auto'];
-/**
- * Il livello salvato, validato.
- *
- * ⚠️ Si valida qui perché pdf.js NON lancia su un valore storto: `#setScale`
- * fa `parseFloat`, non trova un numero, cade nel `default`, stampa un errore in
- * console e torna. Il documento resta alla scala di fabbrica, la chiave
- * avvelenata sopravvive a ogni riapertura, e nessun `try/catch` scatta mai.
- */
+   Vale anche per il MODO: «la fonte sta seguendo il riquadro» non è un
+   interruttore nostro, è `currentScaleValue` che non è un numero. La stessa
+   stringa si ricorda su disco, quindi non c'è un secondo posto in cui possa
+   divergere. L'aritmetica sta in `assets/fonti/zoom.js`, provata in Node; qui
+   c'è solo ciò che tocca il viewer e la barra. */
+/* Solo due campi, e nessun limite: MIN, MAX e PASSO stanno nel modulo, e
+   ricopiarli qui vorrebbe dire un tetto che cambia da una parte sola.
+   `larghezza` è l'ultima misura del riquadro su cui ci si è adattati — serve
+   all'isteresi di `pdfZoomRiadatta`, non è uno stato dello zoom. */
+var PDFZOOM = { CHIAVE: 'studia.pdf.zoom', larghezza: 0 };
+
+/** Il livello salvato e validato, o `page-width` la prima volta. È una leva
+ *  della vista, quindi si ricorda; la validazione — e il perché sia
+ *  indispensabile — sta nel modulo. */
 function pdfZoomSalvato(){
   var v='';
   try{ v=localStorage.getItem(PDFZOOM.CHIAVE)||''; }catch(e){ return 'page-width'; }
-  if(PDFZOOM_MODI.indexOf(v)>=0) return v;
-  var n=parseFloat(v);
-  if(isFinite(n) && n>=PDFZOOM.MIN && n<=PDFZOOM.MAX) return String(n);
-  return 'page-width';
+  return FontiZoom.valido(v);
 }
 function pdfZoomRicorda(v){ try{ localStorage.setItem(PDFZOOM.CHIAVE, String(v)); }catch(e){} }
 
@@ -4848,43 +4854,122 @@ function pdfZoomAggiorna(){
      sé, o resterebbero accese sopra un riquadro vuoto. */
   if(!attivo && !conVideo && ALBUM.attivo) albumRitaglioModo(false);
   if(!attivo || !lvl) return;
-  /* ⚠️ `currentScale` non è mai 0: quando la scala non è ancora stata calcolata
-     il getter torna 1, e la barra avrebbe dichiarato «100%» con sicurezza nella
-     finestra fra `setDocument` e `pagesinit`. Il numero si mostra solo quando
-     esiste davvero. */
-  var s=PDFFIND.scalaPronta && PDFJS.viewer && PDFJS.viewer.currentScale;
-  lvl.textContent = s ? Math.round(s*100)+'%' : '—';
-  /* Il `title` dice che cosa farebbe il click, che non è ovvio da un numero. */
-  var v=PDFJS.viewer && PDFJS.viewer.currentScaleValue;
-  lvl.title = (v==='page-width') ? 'Adattata alla larghezza — clicca per adattare alla pagina intera'
-            : (v==='page-fit') ? 'Adattata alla pagina — clicca per tornare alla larghezza'
-            : 'Clicca per adattare alla larghezza';
+  /* Il segno quando la fonte segue il riquadro, la percentuale quando lo zoom
+     l'ha scelto una mano. Il `title` dice sempre tutte e due le cose — dove si
+     è e dove porta il click — perché da un glifo non si deduce nessuna delle
+     due. */
+  var e=FontiZoom.etichetta(PDFJS.viewer && PDFJS.viewer.currentScaleValue,
+                            PDFJS.viewer && PDFJS.viewer.currentScale,
+                            PDFFIND.scalaPronta);
+  lvl.textContent=e.testo; lvl.title=e.titolo;
 }
 
-/** Ingrandisce o riduce partendo dalla scala vera, con un tetto e un pavimento. */
+/** Ingrandisce o riduce partendo dalla scala vera: un gesto a mano, che ESCE
+ *  dall'adattamento dinamico — da qui in poi il riquadro può cambiare quanto
+ *  vuole, la scala è quella che ha scelto l'utente. */
 function pdfZoomPasso(su){
   if(!PDFJS.pronto || !PDFJS.doc) return;
-  var s=PDFJS.viewer.currentScale || 1;
-  /* ⚠️ Il tetto non deve invertire il gesto. Un adattamento può portare la scala
-     FUORI dai nostri limiti — pdf.js arriva a 0,1×–25× e su una slide in un
-     riquadro largo `page-width` dà 600% — e un clamp cieco faceva RIMPICCIOLIRE
-     premendo «+». Se si è già oltre, il verso che ci porterebbe più in là non fa
-     niente; l'altro funziona. */
-  if(su && s>=PDFZOOM.MAX) return;
-  if(!su && s<=PDFZOOM.MIN) return;
-  var n=su ? s*PDFZOOM.PASSO : s/PDFZOOM.PASSO;
-  n=Math.max(PDFZOOM.MIN, Math.min(PDFZOOM.MAX, Math.round(n*100)/100));
+  var n=FontiZoom.passo(PDFJS.viewer.currentScale || 1, su);
+  if(n===null) return;
   try{ PDFJS.viewer.currentScaleValue=String(n); }catch(e){ return; }
   pdfZoomRicorda(n); pdfZoomAggiorna();
 }
-/** Il click sul numero alterna le due adattature: larghezza ↔ pagina intera. */
+/** Il click sul bottone cicla i due adattamenti: larghezza → pagina intera →
+ *  larghezza. Da una percentuale si rientra sempre dalla larghezza. Sono
+ *  DINAMICI: `pdfZoomRiadatta` li rifà a ogni cambio di misura del riquadro. */
 function pdfZoomAdatta(){
   if(!PDFJS.pronto || !PDFJS.doc) return;
-  var v=PDFJS.viewer.currentScaleValue;
-  var nuovo=(v==='page-width') ? 'page-fit' : 'page-width';
+  var nuovo=FontiZoom.prossimoAdatta(PDFJS.viewer.currentScaleValue);
   try{ PDFJS.viewer.currentScaleValue=nuovo; }catch(e){ return; }
+  PDFZOOM.larghezza=pdfFrameLargo();
   pdfZoomRicorda(nuovo); pdfZoomAggiorna();
 }
+
+/* ---- l'adattamento DINAMICO: la fonte segue il riquadro ------------------
+   ⚠️ `page-width` non è un abbonamento: pdf.js calcola la scala UNA volta, al
+   momento in cui gliela si assegna. Il suo `ResizeObserver` interno aggiorna
+   soltanto una variabile CSS per l'altezza — a riadattare i modi per nome, nel
+   visualizzatore ufficiale, è `webViewerResize` di `app.js`, che qui non c'è.
+   Senza queste venti righe, allargare il divisore lasciava il documento della
+   misura di prima con due bande bianche ai lati.
+
+   Un punto solo di reazione, e copre tutte le cause: divisore verticale, split
+   del dock, divisori del banco, finestra, e blocco che cambia forma. Chi
+   ridimensiona non deve sapere che esiste un PDF. */
+function pdfFrameLargo(){
+  var h=$('#pdfFrame'); return h ? h.clientWidth : 0;
+}
+function pdfZoomRiadatta(){
+  if(!PDFJS.pronto || !PDFJS.doc || !PDFJS.viewer) return;
+  var v=PDFJS.viewer.currentScaleValue, w=pdfFrameLargo();
+  if(!FontiZoom.daRiadattare(v, w, PDFZOOM.larghezza)) return;
+  PDFZOOM.larghezza=w;
+  try{ PDFJS.viewer.currentScaleValue=v; }catch(e){}
+  /* Il resto lo dice `scalechanging`: la barra si aggiorna da sé, e la scala
+     nuova non si ricorda perché su disco c'è già il MODO, che è ciò che
+     l'utente ha scelto. */
+}
+(function(){
+  if(typeof ResizeObserver!=='function') return;
+  var el=document.getElementById('pdfFrame'); if(!el) return;
+  var atteso=0;
+  /* Le rotellate dell'osservatore arrivano a raffica mentre si trascina il
+     divisore: si accorpano in un fotogramma solo. Oltre a questo non si mette
+     nessun freno — l'utente sta guardando la pagina crescere sotto la mano, e
+     un ritardo si vedrebbe. */
+  new ResizeObserver(function(){
+    if(atteso) return;
+    atteso=requestAnimationFrame(function(){ atteso=0; pdfZoomRiadatta(); });
+  }).observe(el);
+})();
+
+/* ---- SHIFT + rotella: si ingrandisce SOTTO IL PUNTATORE ------------------
+   Zoomare sul centro allontana proprio la riga che si sta leggendo: è la stessa
+   regola già pagata sulle mappe. Qui però il conto non lo facciamo noi —
+   `updateScale({origin})` di pdf.js corregge lo scorrimento DOPO il suo
+   `scrollPageIntoView`, che è l'ordine giusto e che rifacendolo a mano si
+   sbaglierebbe. Il `factor` invece lo decidiamo noi, perché i limiti nostri
+   (0,25×–5×) sono più stretti dei suoi (0,1×–25×).
+
+   ⚠️ Serve SHIFT: la rotella nuda deve continuare a scorrere il documento, che
+   è il gesto per cui la rotella esiste. E `{passive:false}` o il
+   `preventDefault` non varrebbe niente — il documento scorrerebbe lo stesso
+   mentre la scala cambia. */
+document.addEventListener('wheel', function(e){
+  if(!e.shiftKey) return;
+  if(!e.target || !e.target.closest || !e.target.closest('#pdfFrame')) return;
+  if(!PDFJS.pronto || !PDFJS.doc || !PDFJS.viewer) return;
+  /* Mentre si sta disegnando un ritaglio la scala non si tocca: il rettangolo è
+     in coordinate di schermo, e sotto gli cambierebbe la pagina. */
+  if(typeof ALBUM!=='undefined' && ALBUM && ALBUM.giu) return;
+  var verso=FontiZoom.verso(e); if(!verso) return;
+  e.preventDefault();
+  var host=$('#pdfFrame'); if(!host) return;
+  var s=PDFJS.viewer.currentScale || 1;
+  var n=FontiZoom.passo(s, verso>0); if(n===null) return;
+  /* ⚠️ `origin` NON è in coordinate di schermo, anche se il visualizzatore
+     ufficiale gli passa `clientX/clientY`. pdf.js lo confronta con
+     `containerTopLeft`, che è `offsetTop/offsetLeft` — cioè la distanza dal
+     primo antenato POSIZIONATO. Nel viewer ufficiale il contenitore sta subito
+     sotto la barra e i due sistemi quasi coincidono; qui `#pdfFrame` è
+     `inset:0` dentro un blocco del banco, quindi `offsetLeft` è 0 mentre a
+     schermo il riquadro comincia a metà finestra. Passando le coordinate del
+     mouse la correzione veniva fatta a METÀ: misurato, il punto sotto il
+     puntatore scappava di 29px (dx −25 · dy −15) invece dei 2 di adesso.
+     Si converte: distanza dal bordo del riquadro, riportata nel sistema che
+     pdf.js userà per sottrarre. */
+  var r=host.getBoundingClientRect();
+  var origine=[ (e.clientX-r.left)+host.offsetLeft, (e.clientY-r.top)+host.offsetTop ];
+  try{
+    /* `drawingDelay` è il ritardo con cui si ridisegna a piena definizione: nel
+       frattempo la pagina è ingrandita via CSS. È quello che fa il
+       visualizzatore ufficiale sulla rotella, e senza, una rotellata lunga
+       chiederebbe una ventina di disegni veri. */
+    PDFJS.viewer.updateScale({ scaleFactor: n/s, origin:origine, drawingDelay:400 });
+  }catch(err){ return; }
+  pdfZoomRicorda(PDFJS.viewer.currentScale || n);
+  pdfZoomAggiorna();
+}, {passive:false});
 
 /* ---- la ricerca nel documento ----
    ⚠️ Non si cerca a mano nel layer di testo: pdf.js ha un `PDFFindController`
@@ -14871,8 +14956,12 @@ window.addEventListener('keydown', function(e){
            ingrandimento» senza mai il valore. Il nome accessibile è il contenuto,
            e il `title` — riscritto da `pdfZoomAggiorna` — dice che cosa fa il
            click. E i titoli non promettono più ⌘+/⌘−: in Electron quei tasti
-           ingrandiscono TUTTA l'applicazione, che è un'altra cosa. -->
-      <button class="tbtn" id="pdfZoomLvl" type="button" title="Adatta alla larghezza o alla pagina">100%</button>
+           ingrandiscono TUTTA l'applicazione, che è un'altra cosa.
+           ⚠️ Il testo di fabbrica è il segno dell'adattamento alla larghezza, non
+           «100%»: una fonte si apre adattata al riquadro, e una percentuale
+           scritta qui direbbe una cosa che smette di essere vera al primo
+           ridimensionamento. La percentuale torna appena si zooma a mano. -->
+      <button class="tbtn" id="pdfZoomLvl" type="button" title="Adattata alla larghezza — segue il riquadro; clicca per adattare alla pagina intera">&#10231;</button>
       <button class="tbtn" id="pdfZoomIn" type="button" title="Ingrandisci" aria-label="Ingrandisci">+</button>
     </span>
     <i class="tbsep" aria-hidden="true"></i>

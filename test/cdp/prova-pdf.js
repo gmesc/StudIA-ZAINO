@@ -13,7 +13,7 @@
  *   ./test/cdp/con-vault-di-prova.sh prova-pdf.js
  */
 const S = require('path').join(__dirname, 'cdp.js');
-const { collega, val, invia, pausa, partiPulito, apriStrumento } = require(S);
+const { collega, val, invia, pausa, partiPulito, apriStrumento, clicca } = require(S);
 
 let ko = 0;
 function ok(n, atteso, avuto) {
@@ -142,6 +142,10 @@ async function finoA(expr, quanto) {
 
   sezione('Lo zoom: la percentuale è quella VERA del viewer');
   await val("pdfFindChiudi(), 1");
+  /* Si parte da una scala A MANO: è lì che l'etichetta deve essere un numero.
+     Adattata, il bottone mostra il segno del modo — e la percentuale passa nel
+     suggerimento (sezione dopo). */
+  await val("PDFJS.viewer.currentScaleValue='1.2', pdfZoomAggiorna(), 1"); await pausa(400);
   const z0 = await val('({ scala:PDFJS.viewer.currentScale, valore:PDFJS.viewer.currentScaleValue, etichetta:document.getElementById("pdfZoomLvl").textContent })');
   console.log('   partenza: ' + JSON.stringify(z0));
   ok('la barra dello zoom è visibile con un documento aperto', false,
@@ -197,6 +201,190 @@ async function finoA(expr, quanto) {
     await val('PDFJS.viewer.currentScaleValue'));
   ok('e lo zoom si ricorda su disco', 'page-fit',
     await val("localStorage.getItem('studia.pdf.zoom')"));
+
+  sezione('⚠️ L\'adattamento è DINAMICO: la fonte segue il riquadro');
+  /* `page-width` non è un abbonamento: pdf.js calcola la scala una volta sola,
+     al momento in cui gliela si assegna. Senza il nostro riadattamento,
+     allargare il divisore lasciava il documento della misura di prima con due
+     bande bianche ai lati — ed è esattamente ciò che questa sezione misura. */
+  const LARGO = "document.getElementById('pdfFrame').clientWidth";
+  /* ⚠️ Lo «split» che conta è il divisore del BANCO, non `--pane-w`: da quando
+     la fonte è uno strumento del banco, la colonna del dock non la tocca più.
+     Prima versione di questa prova: muoveva `--pane-w` e misurava 465px prima e
+     465px dopo, accusando il riadattamento per una leva scollegata.
+     Il banco si mette in una forma NOTA — due affiancati, fonte a sinistra — e
+     alla fine si rimette esattamente com'era, stato compreso. */
+  const bancoPrima = await val('JSON.stringify(bancoStato())');
+  await val(`(()=>{ bancoForma('due-col'); bancoAssegna('A','fonte'); return 1; })()`);
+  await pausa(700);
+  /* Si passa dal BOTTONE vero, non dalla funzione: è la porta che usa l'utente. */
+  await clicca('#pdfZoomLvl'); await pausa(500);
+  ok('un click sul bottone riporta alla larghezza', 'page-width',
+    await val('PDFJS.viewer.currentScaleValue'));
+  const segno = await val(`({ testo:document.getElementById('pdfZoomLvl').textContent,
+                              titolo:document.getElementById('pdfZoomLvl').title })`);
+  ok('e il bottone mostra il segno, non più una percentuale', '⟷', segno.testo);
+  ok('la percentuale però non si perde: sta nel suggerimento', true, /\d+%/.test(segno.titolo));
+  ok('che dice anche che la fonte segue il riquadro', true, /segue il riquadro/.test(segno.titolo));
+
+  const wPrima = await val(LARGO);
+  const sPrima = await val('PDFJS.viewer.currentScale');
+  /* Si stringe la colonna della fonte spostando la frazione del divisore: è
+     esattamente ciò che scrive il trascinamento su `.bdivcol`. */
+  const colPrima = await val('bancoStato().col');
+  async function muoviDivisore(v) {
+    await val(`(()=>{ const s=bancoStato(); s.col=${v}; bancoSalva();
+      bancoApplicaFrazioni(); bancoPosizionaDivisori(); bancoDopoLayout(); return 1; })()`);
+  }
+  await muoviDivisore(0.32);
+  const wStretta = await finoA(LARGO + ' < ' + wPrima + ' ? ' + LARGO + ' : null', 8000);
+  ok('il divisore stringe davvero il riquadro', true, !!wStretta);
+  const sStretta = await finoA('PDFJS.viewer.currentScale < ' + sPrima + ' ? PDFJS.viewer.currentScale : null', 8000);
+  console.log('   riquadro ' + wPrima + 'px → ' + (await val(LARGO)) + 'px · scala '
+    + Math.round(sPrima * 100) + '% → ' + Math.round((sStretta || sPrima) * 100) + '%');
+  ok('stringendo il riquadro la scala scende da sé', true, !!sStretta && sStretta < sPrima);
+  ok('e il bottone resta sul segno', '⟷', await val("document.getElementById('pdfZoomLvl').textContent"));
+
+  /* E nell'altro verso: allargando, la fonte torna a occupare la larghezza. */
+  await muoviDivisore(0.72);
+  const sLarga = await finoA('PDFJS.viewer.currentScale > ' + sStretta + ' ? PDFJS.viewer.currentScale : null', 8000);
+  ok('allargandolo la scala risale', true, !!sLarga);
+  console.log('   → ' + (await val(LARGO)) + 'px · scala ' + Math.round((sLarga || 0) * 100) + '%');
+
+  /* ⚠️ Il ping-pong della barra di scorrimento: adattando, la barra verticale
+     può comparire o sparire, la larghezza utile cambia di una quindicina di
+     pixel e la scala rimbalza all'infinito. Due letture a distanza devono
+     coincidere. */
+  await pausa(900);
+  const q1 = await val('PDFJS.viewer.currentScale'); await pausa(900);
+  const q2 = await val('PDFJS.viewer.currentScale');
+  ok('e poi si ferma: nessun ping-pong con la barra di scorrimento', q1, q2);
+
+  /* Lo zoom a mano ESCE dall'adattamento: da qui in poi il riquadro può fare
+     quello che vuole. */
+  await clicca('#pdfZoomIn'); await pausa(600);
+  const aMano = await val(`({ valore:PDFJS.viewer.currentScaleValue, scala:PDFJS.viewer.currentScale,
+                              testo:document.getElementById('pdfZoomLvl').textContent })`);
+  ok('«+» riporta il bottone alla percentuale', Math.round(aMano.scala * 100) + '%', aMano.testo);
+  ok('e il modo non è più un adattamento', false, /^page-/.test(aMano.valore));
+  await muoviDivisore(0.4);
+  await pausa(1200);
+  ok('spostando il divisore la scala scelta a mano non si muove',
+    aMano.scala, await val('PDFJS.viewer.currentScale'));
+  await muoviDivisore(colPrima);
+  await pausa(600);
+
+  sezione('SHIFT + rotella: si ingrandisce sotto il puntatore');
+  /* Il pezzo di testo che sta sotto il mouse deve restare sotto il mouse. Si
+     misura LUI, non i pixel della tela: con `drawingDelay` la pagina è
+     ingrandita via CSS per qualche centinaio di millisecondi e la tela vera
+     arriva dopo.
+     ⚠️ E non si tiene il nodo: il layer di testo viene RICOSTRUITO a ogni
+     cambio di scala (è la trappola delle evidenze), quindi lo stesso pezzo si
+     ritrova per testo e posizione nell'elenco, non per riferimento. */
+  await val("PDFJS.viewer.currentScaleValue='1', pdfZoomAggiorna(), 1"); await pausa(400);
+  /* ⚠️ Si va a una pagina NOTA e piena di testo. Dopo i ridimensionamenti della
+     sezione prima il viewer può trovarsi su una pagina qualunque — anche una di
+     sole figure — e lì non c'è niente su cui puntare: una corsa su tre finiva
+     con «non c'è un pezzo di testo», che accusava il gesto per un documento
+     capitato male. */
+  await val('vaiAPagina(5), 1');
+  await finoA('ANTEPRIMA.page===5', 10000); await pausa(600);
+  const SPAN = `(()=>{ const f=document.getElementById('pdfFrame'), r=f.getBoundingClientRect();
+    const cx=r.left+r.width/2, cy=r.top+r.height*0.4;
+    /* ⚠️ Solo i pezzi DAVVERO A SCHERMO. pdf.js monta anche le pagine vicine a
+       quella corrente, che stanno fuori dal riquadro o fuori dalla finestra: il
+       «più vicino al centro» poteva cadere là, e una rotellata mandata a quelle
+       coordinate non arriva a nessuno. Sintomo: tutte e tre le rotellate della
+       sezione perse insieme, compresa quella nuda. */
+    /* Basta che il CENTRO cada dentro il riquadro e dentro la finestra: è il
+       punto a cui si manderà la rotellata, e pretendere il rettangolo INTERO
+       dentro scartava anche le righe solo sfiorate dal bordo — con documenti
+       molto ingranditi non ne restava nessuna. */
+    const vis=(b)=>{ const x=b.left+b.width/2, y=b.top+b.height/2;
+      return x>Math.max(r.left,0)+8 && x<Math.min(r.right,innerWidth)-8
+          && y>Math.max(r.top,0)+8 && y<Math.min(r.bottom,innerHeight)-8; };
+    /* L'indice è quello dell'elenco INTERO, non dei visibili: dopo lo zoom la
+       lista dei visibili cambia, quella di tutti no — ed è con l'indice che il
+       pezzo si ritrova, visto che i nodi vengono ricostruiti. */
+    const tutti=[...document.querySelectorAll('#pdfFrame .page[data-page-number="5"] .textLayer span')];
+    let bi=-1, bd=1e9;
+    tutti.forEach((s,i)=>{ const b=s.getBoundingClientRect();
+      if(!(b.width>4 && b.height>4 && (s.textContent||'').trim() && vis(b))) return;
+      const d=Math.hypot(b.left+b.width/2-cx, b.top+b.height/2-cy);
+      if(d<bd){ bd=d; bi=i; } });
+    if(bi<0) return null;
+    const b=tutti[bi].getBoundingClientRect();
+    return { i:bi, testo:(tutti[bi].textContent||'').trim().slice(0,24),
+             x:Math.round(b.left+b.width/2), y:Math.round(b.top+b.height/2) }; })()`;
+  const RITROVA = (i) => `(()=>{ const s=document.querySelectorAll('#pdfFrame .page[data-page-number="5"] .textLayer span')[${i}];
+    if(!s) return null; const b=s.getBoundingClientRect();
+    return { testo:(s.textContent||'').trim().slice(0,24),
+             x:Math.round(b.left+b.width/2), y:Math.round(b.top+b.height/2) }; })()`;
+  /* ⚠️ Si ASPETTA che un pezzo visibile ci sia, non lo si pretende subito: il
+     layer di testo viene ricostruito dopo il disegno, e fra il cambio di scala
+     e la sua comparsa passa qualche centinaio di millisecondi — in una corsa su
+     due qui non c'era ancora niente, e il rosso diceva «non c'è testo» invece
+     di «lo strumento è arrivato presto». */
+  const bersaglio = await finoA(SPAN, 15000);
+  ok('c\'è un pezzo di testo su cui puntare', true, !!bersaglio);
+  if (!bersaglio) {
+    console.log('      ' + JSON.stringify(await val(`(()=>{ const f=document.getElementById('pdfFrame');
+      const r=f.getBoundingClientRect();
+      return { riquadro:[Math.round(r.left),Math.round(r.top),Math.round(r.width),Math.round(r.height)],
+               finestra:[innerWidth,innerHeight], scala:PDFJS.viewer.currentScale,
+               pagina:ANTEPRIMA.page,
+               pezzi:document.querySelectorAll('#pdfFrame .page[data-page-number="5"] .textLayer span').length }; })()`)));
+    console.log('\n✗ senza bersaglio la sezione non ha senso'); process.exit(1);
+  }
+  /* ⚠️ Il puntatore si porta lì PRIMA di rotellare. Senza, una corsa su tre le
+     rotellate sintetiche si perdevano tutte e tre — anche quella nuda, che col
+     nostro codice non c'entra niente: senza un `mouseMoved` che dichiari dove
+     sta il mouse, Chromium non sempre trova a chi consegnarle. Un rosso così
+     accusa il gesto per un difetto dello strumento. */
+  async function rotella(giu, conShift) {
+    await invia('Input.dispatchMouseEvent', { type: 'mouseMoved', x: bersaglio.x, y: bersaglio.y });
+    await pausa(120);
+    await invia('Input.dispatchMouseEvent', {
+      type: 'mouseWheel', x: bersaglio.x, y: bersaglio.y,
+      deltaX: 0, deltaY: giu, modifiers: conShift ? 8 : 0
+    });
+  }
+  const scalaPrima = await val('PDFJS.viewer.currentScale');
+  await rotella(-120, true);
+  await pausa(1200);
+  const scalaDopo = await val('PDFJS.viewer.currentScale');
+  ok('la rotellata con SHIFT ingrandisce', true, scalaDopo > scalaPrima);
+  console.log('   ' + Math.round(scalaPrima * 100) + '% → ' + Math.round(scalaDopo * 100) + '%');
+  ok('e il bottone torna alla percentuale', Math.round(scalaDopo * 100) + '%',
+    await val("document.getElementById('pdfZoomLvl').textContent"));
+  const ritrovato = await val(RITROVA(bersaglio.i));
+  ok('il pezzo di testo è ancora quello', bersaglio.testo, ritrovato && ritrovato.testo);
+  const scarto = ritrovato ? Math.round(Math.hypot(ritrovato.x - bersaglio.x, ritrovato.y - bersaglio.y)) : -1;
+  console.log('   «' + bersaglio.testo + '» si è spostato di ' + scarto + ' px sotto il puntatore'
+    + ' (dx ' + (ritrovato.x - bersaglio.x) + ' · dy ' + (ritrovato.y - bersaglio.y) + ')');
+  /* ⚠️ Il controllo che distingue «sotto il puntatore» da «al centro»: zoomando
+     sul centro questo scarto sarebbe di decine di pixel. Ed è quello che ha
+     scoperto che `origin` di pdf.js NON è in coordinate di schermo: passandogli
+     `clientX/clientY` la correzione veniva fatta a metà, e qui si leggeva 29px
+     (dx −25 · dy −15) invece di 0. */
+  ok('e non si è mosso da sotto il puntatore', true, scarto >= 0 && scarto <= 4);
+  await rotella(120, true);
+  await pausa(900);
+  ok('e in giù si riduce', true, (await val('PDFJS.viewer.currentScale')) < scalaDopo);
+  /* La rotella NUDA deve continuare a scorrere: è il gesto per cui esiste. */
+  const yPrima = await val("document.getElementById('pdfFrame').scrollTop");
+  await rotella(240, false);
+  await pausa(500);
+  ok('senza SHIFT la rotella scorre il documento, non lo zooma', true,
+    (await val("document.getElementById('pdfFrame').scrollTop")) > yPrima);
+
+  /* ⚠️ Una prova lascia il banco come l'ha trovato — forma, frazioni e
+     strumenti nei blocchi — o il rosso lo prende un'altra. */
+  await val(`(()=>{ BANCO.stato=JSON.parse(${JSON.stringify(bancoPrima)});
+    bancoSalva(); bancoDisegna(); bancoApplicaFrazioni(); bancoPosizionaDivisori();
+    bancoDopoLayout(); return 1; })()`);
+  await pausa(700);
 
   sezione('La ricerca dentro il documento');
   ok('il bottone della ricerca c\'è', false, await val("document.getElementById('pdfFindBtn').hidden"));
