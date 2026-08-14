@@ -180,7 +180,18 @@ Le più costose, distillate dagli handoff. Ogni ⚠️ è stato pagato almeno un
   chiamare flush *sembra* salvare.
 - **Le liste bianche mangiano i campi nuovi**: `CHIAVI` in `lib/appunti.js`, `noteMeta` nel
   renderer, `normalizza()` in `lib/mappe.js`. Il controllo giusto non è «il campo esiste» ma
-  **«il campo torna indietro dal disco»**.
+  **«il campo torna indietro dal disco»**. (E la stessa forma prende anche le **guardie**: la
+  condizione d'uscita di `apertoRipristina` guardava due campi su quattro.)
+- **«Non salva» è quasi sempre «qualcun altro riscrive»**: prima di cercare il salvataggio che
+  manca, cercare chi scrive quella chiave *senza essere stato chiamato da un gesto*. Un ripristino
+  che riapre il contenuto non deve toccare lo stato che l'utente ha scelto — e ciò che è ricordato
+  lo scrive **solo un gesto**, mai chi monta o chi ripristina.
+- **Un comando spento che deve poter spiegarsi non si spegne con `disabled`**: quell'attributo non
+  emette il click, quindi il comando resta grigio e muto e il `title` non lo legge nessuno (chi
+  preme un tasto morto non ci passa sopra col mouse). Si usa `aria-disabled` — stessa veste, ma il
+  click arriva — e la risposta dice **perché** e **dove si rimedia**.
+- **Quando una misura e l'utente si contraddicono, apri il file dell'utente**: tre prove verdi
+  contro «non funziona», e la differenza stava in un campo dentro la sua mappa (`vista.motore`).
 
 ## 9. Protocollo per un braindump
 

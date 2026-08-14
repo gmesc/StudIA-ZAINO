@@ -1,5 +1,8 @@
 # Handoff definitivo — 13 agosto 2026, secondo giro
 
+> ⚠️ **Non è più il punto d'ingresso**: lo è [HANDOFF-DEFINITIVO-2026-08-14.md](HANDOFF-DEFINITIVO-2026-08-14.md).
+> Questo file resta la lettura di DETTAGLIO sui tre difetti del 13-14 e sulle loro trappole.
+
 > **A chi arriva adesso: questo file basta per ripartire.** Racconta il giro pomeridiano e i tre
 > difetti che ha chiuso, tutti arrivati dalle prove a mano di Giacomo: il banco che «non teneva»
 > la disposizione, la mappa TUA che riaprendo tornava generata, e TD/SX — che erano spenti

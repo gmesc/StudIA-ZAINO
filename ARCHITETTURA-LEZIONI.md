@@ -2,7 +2,8 @@
 
 > Esito della verifica sul CONTENUTO REALE dei 40 materiali (3 agenti) + 3 decisioni dell'utente.
 > Questo è il documento sorgente: da qui si generano i vault `.md`. Modello storage:
-> [PIANO-VAULT-MD-EDITOR.md](PIANO-VAULT-MD-EDITOR.md). Copertura **40/40**.
+> [_ARCHIVIO/PIANO-VAULT-MD-EDITOR.md](_ARCHIVIO/PIANO-VAULT-MD-EDITOR.md) — ⚠️ è in archivio, e
+> il link puntava ancora alla radice. Copertura **40/40**.
 >
 > Il corso è `TD74-DSA`, e ciò che segue è l'architettura delle sue **lezioni**: il livello
 > intermedio, quello che sta fra il corso e i capitoli. Fino alla rinomina del 9 agosto 2026

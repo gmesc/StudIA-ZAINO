@@ -573,6 +573,21 @@ mai vista: premere TD/SX cambiava la leva e lasciava il disegno identico. Ora è
 funzione chiamabile, non un gestore di eventi» non è pedanteria**: è esattamente lì che le due
 strade sono divergute. ⚠️ I due versi si chiamano `td` e `lr`, non «sx».
 
+**E il seguito, il 14 agosto: sugli anelli erano spenti e non lo dicevano.** Rimessa a posto la
+funzione, Giacomo continuava a vedere due tasti inerti — sulle SUE mappe, e per un'altra ragione:
+quella mappa è salvata sul motore **anelli**, dove il verso non vuol dire niente ed è spento
+apposta. ⚠️ Ma sulle mappe tue i quattro motori escono dalla barra (al loro posto le memorie),
+quindi non si vede nemmeno quale motore è attivo; e un bottone `disabled` **non emette il click**,
+quindi non può spiegarsi — il `title` c'è, ma sta sotto il puntatore, e chi preme un tasto morto
+non ci passa sopra col mouse. Regola nuova, buona per ogni comando spento di questa app: **se ha
+una ragione da dare si spegne con `aria-disabled`** (stessa veste, ma il click arriva), e la
+ragione si dice insieme a DOVE si rimedia — qui «il motore si cambia col tasto destro sulla tela».
+Il rifiuto vive dentro `mappaOrientamento`, non nel gestore del click, così vale da qualunque
+porta arrivi. Provato in `prova-mappa-trascina.js`.
+**Aperto, decisione di Giacomo**: su una mappa tua il motore attivo resta invisibile finché non si
+apre il menu della tela. Un'etichetta in barra lo direbbe, ma rimetterebbe in barra ciò che era
+stato tolto di proposito.
+
 ### L3 — archi e linking words (§4.2–4.3)
 
 La porta di trascinamento è un **fratello** della card nell'SVG, mai un figlio: dentro erediterebbe

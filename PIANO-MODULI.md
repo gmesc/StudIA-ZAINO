@@ -303,16 +303,34 @@ Tutte già pagate almeno una volta in questo progetto.
 
 Quattro numeri, da riportare nell'handoff a ogni passo:
 
-| metrica | all'inizio | **11 ago, sera** | obiettivo |
-|---|---|---|---|
-| righe di `App/StudIA.html` | 13.072 | **12.866** | < 9.000 |
-| righe di logica del renderer provabili in Node | ~0 | **1.138** | ~2.600 |
-| suite di unità | 17 | **21** | 26 |
-| moduli ritagliati da `reader-parser` con `indexOf` o sentinelle | 4 | **0** ✅ | 0 |
+| metrica | all'inizio | 11 ago, sera | **14 ago** | obiettivo |
+|---|---|---|---|---|
+| righe di `App/StudIA.html` | 13.072 | 12.866 | **15.503** ⚠️ | < 9.000 |
+| righe di logica del renderer provabili in Node | ~0 | 1.138 | **~1.700** | ~2.600 |
+| suite di unità | 17 | 21 | **27** ✅ | 26 |
+| moduli ritagliati da `reader-parser` con `indexOf` o sentinelle | 4 | **0** ✅ | **0** ✅ | 0 |
 
 Fatti: **M1** (parser + i tre blocchi del `vm`), **M2** (icone ed emoji), **M3** (ricerca),
-**M6** (rimandi). Restano M4 (TTS, la parte oltre il blocco già uscito), M5 (album), M7 (evidenze),
-M8 (memorie), M9 (archi).
+**M6** (rimandi). A metà: **M4** (`tts/segmenta.js`, 205 righe delle ~450 previste).
+Restano M5 (album), M7 (evidenze), M8 (memorie), M9 (archi).
+Fuori piano, usciti «sul percorso» in altre sessioni: `lettura/lezioni.js`, `lettura/identita.js`,
+`appunti/elenco.js`, `player/lettore.js`, `ripasso/{intervalli,sorgenti}.js`.
+
+⚠️ **Il monolite è CRESCIUTO di 2.637 righe fra l'11 e il 14**, e non è un fallimento del piano:
+in quei tre giorni sono entrate tre feature (zaini e media, OCR dello zaino, banco per contenitore)
+più le riparazioni. Misurato dove sono finite le righe nuove di quei tre giorni:
+
+| dove | righe | provabile in Node |
+|---|---|---|
+| `lib/` (main) — 4 file nuovi: `ocrpdf` 709 · `ripasso` 230 · `media` 218 · `ascolto` 135 | **+1.469** | sì, con le loro prove |
+| `App/assets/` — 3 moduli nuovi: `ripasso/intervalli` 169 · `player/lettore` 138 · `ripasso/sorgenti` 86 | **+473** | sì |
+| **`App/StudIA.html`** | **+2.793** | no, solo CDP |
+
+Cioè: **il nocciolo puro di ogni feature nuova è nato fuori dal monolite** (la matematica del layer
+OCR, gli intervalli del ripasso, il tempo del player), e il lato PAGINA della stessa feature è
+finito dentro — che è il criterio §4, non una deroga. Il rapporto osservato è **1 a 6**: per ogni
+riga pura che esce, sei di pagina entrano. Finché si aggiungono feature il primo numero della
+tabella non scenderà, ed è inutile guardarlo come se fosse un voto.
 
 ⚠️ Le righe del renderer scendono poco e a volte risalgono: le estrazioni ne tolgono, le funzioni
 nuove ne aggiungono, e i commenti di aggancio restano. **La riga che conta è la seconda.**
@@ -337,7 +355,17 @@ legittimi:
 già, e ogni sessione che passa aggiunge righe a un file che nessuno può dividere a posteriori senza
 rileggerlo tutto.
 
-**Prima di M9**, e prima delle flashcard, resta comunque aperto il lavoro che questo piano non tocca:
-l'identità dei capitoli (`cartella + ordine`) è ancora l'unico modo di perdere lavoro dell'utente.
-Un refactoring non lo risolve e non lo peggiora — ma le flashcard, che vivono attaccate ai capitoli,
-sì.
+~~**Prima di M9**, e prima delle flashcard, resta aperto il lavoro che questo piano non tocca:
+l'identità dei capitoli.~~ ✅ **Chiuso**: l'identità stabile con la catena di alias vive in
+`lettura/identita.js` ed è l'invariante 3 della guida.
+
+## 12-bis. ⚠️ E in vista del beta (10 giorni, dal 14 agosto)
+
+**Lo scorporo non è un bloccante del beta**: è un investimento sulla velocità di manutenzione, e
+il tester non lo vede. Ogni estrazione però tocca il file più grosso dell'app — rischio senza
+guadagno visibile, proprio nella finestra in cui serve stabilità.
+
+Regola per questi dieci giorni: **niente estrazioni dichiarate**; resta valido il modo «sul
+percorso» (se apri una sezione per un difetto e dentro c'è del puro, esce con la sua prova), e
+resta valido — anzi obbligatorio — che il nocciolo di una feature nuova nasca fuori dal monolite,
+come è successo per OCR, ripasso e player. Si riprende da M4-M9 dopo il primo giro di ritorni.
