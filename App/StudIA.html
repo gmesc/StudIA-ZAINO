@@ -5178,8 +5178,13 @@ function albumAggiorna(){
   var corso=corsoAttivo();
   lista.innerHTML=viste.map(function(v){
     var src=window.vault.album.srcUrl(corso, v.id);
+    /* `draggable` sulla CARD, non sull'immagine: l'immagine è già trascinabile
+       da sé (lo fa il browser) e porterebbe con sé il percorso del file, che
+       negli appunti diventa un `file:///…` rotto e sulla mappa non è niente.
+       Con la card che comanda, il trascinamento porta l'IDENTITÀ del ritaglio
+       (vedi il `dragstart` più in basso). */
     return '<div class="alcard" role="listitem" data-id="'+escHtml(v.id)+'" tabindex="0" '+
-      'title="'+escHtml(v.didascalia||v.file)+'">'+
+      'draggable="true" title="'+escHtml(v.didascalia||v.file)+'">'+
       '<img src="'+escHtml(src)+'" alt="'+escHtml(v.didascalia||'ritaglio')+'" loading="lazy">'+
       '<span class="alcap">'+escHtml(v.didascalia||'—')+'</span>'+
       '<span class="alfonte">'+escHtml(v.materiale)+' · '+escHtml(albumPunto(v))+'</span>'+
@@ -5407,6 +5412,67 @@ function albumElimina(corso, v){
     e.preventDefault();
     albumMenu(card.getAttribute('data-id'), e.clientX, e.clientY);
   });
+
+  /* ── TRASCINARE UN RITAGLIO ───────────────────────────────────────────────
+   *
+   * Il trascinamento è la TERZA porta per due verbi che esistono già — «metti
+   * nell'appunto» e «metti nella mappa», che stanno nel menu contestuale e
+   * nella bolla del ritaglio appena fatto. Non fa niente di nuovo: chiama le
+   * stesse funzioni. Tre porte, un rito solo.
+   *
+   * ⚠️ Che cosa VIAGGIA. Un'immagine trascinata porta con sé, per gentile
+   * concessione del browser, il percorso del file (`text/uri-list`,
+   * `text/html`): negli appunti diventa un `file:///…` che si rompe appena il
+   * vault cambia posto, e sulla mappa non vuol dire niente. Qui si dichiara
+   * l'IDENTITÀ del ritaglio (`application/x-studia-album`) e, per chi capisce
+   * solo testo, il markdown col rimando `album:<id>` — lo stesso che scrive
+   * «Metti nell'appunto». Il file non si copia MAI: resta uno solo, e chi lo
+   * elimina sa dire in quanti posti è usato.
+   */
+  document.addEventListener('dragstart', function(e){
+    var card=e.target.closest && e.target.closest('#albLista .alcard');
+    if(!card || !e.dataTransfer) return;
+    var v=albumVoce(card.getAttribute('data-id')); if(!v) return;
+    e.dataTransfer.setData('application/x-studia-album', v.id);
+    e.dataTransfer.setData('text/plain', '![' + String(v.didascalia||'ritaglio').replace(/[\[\]]/g,'') + '](album:' + v.id + ')');
+    e.dataTransfer.effectAllowed='copy';
+    /* L'anteprima che segue il puntatore: l'immagine vera, non il rettangolo
+       della card col suo testo. È l'unico modo di sapere che cosa si sta
+       portando quando le card sono venti e si somigliano. */
+    try{
+      var img=card.querySelector('img');
+      if(img && e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(img, 24, 24);
+    }catch(err){ /* niente anteprima: il trascinamento funziona lo stesso */ }
+  });
+
+  /* Gli appunti accettano il ritaglio. ⚠️ In CATTURA, e non in bolla: dentro il
+     riquadro c'è CodeMirror, che il `drop` se lo prende per primo e ci scrive
+     quello che il browser gli offre — cioè il percorso del file. Si interviene
+     prima di lui, e SOLO se sta arrivando un ritaglio: tutto il resto (una
+     parola chiave, un testo qualunque) continua per la sua strada. */
+  function albumTrascinato(e){
+    var t=e.dataTransfer && e.dataTransfer.types;
+    return !!(t && (t.indexOf ? t.indexOf('application/x-studia-album')>=0
+                              : Array.prototype.indexOf.call(t,'application/x-studia-album')>=0));
+  }
+  document.addEventListener('dragover', function(e){
+    if(!e.target.closest || !e.target.closest('#notePane') || !albumTrascinato(e)) return;
+    e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect='copy';
+  }, true);
+  document.addEventListener('drop', function(e){
+    if(!e.target.closest || !e.target.closest('#notePane') || !albumTrascinato(e)) return;
+    e.preventDefault(); e.stopPropagation();
+    var v=albumVoce(e.dataTransfer.getData('application/x-studia-album'));
+    if(!v){ toast('Immagine non trovata nell’album', false); return; }
+    /* Il punto in cui si è lasciato: si scrive LÌ, non dove stava il cursore
+       prima. Chi trascina sta indicando un posto — se il testo comparisse
+       altrove, il gesto avrebbe mentito. */
+    try{
+      var cm=NOTES.mde && NOTES.mde.codemirror;
+      if(cm && cm.coordsChar) cm.setCursor(cm.coordsChar({ left:e.clientX, top:e.clientY }));
+    }catch(err){ /* niente punto: si scrive dove sta il cursore */ }
+    if(inserisciImmagine(v.didascalia||'ritaglio', 'album:'+v.id)) toast('Messa nell’appunto', true);
+  }, true);
 })();
 
 /**
@@ -9462,6 +9528,17 @@ document.addEventListener('dragover', function(e){
 });
 document.addEventListener('drop', function(e){
   if(!e.target.closest || !e.target.closest('#mappaSvg') || !e.dataTransfer) return;
+  /* Un RITAGLIO dell'album: stesso gesto, altro contenuto. Passa dal verbo che
+     esiste già (`mappaNodoImmagine`, quello del menu contestuale dell'album) —
+     qui si aggiunge solo il punto in cui lo si è lasciato. */
+  var idAlbum=e.dataTransfer.getData('application/x-studia-album');
+  if(idAlbum){
+    e.preventDefault();
+    var v=albumVoce(idAlbum);
+    if(!v){ toast('Immagine non trovata nell’album', false); return; }
+    mappaNodoImmagine(v, mappaPunto(e));
+    return;
+  }
   var id=e.dataTransfer.getData('application/x-studia-evidenza'); if(!id) return;
   e.preventDefault();
   var ev=kwDaId(id); if(!ev) return;
@@ -9819,7 +9896,10 @@ function mappaEstrai(testo, range){
  * dire perché. Chi non ne ha una aperta lo sente dire, invece di veder cadere il
  * gesto nel vuoto.
  */
-function mappaNodoImmagine(v){
+/** `punto` (facoltativo, in coordinate della mappa) è dove lo si è LASCIATO:
+ *  lo passa il trascinamento. Senza, il nodo nasce dove il motore decide — che
+ *  è giusto per il menu contestuale, dove nessuno ha indicato un posto. */
+function mappaNodoImmagine(v, punto){
   if(!v || !v.id) return;
   if(!mappaPronta()){ toast('Moduli della mappa non caricati', false); return; }
   if(!(mappaMie() && MAPPA.mia.grafo)){
@@ -9829,6 +9909,8 @@ function mappaNodoImmagine(v){
   try{ bancoMostra('mappa'); }catch(e){}
   MAPPA.mia.grafo=MappaModifica.estrai(MAPPA.mia.grafo, {
     testo:v.didascalia||'', immagine:{ id:v.id, w:v.w, h:v.h },
+    x:(punto && Number.isFinite(punto.x)) ? Math.round(punto.x) : null,
+    y:(punto && Number.isFinite(punto.y)) ? Math.round(punto.y) : null,
     /* Il rimando fa quello che fa per gli altri nodi estratti: rende il nodo
        navigabile fino alla pagina da cui il ritaglio viene. */
     rimando:(v.t!=null)
