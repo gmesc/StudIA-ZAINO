@@ -17,7 +17,7 @@
 
 | ramo | commit | suite |
 |---|---|---|
-| `main` | `c0c0ad9` (14 ago, dopo il merge) | ✅ 27 file di unità · 34 prove CDP |
+| `main` | `4a16c11` (14 ago, dopo il secondo merge) | ✅ **28** file di unità · **36** prove CDP |
 
 **Non c'è nessun ramo aperto.** Il 14 agosto `mappa-limiti` è entrato in `main` in fast-forward
 (`main` non si era mossa, quindi il codice unito è **esattamente** quello su cui erano girate le
@@ -26,8 +26,8 @@ suite: niente da rieseguire) e i cinque rami già uniti — `mappa-limiti`, `des
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
-npm test                                              # 27 file, exit 0
-STUDIA_PORTA=9334 ./test/cdp/con-vault-di-prova.sh    # 34 prove sull'app viva
+npm test                                              # 28 file, exit 0
+STUDIA_PORTA=9334 ./test/cdp/con-vault-di-prova.sh    # 36 prove sull'app viva
 ```
 
 ⚠️ Il prossimo lavoro parte da un ramo nuovo (`git switch -c <nome>`), e al momento del merge la
@@ -64,7 +64,7 @@ Misurati il 14 agosto, non ricordati. La tabella viva sta in [PIANO-MODULI §11]
 |---|---|---|---|---|
 | righe di `App/StudIA.html` | 13.072 | 12.866 | **15.503** | < 9.000 |
 | logica del renderer provabile in Node | ~0 | 1.138 | **~1.700** | ~2.600 |
-| suite di unità | 17 | 21 | **27** ✅ | 26 |
+| suite di unità | 17 | 21 | **28** ✅ | 26 |
 
 Lavori del piano: **fatti** M1 (parser) · M2 (icone/emoji) · M3 (ricerca) · M6 (rimandi);
 **a metà** M4 (TTS); **aperti** M5 album · M7 evidenze · M8 memorie · M9 archi.
