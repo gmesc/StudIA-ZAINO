@@ -77,6 +77,33 @@ tre giorni prima.
 
 ---
 
+## 2-bis. ⌘ tenuto premuto = forbici momentanee
+
+Sempre dalle prove a mano: «il bottone delle forbici in barra è scomodo». Adesso sul documento (e
+sul fermo immagine del player) basta tenere premuto **⌘** — `metaKey || ctrlKey`, quindi ⌃ su
+Windows senza un secondo gesto da imparare: il puntatore passa a croce, il trascinamento ritaglia,
+mollato il tasto torna la selezione del testo.
+
+Non è una scorciatoia per accendere il modo, è **un modo che dura quanto il dito**: le forbici
+appiccicate si possono dimenticare accese — succede all'utente, che crede di selezionare testo e
+disegna un rettangolo, ed è successo alle prove, dove `partiPulito` deve spegnerle apposta. Il
+bottone in barra resta per chi fa dieci ritagli di fila, e il suo suggerimento ora nomina ⌘.
+
+⚠️ **Il cursore e il bottone dicono cose diverse, apposta**: il cursore segue `albumForbici()`
+(appiccicato OPPURE ⌘), il bottone solo il modo appiccicato. Premendosi da sé, mollato ⌘ tornerebbe
+su — e un comando che si accende e si spegne da solo non si capisce più chi lo comanda.
+
+⚠️ **E i tasti da soli non bastano.** Misurato con una sonda, non indovinato: premendo ⌘ la finestra
+perde il fuoco per un istante — su macOS quel tasto è la porta della barra dei menu — e il `blur`
+spegneva il modo appena acceso. Con ⌥ non succedeva: la stessa prova, verde con ⌥, è diventata rossa
+cambiando tasto. Il rimedio non è togliere il `blur` (serve al ⌘-Tab vero): **ogni evento del mouse
+porta con sé lo stato dei modificatori**, quindi lo stato si riconcilia da `pointermove` e
+`pointerdown` e si ripara da solo qualunque evento di tastiera si sia perso. Regola generale: per
+un modo tenuto da un modificatore, la verità è la mano — non la memoria di che cosa è stato premuto.
+
+Gesti provati a mano da Giacomo il 14 sera: ⌘+trascinamento ritaglia, mollato torna la selezione,
+⌘S in un appunto non accende niente.
+
 ## 3. ⚠️ Le trappole pagate qui (la parte che vale oltre questo caso)
 
 1. **`page-width` non è un abbonamento.** pdf.js calcola la scala **una volta**, quando gliela si
