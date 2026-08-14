@@ -194,6 +194,15 @@ contextBridge.exposeInMainWorld('vault', {
   choose: () => ipcRenderer.invoke('vault:choose'),
   // con `corso` l'elenco è quello del corso, non di tutto il vault
   corpus: { list: (corso) => ipcRenderer.invoke('corpus:list', { corso }) },
+  /* Salva come PDF: il renderer manda il documento già impaginato, il main lo
+     stampa in una finestra invisibile e lo scrive dove dice il dialogo.
+     ⚠️ UNA sola chiave `stampa` in questo oggetto: due chiavi uguali in un
+     letterale non sono due cose — l'ultima vince e la prima sparisce senza un
+     errore, ed è già costato due funzioni mute il 13 agosto. */
+  stampa: {
+    pdf: (o) => ipcRenderer.invoke('stampa:pdf', o || {}),
+    mostra: (percorso) => ipcRenderer.invoke('stampa:mostra', { percorso: percorso })
+  },
   schede: {
     stato: (corso) => ipcRenderer.invoke('schede:stato', { corso }),
     build: (corso, rifai) => ipcRenderer.send('schede:build', { corso, rifai }),

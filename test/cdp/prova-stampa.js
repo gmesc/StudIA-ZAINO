@@ -75,6 +75,50 @@ function sezione(t) { console.log('\n== ' + t); }
   ok('è invisibile', 'none',
     await val(`getComputedStyle(document.getElementById('stampaFoglio')).display`));
 
+  sezione('Il documento che va al main: ripulito, e con la sua base');
+  /* ⚠️ Gli script si CONTANO analizzando il documento, non cercando «<script»
+     nel testo: uno dei commenti del monolite nomina quel tag in prosa, e la
+     prima stesura di questa prova accusava il codice per una frase. */
+  const doc = await val(`(()=>{ stampaPrepara({ titolo:'Prova', html:'<p>Testo.</p>' });
+    const d = documentoStampabile();
+    const dom = new DOMParser().parseFromString(d, 'text/html');
+    return { script: dom.querySelectorAll('script').length,
+      base: /<base href="file:[^"]+\\/"/.test(d),
+      foglio: !!dom.querySelector('#stampaFoglio'), banco: !!dom.querySelector('#banco'),
+      regole: /size:A4 portrait/.test(d), kb: Math.round(d.length/1024) }; })()`);
+  /* ⚠️ Gli `<script>` vanno via: la finestra che stampa li ESEGUIREBBE, e
+     l'app ripartirebbe dentro il PDF con un secondo accesso al disco. */
+  ok('nessuno script', 0, doc.script);
+  ok('c’è il `<base>` sulla cartella dell’app', true, doc.base);
+  ok('c’è il foglio', true, doc.foglio);
+  /* ⚠️ E NON c’è il resto dell’interfaccia: sarebbero megabyte di icone in
+     base64 spediti al main a ogni salvataggio. */
+  ok('e non c’è il banco', false, doc.banco);
+  console.log('   il documento pesa ' + doc.kb + ' KB');
+  ok('le regole di stampa viaggiano col documento', true, doc.regole);
+
+  sezione('Salva come PDF: il file esiste davvero');
+  const fs = require('fs'), os = require('os'), path = require('path');
+  const dove = path.join(os.tmpdir(), 'studia-prova-stampa-' + process.pid + '.pdf');
+  /* `percorso` salta il dialogo di sistema, che una prova non può premere;
+     `foglio` dà il contenuto già pronto.
+     ⚠️ Il contenuto arriva da qui e non da un appunto aperto, e va detto che
+     cosa si misura: questa sezione prova la CATENA — documento → main →
+     finestra invisibile → file scritto — non che l'appunto si impagini bene
+     (quello lo misurano le sezioni sopra, e il PDF a mano). La prima stesura
+     chiamava `salvaPdf('appunto')` a schermo vuoto: da sola passava, in suite
+     no, perché lì nessun appunto è aperto e la funzione si ferma prima. */
+  const scritto = await val(`salvaPdf('appunto', { percorso:${JSON.stringify(dove)},
+    foglio:{ titolo:'Prova PDF', dove:'Prove', html:'<p>Testo.</p><p>Altro testo.</p>' } })`);
+  const esiste = fs.existsSync(dove);
+  const grande = esiste ? fs.statSync(dove).size : 0;
+  ok('il PDF è stato scritto dove chiesto', true, !!scritto && esiste);
+  ok('e non è un file vuoto', true, grande > 3000);
+  ok('comincia con la firma di un PDF', '%PDF',
+    esiste ? fs.readFileSync(dove).slice(0, 4).toString() : '');
+  console.log('   ' + Math.round(grande / 1024) + ' KB');
+  try { fs.unlinkSync(dove); } catch (e) { /* la prova non lascia file in giro */ }
+
   /* Si lascia il foglio vuoto, come lo trova chi non ha stampato. */
   await val(`(()=>{ const f=document.getElementById('stampaFoglio');
     f.innerHTML=''; f.className=''; return 1; })()`);

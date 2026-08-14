@@ -6473,14 +6473,20 @@ function stampaFoglio(opt){
 }
 
 /** L'appunto aperto, come lo si vede nel lettore: la stessa `renderNoteMd` del
- *  riquadro «I miei appunti», non una seconda resa che diverge al primo callout. */
-function stampaAppunto(){
-  if(!NOTES.cur || !NOTES.mde){ toast('Nessun appunto aperto da stampare', false); return; }
+ *  riquadro «I miei appunti», non una seconda resa che diverge al primo callout.
+ *
+ *  ⚠️ Restituisce il FOGLIO, non lo stampa: da qui passano tre strade — la
+ *  stampa, il salvataggio in PDF e (domani) un'anteprima — e se ognuna si
+ *  ricostruisse il contenuto da sé, il PDF e la carta comincerebbero a dire due
+ *  cose diverse al primo ritocco. */
+function foglioAppunto(){
+  if(!NOTES.cur || !NOTES.mde){ toast('Nessun appunto aperto da stampare', false); return null; }
   var corpo=NOTES.mde.value()||'';
   var html=''; try{ html=renderNoteMd(corpo); }catch(e){ html='<pre>'+escHtml(corpo)+'</pre>'; }
-  stampaFoglio({ titolo:NOTES.cur.title||NOTES.cur.file||'Appunto',
-                 dove:noteDove(NOTES.cur)||'', html:html });
+  return { titolo:NOTES.cur.title||NOTES.cur.file||'Appunto',
+           dove:noteDove(NOTES.cur)||'', html:html };
 }
+function stampaAppunto(){ var f=foglioAppunto(); if(f) stampaFoglio(f); }
 
 /** La mappa che si sta guardando, disegnata di nuovo per la carta.
  *
@@ -6489,17 +6495,100 @@ function stampaAppunto(){
  *  INTERA, quindi si ridisegna dal risultato del motore con il suo `viewBox`
  *  completo e senza maniglie — che è anche il motivo per cui `disegna` scrive i
  *  colori negli attributi invece che nel foglio di stile. */
-function stampaMappa(){
-  if(!MAPPA.res){ toast('Nessuna mappa da stampare', false); return; }
+function foglioMappa(){
+  if(!MAPPA.res){ toast('Nessuna mappa da stampare', false); return null; }
   var v=MAPPA.vista;
   var out=MappaDisegna.svg(MAPPA.res,{ tema:mappaTemaCarta(), gruppi:mappaGruppi(),
             fsNodo:+v.fsNodo, fsRel:+v.fsRel, etichette:v.etichette,
             maniglie:false, chiudibili:MAPPA.chiudibili||{}, srcImmagine:mappaSrcImmagine,
             font:(getComputedStyle(document.body).fontFamily||'Helvetica Neue, Arial, sans-serif') });
   var titolo=mappaTitoloCorrente();
-  stampaFoglio({ titolo:titolo, classe:'foglio-mappa', tipo:'mappa',
-                 dove:(LESSON?LESSON.title:'')||'',
-                 html:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+escHtml(out.viewBox)+'" role="img" aria-label="'+escHtml(titolo)+'">'+out.markup+'</svg>' });
+  return { titolo:titolo, classe:'foglio-mappa', tipo:'mappa',
+           dove:(LESSON?LESSON.title:'')||'',
+           html:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+escHtml(out.viewBox)+'" role="img" aria-label="'+escHtml(titolo)+'">'+out.markup+'</svg>' };
+}
+function stampaMappa(){ var f=foglioMappa(); if(f) stampaFoglio(f); }
+
+/* ── SALVA COME PDF ────────────────────────────────────────────────────────
+ *
+ * ⚠️ Perché esiste, accanto alla stampa che c'era già. Il dialogo di Chromium
+ * stampa **senza «grafica di sfondo»** finché non la si accende a mano: i fondi
+ * dei riquadri degli appunti — che sono il codice-colore dei callout —
+ * spariscono, e nessuno lo dice. In più il formato del foglio lo sceglie chi
+ * stampa. Quando il PDF lo scrive l'app, quelle due cose non si possono più
+ * sbagliare: `printBackground` acceso e `preferCSSPageSize` che obbedisce al
+ * nostro `@page`.
+ */
+
+/** Il documento da mandare al main: la pagina di adesso, ripulita.
+ *
+ *  ⚠️ Tre cose, e ognuna è un guasto evitato:
+ *   · via gli `<script>` — la finestra che stampa li ESEGUIREBBE: l'app
+ *     ripartirebbe dentro il PDF, con un secondo accesso al disco;
+ *   · via tutto il corpo tranne il foglio — il resto è interfaccia, e trascina
+ *     con sé megabyte di icone in base64;
+ *   · un `<base href>` sulla cartella dell'app, o il CSS, i font e le immagini
+ *     relative non si trovano più: il file temporaneo vive altrove. */
+function documentoStampabile(){
+  var f=$('#stampaFoglio'); if(!f) return '';
+  var clone=document.documentElement.cloneNode(true);
+  Array.prototype.slice.call(clone.querySelectorAll('script')).forEach(function(s){ s.remove(); });
+  /* Via anche i COMMENTI: in questo file sono il 28% delle righe, viaggerebbero
+     al main a ogni salvataggio e nel documento stampato non li legge nessuno.
+     ⚠️ E uno di loro NOMINA `<script>` in prosa: la prima prova cercava quel
+     testo nel documento e accusava il codice di non aver tolto niente — il
+     righello prima del codice. */
+  var passa=document.createTreeWalker(clone, NodeFilter.SHOW_COMMENT, null);
+  var commenti=[]; while(passa.nextNode()) commenti.push(passa.currentNode);
+  commenti.forEach(function(c){ if(c.parentNode) c.parentNode.removeChild(c); });
+  var testa=clone.querySelector('head');
+  if(testa){
+    var base=document.createElement('base');
+    /* La cartella di questo documento: `location.href` senza il nome del file. */
+    base.setAttribute('href', location.href.replace(/[^/]*$/, ''));
+    testa.insertBefore(base, testa.firstChild);
+  }
+  var corpo=clone.querySelector('body');
+  if(corpo){
+    var soloFoglio=clone.querySelector('#stampaFoglio');
+    corpo.innerHTML='';
+    if(soloFoglio) corpo.appendChild(soloFoglio);
+    /* Il foglio esiste solo in stampa (`display:none` a schermo): nel documento
+       che si stampa da solo, la regola `@media print` basta — la finestra del
+       main stampa, quindi quel blocco è attivo. */
+  }
+  return '<!doctype html>'+clone.outerHTML;
+}
+
+/** Scrive il PDF di ciò che si sta guardando. `opzioni.percorso` salta il
+ *  dialogo (lo usano le prove). */
+async function salvaPdf(che, opzioni){
+  opzioni=opzioni||{};
+  var api=(window.vault && window.vault.stampa) || null;
+  if(!api){ toast('Il salvataggio in PDF è disponibile solo nell’app', false); return null; }
+  /* `opzioni.foglio` è la deroga per chi il contenuto ce l'ha già: le prove, e
+     un domani un'anteprima. Senza, una prova dovrebbe aprire un appunto vero
+     per misurare il pezzo che sta misurando — la scrittura del file. */
+  var foglio = opzioni.foglio || ((che==='mappa') ? foglioMappa() : foglioAppunto());
+  if(!foglio) return null;                    // il perché l'ha già detto chi costruisce il foglio
+  var tipo=stampaPrepara(foglio);
+  var doc=documentoStampabile();
+  /* Il nome del file: il titolo del documento e la data, che è come lo si
+     cerca in una cartella fra un mese. I caratteri che il disco non ama si
+     tolgono qui, non nel main: chi propone il nome sa che cosa sta nominando. */
+  var nome=String(foglio.titolo||'StudIA').replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim().slice(0,80) +
+           ' — ' + StampaFoglio.data();
+  var r=null;
+  try{
+    r=await api.pdf({ html:doc, nome:nome, landscape:(tipo==='mappa'), percorso:opzioni.percorso||'' });
+  }catch(e){ r={ error:(e&&e.message)||String(e) }; }
+  /* Il foglio si svuota comunque: lasciarlo pieno vorrebbe dire che un ⌘P
+     successivo stampa quello di prima. */
+  var f=$('#stampaFoglio'); if(f){ f.innerHTML=''; f.className=''; }
+  if(!r || r.annullato) return null;
+  if(r.error){ toast('PDF non salvato: '+r.error, false); return null; }
+  toast('PDF salvato: '+(r.percorso||'').split('/').pop(), true);
+  return r.percorso||'';
 }
 
 /** Come si chiama la mappa che si sta guardando: il titolo del documento se è
@@ -8473,6 +8562,7 @@ document.addEventListener('click',function(e){
   if(e.target.closest && e.target.closest('#noteSave')){ noteSave(); return; }
   if(e.target.closest && e.target.closest('#noteRen')){ noteRename(); return; }
   if(e.target.closest && e.target.closest('#noteStampa')){ stampaAppunto(); return; }
+  if(e.target.closest && e.target.closest('#notePdf')){ salvaPdf('appunto'); return; }
   if(e.target.closest && e.target.closest('#noteDel')){ noteDelete(); return; }
   if(e.target.closest && e.target.closest('#noteClose')){ closeEditor(); return; }
   if(e.target.closest && (e.target.closest('#guidaClose') || e.target===document.getElementById('guidaModal'))){ chiudiGuida(); return; }
@@ -14015,6 +14105,7 @@ document.addEventListener('click', function(e){
   if(e.target.closest('#mCopia')){ mappaCopia(); return; }
   if(e.target.closest('#mRinomina')){ mappaRinominaMappa(); return; }
   if(e.target.closest('#mStampa')){ stampaMappa(); return; }
+  if(e.target.closest('#mPdf')){ salvaPdf('mappa'); return; }
   if(e.target.closest('#mCestino')){ mappaEliminaMappa(); return; }
   var bm=e.target.closest('#mMotore button[data-motore]');
   if(bm){ mappaMotore(bm.getAttribute('data-motore')); return; }
@@ -14821,6 +14912,11 @@ window.addEventListener('keydown', function(e){
     <span class="tbspazio"></span>
     <span class="notectl notectl-fine">
       <button class="ncbtn" id="noteStampa" type="button" title="Stampa appunto (Cmd+P)" aria-label="Stampa appunto">&#128424;</button>
+      <!-- Salva come PDF: è un'altra cosa dalla stampa, e non è un doppione.
+           Dal dialogo di stampa i fondi dei riquadri non escono finché non si
+           accende «grafica di sfondo»; qui il PDF lo scrive l'app, e i colori
+           dei callout ci sono sempre. -->
+      <button class="ncbtn" id="notePdf" type="button" title="Salva l’appunto come PDF" aria-label="Salva l’appunto come PDF">PDF</button>
       <button class="ncbtn" id="noteClose" type="button" title="Chiudi editor" aria-label="Chiudi editor">&#10005;</button>
     </span>
   </template>
@@ -14936,6 +15032,10 @@ window.addEventListener('keydown', function(e){
     <span class="mdirty" id="mSporca" hidden title="Modifiche non salvate">&#9679;</span>
     <button class="mbtn" id="mVista" type="button" title="Aggiustamenti della vista" aria-haspopup="dialog">&#9881;</button>
     <button class="mbtn" id="mStampa" type="button" title="Stampa la mappa (Cmd+P)" aria-label="Stampa la mappa">&#128424;</button>
+    <!-- «PDF esporta la vista corrente» era già nel §7 del piano delle mappe:
+         eccolo. Non è la stampa: il file lo scrive l'app, coi fondi accesi e
+         col formato che dice il nostro `@page`. -->
+    <button class="mbtn" id="mPdf" type="button" title="Salva la mappa come PDF" aria-label="Salva la mappa come PDF">PDF</button>
     <button class="mbtn mlungo" id="mAdatta" type="button" title="Adatta la mappa alla finestra">&#10530;</button>
     <button class="mbtn" id="mChiudi" type="button" title="Chiudi la mappa (Esc)" aria-label="Chiudi la mappa">&#10005;</button>
   </div>

@@ -212,12 +212,24 @@
       /* i riquadri invece SÌ: una citazione spezzata in due pagine perde il
          suo mestiere, che è essere un blocco */
       '  ' + S + ' .st-corpo blockquote, ' + S + ' .st-corpo .ucallout {',
-      '     border-left:3px solid ' + COL.filo + '; margin:.8em 0; padding:.45em .8em;',
-      '     background:' + COL.riquadro + '; break-inside:avoid; page-break-inside:avoid; }',
+      '     margin:.8em 0; padding:.45em .8em; break-inside:avoid; page-break-inside:avoid; }',
+      '  ' + S + ' .st-corpo blockquote { border-left:3px solid ' + COL.filo + ';',
+      '     background:' + COL.riquadro + '; }',
+      /* ⚠️ Il riquadro dell'appunto TIENE IL SUO COLORE. La prima stesura di
+         questa regola dipingeva `.ucallout` come una citazione qualunque —
+         filo grigio, fondo grigio — e sul PDF del 14 agosto i quattro riquadri
+         (nota, attenzione, importante, esempio) uscivano tutti uguali: il
+         colore restava solo nelle due parole del titolino. Il colore di un
+         callout è la sua unica differenza, ed è quella che si cerca sfogliando.
+         Qui si dichiara solo ciò che la carta chiede — il fondo tenue, che a
+         schermo nasce da `--panel` e su carta deve nascere dal BIANCO — e il
+         resto (bordo, tinta del titolo, icona) resta quello dell'app. */
+      '  ' + S + ' .st-corpo .ucallout { background:color-mix(in srgb, var(--uc-col, #999) 10%, #fff); }',
       /* ⚠️ Lo sfondo di un riquadro si stampa solo se chi stampa ha acceso
-         «grafica di sfondo» (di norma è spenta nel dialogo di Chromium). Il
-         filo a sinistra invece è un BORDO e si stampa sempre: è lui a tenere in
-         piedi il riquadro quando il fondo non c'è. */
+         «grafica di sfondo» (di norma è spenta nel dialogo di Chromium) — o se
+         il PDF lo scrive l'app, che accende `printBackground`. Il filo a
+         sinistra invece è un BORDO e si stampa sempre: è lui a tenere in piedi
+         il riquadro quando il fondo non c'è. */
       '  ' + S + ' .st-corpo a { color:' + COL.inchiostro + '; text-decoration:underline; }',
       '  ' + S + ' .st-corpo img { max-width:100%; height:auto; break-inside:avoid; }',
       '  ' + S + ' .st-corpo pre { white-space:pre-wrap; word-wrap:break-word;',

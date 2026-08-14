@@ -573,6 +573,78 @@ function contaFileRicorsivo(dir, salta) {
   return n;
 }
 
+/* ── SALVA COME PDF ────────────────────────────────────────────────────────
+ * Il renderer manda il documento GIÀ IMPAGINATO — il foglio di stampa col suo
+ * CSS e le sue regole `@page` — e qui si stampa in una finestra invisibile.
+ *
+ * ⚠️ Perché non basta `window.print()`, che c'era già. Il dialogo di Chromium
+ * stampa **senza «grafica di sfondo»** finché non la si accende a mano: i fondi
+ * dei riquadri degli appunti — che sono il codice-colore dei callout —
+ * spariscono, e nessuno lo dice. Qui `printBackground` è acceso una volta per
+ * tutte, e `preferCSSPageSize` lascia decidere il nostro `@page` invece del
+ * formato di fabbrica (che è Letter: misurato).
+ *
+ * ⚠️ Il documento si scrive in un FILE temporaneo e si carica con `loadFile`,
+ * non come `data:` URL: una pagina `data:` ha un'origine opaca e il browser le
+ * nega i sotto-file `file://` — cioè il nostro CSS, i font e le icone. Con un
+ * file vero il `<base href>` che il renderer ci mette dentro risolve tutto.
+ *
+ * `percorso` salta il dialogo: serve alle prove, che non possono premere
+ * «Salva» in una finestra di sistema.
+ */
+ipcMain.handle('stampa:pdf', async (e, { html, nome, landscape, percorso } = {}) => {
+  if (!html || typeof html !== 'string') return { error: 'niente da stampare' };
+  let dest = percorso || '';
+  if (!dest) {
+    const r = await dialog.showSaveDialog(win, {
+      title: 'Salva come PDF',
+      defaultPath: path.join(app.getPath('downloads'), (nome || 'StudIA') + '.pdf'),
+      filters: [{ name: 'PDF', extensions: ['pdf'] }]
+    });
+    if (r.canceled || !r.filePath) return { annullato: true };
+    dest = r.filePath;
+  }
+  const tmp = path.join(os.tmpdir(), 'studia-stampa-' + Date.now() + '.html');
+  let finestra = null;
+  try {
+    fs.writeFileSync(tmp, html, 'utf8');
+    finestra = new BrowserWindow({
+      show: false,
+      webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false }
+    });
+    await finestra.loadFile(tmp);
+    /* I font PRIMA della stampa, e non un tempo a caso: senza, il foglio esce
+       col carattere di ripiego e le misure cambiano. Tetto a 4s — meglio un
+       ripiego che restare appesi. */
+    await finestra.webContents.executeJavaScript(
+      'Promise.race([document.fonts?document.fonts.ready:Promise.resolve(),' +
+      'new Promise(function(r){setTimeout(r,4000);})]).then(function(){return true;})'
+    ).catch(() => { });
+    await new Promise((r) => setTimeout(r, 200));   // assestamento delle immagini inline
+    const pdf = await finestra.webContents.printToPDF({
+      printBackground: true, preferCSSPageSize: true, landscape: !!landscape
+    });
+    fs.writeFileSync(dest, pdf);
+    return { ok: true, percorso: dest };
+  } catch (err) {
+    return { error: err.message || String(err) };
+  } finally {
+    if (finestra) { try { finestra.destroy(); } catch (_) { } }
+    try { fs.unlinkSync(tmp); } catch (_) { }
+  }
+});
+
+/* Mostra nel Finder ciò che si è appena salvato: si accetta SOLO un file che
+   esiste, e si passa da `showItemInFolder`, che apre la cartella senza aprire
+   il file — un PDF che si apre da solo è una finestra che nessuno ha chiesto. */
+ipcMain.handle('stampa:mostra', async (e, { percorso } = {}) => {
+  try {
+    if (!percorso || !fs.existsSync(percorso)) return { error: 'file inesistente' };
+    shell.showItemInFolder(percorso);
+    return { ok: true };
+  } catch (err) { return { error: err.message }; }
+});
+
 ipcMain.handle('course:export', async (e, { corso, appunti } = {}) => {
   const v = vaultDir(); if (!v) return { error: 'nessuna cartella StudIA impostata' };
   if (!corso) return { error: 'nessun corso scelto' };
