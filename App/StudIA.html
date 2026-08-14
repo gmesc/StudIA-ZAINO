@@ -4864,8 +4864,9 @@ function pdfZoomAggiorna(){
   if(find) find.hidden=!attivo;
   if(rit) rit.hidden=!(attivo || conVideo);
   /* Senza documento le forbici non hanno su che cosa lavorare: si spengono da
-     sé, o resterebbero accese sopra un riquadro vuoto. */
-  if(!attivo && !conVideo && ALBUM.attivo) albumRitaglioModo(false);
+     sé, o resterebbero accese sopra un riquadro vuoto. Vale per tutt'e due i
+     modi — quello appiccicato e ⌥ tenuto premuto. */
+  if(!attivo && !conVideo){ if(ALBUM.attivo) albumRitaglioModo(false); albumAlt(false); }
   if(!attivo || !lvl) return;
   /* Il segno quando la fonte segue il riquadro, la percentuale quando lo zoom
      l'ha scelto una mano. Il `title` dice sempre tutte e due le cose — dove si
@@ -5045,7 +5046,12 @@ function pdfFindChiudi(){
    La conversione la fa il viewport di pdf.js (`getPagePoint`), che sa già di
    scala e rotazione: rifarla a mano vuol dire sbagliarla il giorno che qualcuno
    ruota una pagina. */
-var ALBUM = { attivo:false, giu:null, rett:null, pagina:0 };
+/* `attivo` è il modo APPICCICATO (il bottone in barra), `alt` è quello
+   MOMENTANEO: vale finché si tiene premuto ⌥. Sono due perché rispondono a due
+   domande diverse — «il bottone è acceso?» e «adesso si ritaglia?» — e tenerne
+   una sola vorrebbe dire o un bottone che si accende da sé quando sfiori un
+   modificatore, o un modo che resta acceso dopo aver mollato il tasto. */
+var ALBUM = { attivo:false, alt:false, giu:null, rett:null, pagina:0 };
 
 /**
  * Dove sta l'IMMAGINE dentro l'elemento video, e con che scala.
@@ -5081,20 +5087,69 @@ function albumPaginaSotto(x, y){
   return { n:n, pv:pv, div:pv.div };
 }
 
-/** Accende o spegne le forbici. */
-function albumRitaglioModo(on){
-  ALBUM.attivo=(on==null) ? !ALBUM.attivo : !!on;
-  /* ⚠️ I riquadri su cui si ritaglia sono DUE — la pagina e il fotogramma — e
-     il modo è UNO. Accendere solo quello del documento lasciava il cursore
-     normale sopra il video e il bottone del player spento mentre le forbici
-     erano attive: due verità sullo stesso stato. */
+/** Adesso si ritaglia? Il modo appiccicato oppure ⌥ tenuto premuto. È l'unica
+ *  domanda che i gesti devono fare: chi trascina non deve sapere da quale delle
+ *  due porte sono entrate le forbici. */
+function albumForbici(){ return ALBUM.attivo || ALBUM.alt; }
+
+/**
+ * Rimette il vestito delle forbici in accordo con lo stato VERO.
+ *
+ * ⚠️ I riquadri su cui si ritaglia sono DUE — la pagina e il fotogramma — e il
+ * modo è UNO. Accendere solo quello del documento lasciava il cursore normale
+ * sopra il video e il bottone del player spento mentre le forbici erano attive:
+ * due verità sullo stesso stato.
+ *
+ * ⚠️ E il CURSORE segue `albumForbici()` mentre il BOTTONE segue solo il modo
+ * appiccicato: tenendo ⌥ si ritaglia, ma il bottone non è «premuto» — mollato il
+ * tasto tornerebbe su da sé, e un comando che si accende e si spegne da solo non
+ * si capisce più chi lo comanda.
+ */
+function albumVestito(){
+  var forbici=albumForbici();
   [['#pdfHost','#pdfRitaglia'], ['#plHost','#plRitaglia']].forEach(function(coppia){
     var h=$(coppia[0]), b=$(coppia[1]);
-    if(h) h.classList.toggle('ritaglio', ALBUM.attivo);
+    if(h) h.classList.toggle('ritaglio', forbici);
     if(b) b.setAttribute('aria-pressed', ALBUM.attivo?'true':'false');
   });
+}
+
+/** Accende o spegne le forbici APPICCICATE (il bottone in barra). */
+function albumRitaglioModo(on){
+  ALBUM.attivo=(on==null) ? !ALBUM.attivo : !!on;
+  albumVestito();
   if(!ALBUM.attivo) albumRettTogli();
-  if(ALBUM.attivo) toast('Trascina un rettangolo sulla pagina per ritagliarla', true);
+  if(ALBUM.attivo) toast('Trascina un rettangolo sulla pagina per ritagliarla — o tieni premuto ⌥', true);
+}
+
+/**
+ * ⌥ tenuto premuto = forbici MOMENTANEE.
+ *
+ * ⚠️ Perché non è solo una scorciatoia per accendere il modo. Le forbici
+ * appiccicate si possono dimenticare accese: succede all'utente (si torna a
+ * selezionare testo e invece si disegna un rettangolo) ed è successo alle prove,
+ * dove `partiPulito` deve spegnerle apposta perché una prova le lasciava addosso
+ * a quella dopo. Un modificatore tenuto non si dimentica: il modo dura quanto il
+ * dito.
+ *
+ * Niente avviso a schermo, qui: il cursore a croce È l'avviso, e un messaggio a
+ * ogni sfioramento di ⌥ sarebbe rumore. Il bottone in barra resta, e resta il
+ * modo per chi deve fare dieci ritagli di fila.
+ */
+function albumAlt(on){
+  var vale = !!on && albumRitagliabile();
+  if(ALBUM.alt===vale) return;
+  ALBUM.alt=vale;
+  albumVestito();
+  /* Mollando ⌥ a metà trascinamento il rettangolo NON si annulla: il gesto vale
+     com'era quando è cominciato. Mollare un modificatore a metà è un incidente
+     frequente, e perdere il ritaglio per quello sarebbe una punizione. */
+}
+/** C'è qualcosa da ritagliare? Un documento aperto o un media nel player. */
+function albumRitagliabile(){
+  var conDoc = (typeof ANTEPRIMA!=='undefined') && ANTEPRIMA.tipo==='pdf' && PDFJS.pronto && !!PDFJS.doc;
+  var conVideo = (typeof playerAperto==='function') && playerAperto();
+  return conDoc || conVideo;
 }
 function albumRettTogli(){ if(ALBUM.rett){ ALBUM.rett.remove(); ALBUM.rett=null; } ALBUM.giu=null; }
 
@@ -5445,7 +5500,7 @@ function albumElimina(corso, v){
      spegne via CSS (`#pdfHost.ritaglio .textLayer{pointer-events:none}`), ma la
      cattura è la rete che regge anche se un giorno quel CSS cambia. */
   document.addEventListener('pointerdown', function(e){
-    if(!ALBUM.attivo || e.button!==0) return;
+    if(!albumForbici() || e.button!==0) return;
     if(!e.target.closest) return;
     var giu=null;
     if(e.target.closest('#pdfFrame')){
@@ -5485,6 +5540,24 @@ function albumElimina(corso, v){
     if(e.key!=='Escape' || !ALBUM.attivo) return;
     e.preventDefault(); e.stopPropagation(); albumRitaglioModo(false);
   }, true);
+
+  /* ---- ⌥ tenuto premuto: le forbici momentanee ----
+     ⚠️ Si guarda `e.altKey` e non solo `e.key==='Alt'`: arrivando sulla finestra
+     con il tasto GIÀ premuto (⌘-Tab con ⌥ giù) il `keydown` di ⌥ è già passato
+     altrove, e senza questa riga il cursore resterebbe indietro di un tasto.
+     ⚠️ E non si accende mentre si scrive: su macOS ⌥ serve a comporre accenti e
+     simboli, e chi sta scrivendo un appunto non sta chiedendo le forbici. */
+  window.addEventListener('keydown', function(e){
+    if(scriveraDaTastiera(document.activeElement)) return;
+    if(e.key==='Alt' || e.altKey) albumAlt(true);
+  }, true);
+  window.addEventListener('keyup', function(e){
+    if(e.key==='Alt' || !e.altKey) albumAlt(false);
+  }, true);
+  /* ⚠️ Il `keyup` di ⌥ non arriva mai se nel frattempo la finestra ha perso il
+     fuoco (⌥+Tab, o un clic su un'altra applicazione): senza questa riga si
+     tornerebbe sull'app col cursore a croce e senza capire perché. */
+  window.addEventListener('blur', function(){ albumAlt(false); });
 
   document.addEventListener('input', function(e){
     if(!e.target.closest || !e.target.closest('#albCerca')) return;
@@ -5702,7 +5775,10 @@ function playerChiudi(){
   PLAYER={ file:'', tipo:'', num:null, label:'', vel:PLAYER.vel, pronto:false };
   /* Senza media le forbici non hanno un fotogramma su cui lavorare: si spengono
      da sé, o resterebbero accese sopra un riquadro vuoto. */
-  if(ALBUM.attivo && (typeof ANTEPRIMA==='undefined' || ANTEPRIMA.tipo!=='pdf')) albumRitaglioModo(false);
+  if(typeof ANTEPRIMA==='undefined' || ANTEPRIMA.tipo!=='pdf'){
+    if(ALBUM.attivo) albumRitaglioModo(false);
+    albumAlt(false);
+  }
   playerBarraAggiorna();
   try{ pdfZoomAggiorna(); }catch(e){}
 }
@@ -14978,7 +15054,7 @@ window.addEventListener('keydown', function(e){
       <button class="tbtn" id="pdfZoomIn" type="button" title="Ingrandisci" aria-label="Ingrandisci">+</button>
     </span>
     <i class="tbsep" aria-hidden="true"></i>
-    <button class="tbtn" id="pdfRitaglia" type="button" hidden aria-pressed="false" title="Ritaglia un'area della pagina" aria-label="Ritaglia un'area della pagina">&#9986;</button>
+    <button class="tbtn" id="pdfRitaglia" type="button" hidden aria-pressed="false" title="Ritaglia un'area della pagina — o tieni premuto &#8997; e trascina" aria-label="Ritaglia un'area della pagina">&#9986;</button>
     <button class="tbtn" id="pdfFindBtn" type="button" hidden aria-expanded="false" title="Cerca nel documento (⌘F)" aria-label="Cerca nel documento">&#128269;</button>
     <!-- Il riconoscimento del testo: compare SOLO quando il documento aperto è
          una scansione (lo dice l'indice, non un'euristica del renderer). Durante
@@ -15053,7 +15129,7 @@ window.addEventListener('keydown', function(e){
          accendono lo stesso modo dell'album. Solo sul video — un audio non ha
          niente da inquadrare. -->
     <button class="tbtn" id="plRitaglia" type="button" hidden aria-pressed="false"
-            title="Ritaglia un fermo immagine" aria-label="Ritaglia un fermo immagine">&#9986;</button>
+            title="Ritaglia un fermo immagine — o tieni premuto &#8997; e trascina" aria-label="Ritaglia un fermo immagine">&#9986;</button>
     <button class="tbtn" id="plNota" type="button" hidden title="Segna questo minuto negli appunti (⌘⇧C)"
             aria-label="Segna questo minuto negli appunti">&#9998;</button>
     <!-- ⚠️ Come `#pdfElimina`: togliere un media tocca un file portato dentro
