@@ -75,6 +75,11 @@
 <script src="assets/dati/icone.js"></script>
 <script src="assets/dati/emoji.js"></script>
 <script src="assets/ricerca/indice.js"></script>
+<!-- La carta: formato del foglio, margini, scala tipografica e il piè coi
+     numeri di pagina. Sta qui — prima dell'inline — perché `stampaFoglio()` gli
+     chiede le regole al momento di stampare, e perché il suo `@page` deve
+     entrare in un <style> che nasce vuoto (subito sotto, `#stampaRegole`). -->
+<script src="assets/stampa/foglio.js"></script>
 <style>
   /* OpenMoji come font emoji dell'app (self-hosted, offline) — eccezione dichiarata per questa app al default Noto */
   @font-face{ font-family:'OpenMoji'; src:url('assets/fonts/OpenMoji-color.woff2') format('woff2');
@@ -2157,35 +2162,29 @@
 
      ⚠️ Sul foglio non si stampa MAI l'interfaccia della mappa: le maniglie
      degli archi e i pallini dei rami sono comandi, e un comando su carta è un
-     disegno che promette un gesto impossibile. Li spegne `.foglio-mappa`.  */
+     disegno che promette un gesto impossibile.
+
+     ⚠️ LE REGOLE DI STAMPA NON STANNO PIÙ QUI, e non è un capriccio: il foglio
+     del testo e quello della mappa vogliono due `@page` diversi (verticale con
+     margini larghi · coricato con margini stretti), e un `@page` con nome —
+     `@page mappa` + `page:mappa` — Chromium NON lo applica al foglio quando la
+     regola arriva da un blocco già caricato: il risultato misurato il 14 agosto
+     era una mappa stampata su foglio verticale americano. Le regole le scrive
+     ADESSO `stampaFoglio()` dentro `#stampaRegole`, chiedendole al modulo
+     `assets/stampa/foglio.js` — che è anche il posto dove i numeri sono
+     motivati e provati in Node. Qui resta solo ciò che vale sempre. */
   #stampaFoglio{ display:none; }
   @media print{
-    /* la carta è bianca: il tema scuro qui sarebbe una lastra di inchiostro */
-    :root{ color-scheme:light; }
+    /* Se qualcuno stampa senza passare da `stampaFoglio()` (⌘P a mano), il
+       foglio è vuoto e l'app non si stampa: meglio una pagina bianca che
+       diciotto pagine d'interfaccia. */
     body > *{ display:none !important; }
-    body{ background:#fff; color:#111; margin:0; }
-    #stampaFoglio{ display:block !important; background:#fff; color:#111;
-      font-family:var(--font-testo, 'Helvetica Neue', Arial, sans-serif); }
-    #stampaFoglio .st-testa{ border-bottom:1px solid #999; padding-bottom:.5rem; margin-bottom:1rem; }
-    #stampaFoglio .st-titolo{ font-size:19px; font-weight:800; margin:0 0 .15rem; }
-    #stampaFoglio .st-dove{ font-size:11px; color:#555; }
-    #stampaFoglio .st-corpo{ font-size:12.5px; line-height:1.6; }
-    #stampaFoglio .st-corpo h1,#stampaFoglio .st-corpo h2,#stampaFoglio .st-corpo h3{ break-after:avoid; }
-    #stampaFoglio .st-corpo li,#stampaFoglio .st-corpo p{ break-inside:avoid; }
-    #stampaFoglio .st-corpo blockquote,#stampaFoglio .st-corpo .ucallout{
-      border-left:3px solid #999; margin:.6rem 0; padding:.35rem .7rem; background:#f4f4f4; break-inside:avoid; }
-    #stampaFoglio .st-corpo a{ color:#111; text-decoration:underline; }
-    #stampaFoglio svg{ width:100%; height:auto; max-height:92vh; }
-    /* Una mappa è larga (mediana misurata: 2.884px) e su un foglio ritto non
-       si legge: le si dà una pagina sua, coricata. Se il motore ignora `page`,
-       si stampa comunque — solo più stretta. */
-    @page mappa{ size:landscape; margin:10mm; }
-    @page{ margin:14mm; }
-    #stampaFoglio.foglio-mappa{ page:mappa; }
-    #stampaFoglio.foglio-mappa .mporta,
-    #stampaFoglio.foglio-mappa .mtoggle{ display:none; }
+    body{ background:#fff; color:#111; margin:0; padding:0; }
   }
 </style>
+<!-- Le regole del foglio, scritte al momento di stampare (vedi sopra). Nasce
+     vuoto: finché nessuno stampa, non c'è nessun `@page` in giro. -->
+<style id="stampaRegole"></style>
 </head>
 <body>
 <a class="skip" href="#content">Vai al contenuto</a>
@@ -6418,19 +6417,55 @@ function closePops(){
    contenuto: è la stessa regola per cui gesto e voce di menu chiamano la
    stessa funzione. Se un giorno si stamperà anche un capitolo, sarà un terzo
    chiamante, non un secondo meccanismo.  */
-function stampaFoglio(opt){
+/**
+ * Prepara il foglio — le regole e il contenuto — SENZA stampare.
+ *
+ * ⚠️ È separata da `stampaFoglio` per una ragione che si è pagata subito: con
+ * la stampa dentro, il foglio si può guardare solo aprendo il dialogo di
+ * Chromium, che è modale e blocca chi misura. Così invece una prova (e chi
+ * verifica il PDF) può riempire il foglio, stamparlo dal main e misurarlo,
+ * passando dallo STESSO codice che usa il gesto. Torna il tipo di foglio.
+ */
+function stampaPrepara(opt){
   opt=opt||{};
-  var f=$('#stampaFoglio'); if(!f) return false;
-  var oggi=new Date().toLocaleDateString('it-CH',{ day:'numeric', month:'long', year:'numeric' });
-  var dove=[opt.dove||'', oggi].filter(Boolean).join(' · ');
+  var f=$('#stampaFoglio'); if(!f) return '';
+  /* Il TIPO di foglio decide il formato: `testo` è A4 verticale con margini da
+     lettura, `mappa` è A4 coricato con margini stretti. Le regole — compreso il
+     piè coi numeri di pagina — arrivano dal modulo, che è anche dove i numeri
+     sono motivati; qui si scrivono nel foglio di stile che nasce vuoto.
+     ⚠️ Si riscrivono a ogni stampa e non una volta all'avvio: sono diverse per
+     tipo, e il titolo del documento entra nel piè. */
+  var tipo=opt.tipo || (opt.classe==='foglio-mappa' ? 'mappa' : 'testo');
+  var regole=$('#stampaRegole');
+  if(regole && typeof StampaFoglio!=='undefined'){
+    var font=(getComputedStyle(document.body).fontFamily)||"'Helvetica Neue', Arial, sans-serif";
+    regole.textContent=StampaFoglio.regole({
+      tipo:tipo, font:font,
+      /* A sinistra nel piè: l'app e dove si sta lavorando — è ciò che dice a
+         chi ritrova il foglio da dove viene. Il titolo no: è già in testa. */
+      marchio:'StudIA', sotto:opt.dove||''
+    });
+  }
   f.className=opt.classe||'';
-  f.innerHTML='<div class="st-testa"><div class="st-titolo">'+escHtml(opt.titolo||'')+'</div>'+
-              (dove? '<div class="st-dove">'+escHtml(dove)+'</div>' : '')+'</div>'+
-              '<div class="st-corpo">'+(opt.html||'')+'</div>';
+  var testa = (typeof StampaFoglio!=='undefined')
+    ? StampaFoglio.testata({ titolo:opt.titolo||'', dove:opt.dove||'' })
+    : '<div class="st-testa"><div class="st-titolo">'+escHtml(opt.titolo||'')+'</div></div>';
+  f.innerHTML=testa+'<div class="st-corpo">'+(opt.html||'')+'</div>';
+  return tipo;
+}
+
+/** Riempie il foglio e stampa. È il gesto: una funzione sola per i due
+ *  chiamanti (l'appunto e la mappa), come vuole la regola del progetto. */
+function stampaFoglio(opt){
+  var f=$('#stampaFoglio'); if(!f) return false;
+  if(!stampaPrepara(opt)) return false;
   /* Il foglio si svuota DOPO la stampa e non prima: il dialogo di Chromium è
      modale ma l'anteprima legge il documento anche dopo che `print()` è
      tornata, e un foglio svuotato subito si stampa bianco. `afterprint` è
-     l'unico momento in cui si sa che nessuno lo sta più guardando. */
+     l'unico momento in cui si sa che nessuno lo sta più guardando.
+     ⚠️ Le regole restano: toglierle qui vorrebbe dire un `@page` che sparisce
+     mentre l'anteprima è ancora aperta. Costano nulla e la prossima stampa le
+     riscrive. */
   var pulisci=function(){ f.innerHTML=''; f.className=''; window.removeEventListener('afterprint', pulisci); };
   window.addEventListener('afterprint', pulisci);
   window.print();
@@ -6462,7 +6497,7 @@ function stampaMappa(){
             maniglie:false, chiudibili:MAPPA.chiudibili||{}, srcImmagine:mappaSrcImmagine,
             font:(getComputedStyle(document.body).fontFamily||'Helvetica Neue, Arial, sans-serif') });
   var titolo=mappaTitoloCorrente();
-  stampaFoglio({ titolo:titolo, classe:'foglio-mappa',
+  stampaFoglio({ titolo:titolo, classe:'foglio-mappa', tipo:'mappa',
                  dove:(LESSON?LESSON.title:'')||'',
                  html:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+escHtml(out.viewBox)+'" role="img" aria-label="'+escHtml(titolo)+'">'+out.markup+'</svg>' });
 }
