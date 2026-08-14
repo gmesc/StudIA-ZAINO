@@ -15,7 +15,7 @@
 
 | ramo | commit | suite |
 |---|---|---|
-| `fonte-zoom-adatta` | `8f0f9c1` | ✅ **29** file di unità · **36** prove CDP, tutte verdi |
+| `fonte-zoom-adatta` | `41fdd97` | ✅ **29** file di unità · **36** prove CDP, tutte verdi |
 | `main` | `727476b` — **ferma**, non si è mossa | |
 
 ```bash
@@ -48,6 +48,14 @@ SHIFT+scroll zooma sotto il puntatore».
 La percentuale non si perde quando il bottone mostra un segno: sta nel suggerimento, insieme a dove
 porta il click («Adattata alla larghezza — 144% — segue il riquadro; clicca per adattare alla pagina
 intera»).
+
+⚠️ **Il bottone tiene la larghezza del CASO PEGGIORE**, cioè «500%» — il tetto dello zoom. Trovato da
+Giacomo provando i gesti: i segni misuravano 30px e una percentuale 46, quindi passando allo zoom a
+mano il bottone si allargava di sedici pixel e «+» e «−» si spostavano **sotto le dita di chi stava
+premendo**. La misura è in `ch` e non in pixel per seguire `--tb-fs`, e non sono 4ch: le barre hanno
+`letter-spacing`, quindi quattro caratteri occupano più di quattro larghezze di cifra (4,3ch dava
+39px contro i 46 veri; il numero giusto è **5,5ch**). La regola generale: **un'etichetta che cambia
+riserva lo spazio del suo caso peggiore**, o sposta i comandi vicini mentre li si usa.
 
 **Il ciclo a tre stati è una scelta dichiarata**: il click prima alternava larghezza ↔ pagina intera,
 e col nuovo comportamento «pagina intera» sarebbe sparita. Ora ci sono due modi dinamici e una
@@ -96,7 +104,11 @@ tre giorni prima.
 
 ---
 
-## 4. I gesti da provare a mano (l'unica cosa che manca al merge)
+## 4. I gesti provati a mano ✅ *il 14 agosto sera*
+
+Provati tutti da Giacomo, tutti funzionanti. L'unico difetto uscito da qui è il bottone che si
+allargava cambiando etichetta (§2), rimediato e coperto da una prova. **Restano da riverificare solo
+`main` ferma e le due suite prima di unire** (§7.2 della guida).
 
 1. Apri una fonte: il bottone mostra `⟷`, non `100%`.
 2. Trascina il divisore del banco avanti e indietro: **la pagina cresce e cala col riquadro**.
