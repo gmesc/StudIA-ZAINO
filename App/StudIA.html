@@ -1932,11 +1932,24 @@
     background:var(--hover); padding:.5rem .6rem; line-height:1.5; }
   table.guida .g-out>*:first-child{ margin-top:0; } table.guida .g-out>*:last-child{ margin-bottom:0; }
   table.guida .g-out .ucallout{ margin:.2rem 0; }
-  /* pulsante "?" accanto ai campi liberi + riquadro con gli esempi */
-  .helpbtn{ border:1px solid var(--line); background:var(--panel); color:var(--muted); cursor:pointer;
-    width:18px; height:18px; line-height:1; font-size:11px; font-weight:700; font-family:inherit;
-    padding:0; vertical-align:middle; text-transform:none; letter-spacing:0; }
-  .helpbtn:hover{ background:color-mix(in srgb, var(--blue) 18%, var(--panel)); color:var(--blue-strong); border-color:transparent; }
+  /* Il "?" accanto ai campi liberi: NON è un bottone di barra ed è giusto che
+     non lo sembri — è un RIMANDO A UNA NOTA, come l'esponente di una potenza.
+     Piccolo, in grassetto, rialzato e colorato di blu, che in quest'app è il
+     colore di ciò che spiega (i callout informativi, il fondo di `.helpbtn`
+     quando era una scatoletta). Senza cornice: una scatola da 18px accanto a
+     un'etichetta da 11 pesava quanto l'etichetta, e sembrava un comando.
+     ⚠️ La scatola dei 18px se ne va, ma il bersaglio del mouse no: il rientro
+     resta, e con `vertical-align:super` non allarga la riga perché il corpo è
+     più piccolo di quello dell'etichetta che lo ospita. */
+  .helpbtn{ border:0; background:transparent; color:var(--blue-strong); cursor:pointer;
+    font-family:inherit; font-size:10px; font-weight:800; line-height:1;
+    vertical-align:super; text-transform:none; letter-spacing:0;
+    /* il rientro allarga il bersaglio del mouse (10px sono pochi da prendere),
+       il margine negativo lo riassorbe: la riga non si sposta di un pixel */
+    padding:.3rem .35rem; margin:-.3rem -.2rem -.3rem -.25rem; }
+  .helpbtn:hover{ color:var(--ink); }
+  .helpbtn:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
+  .helpbtn[aria-expanded="true"]{ color:var(--ink); }
   #helpPop{ width:min(420px,92vw); padding:.7rem .8rem; max-height:60vh; overflow:auto; }
   #helpPop .hp-rule{ font-size:12px; line-height:1.5; color:var(--ink); margin:0 0 .6rem; }
   #helpPop .hp-h{ font-size:10px; text-transform:uppercase; letter-spacing:.12em; font-weight:700; color:var(--muted); margin:.7rem 0 .3rem; }
@@ -6711,6 +6724,10 @@ function closePops(){
     .forEach(function(s){ var e=$(s); if(e) e.removeAttribute('open'); });
   /* Chi apre un pannellino lo dichiara con `aria-expanded`: chiuderlo senza
      rimetterlo a posto lascerebbe il bottone a promettere un riquadro aperto. */
+  /* Il «?» delle spiegazioni è un rimando a una nota, non un pannellino con
+     stato proprio: qui l'attributo si TOGLIE invece di metterlo a «false»,
+     perché fuori dall'apertura quel bottone non promette niente. */
+  document.querySelectorAll('.helpbtn[aria-expanded]').forEach(function(b){ b.removeAttribute('aria-expanded'); });
   var zn=$('#zainoNuovo'); if(zn) zn.setAttribute('aria-expanded','false');
   var pd=$('#pdfDoc'); if(pd) pd.setAttribute('aria-expanded','false');
   var pm=$('#plScegli'); if(pm) pm.setAttribute('aria-expanded','false');
@@ -11030,6 +11047,14 @@ try{
         '<ul class="hp-no">'+h.no.map(function(p){ return '<li>«'+escHtml(p[0])+'» <i>— '+escHtml(p[1])+'</i></li>'; }).join('')+'</ul>'+
         '<p class="hp-foot">In caso di contrasto fra questi campi e i menu qui sopra, vincono i menu.</p>';
       popAt(pop, anchorEl);
+      helpSegna(anchorEl);
+    }
+    /** Segna quale «?» ha aperto il riquadro (uno solo alla volta, o nessuno). */
+    function helpSegna(quale){
+      document.querySelectorAll('.helpbtn[aria-expanded]').forEach(function(b){
+        if(b!==quale) b.removeAttribute('aria-expanded');
+      });
+      if(quale) quale.setAttribute('aria-expanded','true');
     }
     document.addEventListener('click', function(e){
       var hb=e.target.closest && e.target.closest('.helpbtn');
@@ -11048,6 +11073,7 @@ try{
       }
       if(!(e.target.closest && (e.target.closest('#helpPop')||e.target.closest('.helpbtn')))){
         var hp=document.getElementById('helpPop'); if(hp) hp.removeAttribute('open');
+        helpSegna(null);
       }
     });
 

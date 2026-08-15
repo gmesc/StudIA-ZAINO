@@ -143,6 +143,48 @@ const RILEVA = `(()=>{
     { sopra: piede.sopra, sotto: piede.sotto });
   vero('un comando spento si vede spento senza una regola sua', parseFloat(piede.spento) < .5);
 
+  /* Il «?» non è un bottone di barra: è un rimando a una nota — piccolo, in
+     grassetto, rialzato, blu, senza cornice. Ma resta un comando da prendere
+     col mouse, e la grafia da 10px non basta: il bersaglio è più grande della
+     grafia grazie al rientro, riassorbito da un margine negativo perché la
+     riga non si sposti. */
+  /* ⚠️ I «?» stanno nella scheda Utente, e il giro qui sopra è finito su AI: un
+     elemento in un pannello nascosto misura 0×0, e la prova accuserebbe il CSS
+     di una colpa della prova. Si torna sulla scheda giusta PRIMA di misurare. */
+  await val(`(()=>{document.querySelector('.set-tab[data-tab="utente"]').click();return 1})()`);
+  await pausa(250);
+  const aiuto = await val(`(()=>{
+    const b=document.querySelector('#settingsModal .helpbtn'); const s=getComputedStyle(b);
+    const r=b.getBoundingClientRect();
+    const et=b.closest('label,.set-sec-h');
+    return { bordo:s.borderTopWidth, fondo:s.backgroundColor, rialzo:s.verticalAlign,
+             corpo:parseFloat(s.fontSize), peso:s.fontWeight, colore:s.color,
+             bersaglio:[Math.round(r.width),Math.round(r.height)],
+             corpoEtichetta:parseFloat(getComputedStyle(et).fontSize) };
+  })()`);
+  ok('il «?» non ha più la scatola', { bordo: '0px', fondo: 'rgba(0, 0, 0, 0)' },
+    { bordo: aiuto.bordo, fondo: aiuto.fondo });
+  ok('è rialzato come un esponente', 'super', aiuto.rialzo);
+  vero('è più piccolo dell\'etichetta che lo ospita', aiuto.corpo < aiuto.corpoEtichetta);
+  vero('è in grassetto', parseInt(aiuto.peso, 10) >= 700);
+  // era grigio `--muted` quando era una scatoletta: adesso è il blu di ciò che spiega
+  const spento = await val(`(()=>{const d=document.createElement('span');
+    d.style.color='var(--muted)'; document.body.appendChild(d);
+    const c=getComputedStyle(d).color; d.remove(); return c;})()`);
+  vero('è colorato di blu, non spento di grigio', aiuto.colore !== spento);
+  ok('il bersaglio del mouse è più grande della grafia (larghezza, altezza)',
+    true, aiuto.bersaglio[0] >= 16 && aiuto.bersaglio[1] >= 16 ? true : aiuto.bersaglio);
+
+  // …e quando il riquadro è aperto lo dice il markup, non solo il colore
+  const segno = await val(`(()=>{
+    const b=document.querySelector('#settingsModal .helpbtn'); b.click();
+    const v=b.getAttribute('aria-expanded');
+    document.body.click();
+    return { aperto:v, dopo:b.getAttribute('aria-expanded') };
+  })()`);
+  ok('lo stato aperto sta nel markup, e sparisce alla chiusura',
+    { aperto: 'true', dopo: null }, segno);
+
   /* La promessa grossa, in un controllo solo. */
   const superstiti = await val(`[...document.querySelectorAll(
     '.dashbtn,.kr-save:not(.tbtn),.btn-sec,.btn-go,.media-foot button:not(.tbtn),#settingsModal .iconbtn')]
