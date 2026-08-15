@@ -64,7 +64,8 @@ prova('i file di licenza citati dal file dichiarativo esistono davvero', () => {
 
 prova('gli obblighi che non si possono dimenticare ci sono tutti', () => {
   const tutto = JSON.stringify(inventario.obblighi);
-  for (const parola of ['OpenMoji', 'CC BY-SA', 'LGPL', 'Chromium', 'Apache-2.0', 'consulenza legale']) {
+  // «1F393» è l'icona dell'app: opera derivata da OpenMoji, quindi CC BY-SA anche lei
+  for (const parola of ['OpenMoji', 'CC BY-SA', 'LGPL', 'Chromium', 'Apache-2.0', 'consulenza legale', '1F393']) {
     assert.ok(tutto.includes(parola), 'obbligo mancante o riscritto: ' + parola);
   }
 });

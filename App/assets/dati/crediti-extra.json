@@ -29,6 +29,10 @@
       "testo": "Le emoji e le icone OpenMoji sono creative commons con obbligo di condividere allo stesso modo: chi redistribuisce l'app deve mantenere l'attribuzione a OpenMoji e distribuire con la stessa licenza le icone eventualmente modificate. L'attribuzione richiesta è: «Emoji e icone: OpenMoji — il progetto open source di emoji per designer e sviluppatori. Licenza: CC BY-SA 4.0»."
     },
     {
+      "titolo": "L'icona dell'applicazione è un'opera derivata da OpenMoji",
+      "testo": "L'icona di StudIA è basata sull'emoji «graduation cap» (U+1F393) di OpenMoji, adattata al formato icona di macOS. Essendo un'opera derivata da un'opera CC BY-SA 4.0, l'icona stessa è distribuita con licenza CC BY-SA 4.0, non con la licenza MIT del resto dell'app: chi la riusa o la modifica deve mantenere l'attribuzione a OpenMoji e distribuirla con la stessa licenza. Attribuzione: «Icona dell'applicazione: basata sull'emoji graduation cap (1F393) di OpenMoji — il progetto open source di emoji e icone. Licenza: CC BY-SA 4.0»."
+    },
+    {
       "titolo": "ffmpeg dentro Electron — LGPL-2.1",
       "testo": "Electron include una build LGPL di ffmpeg (libffmpeg.dylib nel framework). La LGPL-2.1 chiede di dichiararlo, di includere il testo della licenza e di permettere all'utente di sostituire quella libreria con una propria versione: la libreria è spedita come file dinamico separato dentro StudIA.app/Contents/Frameworks/ e può essere sostituita. Il codice sorgente di ffmpeg è quello pubblicato da FFmpeg (ffmpeg.org) nella versione usata da Electron; su richiesta scritta a giacomo@insegnai.ch se ne indica la revisione esatta."
     },
@@ -149,6 +153,17 @@
       "avviso": "Licenza con obbligo di condivisione allo stesso modo: vedi l'obbligo «OpenMoji — CC BY-SA 4.0»."
     },
 
+    {
+      "nome": "OpenMoji — «graduation cap» (1F393)",
+      "versione": "icona dell'applicazione",
+      "categoria": "vendor",
+      "ruolo": "l'icona di StudIA: opera derivata dall'emoji «graduation cap» di OpenMoji, adattata al formato icona di macOS",
+      "licenza": "CC BY-SA 4.0",
+      "copyright": "OpenMoji — HfG Schwäbisch Gmünd + Hochschule für Gestaltung",
+      "url": "https://openmoji.org/library/emoji-1F393/",
+      "licenzaFile": "cc-by-sa-4.0.txt",
+      "avviso": "Opera derivata: l'icona è distribuita con la stessa licenza CC BY-SA 4.0, non con la licenza MIT del resto dell'app. Vedi l'obbligo «L'icona dell'applicazione è un'opera derivata da OpenMoji»."
+    },
     {
       "nome": "Tesseract OCR — modelli di lingua (tessdata)",
       "versione": "ita, eng",
