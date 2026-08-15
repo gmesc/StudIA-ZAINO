@@ -88,9 +88,24 @@ fs.writeFileSync(process.argv[3], JSON.stringify(c,null,2));
 " "$CFG_VERA" "$VAULT" "$DATI/config.json" || exit 1
 
 cd "$QUI" || exit 1
+# Di norma si prova il codice della cartella (`electron .`). Con `STUDIA_APP` si provano
+# invece **gli stessi gesti dentro il pacchetto** — l'unica cosa che i tester eseguono
+# davvero, e che può rompersi per conto suo (whitelist `files`, percorsi dentro il
+# bundle, firma). Il vault e la cartella dati restano quelli di prova: cambia solo chi
+# viene lanciato.
+#
+#   STUDIA_APP=dist/mac-arm64/StudIA.app ./test/cdp/con-vault-di-prova.sh
+#
 # ⚠️ `--user-data-dir` è ciò che rende innocuo tutto il resto: l'app di prova legge e
 # scrive la config lì dentro, e la tua può restare aperta a lavorare.
-./node_modules/.bin/electron . --user-data-dir="$DATI" --remote-debugging-port="$PORTA" > "$LAVORO/app.log" 2>&1 &
+if [ -n "${STUDIA_APP:-}" ]; then
+  ESEGUIBILE="$STUDIA_APP/Contents/MacOS/$(basename "$STUDIA_APP" .app)"
+  [ -x "$ESEGUIBILE" ] || { echo "✗ non è un pacchetto eseguibile: $ESEGUIBILE"; exit 1; }
+  echo "  si prova il PACCHETTO: $STUDIA_APP"
+  "$ESEGUIBILE" --user-data-dir="$DATI" --remote-debugging-port="$PORTA" > "$LAVORO/app.log" 2>&1 &
+else
+  ./node_modules/.bin/electron . --user-data-dir="$DATI" --remote-debugging-port="$PORTA" > "$LAVORO/app.log" 2>&1 &
+fi
 PID_APP=$!
 printf "  avvio dell'app di prova"
 for _ in $(seq 1 40); do

@@ -8,6 +8,7 @@
   "scripts": {
     "start": "electron .",
     "dist:mac": "electron-builder --mac --arm64",
+    "pacchetto": "bash bin/pacchetto-mac.sh",
     "test": "node test/roundtrip.js && node test/mappe.js && node test/modifica.js && node test/evidenze.js && node test/grafo-focus.js && node test/disegna-fonti.js && node test/appunti-rinomina.js && node test/appunti-zaino.js && node test/genera-concetti.js && node test/figure.js && node test/mappa-immagini.js && node test/album.js && node test/ritentativi.js && node test/costi.js && node test/zaini.js && node test/evidenze-pdf.js && node test/lettura.js && node test/fonti.js && node test/ocrpdf.js && node test/ascolto.js && node test/media.js && node test/player.js && node test/note.js && node test/ricerca.js && node test/stampa-foglio.js && node test/rimandi.js && node test/identita.js && node test/ripasso.js && node test/zoom-fonte.js && node test/crediti.js && node test/atlante.js && node test/foto.js && node test/heic.js && node test/importa-testi.js",
     "studia": "node bin/studia.js",
     "crediti": "node lib/crediti.js"
@@ -29,7 +30,6 @@
       "bin/**",
       "lib/**",
       "App/wizard.js",
-      "prompts/**",
       "schema/**",
       "ingest.py",
       "index_videos.py",
@@ -38,7 +38,6 @@
     ],
     "extraResources": [
       {
-        "//": "l'elenco dei componenti di Chromium (14 MB): le loro licenze vanno accompagnate al binario, e nel JSON dei crediti non ci sta",
         "from": "node_modules/electron/dist/LICENSES.chromium.html",
         "to": "LICENSES.chromium.html"
       }
