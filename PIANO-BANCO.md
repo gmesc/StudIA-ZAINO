@@ -72,6 +72,31 @@ Otto forme, e si dicono tutte con un `grid-template-areas`. Il PDF a tutta largh
 appunti sotto è **«3 · sopra intera»** con `A = PDF`; la mappa e le parole chiave a schermo pieno
 sono **«2 affiancati»** con la fonte chiusa.
 
+## 2.0 ⚠️ La griglia è arrivata a 3×3 (B1, 15 agosto 2026)
+
+Quello che segue descrive il banco **2×2 delle origini**, e resta vero nella sostanza — le otto
+forme del piano non hanno cambiato né chiave né significato. Ma da B1:
+
+- i blocchi sono **nove** (A–I) e le forme dodici: alle otto si aggiungono le quattro a **tre
+  colonne**, nate per gli schermi larghi;
+- una forma dichiara la sua griglia nelle AREE, e da lì si leggono colonne, righe, **quali fessure
+  sono divisori veri** (`divisoriDi`) e quali blocchi toccano i bordi. Niente elenchi a parte: con
+  dodici forme più quelle dell'utente, una seconda copia diverge alla prima;
+- i divisori sono fino a **quattro** (due per asse);
+- ⚠️ le griglie a due e a tre colonne ricordano **tarature separate** (`col`/`riga` contro
+  `col3`/`col3b`/`riga3`/`riga3b`): una frazione scelta con due colonne, portata su tre, faceva la
+  prima colonna doppia delle altre — misurato;
+- l'utente può **disegnare** le sue forme (il «pittore»: casella «+» nel selettore, si trascina sui
+  riquadri di una 3×3). Vivono nel `localStorage` con prefisso obbligato `mia-` — una forma che si
+  chiamasse `quattro` coprirebbe quella di fabbrica — e si ricaricano all'avvio PRIMA che il banco
+  rilegga lo stato.
+
+⚠️ Il pittore **non fa nascere blocchi a L**: ricoprire celle è il modo naturale di correggersi, ma
+se il ricoprire spezza un rettangolo le celle orfane tornano vuote. Il CSS, davanti a una
+`grid-template-areas` storta, scarta la regola INTERA senza dire niente.
+
+Prove: la sezione del banco in `test/roundtrip.js` e `test/cdp/prova-banco-griglia.js`.
+
 ## 2.1 Tutta la geometria sta in due numeri
 
 Qualunque sia la forma, i divisori sono due: **uno verticale** e **uno orizzontale**. Dove la forma
@@ -86,6 +111,9 @@ raccontabile in una riga:
 ⚠️ Le frazioni si salvano come **frazioni**, non in pixel: il banco deve reggere il passaggio da un
 portatile a un monitor esterno senza che il quaderno diventi una fessura. È lo stesso errore che
 `--pane-w:42vw` evita già oggi, e va conservato.
+
+⚠️ *(Da B1 i numeri sono fino a quattro: due per asse. Il principio non cambia — la geometria sta
+nelle frazioni, e le frazioni stanno nello stato.)*
 
 ## 2.2 Gli strumenti sono un registro, non un elenco di `if`
 

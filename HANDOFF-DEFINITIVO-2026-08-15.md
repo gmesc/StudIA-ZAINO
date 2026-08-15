@@ -1,131 +1,164 @@
-# Handoff definitivo — 15 agosto 2026
+# Handoff definitivo — 15 agosto 2026, sera
 
-> **A chi arriva adesso: questo file basta per ripartire.** Sostituisce
-> [HANDOFF-DEFINITIVO-2026-08-14b.md](HANDOFF-DEFINITIVO-2026-08-14b.md), che resta la lettura di
-> dettaglio su zoom della fonte, forbici con ⌘ e Album Foto (F1–F2, ormai in `main`). Il §4 del
-> [14](HANDOFF-DEFINITIVO-2026-08-14.md) — le quattro cose che contano prima del beta — vale ancora,
-> e il **pacchetto è sempre la prima**: `dist/` è del 23 luglio, mai provata con questo codice.
+> **A chi arriva adesso: questo file basta per ripartire.** Dice dov'è il codice, che cosa è appena
+> entrato, che cosa resta aperto e in che ordine — e le trappole fresche, che sono la parte utile.
 >
+> Sostituisce [HANDOFF-DEFINITIVO-2026-08-14b.md](HANDOFF-DEFINITIVO-2026-08-14b.md), che resta la
+> lettura di dettaglio su zoom della fonte, forbici con ⌘ e Album Foto. Il **§4 del
+> [14 agosto](HANDOFF-DEFINITIVO-2026-08-14.md)** — le quattro cose che contano prima del beta — è
+> ancora la lista giusta, e il pacchetto è ancora la prima.
+>
+> **Come si costruisce qui** lo dice [GUIDA-ARCHITETTO.md](GUIDA-ARCHITETTO.md), aggiornata oggi.
 > **Regola di lettura**: dove c'è ⚠️ c'è un guasto già pagato, col rimedio accanto.
 
 ---
 
 ## 1. Dove sono i lavori
 
-| ramo | commit | suite |
-|---|---|---|
-| `main` | `5dc51b6` (15 ago sera, dopo il merge dei tre lavori) | ✅ **34** unità · **43** CDP, meno la nota qui sotto |
-
-**Non c'è nessun ramo aperto.** `lavori-fotografie-banco` (F1-bis · B1 · Confronto) è entrato in
-`main` in fast-forward dopo che i gesti erano stati provati a mano — e da quelle prove sono usciti
-due difetti veri, il pittore che restava in overlay e la barra del Confronto fuori dal token, tutti
-e due rimediati prima del merge.
+| | |
+|---|---|
+| ramo | `main` — **nessun ramo aperto** |
+| commit | `1a28484` (15 agosto sera) |
+| remoto | **`git@github.com:gmesc/StudIA.git`** (privato), `main` tracciante e allineata |
+| suite | ✅ **34** file di unità · **43** prove CDP, con l'eccezione qui sotto |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
-npm test
-STUDIA_PORTA=9334 ./test/cdp/con-vault-di-prova.sh
+npm test                                              # 34 file, exit 0
+STUDIA_PORTA=9334 ./test/cdp/con-vault-di-prova.sh    # 43 prove sull'app viva
+npm start                                             # l'app
 ```
 
-⚠️ **`prova-testolayer` è rossa da stasera ANCHE su `main` pulita** («il trascinamento seleziona
-qualcosa» → selezione vuota). La prova è invariata dall'11 agosto, la porta 9333/9334 è libera, e la
-stessa prova era verde più volte oggi: guasto **preesistente o ambientale**, non di questo ramo.
-Da riguardare al momento del merge; se è un flake, ripasserà.
+⚠️ **`prova-testolayer` è rossa a corse alterne**, e lo è **anche su `main` pulita**: verificato
+tornando indietro col `git stash`. I sintomi cambiano da una corsa all'altra (una volta il
+trascinamento non seleziona niente, un'altra seleziona ma il testo non combacia con la pagina), la
+prova è invariata dall'11 agosto e la porta 9333/9334 era libera. È **ambientale o preesistente,
+non una regressione**: va capito, ma non ferma niente.
 
-⚠️ Due lezioni di processo pagate oggi: (1) una sessione parallela ha mosso `main` a metà lavoro —
-il ramo delle foto è stato **rifondato** e le suite rieseguite sul codice unito; la condizione
-«`main` ferma» si verifica AL momento, non si ricorda. (2) Tre commit sono partiti per sbaglio su
-`main` e sono stati spostati su un ramo con `git branch` + `reset`: prima di committare, guardare
-su che ramo si è.
+⚠️ **Il remoto è nuovo (15 agosto)**: i **tag non sono saliti** (`git push --tags` se li vuoi), e i
+rami di lavoro salgono solo se lo si chiede. La chiave SSH è quella che c'era già
+(`~/.ssh/github_mappai`, account `gmesc`): una chiave vale per **macchina + account**, non per
+repository, e non ne serviva una nuova.
 
----
-
-## 2. Che cosa c'è di nuovo sul ramo (in ordine di commit)
-
-### F1-bis — un `.md` trascinato in uno zaino diventa un appunto (`56cb0d6`)
-`.md`, `.markdown`, `.txt`. Titolo cercato in tre posti (frontmatter → primo `#` → nome del file);
-il frontmatter di un altro programma **non sparisce** — le chiavi che la lista bianca di
-`lib/appunti.js` mangerebbe restano nel corpo, in un blocco `yaml` — e i `[[wikilink]]` e le
-immagini relative si **dichiarano**. Oltre i 2 MB si rimanda alle fonti («quella è un'altra
-strada»). Modulo puro `App/assets/appunti/importa.js` + `test/importa-testi.js`; sezione CDP in
-`prova-zaino.js`.
-
-### B1 — la griglia del banco arriva a 3×3, e le forme si disegnano (`e9fe3d2`)
-Quattro forme nuove a tre colonne più il **pittore**: casella «+» nel selettore, griglia 3×3, ogni
-rettangolo trascinato è un blocco, la forma salvata entra nel selettore (tasto destro per
-eliminarla). I blocchi diventano nove (A–I), le otto forme del piano non cambiano significato.
-
-- ⚠️ **Tarature separate per due e tre colonne** (`col` vs `col3`/`col3b`): una frazione scelta con
-  due colonne portata su tre faceva la prima colonna doppia delle altre. Misurato dalla prova.
-- ⚠️ **Tutta la geometria si legge dalle aree** (griglia, divisori veri, bordi): con dodici forme
-  più quelle dell'utente, un elenco scritto a mano diverge alla prima.
-- ⚠️ **Il pittore non permette la L**: ricoprire è il modo di correggersi, ma le celle orfane di un
-  rettangolo spezzato tornano vuote — il CSS scarterebbe la regola intera senza dire niente.
-- Le forme personali: `localStorage` (preferenza dello schermo), prefisso obbligato `mia-`, e si
-  ricaricano all'avvio PRIMA che il banco rilegga lo stato.
-- Prove: sezione banco di `test/roundtrip.js` riscritta (930 ok) + `prova-banco-griglia.js`.
-
-### Il Confronto — due fonti fianco a fianco (`f11e051`, rifinito in `5dc51b6`)
-Strumento nuovo «Confronto» (`fonte2`), famiglia fonte, tutte le modalità: un secondo visualizzatore
-pdf.js **tutto suo** — documento, pagina, zoom e memoria separati. La porta è il suo «Documenti ▾»;
-i rimandi dei capitoli restano della Fonte.
-
-- ⚠️ **Dichiaratamente più semplice, e lo dice**: si legge, si scorre, si zooma (⟷/⤢/%, ⇧+rotella)
-  e si copia. Evidenze, ritagli e «appunta» stanno nella Fonte — un corredo a metà che sembra
-  intero produrrebbe un «appunta» che cita il documento sbagliato. La selezione lì **non apre**
-  menu né barra, apposta.
-- ⚠️ **Il guasto che ha insegnato di più**: 266 pagine nel DOM, nessun canvas, nessun errore. Il
-  CSS del viewer è incapsulato sotto `#pdfPane` (`bin/pdfjs-css.js`): dentro `#pdfPane2` le pagine
-  erano ad altezza ZERO e `_getVisiblePages()` vuota. Ora il guscio è `:is(#pdfPane, #pdfPane2)` —
-  un terzo riquadro si aggiunge LÌ.
-- ⚠️ `GlobalWorkerOptions.workerSrc` si dichiara anche in `fonte2Avvia`: il Confronto deve poter
-  partire prima che la Fonte sia mai stata aperta.
-- Cambiando contenitore il Confronto si chiude: quel documento era di un altro.
-- Prova: `prova-confronto.js`.
+⚠️ **`main` si è mossa due volte oggi sotto una sessione parallela.** La condizione «`main` ferma»
+si verifica **al momento del merge**, non si ricorda: una volta è costata un rebase con due
+conflitti — due ELENCHI, la catena di `npm test` e `PROVE=(` — e la rilettura di tutte le suite sul
+codice unito, che non era mai girato prima.
 
 ---
 
-## 3. I gesti provati a mano ✅ *il 15 agosto sera*
+## 2. Che cosa è entrato oggi
 
-Provati tutti da Giacomo: funzionano. Da lì sono usciti due difetti, tutti e due la STESSA forma di
-guasto — un elenco che sembrava dire «tutto» e diceva «questi»:
+Quattro giri, tutti chiusi e uniti. Il dettaglio nei piani; qui la sostanza e le trappole.
 
-⚠️ **il pittore restava in overlay** dopo il salvataggio, perché `closePops()` chiude i pannellini
-scritti nel suo elenco e `#pittorePop` non c'era (la trappola del `PROVE=(` in salsa DOM);
-⚠️ **la barra del Confronto aveva i caratteri di fabbrica**, perché le regole della `.pdfbar` erano
-ancorate a `#pdfPane` — ora `:is(#pdfPane, #pdfPane2)`, come il guscio CSS di pdf.js.
+### Le immagini dell'utente — F1 · F2 · F2-bis → [PIANO-FOTO.md](PIANO-FOTO.md)
+In uno zaino si trascinano dentro immagini (`.jpg .png .gif .webp .heic`), che entrano in `ALBUM/`
+con la loro miniatura. **Un archivio solo, due viste**: «Ritagli» (i crop, anche dai fermi immagine)
+e «Album Foto» (le importate), filtrate da `origine`. Un'immagine si apre nel **visualizzatore** —
+seconda faccia dello stesso riquadro — con la grammatica di zoom delle fonti e ⌘ per ritagliare.
+Mettendola in un appunto o in una mappa entra **intera**, e una bolla offre «solo una parte…»: il
+ritaglio **prende il posto** dell'intera.
 
-La lista, per quando servirà rifarla:
+⚠️ Le tre trappole che valgono oltre il caso: l'**orientamento EXIF**, che `<img>` applica e un
+canvas no (un ritaglio fatto dopo prenderebbe l'area ruotata di 90°); la **miniatura**, che non è un
+vezzo (una foto da 12 MP dentro una card da 104px è una decodifica intera per un francobollo); e
+`scrollbar-gutter:stable`, perché adattare alla larghezza fa comparire la barra che cambia la
+larghezza che rifà la scala che fa sparire la barra.
 
-**Testi (F1-bis)**
-1. Trascina in uno zaino un `.md` con frontmatter di Obsidian: diventa un appunto col titolo
-   giusto, e le chiavi extra stanno in un blocco in cima.
-2. Trascina un `.txt`: entra come appunto.
+### I testi che diventano appunti — F1-bis → [PIANO-ZAINO §Z5-bis](PIANO-ZAINO.md)
+`.md`, `.markdown`, `.txt` trascinati in uno zaino diventano appunti. Titolo cercato in tre posti;
+il frontmatter di un altro programma **non sparisce** (le chiavi che la lista bianca di
+`lib/appunti.js` mangerebbe restano nel corpo, in un blocco `yaml`); wikilink e immagini relative si
+**dichiarano**. Oltre i 2 MB si rimanda alle fonti: «quella è un'altra strada».
 
-**Banco (B1)**
-3. Dal selettore delle forme scegli «Tre · colonne affiancate»: tre colonne uguali, due divisori
-   verticali che si muovono indipendenti; doppio click su un divisore → si torna ai terzi.
-4. «+» nel selettore → dipingi una forma sulla 3×3 (due-tre rettangoli) → salvala: il banco la usa
-   subito. Riavvia l'app: c'è ancora. Tasto destro sulla sua miniatura: si elimina.
-5. Le vecchie forme (due affiancati, quattro) sono dove erano e come erano.
+### Il banco a 3×3 e il pittore — B1 → [PIANO-BANCO §2.0](PIANO-BANCO.md)
+Nove blocchi, dodici forme (quattro nuove a tre colonne, per gli schermi larghi), fino a quattro
+divisori, e l'utente può **disegnare** le sue forme su una griglia 3×3 (casella «+» nel selettore).
 
-**Confronto**
-6. Metti «Fonti» in un blocco e «Confronto» in un altro; dal suo «Documenti ▾» apri un secondo
-   documento (anche lo stesso della Fonte): sfoglia e zooma ognuno per conto suo.
-7. Seleziona del testo nel Confronto: si copia con ⌘C, ma la barretta delle evidenze NON compare.
-8. Chiudi il Confronto con la ✕: la Fonte resta dov'era.
-9. Su uno schermo largo: tre colonne con Fonte · Confronto · Appunti è il caso d'uso vero.
+⚠️ Tarature **separate** fra due e tre colonne — una frazione scelta con due colonne, portata su
+tre, faceva la prima doppia delle altre; ⚠️ il pittore non fa nascere blocchi a L; ⚠️ tutta la
+geometria (griglia, divisori veri, bordi) si **legge dalle aree**.
+
+### Il Confronto — due fonti affiancate
+Strumento nuovo (`fonte2`), con un pdf.js **tutto suo**: documento, pagina, zoom e memoria separati.
+È **dichiaratamente più semplice** e lo dice: si legge, si zooma, si copia — evidenze, ritagli e
+«appunta» stanno nella Fonte, e la selezione lì **non apre menu** apposta, perché citerebbe il
+documento sbagliato.
+
+⚠️ **Il guasto che ha insegnato di più**: 266 pagine nel DOM, nessun canvas, nessun errore. Il CSS
+del viewer è incapsulato sotto un selettore (`bin/pdfjs-css.js`), e dentro il secondo riquadro le
+pagine erano ad **altezza zero**, quindi `_getVisiblePages()` vuota e rendering mai chiesto. Ora il
+guscio è `:is(#pdfPane, #pdfPane2)`: **un terzo riquadro col viewer si aggiunge LÌ**.
 
 ---
 
-## 4. Che cosa resta
+## 3. ⚠️ Le tre trappole di processo pagate oggi
 
-- **Il pacchetto** (`npm run dist:mac`) — resta la prima cosa: il beta è vicino e `dist/` è del 23
-  luglio.
-- **F3** — l'elenco degli usi al click su un'immagine usata in più posti (`album.usi` c'è già), e
-  le lapidi per una foto cancellata che ha ritagli figli. In coda, chiesto da Giacomo.
-- **`prova-testolayer`** — capire il rosso ambientale (sopra).
-- **B2 vero** — il multi-istanza con lo «strumento attivo» («l'ultimo riquadro toccato è quello che
-  riceve», regola approvata): dopo lo smontaggio degli stati (M4-M9). Il Confronto di oggi è il
-  passo uno, dichiaratamente asimmetrico.
-- Il resto invariato dal [14b §5](HANDOFF-DEFINITIVO-2026-08-14b.md).
+1. **Un elenco che sembra dire «tutto» e dice «questi».** Tre volte in un giorno: `closePops()` non
+   conosceva il pittore (che restava in overlay dopo il salvataggio); `test/atlante.js` non era
+   nella catena di `npm test` (la prova esisteva e non girava mai); le regole CSS della `.pdfbar`
+   erano ancorate a `#pdfPane` (la barra del Confronto usciva fuori misura). **Chi aggiunge una cosa
+   la aggiunge nell'elenco che la esegue** — e gli elenchi sono più di uno.
+2. **La suite intera al cancelletto, non a ogni passo.** Durante il lavoro si lanciano le prove che
+   si toccano (quaranta secondi invece di sei minuti); la suite intera prima di dichiarare finito,
+   prima di un merge, e dopo un rebase.
+3. **Guardare su che ramo si è, prima di committare.** Tre commit sono partiti su `main` e sono
+   stati spostati su un ramo con `git branch` + `reset --hard`.
+
+E la regola di sempre, che oggi ha pagato quattro volte: **i gesti provati a mano da Giacomo trovano
+quello che le suite verdi non vedono** — il «timbro» di pdf.js sulle immagini trascinate, il rifiuto
+che negli zaini parlava di lezioni, il `⤢` che sulle immagini non cambiava niente, il pittore che
+restava aperto.
+
+---
+
+## 4. Che cosa resta aperto, in ordine
+
+### 1. Il pacchetto — la prima cosa
+`dist/StudIA-1.0.0-arm64.dmg` è del **23 luglio**: quasi un mese di lavoro non ci sta dentro, e la
+build **non è mai stata provata con questo codice**. È l'unica cosa che i tester eseguono davvero.
+`npm run dist:mac`, poi la firma ad-hoc a mano, `asar:false`, pyenv, cache Tesseract, percorsi del
+vault fuori dal repo. Il beta è **fra otto giorni**.
+
+### 2. F3 — gli usi e le lapidi delle immagini → [PIANO-FOTO §3](PIANO-FOTO.md)
+Chiesto esplicitamente da Giacomo, in coda a B1 e al Confronto. Tre regole già decise:
+- **il click su un'immagine usata in più posti** non segue una regola cablata ma **chiede
+  all'indice degli usi** (`album.usi`, che esiste già): un uso → ci si va; più usi → si sceglie da un
+  elenco; nessun uso → la sua scheda. Così non cambia niente quando gli usi diventano dieci;
+- **cancellare una foto che ha ritagli figli** è permesso, e i figli sopravvivono **dicendo** che la
+  fonte non c'è più — la regola delle lapidi (`MATERIALI/_rimossi.json`), non il silenzio;
+- **il ritaglio di un ritaglio** si ancora sempre all'immagine originale, componendo i rettangoli:
+  una catena renderebbe orfano il figlio quando si cancella l'anello di mezzo.
+
+### 3. `prova-testolayer` — il rosso a corse alterne
+Capire se è flake d'ambiente o un guasto vero del layer di testo (§1).
+
+### 4. B2 vero — il multi-istanza
+Due Fonti **complete** e due Appunti, con lo «strumento attivo»: la regola approvata da Giacomo è
+**«l'ultimo riquadro toccato è quello che riceve»**. Va dopo lo smontaggio degli stati (M4–M9 di
+[PIANO-MODULI](PIANO-MODULI.md)): rendere multi-istanza uno strumento È far ricevere alle funzioni
+il proprio stato invece di leggere un globale, cioè quel lavoro lì. Misurato il 15 agosto: `MAPPA.`
+493 usi, `NOTES.` 187, `PDFJS.` 92, `ANTEPRIMA.` 67, più 142 riferimenti nelle prove CDP. Il
+Confronto di oggi è il passo uno, dichiaratamente asimmetrico.
+
+### 5. Il resto, invariato
+Il motore invisibile sulle mappe tue, il limite del nodo all'area visibile, M4–M9, le pillole delle
+Lenti. E due idee messe da parte **con la loro ragione**: il **lettore di testo** come fonte (fuori
+lista — la regola di Giacomo «testo lungo → lo converto in PDF, testo breve → è un appunto» lo
+lascia senza mestiere) e i **`.docx`** via `textutil`, dichiaratamente lossy, semmai come
+import→appunto.
+
+---
+
+## 5. Come si lavora qui (il minimo per non sbagliare)
+
+Il resto sta in [GUIDA-ARCHITETTO.md](GUIDA-ARCHITETTO.md), che è la fonte su *come si costruisce*.
+
+1. **Ramo per ogni lavoro** (`git switch -c <nome>`), commit con la prosa che spiega il *perché* e
+   le ⚠️ pagate.
+2. **Le prove misurano, non guardano**: prove mirate durante il lavoro, suite intere al cancelletto,
+   e poi una lista corta di gesti che Giacomo prova di persona.
+3. **Il merge si dichiara**: suite verdi · gesti provati · piani e handoff aggiornati · `main` ferma
+   **riverificata al momento**.
+4. **A fine sessione un handoff datato** che rimpiazza questo, e i `PIANO-*` aggiornati se il lavoro
+   li tocca.

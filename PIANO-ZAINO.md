@@ -267,6 +267,30 @@ che il viewer tiene già e che si ricorda su disco così com'è (invariante 1). 
 `App/assets/fonti/zoom.js` (`test/zoom-fonte.js`, in `npm test`); la sezione dell'app viva è dentro
 `test/cdp/prova-pdf.js`.
 
+### Z5-bis — Che cosa ENTRA in uno zaino, oggi ✅ *aggiornato il 15 agosto 2026*
+
+Il trascinamento sulla finestra smista quattro popolazioni, e chi non entra lo sa col motivo:
+
+| si trascina | dove va | dove sta scritto |
+|---|---|---|
+| `.pdf` | `MATERIALI/PDF/`, numerato e indicizzato | Z5, qui sotto |
+| video · audio | `MATERIALI/`, col player | Z8 |
+| `.jpg .png .gif .webp .heic` | `ALBUM/` (Album Foto) | [PIANO-FOTO §2](PIANO-FOTO.md) |
+| `.md .markdown .txt` | `APPUNTI/`, come appunti | qui |
+
+**I testi (F1-bis).** Un `.md` scritto altrove è già la forma nativa del vault: non si converte
+niente. Il titolo si cerca in tre posti (frontmatter → primo `#` → nome del file), e **tre cose che
+si perderebbero in silenzio si dicono**: il frontmatter di un altro programma (le chiavi che la
+lista bianca di `lib/appunti.js` mangerebbe restano nel corpo, in un blocco `yaml`), i
+`[[wikilink]]` che qui puntano alle lezioni del contenitore, e le immagini con percorso relativo,
+che sono rimaste dov'erano. Oltre i 2 MB si rimanda alle fonti: «quella è un'altra strada».
+
+⚠️ E il rifiuto dice che cosa entra **dove si è**: «qui si rilascia una lezione .json» era vero in
+un corso e falso in uno zaino, dove le lezioni non si rilasciano affatto.
+
+Modulo puro `App/assets/appunti/importa.js` (`test/importa-testi.js`), sezione CDP in
+`prova-zaino.js`.
+
 ### Z5 — L'import e la lente ✅ *fatto il 10 agosto 2026*
 Si trascinano dei PDF sulla finestra e, in modalità zaino, entrano: **copiati** dentro
 `MATERIALI/PDF/` (mai linkati — un file linkato è una fonte che si rompe appena lo si sposta),

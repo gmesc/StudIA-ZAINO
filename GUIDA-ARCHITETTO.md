@@ -44,6 +44,9 @@ Due proprietà la definiscono più di ogni funzione:
 | **evidenza / parola chiave** | testo evidenziato dall'utente, ancorato con TextQuoteSelector | l'ancoraggio è `App/assets/evidenze/ancoraggio.js`, scritto da zero: non deriva dai marker degli appunti |
 | **carta** | un'unità di ripasso; identità = `hash(capitolo + domanda normalizzata)`, calcolata **nel main** | non si copia mai: è una *vista* sul quiz/glossario del capitolo |
 | **percorso / variante** | scalette alternative sugli stessi capitoli (`PERCORSI/*.json`, otto personaggi) | rimandi/tendina/ricerca seguono il percorso attivo; evidenze, mappe e appunti restano nella variante in cui sono nati |
+| **Ritagli / Album Foto** | le due VISTE dello stesso archivio `ALBUM/`: le voci dichiarano `origine` (`ritaglio` · `foto`) | non sono due cartelle: un archivio solo, due filtri — `album:<id>` non deve sapere che cosa ha dietro (invariante 7). La chiave dello strumento resta `album` |
+| **foto** | un'immagine portata dentro dall'utente; la sua identità sono i **byte** | un *ritaglio* invece ha materiale + punto + rettangolo. Un ritaglio preso da una foto ha `da` (l'id della madre) come punto |
+| **Confronto** | il SECONDO riquadro delle fonti (`fonte2`), con un pdf.js tutto suo | si legge, si zooma, si copia — evidenze, ritagli e «appunta» stanno nella Fonte, e la selezione lì non apre menu apposta |
 
 ## 3. Gli invarianti
 
@@ -94,7 +97,13 @@ stata pagata almeno una volta.
 App/StudIA.html          il guscio: markup, <style>, e il renderer che CABLA i moduli.
                          Monolite in smontaggio controllato: criterio e metriche in PIANO-MODULI.md
 App/assets/…             i moduli UMD (lettura, mappa, banco, evidenze, rimandi, ripasso, tts, stampa,
-                         appunti, ricerca, player, dati). Provabili in Node, caricati con <script src>
+                         appunti, ricerca, player, dati, fonti/zoom, album/foto, appunti/importa).
+                         Provabili in Node, caricati con <script src>
+App/assets/pdfjs/        pdf.js vendorizzato (build LEGACY) + `pdf_viewer.scoped.css`, GENERATO da
+                         bin/pdfjs-css.js: il foglio del viewer incapsulato sotto
+                         `:is(#pdfPane, #pdfPane2)`. ⚠️ Chi aggiunge un terzo riquadro col viewer
+                         aggiunge il selettore LÌ, o quelle pagine restano ad altezza zero — niente
+                         canvas, nessun errore (pagato il 15 agosto col Confronto)
 lib/                     logica Node del main: corsi, appunti, evidenze, fonti, ripasso, genera,
                          mdser (serializzazione .md), validate (ajv), profilo, percorsi, pacchetto…
 lib/crediti.js           l'inventario delle licenze: lo RICAVA da node_modules + crediti-extra.json
@@ -131,10 +140,19 @@ in silenzio.
 ## 6. Come si verifica
 
 ```bash
-npm test                                   # unità: tutti i file di test/, in catena
-./test/cdp/con-vault-di-prova.sh           # tutte le prove sull'app viva
-./test/cdp/con-vault-di-prova.sh <nome>    # una sola
+npm test                                   # unità: tutti i file di test/, in catena (34 al 15 ago)
+./test/cdp/con-vault-di-prova.sh           # tutte le prove sull'app viva (43 al 15 ago)
+./test/cdp/con-vault-di-prova.sh <nome>    # una sola — è così che si lavora
 ```
+
+⚠️ **La suite intera si lancia al CANCELLETTO, non a ogni passo**: durante il lavoro si lanciano le
+prove che si toccano (quaranta secondi invece di sei minuti); la suite intera prima di dichiarare
+finito, prima di un merge, e **dopo un rebase** — dove il codice unito non è mai girato.
+
+⚠️ **Una prova nuova va DENTRO l'elenco che la esegue**, e gli elenchi sono DUE: `PROVE=(` nel
+runner CDP e la catena di `npm test` in `package.json`. Il 15 agosto `test/atlante.js` è stato
+trovato fuori dalla catena: esisteva e non girava mai. È la stessa forma del guasto di
+`closePops()`, che chiude i pannellini scritti nel suo elenco e non «tutti».
 
 - Le prove CDP girano su una **copia magra del vault** (23 GB → ~2 MB) e una cartella dati tutta
   loro: non toccano niente dell'utente, e la sua app può restare aperta.
@@ -202,8 +220,8 @@ Chi riceve un braindump dell'utente e deve produrne un piano:
 
 1. **Leggere, in quest'ordine**: questo documento → l'HANDOFF-DEFINITIVO più recente → il
    PIANO-* dell'area toccata (BRAYNR = appunti/mappe/ripasso; MODULI = smontaggio del monolite;
-   ZAINO; BANCO; MAPPE-EDITOR; ONBOARDING). Se il braindump attraversa più aree, tutti i piani
-   toccati.
+   ZAINO; BANCO; MAPPE-EDITOR; ONBOARDING; FOTO = immagini dell'utente). Se il braindump
+   attraversa più aree, tutti i piani toccati.
 2. **Tradurre nel vocabolario del progetto** (§2) prima di ragionare: mezzo fraintendimento
    classico è «corso» per «lezione».
 3. **Passare il piano contro gli invarianti** (§3), uno per uno. Le domande che smascherano il
@@ -222,9 +240,10 @@ Chi riceve un braindump dell'utente e deve produrne un piano:
 
 | documento | che cosa dice |
 |---|---|
-| `HANDOFF-DEFINITIVO-<data>.md` (il più recente) | lo stato: che cosa è appena successo, che cosa viene dopo, le trappole fresche |
+| `HANDOFF-DEFINITIVO-<data>.md` (il più recente: **15 agosto 2026**) | lo stato: che cosa è appena successo, che cosa viene dopo, le trappole fresche |
 | `PIANO-BRAYNR.md` | appunti, evidenze, mappe, flashcard/ripasso (aree P1–P3) |
 | `PIANO-MODULI.md` | lo smontaggio del monolite: criterio, albero dei moduli, metriche |
 | `PIANO-ZAINO.md` · `PIANO-BANCO.md` · `PIANO-MAPPE-EDITOR.md` · `PIANO-ONBOARDING.md` | le altre aree |
+| `PIANO-FOTO.md` | le immagini dell'utente: import, Album Foto, visualizzatore, ritagli sulle foto |
 | `~/.claude/skills/studia-app-layout/` | il design system, riusabile fuori da StudIA |
 | `README.md` | ⚠️ fotografa il layout **vecchio** (pre 3 ago 2026): non è una fonte |
