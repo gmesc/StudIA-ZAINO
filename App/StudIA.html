@@ -87,6 +87,9 @@
 <!-- Che cosa entra nell'album delle foto e in che misura: formati letti dai
      byte, tetto delle dimensioni, motivi degli scarti. Puro, provato in Node. -->
 <script src="assets/album/foto.js"></script>
+<!-- I testi che arrivano da fuori e diventano appunti: titolo, frontmatter di
+     un altro programma, e le tre cose che si perderebbero in silenzio. -->
+<script src="assets/appunti/importa.js"></script>
 <style>
   /* OpenMoji come font emoji dell'app (self-hosted, offline) — eccezione dichiarata per questa app al default Noto */
   @font-face{ font-family:'OpenMoji'; src:url('assets/fonts/OpenMoji-color.woff2') format('woff2');
@@ -920,7 +923,7 @@
     font-family:var(--font-text),var(--emoji-font),sans-serif;
     text-transform:uppercase; letter-spacing:.12em; text-align:center; padding:0 2rem;
     border:3px dashed var(--teal); pointer-events:none; }
-  html[data-drop="pdf"]::after{ content:"Rilascia qui documenti, video, audio e immagini da mettere nello zaino"; }
+  html[data-drop="pdf"]::after{ content:"Rilascia qui documenti, video, audio, immagini e testi da mettere nello zaino"; }
   html[data-drop="json"]::after{ content:"Rilascia qui il file della lezione (.json)"; }
 
   /* ---- Fonti (sorgenti PDF) + anteprima split view ---- */
@@ -4170,7 +4173,7 @@ function readLessonFile(f){
          .json» mandava a cercare una porta che in questa modalità non esiste.
          Un rifiuto deve dire che cosa entra DAVVERO dove si è. */
       var chi=(files[0] && files[0].name) || 'questo file';
-      toast('In uno zaino entrano documenti .pdf, video, audio e immagini — «'+chi+'» no', false);
+      toast('In uno zaino entrano documenti .pdf, video, audio, immagini e testi (.md .txt) — «'+chi+'» no', false);
       return;
     }
     readLessonFile(files[0]);
@@ -4576,10 +4579,14 @@ function zainoTrascinati(files){
      smistarle: che siano davvero immagini lo dicono i byte, un attimo dopo
      (`AlbumFoto.tipoDaiByte`). Qui basta sapere a chi consegnarle. */
   var immagini=lista.filter(function(f){ return !!AlbumFoto.tipoDalNome(f.name); });
+  /* E i testi sono la quarta: un `.md` è già la forma nativa del vault, e
+     diventa un appunto senza conversioni. */
+  var testi=lista.filter(function(f){ return !!AppuntiImporta.tipoDalNome(f.name); });
   if(pdf.length) fontiTrascinate(pdf);
   if(media.length) mediaTrascinati(media);
   if(immagini.length) fotoTrascinate(immagini);
-  return !!(pdf.length || media.length || immagini.length);
+  if(testi.length) testiTrascinati(testi);
+  return !!(pdf.length || media.length || immagini.length || testi.length);
 }
 
 /** Il gesto: dei media trascinati sopra la finestra, in modalità zaino. */
@@ -4766,6 +4773,81 @@ async function fotoImporta(corso, file){
   });
   if(r.error) return { giaCera:false, error:r.error };
   return { giaCera:!!r.giaCera, error:'' };
+}
+
+/* ===== I TESTI CHE DIVENTANO APPUNTI =====================================
+ *
+ * Un `.md` scritto altrove è già la forma nativa di questo vault: non c'è
+ * niente da convertire, solo da capire che cosa tenere e che cosa DIRE. Le tre
+ * cose che si perderebbero in silenzio — il frontmatter di un altro programma,
+ * i wikilink che qui puntano alle lezioni del contenitore, le immagini con
+ * percorso relativo — le dichiara `AppuntiImporta`, provato in Node.
+ *
+ * ⚠️ Non nasce nessuna strada nuova per scrivere un appunto: si passa da
+ * `notes.save`, lo stesso di sempre, che sa già dare un nome libero al file
+ * quando ce n'è uno uguale (`appunti.filename` aggiunge « 2»). Un secondo modo
+ * di creare un appunto sarebbe la copia destinata a divergere.
+ */
+var TESTIIMP = { inCorso:false };
+
+/** Legge un file come testo. */
+function testoLeggi(file){
+  return new Promise(function(ok, no){
+    var fr=new FileReader();
+    fr.onload=function(){ ok(String(fr.result||'')); };
+    fr.onerror=function(){ no(new Error('non si è potuto leggere il file')); };
+    /* UTF-8, che è ciò che scrivono tutti gli editor di markdown. Un file in
+       un'altra codifica arriverà con qualche accento storto — visibile e
+       correggibile — invece che con un errore che non dice niente. */
+    fr.readAsText(file, 'utf-8');
+  });
+}
+
+/** Il gesto: dei testi trascinati sopra la finestra, in modalità zaino. */
+async function testiTrascinati(files){
+  var api=(window.vault && window.vault.notes) || null;
+  var id=corsoAttivo();
+  if(!api || !id){ toast('Apri uno zaino prima di trascinare i testi', false); return; }
+  if(TESTIIMP.inCorso){ toast('Sto ancora importando: un momento', false); return; }
+
+  var lista=[].slice.call(files||[]);
+  var vaglio=AppuntiImporta.accetta(lista.map(function(f){ return { nome:f.name, dimensione:f.size }; }));
+  var perNome={}; lista.forEach(function(f){ perNome[f.name]=f; });
+
+  TESTIIMP.inCorso=true;
+  var entrati=[], scartati=vaglio.scartate.slice(), avvisi=[];
+  for(var i=0;i<vaglio.buone.length;i++){
+    var v=vaglio.buone[i], file=perNome[v.nome];
+    try{
+      var grezzo=await testoLeggi(file);
+      var letto=AppuntiImporta.daTesto(grezzo, v.nome);
+      var r=api.save(id, null, { title:letto.titolo }, letto.corpo);
+      if(r && r.error){ scartati.push({ nome:v.nome, motivo:r.error }); continue; }
+      entrati.push({ file:r.file, titolo:letto.titolo });
+      letto.avvisi.forEach(function(a){ if(avvisi.indexOf(a)<0) avvisi.push(a); });
+    }catch(e){
+      scartati.push({ nome:v.nome, motivo:(e && e.message) || 'import non riuscito' });
+    }
+  }
+  TESTIIMP.inCorso=false;
+
+  try{ zainoNavAggiorna(); }catch(e){}
+  try{ refreshNoteUI(); }catch(e){}
+  if(entrati.length){
+    toast(entrati.length===1 ? 'Appunto importato: '+entrati[0].titolo
+                             : entrati.length+' appunti importati', true);
+    /* Il primo si apre: un import che non mostra niente lascia il dubbio che non
+       sia successo niente. */
+    try{ noteOpen(entrati[0].file); }catch(e){}
+  }
+  /* ⚠️ Gli avvisi valgono più degli scarti, qui: l'appunto È entrato, e la cosa
+     che l'utente non può indovinare è che cosa NON è arrivato con lui. */
+  avvisi.forEach(function(a){ toast(a, false); });
+  if(scartati.length){
+    if(scartati.length<=3) scartati.forEach(function(x){ toast(x.nome+': '+x.motivo, false); });
+    else toast(scartati.length+' file non sono entrati — il primo: '+scartati[0].nome+' ('+scartati[0].motivo+')', false);
+    console.warn('appunti/importa: scartati', scartati);
+  }
 }
 
 /* ===== IL SEGNO DI LETTURA: a che pagina si era arrivati =================

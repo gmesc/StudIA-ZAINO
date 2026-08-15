@@ -150,6 +150,35 @@ const ZAINO = 'zaino-di-prova';
     fs.existsSync(path.join(dirZaino, 'MAPPE')) &&
     fs.readdirSync(path.join(dirZaino, 'MAPPE')).some((f) => f.endsWith('.json')));
 
+  sezione('Un .md trascinato diventa un appunto, e dice che cosa non è arrivato');
+  /* Un testo scritto altrove è già la forma nativa del vault: non si converte
+     niente. Ma tre cose si perderebbero in silenzio, e vanno dette. */
+  const primaNote = await val(`(window.vault.notes.leggi('${ZAINO}').notes||[]).length`);
+  await val(`(async()=>{
+    const testo='---\\ntitle: "Lettura di agosto"\\ntags: [ai, mente]\\n---\\n\\n' +
+      'Vedi [[Lezione 3]].\\n\\n![schema](immagini/x.png)\\n';
+    const f=new File([testo], 'note obsidian.md', {type:'text/markdown'});
+    await testiTrascinati([f]);
+    return 1; })()`);
+  const dopoNote = await finoA(`(()=>{ const n=(window.vault.notes.leggi('${ZAINO}').notes||[]).length;
+    return n>${primaNote} ? n : null; })()`, 15000);
+  ok('l\'appunto è nato', primaNote + 1, dopoNote);
+  /* ⚠️ Si cerca per TITOLO, non «l'ultima della lista»: l'elenco degli appunti
+     è ordinato, non cronologico, e in questo zaino ce n'è già un altro. */
+  const nata = await val(`(()=>{ const n=window.vault.notes.leggi('${ZAINO}').notes||[];
+    return n.filter(x=>x.title==='Lettura di agosto')[0]||null; })()`);
+  /* Il titolo viene dal frontmatter, che è il primo dei tre posti in cui si
+     cerca — prima del titolo nel testo e del nome del file. */
+  ok('col titolo del frontmatter', 'Lettura di agosto', nata && nata.title);
+  ok('e sta dentro lo zaino', true,
+    fs.existsSync(path.join(dirZaino, 'APPUNTI', nata.file)));
+  const corpo = fs.readFileSync(path.join(dirZaino, 'APPUNTI', nata.file), 'utf-8');
+  /* ⚠️ Le chiavi che la lista bianca di `lib/appunti.js` mangerebbe restano nel
+     corpo, dentro un blocco che si vede e si legge. */
+  ok('le chiavi dell\'altro programma non sono sparite', true, /tags: \[ai, mente\]/.test(corpo));
+  ok('e il testo vero c\'è', true, /Lezione 3/.test(corpo));
+  ok('l\'appunto si è aperto da sé', true, !!(await val('NOTES.cur ? 1 : 0')));
+
   sezione('Tornando ai corsi la sidebar torna quella dei capitoli');
   await val(`(async()=>{ await cambiaModo('corso'); return 1; })()`);
   await pausa(700);
