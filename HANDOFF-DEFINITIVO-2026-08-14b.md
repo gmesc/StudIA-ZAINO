@@ -16,8 +16,13 @@
 
 | ramo | commit | suite |
 |---|---|---|
-| `main` | `0143b28` (15 ago, dopo il merge di `menu-impostazioni`) | crediti, Atlante, token |
-| `foto-album` | `2011657` — **aperto**, gesti da provare, **già rifondato su `main`** | ✅ **33** file di unità · **41** prove CDP |
+| `main` | `ba2ed18` (15 ago, dopo il merge delle foto) | ✅ **33** file di unità · **41** prove CDP |
+
+**Non c'è nessun ramo aperto.** `foto-album` (F1 · F2 · F2-bis) è entrato in `main` in
+fast-forward il 15 agosto, dopo che i gesti erano stati provati a mano da Giacomo e dopo il rebase
+sul `main` mosso dalla sessione parallela: il codice unito è **esattamente** quello su cui erano
+girate le due suite. Anche il ramo di sicurezza del rebase è stato cancellato; le due punte restano
+nel reflog.
 
 **Un ramo aperto: `foto-album`** (F1, le foto). I gesti a mano sono al §4-bis; finché non sono
 provati non si unisce. `fonte-zoom-adatta` è entrato in `main` in **fast-forward** — `main`
@@ -26,7 +31,6 @@ suite: niente da rieseguire. Il ramo è stato cancellato con `-d`; la sua punta 
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
-git switch foto-album                                 # ⚠️ l'albero può essere su main
 npm test                                              # 33 file, exit 0
 STUDIA_PORTA=9334 ./test/cdp/con-vault-di-prova.sh    # 41 prove sull'app viva
 ```
@@ -238,7 +242,13 @@ allargava cambiando etichetta (§2), rimediato e coperto da una prova. **Restano
 
 ---
 
-## 4-bis. I gesti da provare a mano sulle FOTO (quello che manca per unire `foto-album`)
+## 4-bis. I gesti delle FOTO ✅ *provati il 15 agosto*
+
+Provati da Giacomo su F1, F2 e F2-bis: tutto funziona. Da lì sono usciti tre difetti veri — pdf.js
+che si prendeva l'immagine trascinata come «timbro», il rifiuto che in uno zaino parlava di lezioni,
+e «⤢» che sulle immagini non cambiava niente — tutti rimediati prima del merge.
+
+La lista, per quando servirà rifarla:
 
 1. In uno zaino, trascina sulla finestra **un `.jpg` da telefono ruotato**: entra **dritto**.
 2. Trascina un **`.heic`**: entra convertito (e nell'archivio non resta l'originale).
