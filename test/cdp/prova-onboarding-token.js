@@ -43,9 +43,23 @@ const DATI = `(m)=>{
   };
 }`;
 
+
+/* ⚠️ Le prove girano in coda ad altre trentasei, e ognuna eredita lo schermo
+   dell'ultima: un modale rimasto aperto copre la topbar, e il click su ⚙
+   finirebbe sul suo fondo. Si parte richiudendo le superfici, non sperando. */
+async function schermoPulito() {
+  await val(`(()=>{
+    ['settingsModal','creditsModal','guidaModal','mediaModal','atlante'].forEach(function(id){
+      var m=document.getElementById(id); if(m) m.hidden=true; });
+    ['crediti','guida','media','atlante'].forEach(function(k){ delete document.documentElement.dataset[k]; });
+    if(typeof closePops==='function') closePops();
+    return 1;})()`);
+}
+
 (async () => {
   await collega();
   await partiPulito();
+  await schermoPulito();
 
   const ctl = parseInt(await val(`getComputedStyle(document.documentElement).getPropertyValue('--ctl-h')`), 10);
   const tb = parseInt(await val(`getComputedStyle(document.documentElement).getPropertyValue('--tb-h')`), 10);

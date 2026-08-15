@@ -238,6 +238,8 @@ contextBridge.exposeInMainWorld('vault', {
     summary: () => ipcRenderer.invoke('costs:summary'),
     log: (entry) => ipcRenderer.invoke('costs:log', entry)
   },
+  /* l'Atlante delle opzioni: leve, direttive vere ed esempi, composti nel main */
+  atlante: () => ipcRenderer.invoke('profilo:atlante'),
   /* crediti e licenze: l'inventario sta su disco, non nel renderer */
   crediti: {
     leggi: () => ipcRenderer.invoke('crediti:leggi'),

@@ -22,9 +22,23 @@ function ok(n, atteso, avuto) {
 }
 function vero(n, avuto) { ok(n, true, !!avuto); }
 
+
+/* ⚠️ Le prove girano in coda ad altre trentasei, e ognuna eredita lo schermo
+   dell'ultima: un modale rimasto aperto copre la topbar, e il click su ⚙
+   finirebbe sul suo fondo. Si parte richiudendo le superfici, non sperando. */
+async function schermoPulito() {
+  await val(`(()=>{
+    ['settingsModal','creditsModal','guidaModal','mediaModal','atlante'].forEach(function(id){
+      var m=document.getElementById(id); if(m) m.hidden=true; });
+    ['crediti','guida','media','atlante'].forEach(function(k){ delete document.documentElement.dataset[k]; });
+    if(typeof closePops==='function') closePops();
+    return 1;})()`);
+}
+
 (async () => {
   await collega();
   await partiPulito();
+  await schermoPulito();
 
   // le impostazioni, e da lì il 🧙 dei crediti
   await clicca('#settingsBtn'); await pausa(200);
@@ -57,7 +71,10 @@ function vero(n, avuto) { ok(n, true, !!avuto); }
     c.focus(); c.value='openmoji'; c.dispatchEvent(new Event('input',{bubbles:true})); return 1;})()`);
   await pausa(150);
   const filtrate = await val(`document.querySelectorAll('#creditsBody li:not(.cred-gruppo)').length`);
-  ok('la ricerca restringe a una voce', 1, filtrate);
+  /* «openmoji» trova DUE voci dal 15 agosto: la libreria di emoji e l'icona
+     dell'app (graduation cap 1F393), che è una voce a sé perché ha un'altra
+     storia di licenza. La prova era stata scritta quando la voce era una. */
+  ok('la ricerca restringe alle voci OpenMoji', 2, filtrate);
   vero('la ricerca tiene il fuoco', await val(`document.activeElement.id === 'creditsCerca'`));
 
   await val(`(()=>{const c=document.getElementById('creditsCerca');

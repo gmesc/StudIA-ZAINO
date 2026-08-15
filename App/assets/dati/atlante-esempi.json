@@ -1,0 +1,263 @@
+{
+  "_commento": [
+    "Gli esempi dell'Atlante delle opzioni. SONO ILLUSTRATIVI E SCRITTI A MANO: mostrano che cosa",
+    "quella scelta chiede al modello, non un'uscita vera del modello. La pagina lo dichiara, e non",
+    "è una formalità — un esempio che promette ciò che l'app non fa è peggio di nessun esempio.",
+    "",
+    "Il brano di prova è INVENTATO per questo scopo: nessun documento è stato letto, ritagliato o",
+    "elaborato per costruirlo. Serve un testo con dentro un tecnicismo, dei numeri, una procedura e",
+    "un concetto che regga un esempio concreto, o metà delle leve non avrebbe su cosa mordere.",
+    "",
+    "⚠️ Le chiavi sono «<leva>.<variante>» e devono esistere nel catalogo App/assets/dati/leve.js:",
+    "test/atlante.js fallisce se un esempio parla di una variante che non c'è, o se una variante",
+    "resta senza esempio. Il testo delle direttive NON si scrive qui: viene da lib/profilo.js."
+  ],
+  "avviso": "Esempi illustrativi scritti a mano su un brano inventato: mostrano che cosa la scelta chiede al modello, non un testo che il modello ha prodotto davvero.",
+  "brano": {
+    "titolo": "Come funziona una batteria a ioni di litio",
+    "testo": "Le batterie a ioni di litio immagazzinano energia spostando ioni fra due elettrodi. Durante la carica gli ioni migrano dal catodo all'anodo attraverso l'elettrolita; scaricandosi tornano indietro, e il flusso di elettroni alimenta il dispositivo. Una cella tipica lavora a 3,7 volt e sopporta circa 500 cicli completi prima che la capacità scenda sotto l'80%. La densità di energia — quanta carica sta in un chilogrammo — è ciò che distingue una batteria da telefono da una per un'automobile. Il degrado dipende soprattutto dalla temperatura e dalla profondità di scarica: tenere la carica fra il 20% e l'80% allunga la vita della cella.",
+    "nota": "Brano inventato per l'Atlante. Tutti gli esempi qui sotto partono da queste sei righe: se ognuno partisse da un testo diverso, la differenza che si vede non sarebbe la leva ma il materiale."
+  },
+  "esempi": {
+    "lettura.lettura-lenta": {
+      "tipo": "testo",
+      "reso": "Una batteria a ioni di litio sposta ioni fra due elettrodi. Così immagazzina energia.\n\nDurante la carica gli ioni vanno dal catodo all'anodo. Quando si scarica tornano indietro.\n\n- tensione di una cella: 3,7 volt\n- cicli prima del calo: circa 500\n\n**elettrolita** → nel glossario",
+      "guarda": "Frasi corte, il muro di testo diventa elenco, e ogni tecnicismo finisce nel glossario invece di restare nel corpo."
+    },
+    "lettura.lettura-decodifica": {
+      "tipo": "testo",
+      "reso": "Gli ioni passano da un lato all'altro attraverso l'**elettrolita** (il liquido che li lascia passare).\n\nLa **densità di energia** (quanta carica sta in un chilo) distingue la batteria di un telefono da quella di un'auto.",
+      "guarda": "Alla prima occorrenza ogni parola difficile porta con sé un sinonimo comune, fra parentesi, subito lì."
+    },
+    "lettura.lettura-comprensione": {
+      "tipo": "testo",
+      "reso": "Gli ioni migrano dal catodo all'anodo. **Questo spostamento è la carica**: senza di esso la cella resta vuota.\n\nDetto altrimenti: la batteria non «contiene» elettricità, la ottiene spostando ioni avanti e indietro.\n\n> In due righe: carica = ioni verso l'anodo; scarica = ioni indietro, corrente al dispositivo.",
+      "guarda": "Le transizioni sono dette a voce alta («questo spostamento è…», «detto altrimenti») e ogni sezione chiude con un micro-riepilogo."
+    },
+
+    "scrittura.scrittura-ortografia": {
+      "tipo": "testo",
+      "reso": "**Quiz** — Durante la carica gli ioni si spostano:\n- [ ] dall'anodo al catodo\n- [x] dal catodo all'anodo\n- [ ] restano fermi",
+      "guarda": "I quiz diventano tutti a risposta chiusa: niente domande che chiedono di scrivere."
+    },
+    "scrittura.scrittura-gesto": {
+      "tipo": "testo",
+      "reso": "**Quiz** — Quanti cicli completi regge una cella tipica?\n- [ ] circa 50\n- [x] circa 500\n- [ ] circa 5000\n\n~~«Ricopia lo schema della cella sul quaderno»~~ — mai chiesto.",
+      "guarda": "Nessuna consegna che chieda di trascrivere o ricopiare a mano: solo risposte da scegliere."
+    },
+    "scrittura.scrittura-organizzazione": {
+      "tipo": "testo",
+      "reso": "**In questo capitolo**: prima come si muove la carica, poi i numeri di una cella, infine che cosa la consuma.\n\n1. Come si muove la carica\n2. I numeri di una cella\n3. Che cosa consuma la cella",
+      "guarda": "La struttura è dichiarata in apertura, e lo stesso schema si ripete identico in ogni capitolo."
+    },
+
+    "numeri.numeri-calcolo": {
+      "tipo": "testo",
+      "reso": "Una cella lavora a 3,7 volt (tre virgola sette). Dopo circa 500 cicli (cinquecento) la capacità scende sotto l'80% (ottanta per cento), cioè resta poco più di tre quarti.",
+      "guarda": "Ogni numero è accompagnato dalla resa a parole, e nessun passaggio chiede un calcolo mentale."
+    },
+    "numeri.numeri-procedure": {
+      "tipo": "testo",
+      "reso": "1. Colleghi il caricatore.\n2. Gli ioni lasciano il catodo.\n3. Attraversano l'elettrolita.\n4. Si depositano nell'anodo: la cella è carica.",
+      "guarda": "La procedura è spezzata in passaggi numerati, uno per riga, invece di stare dentro un periodo unico."
+    },
+    "numeri.numeri-quantita": {
+      "tipo": "testo",
+      "reso": "Una cella regge circa 500 cicli completi: **una ricarica al giorno per un anno e mezzo**.\n\nLa densità di energia di una batteria da auto sta a quella di un telefono come una damigiana a un bicchiere.",
+      "guarda": "Ogni quantità è ancorata a un riferimento concreto: il numero da solo non dice niente a chi fatica a stimare."
+    },
+
+    "attenzione.attenzione-distraibilita": {
+      "tipo": "indice",
+      "reso": "01 · Che cosa sposta la carica dentro la cella\n02 · Perché la tensione è 3,7 volt\n03 · Che cosa consuma una batteria\n\n— unità da ≤10 minuti, titoli che dicono già dove si va",
+      "guarda": "Cambia l'indice (capitoli corti, titoli che anticipano) **e** il testo: «In breve» in tre frasi, corpo sotto le 500 parole, una idea per paragrafo, nessuna digressione dentro al discorso."
+    },
+    "attenzione.attenzione-avvio": {
+      "tipo": "indice",
+      "reso": "❌ «Storia degli accumulatori: dalla pila di Volta al litio»\n✅ «Metti in carica: che cosa succede nel primo secondo»",
+      "guarda": "I titoli smettono di essere etichette, e il capitolo apre con il primo passo concreto invece che con la premessa storica."
+    },
+    "attenzione.attenzione-iperfocus": {
+      "tipo": "testo",
+      "reso": "…tenere la carica fra il 20% e l'80% allunga la vita della cella.\n\n**Per approfondire**\n- perché il freddo abbassa la capacità\n- che cosa cambia nelle batterie allo stato solido",
+      "guarda": "Il capitolo chiude con due-quattro spunti collegati, e nel piano delle lezioni i legami fra gruppi di materiali sono dichiarati."
+    },
+
+    "spazio.spazio-schemi": {
+      "tipo": "testo",
+      "reso": "Il percorso della carica, a parole: il catodo cede gli ioni, l'elettrolita li lascia passare, l'anodo li accoglie. Lo schema qui accanto illustra lo stesso percorso, ma il testo basta da solo.",
+      "guarda": "Nessun concetto è affidato soltanto a uno schema: il testo resta il veicolo principale."
+    },
+    "spazio.spazio-grafici": {
+      "tipo": "testo",
+      "reso": "Il grafico mostra la capacità che scende: parte dal 100%, resta quasi piatta per i primi 300 cicli, poi cala fino all'80% verso il cinquecentesimo.",
+      "guarda": "Ogni figura viene raccontata a parole nel corpo del testo, non lasciata parlare da sola."
+    },
+    "spazio.spazio-orientamento": {
+      "tipo": "indice",
+      "reso": "01 · Che cosa sposta la carica ← sei qui\n02 · I numeri di una cella →\n\n### Dentro il capitolo\n#### Il viaggio degli ioni\n#### Che cosa fa l'elettrolita",
+      "guarda": "Unità corte e ben titolate nell'indice, e dentro al capitolo intestazioni frequenti più i rimandi avanti/indietro."
+    },
+
+    "carico.carico-affollamento": {
+      "tipo": "testo",
+      "reso": "Una cella lavora a 3,7 volt.\n\nRegge circa 500 cicli.\n\nSotto l'80% di capacità si considera esaurita.\n\n*(niente tabella a quattro colonne con tensione, cicli, capacità e temperatura)*",
+      "guarda": "Densità visiva bassa: un elemento per blocco, elenchi corti, nessuna tabella larga."
+    },
+    "carico.carico-prevedibilita": {
+      "tipo": "indice",
+      "reso": "**Che cosa**: la carica è uno spostamento di ioni.\n**Perché**: senza spostamento non c'è energia immagazzinata.\n**Esempio**: metti il telefono in carica alle 22, gli ioni migrano tutta la notte.\n\n— e la sequenza va dal generale al particolare, senza salti",
+      "guarda": "Struttura sempre uguale — cosa, perché, esempio — linguaggio letterale, nessuna metafora non spiegata, acronimi sciolti alla prima occorrenza."
+    },
+    "carico.carico-pause": {
+      "tipo": "indice",
+      "reso": "01 · Il viaggio degli ioni *(≈8 minuti)*\n— · — · fine della prima parte: puoi fermarti qui · — · —\n02 · I numeri di una cella *(≈7 minuti)*",
+      "guarda": "Unità brevi e punti di stacco dichiarati: si può interrompere senza perdere il filo."
+    },
+
+    "memoria.memoria-lavoro": {
+      "tipo": "testo",
+      "reso": "1. Gli ioni lasciano il catodo.\n2. Attraversano l'elettrolita.\n3. Si depositano nell'anodo.\n\n**Fin qui**: la carica è finita e la cella è piena. Adesso vediamo che cosa la consuma.",
+      "guarda": "Passaggi numerati e un riepilogo intermedio ogni volta che si cambia argomento."
+    },
+    "memoria.memoria-richiamo": {
+      "tipo": "testo",
+      "reso": "Presuppone [[01-il-viaggio-degli-ioni]].\n\n**Quiz** — In che direzione vanno gli ioni durante la scarica?\n\n**Quiz** — Sotto quale percentuale si considera esaurita una cella?",
+      "guarda": "Quiz frequenti e rimandi espliciti ai capitoli presupposti, così ogni ripasso riaggancia ciò che viene prima."
+    },
+
+    "stile_corso.tematico": {
+      "tipo": "indice",
+      "reso": "Lezione 1 · Come si muove la carica\nLezione 2 · I numeri di una cella\nLezione 3 · Perché una batteria invecchia",
+      "guarda": "I materiali vengono raggruppati per argomento, anche se in aula erano stati affrontati in un altro ordine."
+    },
+    "stile_corso.cronologico": {
+      "tipo": "indice",
+      "reso": "Lezione 1 · Prima parte del corso (video del 3 marzo)\nLezione 2 · Seconda parte (video del 10 marzo)\nLezione 3 · Laboratorio (dispensa del 17 marzo)",
+      "guarda": "L'ordine resta quello in cui i materiali sono stati erogati: nessun rimescolamento tematico."
+    },
+    "stile_corso.problemi": {
+      "tipo": "indice",
+      "reso": "Lezione 1 · «Il telefono dura mezza giornata»: che cosa è successo alla cella\nLezione 2 · «L'auto perde autonomia d'inverno»: temperatura e capacità",
+      "guarda": "Ogni lezione parte da un caso concreto, e la teoria arriva per rispondergli."
+    },
+
+    "stile_lezioni.cornici": {
+      "tipo": "indice",
+      "reso": "01 · La mappa: tre cose da sapere su una cella\n02 · Il viaggio degli ioni, nel dettaglio\n03 · I numeri, nel dettaglio",
+      "guarda": "La lezione apre con la mappa d'insieme, poi scende nel dettaglio un pezzo per volta."
+    },
+    "stile_lezioni.lineare": {
+      "tipo": "indice",
+      "reso": "01 · Che cos'è un elettrodo\n02 · Che cosa fa l'elettrolita\n03 · Che cosa succede in carica\n04 · Che cosa succede in scarica",
+      "guarda": "Un passo alla volta, nell'ordine in cui i concetti si costruiscono: niente anticipazioni."
+    },
+    "stile_lezioni.spirale": {
+      "tipo": "indice",
+      "reso": "01 · La carica, in due righe\n02 · La carica, con dentro l'elettrolita\n03 · La carica, con dentro il degrado",
+      "guarda": "Si torna sullo stesso concetto tre volte, ogni volta un livello più a fondo."
+    },
+
+    "stile_capitoli.discorsivo": {
+      "tipo": "testo",
+      "reso": "Quando colleghi il caricatore, dentro la cella comincia un movimento silenzioso: gli ioni lasciano il catodo, attraversano l'elettrolita e si accomodano nell'anodo, dove resteranno finché non chiederai loro di tornare indietro.",
+      "guarda": "Prosa continua: il discorso tiene insieme i passaggi invece di spezzarli."
+    },
+    "stile_capitoli.schematico": {
+      "tipo": "testo",
+      "reso": "**Carica**\n- gli ioni lasciano il catodo\n- attraversano l'elettrolita\n- si depositano nell'anodo\n\n**Scarica**\n- il percorso si inverte\n- gli elettroni alimentano il dispositivo",
+      "guarda": "Elenchi e titoletti al posto delle subordinate: la stessa informazione, ma smontata."
+    },
+    "stile_capitoli.esempi": {
+      "tipo": "testo",
+      "reso": "Metti il telefono in carica alle 22 e lo trovi pieno al mattino.\n\nQuello che è successo: per tutta la notte gli ioni si sono spostati dal catodo all'anodo attraverso l'elettrolita. **La carica è questo spostamento.**",
+      "guarda": "Prima il caso concreto, poi la regola che lo spiega: l'ordine è rovesciato rispetto al discorsivo."
+    },
+    "stile_capitoli.domande": {
+      "tipo": "testo",
+      "reso": "**Che cosa si muove davvero dentro una batteria?**\nGli ioni, fra due elettrodi.\n\n**E perché serve l'elettrolita?**\nPerché è l'unica strada che gli ioni possono percorrere.",
+      "guarda": "Ogni sezione è aperta da una domanda esplicita, e il testo è la sua risposta."
+    },
+
+    "granularita.atomico": {
+      "tipo": "indice",
+      "reso": "01 · Che cos'è un elettrodo\n02 · Che cosa fa l'elettrolita\n03 · Che cosa succede in carica\n04 · Che cosa succede in scarica\n05 · Perché 3,7 volt\n06 · Perché la capacità cala",
+      "guarda": "Un concetto per capitolo, 300-600 parole ciascuno: molti capitoli brevi invece di pochi lunghi."
+    },
+    "granularita.medio": {
+      "tipo": "indice",
+      "reso": "01 · Elettrodi ed elettrolita: chi fa che cosa\n02 · Carica e scarica: il viaggio degli ioni\n03 · Tensione, cicli e degrado",
+      "guarda": "Pochi concetti strettamente legati per capitolo: il taglio sta a metà fra atomico e ampio."
+    },
+    "granularita.ampio": {
+      "tipo": "indice",
+      "reso": "01 · Come funziona una batteria a ioni di litio\n02 · Perché invecchia e come farla durare",
+      "guarda": "Un tema intero per capitolo, anche lungo: pochi capitoli, ognuno autosufficiente."
+    },
+
+    "capitoli_brevi.true": {
+      "tipo": "testo",
+      "reso": "**Il viaggio degli ioni** *(280 parole)*\n\n**Che cosa fa l'elettrolita** *(240 parole)*\n\n— due capitoli brevi invece di uno da 520",
+      "guarda": "Davanti alla scelta, il generatore taglia in due invece di allungare."
+    },
+    "capitoli_brevi.false": {
+      "tipo": "testo",
+      "reso": "**Il viaggio degli ioni, dall'inizio alla fine** *(520 parole)*\n\n— il discorso resta intero anche se il capitolo si allunga",
+      "guarda": "La continuità del ragionamento vale più della brevità: non si spezza per fare numero."
+    },
+
+    "quiz.frequenti": {
+      "tipo": "testo",
+      "reso": "**Quiz 1** — In che direzione vanno gli ioni in carica?\n**Quiz 2** — A che tensione lavora una cella?\n**Quiz 3** — Dopo quanti cicli la capacità scende sotto l'80%?\n**Quiz 4** — Che cosa fa l'elettrolita?\n**Quiz 5** — Quale intervallo di carica allunga la vita?",
+      "guarda": "Cinque-sei domande per capitolo: sono anche le carte che finiscono nel Ripasso."
+    },
+    "quiz.pochi": {
+      "tipo": "testo",
+      "reso": "**Quiz 1** — In che direzione vanno gli ioni in carica?\n**Quiz 2** — Quale intervallo di carica allunga la vita della cella?",
+      "guarda": "Due domande per capitolo: il minimo per fissare, senza trasformare la lettura in un test."
+    },
+    "quiz.nessuno": {
+      "tipo": "testo",
+      "reso": "*(il capitolo finisce con il testo: nessuna domanda)*",
+      "guarda": "Nessun quiz — e quindi nessuna carta nuova per il Ripasso, che di quelle vive."
+    },
+
+    "glossario.esteso": {
+      "tipo": "testo",
+      "reso": "**Glossario**\n- **anodo** — l'elettrodo che accoglie gli ioni durante la carica\n- **catodo** — l'elettrodo da cui partono\n- **elettrolita** — il mezzo che lascia passare gli ioni\n- **ciclo** — una carica completa più la scarica che la segue\n- **densità di energia** — quanta carica sta in un chilogrammo",
+      "guarda": "Ogni termine non comune entra nel glossario, anche quelli che il testo spiega di passaggio."
+    },
+    "glossario.essenziale": {
+      "tipo": "testo",
+      "reso": "**Glossario**\n- **elettrolita** — il mezzo che lascia passare gli ioni\n- **ciclo** — una carica completa più la scarica che la segue",
+      "guarda": "Solo i termini senza i quali il capitolo non si capisce."
+    },
+    "glossario.nessuno": {
+      "tipo": "testo",
+      "reso": "*(nessun glossario: i termini vanno capiti dal contesto)*",
+      "guarda": "Il capitolo non produce voci di glossario — utile se il lessico lo conosci già."
+    },
+
+    "esempi_concreti.true": {
+      "tipo": "testo",
+      "reso": "La densità di energia è quanta carica sta in un chilogrammo.\n\n**Per capirci**: la batteria di un telefono pesa 40 grammi e ti porta a sera; quella di un'auto pesa 400 chili e ti porta a 300 chilometri.",
+      "guarda": "Almeno un esempio concreto per ogni concetto, anche per quelli che sembrano chiari."
+    },
+    "esempi_concreti.false": {
+      "tipo": "testo",
+      "reso": "La densità di energia è la carica immagazzinata per unità di massa, e distingue le batterie portatili da quelle per trazione.",
+      "guarda": "Nessun esempio se il concetto si regge da solo: si aggiunge solo dove resterebbe oscuro."
+    },
+
+    "approfondimenti.ricchi": {
+      "tipo": "testo",
+      "reso": "…tenere la carica fra il 20% e l'80% allunga la vita della cella.\n\n**Approfondimenti**\n- perché il freddo abbassa la capacità (e perché torna, scaldandosi)\n- che cosa cambia con le batterie allo stato solido",
+      "guarda": "Le digressioni collegate ci sono, ma stanno **fuori dal corpo**: in coda, non fra parentesi nel discorso."
+    },
+    "approfondimenti.minimi": {
+      "tipo": "testo",
+      "reso": "…tenere la carica fra il 20% e l'80% allunga la vita della cella.\n\n*(fine del capitolo)*",
+      "guarda": "Solo l'essenziale: niente code, niente rami laterali."
+    }
+  }
+}

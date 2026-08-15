@@ -555,6 +555,51 @@ ipcMain.handle('ocrpdf:applica', async (e, { corso, file, pagine } = {}) => {
   return r;
 });
 
+/* ── ATLANTE DELLE OPZIONI ─────────────────────────────────────────────────
+ * La pagina che spiega il profilo di apprendimento: per ogni menu, la direttiva
+ * che finisce nel prompt e un esempio del suo effetto.
+ *
+ * ⚠️ La direttiva NON viaggia scritta a mano da nessuna parte: si compone qui
+ * chiedendola a `profilo.directives()`, cioè alla stessa funzione che riempie i
+ * prompt veri. Una spiegazione ricopiata diverge al primo ritocco, e una pagina
+ * che dichiara una regola che il modello non riceve è peggio del silenzio.
+ * Il catalogo delle leve è un modulo UMD (invariante 5): lo stesso file serve a
+ * questa composizione e alle prove. */
+const leveLib = require('./App/assets/dati/leve.js');
+
+ipcMain.handle('profilo:atlante', () => {
+  const out = { leve: [], esempi: {}, brano: null, avviso: '' };
+  try { out.leve = leveLib.atlante(profiloLib.directives); }
+  catch (err) { return { errore: 'Le leve del profilo non si sono potute leggere: ' + err.message, leve: [] }; }
+  try {
+    const raw = fs.readFileSync(path.join(__dirname, 'App', 'assets', 'dati', 'atlante-esempi.json'), 'utf8');
+    const e = JSON.parse(raw);
+    out.esempi = e.esempi || {}; out.brano = e.brano || null; out.avviso = e.avviso || '';
+  } catch (err) {
+    // invariante 4: gli esempi mancanti si dichiarano, la griglia resta utile
+    out.avvisoEsempi = 'Gli esempi non si sono potuti leggere: ' + err.message;
+  }
+  /* La scelta ATTUALE dell'utente, per marcare la sua colonna: l'Atlante non è
+     un manuale astratto, è la spiegazione di ciò che ha scelto lui. */
+  try {
+    const v = vaultDir();
+    const p = v ? profiloLib.load(v) : null;
+    if (p) {
+      out.scelte = {};
+      for (const l of leveLib.LEVE) {
+        if (l.tipo === 'bisogno') {
+          const suoi = Array.isArray(p.bisogni) ? p.bisogni : [];
+          out.scelte[l.chiave] = l.varianti.map((x) => x.valore).filter((x) => suoi.includes(x))[0] || '';
+        } else {
+          const val = p[l.campo];
+          out.scelte[l.chiave] = (val === true || val === false) ? String(val) : (val || '');
+        }
+      }
+    }
+  } catch (err) { /* senza vault l'Atlante si legge lo stesso: è una spiegazione, non uno stato */ }
+  return out;
+});
+
 /* ── CREDITI E LICENZE ─────────────────────────────────────────────────────
  * L'inventario sta su disco (App/assets/dati/crediti.json, generato da
  * `npm run crediti`) e non in una costante nel renderer: era una costante, ed

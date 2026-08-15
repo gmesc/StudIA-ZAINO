@@ -1880,6 +1880,59 @@
     border-left:3px solid var(--no-bd); padding:.5rem .7rem; margin:.4rem 0; line-height:1.55; }
   .exp-rotti ul{ margin:.3rem 0 0 1rem; }
   .exp-rotti code{ font-size:11px; }
+  /* ===== Atlante delle opzioni: una riga per leva, una colonna per variante =====
+     La forma è quella del composer degli indici — righe di card affiancate che
+     scorrono — perché è la stessa domanda: «fra queste alternative, quale?».
+     Chi ha imparato a leggere il composer non impara niente di nuovo. */
+  #atlante{ position:fixed; inset:0; z-index:245; background:var(--bg); display:flex; flex-direction:column; overflow:hidden; }
+  #atlante[hidden]{ display:none!important; }
+  .atl-top b{ font-size:14px; text-transform:uppercase; letter-spacing:.16em; white-space:nowrap; }
+  .atl-top input[type=search]{ flex:0 1 240px; min-width:120px; height:var(--tb-h); box-sizing:border-box;
+    background:var(--panel); border:1px solid var(--line); color:var(--ink); font:inherit; font-size:12px; padding:0 .5rem; }
+  .atl-corpo{ flex:1 1 auto; overflow:auto; padding:0 0 2rem; }
+  /* Il brano di prova: sta in cima e non si ripete, perché è lo STESSO per tutte
+     le celle — se ognuna partisse da un testo suo, la differenza che si vede non
+     sarebbe la leva ma il materiale. */
+  .atl-brano{ border-bottom:1px solid var(--line); padding:1rem 1.4rem; background:var(--panel); }
+  .atl-brano h3{ margin:0 0 .3rem; font-size:11px; text-transform:uppercase; letter-spacing:.14em; color:var(--muted); }
+  .atl-brano p{ margin:.2rem 0 0; font-size:13px; line-height:1.6; max-width:80ch; }
+  .atl-brano .atl-nota{ font-size:11px; color:var(--muted); margin-top:.5rem; }
+  .atl-riga{ border-bottom:1px solid var(--line); padding:.9rem 1.4rem 1.1rem; }
+  .atl-testa{ display:flex; align-items:baseline; gap:.6rem; margin-bottom:.6rem; }
+  .atl-testa b{ font-size:14px; }
+  .atl-testa .atl-id{ font-size:10px; color:var(--muted); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  /* Il cartellino della fase: è la cosa che questa pagina esiste per dire —
+     alcune leve cambiano l'INDICE, altre il TESTO, e finora non lo sapeva
+     nessuno. Due colori diversi perché sono due momenti diversi della pipeline. */
+  .atl-fase{ font-size:10px; text-transform:uppercase; letter-spacing:.1em; font-weight:700; padding:.1rem .45rem; }
+  .atl-fase.struttura{ color:var(--blue-strong); background:color-mix(in srgb, var(--blue) 14%, var(--panel)); }
+  .atl-fase.testo{ color:var(--teal-strong); background:color-mix(in srgb, var(--teal) 14%, var(--panel)); }
+  .atl-cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:.7rem; align-items:start; }
+  .atl-card{ border:1px solid var(--line); background:var(--panel); padding:.6rem .7rem; }
+  .atl-card.scelta{ border-color:var(--teal-strong); box-shadow:inset 3px 0 0 var(--teal-strong); }
+  .atl-card h4{ margin:0 0 .4rem; font-size:12.5px; line-height:1.4; }
+  .atl-card .atl-tua{ display:block; font-size:10px; text-transform:uppercase; letter-spacing:.1em;
+    font-weight:700; color:var(--teal-strong); margin-bottom:.25rem; }
+  .atl-dir{ list-style:none; margin:0; padding:0; }
+  .atl-dir li{ font-size:11.5px; line-height:1.5; color:var(--ink); padding:.25rem 0 .25rem .6rem;
+    border-left:2px solid var(--line); margin-bottom:.25rem; }
+  .atl-dir li.prop{ border-left-color:var(--blue-strong); }
+  .atl-dir li.gen{ border-left-color:var(--teal-strong); }
+  .atl-vuoto{ font-size:11px; color:var(--muted); }
+  /* L'esempio: chiuso finché non si preme «Visualizza esempi», come le card del
+     composer con «Mostra gli indici». */
+  .atl-es{ margin-top:.5rem; border-top:1px dashed var(--line); padding-top:.5rem; }
+  .atl-es[hidden]{ display:none!important; }
+  .atl-es pre{ margin:0; white-space:pre-wrap; word-break:break-word; font-family:var(--font-text),var(--emoji-font),sans-serif;
+    font-size:12px; line-height:1.55; background:var(--hover); padding:.5rem .6rem; }
+  .atl-reso{ font-size:12px; line-height:1.55; background:var(--hover); padding:.5rem .6rem; }
+  .atl-reso>*:first-child{ margin-top:0; } .atl-reso>*:last-child{ margin-bottom:0; }
+  .atl-reso p{ margin:.4rem 0; } .atl-reso ul,.atl-reso ol{ margin:.3rem 0 .3rem 1.2rem; padding:0; }
+  .atl-reso h4,.atl-reso h3{ font-size:12px; margin:.4rem 0 .2rem; }
+  .atl-reso blockquote{ margin:.4rem 0; padding:.1rem .6rem; border-left:2px solid var(--line); color:var(--muted); }
+  .atl-es .atl-guarda{ display:block; font-size:11px; color:var(--muted); line-height:1.5; margin-top:.35rem; }
+  .atl-es .atl-tipo{ font-size:10px; text-transform:uppercase; letter-spacing:.1em; font-weight:700; color:var(--muted); }
+  .atl-piede{ border-top:1px solid var(--line); padding:.7rem 1.4rem; font-size:11px; color:var(--muted); line-height:1.6; }
   /* crediti: una riga per progetto libero, e sotto il testo integrale della licenza */
   .cred-list{ list-style:none; margin:0; padding:.4rem 0; }
   .cred-list li{ display:flex; flex-wrap:wrap; align-items:baseline; gap:.5rem;
@@ -7118,6 +7171,123 @@ function apriCrediti(){
 }
 function chiudiCrediti(){ var m=document.getElementById('creditsModal'); if(m) m.hidden=true; document.documentElement.dataset.crediti=''; }
 
+/* ===== Atlante delle opzioni ==============================================
+   Che cosa risponde: «se scelgo questa voce del menu, che cosa cambia?».
+   Due strati, con provenienze diverse e apposta:
+     · la DIRETTIVA arriva da `profilo.directives()` attraverso il main — è la
+       stessa funzione che riempie i prompt veri, quindi la pagina non può
+       promettere una regola che il modello non riceve;
+     · l'ESEMPIO è scritto a mano in `App/assets/dati/atlante-esempi.json`, su un
+       brano inventato, e la pagina lo DICHIARA (invariante 4: un esempio che
+       sembra un'uscita del modello e non lo è mente a chi legge).
+   La fase — «cambia l'indice» o «cambia il testo» — non è dichiarata da
+   nessuno: si deduce da dove `directives()` mette le righe. */
+var ATLANTE = { leve: [], esempi: {}, scelte: {}, caricato: false, mostraEsempi: false };
+
+function atlanteDirettive(v){
+  var righe = v.proposta.map(function(r){ return '<li class="prop">'+escHtml(r)+'</li>'; })
+    .concat(v.generazione.map(function(r){ return '<li class="gen">'+escHtml(r)+'</li>'; }));
+  if(!righe.length) return '<div class="atl-vuoto">Nessuna direttiva: questa scelta non arriva al modello.</div>';
+  return '<ul class="atl-dir">'+righe.join('')+'</ul>';
+}
+
+function atlanteEsempio(chiave, valore){
+  var e = ATLANTE.esempi[chiave+'.'+valore];
+  if(!e) return '<div class="atl-es"'+(ATLANTE.mostraEsempi?'':' hidden')+'><span class="atl-vuoto">Esempio non disponibile.</span></div>';
+  // gli esempi sono markdown come i capitoli veri: si mostrano RESI, con lo
+  // stesso renderNoteMd degli appunti — a monolite mezzo caricato si ripiega sul testo nudo
+  var reso; try{ reso='<div class="atl-reso">'+renderNoteMd(e.reso)+'</div>'; }
+  catch(err){ reso='<pre>'+escHtml(e.reso)+'</pre>'; }
+  return '<div class="atl-es"'+(ATLANTE.mostraEsempi?'':' hidden')+'>'+
+    '<span class="atl-tipo">'+(e.tipo==='indice'?'l\'indice che ne esce':'il testo che ne esce')+'</span>'+
+    reso+
+    '<span class="atl-guarda">'+escHtml(e.guarda||'')+'</span>'+
+  '</div>';
+}
+
+/** Una riga: la leva, il suo cartellino di fase, e una card per variante. */
+function atlanteRiga(l){
+  var cards = l.varianti.map(function(v){
+    var mia = ATLANTE.scelte && ATLANTE.scelte[l.chiave]===v.valore;
+    return '<div class="atl-card'+(mia?' scelta':'')+'">'+
+      (mia?'<span class="atl-tua">la tua scelta</span>':'')+
+      '<h4>'+escHtml(v.etichetta)+'</h4>'+
+      atlanteDirettive(v)+
+      atlanteEsempio(l.chiave, v.valore)+
+    '</div>';
+  }).join('');
+  return '<div class="atl-riga" data-leva="'+escHtml(l.chiave)+'">'+
+    '<div class="atl-testa"><b>'+escHtml(l.etichetta)+'</b>'+
+      '<span class="atl-fase '+(l.struttura?'struttura':'testo')+'">'+
+        (l.struttura?'cambia l\'indice':'cambia il testo')+'</span>'+
+      '<span class="atl-id">'+escHtml(l.chiave)+'</span></div>'+
+    '<div class="atl-cards">'+cards+'</div>'+
+  '</div>';
+}
+
+/** Ridisegna il corpo, tenendo conto della ricerca. */
+function atlanteDisegna(){
+  var corpo=document.getElementById('atlCorpo'); if(!corpo) return;
+  var campo=document.getElementById('atlCerca');
+  var f=String(campo?campo.value:'').trim().toLowerCase();
+  var leve=ATLANTE.leve.filter(function(l){
+    if(!f) return true;
+    var testo=l.etichetta+' '+l.chiave+' '+l.varianti.map(function(v){
+      return v.etichetta+' '+v.proposta.join(' ')+' '+v.generazione.join(' '); }).join(' ');
+    return testo.toLowerCase().indexOf(f)>=0;
+  });
+  if(!leve.length){ corpo.innerHTML='<div class="atl-riga"><span class="atl-vuoto">Nessuna leva per «'+escHtml(f)+'».</span></div>'; return; }
+  corpo.innerHTML = leve.map(atlanteRiga).join('');
+}
+
+function atlanteBrano(){
+  var box=document.getElementById('atlBrano'); if(!box) return;
+  var b=ATLANTE.brano;
+  if(!b){ box.hidden=true; return; }
+  box.hidden=false;
+  box.innerHTML='<h3>Il brano di prova · '+escHtml(b.titolo||'')+'</h3>'+
+    '<p>'+escHtml(b.testo||'')+'</p>'+
+    '<p class="atl-nota">'+escHtml(b.nota||'')+'</p>';
+}
+
+function apriAtlante(){
+  var m=document.getElementById('atlante'); if(!m) return;
+  m.hidden=false; document.documentElement.dataset.atlante='1';
+  var corpo=document.getElementById('atlCorpo');
+  if(ATLANTE.caricato){ atlanteDisegna(); return; }
+  if(corpo) corpo.innerHTML='<div class="atl-riga"><span class="atl-vuoto">Leggo le leve del profilo…</span></div>';
+  Promise.resolve(window.vault && window.vault.atlante ? window.vault.atlante() : null)
+    .then(function(d){
+      if(!d || d.errore){
+        if(corpo) corpo.innerHTML='<div class="atl-riga"><span class="atl-vuoto">'+
+          escHtml((d&&d.errore)||'Le leve non si sono potute leggere.')+'</span></div>';
+        return;
+      }
+      ATLANTE.leve=d.leve||[]; ATLANTE.esempi=d.esempi||{}; ATLANTE.scelte=d.scelte||{};
+      ATLANTE.brano=d.brano||null; ATLANTE.avviso=d.avviso||''; ATLANTE.caricato=true;
+      var piede=document.getElementById('atlPiede');
+      if(piede) piede.textContent = (d.avvisoEsempi ? d.avvisoEsempi+' ' : '') + (d.avviso||'');
+      atlanteBrano(); atlanteDisegna();
+    })
+    .catch(function(e){
+      if(corpo) corpo.innerHTML='<div class="atl-riga"><span class="atl-vuoto">Le leve non si sono potute leggere: '+escHtml(e.message||String(e))+'</span></div>';
+    });
+}
+function chiudiAtlante(){
+  var m=document.getElementById('atlante'); if(m) m.hidden=true;
+  document.documentElement.dataset.atlante='';
+}
+/** «Visualizza esempi»: apre e chiude tutti gli esempi insieme, come «Mostra
+ *  gli indici» del composer — il confronto si fa su una riga intera, non su una
+ *  cella per volta. */
+function atlanteEsempiMostra(){
+  ATLANTE.mostraEsempi = !ATLANTE.mostraEsempi;
+  var b=document.getElementById('atlEsempi');
+  if(b){ b.setAttribute('aria-pressed', String(ATLANTE.mostraEsempi));
+    b.textContent = ATLANTE.mostraEsempi ? 'Nascondi esempi' : 'Visualizza esempi'; }
+  atlanteDisegna();
+}
+
 /** Il NOTICE.txt da allegare a una distribuzione: lo scrive il main, che ha
  *  l'inventario intero e il dialogo di salvataggio. */
 function creditiEsporta(){
@@ -7131,6 +7301,7 @@ function creditiEsporta(){
 /* la ricerca nasce dentro la testata ridisegnata: si ascolta in delega */
 document.addEventListener('input', function(e){
   if(e.target && e.target.id==='creditsCerca') creditiAggiorna();
+  if(e.target && e.target.id==='atlCerca') atlanteDisegna();
 });
 function apriGuida(){
   var m=document.getElementById('guidaModal'); if(!m) return;
@@ -9008,6 +9179,9 @@ document.addEventListener('click',function(e){
   if(e.target.closest && e.target.closest('#creditsBtn')){ apriCrediti(); return; }
   if(e.target.closest && (e.target.closest('#creditsClose') || e.target===document.getElementById('creditsModal'))){ chiudiCrediti(); return; }
   if(e.target.closest && e.target.closest('#creditsNotice')){ creditiEsporta(); return; }
+  if(e.target.closest && e.target.closest('#apriAtlante')){ apriAtlante(); return; }
+  if(e.target.closest && e.target.closest('#atlChiudi')){ chiudiAtlante(); return; }
+  if(e.target.closest && e.target.closest('#atlEsempi')){ atlanteEsempiMostra(); return; }
   if(e.target.closest && e.target.closest('#creditsChromium')){
     Promise.resolve(window.vault.crediti.chromium()).then(function(r){
       if(r && r.error) toast('Elenco Chromium non apribile: '+r.error, false);
@@ -9039,6 +9213,8 @@ document.addEventListener('input',function(e){ if(e.target && e.target.id==='mat
 document.addEventListener('keydown',function(e){
   if(e.key!=='Escape') return;
   var cr=document.getElementById('creditsModal');
+  var atl=document.getElementById('atlante');
+  if(atl && !atl.hidden){ e.stopPropagation(); chiudiAtlante(); return; } // l'atlante sta sopra le impostazioni
   if(cr && !cr.hidden){ e.stopPropagation(); chiudiCrediti(); return; } // Esc chiude prima i crediti…
   var g=document.getElementById('guidaModal');
   if(g && !g.hidden){ e.stopPropagation(); chiudiGuida(); return; }   // …poi la guida
@@ -15201,7 +15377,8 @@ document.addEventListener('keydown', function(e){
 window.addEventListener('keydown', function(e){
   if(e.key!=='Escape' || !mappaAperta()) return;
   var cr=document.getElementById('creditsModal'), gu=document.getElementById('guidaModal');
-  if((cr && !cr.hidden) || (gu && !gu.hidden)) return;
+  var atl=document.getElementById('atlante');
+  if((cr && !cr.hidden) || (gu && !gu.hidden) || (atl && !atl.hidden)) return;
   e.stopPropagation();
   /* Gli strati si chiudono dal più interno: la casella aperta su una card o su
      un arco, poi il menu, poi la modalità «collega», poi il pannellino della
@@ -15732,6 +15909,26 @@ window.addEventListener('keydown', function(e){
   </div>
 </div>
 <script src="composer.js" defer></script>
+
+<!-- Atlante delle opzioni: la spiegazione del profilo, a schermo intero come il
+     composer. Si apre da ⚙ Impostazioni › Utente. -->
+<div id="atlante" hidden role="dialog" aria-modal="true" aria-label="Atlante delle opzioni">
+  <header class="tbar atl-top">
+    <b>Atlante delle opzioni</b>
+    <span class="tbsep"></span>
+    <span class="tbnota">ogni menu del profilo: la regola che manda al modello, e un esempio</span>
+    <span class="tbspazio"></span>
+    <input type="search" id="atlCerca" placeholder="Cerca una leva o una regola…" aria-label="Cerca nell'atlante">
+    <button type="button" class="tbtn" id="atlEsempi" aria-pressed="false">Visualizza esempi</button>
+    <span class="tbsep"></span>
+    <button class="tbtn" id="atlChiudi" type="button" title="Chiudi l'atlante" aria-label="Chiudi">&#10005;</button>
+  </header>
+  <div class="atl-corpo">
+    <div class="atl-brano" id="atlBrano" hidden></div>
+    <div id="atlCorpo"></div>
+  </div>
+  <div class="atl-piede" id="atlPiede"></div>
+</div>
 <div id="emojiPop" class="popmenu" aria-label="Inserisci emoji">
   <input id="emojiSearch" type="search" placeholder="Cerca: libro, idea, attenzione…" autocomplete="off">
   <div id="emojiGrid"></div>
@@ -15782,6 +15979,11 @@ window.addEventListener('keydown', function(e){
       <section class="set-pane" data-pane="utente">
         <div class="set-sec-h">Come imparo</div>
         <p class="set-note">Questo profilo governa la <b>forma</b> delle lezioni generate (linguaggio, ritmo, esempi), mai la <b>copertura</b> dei contenuti. Salvato in <code>_profilo.md</code> nella cartella dei file.</p>
+        <!-- l'Atlante: la spiegazione di ogni menu qui sotto, con la regola vera ed esempi -->
+        <div class="setrow" style="margin-top:.5rem;">
+          <button class="tbtn" id="apriAtlante" type="button" title="Ogni opzione spiegata: la regola che manda al modello e un esempio del suo effetto">Atlante delle opzioni&#8230;</button>
+        </div>
+        <p class="set-note" style="margin-top:.4rem;">Che cosa fa davvero ogni voce dei menu: la regola che arriva al generatore, se agisce sull'<b>indice</b> o sul <b>testo</b>, e un esempio a confronto.</p>
         <div class="set-sec-h" style="margin-top:1.1rem;">Cosa mi serve, area per area</div>
         <p class="set-note" style="margin-top:-.4rem;">Scegli l'opzione che ti somiglia di più. Sono descritte per <b>effetto sullo studio</b>, non come diagnosi: al generatore serve sapere cosa rendere più leggibile, non l'etichetta clinica. Lascia «nessuna difficoltà» dove non serve.</p>
         <div class="setgrid" id="profBisogni">
