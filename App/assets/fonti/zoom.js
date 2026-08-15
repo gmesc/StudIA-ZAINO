@@ -110,7 +110,7 @@
    * ingrandimento si sta leggendo, che è l'informazione per cui quel bottone è
    * nato.
    */
-  function etichetta(valore, scala, pronta) {
+  function etichetta(valore, scala, pronta, senzaCiclo) {
     var v = String(valore || '');
     /* ⚠️ `currentScale` non è mai 0: quando la scala non è ancora stata
        calcolata il getter torna 1, e la barra dichiarerebbe «100%» con sicurezza
@@ -118,8 +118,19 @@
        quando esiste davvero. */
     var pct = (pronta && isFinite(scala) && scala > 0) ? Math.round(scala * 100) + '%' : '';
     if (v === 'page-width' || v === 'page-fit') {
-      var altro = prossimoAdatta(v) === 'page-fit' ? 'alla pagina intera' : 'alla larghezza';
       var dove = v === 'page-width' ? 'Adattata alla larghezza' : 'Adattata alla pagina intera';
+      /* ⚠️ `senzaCiclo` è per le IMMAGINI, dove di modi ne resta uno solo.
+         Misurato il 15 agosto: su una foto orizzontale dentro un riquadro alto,
+         «alla pagina intera» e «alla larghezza» danno LO STESSO numero — il
+         vincolo è già la larghezza — quindi il secondo stato del ciclo era un
+         bottone che cambiava segno senza cambiare niente. Su un documento
+         invece i due si distinguono, e là il ciclo resta.
+         Il suggerimento allora non promette un altro adattamento: dice dove si
+         è. Un bottone che promette e non mantiene è peggio di uno che tace. */
+      if (senzaCiclo) {
+        return { testo: SEGNI[v], titolo: dove + (pct ? ' — ' + pct : '') + ' — segue il riquadro' };
+      }
+      var altro = prossimoAdatta(v) === 'page-fit' ? 'alla pagina intera' : 'alla larghezza';
       return {
         testo: SEGNI[v],
         titolo: dove + (pct ? ' — ' + pct : '') + ' — segue il riquadro; clicca per adattare ' + altro

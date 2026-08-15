@@ -62,6 +62,17 @@ ok('la percentuale non sparisce: si sposta nel suggerimento', true, /144%/.test(
 ok('che dice anche che segue il riquadro', true, /segue il riquadro/.test(larg.titolo));
 ok('e dove porta il click', true, /alla pagina intera/.test(larg.titolo));
 
+/* ⚠️ Per le IMMAGINI il ciclo non c'è: «alla pagina intera» su una foto
+   orizzontale dentro un riquadro alto dà la stessa scala di «alla larghezza» —
+   il vincolo è già la larghezza — e un secondo stato che non cambia niente è un
+   bottone che finge. Il suggerimento allora dice dove si è e non promette. */
+const senzaCiclo = Z.etichetta('page-width', 1.44, true, true);
+ok('senza ciclo il segno resta quello', '⟷', senzaCiclo.testo);
+ok('e la percentuale pure', true, /144%/.test(senzaCiclo.titolo));
+ok('ma non si promette un altro adattamento', false, /clicca/.test(senzaCiclo.titolo));
+ok('mentre da una percentuale il click promette lo stesso', true,
+  /adattare alla larghezza/.test(Z.etichetta('1.44', 1.44, true, true).titolo));
+
 const pag = Z.etichetta('page-fit', 0.8, true);
 ok('la pagina intera si dice con la diagonale', '⤢', pag.testo);
 ok('e il click di lì torna alla larghezza', true, /alla larghezza/.test(pag.titolo));

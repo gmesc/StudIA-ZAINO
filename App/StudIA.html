@@ -5879,7 +5879,7 @@ function fotoZoomAggiorna(){
   var lvl=$('#fotoZoomLvl'); if(!lvl) return;
   var img=$('#fotoImg');
   var pronta=!!(img && img.naturalWidth);
-  var e=FontiZoom.etichetta(fotoZoomSalvato(), fotoScala(), pronta);
+  var e=FontiZoom.etichetta(fotoZoomSalvato(), fotoScala(), pronta, true);
   lvl.textContent=e.testo; lvl.title=e.titolo;
 }
 /** «+» e «−»: un gesto a mano, che esce dall'adattamento dinamico. */
@@ -5889,10 +5889,22 @@ function fotoZoomPasso(su){
   if(n===null) return;
   fotoZoomRicorda(n); fotoZoomApplica();
 }
-/** Il click sul livello cicla i due adattamenti, come sulle fonti. */
+/**
+ * Il click sul livello riporta all'adattamento alla larghezza.
+ *
+ * ⚠️ Qui NON si cicla, a differenza delle fonti. Misurato da Giacomo: su una
+ * foto orizzontale dentro un riquadro alto, «alla pagina intera» dà la STESSA
+ * scala di «alla larghezza» — il vincolo è già la larghezza — quindi il secondo
+ * stato era un bottone che cambiava segno senza cambiare l'immagine. Su un
+ * documento i due si distinguono davvero, e là il ciclo resta: due riquadri con
+ * la stessa grammatica, ma non un comando che finge.
+ *
+ * Un livello `page-fit` salvato da prima resta valido in ARRIVO: si mostra e si
+ * applica, semplicemente il bottone non ci riporta più.
+ */
 function fotoZoomAdatta(){
   if(!fotoVistaAperta()) return;
-  fotoZoomRicorda(FontiZoom.prossimoAdatta(fotoZoomSalvato()));
+  fotoZoomRicorda('page-width');
   fotoZoomApplica();
 }
 /** L'adattamento è DINAMICO: cambia il riquadro, la scala lo segue. Stessa
@@ -16378,7 +16390,7 @@ window.addEventListener('keydown', function(e){
     <span class="pdfzoom" id="fotoZoom">
       <button class="tbtn" id="fotoZoomOut" type="button" title="Riduci" aria-label="Riduci">&#8722;</button>
       <!-- Niente `aria-label`: coprirebbe il testo visibile, che è il valore. -->
-      <button class="tbtn" id="fotoZoomLvl" type="button" title="Adattata alla larghezza — segue il riquadro; clicca per adattare alla pagina intera">&#10231;</button>
+      <button class="tbtn" id="fotoZoomLvl" type="button" title="Adattata alla larghezza — segue il riquadro">&#10231;</button>
       <button class="tbtn" id="fotoZoomIn" type="button" title="Ingrandisci" aria-label="Ingrandisci">+</button>
     </span>
     <i class="tbsep" aria-hidden="true"></i>

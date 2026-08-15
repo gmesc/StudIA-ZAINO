@@ -262,13 +262,17 @@ const FABBRICA = `
   ok('«+» porta alla percentuale', true, /%$/.test(aMano.testo));
   ok('e il livello si ricorda su disco', true, !/^page-/.test(aMano.salvato));
   await val('fotoZoomAdatta(), 1'); await pausa(500);
-  /* Da una percentuale si rientra sempre dalla LARGHEZZA — è l'adattamento con
-     cui un'immagine si apre, e la stessa regola delle fonti. */
-  ok('il click sul livello torna a un adattamento', '⟷',
+  ok('il click sul livello torna ad adattare alla larghezza', '⟷',
     await val("document.getElementById('fotoZoomLvl').textContent"));
+  /* ⚠️ E un altro click NON porta alla pagina intera: sulle immagini quel modo
+     non è nel ciclo. Su una foto orizzontale in un riquadro alto darebbe la
+     stessa scala della larghezza — un bottone che cambia segno senza cambiare
+     l'immagine. Sulle fonti, dove i due si distinguono, il ciclo resta. */
   await val('fotoZoomAdatta(), 1'); await pausa(500);
-  ok('e un altro click porta alla pagina intera', '⤢',
+  ok('e un altro click resta sulla larghezza', '⟷',
     await val("document.getElementById('fotoZoomLvl').textContent"));
+  ok('il suggerimento non promette un adattamento che non c\'è', false,
+    /clicca per adattare alla pagina/.test(await val("document.getElementById('fotoZoomLvl').title")));
   await val("localStorage.setItem('studia.foto.zoom','page-width'), fotoZoomApplica(), 1");
   await pausa(600);
 
