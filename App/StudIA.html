@@ -515,16 +515,31 @@
      blocco. È la conseguenza inevitabile di mettere due riquadri uno sopra
      l'altro, ed è anche ciò che permette al capitolo di restare fermo mentre
      si lavora nel quaderno accanto. */
+  /* ⚠️ Colonne e righe non sono più scritte qui: con una griglia che può avere
+     una, due o tre colonne, il template lo scrive `bancoApplicaFrazioni` —
+     inline, insieme alle frazioni. Quello che resta qui è il ripiego del primo
+     dipinto, prima che il JS parta. */
   #banco{ display:grid; height:calc(100vh - var(--topbar-h)); min-width:0; position:relative;
-    grid-template-columns:var(--b-col) minmax(0,1fr);
-    grid-template-rows:var(--b-riga) minmax(0,1fr);
+    grid-template-columns:50% minmax(0,1fr);
     grid-template-areas:"A C" "A C"; }
   .blocco{ display:flex; flex-direction:column; min-width:0; min-height:0; overflow:hidden;
     border-left:1px solid var(--line); }
-  .blocco[data-blocco="A"]{ grid-area:A; border-left:0; }
-  .blocco[data-blocco="B"]{ grid-area:B; border-left:0; border-top:1px solid var(--line); }
+  /* ⚠️ I bordi non sono più scritti per blocco: con la griglia fino a 3×3 la
+     posizione di un blocco dipende dalla forma, non dal nome. Chi sta sul bordo
+     sinistro o su quello alto lo decide `bancoApplicaForma`, leggendo le aree —
+     l'unico posto che le sa — e lo scrive in due attributi. */
+  .blocco[data-blocco="A"]{ grid-area:A; }
+  .blocco[data-blocco="B"]{ grid-area:B; }
   .blocco[data-blocco="C"]{ grid-area:C; }
-  .blocco[data-blocco="D"]{ grid-area:D; border-top:1px solid var(--line); }
+  .blocco[data-blocco="D"]{ grid-area:D; }
+  .blocco[data-blocco="E"]{ grid-area:E; }
+  .blocco[data-blocco="F"]{ grid-area:F; }
+  .blocco[data-blocco="G"]{ grid-area:G; }
+  .blocco[data-blocco="H"]{ grid-area:H; }
+  .blocco[data-blocco="I"]{ grid-area:I; }
+  .blocco{ border-left:0; border-top:0; }
+  .blocco[data-bordo-sx="1"]{ border-left:1px solid var(--line); }
+  .blocco[data-bordo-alto="1"]{ border-top:1px solid var(--line); }
   .blocco[hidden]{ display:none!important; }
   /* Il segno che dice di chi è il blocco: fonte o quaderno. Una riga di colore
      in testa, non un'etichetta — la distinzione la fa già il vault, qui va solo
@@ -583,6 +598,21 @@
   .bforma[aria-pressed="true"]{ border-color:var(--teal-strong); box-shadow:inset 0 0 0 1px var(--teal-strong); }
   .bforma i{ background:color-mix(in srgb, var(--ink) 22%, transparent); display:block; }
   .bforma[aria-pressed="true"] i{ background:var(--teal-strong); }
+  .bforma.bformapiu{ display:flex; align-items:center; justify-content:center;
+    font-size:18px; font-weight:700; color:var(--muted); border-style:dashed; }
+  .bforma.bformapiu:hover{ color:var(--ink); }
+  /* Il pittore: nove celle, i blocchi si distinguono per lettera e tono. */
+  #pittorePop{ padding:.6rem; width:220px; }
+  .pittoregriglia{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
+    gap:3px; width:100%; aspect-ratio:3/2; user-select:none; touch-action:none; }
+  .pittorecella{ border:1px dashed var(--line); background:var(--bg); display:flex;
+    align-items:center; justify-content:center; font-size:12px; font-weight:700;
+    color:var(--muted); cursor:crosshair; }
+  .pittorecella[data-blocco]{ border-style:solid; border-color:var(--teal-strong);
+    background:color-mix(in srgb, var(--teal-strong) 16%, var(--bg)); color:var(--ink); }
+  .pittoreaiuto{ font-size:11px; color:var(--muted); margin:.5rem 0; line-height:1.4; min-height:28px; }
+  .pittorepiedi{ display:flex; gap:.4rem; justify-content:flex-end; }
+  .pittorepiedi .tbtn{ border:1px solid var(--line); }
 
   /* ⚠️ Il dock non esiste più come pannello. I suoi due pezzi — `#pdfPane` e
      `#notePane` — sono diventati strumenti del banco, e `bancoMonta` li sposta
@@ -2477,6 +2507,29 @@
       <header class="bhead"><select class="bsel" data-blocco="D" aria-label="Strumento del blocco in basso a destra"></select></header>
       <div class="bcorpo" data-corpo="D"><div class="bvuoto"></div></div>
     </section>
+    <!-- I blocchi della griglia larga (fino a 3×3). Nascono nascosti e vuoti:
+         il banco li mostra solo nelle forme che li usano, e il vestito è
+         identico agli altri — un blocco è un blocco. -->
+    <section class="blocco" data-blocco="E" data-fam="quaderno" hidden>
+      <header class="bhead"><select class="bsel" data-blocco="E" aria-label="Strumento del blocco della terza colonna, in alto"></select></header>
+      <div class="bcorpo" data-corpo="E"><div class="bvuoto"></div></div>
+    </section>
+    <section class="blocco" data-blocco="F" data-fam="quaderno" hidden>
+      <header class="bhead"><select class="bsel" data-blocco="F" aria-label="Strumento della terza colonna, in mezzo"></select></header>
+      <div class="bcorpo" data-corpo="F"><div class="bvuoto"></div></div>
+    </section>
+    <section class="blocco" data-blocco="G" data-fam="quaderno" hidden>
+      <header class="bhead"><select class="bsel" data-blocco="G" aria-label="Strumento della riga in basso, a sinistra"></select></header>
+      <div class="bcorpo" data-corpo="G"><div class="bvuoto"></div></div>
+    </section>
+    <section class="blocco" data-blocco="H" data-fam="quaderno" hidden>
+      <header class="bhead"><select class="bsel" data-blocco="H" aria-label="Strumento della riga in basso, al centro"></select></header>
+      <div class="bcorpo" data-corpo="H"><div class="bvuoto"></div></div>
+    </section>
+    <section class="blocco" data-blocco="I" data-fam="quaderno" hidden>
+      <header class="bhead"><select class="bsel" data-blocco="I" aria-label="Strumento della riga in basso, a destra"></select></header>
+      <div class="bcorpo" data-corpo="I"><div class="bvuoto"></div></div>
+    </section>
     <!-- ⚠️ L'ordine conta. I due divisori si INCROCIANO: quello verticale corre
          per tutta l'altezza, quello orizzontale per tutta la larghezza, e nel
          punto d'incontro vince chi è disegnato dopo. Misurato: con il verticale
@@ -2484,8 +2537,10 @@
          afferrava invece l'orizzontale, e trascinare di lato non faceva niente.
          Il verticale sta quindi per ultimo e vince l'incrocio; l'orizzontale
          perde nove pixel al centro e resta afferrabile su tutto il resto. -->
-    <div class="bdiv bdivriga" id="bDivRiga" role="separator" aria-orientation="horizontal" aria-label="Altezza delle righe" title="Trascina · doppio click per rimettere a metà" hidden></div>
-    <div class="bdiv bdivcol" id="bDivCol" role="separator" aria-orientation="vertical" aria-label="Larghezza delle colonne" title="Trascina · doppio click per rimettere a metà"></div>
+    <div class="bdiv bdivriga" id="bDivRiga" data-frazione="riga" role="separator" aria-orientation="horizontal" aria-label="Altezza delle righe" title="Trascina · doppio click per rimettere a metà" hidden></div>
+    <div class="bdiv bdivriga" id="bDivRiga2" data-frazione="riga2" role="separator" aria-orientation="horizontal" aria-label="Altezza della seconda riga" title="Trascina · doppio click per rimettere a metà" hidden></div>
+    <div class="bdiv bdivcol" id="bDivCol" data-frazione="col" role="separator" aria-orientation="vertical" aria-label="Larghezza delle colonne" title="Trascina · doppio click per rimettere a metà"></div>
+    <div class="bdiv bdivcol" id="bDivCol2" data-frazione="col2" role="separator" aria-orientation="vertical" aria-label="Larghezza della terza colonna" title="Trascina · doppio click per rimettere a metà" hidden></div>
   </div>
 </div>
 
@@ -13066,26 +13121,74 @@ function bancoApplicaForma(){
   el.dataset.forma=f;
   el.style.gridTemplateAreas=dati.aree;
   var visibili=BancoForme.blocchiDi(f);
-  ['A','B','C','D'].forEach(function(b){
+  var righe=BancoForme.righeDi(dati.aree);
+  BancoForme.BLOCCHI.forEach(function(b){
     var blocco=document.querySelector('.blocco[data-blocco="'+b+'"]');
-    if(blocco) blocco.hidden = visibili.indexOf(b)<0;
+    if(!blocco) return;
+    blocco.hidden = visibili.indexOf(b)<0;
+    /* I bordi: una riga di separazione dove il blocco NON tocca il bordo del
+       banco. Si leggono dalle aree — l'unico posto che sa dove sta chi — e non
+       da un elenco per nome, che con dodici forme divergerebbe subito. */
+    var minX=99, minY=99;
+    righe.forEach(function(riga, y){
+      riga.forEach(function(n, x){ if(n===b){ if(x<minX) minX=x; if(y<minY) minY=y; } });
+    });
+    if(minX<99){
+      if(minX>0) blocco.dataset.bordoSx='1'; else delete blocco.dataset.bordoSx;
+      if(minY>0) blocco.dataset.bordoAlto='1'; else delete blocco.dataset.bordoAlto;
+    }
   });
-  var dc=document.getElementById('bDivCol'), dr=document.getElementById('bDivRiga');
-  if(dc) dc.hidden=!BancoForme.usaDivisoreColonna(f);
-  if(dr) dr.hidden=!BancoForme.usaDivisoreRiga(f);
+  /* I divisori: fino a due per asse, e si mostrano solo quelli che separano
+     davvero qualcosa (`divisoriDi` legge le aree). */
+  var div=BancoForme.divisoriDi(f);
+  var dc=document.getElementById('bDivCol'), dc2=document.getElementById('bDivCol2');
+  var dr=document.getElementById('bDivRiga'), dr2=document.getElementById('bDivRiga2');
+  if(dc) dc.hidden=div.col.indexOf(0)<0;
+  if(dc2) dc2.hidden=div.col.indexOf(1)<0;
+  if(dr) dr.hidden=div.riga.indexOf(0)<0;
+  if(dr2) dr2.hidden=div.riga.indexOf(1)<0;
 }
 function bancoApplicaFrazioni(){
   var el=document.getElementById('banco'); if(!el) return;
   var s=bancoStato();
-  el.style.setProperty('--b-col', (s.col*100).toFixed(2)+'%');
-  el.style.setProperty('--b-riga', (s.riga*100).toFixed(2)+'%');
+  var g=BancoForme.griglia(s.forma);
+  /* Il template si scrive per intero, con TUTTE le colonne della forma. Le
+     griglie a due e a tre colonne leggono CAMPI diversi (`col` contro
+     `col3`/`col3b`): tarature separate, perché una frazione scelta con due
+     colonne non significa niente su tre. La colonna di mezzo è la differenza
+     fra le due frazioni, così i divisori restano indipendenti. */
+  var col = g.colonne===1 ? 'minmax(0,1fr)'
+          : g.colonne===2 ? (s.col*100).toFixed(2)+'% minmax(0,1fr)'
+          : (s.col3*100).toFixed(2)+'% '+((s.col3b-s.col3)*100).toFixed(2)+'% minmax(0,1fr)';
+  var riga = g.righe===1 ? 'minmax(0,1fr)'
+           : g.righe===2 ? (s.riga*100).toFixed(2)+'% minmax(0,1fr)'
+           : (s.riga3*100).toFixed(2)+'% '+((s.riga3b-s.riga3)*100).toFixed(2)+'% minmax(0,1fr)';
+  el.style.gridTemplateColumns=col;
+  el.style.gridTemplateRows=riga;
+}
+
+/** Le CHIAVI di frazione della forma attiva: su tre colonne il primo divisore
+ *  scrive `col3`, su due `col`. Un posto solo per la mappa, o il trascinamento
+ *  e la rilettura parlerebbero di campi diversi. */
+function bancoChiaviFrazione(){
+  var g=BancoForme.griglia(bancoStato().forma);
+  return {
+    col: g.colonne===3 ? 'col3' : 'col',
+    col2: 'col3b',
+    riga: g.righe===3 ? 'riga3' : 'riga',
+    riga2: 'riga3b'
+  };
 }
 function bancoPosizionaDivisori(){
   var el=document.getElementById('banco'); if(!el) return;
   var r=el.getBoundingClientRect(), s=bancoStato();
   var dc=document.getElementById('bDivCol'), dr=document.getElementById('bDivRiga');
-  if(dc && !dc.hidden) dc.style.left=(s.col*r.width)+'px';
-  if(dr && !dr.hidden) dr.style.top=(s.riga*r.height)+'px';
+  var dc2=document.getElementById('bDivCol2'), dr2=document.getElementById('bDivRiga2');
+  var ch=bancoChiaviFrazione();
+  if(dc && !dc.hidden) dc.style.left=(s[ch.col]*r.width)+'px';
+  if(dc2 && !dc2.hidden) dc2.style.left=(s[ch.col2]*r.width)+'px';
+  if(dr && !dr.hidden) dr.style.top=(s[ch.riga]*r.height)+'px';
+  if(dr2 && !dr2.hidden) dr2.style.top=(s[ch.riga2]*r.height)+'px';
 }
 /** Sposta ogni strumento nel blocco che gli tocca, e in magazzino quelli che
  *  non sono a schermo. Non ricrea niente: `appendChild` sposta. */
@@ -13447,18 +13550,141 @@ function bancoDisegnaForme(){
   host.innerHTML='';
   Object.keys(BancoForme.FORME).forEach(function(f){
     var dati=BancoForme.FORME[f];
+    var g=BancoForme.griglia(f);
     var b=document.createElement('button');
     b.type='button'; b.className='bforma'; b.dataset.forma=f;
-    b.title=dati.nome; b.setAttribute('aria-label', dati.nome);
+    b.title=dati.nome + (dati.personale ? ' — tasto destro per eliminarla' : '');
+    b.setAttribute('aria-label', dati.nome);
     b.setAttribute('aria-pressed', String(f===attuale));
     b.style.gridTemplateAreas=dati.aree;
-    b.style.gridTemplateColumns='1fr 1fr';
-    b.style.gridTemplateRows='1fr 1fr';
+    /* Le colonne della MINIATURA sono quelle della forma: una miniatura a tre
+       colonne disegnata su una griglia da due mentirebbe sulla disposizione. */
+    b.style.gridTemplateColumns='repeat('+g.colonne+',1fr)';
+    b.style.gridTemplateRows='repeat('+g.righe+',1fr)';
     BancoForme.blocchiDi(f).forEach(function(cella){
       var i=document.createElement('i'); i.style.gridArea=cella; b.appendChild(i);
     });
     host.appendChild(b);
   });
+  /* L'ultima casella apre il pittore: la forma che non c'è ancora. */
+  var piu=document.createElement('button');
+  piu.type='button'; piu.className='bforma bformapiu'; piu.id='bFormaNuova';
+  piu.title='Disegna una forma tua'; piu.setAttribute('aria-label','Disegna una forma tua');
+  piu.textContent='+';
+  host.appendChild(piu);
+}
+
+/* ---- IL PITTORE: una forma disegnata su una griglia 3×3 -------------------
+   Si trascina sopra le celle e ogni rettangolo diventa un blocco. Le regole non
+   stanno qui: stanno in `BancoForme.guastoNelleAree`, la stessa che valida le
+   forme di fabbrica — il pittore costruisce solo la stringa delle aree.
+   ⚠️ Le forme personali vivono nel localStorage (`studia.banco.forme`): sono
+   una preferenza dello schermo che si ha davanti — su un 4K vuoi tre colonne,
+   sul portatile no — non un dato del vault. */
+var PITTORE = { celle:[], giu:-1, sopra:-1 };
+
+function bancoFormePersonali(){
+  try{ return JSON.parse(localStorage.getItem('studia.banco.forme')||'[]')||[]; }catch(e){ return []; }
+}
+function bancoFormePersonaliScrivi(elenco){
+  try{ localStorage.setItem('studia.banco.forme', JSON.stringify(elenco)); }catch(e){}
+}
+/** All'avvio: le forme salvate rientrano nella tabella. Chi non passa la
+ *  validazione si scarta DICENDOLO in console — un localStorage modificato a
+ *  mano non deve piantare il banco. */
+function bancoFormePersonaliCarica(){
+  bancoFormePersonali().forEach(function(fp){
+    var guasto=BancoForme.registraForma(fp.chiave, fp.nome, fp.aree);
+    if(guasto) console.warn('banco/forme: «'+(fp.chiave||'?')+'» scartata — '+guasto);
+  });
+}
+
+function pittoreApri(){
+  PITTORE.celle=Array(9).fill('');
+  PITTORE.giu=-1;
+  pittoreDisegna();
+  var pop=document.getElementById('pittorePop');
+  var btn=document.getElementById('bFormaNuova');
+  if(pop && btn) popAt(pop, btn);
+}
+function pittoreDisegna(){
+  var host=document.getElementById('pittoreGriglia'); if(!host) return;
+  host.innerHTML='';
+  for(var i=0;i<9;i++){
+    var c=document.createElement('div');
+    c.className='pittorecella'; c.dataset.i=i;
+    var b=PITTORE.celle[i];
+    if(b){ c.dataset.blocco=b; c.textContent=b; }
+    host.appendChild(c);
+  }
+  var pieno=PITTORE.celle.every(function(x){ return !!x; });
+  var salva=document.getElementById('pittoreSalva');
+  /* aria-disabled e non disabled: il tasto spento deve poter dire perché. */
+  if(salva) salva.setAttribute('aria-disabled', String(!pieno));
+  var aiuto=document.getElementById('pittoreAiuto');
+  if(aiuto) aiuto.textContent=pieno
+    ? 'Ogni cella ha il suo blocco: si può salvare.'
+    : 'Trascina sui riquadri: ogni rettangolo diventa un blocco. Vanno riempiti tutti.';
+}
+/** Le aree dal dipinto: nove celle → tre righe. Le celle sono già lettere. */
+function pittoreAree(){
+  var c=PITTORE.celle;
+  return '"'+c[0]+' '+c[1]+' '+c[2]+'" "'+c[3]+' '+c[4]+' '+c[5]+'" "'+c[6]+' '+c[7]+' '+c[8]+'"';
+}
+/** Applica un rettangolo fra due celle (indici 0-8) col prossimo nome libero.
+ *  ⚠️ Un trascinamento che TOCCA celle già dipinte le ricopre: ridisegnare
+ *  sopra è il modo naturale di correggersi, e rifiutarlo obbligherebbe a
+ *  ricominciare da capo per un dito fuori posto. Ma se il ricoprire SPEZZA un
+ *  rettangolo esistente (ne restano celle fuori), quelle celle tornano vuote —
+ *  un blocco a L non deve poter nascere da nessun gesto. */
+function pittoreRettangolo(da, a){
+  if(da<0 || a<0) return;
+  var x1=Math.min(da%3, a%3), x2=Math.max(da%3, a%3);
+  var y1=Math.min(Math.floor(da/3), Math.floor(a/3)), y2=Math.max(Math.floor(da/3), Math.floor(a/3));
+  var usati={}; PITTORE.celle.forEach(function(b){ if(b) usati[b]=true; });
+  var nome='';
+  for(var i=0;i<9;i++){ var l=BancoForme.BLOCCHI[i]; if(!usati[l]){ nome=l; break; } }
+  if(!nome) return;
+  var toccati={};
+  for(var y=y1;y<=y2;y++) for(var x=x1;x<=x2;x++){
+    var i2=y*3+x;
+    if(PITTORE.celle[i2]) toccati[PITTORE.celle[i2]]=true;
+    PITTORE.celle[i2]=nome;
+  }
+  /* le celle orfane dei blocchi spezzati tornano vuote */
+  Object.keys(toccati).forEach(function(b){
+    var restano=PITTORE.celle.filter(function(x){ return x===b; }).length;
+    if(!restano) return;
+    /* il resto di un blocco ricoperto è ancora un rettangolo? se no, si svuota */
+    var idx=[]; PITTORE.celle.forEach(function(x,i3){ if(x===b) idx.push(i3); });
+    var xs=idx.map(function(i3){ return i3%3; }), ys=idx.map(function(i3){ return Math.floor(i3/3); });
+    var area=(Math.max.apply(null,xs)-Math.min.apply(null,xs)+1)*(Math.max.apply(null,ys)-Math.min.apply(null,ys)+1);
+    if(area!==idx.length) PITTORE.celle=PITTORE.celle.map(function(x){ return x===b?'':x; });
+  });
+}
+function pittoreSalva(){
+  var pieno=PITTORE.celle.every(function(x){ return !!x; });
+  if(!pieno){ toast('Vanno riempite tutte le celle: un buco nella griglia è un buco nell’app', false); return; }
+  var aree=pittoreAree();
+  var elenco=bancoFormePersonali();
+  var n=1; while(elenco.some(function(f){ return f.chiave==='mia-'+n; })) n++;
+  var fp={ chiave:'mia-'+n, nome:'Forma personale '+n, aree:aree };
+  var guasto=BancoForme.registraForma(fp.chiave, fp.nome, fp.aree);
+  if(guasto){ toast('La forma non è valida: '+guasto, false); return; }
+  elenco.push(fp); bancoFormePersonaliScrivi(elenco);
+  closePops();
+  bancoForma(fp.chiave);
+  toast('Forma salvata: la trovi nel selettore, col tasto destro la elimini', true);
+}
+function pittoreElimina(chiave){
+  if(!BancoForme.dimenticaForma(chiave)) return;
+  bancoFormePersonaliScrivi(bancoFormePersonali().filter(function(f){ return f.chiave!==chiave; }));
+  /* Se il banco era su quella forma, si torna a quella di fabbrica: un banco
+     su una forma che non esiste più sarebbe riparato in silenzio alla prossima
+     rilettura, ma tanto vale dirlo adesso. */
+  if(bancoStato().forma===chiave) bancoForma(BancoForme.DI_FABBRICA);
+  bancoDisegnaForme();
+  toast('Forma eliminata', true);
 }
 
 /* ---- eventi ---- */
@@ -13470,6 +13696,15 @@ document.addEventListener('click', function(e){
     if(pop && pop.hasAttribute('open')) closePops();
     else { bancoDisegnaForme(); popAt(pop, e.target.closest('#bancoBtn')); }
     return;
+  }
+  if(e.target.closest('#bFormaNuova')){ pittoreApri(); return; }
+  if(e.target.closest('#pittoreAzzera')){ PITTORE.celle=Array(9).fill(''); pittoreDisegna(); return; }
+  if(e.target.closest('#pittoreSalva')){
+    if(e.target.closest('#pittoreSalva').getAttribute('aria-disabled')==='true'){
+      toast('Prima riempi tutte le celle: ogni rettangolo che trascini è un blocco', false);
+      return;
+    }
+    pittoreSalva(); return;
   }
   var bf=e.target.closest('.bforma');
   if(bf){ closePops(); bancoForma(bf.dataset.forma); return; }
@@ -13498,18 +13733,38 @@ document.addEventListener('dblclick', function(e){
      soglie diverse vorrebbero dire un divisore che si può trascinare dove poi
      la rilettura non lo lascia stare. */
   function fraz(v){ return BancoForme.frazione(v); }
+  /* ⚠️ QUALE frazione muove un divisore lo dice il suo `data-frazione`, non la
+     classe: da quando i divisori possono essere quattro, «verticale» non basta
+     più a distinguere il primo dal secondo. E le due frazioni di un asse si
+     tengono in ORDINE mentre si trascina: il primo divisore non scavalca il
+     secondo — `frazioneDopo` è la stessa regola che applica la rilettura, e
+     due regole diverse vorrebbero dire un divisore trascinabile dove poi lo
+     stato non lo lascia stare. */
+  function scrivi(s, chiave, v){
+    var ch=bancoChiaviFrazione();
+    if(chiave==='col'){
+      s[ch.col]=fraz(v);
+      if(ch.col==='col3') s.col3b=BancoForme.frazioneDopo(s.col3, s.col3b);
+    }
+    else if(chiave==='col2'){ s.col3b=BancoForme.frazioneDopo(s.col3, v); }
+    else if(chiave==='riga'){
+      s[ch.riga]=fraz(v);
+      if(ch.riga==='riga3') s.riga3b=BancoForme.frazioneDopo(s.riga3, s.riga3b);
+    }
+    else { s.riga3b=BancoForme.frazioneDopo(s.riga3, v); }
+  }
   document.addEventListener('pointerdown', function(e){
     var h=e.target.closest && e.target.closest('.bdiv'); if(!h) return;
     var el=document.getElementById('banco'); if(!el) return;
     e.preventDefault();
+    var chiave=h.dataset.frazione || (h.classList.contains('bdivcol') ? 'col' : 'riga');
     var verticale=h.classList.contains('bdivcol');
     var r=el.getBoundingClientRect();
     document.documentElement.dataset.bresize='1';
     try{ h.setPointerCapture(e.pointerId); }catch(err){}
     function muovi(ev){
       var s=bancoStato();
-      if(verticale) s.col=fraz((ev.clientX-r.left)/r.width);
-      else s.riga=fraz((ev.clientY-r.top)/r.height);
+      scrivi(s, chiave, verticale ? (ev.clientX-r.left)/r.width : (ev.clientY-r.top)/r.height);
       bancoApplicaFrazioni(); bancoPosizionaDivisori();
     }
     function su(){
@@ -13523,8 +13778,53 @@ document.addEventListener('dblclick', function(e){
   document.addEventListener('dblclick', function(e){
     var h=e.target.closest && e.target.closest('.bdiv'); if(!h) return;
     var s=bancoStato();
-    if(h.classList.contains('bdivcol')) s.col=0.5; else s.riga=0.5;
+    /* Il doppio click rimette la griglia SIMMETRICA della forma: metà con due
+       colonne, terzi con tre — «a metà» su una griglia a tre colonne non
+       significa niente. */
+    var g=BancoForme.griglia(s.forma);
+    if(h.classList.contains('bdivcol')){
+      if(g.colonne===3){ s.col3=1/3; s.col3b=2/3; } else s.col=0.5;
+    } else {
+      if(g.righe===3){ s.riga3=1/3; s.riga3b=2/3; } else s.riga=0.5;
+    }
     bancoSalva(); bancoApplicaFrazioni(); bancoPosizionaDivisori(); bancoDopoLayout();
+  });
+})();
+
+/* Il trascinamento sul pittore: si preme su una cella, si arriva a un'altra, e
+   il rettangolo fra le due diventa un blocco. `pointerenter` non basta — con il
+   puntatore catturato gli enter non arrivano — quindi si guarda che cella sta
+   sotto il dito a ogni mossa. */
+(function(){
+  function cellaSotto(e){
+    var c=document.elementFromPoint(e.clientX, e.clientY);
+    c=c && c.closest ? c.closest('.pittorecella') : null;
+    return c ? parseInt(c.dataset.i, 10) : -1;
+  }
+  document.addEventListener('pointerdown', function(e){
+    var c=e.target.closest && e.target.closest('.pittorecella'); if(!c) return;
+    e.preventDefault();
+    PITTORE.giu=parseInt(c.dataset.i, 10);
+    PITTORE.sopra=PITTORE.giu;
+  });
+  document.addEventListener('pointermove', function(e){
+    if(PITTORE.giu<0) return;
+    var i=cellaSotto(e);
+    if(i>=0) PITTORE.sopra=i;
+  });
+  document.addEventListener('pointerup', function(e){
+    if(PITTORE.giu<0) return;
+    pittoreRettangolo(PITTORE.giu, PITTORE.sopra);
+    PITTORE.giu=-1; PITTORE.sopra=-1;
+    pittoreDisegna();
+  });
+  /* Il tasto destro su una forma personale la elimina: sulle forme di fabbrica
+     non fa niente — quelle non sono eliminabili, e un menu vuoto è rumore. */
+  document.addEventListener('contextmenu', function(e){
+    var bf=e.target.closest && e.target.closest('.bforma[data-forma^="mia-"]');
+    if(!bf) return;
+    e.preventDefault();
+    pittoreElimina(bf.dataset.forma);
   });
 })();
 
@@ -13539,6 +13839,11 @@ document.addEventListener('dblclick', function(e){
 (function(){
   function avvia(){
     if(!bancoPronto()){ console.error('banco: assets/banco/forme.js non caricato'); return; }
+    /* Prima le forme dell'utente, poi il banco: uno stato salvato su una forma
+       personale deve trovarla già in tabella, o `normalizzaStato` lo
+       riporterebbe alla forma di fabbrica — riparando una cosa che non era
+       rotta. */
+    bancoFormePersonaliCarica();
     bancoRicarica();
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', avvia); else avvia();
@@ -16621,6 +16926,17 @@ window.addEventListener('keydown', function(e){
      finirebbe sotto la topbar. Stessa ragione di #mappaPop e #mapMenu. -->
 <div id="bancoPop" class="popmenu" role="dialog" aria-label="Disposizione dei blocchi">
   <div class="bforme" id="bForme"></div>
+</div>
+<!-- Il pittore delle forme: una griglia 3×3 su cui si trascina, e ogni
+     rettangolo diventa un blocco. Le regole le applica BancoForme, la stessa
+     validazione delle forme di fabbrica. -->
+<div id="pittorePop" class="popmenu" role="dialog" aria-label="Disegna una forma">
+  <div class="pittoregriglia" id="pittoreGriglia"></div>
+  <div class="pittoreaiuto" id="pittoreAiuto"></div>
+  <div class="pittorepiedi">
+    <button class="tbtn" id="pittoreAzzera" type="button">Ricomincia</button>
+    <button class="tbtn" id="pittoreSalva" type="button" aria-disabled="true">Salva la forma</button>
+  </div>
 </div>
 <!-- Creare uno zaino: un campo e un bottone, aperti dal «+» accanto alla
      tendina che li elenca. -->

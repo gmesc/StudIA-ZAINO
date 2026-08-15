@@ -2948,30 +2948,42 @@ async function modelloFinto(o) {
      primo ritocco, e il guasto non fa eccezione da nessuna parte, si vede solo
      a occhio come un blocco che non compare. Qui si controlla che la
      derivazione sia una sola, e che lo stato regga il giro dal disco. */
-  sezione('Banco — otto forme, due divisori, uno stato che torna dal disco');
+  sezione('Banco — dodici forme, fino a quattro divisori, uno stato che torna dal disco');
   {
     const BF = require('../App/assets/banco/forme');
 
     // ---- la tabella delle forme
-    check('otto forme, nell\'ordine del disegno del piano',
-      ['uno', 'due-col', 'due-riga', 'tre-sx', 'tre-dx', 'tre-sopra', 'tre-sotto', 'quattro'], BF.CHIAVI);
-    check('le aree sono quelle del piano, alla lettera',
-      ['"A A" "A A"', '"A C" "A C"', '"A A" "B B"', '"A C" "A D"',
-       '"A C" "B C"', '"A A" "B D"', '"A C" "B B"', '"A C" "B D"'],
+    /* Dodici: le otto del piano più le quattro a tre colonne (B1, 15 agosto).
+       Le prime otto non cambiano di nome né di sostanza — una disposizione
+       salvata prima continua a dire le stesse cose — ma le aree si sono
+       ASCIUGATE: «un blocco solo» è '"A"', non più quattro celle uguali. */
+    check('dodici forme, le otto del piano per prime',
+      ['uno', 'due-col', 'due-riga', 'tre-sx', 'tre-dx', 'tre-sopra', 'tre-sotto', 'quattro',
+       'tre-col', 'tre-col-dx', 'tre-col-sx', 'sei'], BF.CHIAVI);
+    check('le aree, alla lettera',
+      ['"A"', '"A C"', '"A" "B"', '"A C" "A D"',
+       '"A C" "B C"', '"A A" "B D"', '"A C" "B B"', '"A C" "B D"',
+       '"A C E"', '"A C E" "A C F"', '"A C E" "B C E"', '"A C E" "B D F"'],
       BF.CHIAVI.map((k) => BF.FORME[k].aree));
     check('ognuna ha un nome leggibile, e nessuno si ripete',
-      [[], 8], [BF.CHIAVI.filter((k) => !/\S/.test(BF.FORME[k].nome || '')),
+      [[], 12], [BF.CHIAVI.filter((k) => !/\S/.test(BF.FORME[k].nome || '')),
                 new Set(BF.CHIAVI.map((k) => BF.FORME[k].nome)).size]);
     check('i blocchi di ogni forma',
       [['A'], ['A', 'C'], ['A', 'B'], ['A', 'C', 'D'],
-       ['A', 'B', 'C'], ['A', 'B', 'D'], ['A', 'B', 'C'], ['A', 'B', 'C', 'D']],
+       ['A', 'B', 'C'], ['A', 'B', 'D'], ['A', 'B', 'C'], ['A', 'B', 'C', 'D'],
+       ['A', 'C', 'E'], ['A', 'C', 'E', 'F'], ['A', 'B', 'C', 'E'], ['A', 'B', 'C', 'D', 'E', 'F']],
       BF.CHIAVI.map((k) => BF.blocchiDi(k)));
+    check('e la griglia di ognuna si legge dalle aree',
+      [{colonne:1,righe:1}, {colonne:2,righe:1}, {colonne:1,righe:2}, {colonne:2,righe:2},
+       {colonne:2,righe:2}, {colonne:2,righe:2}, {colonne:2,righe:2}, {colonne:2,righe:2},
+       {colonne:3,righe:1}, {colonne:3,righe:2}, {colonne:3,righe:2}, {colonne:3,righe:2}],
+      BF.CHIAVI.map((k) => BF.griglia(k)));
 
     /* ⚠️ La prova che conta davvero: l'elenco esce dalla STRINGA. Il test la
        rilegge per conto suo — se un giorno `blocchiDi` tornasse a leggere un
        elenco scritto a mano accanto alle aree, le due derivazioni si
        separerebbero qui invece che a schermo, mesi dopo. */
-    const dallaStringa = (aree) => ['A', 'B', 'C', 'D'].filter((b) => aree.indexOf(b) >= 0);
+    const dallaStringa = (aree) => BF.BLOCCHI.filter((b) => aree.indexOf(b) >= 0);
     check('blocchiDi legge le aree, non un secondo elenco', [],
       BF.CHIAVI.filter((k) => JSON.stringify(BF.blocchiDi(k)) !== JSON.stringify(dallaStringa(BF.FORME[k].aree))));
     check('e «quanti» è il conto di quell\'elenco, non un numero battuto a mano', [],
@@ -2985,42 +2997,83 @@ async function modelloFinto(o) {
 
     // ---- i due divisori, dove servono e dove no
     check('il divisore verticale c\'è dove una riga è spezzata in due',
-      [false, true, false, true, true, true, true, true], BF.CHIAVI.map((k) => BF.usaDivisoreColonna(k)));
+      [false, true, false, true, true, true, true, true, true, true, true, true],
+      BF.CHIAVI.map((k) => BF.usaDivisoreColonna(k)));
     check('quello orizzontale dove è spezzata una colonna',
-      [false, false, true, true, true, true, true, true], BF.CHIAVI.map((k) => BF.usaDivisoreRiga(k)));
+      [false, false, true, true, true, true, true, true, false, true, true, true],
+      BF.CHIAVI.map((k) => BF.usaDivisoreRiga(k)));
+    /* ⚠️ QUALI fessure sono divisori veri: con tre colonne una fessura può non
+       separare niente — «tre colonne, la seconda unita» non esiste in tabella,
+       ma le forme personali possono farla nascere. */
+    check('divisoriDi dice quali fessure separano davvero',
+      [{col:[0,1],riga:[0]}, {col:[0],riga:[]}, {col:[0,1],riga:[0]}],
+      [BF.divisoriDi('sei'), BF.divisoriDi('due-col'), BF.divisoriDi('tre-col-sx')]);
     check('«un blocco solo» non ne ha nessuno, «due impilati» solo l\'orizzontale',
       [false, false, false, true],
       [BF.usaDivisoreColonna('uno'), BF.usaDivisoreRiga('uno'),
        BF.usaDivisoreColonna('due-riga'), BF.usaDivisoreRiga('due-riga')]);
 
     /* Anche i divisori si ricavano dalle aree. Il test li ridice in un altro
-       modo — «esiste un blocco che sta in una colonna sola?» invece di «due
+       modo — «esiste un blocco che NON copre tutte le colonne?» invece di «due
        celle affiancate hanno nomi diversi?» — perché due formulazioni della
        stessa geometria si controllano a vicenda; ripetere la formula
        dell'implementazione controllerebbe soltanto la copia-incolla. */
-    const spanne = (aree, b, asse) =>
-      new Set((aree.match(/[A-D]/g) || []).map((n, i) => (n === b ? (asse === 'col' ? (i & 1) : (i >> 1)) : null))
-        .filter((v) => v !== null)).size;
+    const copre = (aree, b, asse) => {
+      const righe = BF.righeDi(aree);
+      const tot = asse === 'col' ? righe[0].length : righe.length;
+      const posti = new Set();
+      righe.forEach((riga, y) => riga.forEach((n, x) => { if (n === b) posti.add(asse === 'col' ? x : y); }));
+      return posti.size === tot;
+    };
     check('i divisori escono dalla geometria, non da un elenco di forme', [],
       BF.CHIAVI.filter((k) => {
         const aree = BF.FORME[k].aree, bl = BF.blocchiDi(k);
-        return BF.usaDivisoreColonna(k) !== bl.some((b) => spanne(aree, b, 'col') === 1)
-            || BF.usaDivisoreRiga(k) !== bl.some((b) => spanne(aree, b, 'riga') === 1);
+        return BF.usaDivisoreColonna(k) !== bl.some((b) => !copre(aree, b, 'col'))
+            || BF.usaDivisoreRiga(k) !== bl.some((b) => !copre(aree, b, 'riga'));
       }));
 
     // ---- l'invariante che gira al caricamento del modulo
     check('una diagonale non è una griglia, e il modulo lo sa dire', true,
       /rettangolo/.test(BF.guastoNelleAree('"A C" "C A"')));
-    check('e nemmeno un nome inventato, un conto di celle sbagliato o il nulla',
+    check('e nemmeno un nome inventato, righe di lunghezza diversa o il nulla',
       [false, false, false],
-      [BF.guastoNelleAree('"A E" "B D"') === '', BF.guastoNelleAree('"A C B" "B D"') === '',
+      [BF.guastoNelleAree('"A Z" "B D"') === '', BF.guastoNelleAree('"A C B" "B D"') === '',
        BF.guastoNelleAree('') === '']);
-    check('le otto forme, invece, passano tutte', [], BF.CHIAVI.filter((k) => BF.guastoNelleAree(BF.FORME[k].aree)));
+    /* Nella 3×3 i modi di sbagliare un rettangolo sono di più: la L e la croce
+       non devono passare, mentre un rettangolo che copre più righe sì. */
+    check('una L su tre colonne non passa', true, /rettangolo/.test(BF.guastoNelleAree('"A A C" "A C C"')));
+    check('un rettangolo largo sì', '', BF.guastoNelleAree('"A A C" "A A C" "B B C"'));
+    check('le dodici forme, invece, passano tutte', [], BF.CHIAVI.filter((k) => BF.guastoNelleAree(BF.FORME[k].aree)));
+
+    // ---- le forme personali
+    check('una forma personale valida entra', '', BF.registraForma('mia-test', 'Di prova', '"A A C" "B B C"'));
+    check('e da lì in poi è una forma come le altre',
+      [['A', 'B', 'C'], {colonne:3,righe:2}],
+      [BF.blocchiDi('mia-test'), BF.griglia('mia-test')]);
+    check('⚠️ ma non può coprire una forma di fabbrica', true,
+      /mia-/.test(BF.registraForma('quattro', 'x', '"A C" "B D"')));
+    check('né entrare storta', true, /rettangolo/.test(BF.registraForma('mia-storta', 'x', '"A C" "C A"')));
+    check('e si può dimenticare — quelle di fabbrica no',
+      [true, false, false],
+      [BF.dimenticaForma('mia-test'), BF.dimenticaForma('mia-test'), BF.dimenticaForma('quattro')]);
+    check('dimenticata, esce anche dall\'elenco', -1, BF.CHIAVI.indexOf('mia-test'));
 
     // ---- normalizzaStato: l'entroSchema del banco
     const S = (x) => BF.normalizzaStato(x);
-    check('senza niente in ingresso: forma di fabbrica, divisori a metà, quattro blocchi vuoti',
-      { forma: 'due-col', col: 0.5, riga: 0.5, blocchi: { A: '', B: '', C: '', D: '' } }, S(undefined));
+    check('senza niente in ingresso: forma di fabbrica, divisori a metà, blocchi vuoti',
+      { forma: 'due-col', col: 0.5, riga: 0.5 },
+      (() => { const s = S(undefined); return { forma: s.forma, col: s.col, riga: s.riga }; })());
+    check('i nove blocchi ci sono tutti, vuoti', 9,
+      Object.values(S(undefined).blocchi).filter((v) => v === '').length);
+    /* ⚠️ Le griglie a due e a tre colonne ricordano tarature SEPARATE: una
+       frazione scelta con due colonne (0,62 per leggere largo) non significa
+       niente su tre — misurato: la prima colonna usciva doppia delle altre. */
+    check('la taratura a tre colonne parte dai terzi, qualunque sia quella a due', [true, true],
+      (() => { const s = S({ col: 0.62 }); return [Math.abs(s.col3 - 1 / 3) < 0.01, Math.abs(s.col3b - 2 / 3) < 0.01]; })());
+    check('e si ricorda per conto suo', [0.62, 0.25, 0.55],
+      (() => { const s = S({ col: 0.62, col3: 0.25, col3b: 0.55 }); return [s.col, s.col3, s.col3b]; })());
+    check('la seconda non scavalca mai la prima', 0.7,
+      S({ col3: 0.6, col3b: 0.2 }).col3b);
     check('una forma che non esiste ricade su quella di fabbrica, una buona resta',
       ['due-col', 'due-col', 'tre-sopra'], [S({ forma: 'a caso' }).forma, S({ forma: 42 }).forma, S({ forma: 'tre-sopra' }).forma]);
     check('le frazioni restano frazioni, e non toccano mai i bordi',
@@ -3036,15 +3089,17 @@ async function modelloFinto(o) {
     check('e il limite è uno solo, esportato: lo usa anche chi trascina il divisore',
       [0.1, 0.9, 0.5, 0.33], [BF.frazione(0), BF.frazione(1.2), BF.frazione('0.4'), BF.frazione(0.33)]);
 
-    check('i blocchi ci sono tutti e quattro, sempre e nello stesso ordine',
-      ['A', 'B', 'C', 'D'], Object.keys(S({ forma: 'uno', blocchi: { C: 'mappa' } }).blocchi));
+    check('i blocchi ci sono tutti e nove, sempre e nello stesso ordine',
+      ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'], Object.keys(S({ forma: 'uno', blocchi: { C: 'mappa' } }).blocchi));
     check('un blocco che la forma non usa conserva il suo strumento… ma non è visibile',
       ['mappa', false], [S({ forma: 'uno', blocchi: { C: 'mappa' } }).blocchi.C, BF.visibile('uno', 'C')]);
-    check('una chiave che non è un blocco sparisce', undefined, S({ blocchi: { E: 'x' } }).blocchi.E);
+    check('una chiave che non è un blocco sparisce', undefined, S({ blocchi: { Z: 'x' } }).blocchi.Z);
+    check('mentre E adesso È un blocco: la griglia arriva a nove', 'x', S({ blocchi: { E: 'x' } }).blocchi.E);
     check('uno strumento che non è una stringa non diventa uno strumento', ['', '', ''],
       [S({ blocchi: { A: 3 } }).blocchi.A, S({ blocchi: { A: { id: 'x' } } }).blocchi.A, S({ blocchi: { A: '   ' } }).blocchi.A]);
     check('le chiavi in più non entrano nel localStorage: lì il rumore resta per sempre',
-      ['blocchi', 'col', 'forma', 'riga'], Object.keys(S({ zoom: 3, tema: 'scuro' })).sort());
+      ['blocchi', 'col', 'col3', 'col3b', 'forma', 'riga', 'riga3', 'riga3b'],
+      Object.keys(S({ zoom: 3, tema: 'scuro' })).sort());
 
     /* ⚠️ Uno strumento in due blocchi è impossibile (§2.2): è un pezzo di
        pagina, non un'immagine. Quando lo stato che arriva lo dice due volte, a
@@ -3055,7 +3110,7 @@ async function modelloFinto(o) {
       (() => { const s = S({ forma: 'due-col', blocchi: { A: 'mappa', C: 'mappa' } }); return [s.blocchi.A, s.blocchi.C]; })());
     check('duplicato fra un blocco nascosto e uno visibile: vince quello che si vede', ['', 'mappa'],
       (() => { const s = S({ forma: 'due-col', blocchi: { B: 'mappa', C: 'mappa' } }); return [s.blocchi.B, s.blocchi.C]; })());
-    check('più blocchi vuoti invece convivono: «vuoto» non è uno strumento', 4,
+    check('più blocchi vuoti invece convivono: «vuoto» non è uno strumento', 9,
       Object.values(S({ blocchi: { A: '', B: '', C: '', D: '' } }).blocchi).filter((v) => v === '').length);
     check('comunque arrivi lo stato, nessuno strumento resta in due blocchi', [],
       [{ A: 'm', B: 'm', C: 'm', D: 'm' }, { A: 'a', B: 'a', C: 'b', D: 'b' }, { D: 'x', A: 'x' }]
@@ -3064,7 +3119,9 @@ async function modelloFinto(o) {
 
     const pieno = { forma: 'tre-sopra', col: 0.62, riga: 0.4, blocchi: { A: 'pdf', B: 'appunti', C: 'mappa', D: 'keyword' } };
     check('normalizzare due volte non cambia niente', JSON.stringify(S(pieno)), JSON.stringify(S(S(pieno))));
-    check('e il giro dal localStorage lo restituisce identico', pieno, S(JSON.parse(JSON.stringify(S(pieno)))));
+    check('e il giro dal localStorage restituisce le stesse scelte',
+      [pieno.forma, pieno.col, pieno.riga, 'pdf'],
+      (() => { const s = S(JSON.parse(JSON.stringify(S(pieno)))); return [s.forma, s.col, s.riga, s.blocchi.A]; })());
 
     // ---- assegna: si sposta, non si duplica; e si scambia, non si buca
     const base = S({ forma: 'quattro', blocchi: { A: 'capitolo', B: 'appunti', C: 'mappa', D: '' } });
@@ -3118,7 +3175,7 @@ async function modelloFinto(o) {
     check('e un blocco già nascosto non «esce» una seconda volta', [],
       BF.cambiaForma(S({ forma: 'due-col', blocchi: { A: 'capitolo', B: 'appunti', C: 'mappa' } }), 'uno')
         .usciti.filter((u) => u.blocco === 'B'));
-    check('passare a una forma più larga non fa uscire nessuno', [['A', 'B', 'C', 'D'], []],
+    check('passare a una forma più larga non fa uscire nessuno', [['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'], []],
       (() => { const s = BF.cambiaForma(q, 'quattro'); return [Object.keys(s.blocchi), s.usciti]; })());
     check('una forma sconosciuta non rifà il banco: si tiene quella di adesso', ['tre-sopra', []],
       (() => { const s = BF.cambiaForma(S({ forma: 'tre-sopra' }), 'pippo'); return [s.forma, s.usciti]; })());
@@ -3140,8 +3197,8 @@ async function modelloFinto(o) {
     const salvato = JSON.parse(JSON.stringify(BF.cambiaForma(
       S({ forma: 'quattro', col: 0.62, riga: 0.4, blocchi: { A: 'capitolo', B: 'appunti', C: 'mappa', D: 'keyword' } }), 'uno')));
     check('il giro completo dal disco: si salva, si rilegge, e il banco è quello di prima',
-      { forma: 'uno', col: 0.62, riga: 0.4, blocchi: { A: 'capitolo', B: 'appunti', C: 'mappa', D: 'keyword' } },
-      S(salvato));
+      ['uno', 0.62, 0.4, 'capitolo', 'appunti', 'mappa', 'keyword'],
+      (() => { const s = S(salvato); return [s.forma, s.col, s.riga, s.blocchi.A, s.blocchi.B, s.blocchi.C, s.blocchi.D]; })());
     check('e dal disco «usciti» non torna, perché non c\'era mai andato', undefined, S(salvato).usciti);
   }
 

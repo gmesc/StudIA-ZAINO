@@ -47,7 +47,13 @@ const dentro = (sel, padre) => val(`!!document.querySelector('${padre} ${sel}')`
 
   // ---- il selettore della forma
   await clicca('#bancoBtn'); await pausa(300);
-  ok('il selettore mostra otto forme', 8, await val("document.querySelectorAll('#bForme .bforma').length"));
+  /* Dodici di fabbrica più la casella «+» del pittore (B1, 15 agosto). Si conta
+     dalla TABELLA e non con un numero scritto qui: le forme personali
+     dell'utente ne aggiungono altre, e questa prova non deve arrossire per una
+     preferenza. */
+  const inTabella = await val('Object.keys(BancoForme.FORME).length');
+  ok('il selettore mostra tutte le forme della tabella, più il pittore',
+    inTabella + 1, await val("document.querySelectorAll('#bForme .bforma').length"));
   ok('e segna quella in uso', 'due-col',
     await val("document.querySelector('#bForme .bforma[aria-pressed=\"true\"]').dataset.forma"));
   await clicca('#bForme .bforma[data-forma="quattro"]'); await pausa(400);

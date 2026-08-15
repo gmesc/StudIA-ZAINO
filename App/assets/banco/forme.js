@@ -37,7 +37,11 @@
      le aree ("A C" sopra, "B D" sotto) ed è l'ordine con cui si sciolgono le
      contese più avanti: un ordine solo, sempre lo stesso, così una regola non
      dipende mai da come è stato serializzato un file. */
-  var BLOCCHI = ['A', 'B', 'C', 'D'];
+  /* ⚠️ NOVE e non più quattro. Il banco è diventato una griglia fino a 3×3 per
+     gli schermi larghi — su un 4K tre colonne sono la disposizione naturale — e
+     i primi quattro nomi restano quelli di prima: una disposizione salvata con
+     la vecchia griglia continua a dire le stesse cose. */
+  var BLOCCHI = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
 
   /** La forma di fabbrica: due colonne affiancate. Vale quando non si sa niente
    *  — primo avvio, stato mai salvato, file storto — ed è la disposizione che
@@ -51,14 +55,20 @@
      ⚠️ `aree` è l'UNICO posto in cui è scritto quali blocchi ha una forma.
      Tutto il resto di questo file lo ricava da lì. */
   var SORGENTE = [
-    ['uno',       'Un blocco solo',                '"A A" "A A"'],
-    ['due-col',   'Due · affiancati',              '"A C" "A C"'],
-    ['due-riga',  'Due · impilati',                '"A A" "B B"'],
+    ['uno',       'Un blocco solo',                '"A"'],
+    ['due-col',   'Due · affiancati',              '"A C"'],
+    ['due-riga',  'Due · impilati',                '"A" "B"'],
     ['tre-sx',    'Tre · colonna sinistra intera', '"A C" "A D"'],
     ['tre-dx',    'Tre · colonna destra intera',   '"A C" "B C"'],
     ['tre-sopra', 'Tre · riga sopra intera',       '"A A" "B D"'],
     ['tre-sotto', 'Tre · riga sotto intera',       '"A C" "B B"'],
-    ['quattro',   'Quattro blocchi',               '"A C" "B D"']
+    ['quattro',   'Quattro blocchi',               '"A C" "B D"'],
+    /* Le forme a TRE COLONNE: nate per gli schermi larghi, dove due riquadri
+       lasciano metà pagina a un documento che non ne ha bisogno. */
+    ['tre-col',   'Tre · colonne affiancate',      '"A C E"'],
+    ['tre-col-dx','Tre colonne · la terza divisa', '"A C E" "A C F"'],
+    ['tre-col-sx','Tre colonne · la prima divisa', '"A C E" "B C E"'],
+    ['sei',       'Sei blocchi',                   '"A C E" "B D F"']
   ];
 
   /* ------------------------------------------------------- leggere le aree */
@@ -68,6 +78,22 @@
    *  interessano a nessuno: contano i nomi, e sono in fila. */
   function celleDi(aree) {
     return String(aree == null ? '' : aree).match(/[A-Za-z]+/g) || [];
+  }
+
+  /** Le celle RIGA PER RIGA: `'"A C" "B D"'` → `[['A','C'],['B','D']]`. È la
+   *  lettura che serve da quando la griglia non è più per forza 2×2 — il numero
+   *  di colonne è la lunghezza di una riga, e quello delle righe è quante sono.
+   *  ⚠️ Sempre derivata dalle aree, mai dichiarata a parte: due numeri scritti
+   *  accanto alla stringa sarebbero due numeri da tenere d'accordo con lei. */
+  function righeDi(aree) {
+    var m = String(aree == null ? '' : aree).match(/"[^"]*"/g);
+    if (!m) return [];
+    return m.map(function (r) { return r.match(/[A-Za-z]+/g) || []; });
+  }
+  /** Quante colonne e quante righe ha una forma. Forma ignota → 1×1. */
+  function griglia(forma) {
+    var r = righeDi(FORME[forma] ? FORME[forma].aree : '');
+    return { colonne: r.length ? r[0].length : 1, righe: r.length || 1 };
   }
 
   /** I blocchi che una stringa di aree usa davvero, in ordine canonico.
@@ -102,15 +128,29 @@
    *     di sbagliare è la diagonale (`"A C" "C A"`), e il CSS la rifiuta.
    */
   function guastoNelleAree(aree) {
-    var c = celleDi(aree);
-    if (c.length !== 4) return 'servono quattro celle, ce ne sono ' + c.length;
-    var fuori = c.filter(function (n) { return BLOCCHI.indexOf(n) < 0; });
+    var r = righeDi(aree);
+    if (!r.length) return 'non c\'è nessuna riga';
+    if (r.length > 3) return 'le righe sono ' + r.length + ', il massimo è tre';
+    var colonne = r[0].length;
+    if (!colonne || colonne > 3) return 'le colonne sono ' + colonne + ', devono essere da una a tre';
+    for (var i = 1; i < r.length; i++) {
+      if (r[i].length !== colonne) return 'la riga ' + (i + 1) + ' ha ' + r[i].length + ' celle invece di ' + colonne;
+    }
+    var celle = [].concat.apply([], r);
+    var fuori = celle.filter(function (n) { return BLOCCHI.indexOf(n) < 0; });
     if (fuori.length) return 'nomi non previsti: ' + fuori.join(', ');
-    var storti = blocchiNelleAree(aree).filter(function (b) {
-      var righe = [], colonne = [];
-      c.forEach(function (n, i) { if (n === b) { righe.push(i >> 1); colonne.push(i & 1); } });
+    /* ⚠️ Ogni nome deve coprire un RETTANGOLO pieno. In una griglia 2×2 l'unico
+       modo di sbagliare era la diagonale; in una 3×3 ce ne sono molti di più —
+       una L, una croce, un blocco con un buco in mezzo — e il CSS scarta la
+       regola INTERA senza dire niente: la griglia si impagina a caso e il
+       guasto si scopre a occhio, mesi dopo. */
+    var storti = BLOCCHI.filter(function (b) { return celle.indexOf(b) >= 0; }).filter(function (b) {
+      var righe = [], colonneB = [];
+      r.forEach(function (riga, y) {
+        riga.forEach(function (n, x) { if (n === b) { righe.push(y); colonneB.push(x); } });
+      });
       var alto = Math.max.apply(null, righe) - Math.min.apply(null, righe) + 1;
-      var largo = Math.max.apply(null, colonne) - Math.min.apply(null, colonne) + 1;
+      var largo = Math.max.apply(null, colonneB) - Math.min.apply(null, colonneB) + 1;
       return alto * largo !== righe.length;      // il riquadro che le contiene ha buchi
     });
     return storti.length ? 'non è un rettangolo: ' + storti.join(', ') : '';
@@ -135,6 +175,43 @@
     if (guasto) throw new Error('banco/forme: la forma «' + k + '» ha aree impossibili — ' + guasto);
   });
 
+  /* ------------------------------------------------- le forme dell'utente */
+
+  /**
+   * Registra una forma PERSONALE. `''` se è entrata, altrimenti il guasto.
+   *
+   * Le forme dell'utente vivono nel `localStorage` del renderer (sono una
+   * preferenza dello schermo che si ha davanti, come le disposizioni) e vengono
+   * ripresentate qui a ogni avvio: la tabella resta l'unico posto che sa quali
+   * forme esistono, e tutto il resto del modulo — divisori, contese, griglia —
+   * le tratta come le altre senza una riga in più.
+   *
+   * ⚠️ Le chiavi personali hanno un prefisso obbligato (`mia-`): una forma
+   * dell'utente che si chiamasse `quattro` COPRIREBBE quella di fabbrica, e le
+   * disposizioni salvate cambierebbero significato in silenzio.
+   */
+  function registraForma(chiave, nome, aree) {
+    var k = String(chiave == null ? '' : chiave);
+    if (!/^mia-[a-z0-9-]{1,30}$/.test(k)) return 'la chiave di una forma personale comincia con «mia-»';
+    var guasto = guastoNelleAree(aree);
+    if (guasto) return guasto;
+    FORME[k] = { nome: String(nome == null ? '' : nome).trim() || 'Forma personale',
+                 aree: String(aree),
+                 quanti: blocchiNelleAree(aree).length,
+                 personale: true };
+    if (CHIAVI.indexOf(k) < 0) CHIAVI.push(k);
+    return '';
+  }
+  /** Toglie una forma personale. Quelle di fabbrica non si toccano. */
+  function dimenticaForma(chiave) {
+    var k = String(chiave == null ? '' : chiave);
+    if (!FORME[k] || !FORME[k].personale) return false;
+    delete FORME[k];
+    var i = CHIAVI.indexOf(k);
+    if (i >= 0) CHIAVI.splice(i, 1);
+    return true;
+  }
+
   /* ------------------------------------------------------------- le domande */
 
   /** I blocchi che una forma usa, in ordine canonico. Forma sconosciuta → `[]`.
@@ -158,14 +235,39 @@
    *  tabella riscritta una seconda volta, e «due-riga» ci finirebbe dentro il
    *  giorno in cui qualcuno lo compila a memoria. */
   function usaDivisoreColonna(forma) {
-    var c = celleDiForma(forma);
-    return c.length === 4 && (c[0] !== c[1] || c[2] !== c[3]);
+    return divisoriDi(forma).col.length > 0;
   }
 
   /** C'è il divisore ORIZZONTALE? Sì se almeno una colonna è spezzata. */
   function usaDivisoreRiga(forma) {
-    var c = celleDiForma(forma);
-    return c.length === 4 && (c[0] !== c[2] || c[1] !== c[3]);
+    return divisoriDi(forma).riga.length > 0;
+  }
+
+  /**
+   * QUALI divisori servono a una forma: `{ col:[0], riga:[0,1] }`, cioè gli
+   * indici delle fessure che separano davvero due blocchi.
+   *
+   * ⚠️ Una fessura fra due colonne che in OGNI riga hanno lo stesso nome non è
+   * un divisore: non separa niente, e trascinarla sposterebbe un confine che
+   * non si vede. In una 2×2 il caso era uno solo; in una 3×3 capita di continuo
+   * — «tre colonne, la prima divisa» ha una fessura vera e una finta.
+   */
+  function divisoriDi(forma) {
+    var r = righeDi(FORME[forma] ? FORME[forma].aree : '');
+    var out = { col: [], riga: [] };
+    if (!r.length) return out;
+    var colonne = r[0].length;
+    for (var x = 0; x + 1 < colonne; x++) {
+      for (var y = 0; y < r.length; y++) {
+        if (r[y][x] !== r[y][x + 1]) { out.col.push(x); break; }
+      }
+    }
+    for (var y2 = 0; y2 + 1 < r.length; y2++) {
+      for (var x2 = 0; x2 < colonne; x2++) {
+        if (r[y2][x2] !== r[y2 + 1][x2]) { out.riga.push(y2); break; }
+      }
+    }
+    return out;
   }
 
   /* --------------------------------------------------------------- lo stato */
@@ -198,6 +300,23 @@
   function frazione(v) {
     if (typeof v !== 'number' || !isFinite(v)) return MEZZO;
     return Math.min(MASSIMO, Math.max(MINIMO, v));
+  }
+
+  /**
+   * La SECONDA frazione di un asse: dove sta il secondo divisore, quando le
+   * colonne (o le righe) sono tre.
+   *
+   * ⚠️ Deve stare DOPO la prima, e non a ridosso: due divisori sovrapposti sono
+   * un blocco largo zero, cioè un blocco che non si riafferra più. Se il valore
+   * manca o non è un numero, il ripiego divide a metà lo spazio che resta —
+   * con la prima a un terzo, la seconda cade a due terzi, che è la griglia
+   * simmetrica che chiunque si aspetta.
+   */
+  function frazioneDopo(prima, v) {
+    var p = frazione(prima);
+    var ripiego = p + (1 - p) / 2;
+    var n = (typeof v === 'number' && isFinite(v)) ? v : ripiego;
+    return Math.min(MASSIMO, Math.max(p + MINIMO, n));
   }
 
   /** L'id di uno strumento, o `''` se in quel blocco non c'è niente.
@@ -264,10 +383,27 @@
   function normalizzaStato(s) {
     var v = (s && typeof s === 'object') ? s : {};
     var forma = FORME[v.forma] ? v.forma : DI_FABBRICA;
+    var g = griglia(forma);
+    /* ⚠️ La prima frazione ha DUE valori di fabbrica: metà con due colonne, un
+       terzo con tre. Un banco a tre colonne che si apre con la prima a metà è
+       una colonna doppia delle altre senza che nessuno l'abbia chiesto. Il
+       valore SALVATO invece si rispetta sempre: è una scelta. */
+    /* ⚠️ Le griglie a DUE e a TRE colonne ricordano tarature SEPARATE. Una
+       frazione scelta con due colonne (0,62 per leggere largo) non significa
+       niente su tre — misurato: passando a tre colonne la prima usciva doppia
+       delle altre — e viceversa. Quattro campi in più nello stato costano una
+       riga di JSON; una taratura che cambia significato cambiando forma costa
+       un banco storto ogni volta. */
+    var col3 = (typeof v.col3 === 'number' && isFinite(v.col3)) ? frazione(v.col3) : frazione(1 / 3);
+    var riga3 = (typeof v.riga3 === 'number' && isFinite(v.riga3)) ? frazione(v.riga3) : frazione(1 / 3);
+    var col3b = (typeof v.col3b === 'number' && isFinite(v.col3b)) ? frazioneDopo(col3, v.col3b) : frazioneDopo(col3, 2 / 3);
+    var riga3b = (typeof v.riga3b === 'number' && isFinite(v.riga3b)) ? frazioneDopo(riga3, v.riga3b) : frazioneDopo(riga3, 2 / 3);
     return {
       forma: forma,
       col: frazione(v.col),
       riga: frazione(v.riga),
+      col3: col3, col3b: col3b,
+      riga3: riga3, riga3b: riga3b,
       blocchi: blocchiSenzaDoppioni(v.blocchi, forma)
     };
   }
@@ -362,10 +498,11 @@
 
   return {
     FORME: FORME, CHIAVI: CHIAVI, BLOCCHI: BLOCCHI, DI_FABBRICA: DI_FABBRICA,
-    blocchiDi: blocchiDi, visibile: visibile,
-    usaDivisoreColonna: usaDivisoreColonna, usaDivisoreRiga: usaDivisoreRiga,
-    guastoNelleAree: guastoNelleAree, frazione: frazione,
+    blocchiDi: blocchiDi, visibile: visibile, righeDi: righeDi, griglia: griglia,
+    usaDivisoreColonna: usaDivisoreColonna, usaDivisoreRiga: usaDivisoreRiga, divisoriDi: divisoriDi,
+    guastoNelleAree: guastoNelleAree, frazione: frazione, frazioneDopo: frazioneDopo,
     normalizzaStato: normalizzaStato, bloccoCon: bloccoCon,
+    registraForma: registraForma, dimenticaForma: dimenticaForma,
     assegna: assegna, cambiaForma: cambiaForma
   };
 }));

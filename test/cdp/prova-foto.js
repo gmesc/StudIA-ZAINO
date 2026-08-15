@@ -173,9 +173,11 @@ const FABBRICA = `
   sezione('⚠️ Un file che non entra dice che cosa entra DOVE SI È');
   /* Prima rispondeva «qui si rilascia una lezione .json» anche dentro uno
      zaino, dove le lezioni non si rilasciano affatto: un rifiuto che manda a
-     cercare una porta che in quella modalità non esiste. */
+     cercare una porta che in quella modalità non esiste.
+     ⚠️ Il file della prova è un `.xyz`, non più un `.txt`: da F1-bis i testi
+     ENTRANO, come appunti — e infatti qui sotto si misura anche quello. */
   await val(`(async()=>{ const f=window.__foto;
-    const files=[ f.file(f.testo('due righe'), 'appunti.txt') ];
+    const files=[ f.file(f.testo('due righe'), 'strano.xyz') ];
     /* ⚠️ Si passa dal gestore della caduta, non da fotoTrascinate: il messaggio
        che si vuole misurare lo scrive lui, quando nessuno vuole quel file.
        ⚠️⚠️ E niente apici inversi in questo commento: sta dentro un template
@@ -186,9 +188,20 @@ const FABBRICA = `
   await pausa(800);
   const rifiuto = await val("(()=>{ const t=document.getElementById('toast'); return t?t.textContent:''; })()");
   console.log('   ' + JSON.stringify(rifiuto));
-  ok('il rifiuto nomina il file', true, /appunti\.txt/.test(rifiuto));
+  ok('il rifiuto nomina il file', true, /strano\.xyz/.test(rifiuto));
   ok('e dice che cosa entra in uno zaino', true, /pdf/i.test(rifiuto) && /immagini/i.test(rifiuto));
   ok('senza parlare di lezioni, che qui non si rilasciano', false, /lezione/i.test(rifiuto));
+
+  /* E un .txt invece ENTRA: diventa un appunto (F1-bis). */
+  const notePrima = await val(`(window.vault.notes.leggi(${JSON.stringify(corso)}).notes||[]).length`);
+  await val(`(async()=>{ const f=window.__foto;
+    await new Promise(r=>setTimeout(r,100));
+    const dt=new DataTransfer(); dt.items.add(f.file(f.testo('una lista'), 'lista della spesa.txt'));
+    window.dispatchEvent(new DragEvent('drop', { dataTransfer:dt, bubbles:true, cancelable:true }));
+    return 1; })()`);
+  const noteDopo = await finoA(`(()=>{ const n=(window.vault.notes.leggi(${JSON.stringify(corso)}).notes||[]).length;
+    return n>${notePrima} ? n : null; })()`, 15000);
+  ok('un .txt invece entra: è diventato un appunto', notePrima + 1, noteDopo);
 
   sezione('Una foto non ha una fonte a cui tornare, e il menu lo dichiara');
   const id = (voci || [])[0].id;
