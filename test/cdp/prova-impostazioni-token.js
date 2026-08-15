@@ -84,6 +84,36 @@ const RILEVA = `(()=>{
     `(()=>{const r=[...document.querySelectorAll('#settingsModal .setrow')].filter(x=>x.offsetParent&&x.querySelector('.tbtn'));
       return r.length>0 && r.every(x=>getComputedStyle(x).backgroundColor!=='rgba(0, 0, 0, 0)');})()`));
 
+  /* La TESTATA del modale è una barra come le altre: stesso fondo, stessa
+     altezza, stessa linea sotto, e i suoi due comandi (🧙 ✕) sono `.tbtn`
+     attaccati a destra invece di due `.iconbtn` incorniciati. */
+  const testa = await val(`(()=>{
+    const h=document.querySelector('#settingsModal .media-head');
+    const s=getComputedStyle(h);
+    const b=[...h.querySelectorAll('button')];
+    return { alta:Math.round(h.getBoundingClientRect().height),
+             fondo:s.backgroundColor, linea:s.borderBottomWidth,
+             fuoriToken:b.filter(x=>!x.classList.contains('tbtn')).map(x=>x.id),
+             altezze:[...new Set(b.map(x=>Math.round(x.getBoundingClientRect().height)))],
+             pannello:getComputedStyle(document.querySelector('#settingsModal .media-card')).backgroundColor };
+  })()`);
+  /* ⚠️ Non si confronta con 40px: l'altezza di una barra non è quella dei suoi
+     bottoni — ci sono il rientro verticale e la linea sotto. Il metro è una
+     barra VERA costruita al momento con le stesse classi: se la testata è
+     davvero «quella barra», le due misure coincidono. */
+  const metro = await val(`(()=>{
+    const d=document.createElement('div'); d.className='tbar tbar-ctl';
+    d.style.cssText='position:absolute;left:-9999px;top:0;width:400px';
+    d.innerHTML='<b>x</b><span class="tbspazio"></span><button class="tbtn">y</button>';
+    document.body.appendChild(d);
+    const h=Math.round(d.getBoundingClientRect().height); d.remove(); return h;
+  })()`);
+  ok('la testata è alta esattamente quanto una `.tbar.tbar-ctl` vera', metro, testa.alta);
+  ok('i comandi della testata sono bottoni di barra', [], testa.fuoriToken);
+  ok('…e alti come la barra li vuole', [parseInt(per.ai.ctl, 10)], testa.altezze);
+  ok('la testata ha la linea sotto della barra', '1px', testa.linea);
+  ok('…e il fondo della barra', testa.pannello, testa.fondo);
+
   console.log(ko ? '\n' + ko + ' controlli falliti' : '\n✓ tutti i controlli passati');
   process.exit(ko ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });
