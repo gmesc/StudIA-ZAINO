@@ -14,12 +14,15 @@
 
 | ramo | commit | suite |
 |---|---|---|
-| `main` | `2d5af8e` (15 ago, dopo il merge delle foto) | ✅ 33 unità · 41 CDP |
-| `lavori-fotografie-banco` | `f11e051` — **aperto**, gesti da provare | ✅ 34 unità · 43 CDP, meno la nota qui sotto |
+| `main` | `5dc51b6` (15 ago sera, dopo il merge dei tre lavori) | ✅ **34** unità · **43** CDP, meno la nota qui sotto |
+
+**Non c'è nessun ramo aperto.** `lavori-fotografie-banco` (F1-bis · B1 · Confronto) è entrato in
+`main` in fast-forward dopo che i gesti erano stati provati a mano — e da quelle prove sono usciti
+due difetti veri, il pittore che restava in overlay e la barra del Confronto fuori dal token, tutti
+e due rimediati prima del merge.
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
-git switch lavori-fotografie-banco        # ⚠️ l'albero può essere su main
 npm test
 STUDIA_PORTA=9334 ./test/cdp/con-vault-di-prova.sh
 ```
@@ -62,7 +65,7 @@ eliminarla). I blocchi diventano nove (A–I), le otto forme del piano non cambi
   ricaricano all'avvio PRIMA che il banco rilegga lo stato.
 - Prove: sezione banco di `test/roundtrip.js` riscritta (930 ok) + `prova-banco-griglia.js`.
 
-### Il Confronto — due fonti fianco a fianco (`f11e051`)
+### Il Confronto — due fonti fianco a fianco (`f11e051`, rifinito in `5dc51b6`)
 Strumento nuovo «Confronto» (`fonte2`), famiglia fonte, tutte le modalità: un secondo visualizzatore
 pdf.js **tutto suo** — documento, pagina, zoom e memoria separati. La porta è il suo «Documenti ▾»;
 i rimandi dei capitoli restano della Fonte.
@@ -82,7 +85,17 @@ i rimandi dei capitoli restano della Fonte.
 
 ---
 
-## 3. I gesti da provare a mano (per unire il ramo)
+## 3. I gesti provati a mano ✅ *il 15 agosto sera*
+
+Provati tutti da Giacomo: funzionano. Da lì sono usciti due difetti, tutti e due la STESSA forma di
+guasto — un elenco che sembrava dire «tutto» e diceva «questi»:
+
+⚠️ **il pittore restava in overlay** dopo il salvataggio, perché `closePops()` chiude i pannellini
+scritti nel suo elenco e `#pittorePop` non c'era (la trappola del `PROVE=(` in salsa DOM);
+⚠️ **la barra del Confronto aveva i caratteri di fabbrica**, perché le regole della `.pdfbar` erano
+ancorate a `#pdfPane` — ora `:is(#pdfPane, #pdfPane2)`, come il guscio CSS di pdf.js.
+
+La lista, per quando servirà rifarla:
 
 **Testi (F1-bis)**
 1. Trascina in uno zaino un `.md` con frontmatter di Obsidian: diventa un appunto col titolo
