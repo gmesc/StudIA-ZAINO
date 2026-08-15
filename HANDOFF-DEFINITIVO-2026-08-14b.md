@@ -16,8 +16,8 @@
 
 | ramo | commit | suite |
 |---|---|---|
-| `main` | `9570480` (14 ago sera) | ✅ 29 file di unità · 36 prove CDP |
-| `foto-album` | `da9a521` — **aperto**, gesti da provare | ✅ **31** file di unità · **37** prove CDP |
+| `main` | `0143b28` (15 ago, dopo il merge di `menu-impostazioni`) | crediti, Atlante, token |
+| `foto-album` | `2011657` — **aperto**, gesti da provare, **già rifondato su `main`** | ✅ **33** file di unità · **41** prove CDP |
 
 **Un ramo aperto: `foto-album`** (F1, le foto). I gesti a mano sono al §4-bis; finché non sono
 provati non si unisce. `fonte-zoom-adatta` è entrato in `main` in **fast-forward** — `main`
@@ -26,9 +26,25 @@ suite: niente da rieseguire. Il ramo è stato cancellato con `-d`; la sua punta 
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
-npm test                                              # 31 file sul ramo, exit 0
-STUDIA_PORTA=9334 ./test/cdp/con-vault-di-prova.sh    # 37 prove sull'app viva
+git switch foto-album                                 # ⚠️ l'albero può essere su main
+npm test                                              # 33 file, exit 0
+STUDIA_PORTA=9334 ./test/cdp/con-vault-di-prova.sh    # 41 prove sull'app viva
 ```
+
+⚠️ **UNA SESSIONE PARALLELA HA MOSSO `main`** mentre questo ramo era aperto: dieci commit —
+crediti e licenze, l'Atlante delle opzioni, la tokenizzazione dei bottoni — che toccano gli stessi
+quattro file (`App/StudIA.html`, `package.json`, `preload.js`, il runner delle prove). Il ramo è
+stato **rifondato** su `main` il 15 agosto, i due conflitti risolti erano due ELENCHI (la catena di
+`npm test` e `PROVE=(`), e **le due suite sono state rieseguite sul codice unito**, che non era mai
+girato prima.
+
+⚠️ E il sintomo che ha fatto scoprire tutto: l'app avviata mostrava «Album» invece di «Ritagli» e
+il vecchio messaggio di rifiuto, perché **l'albero di lavoro era tornato su `main`**. Prima di dare
+la colpa al codice, guardare su quale ramo si sta.
+
+⚠️ Trovato durante il rebase: **`test/atlante.js` non era nella catena di `npm test`** — la prova
+esisteva e non girava mai. È la stessa trappola del `PROVE=(`, in salsa `npm`: una prova nuova va
+DENTRO l'elenco, o dice «verde» senza essere mai stata eseguita. Aggiunta (passa).
 
 Le quattro condizioni del §7.2 della guida erano tutte vere al momento del merge: (a) le due suite
 verdi; (b) i gesti provati a mano da Giacomo (§4, e da lì è uscito un difetto vero); (c)
