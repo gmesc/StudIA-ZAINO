@@ -1264,6 +1264,34 @@
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .alcard .alfonte{ font-size:10px; color:var(--muted); padding:0 .4rem .35rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .alvuoto{ grid-column:1/-1; font-size:12px; color:var(--muted); padding:1rem .4rem; line-height:1.5; }
+  /* ===== Il visualizzatore delle immagini =====
+     La seconda faccia dello stesso riquadro, non un blocco in più del banco:
+     l'Album Foto o mostra la griglia o mostra un'immagine, mai tutt'e due — come
+     la mappa, che ha il registro «generata» e «mie» nello stesso posto. Così lo
+     zoom eredita gratis il riquadro che cambia misura, e nessuno deve fare spazio
+     a un nono strumento. */
+  #fotoPane{ display:none; flex-direction:column; height:100%; min-height:0; background:var(--panel); }
+  .bcorpo > #fotoPane{ display:flex!important; height:100%; }
+  #fotoVista{ flex:1 1 auto; min-height:0; position:relative; background:var(--hover); }
+  #fotoVista[hidden]{ display:none; }
+  /* Il riquadro che scorre: l'immagine dentro è larga quanto la scala dice, e
+     quando sfora si scorre. `place-items:center` la tiene in mezzo finché ci sta,
+     che è come ci si aspetta di vedere una foto piccola in un riquadro grande. */
+  /* ⚠️ `scrollbar-gutter:stable` non è un vezzo: adattando l'immagine alla
+     larghezza, la barra verticale compare, si porta via quindici pixel, la
+     larghezza utile cambia e la scala andrebbe rifatta — e rifacendola la barra
+     sparisce. Misurato: immagine 694px dentro un riquadro da 679. Riservare il
+     posto alla barra rompe l'anello all'origine, invece di inseguirlo con
+     un'isteresi. */
+  #fotoHost{ position:absolute; inset:0; overflow:auto; scrollbar-gutter:stable;
+    display:grid; place-items:center; outline:0; }
+  #fotoImg{ display:block; max-width:none; image-orientation:from-image; user-select:none; -webkit-user-drag:none; }
+  #fotoHost.ritaglio{ cursor:crosshair; }
+  #fotoPane .fotobar strong{ font-size:11px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.08em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+  #fotoPane .fotobar #fotoZoomLvl{ width:auto; padding:0 .4rem; font-size:11px; font-weight:700;
+    font-variant-numeric:tabular-nums; min-width:calc(5.5ch + .8rem); }
+  #fotoPane .fotobar #fotoRitaglia[aria-pressed="true"]{ background:var(--teal-strong,#0d9488); color:#fff; }
   /* Il rettangolo che si trascina sopra il documento. `mix-blend-mode` invece di
      un fondo semitrasparente: sopra una pagina bianca un velo grigio si vede
      appena, e chi ritaglia deve vedere ESATTAMENTE che cosa sta prendendo. */
@@ -5226,6 +5254,12 @@ function pdfZoomRiadatta(){
 }
 (function(){
   if(typeof ResizeObserver!=='function') return;
+  /* ⚠️ Questo blocco gira PRIMA del markup: l'inline sta in cima al corpo e i
+     riquadri sono in fondo. Cercare l'elemento adesso vuol dire trovarlo
+     `null` e non accorgersene — l'osservatore non nasce, il riadattamento non
+     succede, e nessuno solleva niente. Si aspetta il documento, come già fanno
+     il player e la voce del TTS. */
+  function attacca(){
   var el=document.getElementById('pdfFrame'); if(!el) return;
   var atteso=0;
   /* Le rotellate dell'osservatore arrivano a raffica mentre si trascina il
@@ -5236,6 +5270,8 @@ function pdfZoomRiadatta(){
     if(atteso) return;
     atteso=requestAnimationFrame(function(){ atteso=0; pdfZoomRiadatta(); });
   }).observe(el);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', attacca); else attacca();
 })();
 
 /* ---- SHIFT + rotella: si ingrandisce SOTTO IL PUNTATORE ------------------
@@ -5409,7 +5445,7 @@ function albumForbici(){ return ALBUM.attivo || ALBUM.mod; }
  */
 function albumVestito(){
   var forbici=albumForbici();
-  [['#pdfHost','#pdfRitaglia'], ['#plHost','#plRitaglia']].forEach(function(coppia){
+  [['#pdfHost','#pdfRitaglia'], ['#plHost','#plRitaglia'], ['#fotoHost','#fotoRitaglia']].forEach(function(coppia){
     var h=$(coppia[0]), b=$(coppia[1]);
     if(h) h.classList.toggle('ritaglio', forbici);
     if(b) b.setAttribute('aria-pressed', ALBUM.attivo?'true':'false');
@@ -5448,11 +5484,13 @@ function albumModificatore(on){
      gesto vale com'era quando è cominciato. Mollare un modificatore a metà è un
      incidente frequente, e perdere il ritaglio per quello sarebbe una punizione. */
 }
-/** C'è qualcosa da ritagliare? Un documento aperto o un media nel player. */
+/** C'è qualcosa da ritagliare? Un documento aperto, un media nel player, o
+ *  un'immagine aperta nel visualizzatore. */
 function albumRitagliabile(){
   var conDoc = (typeof ANTEPRIMA!=='undefined') && ANTEPRIMA.tipo==='pdf' && PDFJS.pronto && !!PDFJS.doc;
   var conVideo = (typeof playerAperto==='function') && playerAperto();
-  return conDoc || conVideo;
+  var conFoto = (typeof fotoVistaAperta==='function') && fotoVistaAperta();
+  return conDoc || conVideo || conFoto;
 }
 function albumRettTogli(){ if(ALBUM.rett){ ALBUM.rett.remove(); ALBUM.rett=null; } ALBUM.giu=null; }
 
@@ -5537,6 +5575,39 @@ function albumChiudiGesto(x2, y2){
   var g=ALBUM.giu; albumRettTogli();
   if(!g) return;
   if(Math.abs(x2-g.x)<8 || Math.abs(y2-g.y)<8) return;   // un tocco non è un ritaglio
+
+  if(g.tipo==='foto'){
+    /* ⚠️ Le coordinate sono i PIXEL VERI DELL'IMMAGINE, non dello schermo: la
+       stessa regola della pagina e del fotogramma. A un altro zoom gli stessi
+       pixel di schermo indicherebbero un altro punto della foto, e il ritaglio
+       serve proprio a poter tornare là. */
+    var im=g.el, bb=im.getBoundingClientRect();
+    var k=bb.width>0 ? im.naturalWidth/bb.width : 1;
+    var rf={ x:Math.round((Math.min(g.x,x2)-bb.left)*k), y:Math.round((Math.min(g.y,y2)-bb.top)*k),
+             w:Math.round(Math.abs(x2-g.x)*k), h:Math.round(Math.abs(y2-g.y)*k) };
+    /* Fuori dall'immagine non si ritaglia: il rettangolo si stringe ai suoi
+       bordi, e se non ne resta niente il gesto non era sopra la foto. */
+    rf.x=Math.max(0, Math.min(rf.x, im.naturalWidth-1));
+    rf.y=Math.max(0, Math.min(rf.y, im.naturalHeight-1));
+    rf.w=Math.min(rf.w, im.naturalWidth-rf.x);
+    rf.h=Math.min(rf.h, im.naturalHeight-rf.y);
+    if(rf.w<4 || rf.h<4) return;
+    var ritagliata;
+    try{ ritagliata=albumRendiFoto(im, rf); }
+    catch(err){ toast('Ritaglio non riuscito: '+((err&&err.message)||err), false); return; }
+    /* `materiale` è il nome del file da cui la foto è entrata — quello che si
+       legge sulla card — e `da` è l'IDENTITÀ della foto: è quella che riporta
+       all'originale, perché il nome può ripetersi. */
+    var rf2=window.vault.album.salva(corsoAttivo(), {
+      materiale:g.voce.materiale, da:g.voce.id, rect:rf, didascalia:'',
+      dati:ritagliata.dati, w:ritagliata.w, h:ritagliata.h
+    });
+    if(rf2.error){ toast('Ritaglio non salvato: '+rf2.error, false); return; }
+    albumAggiorna();
+    toast(rf2.giaCera ? 'Quest’area era già nei Ritagli' : 'Ritaglio salvato nei Ritagli', true);
+    albumBolla(rf2.voce, x2, y2);
+    return;
+  }
 
   if(g.tipo==='video'){
     var a1=albumVideoPunto(g.g, Math.min(g.x,x2), Math.min(g.y,y2));
@@ -5679,6 +5750,200 @@ function albumDisegnaVista(quale){
     '</div>';
   }).join('');
 }
+/* ===== IL VISUALIZZATORE DELLE IMMAGINI ===================================
+ *
+ * La seconda faccia dell'Album Foto: o la griglia, o un'immagine sola. Non è un
+ * blocco in più del banco — è lo stesso riquadro che cambia contenuto, come la
+ * mappa fa coi suoi due registri. Da qui discendono due cose gratis: lo zoom
+ * dinamico eredita il riquadro che cambia misura (il divisore del banco), e le
+ * forbici sono le stesse del documento, con la stessa `albumForbici()`.
+ *
+ * ⚠️ La grammatica dello zoom è QUELLA DELLE FONTI, non una seconda: `⟷`
+ * larghezza · `⤢` pagina intera · `NNN%` a mano, ciclo col click, «+»/«−» e
+ * ⇧+rotella che portano alla percentuale. Due riquadri che si guardano allo
+ * stesso modo con due grammatiche diverse sono due cose da imparare invece di
+ * una. L'aritmetica sta in `assets/fonti/zoom.js`, la stessa dei PDF.
+ *
+ * ⚠️ Qui però il conto della scala lo facciamo NOI (`FontiZoom.scalaPer`): sotto
+ * non c'è pdf.js, c'è un `<img>` dentro un riquadro che scorre. E per la stessa
+ * ragione torna a servire `puntoFisso`, che sui PDF fa `updateScale({origin})`.
+ */
+var FOTOV = {
+  /* L'immagine aperta (l'id della voce) o `''`. È l'unico stato che dice «si
+     sta guardando»: la griglia e la vista non sono due modi ricordati, sono due
+     facce di questo campo. */
+  aperta:'',
+  /* Il livello: `page-width` · `page-fit` · un numero, come le fonti. Si ricorda
+     su disco per la stessa ragione — chi ha ingrandito perché ci vede poco non
+     deve rifarlo a ogni immagine. */
+  CHIAVE:'studia.foto.zoom',
+  larghezza:0     // l'ultima misura su cui ci si è adattati (isteresi)
+};
+
+function fotoZoomSalvato(){
+  var v='';
+  try{ v=localStorage.getItem(FOTOV.CHIAVE)||''; }catch(e){ return 'page-width'; }
+  return FontiZoom.valido(v);
+}
+function fotoZoomRicorda(v){ try{ localStorage.setItem(FOTOV.CHIAVE, String(v)); }catch(e){} }
+
+/** La voce dell'immagine aperta, o `null`. */
+function fotoVoceAperta(){ return FOTOV.aperta ? albumVoce(FOTOV.aperta) : null; }
+/** Si sta guardando un'immagine? */
+function fotoVistaAperta(){ return !!FOTOV.aperta; }
+
+/**
+ * Apre un'immagine nel riquadro.
+ *
+ * ⚠️ Si mostra l'immagine VERA, non la miniatura: quella è un francobollo da
+ * 480px, e ingrandirla darebbe un mosaico proprio nel momento in cui si vuole
+ * guardare da vicino. La miniatura serve alla griglia, non a chi guarda.
+ */
+function fotoApri(id){
+  var v=albumVoce(id); if(!v){ toast('Immagine non trovata', false); return; }
+  try{ bancoMostra('foto'); }catch(e){}
+  FOTOV.aperta=v.id;
+  FOTOV.larghezza=0;
+  var img=$('#fotoImg');
+  if(img){
+    img.alt=v.didascalia||'immagine';
+    img.style.width='';                       // finché non si sa quanto è grande
+    img.src=window.vault.album.srcUrl(corsoAttivo(), v.id);
+  }
+  var t=$('#fotoTitolo'); if(t){ t.textContent=v.didascalia||v.file; t.title=v.didascalia||v.file; }
+  fotoFacce();
+}
+/** Torna alla griglia. Non si cambia strumento: si cambia faccia. */
+function fotoChiudiVista(){
+  FOTOV.aperta='';
+  var img=$('#fotoImg'); if(img){ img.removeAttribute('src'); img.style.width=''; }
+  /* Le forbici, se erano accese per l'immagine, non hanno più su che cosa
+     lavorare: si spengono da sé — la stessa regola del documento chiuso. */
+  try{ if(ALBUM.attivo && !albumRitagliabile()) albumRitaglioModo(false); albumModificatore(false); }catch(e){}
+  fotoFacce();
+  fotoAggiorna();
+}
+/** Quale delle due facce si vede. Un punto solo, o le due barre e i due
+ *  contenuti si contraddicono al primo ripensamento. */
+function fotoFacce(){
+  var aperta=fotoVistaAperta();
+  var b1=$('#fotoBarra'), b2=$('#fotoBarraVista'), lista=$('#fotoLista'), vista=$('#fotoVista');
+  if(b1) b1.hidden=aperta;
+  if(b2) b2.hidden=!aperta;
+  if(lista) lista.hidden=aperta;
+  if(vista) vista.hidden=!aperta;
+  try{ albumVestito(); }catch(e){}
+}
+
+/** Le misure vere dell'immagine aperta, e quelle del riquadro che la contiene. */
+function fotoMisure(){
+  var img=$('#fotoImg'), host=$('#fotoHost');
+  if(!img || !host || !img.naturalWidth) return null;
+  return { larghezza:img.naturalWidth, altezza:img.naturalHeight,
+           riquadroL:host.clientWidth, riquadroH:host.clientHeight };
+}
+/** La scala a schermo adesso: la larghezza disegnata diviso quella vera. */
+function fotoScala(){
+  var img=$('#fotoImg'); if(!img || !img.naturalWidth) return 1;
+  var w=img.getBoundingClientRect().width;
+  return w>0 ? w/img.naturalWidth : 1;
+}
+
+/**
+ * Applica il livello all'immagine. `k` opzionale = una scala già decisa (il
+ * gesto della rotella la calcola prima, per sapere di quanto scorrere).
+ */
+function fotoZoomApplica(){
+  var img=$('#fotoImg'), m=fotoMisure();
+  if(!img || !m) return;
+  var k=FontiZoom.scalaPer(fotoZoomSalvato(), m);
+  img.style.width=Math.max(1, Math.round(m.larghezza*k))+'px';
+  FOTOV.larghezza=m.riquadroL;
+  fotoZoomAggiorna();
+}
+/** Scrive nella barra il livello, con la stessa etichetta delle fonti. */
+function fotoZoomAggiorna(){
+  var lvl=$('#fotoZoomLvl'); if(!lvl) return;
+  var img=$('#fotoImg');
+  var pronta=!!(img && img.naturalWidth);
+  var e=FontiZoom.etichetta(fotoZoomSalvato(), fotoScala(), pronta);
+  lvl.textContent=e.testo; lvl.title=e.titolo;
+}
+/** «+» e «−»: un gesto a mano, che esce dall'adattamento dinamico. */
+function fotoZoomPasso(su){
+  if(!fotoVistaAperta()) return;
+  var n=FontiZoom.passo(fotoScala(), su);
+  if(n===null) return;
+  fotoZoomRicorda(n); fotoZoomApplica();
+}
+/** Il click sul livello cicla i due adattamenti, come sulle fonti. */
+function fotoZoomAdatta(){
+  if(!fotoVistaAperta()) return;
+  fotoZoomRicorda(FontiZoom.prossimoAdatta(fotoZoomSalvato()));
+  fotoZoomApplica();
+}
+/** L'adattamento è DINAMICO: cambia il riquadro, la scala lo segue. Stessa
+ *  isteresi delle fonti, contro il ping-pong della barra di scorrimento. */
+function fotoZoomRiadatta(){
+  if(!fotoVistaAperta()) return;
+  var host=$('#fotoHost'); if(!host) return;
+  if(!FontiZoom.daRiadattare(fotoZoomSalvato(), host.clientWidth, FOTOV.larghezza)) return;
+  fotoZoomApplica();
+}
+
+(function(){
+  /* ⚠️ Come per il documento: qui il markup non esiste ancora. Un
+     `getElementById` fatto adesso torna `null` in silenzio, e il visualizzatore
+     resterebbe senza il suo «l'immagine è pronta» e senza l'osservatore del
+     riquadro — cioè un'immagine che non si adatta mai, senza un errore da
+     nessuna parte. Misurato: la prima stesura mostrava la foto alla sua misura
+     vera dentro un riquadro largo il doppio. */
+  function attacca(){
+    var img=document.getElementById('fotoImg');
+    if(img){
+      /* La misura vera si sa solo a immagine caricata: prima, `naturalWidth` è 0
+         e qualunque conto darebbe zero. */
+      img.addEventListener('load', function(){ FOTOV.larghezza=0; fotoZoomApplica(); });
+      img.addEventListener('error', function(){
+        if(fotoVistaAperta()) toast('L\'immagine non si è potuta caricare', false);
+      });
+    }
+    if(typeof ResizeObserver!=='function') return;
+    var host=document.getElementById('fotoHost'); if(!host) return;
+    var atteso=0;
+    new ResizeObserver(function(){
+      if(atteso) return;
+      atteso=requestAnimationFrame(function(){ atteso=0; fotoZoomRiadatta(); });
+    }).observe(host);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', attacca); else attacca();
+  document.addEventListener('click', function(e){
+    if(!e.target.closest) return;
+    if(e.target.closest('#fotoIndietro')){ fotoChiudiVista(); return; }
+    if(e.target.closest('#fotoZoomIn')){ fotoZoomPasso(true); return; }
+    if(e.target.closest('#fotoZoomOut')){ fotoZoomPasso(false); return; }
+    if(e.target.closest('#fotoZoomLvl')){ fotoZoomAdatta(); return; }
+    if(e.target.closest('#fotoRitaglia')){ albumRitaglioModo(); return; }
+  });
+  /* ⇧+rotella: si ingrandisce sotto il puntatore. Qui il conto è nostro —
+     `puntoFisso` — perché sotto non c'è pdf.js a correggere lo scorrimento. */
+  document.addEventListener('wheel', function(e){
+    if(!e.shiftKey || !fotoVistaAperta()) return;
+    if(!e.target.closest || !e.target.closest('#fotoHost')) return;
+    var verso=FontiZoom.verso(e); if(!verso) return;
+    e.preventDefault();
+    var host=$('#fotoHost'), img=$('#fotoImg'); if(!host || !img) return;
+    var prima=fotoScala();
+    var n=FontiZoom.passo(prima, verso>0); if(n===null) return;
+    fotoZoomRicorda(n); fotoZoomApplica();
+    var dopo=fotoScala();
+    var r=host.getBoundingClientRect();
+    var p=FontiZoom.puntoFisso({ scrollLeft:host.scrollLeft, scrollTop:host.scrollTop,
+                                 px:e.clientX-r.left, py:e.clientY-r.top, k:dopo/prima });
+    host.scrollLeft=p.left; host.scrollTop=p.top;
+  }, {passive:false});
+})();
+
 /** Rilegge l'album dei ritagli e ridisegna la griglia. */
 function albumAggiorna(){ albumDisegnaVista('album'); }
 /** Lo stesso, per le immagini importate. */
@@ -5691,10 +5956,31 @@ function albumProvenienza(v){
   if(v.origine==='foto') return v.materiale;
   return v.materiale+' · '+albumPunto(v);
 }
+/**
+ * Ritaglia un'area dall'immagine aperta. `{ dati, w, h }`.
+ *
+ * ⚠️ Si disegna dai PIXEL VERI (`naturalWidth`), non da quelli a schermo: un
+ * ritaglio preso da un'immagine rimpicciolita sarebbe sgranato quanto lo zoom
+ * del momento — e cambierebbe qualità a seconda di come si stava guardando. È
+ * la stessa scelta già fatta per il documento, dove si ridisegna la pagina a
+ * risoluzione doppia invece di copiare la tela a schermo.
+ */
+function albumRendiFoto(im, rect){
+  var c=document.createElement('canvas');
+  c.width=Math.max(1, rect.w); c.height=Math.max(1, rect.h);
+  var g=c.getContext('2d');
+  g.drawImage(im, rect.x, rect.y, rect.w, rect.h, 0, 0, c.width, c.height);
+  /* PNG e non JPEG: un ritaglio è spesso uno schema o del testo, dove il JPEG
+     lascia gli aloni proprio sui bordi netti. È la stessa scelta dei ritagli
+     dal documento. */
+  return { dati:c.toDataURL('image/png'), w:c.width, h:c.height };
+}
+
 /** Il punto da cui viene un ritaglio, scritto come lo legge chi guarda. */
 function albumPunto(v){
   if(!v) return '';
   if(v.t!=null) return fmtTime(Math.floor(v.t));
+  if(v.da) return 'ritaglio';
   return 'p.'+v.pagina;
 }
 /** Una voce per id, in QUALUNQUE delle due viste: i menu, il trascinamento e i
@@ -5735,6 +6021,9 @@ function albumMenu(id, x, y){
   }
   var et=(v.didascalia||v.file).replace(/\s+/g,' ').trim();
   m.innerHTML='<div class="ctx-head">'+escHtml(et.length>34?et.slice(0,33)+'…':et)+'</div>'+
+    /* «Apri» in cima perché è quello che si vuole nove volte su dieci quando si
+       preme su un'immagine: guardarla grande. Da lì si ritaglia. */
+    it('apri','Apri l’immagine…', modoAttivo()==='zaino' ? '' : 'il visualizzatore vive negli zaini')+
     it('fonte','Alla fonte', v.origine==='foto' ? 'l’hai portata dentro tu'
                              : (v.materiale ? '' : 'non si sa da dove viene'))+
     it('appunti','Metti nell’appunto aperto', (NOTES.cur && NOTES.mde)? '' : 'nessun appunto aperto')+
@@ -5764,6 +6053,10 @@ function albumAzione(az, id){
   albumChiudiMenu();
   var corso=corsoAttivo(), v=albumVoce(id);
   if(!v && az!=='album'){ toast('Immagine non trovata nell’album', false); return; }
+  if(az==='apri'){
+    if(modoAttivo()!=='zaino'){ toast('Il visualizzatore delle immagini vive negli zaini', false); return; }
+    fotoApri(id); return;
+  }
   if(az==='album'){
     var dove=albumVistaDi(v);
     try{ bancoMostra(dove); }catch(e){}
@@ -5777,6 +6070,13 @@ function albumAzione(az, id){
        vorrebbe dire cercare un PDF che non esiste. La voce è spenta nel menu —
        qui c'è comunque la rete, perché un menu si può chiamare anche da altrove. */
     if(v.origine==='foto'){ toast('Questa immagine non viene da un documento: l’hai portata dentro tu', false); return; }
+    /* Un ritaglio preso da una FOTO torna alla foto, non a un documento: la sua
+       fonte è un'immagine dell'album, e la porta per rivederla è il
+       visualizzatore. */
+    if(v.da){
+      if(!albumVoce(v.da)){ toast('L’immagine da cui viene questo ritaglio non c’è più', false); return; }
+      fotoApri(v.da); return;
+    }
     /* Il punto ha due forme, e la porta per tornarci pure: un video si riapre al
        secondo, un documento alla pagina. */
     if(v.t!=null) openVideo(v.materiale, Math.floor(v.t), v.didascalia||v.materiale);
@@ -5878,6 +6178,9 @@ function albumElimina(corso, v){
     if(e.target.closest('#pdfFrame')){
       var p=albumPaginaSotto(e.clientX, e.clientY);
       if(p) giu={ tipo:'pdf', x:e.clientX, y:e.clientY, n:p.n, pv:p.pv };
+    } else if(e.target.closest('#fotoHost') && typeof fotoVistaAperta==='function' && fotoVistaAperta()){
+      var im=$('#fotoImg'), vv=fotoVoceAperta();
+      if(im && im.naturalWidth && vv) giu={ tipo:'foto', x:e.clientX, y:e.clientY, el:im, voce:vv };
     } else if(e.target.closest('#mediaVideo')){
       var vid=$('#mediaVideo'), g=albumVideoGeom(vid);
       if(g){
@@ -5985,6 +6288,16 @@ function albumElimina(corso, v){
     if(!card) return;
     e.preventDefault();
     albumMenu(card.getAttribute('data-id'), e.clientX, e.clientY);
+  });
+  /* Il doppio click apre l'immagine: è il gesto che chiunque prova per primo su
+     una griglia di provini, e chiama la stessa funzione della voce di menu —
+     due porte, un rito solo. */
+  document.addEventListener('dblclick', function(e){
+    var card=e.target.closest && e.target.closest(CARD_ALBUM);
+    if(!card || modoAttivo()!=='zaino') return;
+    e.preventDefault();
+    albumChiudiMenu();
+    fotoApri(card.getAttribute('data-id'));
   });
 
   /* ── TRASCINARE UN RITAGLIO ───────────────────────────────────────────────
@@ -8021,7 +8334,8 @@ function contenitoreMolla(){
     }
   }catch(e){ console.error('mappe/cambioContenitore:', e); }
   try{ MATERIALI.lista=null; }catch(e){}
-  try{ FOTOVISTA.voci=[]; FOTOVISTA.filtro=''; var fc=$('#fotoCerca'); if(fc) fc.value='';
+  try{ if(typeof fotoChiudiVista==='function' && fotoVistaAperta()) fotoChiudiVista();
+    FOTOVISTA.voci=[]; FOTOVISTA.filtro=''; var fc=$('#fotoCerca'); if(fc) fc.value='';
     ALBUMVISTA.voci=[]; ALBUMVISTA.filtro=''; var ac=$('#albCerca'); if(ac) ac.value='';
        if(typeof albumChiudiMenu==='function') albumChiudiMenu();
        if(typeof albumAggiorna==='function') albumAggiorna();
@@ -8430,7 +8744,8 @@ function cambiaCorso(id){
   try{ ripassoCarica().then(function(){ return ripassoPota(); }); }catch(e){}
   /* L'album è di un corso: quello di prima resterebbe a schermo con i suoi
      ritagli, e un click ci lavorerebbe sopra nel corso sbagliato. */
-  try{ FOTOVISTA.voci=[]; FOTOVISTA.filtro=''; var fc=$('#fotoCerca'); if(fc) fc.value='';
+  try{ if(typeof fotoChiudiVista==='function' && fotoVistaAperta()) fotoChiudiVista();
+    FOTOVISTA.voci=[]; FOTOVISTA.filtro=''; var fc=$('#fotoCerca'); if(fc) fc.value='';
     ALBUMVISTA.voci=[]; ALBUMVISTA.filtro=''; var ac=$('#albCerca'); if(ac) ac.value='';
        if(typeof albumChiudiMenu==='function') albumChiudiMenu();
        if(typeof albumAggiorna==='function') albumAggiorna();
@@ -12683,8 +12998,9 @@ function bancoDopoLayout(){
   catch(e){ console.error('banco/album:', e); }
   /* Stessa ragione per l'Album Foto: montarlo è un `appendChild`, e nessuno gli
      direbbe che adesso è a schermo e ha del contenuto da mostrare. */
-  try{ if(typeof fotoAggiorna==='function' && bancoVisibile('foto')) fotoAggiorna(); }
-  catch(e){ console.error('banco/foto:', e); }
+  try{ if(typeof fotoAggiorna==='function' && bancoVisibile('foto')){
+    if(fotoVistaAperta()) fotoZoomApplica(); else fotoAggiorna();
+  } }catch(e){ console.error('banco/foto:', e); }
   /* Il ripasso: stessa ragione degli altri due. In più la coda si costruisce
      chiedendo gli id al main, quindi è un giro asincrono che non ha senso fare
      finché lo strumento sta in magazzino. */
@@ -15893,11 +16209,33 @@ window.addEventListener('keydown', function(e){
      origine: qui le immagini non vengono da nessuna pagina, e infatti la card
      dice il nome del file invece del punto. -->
 <section id="fotoPane" aria-label="Album delle immagini">
-  <div class="tbar albar">
+  <div class="tbar albar" id="fotoBarra">
     <input id="fotoCerca" type="search" placeholder="Cerca fra le immagini…" aria-label="Cerca fra le immagini dell'album">
     <span id="fotoConto" class="albconto"></span>
   </div>
+  <!-- La barra dell'immagine aperta. È la barra della fonte con gli stessi
+       comandi e gli stessi segni (`⟷` `⤢` `NNN%`): due riquadri che si guardano
+       allo stesso modo non devono avere due grammatiche di zoom. -->
+  <div class="tbar albar fotobar" id="fotoBarraVista" hidden>
+    <button class="tbtn" id="fotoIndietro" type="button" title="Torna all'album" aria-label="Torna all'album">&#8249;</button>
+    <strong id="fotoTitolo">Immagine</strong>
+    <span class="tbspazio"></span>
+    <i class="tbsep" aria-hidden="true"></i>
+    <span class="pdfzoom" id="fotoZoom">
+      <button class="tbtn" id="fotoZoomOut" type="button" title="Riduci" aria-label="Riduci">&#8722;</button>
+      <!-- Niente `aria-label`: coprirebbe il testo visibile, che è il valore. -->
+      <button class="tbtn" id="fotoZoomLvl" type="button" title="Adattata alla larghezza — segue il riquadro; clicca per adattare alla pagina intera">&#10231;</button>
+      <button class="tbtn" id="fotoZoomIn" type="button" title="Ingrandisci" aria-label="Ingrandisci">+</button>
+    </span>
+    <i class="tbsep" aria-hidden="true"></i>
+    <button class="tbtn" id="fotoRitaglia" type="button" aria-pressed="false"
+            title="Ritaglia un'area dell'immagine — o tieni premuto &#8984; e trascina"
+            aria-label="Ritaglia un'area dell'immagine">&#9986;</button>
+  </div>
   <div id="fotoLista" class="alblista" role="list"></div>
+  <div id="fotoVista" hidden>
+    <div id="fotoHost" tabindex="0" aria-label="Immagine"><img id="fotoImg" alt=""></div>
+  </div>
 </section>
 <section id="keywordPane" aria-label="Parole chiave">
   <div class="tbar kwbar">

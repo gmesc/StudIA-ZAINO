@@ -76,9 +76,43 @@ ok('finché la scala non esiste non si inventa un numero', '—', Z.etichetta('1
 ok('ma il modo si mostra lo stesso', '⟷', Z.etichetta('page-width', 1, false).testo);
 ok('senza la percentuale nel suggerimento', false, /100%/.test(Z.etichetta('page-width', 1, false).titolo));
 
-/* Lo scorrimento che tiene il punto sotto il puntatore non si prova qui perché
-   non è nostro: lo fa `updateScale({origin})` di pdf.js, e sta nella prova
-   sull'app viva (`test/cdp/prova-pdf.js`). Nostro è di quanto ingrandire. */
+/* Sui PDF lo scorrimento che tiene il punto sotto il puntatore non è nostro —
+   lo fa `updateScale({origin})` di pdf.js, e sta nella prova sull'app viva. Con
+   le IMMAGINI invece sì: `puntoFisso`, qui sotto. */
+
+sezione('La scala che realizza un modo — per le immagini, dove non c\'è pdf.js');
+const GRANDE = { larghezza: 1000, altezza: 500, riquadroL: 600, riquadroH: 400 };
+ok('alla larghezza riempie il riquadro', 0.6, Z.scalaPer('page-width', GRANDE));
+ok('alla pagina ci sta tutta', 0.6, Z.scalaPer('page-fit', GRANDE));
+ok('e in verticale comanda l\'altezza', 0.4,
+  Z.scalaPer('page-fit', { larghezza: 500, altezza: 1000, riquadroL: 600, riquadroH: 400 }));
+/* ⚠️ Adattare alla pagina non vuol dire RIEMPIRLA: una foto da 100px sgranata a
+   tutto schermo non è adattata, è rovinata. */
+ok('un\'immagine più piccola del riquadro non si ingrandisce', 1,
+  Z.scalaPer('page-fit', { larghezza: 100, altezza: 50, riquadroL: 600, riquadroH: 400 }));
+/* «Alla larghezza» invece riempie, e può ingrandire: è un comando esplicito. */
+ok('«alla larghezza» invece riempie anche ingrandendo', 3,
+  Z.scalaPer('page-width', { larghezza: 200, altezza: 100, riquadroL: 600, riquadroH: 400 }));
+ok('ma senza sfondare il tetto', Z.MAX,
+  Z.scalaPer('page-width', { larghezza: 10, altezza: 10, riquadroL: 600, riquadroH: 400 }));
+ok('un numero resta quel numero', 1.5, Z.scalaPer('1.5', GRANDE));
+ok('un numero storto ripiega su 1', 1, Z.scalaPer('cane', GRANDE));
+ok('senza misure vere non si inventa niente', 1,
+  Z.scalaPer('page-width', { larghezza: 0, altezza: 0, riquadroL: 600, riquadroH: 400 }));
+
+sezione('Il punto sotto il puntatore resta dov\'era (senza pdf.js sotto)');
+/* Raddoppiando la scala, il pixel che stava sotto il mouse deve restare sotto il
+   mouse: tutto ciò che gli sta sopra raddoppia, meno la distanza dal bordo. */
+ok('raddoppiando', { left: 800, top: 400 },
+  Z.puntoFisso({ scrollLeft: 300, scrollTop: 100, px: 200, py: 200, k: 2 }));
+ok('dimezzando', { left: 50, top: 0 },
+  Z.puntoFisso({ scrollLeft: 300, scrollTop: 100, px: 200, py: 200, k: 0.5 }));
+ok('a scala ferma non si muove niente', { left: 300, top: 100 },
+  Z.puntoFisso({ scrollLeft: 300, scrollTop: 100, px: 200, py: 200, k: 1 }));
+ok('non si scorre mai in negativo', { left: 0, top: 0 },
+  Z.puntoFisso({ scrollLeft: 0, scrollTop: 0, px: 0, py: 0, k: 0.5 }));
+ok('un rapporto assurdo non muove niente', { left: 10, top: 10 },
+  Z.puntoFisso({ scrollLeft: 10, scrollTop: 10, px: 0, py: 0, k: 'cane' }));
 
 sezione('⚠️ La rotellata con SHIFT arriva su deltaX, su macOS');
 ok('in su si ingrandisce', 1, Z.verso({ deltaY: -120, deltaX: 0 }));

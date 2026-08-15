@@ -131,11 +131,66 @@
     };
   }
 
-  /* Lo scorrimento che tiene fermo il punto sotto il puntatore NON si calcola
-     qui: `updateScale({origin})` di pdf.js lo corregge dopo il suo
-     `scrollPageIntoView`, e rifarlo a mano vorrebbe dire indovinare l'ordine di
-     due correzioni che si sommano. Quello che resta nostro è di quanto
-     ingrandire, cioè `passo()`. */
+  /**
+   * La scala che realizza un modo, date le misure vere e quelle del riquadro.
+   *
+   * Per un PDF questo conto lo fa pdf.js; per un'IMMAGINE no — lì c'è solo un
+   * `<img>` dentro un riquadro che scorre, e la scala siamo noi a doverla
+   * decidere. La grammatica però è la stessa, e sta qui: due modi dinamici e un
+   * numero, con gli stessi nomi (`page-width` · `page-fit`).
+   *
+   * ⚠️ `page-fit` NON è «il minimo fra i due rapporti» e basta: se l'immagine è
+   * più piccola del riquadro il minimo sarebbe maggiore di 1, cioè ingrandirla
+   * per riempire — e una foto da 200px sgranata a tutto schermo non è «adattata
+   * alla pagina», è rovinata. Adattare vuol dire «fai in modo che ci stia», non
+   * «riempi».
+   */
+  function scalaPer(valore, misure) {
+    var m = misure || {};
+    var nw = Number(m.larghezza) || 0, nh = Number(m.altezza) || 0;
+    var cw = Number(m.riquadroL) || 0, ch = Number(m.riquadroH) || 0;
+    if (!(nw > 0) || !(nh > 0)) return 1;
+    var v = String(valore || '');
+    var k;
+    /* «Alla larghezza» RIEMPIE, e può ingrandire: è un comando esplicito, e su
+       un PDF fa esattamente così. «Alla pagina» invece è la richiesta di vedere
+       tutto, e vedere tutto non richiede mai di ingrandire. */
+    if (v === 'page-width') k = cw > 0 ? cw / nw : 1;
+    else if (v === 'page-fit') k = (cw > 0 && ch > 0) ? Math.min(cw / nw, ch / nh, 1) : 1;
+    else {
+      k = parseFloat(v);
+      if (!isFinite(k) || k <= 0) k = 1;
+      return Math.max(MIN, Math.min(MAX, k));
+    }
+    /* I limiti valgono anche per gli adattamenti: un francobollo da 40px
+       adattato a un riquadro largo mille arriverebbe a 25×, cioè a un mosaico. */
+    return Math.max(MIN, Math.min(MAX, k));
+  }
+
+  /**
+   * Lo scorrimento che tiene fermo il punto sotto il puntatore.
+   *
+   * ⚠️ Torna a servire con le IMMAGINI. Per i PDF lo fa
+   * `updateScale({origin})` di pdf.js — e rifarlo a mano vorrebbe dire
+   * indovinare l'ordine di due correzioni che si sommano — ma un `<img>` dentro
+   * un riquadro che scorre non ha nessuno che ci pensi.
+   *
+   * `px`/`py` sono le coordinate del puntatore DENTRO il riquadro (dal suo
+   * bordo, non dallo schermo), `k` il rapporto fra la scala nuova e la vecchia.
+   * Zoomare sul centro allontana proprio il punto che si sta guardando: è la
+   * stessa regola già pagata sulle mappe.
+   */
+  function puntoFisso(o) {
+    var s = o || {};
+    var k = Number(s.k);
+    if (!isFinite(k) || k <= 0) k = 1;
+    var sl = Number(s.scrollLeft) || 0, st = Number(s.scrollTop) || 0;
+    var px = Number(s.px) || 0, py = Number(s.py) || 0;
+    return {
+      left: Math.max(0, (sl + px) * k - px),
+      top: Math.max(0, (st + py) * k - py)
+    };
+  }
 
   /**
    * Il verso di una rotellata.
@@ -173,6 +228,7 @@
   return {
     MIN: MIN, MAX: MAX, PASSO: PASSO, MODI: MODI, MODI_NOTI: MODI_NOTI, SEGNI: SEGNI,
     modo: modo, valido: valido, passo: passo, prossimoAdatta: prossimoAdatta,
-    etichetta: etichetta, verso: verso, daRiadattare: daRiadattare
+    etichetta: etichetta, verso: verso, daRiadattare: daRiadattare,
+    scalaPer: scalaPer, puntoFisso: puntoFisso
   };
 }));
