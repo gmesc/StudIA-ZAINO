@@ -391,12 +391,34 @@
   .tbar-lg{
     --tb-h:var(--tbig-h); --tb-min:var(--tbig-h); --tb-pad-x:var(--tbig-pad-x);
     --tb-fs:var(--tbig-fs); --tb-bar-h:var(--tbig-bar-h); }
+  /* ---- `.tbar-ctl`: la stessa barra alla scala dei CONTROLLI GRANDI --------
+     Stesso meccanismo di `.tbar-lg`, applicato in basso invece che in alto:
+     nessuna regola ricopiata, solo i token ridichiarati sul contenitore.
+     Serve alle superfici che non sono un riquadro del banco — Impostazioni,
+     wizard — dove i controlli stanno a `--ctl-h` perché non devono rubare
+     spazio a nessun contenuto. È ciò che permette ai bottoni delle
+     impostazioni di essere `.tbtn` come tutti gli altri senza rimpicciolirsi:
+     prima erano cinque dialetti diversi (`.dashbtn` blu, `.kr-save` teal,
+     `.iconbtn` con quattro proprietà scritte a mano nell'attributo `style`, e
+     un `.btn` senza nemmeno una regola, che si vedeva grigio di fabbrica).
+     Il corpo è 12px e non `--tb-fs`×1.1: qui le etichette sono parole intere
+     («Riprendi la creazione guidata»), non sigle da barra. */
+  .tbar-ctl{ --tb-h:var(--ctl-h); --tb-min:var(--ctl-h);
+    --tb-pad-x:.85rem; --tb-fs:12px; --tb-bar-h:var(--ctl-h); }
+  /* ---- L'accento: uno solo, e vuol dire «questo comando SCRIVE» -----------
+     Teal per ciò che salva, crea o sceglie una cartella; tutto il resto nudo
+     come in barra. È lo stesso teal dell'«acceso» (`aria-pressed`), quindi il
+     sistema di colore resta uno. ⚠️ Il blu di `.dashbtn` è sparito apposta:
+     erano due accenti senza una regola che dicesse quando usare l'uno o
+     l'altro — «Salva profilo» era blu e «Salva chiave» teal. */
+  .tbtn.acc{ color:var(--teal-strong);
+    background:color-mix(in srgb, var(--teal) 16%, var(--panel)); }
+  .tbtn.acc:hover:not(:disabled){ background:color-mix(in srgb, var(--teal) 28%, var(--panel)); }
   .ctl-btn{ height:var(--ctl-h); box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center; }
   .ctl-select{ height:var(--ctl-h); box-sizing:border-box; }
   .ctl-input{ height:var(--ctl-h); box-sizing:border-box; }
   /* alias: bottoni */
-  .iconbtn,.chiptoggle,.paneltoggle,.setup-btn,.dashbtn,.srcchip,.vidchip,
-  .keyrow button,.vaultrow button,.media-foot button{
+  .iconbtn,.chiptoggle,.paneltoggle,.setup-btn,.srcchip,.vidchip,.media-foot button{
     height:var(--ctl-h); box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center; }
   /* alias: menu a tendina */
   select,#lessonSelect,#projSelect,.setgrid select{ height:var(--ctl-h); box-sizing:border-box; }
@@ -1929,7 +1951,21 @@
   .fieldlab{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.1em; font-weight:700; color:var(--muted); margin-bottom:.25rem; }
   .cnt{ font-size:10px; font-weight:700; letter-spacing:.06em; color:var(--muted); margin-left:.4rem; text-transform:none; }
   .cnt.warn{ color:var(--yellow-strong); }
-  .setrow{ display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
+  /* Le righe di comandi delle impostazioni sono barre come le altre: bottoni
+     attaccati, e la barretta `.tbsep` dove cambia il mestiere. Il `gap` di
+     mezzo rem che c'era prima staccava ogni bottone dal vicino, che è
+     esattamente ciò che il token ha smesso di fare nelle barre degli split. */
+  .setrow{ display:flex; flex-wrap:wrap; gap:0 0; row-gap:var(--tb-bar-rowgap); align-items:center; }
+  .setrow > label, .setrow > select, .setrow > .set-note{ margin-left:.5rem; }
+  /* ⚠️ Un bottone di barra è NUDO, e nelle barre funziona perché la barra è una
+     superficie: fondo `--panel` sopra il `--bg` della pagina, una linea sotto.
+     Dentro le impostazioni la superficie è già `--panel`, quindi un bottone
+     nudo su fondo nudo non si vede più come comando — sembra un titoletto.
+     La barra qui la si disegna col fondo `--hover`: stessa grammatica (gruppo
+     di comandi attaccati dentro un vassoio), l'unico valore diverso è quello
+     che serve a restare visibile su una superficie chiara. */
+  .setrow:not(:empty), .set-dash{ width:fit-content; max-width:100%;
+    background:var(--hover); border:1px solid var(--line-weak); }
   .set-sec-h{ font-size:11px; text-transform:uppercase; letter-spacing:.16em; color:var(--muted); font-weight:700; margin:.1rem 0 .8rem; }
   .keyrow{ display:flex; align-items:center; gap:.6rem; padding:.55rem 0; border-bottom:1px solid var(--line-weak); }
   .keyrow:last-child{ border-bottom:0; }
@@ -1939,21 +1975,16 @@
   .keyrow input{ flex:1; min-width:0; font:inherit; font-size:13px; padding:.45rem .6rem; border:1px solid var(--line); background:var(--bg); color:var(--ink); }
   .keyrow input:focus{ outline:2px solid var(--focus); outline-offset:-1px; }
   .keyrow .kr-hint{ flex:0 0 auto; min-width:56px; font-size:11px; color:var(--muted); }
-  .keyrow button{ border:0; cursor:pointer; font-size:12px; font-weight:700; padding:.45rem .7rem; }
-  .keyrow button:disabled{ opacity:.5; cursor:not-allowed; }
-  .kr-save{ color:var(--teal-strong); background:color-mix(in srgb, var(--teal) 16%, var(--panel)); }
-  .kr-save:hover{ background:color-mix(in srgb, var(--teal) 28%, var(--panel)); box-shadow:var(--sh-3d); }
-  .kr-clear{ color:var(--ink); background:var(--hover); }
+  /* ⚠️ Qui c'erano `.keyrow button`, `.kr-save` e `.kr-clear`: tre regole per i
+     due bottoni di una riga di chiave. Adesso sono `.tbtn` (+ `.acc` quello che
+     salva) e le classi `kr-*` restano solo come appiglio per il JS. */
   .set-note{ font-size:11px; color:var(--muted); margin-top:.9rem; line-height:1.55; }
   .vaultrow{ display:flex; align-items:center; gap:.7rem; }
   .vaultrow .vr-path{ flex:1; min-width:0; font-size:12px; color:var(--ink); background:var(--hover); border:1px solid var(--line);
     padding:.5rem .6rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; direction:rtl; text-align:left; }
-  .vaultrow button{ border:0; cursor:pointer; font:inherit; font-size:12px; font-weight:700; padding:.45rem .7rem; flex:0 0 auto;
-    transition:box-shadow var(--speed),background var(--speed); }
-  .vaultrow button:disabled{ opacity:.5; cursor:not-allowed; }
-  .set-dash{ margin-top:1.2rem; padding-top:1rem; border-top:1px solid var(--line-weak); }
-  .dashbtn{ display:inline-flex; align-items:center; gap:.5rem; border:0; cursor:pointer; font-size:13px; font-weight:700; padding:.6rem 1rem; color:var(--blue-strong); background:color-mix(in srgb, var(--blue) 14%, var(--panel)); }
-  .dashbtn:hover{ background:color-mix(in srgb, var(--blue) 24%, var(--panel)); box-shadow:var(--sh-3d); }
+  .vaultrow .tbtn{ flex:0 0 auto; }
+  .set-dash{ display:flex; flex-wrap:wrap; align-items:center; gap:0;
+    row-gap:var(--tb-bar-rowgap); margin-top:1.2rem; }
   .kpi-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:.6rem; margin-bottom:.4rem; }
   .kpi{ padding:.7rem .75rem; background:var(--hover); border:1px solid var(--line-weak); }
   .kpi .kpi-v{ font-size:19px; font-weight:800; line-height:1.1; }
@@ -10800,8 +10831,8 @@ try{
         row.innerHTML='<span class="kr-dot"></span><span class="kr-name">'+p.name+'</span>'+
           '<input type="password" autocomplete="off" spellcheck="false" placeholder="'+(st.set?('•••• '+esc(st.hint||'')):esc(p.ph))+'" aria-label="Chiave '+p.name+'">'+
           '<span class="kr-hint">'+(st.set?(st.enc?'cifrata':'salvata'):'')+'</span>'+
-          '<button class="kr-save" type="button">Salva</button>'+
-          '<button class="kr-clear" type="button"'+(st.set?'':' hidden')+'>Rimuovi</button>';
+          '<button class="tbtn acc kr-save" type="button">Salva</button>'+
+          '<button class="tbtn kr-clear" type="button"'+(st.set?'':' hidden')+'>Rimuovi</button>';
         var inp=row.querySelector('input'), save=row.querySelector('.kr-save'), clr=row.querySelector('.kr-clear');
         save.addEventListener('click', function(){
           var v=inp.value.trim(); if(!v){ toast('Inserisci una chiave',false); return; }
@@ -10932,11 +10963,15 @@ try{
         slotNuovo=document.getElementById('slotNuovoCorso');
     function move(id, slot, etichetta){
       var el=document.getElementById(id); if(!el||!slot) return;
-      el.classList.add('iconbtn');
+      /* ⚠️ Traslocando cambia FAMIGLIA: in topbar era un `.iconbtn` (quadrato,
+         incorniciato), qui è un bottone di barra come tutti quelli delle
+         impostazioni. Le misure le dà `.tbar-ctl` sul corpo del modale: prima
+         erano tre proprietà scritte a mano su `style`, una per bottone. */
+      el.classList.remove('iconbtn'); el.classList.add('tbtn');
+      el.style.width=''; el.style.padding='';
       if(etichetta && !el.textContent.trim()){                   // i bottoni-icona ricevono un'etichetta leggibile
-        el.style.width='auto'; el.style.padding='0 .7rem';
         var s=document.createElement('span'); s.textContent=etichetta;
-        s.style.cssText='font-size:12px;font-weight:700;margin-left:.4rem;';
+        s.style.marginLeft='.4rem';
         el.appendChild(s);
       }
       slot.appendChild(el);
@@ -15709,7 +15744,7 @@ window.addEventListener('keydown', function(e){
       <button class="set-tab" role="tab" data-tab="zaino" aria-selected="false">Zaino</button>
       <button class="set-tab" role="tab" data-tab="ai" aria-selected="false">AI</button>
     </div>
-    <div class="set-body">
+    <div class="set-body tbar-ctl">
 
       <!-- ============ UTENTE ============ -->
       <section class="set-pane" data-pane="utente">
@@ -15854,8 +15889,8 @@ window.addEventListener('keydown', function(e){
             </label>
           </div>
         </div>
-        <div class="set-dash"><button class="dashbtn" id="profSave" type="button">Salva profilo</button>
-          <button class="dashbtn" id="rifaiOnboarding" type="button">Rifai il primo avvio</button></div>
+        <div class="set-dash"><button class="tbtn acc" id="profSave" type="button">Salva profilo</button>
+          <button class="tbtn" id="rifaiOnboarding" type="button">Rifai il primo avvio</button></div>
         <p class="set-note">«Rifai il primo avvio» ricontrolla il computer — motore AI, Python, spazio, modello di trascrizione — e rimostra la schermata di benvenuto. Non cancella niente.</p>
       </section>
 
@@ -15864,7 +15899,7 @@ window.addEventListener('keydown', function(e){
         <div class="set-sec-h">Cartella dei file &laquo;StudIA - file&raquo;</div>
         <div class="vaultrow">
           <span class="vr-path" id="vaultPathLabel">Nessuna cartella scelta</span>
-          <button class="kr-save" id="vaultChangeBtn" type="button">Scegli cartella&#8230;</button>
+          <button class="tbtn acc" id="vaultChangeBtn" type="button">Scegli cartella&#8230;</button>
         </div>
         <p class="set-note">&Egrave; la cartella dove l'app salva e legge tutto: corsi, PDF, video, trascrizioni e appunti. Cambiando cartella l'app si ricarica.</p>
 
@@ -15877,11 +15912,11 @@ window.addEventListener('keydown', function(e){
              era irraggiungibile, e l'unico rimedio era rifarlo da capo. -->
         <div class="vaultrow" id="projRiprendiRiga" style="margin-top:.5rem;" hidden>
           <span class="vr-path" id="projRiprendiNota" style="flex:1"></span>
-          <button class="kr-save" id="projRiprendi" type="button">Riprendi la creazione guidata</button>
+          <button class="tbtn acc" id="projRiprendi" type="button">Riprendi la creazione guidata</button>
         </div>
         <div class="vaultrow" style="margin-top:.5rem;">
           <input type="text" id="projNewName" placeholder="Nome del nuovo corso" style="flex:1">
-          <button class="kr-save" id="projCreate" type="button">Crea corso</button>
+          <button class="tbtn acc" id="projCreate" type="button">Crea corso</button>
         </div>
         <p class="set-note">Un corso raccoglie le lezioni (cartelle) e i loro capitoli (file <code>.md</code>), pi&ugrave; gli appunti in <code>APPUNTI/</code>.</p>
         <!-- «+ Nuovo corso» (creazione guidata): traslocato qui dalla topbar da initSettingsTabs() -->
@@ -15890,16 +15925,18 @@ window.addEventListener('keydown', function(e){
         <!-- Il composer si apre anche dal wizard, al passo dei capitoli. Qui perch&eacute; un
              corso gi&agrave; approvato non ha pi&ugrave; bisogno di riaprire il wizard per rivederne gli indici. -->
         <div class="setrow" style="margin-top:.7rem;">
-          <button class="iconbtn" id="openComposer" type="button" style="width:auto;padding:0 .7rem;font-size:12px;font-weight:700;">Composer degli indici&#8230;</button>
+          <button class="tbtn" id="openComposer" type="button">Composer degli indici&#8230;</button>
         </div>
         <p class="set-note">Tutti gli indici proposti del corso attivo, una riga per lezione, con gli otto personaggi da trascinare: da l&igrave; nascono le varianti di percorso in <code>PERCORSI/</code>.</p>
 
         <div class="set-sec-h" style="margin-top:1.4rem;">Passare il corso a qualcuno</div>
         <div class="setrow">
-          <button class="iconbtn" id="projExport" type="button" style="width:auto;padding:0 .7rem;font-size:12px;font-weight:700;">Esporta corso&#8230;</button>
-          <button class="iconbtn" id="projImport" type="button" style="width:auto;padding:0 .7rem;font-size:12px;font-weight:700;">Importa corso&#8230;</button>
-          <label class="pkg-opt"><input type="checkbox" id="projExportAppunti"> includi i miei appunti</label>
+          <button class="tbtn" id="projExport" type="button">Esporta corso&#8230;</button>
+          <button class="tbtn" id="projImport" type="button">Importa corso&#8230;</button>
         </div>
+        <!-- L'opzione NON sta nel vassoio dei comandi: è ciò che l'esportazione
+             porta con sé, non un comando da premere. -->
+        <label class="pkg-opt" style="margin-top:.5rem;"><input type="checkbox" id="projExportAppunti"> includi i miei appunti</label>
         <div class="pkg-prog" id="projExportProg" hidden><span class="pkg-bar"><i></i></span><span class="pkg-msg"></span></div>
         <p class="set-note">L'esportazione fa <b>un file solo</b> (<code>.studia.zip</code>) con dentro tutto ci&ograve; che serve a leggere il corso altrove: capitoli, video, audio, PDF, pagine salvate, trascrizioni e indici. Chi lo riceve usa &laquo;Importa corso&raquo; e ce l'ha completo, senza bisogno della tua cartella dei file. Restano fuori i file di lavorazione e, se non spunti la casella, i tuoi appunti.</p>
 
@@ -15915,9 +15952,9 @@ window.addEventListener('keydown', function(e){
           <p class="set-note" id="ocrTitolo" style="margin-top:0;font-weight:700;">Controllo in corso&#8230;</p>
           <p class="set-note" id="ocrTesto" style="margin-top:.2rem;"></p>
           <div class="setrow" id="ocrAzioni" hidden>
-            <button class="iconbtn" id="ocrInstalla" type="button" hidden style="width:auto;padding:0 .7rem;font-size:12px;font-weight:700;">Installa la lettura avanzata&#8230;</button>
-            <button class="iconbtn" id="ocrScarica" type="button" hidden style="width:auto;padding:0 .7rem;font-size:12px;font-weight:700;">Scarica ora il modello&#8230;</button>
-            <button class="iconbtn" id="ocrRimuovi" type="button" hidden style="width:auto;padding:0 .7rem;font-size:12px;">Rimuovi</button>
+            <button class="tbtn" id="ocrInstalla" type="button" hidden>Installa la lettura avanzata&#8230;</button>
+            <button class="tbtn" id="ocrScarica" type="button" hidden>Scarica ora il modello&#8230;</button>
+            <button class="tbtn" id="ocrRimuovi" type="button" hidden>Rimuovi</button>
           </div>
           <!-- La stima si vede anche senza Chandra installato: è il punto.
                Chi deve decidere se scaricare undici gigabyte deve sapere prima
@@ -15927,16 +15964,16 @@ window.addEventListener('keydown', function(e){
             <div id="ocrElenco" style="max-height:15rem;overflow:auto;border:1px solid var(--line);"></div>
             <p class="set-note" id="ocrTotale" style="margin-top:.35rem;"></p>
             <div class="setrow" style="margin-top:.35rem;">
-              <button class="iconbtn" id="ocrLeggi" type="button" style="width:auto;padding:0 .7rem;font-size:12px;font-weight:700;">Rileggi i PDF scelti</button>
-              <button class="iconbtn" id="ocrTutti" type="button" style="width:auto;padding:0 .7rem;font-size:12px;">Spunta tutti</button>
-              <button class="iconbtn" id="ocrNessuno" type="button" style="width:auto;padding:0 .7rem;font-size:12px;">Nessuno</button>
+              <button class="tbtn" id="ocrLeggi" type="button">Rileggi i PDF scelti</button>
+              <button class="tbtn" id="ocrTutti" type="button">Spunta tutti</button>
+              <button class="tbtn" id="ocrNessuno" type="button">Nessuno</button>
             </div>
           </div>
           <p class="set-note" id="ocrAvanz" hidden style="margin-top:.5rem;"></p>
           <!-- FUORI da #ocrStima: quel riquadro si nasconde quando la rilettura
                parte, e il tasto per fermarla sparirebbe proprio quando serve. -->
           <div class="setrow" style="margin-top:.35rem;">
-            <button class="iconbtn" id="ocrFerma" type="button" hidden style="width:auto;padding:0 .7rem;font-size:12px;font-weight:700;">Ferma la rilettura</button>
+            <button class="tbtn" id="ocrFerma" type="button" hidden>Ferma la rilettura</button>
           </div>
           <pre id="ocrLog" hidden style="max-height:9rem;overflow:auto;font-size:11px;line-height:1.35;margin:.4rem 0 0;white-space:pre-wrap;"></pre>
           <p class="set-note">&Egrave; facoltativa: senza, StudIA estrae il testo dei PDF come ha sempre fatto. Vive in un ambiente Python suo, separato da quello della trascrizione, quindi installarla non pu&ograve; romperla e rimuoverla &egrave; cancellare una cartella. Chi legge un documento resta scritto dentro l'indice, cos&igrave; si sa sempre da dove viene ci&ograve; che si legge.</p>
@@ -15947,7 +15984,7 @@ window.addEventListener('keydown', function(e){
           <p class="set-note" id="expStato" style="margin-top:0;">Controllo in corso&#8230;</p>
           <div class="setrow" id="expAzioni" hidden>
             <select id="expLezione" aria-label="Lezione da estendere" style="flex:1;min-width:180px;"></select>
-            <button class="iconbtn" id="expVai" type="button" style="width:auto;padding:0 .7rem;font-size:12px;font-weight:700;">Estendi questa lezione&#8230;</button>
+            <button class="tbtn" id="expVai" type="button">Estendi questa lezione&#8230;</button>
           </div>
           <p class="set-note">I capitoli nuovi si <b>accodano</b> a quelli esistenti: i numeri gi&agrave; assegnati non cambiano mai, cos&igrave; i rimandi <code>[[NN-lezione]]</code> delle altre lezioni restano validi.</p>
           <div id="expRotti" hidden></div>
@@ -15996,7 +16033,7 @@ window.addEventListener('keydown', function(e){
           </label>
           <div id="ccStato" class="set-note" style="grid-column:1/-1"></div>
           <div style="grid-column:1/-1">
-            <button type="button" class="btn" id="aiRefresh">Aggiorna l&rsquo;elenco dei modelli</button>
+            <div class="setrow" style="display:inline-flex;vertical-align:middle;"><button type="button" class="tbtn" id="aiRefresh">Aggiorna l&rsquo;elenco dei modelli</button></div>
             <span class="set-note" id="aiRefreshNota" style="margin-left:.6rem">Chiede al fornitore selezionato quali modelli esistono oggi.</span>
             <div id="aiModelli"></div>
           </div>
@@ -16015,8 +16052,8 @@ window.addEventListener('keydown', function(e){
           </label>
         </div>
         <div class="set-dash">
-          <button class="dashbtn" id="aiSave" type="button">Salva impostazioni AI</button>
-          <button class="dashbtn" id="openCosts" type="button">📊 Dashboard costi</button>
+          <button class="tbtn acc" id="aiSave" type="button">Salva impostazioni AI</button>
+          <button class="tbtn" id="openCosts" type="button">📊 Dashboard costi</button>
         </div>
       </section>
     </div>
