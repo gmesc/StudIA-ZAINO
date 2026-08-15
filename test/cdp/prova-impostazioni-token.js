@@ -114,6 +114,41 @@ const RILEVA = `(()=>{
   ok('la testata ha la linea sotto della barra', '1px', testa.linea);
   ok('…e il fondo della barra', testa.pannello, testa.fondo);
 
+  /* Il PIEDE del modale Video: la stessa barra girata — la linea chiude invece
+     di aprire — e i due bottoni che erano `.btn-sec`/`.btn-go`, cioè le ultime
+     classi-bottone dell'app fuori dal token. Il modale non serve aprirlo: le
+     misure si prendono rendendolo visibile per un istante, perché un elemento
+     `hidden` non ha geometria e ogni misura sarebbe zero. */
+  const piede = await val(`(()=>{
+    /* ⚠️ Non basta togliere \`hidden\`: il modale si apre con
+       \`html[data-media="1"]\`, e senza quell'attributo resta \`display:none\`
+       — gli elementi dentro esistono ma sono larghi e alti zero. */
+    const m=document.getElementById('mediaModal'); const era=m.hidden; m.hidden=false;
+    const eraD=document.documentElement.dataset.media; document.documentElement.dataset.media='1';
+    const f=m.querySelector('.media-foot'); const s=getComputedStyle(f);
+    const b=[...f.querySelectorAll('button')];
+    const out={ sopra:s.borderTopWidth, sotto:s.borderBottomWidth,
+      fondo:s.backgroundColor,
+      fuoriToken:b.filter(x=>!x.classList.contains('tbtn')).map(x=>x.id),
+      accenti:b.filter(x=>x.classList.contains('acc')).map(x=>x.id),
+      altezze:[...new Set(b.map(x=>Math.round(x.getBoundingClientRect().height)))],
+      spento:getComputedStyle(document.getElementById('mediaGo')).opacity };
+    m.hidden=era; if(eraD===undefined) delete document.documentElement.dataset.media; else document.documentElement.dataset.media=eraD;
+    return out;
+  })()`);
+  ok('i bottoni del piede sono bottoni di barra', [], piede.fuoriToken);
+  ok('l\'accento sta sul comando che agisce', ['mediaGo'], piede.accenti);
+  ok('…alti come la barra li vuole', [parseInt(per.ai.ctl, 10)], piede.altezze);
+  ok('la linea del piede sta sopra, non sotto', { sopra: '1px', sotto: '0px' },
+    { sopra: piede.sopra, sotto: piede.sotto });
+  vero('un comando spento si vede spento senza una regola sua', parseFloat(piede.spento) < .5);
+
+  /* La promessa grossa, in un controllo solo. */
+  const superstiti = await val(`[...document.querySelectorAll(
+    '.dashbtn,.kr-save:not(.tbtn),.btn-sec,.btn-go,.media-foot button:not(.tbtn),#settingsModal .iconbtn')]
+    .map(x=>x.id||x.className)`);
+  ok('nessun dialetto di bottone sopravvive nei modali', [], superstiti);
+
   console.log(ko ? '\n' + ko + ' controlli falliti' : '\n✓ tutti i controlli passati');
   process.exit(ko ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

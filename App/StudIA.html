@@ -356,7 +356,7 @@
      restano nell'elenco come alias, così il markup vecchio non si rompe e non
      c'è una seconda definizione da tenere allineata a mano. */
   .tbar, .tbar-lg, .topbar, .mtoolbar, #pdfPane .pdfbar, #noteHost .editor-toolbar, .albar, .kwbar,
-  .media-head, .guida-head{
+  .media-head, .guida-head, .media-foot{
     display:flex; align-items:center; gap:0; flex-wrap:wrap;
     row-gap:var(--tb-bar-rowgap); flex:0 0 auto;
     min-height:var(--tb-bar-h); padding:.15rem var(--tb-bar-pad-x);
@@ -404,7 +404,7 @@
      un `.btn` senza nemmeno una regola, che si vedeva grigio di fabbrica).
      Il corpo è 12px e non `--tb-fs`×1.1: qui le etichette sono parole intere
      («Riprendi la creazione guidata»), non sigle da barra. */
-  .tbar-ctl, .media-head, .guida-head{ --tb-h:var(--ctl-h); --tb-min:var(--ctl-h);
+  .tbar-ctl, .media-head, .guida-head, .media-foot{ --tb-h:var(--ctl-h); --tb-min:var(--ctl-h);
     --tb-pad-x:.85rem; --tb-fs:12px; --tb-bar-h:var(--ctl-h); }
   /* ---- L'accento: uno solo, e vuol dire «questo comando SCRIVE» -----------
      Teal per ciò che salva, crea o sceglie una cartella; tutto il resto nudo
@@ -419,7 +419,7 @@
   .ctl-select{ height:var(--ctl-h); box-sizing:border-box; }
   .ctl-input{ height:var(--ctl-h); box-sizing:border-box; }
   /* alias: bottoni */
-  .iconbtn,.chiptoggle,.paneltoggle,.setup-btn,.srcchip,.vidchip,.media-foot button{
+  .iconbtn,.chiptoggle,.paneltoggle,.setup-btn,.srcchip,.vidchip{
     height:var(--ctl-h); box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center; }
   /* alias: menu a tendina */
   select,#lessonSelect,#projSelect,.setgrid select{ height:var(--ctl-h); box-sizing:border-box; }
@@ -1706,14 +1706,12 @@
   .media-badge.ok{ color:var(--teal-strong); background:color-mix(in srgb, var(--teal) 16%, var(--panel)); }
   .media-badge.todo{ color:var(--blue-strong); background:color-mix(in srgb, var(--blue) 14%, var(--panel)); }
   .media-empty{ padding:2rem 1rem; text-align:center; color:var(--muted); font-size:13px; }
-  .media-foot{ display:flex; align-items:center; gap:.6rem; padding:.8rem 1.1rem; border-top:1px solid var(--line); }
-  .media-foot .mf-info{ font-size:11px; color:var(--muted); }
-  .media-foot .sp{ flex:1; }
-  .media-foot button{ border:0; cursor:pointer; font-size:12px; font-weight:700; padding:.55rem .9rem; }
-  .media-foot .btn-sec{ color:var(--ink); background:var(--hover); }
-  .media-foot .btn-go{ color:var(--teal-strong); background:color-mix(in srgb, var(--teal) 16%, var(--panel)); }
-  .media-foot .btn-go:hover{ background:color-mix(in srgb, var(--teal) 28%, var(--panel)); box-shadow:var(--sh-3d); }
-  .media-foot .btn-go:disabled{ opacity:.45; cursor:not-allowed; box-shadow:none; }
+  /* Il piede di un modale è la stessa barra della testata, girata: la linea
+     CHIUDE il riquadro invece di aprirlo, quindi sta sopra. Tutto il resto —
+     bottoni, note di stato, spazio elastico — è il token. Qui c'erano cinque
+     regole per due bottoni (`.btn-sec`, `.btn-go` e i loro stati): erano le
+     ultime due classi-bottone dell'app fuori dal sistema. */
+  .media-foot{ border-bottom:0; border-top:1px solid var(--line); }
   #mediaModal[hidden]{ display:none!important; }
 
   /* ---- Impostazioni: chiavi API + Dashboard costi ---- */
@@ -15727,10 +15725,11 @@ window.addEventListener('keydown', function(e){
     </div>
     <div class="media-list" id="mediaList"></div>
     <div class="media-foot">
-      <button class="btn-sec" id="mediaSelTodo" type="button">Seleziona i non trascritti</button>
-      <span class="sp"></span>
-      <span class="mf-info" id="mediaSel">0 selezionati</span>
-      <button class="btn-go" id="mediaGo" type="button" disabled>Trascrivi selezionati</button>
+      <button class="tbtn" id="mediaSelTodo" type="button">Seleziona i non trascritti</button>
+      <span class="tbspazio"></span>
+      <span class="tbnota" id="mediaSel">0 selezionati</span>
+      <span class="tbsep"></span>
+      <button class="tbtn acc" id="mediaGo" type="button" disabled>Trascrivi selezionati</button>
     </div>
   </div>
 </div>
