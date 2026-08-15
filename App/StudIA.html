@@ -356,7 +356,7 @@
      restano nell'elenco come alias, così il markup vecchio non si rompe e non
      c'è una seconda definizione da tenere allineata a mano. */
   .tbar, .tbar-lg, .topbar, .mtoolbar, #pdfPane .pdfbar, #noteHost .editor-toolbar, .albar, .kwbar,
-  .media-head, .guida-head, .media-foot{
+  .media-head, .guida-head, .media-foot, .wz-head, .wz-foot, .pa-foot, .ps-row{
     display:flex; align-items:center; gap:0; flex-wrap:wrap;
     row-gap:var(--tb-bar-rowgap); flex:0 0 auto;
     min-height:var(--tb-bar-h); padding:.15rem var(--tb-bar-pad-x);
@@ -404,7 +404,8 @@
      un `.btn` senza nemmeno una regola, che si vedeva grigio di fabbrica).
      Il corpo è 12px e non `--tb-fs`×1.1: qui le etichette sono parole intere
      («Riprendi la creazione guidata»), non sigle da barra. */
-  .tbar-ctl, .media-head, .guida-head, .media-foot{ --tb-h:var(--ctl-h); --tb-min:var(--ctl-h);
+  .tbar-ctl, .media-head, .guida-head, .media-foot,
+  .wz-head, .wz-foot, .pa-foot, .ps-row, .setup-card{ --tb-h:var(--ctl-h); --tb-min:var(--ctl-h);
     --tb-pad-x:.85rem; --tb-fs:12px; --tb-bar-h:var(--ctl-h); }
   /* ---- L'accento: uno solo, e vuol dire «questo comando SCRIVE» -----------
      Teal per ciò che salva, crea o sceglie una cartella; tutto il resto nudo
@@ -419,7 +420,7 @@
   .ctl-select{ height:var(--ctl-h); box-sizing:border-box; }
   .ctl-input{ height:var(--ctl-h); box-sizing:border-box; }
   /* alias: bottoni */
-  .iconbtn,.chiptoggle,.paneltoggle,.setup-btn,.srcchip,.vidchip{
+  .iconbtn,.chiptoggle,.paneltoggle,.srcchip,.vidchip{
     height:var(--ctl-h); box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center; }
   /* alias: menu a tendina */
   select,#lessonSelect,#projSelect,.setgrid select{ height:var(--ctl-h); box-sizing:border-box; }
@@ -1628,8 +1629,10 @@
   #setup{ position:fixed; inset:0; z-index:200; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:2rem; }
   .setup-card{ max-width:560px; text-align:center; }
   .setup-card h2{ margin:0 0 1rem; } .setup-card p{ color:var(--muted); margin:0 0 1.6rem; line-height:1.6; }
-  .setup-btn{ border:0; cursor:pointer; font-size:14px; font-weight:700; padding:.7rem 1.3rem; color:var(--teal-strong); background:color-mix(in srgb, var(--teal) 18%, var(--panel)); transition:box-shadow var(--speed),background var(--speed); }
-  .setup-btn:hover{ background:color-mix(in srgb, var(--teal) 30%, var(--panel)); box-shadow:var(--sh-3d); }
+  /* ⚠️ `.setup-btn` non c'è più: il bottone del benvenuto e quelli
+     dell'onboarding sono `.tbtn` come tutti gli altri (con `.acc` su quello che
+     porta avanti). La scala gliela dà il token ridichiarato qui sopra. */
+  .setup-card .tbtn{ margin:0 auto; }
   #ingestBtn{ border:0; cursor:pointer; height:40px; padding:0 .8rem; font-size:12px; font-weight:700; color:var(--teal-strong); background:color-mix(in srgb, var(--teal) 15%, var(--panel)); }
   #ingestBtn:hover{ background:color-mix(in srgb, var(--teal) 26%, var(--panel)); box-shadow:var(--sh-3d); }
   #ingestBar{ position:fixed; left:0; right:0; bottom:0; z-index:120; background:var(--panel); border-top:1px solid var(--line); padding:.6rem .9rem; }
@@ -1752,9 +1755,8 @@
   #profiloSetup h2{ margin:0 0 .8rem; font-size:20px; }
   #profiloSetup p{ color:var(--muted); line-height:1.6; margin:0 0 .8rem; font-size:14px; }
   #profiloSetup .ps-small{ font-size:12px; }
-  #profiloSetup .ps-row{ display:flex; gap:.7rem; align-items:center; margin-top:1.2rem; }
-  #profiloSetup .ps-skip{ border:1px solid var(--line); background:var(--panel); cursor:pointer; font-size:12px; font-weight:700; padding:.6rem 1rem; color:var(--muted); }
-  #profiloSetup .ps-skip:hover{ background:var(--hover); color:var(--ink); }
+  #profiloSetup .ps-row{ margin-top:1.2rem; border-bottom:0; }
+
   /* ===== Onboarding di primo avvio: un passo per schermata ===== */
   #primoAvvio{ position:fixed; inset:0; z-index:215; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.4); padding:2rem; }
   #primoAvvio[hidden]{ display:none!important; }
@@ -1780,17 +1782,12 @@
   .pa-key input{ border:1px solid var(--line); background:var(--bg); color:var(--ink); padding:.5rem .6rem;
     font-size:13px; text-transform:none; letter-spacing:0; font-weight:400; font-family:var(--font-mono),monospace; }
   .pa-elenco{ font-size:12px; color:var(--muted); line-height:1.7; margin:0 0 .8rem; }
-  .pa-foot{ display:flex; gap:.7rem; align-items:center; padding:.9rem 1.6rem 1.2rem; border-top:1px solid var(--line); }
-  /* .ps-skip è scritta per #profiloSetup: qui la si riusa senza duplicarne l'aspetto */
-  #primoAvvio .ps-skip{ border:1px solid var(--line); background:var(--panel); cursor:pointer; font-size:12px;
-    font-weight:700; padding:.6rem 1rem; color:var(--muted); font-family:inherit; }
-  #primoAvvio .ps-skip:hover{ background:var(--hover); color:var(--ink); }
+  .pa-foot{ border-bottom:0; border-top:1px solid var(--line); }
   /* ===== Wizard di creazione del corso ===== */
   #wizard{ position:fixed; inset:0; z-index:220; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.4); padding:2rem; }
   #wizard[hidden]{ display:none!important; }
   .wz-card{ background:var(--panel); border:1px solid var(--line); box-shadow:var(--sh-3d); width:min(720px,95vw); max-height:88vh; display:flex; flex-direction:column; }
-  .wz-head{ display:flex; align-items:center; gap:.7rem; padding:.8rem 1rem; border-bottom:1px solid var(--line); }
-  .wz-head b{ font-size:14px; }
+  .wz-head b{ font-size:14px; margin-right:.6rem; }
   .wz-steps{ font-size:10px; text-transform:uppercase; letter-spacing:.14em; color:var(--muted); font-weight:700; }
   .wz-body{ padding:1.1rem 1.2rem; overflow-y:auto; }
   .wz-body h3{ font-size:11px; text-transform:uppercase; letter-spacing:.14em; color:var(--muted); margin:0 0 .5rem; }
@@ -1801,11 +1798,13 @@
   /* le leve di forma del passo «Opzioni»: menu corti, in griglia, tutti alla stessa altezza */
   .wz-leve{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:.5rem .8rem; margin:.2rem 0 1rem; }
   .wz-leve label.f{ margin-bottom:0; }
-  .wz-foot{ display:flex; align-items:center; gap:.7rem; padding:.8rem 1rem; border-top:1px solid var(--line); }
-  .wz-btn{ border:1px solid var(--line); background:var(--panel); cursor:pointer; font-size:12px; font-weight:700; padding:.55rem 1.1rem; color:var(--ink); }
-  .wz-btn:hover:not(:disabled){ box-shadow:var(--sh-3d); }
-  .wz-btn:disabled{ opacity:.45; cursor:default; }
-  .wz-btn.primary{ background:color-mix(in srgb, var(--teal) 22%, var(--panel)); border-color:transparent; color:var(--teal-strong); }
+  /* Il piede del wizard è una barra girata, come quello del modale Video. Delle
+     quattro regole di `.wz-btn` (normale, hover, spento, «primary») non resta
+     niente: sono `.tbtn` e `.tbtn.acc`, e lo spento ce l'ha già il token. */
+  .wz-foot{ border-bottom:0; border-top:1px solid var(--line); }
+  /* ⚠️ `.wz-hint` non segue i bottoni: è il testo spento delle spiegazioni, e sta
+     anche dentro i paragrafi del corpo — dove `.tbnota` (che non va mai a capo)
+     taglierebbe le frasi lunghe. In BARRA la nota di stato resta `.tbnota`. */
   .wz-hint{ font-size:11px; color:var(--muted); }
   .wz-files{ list-style:none; margin:.6rem 0 0; padding:0; display:flex; flex-direction:column; gap:.25rem; max-height:220px; overflow:auto; }
   .wz-files li{ display:flex; gap:.6rem; align-items:center; font-size:12px; border-bottom:1px solid var(--line); padding:.35rem .1rem; }
@@ -2084,7 +2083,7 @@
   #composer[hidden]{ display:none!important; }
   .cmp-top{ display:flex; flex-wrap:wrap; gap:.5rem .7rem; align-items:center; padding:.5rem 1.1rem;
     border-bottom:1px solid var(--line); background:var(--bg); flex:0 0 auto; }
-  .cmp-top .wz-btn{ padding:.45rem .7rem; font-size:11px; white-space:nowrap; }
+  .cmp-top .tbtn{ white-space:nowrap; }
   .cmp-brand{ display:flex; align-items:baseline; gap:.5rem; margin-right:auto; min-width:0; }
   .cmp-brand b{ font-size:14px; text-transform:uppercase; letter-spacing:.16em; white-space:nowrap; }
   .cmp-brand span{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.14em;
@@ -2145,7 +2144,7 @@
   .cmp-rigacmd{ display:flex; gap:.35rem; align-items:center; margin-top:.45rem; }
   .cmp-rigacmd input{ width:66px; height:30px; border:1px solid var(--line); background:var(--panel); color:var(--ink);
     padding:0 .4rem; font-size:12px; text-align:center; font-family:var(--font-text),sans-serif; }
-  .cmp-rigacmd .wz-btn{ padding:.35rem .6rem; font-size:11px; }
+  .cmp-rigacmd .tbtn{ --tb-pad-x:.6rem; --tb-h:26px; --tb-min:26px; }
   .cmp-piste{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:.6rem; }
   .cmp-card-idx{ border:1px solid var(--line); background:var(--panel); padding:.6rem .65rem;
     display:flex; flex-direction:column; gap:.35rem; position:relative; transition:background .12s; }
@@ -2204,7 +2203,7 @@
   .cmp-tab tr.incorso td{ background:color-mix(in srgb,var(--teal) 8%,var(--panel)); }
   .cmp-tab code{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; }
   .cmp-tab .cmp-mini{ display:inline-grid; vertical-align:middle; margin-right:.15rem; }
-  .cmp-tab .wz-btn{ padding:.3rem .55rem; font-size:11px; }
+  .cmp-tab .tbtn{ --tb-pad-x:.55rem; --tb-h:24px; --tb-min:24px; }
   .cmp-cond{ display:block; font-size:10px; text-transform:uppercase; letter-spacing:.08em;
     font-weight:700; color:var(--teal-strong); }
   .cmp-fatto{ color:var(--teal-strong); font-weight:700; }
@@ -11595,7 +11594,7 @@ try{
           .map(function(a){
             var h=esc(a.testo);
             if(a.comando) h+='<br><span class="pa-cmd"><code>'+esc(a.comando)+'</code>'+
-              '<button type="button" class="ps-skip" data-copia="'+esc(a.comando)+'">Copia</button></span>';
+              '<button type="button" class="tbtn" data-copia="'+esc(a.comando)+'">Copia</button></span>';
             return riga(liv[a.livello]||'info', h);
           }).join('');
       }
@@ -11616,12 +11615,12 @@ try{
           h+='<p>Due strade: installarlo e usare l’abbonamento, oppure incollare una chiave API '+
              'e pagare a consumo.</p>';
           h+='<p class="pa-cmd"><code>'+esc(CMD_CC)+'</code>'+
-             '<button type="button" class="ps-skip" data-copia="'+esc(CMD_CC)+'">Copia il comando</button></p>';
+             '<button type="button" class="tbtn" data-copia="'+esc(CMD_CC)+'">Copia il comando</button></p>';
         }
         if(pronte.length) h+=riga('ok','Chiavi API già salvate per: '+esc(pronte.join(', '))+'.');
         h+=avvisiDi(['motore-assente']);
         if(cc.ok && !vuoleChiave)
-          h+='<p><button type="button" class="ps-skip" id="paVuoleChiave">Preferisco usare una chiave API</button></p>';
+          h+='<p><button type="button" class="tbtn" id="paVuoleChiave">Preferisco usare una chiave API</button></p>';
         if(!cc.ok || vuoleChiave)
           h+='<label class="pa-key">Chiave Anthropic — facoltativa, la puoi mettere dopo da ⚙ AI'+
              '<input type="password" id="paKey" placeholder="sk-ant-…" autocomplete="off" spellcheck="false"></label>';
@@ -15623,9 +15622,9 @@ window.addEventListener('keydown', function(e){
     </div>
     <div class="pa-body" id="paBody" aria-live="polite"></div>
     <div class="pa-foot">
-      <button type="button" class="ps-skip" id="paSalta">Salta questo passo</button>
-      <span style="flex:1"></span>
-      <button type="button" class="setup-btn" id="paAvanti">Avanti</button>
+      <button type="button" class="tbtn" id="paSalta">Salta questo passo</button>
+      <span class="tbspazio"></span>
+      <button type="button" class="tbtn acc" id="paAvanti">Avanti</button>
     </div>
   </div>
 </div>
@@ -15637,8 +15636,8 @@ window.addEventListener('keydown', function(e){
     <p>StudIA può adattare la <b>forma</b> delle lezioni che genera: lunghezza dei capitoli, quantità di esempi, quiz, glossario, e come presentare i contenuti. Non cambia mai <b>quali</b> argomenti trattare.</p>
     <p class="ps-small">Bastano due minuti. Puoi rivedere tutto quando vuoi da <b>⚙ Impostazioni › Utente</b>, e saltare adesso senza perdere niente.</p>
     <div class="ps-row">
-      <button type="button" class="setup-btn" id="psCompila">Compila il profilo</button>
-      <button type="button" class="ps-skip" id="psSalta">Salta per ora</button>
+      <button type="button" class="tbtn acc" id="psCompila">Compila il profilo</button>
+      <button type="button" class="tbtn" id="psSalta">Salta per ora</button>
     </div>
   </div>
 </div>
@@ -15649,15 +15648,16 @@ window.addEventListener('keydown', function(e){
     <div class="wz-head">
       <b id="wzTitle">Nuovo corso</b>
       <span class="wz-steps" id="wzSteps"></span>
-      <span class="sp" style="flex:1"></span>
-      <button class="iconbtn" id="wzClose" type="button" title="Chiudi (riprendi dopo)" aria-label="Chiudi">&#10005;</button>
+      <span class="tbspazio"></span>
+      <button class="tbtn" id="wzClose" type="button" title="Chiudi (riprendi dopo)" aria-label="Chiudi">&#10005;</button>
     </div>
     <div class="wz-body" id="wzBody"></div>
     <div class="wz-foot">
-      <button type="button" class="wz-btn" id="wzBack">Indietro</button>
-      <span style="flex:1"></span>
-      <span class="wz-hint" id="wzHint"></span>
-      <button type="button" class="wz-btn primary" id="wzNext">Avanti</button>
+      <button type="button" class="tbtn" id="wzBack">Indietro</button>
+      <span class="tbspazio"></span>
+      <span class="tbnota" id="wzHint"></span>
+      <span class="tbsep"></span>
+      <button type="button" class="tbtn acc" id="wzNext">Avanti</button>
     </div>
   </div>
 </div>
@@ -15672,11 +15672,13 @@ window.addEventListener('keydown', function(e){
       Alternative <input type="number" id="cmpNAlt" min="2" max="6" aria-label="Numero di alternative d'indice per lezione"></label>
     <label class="cmp-field" for="cmpNCap" title="Quanti capitoli deve avere ogni indice proposto. Vuoto: lo decide il modello.">
       Capitoli <input type="number" id="cmpNCap" min="2" max="30" placeholder="auto" aria-label="Numero di capitoli per lezione"></label>
-    <button type="button" class="wz-btn" id="cmpChiedi">Proponi gli indici</button>
-    <button type="button" class="wz-btn" id="cmpVediTutti" aria-pressed="false" title="Apre o chiude l'elenco dei capitoli su tutte le card">Mostra gli indici</button>
-    <button type="button" class="wz-btn" id="cmpFs">Schermo intero</button>
-    <button type="button" class="wz-btn primary" id="cmpSalva">Salva i percorsi</button>
-    <button class="iconbtn" id="cmpClose" type="button" title="Chiudi il composer" aria-label="Chiudi">&#10005;</button>
+    <button type="button" class="tbtn" id="cmpChiedi">Proponi gli indici</button>
+    <button type="button" class="tbtn" id="cmpVediTutti" aria-pressed="false" title="Apre o chiude l'elenco dei capitoli su tutte le card">Mostra gli indici</button>
+    <button type="button" class="tbtn" id="cmpFs">Schermo intero</button>
+    <button type="button" class="tbtn acc" id="cmpSalva">Salva i percorsi</button>
+    <!-- la chiusura sta in fondo alla riga, come in ogni barra dell'app -->
+    <span class="tbspazio"></span>
+    <button class="tbtn" id="cmpClose" type="button" title="Chiudi il composer" aria-label="Chiudi">&#10005;</button>
   </header>
   <div class="cmp-summary" id="cmpSummary"></div>
   <div class="cmp-body">
@@ -15697,8 +15699,8 @@ window.addEventListener('keydown', function(e){
       <div class="h"><span style="font-size:22px;font-family:var(--emoji-font)">⚠️</span><b>Percorsi incompleti</b></div>
       <div class="b" id="cmpOvBody"></div>
       <div class="f">
-        <button type="button" class="wz-btn" id="cmpOvNo">Torna a comporre</button>
-        <button type="button" class="wz-btn primary" id="cmpOvSi">Salva comunque</button>
+        <button type="button" class="tbtn" id="cmpOvNo">Torna a comporre</button>
+        <button type="button" class="tbtn acc" id="cmpOvSi">Salva comunque</button>
       </div>
     </div>
   </div>
@@ -15712,7 +15714,7 @@ window.addEventListener('keydown', function(e){
 <div id="setup" hidden><div class="setup-card">
   <h2>Benvenuto in StudIA</h2>
   <p>Scegli la cartella dove tenere il tuo <strong>Vault</strong>. Corsi, PDF e video staranno tutti qui: PDF e video vanno insieme nella sottocartella <em>Fonti</em>, e l'app li distingue dall'estensione.</p>
-  <button class="setup-btn" id="chooseVault" type="button">Scegli cartella&#8230;</button>
+  <button class="tbtn acc" id="chooseVault" type="button">Scegli cartella&#8230;</button>
 </div></div>
 <div id="mediaModal" hidden role="dialog" aria-modal="true" aria-label="Video da trascrivere">
   <div class="media-card">

@@ -181,7 +181,7 @@
         '<td class="num">' + k.capitoli + '</td>' +
         '<td>' + chips + (k.usataDa.length > 1 ? '<span class="cmp-cond">usato da ' + k.usataDa.length + ' percorsi</span>' : '') + '</td>' +
         '<td>' + stato + '</td>' +
-        '<td><button type="button" class="wz-btn cmp-scrivi-uno" data-cartella="' + esc(k.cartella) + '"' +
+        '<td><button type="button" class="tbtn cmp-scrivi-uno" data-cartella="' + esc(k.cartella) + '"' +
           (s.stato === 'in-corso' ? ' disabled' : '') + '>' + (k.scritti ? 'riscrivi' : 'scrivi') + '</button></td></tr>';
     }).join('');
 
@@ -200,10 +200,10 @@
       '<div class="cmp-scrhead">' +
       '<span>' + C.coppie.length + ' coppie · <b>' + nCap + '</b> capitoli da scrivere · ' + costo + '</span>' +
       (s.stato === 'in-corso'
-        ? '<button type="button" class="wz-btn" id="cmpScrStop">Ferma dopo questo capitolo</button>'
-        : '<button type="button" class="wz-btn primary" id="cmpScrivi"' + (nCap ? '' : ' disabled') + '>' +
+        ? '<button type="button" class="tbtn" id="cmpScrStop">Ferma dopo questo capitolo</button>'
+        : '<button type="button" class="tbtn acc" id="cmpScrivi"' + (nCap ? '' : ' disabled') + '>' +
             'Scrivi i capitoli mancanti</button>' +
-          '<button type="button" class="wz-btn" id="cmpRiscrivi">Riscrivi tutto</button>') +
+          '<button type="button" class="tbtn" id="cmpRiscrivi">Riscrivi tutto</button>') +
       '</div>' + avanz +
       '<table class="cmp-tab"><thead><tr><th>Cartella</th><th>Indice</th><th class="num">Cap.</th>' +
       '<th>Percorsi</th><th>Stato</th><th></th></tr></thead><tbody>' + righe + '</tbody></table>' +
@@ -324,7 +324,7 @@
           '<input type="number" class="cmp-ncap-riga" data-folder="' + esc(c.folder) + '" min="2" max="30" ' +
             'value="' + esc(C.nPerLezione[c.folder] || '') + '" placeholder="' + (C.nCap || 'auto') + '" ' +
             'title="Quanti capitoli per gli indici di questa lezione. Vuoto = quello generale.">' +
-          '<button type="button" class="wz-btn cmp-rifai" data-folder="' + esc(c.folder) + '"' +
+          '<button type="button" class="tbtn cmp-rifai" data-folder="' + esc(c.folder) + '"' +
             (C.stato === 'in-corso' ? ' disabled' : '') + '>' + (alt.length ? 'rifai' : 'proponi') + '</button>' +
         '</div></div>' +
         '<div class="cmp-piste">' + piste + '</div></div>';

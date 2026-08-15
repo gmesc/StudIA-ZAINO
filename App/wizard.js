@@ -252,8 +252,8 @@
     return '' +
       '<h3>Porta dentro i materiali</h3>' +
       '<p>Se hai già raccolto tutto in una cartella — anche divisa in sottocartelle come <code>MEDIA</code>, <code>PDF</code>, <code>HTML</code>, <code>SOTTOTITOLI</code> — dalla a StudIA: legge com\'è fatta e propone dove va ogni file. I file vengono <b>copiati</b>: gli originali restano dove sono.</p>' +
-      '<button type="button" class="wz-btn primary" id="wzCartella">Importa una cartella…</button> ' +
-      '<button type="button" class="wz-btn" id="wzPick">Scegli singoli file…</button> ' +
+      '<button type="button" class="tbtn acc" id="wzCartella">Importa una cartella…</button> ' +
+      '<button type="button" class="tbtn" id="wzPick">Scegli singoli file…</button> ' +
       '<span class="wz-hint">' + (W.importati.length ? W.importati.filter(function (f) { return !f.error; }).length + ' importati' : 'nessun file ancora importato') + '</span>' +
       (W.imp.errore ? '<div class="wz-errore">' + esc(W.imp.errore) + '</div>' : '') +
       (righe ? '<ul class="wz-files">' + righe + '</ul>' : '');
@@ -296,9 +296,9 @@
       '<ul class="wz-files wz-imp">' + mats + '</ul>' +
       (p.esclusi.length ? '<p style="margin-top:.9rem"><b>Restano fuori ' + p.esclusi.length + ' file.</b></p><ul class="wz-files wz-imp">' + scarti + '</ul>' : '') +
       '<div style="margin-top:1rem">' +
-      '<button type="button" class="wz-btn primary" id="wzImpOk"' + (W.imp.stato === 'copia' ? ' disabled' : '') + '>' +
+      '<button type="button" class="tbtn acc" id="wzImpOk"' + (W.imp.stato === 'copia' ? ' disabled' : '') + '>' +
       (W.imp.stato === 'copia' ? 'Copio…' : 'Importa questi ' + r.materiali + ' materiali') + '</button> ' +
-      '<button type="button" class="wz-btn" id="wzImpNo">Scegli un\'altra cartella</button>' +
+      '<button type="button" class="tbtn" id="wzImpNo">Scegli un\'altra cartella</button>' +
       '</div>';
   }
 
@@ -431,7 +431,7 @@
            Rifare un singolo materiale ora si chiede spuntandolo: se ne scegli
            uno già fatto, quello viene rifatto (vedi avviaIngest). */
         '<div style="display:flex;gap:.5rem;margin-top:.8rem;">' +
-        '<button type="button" class="wz-btn primary" id="wzIngStart">' +
+        '<button type="button" class="tbtn acc" id="wzIngStart">' +
         (daFare.length ? 'Elabora i ' + daFare.length + ' materiali mancanti' : 'Rielabora i materiali scelti') +
         '</button>' +
         '</div>' +
@@ -529,8 +529,8 @@
 
     if (!inCorso) {
       h += '<div style="display:flex;gap:.5rem;">' +
-        '<button type="button" class="wz-btn primary" id="wzSchede">' + (s.fatte ? 'Leggi i materiali mancanti' : 'Analizza i materiali') + '</button>' +
-        (s.fatte ? '<button type="button" class="wz-btn" id="wzSchedeTutto">Rileggi tutto</button>' : '') +
+        '<button type="button" class="tbtn acc" id="wzSchede">' + (s.fatte ? 'Leggi i materiali mancanti' : 'Analizza i materiali') + '</button>' +
+        (s.fatte ? '<button type="button" class="tbtn" id="wzSchedeTutto">Rileggi tutto</button>' : '') +
         '</div>';
     } else {
       h += '<p class="wz-hint">' + esc(s.corrente || 'Avvio…') + '</p>';
@@ -639,7 +639,7 @@
       '«Capitoli per lezione» vuoto vuol dire che decide il modello.</p>';
 
     h += '<div class="setrow" style="margin-bottom:.8rem;">' +
-      '<button type="button" class="wz-btn primary" id="wzProponi"' + (inCorso ? ' disabled' : '') + '>' +
+      '<button type="button" class="tbtn acc" id="wzProponi"' + (inCorso ? ' disabled' : '') + '>' +
       (W.piano ? 'Rifai la proposta delle lezioni' : 'Proponi le lezioni') + '</button>' +
       (inCorso ? '<span class="wz-hint">' + esc(W.plan.msg || 'Sto lavorando…') + '</span>' : '') +
       '</div>';
@@ -695,7 +695,7 @@
       (st.coppieScritte ? ' · ' + st.coppieScritte + ' cartelle di capitoli scritte' : '') + '</div>';
 
     h += '<div style="margin-top:1rem">' +
-      '<button type="button" class="wz-btn primary" id="wzApriComposer">Apri il composer</button></div>' +
+      '<button type="button" class="tbtn acc" id="wzApriComposer">Apri il composer</button></div>' +
       '<p class="wz-hint" style="display:block;margin-top:.6rem;">Il wizard si chiude mentre componi e si riapre qui quando chiudi il composer. ' +
       '«Approva le lezioni» crea le cartelle delle lezioni senza variante: serve solo se vuoi scrivere anche i capitoli della lezione singola, al passo dopo.</p>';
     return h;
@@ -782,7 +782,7 @@
         'una cartella per coppia lezione+indice, condivisa fra i percorsi che scelgono lo stesso indice.</p>' +
         '<div class="wz-ok" style="display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;">' +
         '<span style="flex:1;min-width:220px">I percorsi si compongono al passo precedente.</span>' +
-        '<button type="button" class="wz-btn" id="wzComposer">Torna al composer</button></div>' +
+        '<button type="button" class="tbtn" id="wzComposer">Torna al composer</button></div>' +
         (perLezione
           ? '<p class="wz-hint" style="display:block">' + (scritti
               ? '<b>' + scritti + '</b> lezioni su ' + lezioni.length + ' hanno già i capitoli scritti. Rifarli li riscrive da capo: serve a provare un taglio diverso sullo stesso materiale.'
@@ -817,9 +817,9 @@
       return h + '<p>Lo stesso materiale si può insegnare in modi diversi, tutti legittimi. Chiedo <b>due o tre scalette alternative</b> e ti dico in una frase che cosa cambia per te fra l\'una e l\'altra.</p>' +
         '<p class="wz-hint" style="display:block">Le tue preferenze di forma valgono per tutte: non sono una delle variabili in gioco.</p>' +
         '<div style="margin-top:1rem">' +
-        '<button type="button" class="wz-btn primary" id="wzScalette"' + (W.cap.stato === 'scalette' ? ' disabled' : '') + '>' +
+        '<button type="button" class="tbtn acc" id="wzScalette"' + (W.cap.stato === 'scalette' ? ' disabled' : '') + '>' +
         (W.cap.stato === 'scalette' ? 'Ci penso…' : 'Proponi le scalette') + '</button> ' +
-        '<button type="button" class="wz-btn" id="wzAltroLezione">Cambia lezione</button></div>';
+        '<button type="button" class="tbtn" id="wzAltroLezione">Cambia lezione</button></div>';
     }
 
     // 2. confronto e scelta
@@ -873,10 +873,10 @@
     }
     h += '<div style="margin-top:1rem">' +
       (W.cap.stato === 'in-corso'
-        ? '<button type="button" class="wz-btn" id="wzGenStop">Ferma dopo questo capitolo</button>'
-        : '<button type="button" class="wz-btn primary" id="wzGenVia"' + (W.cap.scelta < 0 ? ' disabled' : '') + '>' +
+        ? '<button type="button" class="tbtn" id="wzGenStop">Ferma dopo questo capitolo</button>'
+        : '<button type="button" class="tbtn acc" id="wzGenVia"' + (W.cap.scelta < 0 ? ' disabled' : '') + '>' +
           (W.cap.esito ? 'Riscrivi' : 'Scrivi i capitoli') + '</button>') +
-      ' <button type="button" class="wz-btn" id="wzAltroLezione">Cambia lezione</button></div>';
+      ' <button type="button" class="tbtn" id="wzAltroLezione">Cambia lezione</button></div>';
     return h;
   }
 
