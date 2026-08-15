@@ -17,7 +17,7 @@
 | ramo | commit | suite |
 |---|---|---|
 | `main` | `9570480` (14 ago sera) | ✅ 29 file di unità · 36 prove CDP |
-| `foto-album` | `2ad3721` — **aperto**, gesti da provare | ✅ **31** file di unità · **37** prove CDP |
+| `foto-album` | `da9a521` — **aperto**, gesti da provare | ✅ **31** file di unità · **37** prove CDP |
 
 **Un ramo aperto: `foto-album`** (F1, le foto). I gesti a mano sono al §4-bis; finché non sono
 provati non si unisce. `fonte-zoom-adatta` è entrato in `main` in **fast-forward** — `main`
@@ -144,6 +144,33 @@ Prove nuove: `test/foto.js` · `test/heic.js` (unità, ora **31** file) e `test/
 ⚠️ E la prova rimette a posto **modalità e banco**: senza, `prova-modo` e `prova-evidenze-pdf`
 diventavano rosse perché si ritrovavano uno zaino attivo. *Una prova lascia il banco come l'ha
 trovato* — terza volta che si paga, e stavolta con un sintomo che non c'entrava niente col colpevole.
+
+## 2-quater. Il visualizzatore delle immagini (F2 e F2-bis) — 15 agosto
+
+Un'immagine dell'Album Foto si apre nel riquadro (doppio click o «Apri l'immagine…») e si guarda con
+la **stessa grammatica delle fonti**; ⌘ tenuto premuto ritaglia. È la **seconda faccia** dello stesso
+strumento — o la griglia, o un'immagine — non un blocco in più del banco.
+
+Mettendo una foto in un appunto o in una mappa, l'immagine entra subito e una bolla offre «solo una
+parte…»: si apre il visualizzatore con le forbici già accese, e il ritaglio **prende il posto**
+dell'intera. Le quattro porte dell'inserimento passano tutte da una funzione sola.
+
+⚠️ **Gli osservatori si registravano prima che il markup esistesse**, e valeva anche per lo zoom
+delle fonti del giorno prima: l'inline sta in cima al corpo, i riquadri in fondo, e
+`getElementById` torna `null` **in silenzio**. Regola: un ascoltatore su un elemento di pagina si
+attacca a documento pronto, come già facevano il player e il TTS.
+
+⚠️ **`scrollbar-gutter:stable`**: adattare alla larghezza fa comparire la barra, che si porta via
+quindici pixel, che cambiano la larghezza utile, che rifà la scala, che fa sparire la barra.
+Misurato: 694px dentro 679. Si riserva il posto invece di inseguirlo.
+
+⚠️ **Trappola di metodo**: `await` su una promessa che si risolve solo quando un modale è stato
+compilato blocca la prova per sempre — dieci minuti di silenzio, perché a compilarlo era la riga
+dopo.
+
+Prove: la sezione del visualizzatore e quella dell'inserimento in `prova-foto.js`;
+`MappaModifica.sostituisciImmagine` in `test/modifica.js`; la scala per modo e il punto fisso in
+`test/zoom-fonte.js`.
 
 ## 3. ⚠️ Le trappole pagate qui (la parte che vale oltre questo caso)
 

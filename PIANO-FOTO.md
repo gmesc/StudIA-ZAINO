@@ -92,16 +92,60 @@ conversione. Da decidere: il frontmatter YAML di un file da Obsidian (tenerlo o 
 percorso relativo (che vanno nell'album). Poi, se servirà, `.docx` via `textutil` — dichiaratamente
 lossy: immagini, tabelle e impaginazione non arrivano.
 
-### F2 — il visualizzatore
-Si apre **al momento dell'inserimento** in un appunto o in una mappa — è lì che serve la domanda
-«tutta l'immagine o una parte?» — e dal menu contestuale di una card. Zoom col ciclo `⟷`/`⤢` e
-⇧+rotella sotto il puntatore, come le fonti: `App/assets/fonti/zoom.js` si riusa tutto tranne una
-cosa — lo scorrimento che tiene il punto sotto il puntatore, che per i PDF lo fa
-`updateScale({origin})` di pdf.js e qui va rifatto (era `puntoFisso`, tolto dal modulo quando si è
-scoperto che pdf.js lo faceva già).
+### F2 — il visualizzatore ✅ *fatto il 15 agosto 2026*
+Un'immagine si apre nel riquadro — doppio click sulla card o «Apri l'immagine…» — e si guarda con
+la **stessa grammatica delle fonti**: `⟷` larghezza · `⤢` pagina intera · `NNN%` a mano, ciclo col
+click, «+»/«−» e ⇧+rotella sotto il puntatore. ⌘ tenuto premuto ritaglia, come sul documento.
 
-### F3 — il ritaglio sulle foto, e gli usi
-⌘ tenuto premuto, come sulle fonti. Tre regole da scrivere:
+**Non è un blocco in più del banco**: è la seconda faccia dell'Album Foto — o la griglia, o
+un'immagine — come la mappa ha i suoi due registri. Da lì lo zoom dinamico eredita gratis il
+riquadro che cambia misura.
+
+Il ritaglio di un'immagine ha un punto di tipo nuovo: **`da`**, l'identità della foto madre.
+Serviva un tipo suo e non un riuso di `pagina` — il tipo entra nel seme dell'identità, e senza, il
+ritaglio a pagina 12 di un PDF e quello preso da una foto potrebbero collidere. «Alla fonte», lì,
+riapre la foto.
+
+⚠️ **Gli osservatori si registravano prima che il markup esistesse** — l'inline sta in cima al
+corpo, i riquadri in fondo — e `getElementById` tornava `null` in silenzio: niente «immagine
+pronta», niente `ResizeObserver`, cioè un'immagine che non si adatta mai senza un errore da nessuna
+parte. Valeva anche per lo zoom delle fonti. Ora si aspetta il documento.
+
+⚠️ **`scrollbar-gutter:stable`**: adattando alla larghezza compare la barra verticale, si porta via
+quindici pixel, la larghezza utile cambia e la scala andrebbe rifatta — e rifacendola la barra
+sparisce. Misurato: immagine 694px in un riquadro da 679. Riservare il posto rompe l'anello
+all'origine, invece di inseguirlo con un'isteresi.
+
+⚠️ **`page-fit` non ingrandisce mai**: una foto da 200px sgranata a tutto schermo non è «adattata»,
+è rovinata. «Alla larghezza» invece riempie — è un comando esplicito, e fa così anche su un PDF.
+
+`FontiZoom.puntoFisso` è tornato (con la sua prova): sui PDF lo scorrimento sotto il puntatore lo fa
+`updateScale({origin})`, ma sotto un `<img>` non c'è nessuno che ci pensi.
+
+### F2-bis — la domanda al momento dell'inserimento ✅ *fatto il 15 agosto 2026*
+Mettendo una foto in un appunto o in una mappa, l'immagine entra **subito** e una bolla chiede: «va
+bene tutta» o «solo una parte…». La seconda apre il visualizzatore con le forbici **già accese**, e
+il ritaglio **prende il posto** dell'immagine intera.
+
+**La domanda arriva dopo, non prima**: chiederlo prima metterebbe un bivio davanti a un gesto oggi
+immediato, e lo farebbe pagare a chi voleva davvero tutta l'immagine — il caso normale.
+
+Le quattro porte (due voci di menu, due trascinamenti) passano tutte da `albumInserisci`: la domanda
+si fa in un posto solo, o resterebbe una porta che non la fa.
+
+⚠️ Nell'appunto si cerca la **stringa scritta**, non «l'ultima riga»: fra l'inserimento e il
+ritaglio si può aver scritto altrove. Se non c'è più, non si inventa niente — si dice che il
+ritaglio è nei Ritagli. Il ripiego cerca il solo `(album:<id>)`, che una rinomina non cambia.
+
+⚠️ Un nodo con una foto **non prende più un rimando**: `materiale`, per un'immagine portata dentro,
+è il nome del file da cui è entrata, non un documento — un rimando lì sopra prometterebbe di
+riportare da qualche parte senza riportarci.
+
+`MappaModifica.sostituisciImmagine` è il verbo nuovo, puro e provato: conserva la `scala` del nodo,
+che è la misura data a mano a quel riquadro.
+
+### F3 — gli usi, e le lapidi
+Il ritaglio sulle foto è entrato con F2. Restano tre regole:
 
 1. **il ritaglio di un ritaglio** si ancora sempre all'immagine **originale**, componendo i
    rettangoli: una catena renderebbe orfano il figlio quando si cancella l'anello di mezzo;
