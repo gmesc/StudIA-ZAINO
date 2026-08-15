@@ -36,7 +36,11 @@ const path = require('path');
 
 const SORGENTE = path.join(__dirname, '..', 'App', 'assets', 'pdfjs', 'pdf_viewer.css');
 const USCITA = path.join(__dirname, '..', 'App', 'assets', 'pdfjs', 'pdf_viewer.scoped.css');
-const GUSCIO = '#pdfPane';
+/* ⚠️ `:is(...)`: da quando esiste il CONFRONTO i riquadri col viewer sono due,
+   e un guscio che ne copre uno solo lascia l'altro con 266 pagine ad altezza
+   ZERO — misurato: `_getVisiblePages()` vuota, nessun rendering, nessun
+   errore da nessuna parte. Chi aggiunge un terzo riquadro lo aggiunge QUI. */
+const GUSCIO = ':is(#pdfPane, #pdfPane2)';
 
 /**
  * Trova i blocchi `:root { … }` di PRIMO livello e ne riscrive il selettore.

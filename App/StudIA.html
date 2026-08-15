@@ -1021,6 +1021,16 @@
      pretende. Lo scroll è nostro: `pdf_viewer.css` stila le pagine, non il
      contenitore — quella regola sta in `viewer.css`, che non è vendorizzato. */
   #pdfHost{ flex:1; position:relative; min-height:0; background:var(--hover); }
+  /* Il Confronto: lo stesso vestito della fonte, un motore suo. */
+  #pdfPane2{ display:none; flex-direction:column; height:100%; min-height:0; background:var(--panel); }
+  .bcorpo > #pdfPane2{ display:flex!important; height:100%; }
+  #pdf2Host{ flex:1; position:relative; min-height:0; background:var(--hover); }
+  #pdf2Frame{ position:absolute; inset:0; overflow:auto; outline:0; }
+  #pdf2Frame .pdfViewer{ margin:0 auto; }
+  #pdfPane2[data-doc="0"] #pdf2Host{ display:none; }
+  #pdfPane2 .pdfzoom #pdf2ZoomLvl{ width:auto; padding:0 .4rem; font-size:11px; font-weight:700;
+    font-variant-numeric:tabular-nums; min-width:calc(5.5ch + .8rem); }
+  #pdf2Title{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
   #pdfFrame{ position:absolute; inset:0; overflow:auto; outline:0; }
   #pdfFrame .pdfViewer{ margin:0 auto; }
   /* Il documento non c'è ancora, o si sta caricando: si dice, invece di
@@ -5283,6 +5293,216 @@ function pdfjsAvvia(){
   }
 }
 
+/* ===== IL CONFRONTO: la seconda fonte ====================================
+ *
+ * Un secondo visualizzatore, con un motore pdf.js TUTTO SUO (`FONTE2`): il
+ * documento affiancato non condivide niente col principale — né la pagina, né
+ * lo zoom, né la cache — perché due riquadri che si passano lo stato di
+ * nascosto sono il difetto che il banco ha già pagato col «riquadro ricordato».
+ *
+ * ⚠️ Che cosa NON fa, dichiarato: evidenze, ritagli, ricerca, OCR e «appunta»
+ * vivono nella Fonte principale. Qui si legge, si scorre, si zooma e si copia.
+ * Un corredo a metà che sembra intero produrrebbe un «appunta» che cita il
+ * documento sbagliato — e la selezione qui dentro, infatti, non apre il menu.
+ *
+ * Lo zoom è la grammatica delle fonti (`FontiZoom`), con la sua chiave di
+ * memoria: chi confronta tiene spesso i due documenti a scale diverse.
+ */
+var FONTE2 = { pronto:false, viewer:null, bus:null, link:null, doc:null,
+               file:'', page:1, larghezza:0, CHIAVE:'studia.pdf2.zoom' };
+
+function fonte2Aperta(){ return !!FONTE2.doc; }
+function fonte2ZoomSalvato(){
+  var v='';
+  try{ v=localStorage.getItem(FONTE2.CHIAVE)||''; }catch(e){ return 'page-width'; }
+  return FontiZoom.valido(v);
+}
+function fonte2ZoomRicorda(v){ try{ localStorage.setItem(FONTE2.CHIAVE, String(v)); }catch(e){} }
+
+function fonte2Avvia(){
+  if(FONTE2.pronto) return true;
+  if(!pdfjsCaricato()) return false;
+  var host=$('#pdf2Frame'); if(!host) return false;
+  var tela=host.querySelector('.pdfViewer'); if(!tela) return false;
+  try{
+    /* ⚠️ Il worker si dichiara anche qui: lo fa `pdfjsAvvia`, ma il Confronto
+       deve poter partire PRIMA che la Fonte sia mai stata aperta — misurato
+       con la sonda: senza, `getDocument` falliva in silenzio. Riassegnarlo è
+       idempotente. */
+    pdfjsLib.GlobalWorkerOptions.workerSrc='assets/pdfjs/pdf.worker.min.mjs';
+    FONTE2.bus=new pdfjsViewer.EventBus();
+    FONTE2.link=new pdfjsViewer.PDFLinkService({ eventBus:FONTE2.bus });
+    FONTE2.viewer=new pdfjsViewer.PDFViewer({
+      container:host, viewer:tela,
+      eventBus:FONTE2.bus, linkService:FONTE2.link,
+      textLayerMode:1,                 // selezionare e COPIARE è metà del confronto
+      annotationEditorMode:-1,         // stessa lezione della fonte: niente «timbri»
+      imageResourcesPath:'assets/pdfjs/images/'
+    });
+    FONTE2.link.setViewer(FONTE2.viewer);
+    FONTE2.bus.on('pagesinit', function(){
+      try{ FONTE2.viewer.currentScaleValue=fonte2ZoomSalvato(); }
+      catch(e){ try{ FONTE2.viewer.currentScaleValue='page-width'; }catch(e2){} }
+      FONTE2.larghezza=$('#pdf2Frame') ? $('#pdf2Frame').clientWidth : 0;
+      if(FONTE2.page>1){ try{ FONTE2.viewer.currentPageNumber=FONTE2.page; }catch(e){} }
+      fonte2Aggiorna();
+    });
+    FONTE2.bus.on('scalechanging', function(){ fonte2Aggiorna(); });
+    FONTE2.bus.on('pagechanging', function(e){
+      if(e && e.pageNumber){ FONTE2.page=e.pageNumber; fonte2Aggiorna(); }
+    });
+    FONTE2.pronto=true;
+    return true;
+  }catch(err){
+    console.error('confronto: avvio fallito', err);
+    return false;
+  }
+}
+
+/** Apre un documento nel confronto. La porta è UNA: il pannellino dei
+ *  documenti qui sopra — i rimandi dei capitoli restano della Fonte. */
+async function fonte2Apri(file){
+  if(!file) return;
+  if(!fonte2Avvia()){ toast('Il visualizzatore del confronto non si è avviato', false); return; }
+  var url=(window.vault&&window.vault.srcUrl)?window.vault.srcUrl(file, corsoAttivo()):('../Fonti/'+encodeURIComponent(file));
+  try{
+    var doc=await pdfjsLib.getDocument({ url:url, isEvalSupported:false }).promise;
+    if(FONTE2.doc){ try{ FONTE2.doc.destroy(); }catch(e){} }
+    FONTE2.doc=doc; FONTE2.file=file; FONTE2.page=1;
+    FONTE2.viewer.setDocument(doc);
+    FONTE2.link.setDocument(doc, null);
+  }catch(e){
+    toast('Il documento non si è potuto aprire: '+((e&&e.message)||e), false);
+    return;
+  }
+  var t=$('#pdf2Title'); if(t){ t.textContent=titoloMateriale(file)||file; t.title=file; }
+  try{ bancoMostra('fonte2'); }catch(e){}
+  fonte2Aggiorna();
+}
+function fonte2Chiudi(){
+  if(FONTE2.doc){ try{ FONTE2.doc.destroy(); }catch(e){} }
+  FONTE2.doc=null; FONTE2.file=''; FONTE2.page=1;
+  try{ if(FONTE2.viewer) FONTE2.viewer.setDocument(null); }catch(e){}
+  var t=$('#pdf2Title'); if(t){ t.textContent='Confronto'; t.title=''; }
+  fonte2Aggiorna();
+}
+
+/** La barra: pagina, zoom, e il riquadro vuoto che spiega. Un punto solo. */
+function fonte2Aggiorna(){
+  var pane=$('#pdfPane2'); if(!pane) return;
+  var aperta=fonte2Aperta();
+  pane.dataset.doc=aperta?'1':'0';
+  var vuoto=$('#pdf2Vuoto'); if(vuoto) vuoto.hidden=aperta;
+  var pag=$('#pdf2Pag'), zoom=$('#pdf2Zoom'), chiudi=$('#pdf2Close');
+  if(pag) pag.hidden=!aperta;
+  if(zoom) zoom.hidden=!aperta;
+  if(chiudi) chiudi.hidden=!aperta;
+  if(!aperta) return;
+  var n=$('#pdf2PagN');
+  if(n) n.textContent='p. '+(FONTE2.page||1)+(FONTE2.doc?(' di '+FONTE2.doc.numPages):'');
+  var lvl=$('#pdf2ZoomLvl');
+  if(lvl){
+    var e=FontiZoom.etichetta(FONTE2.viewer && FONTE2.viewer.currentScaleValue,
+                              FONTE2.viewer && FONTE2.viewer.currentScale, true);
+    lvl.textContent=e.testo; lvl.title=e.titolo;
+  }
+}
+function fonte2Pagina(avanti){
+  if(!fonte2Aperta()) return;
+  var n=(FONTE2.viewer.currentPageNumber||1)+(avanti?1:-1);
+  n=Math.max(1, Math.min(FONTE2.doc.numPages, n));
+  try{ FONTE2.viewer.currentPageNumber=n; }catch(e){}
+}
+function fonte2ZoomPasso(su){
+  if(!fonte2Aperta()) return;
+  var n=FontiZoom.passo(FONTE2.viewer.currentScale||1, su);
+  if(n===null) return;
+  try{ FONTE2.viewer.currentScaleValue=String(n); }catch(e){ return; }
+  fonte2ZoomRicorda(n); fonte2Aggiorna();
+}
+function fonte2ZoomAdatta(){
+  if(!fonte2Aperta()) return;
+  var nuovo=FontiZoom.prossimoAdatta(FONTE2.viewer.currentScaleValue);
+  try{ FONTE2.viewer.currentScaleValue=nuovo; }catch(e){ return; }
+  FONTE2.larghezza=$('#pdf2Frame') ? $('#pdf2Frame').clientWidth : 0;
+  fonte2ZoomRicorda(nuovo); fonte2Aggiorna();
+}
+/** L'adattamento dinamico: il riquadro cambia, la scala segue. Stessa isteresi
+ *  della Fonte, letta dallo stesso modulo. */
+function fonte2Riadatta(){
+  if(!fonte2Aperta() || !FONTE2.viewer) return;
+  var host=$('#pdf2Frame'); if(!host) return;
+  var v=FONTE2.viewer.currentScaleValue;
+  if(!FontiZoom.daRiadattare(v, host.clientWidth, FONTE2.larghezza)) return;
+  FONTE2.larghezza=host.clientWidth;
+  try{ FONTE2.viewer.currentScaleValue=v; }catch(e){}
+}
+
+/** Il pannellino dei documenti: lo stesso elenco della Fonte (`documentiPdf`),
+ *  un bersaglio diverso. Riusa il popup dei documenti con un contrassegno. */
+async function fonte2Pannello(btn){
+  var pop=$('#pdfDocPop'); if(!pop) return;
+  var id=corsoAttivo();
+  if(!id){ toast('Apri un corso o uno zaino', false); return; }
+  var docs=await documentiPdf(id);
+  if(!docs.length){
+    pop.innerHTML='<div class="pd-vuoto">Nessun documento in questo contenitore.</div>';
+  } else {
+    pop.innerHTML=docs.map(function(d){
+      var attivo=(d.name===FONTE2.file);
+      return '<button type="button" class="pd-voce'+(attivo?' attivo':'')+'" data-confronto="'+escHtml(d.name)+'">'+
+        escHtml(titoloMateriale(d.name)||d.name)+'</button>';
+    }).join('');
+  }
+  popAt(pop, btn);
+}
+
+(function(){
+  function attacca(){
+    if(typeof ResizeObserver==='function'){
+      var el=document.getElementById('pdf2Frame');
+      if(el){
+        var atteso=0;
+        new ResizeObserver(function(){
+          if(atteso) return;
+          atteso=requestAnimationFrame(function(){ atteso=0; fonte2Riadatta(); });
+        }).observe(el);
+      }
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', attacca); else attacca();
+
+  document.addEventListener('click', function(e){
+    if(!e.target.closest) return;
+    if(e.target.closest('#pdf2Doc')){ fonte2Pannello(e.target.closest('#pdf2Doc')); return; }
+    var voce=e.target.closest('#pdfDocPop .pd-voce[data-confronto]');
+    if(voce){ closePops(); fonte2Apri(voce.getAttribute('data-confronto')); return; }
+    if(e.target.closest('#pdf2Prev')){ fonte2Pagina(false); return; }
+    if(e.target.closest('#pdf2Next')){ fonte2Pagina(true); return; }
+    if(e.target.closest('#pdf2ZoomIn')){ fonte2ZoomPasso(true); return; }
+    if(e.target.closest('#pdf2ZoomOut')){ fonte2ZoomPasso(false); return; }
+    if(e.target.closest('#pdf2ZoomLvl')){ fonte2ZoomAdatta(); return; }
+    if(e.target.closest('#pdf2Close')){ fonte2Chiudi(); return; }
+  });
+  /* ⇧+rotella sotto il puntatore, come la Fonte: `origin` va convertito nel
+     sistema di `offsetTop/offsetLeft` — stessa trappola, stessa correzione. */
+  document.addEventListener('wheel', function(e){
+    if(!e.shiftKey || !fonte2Aperta()) return;
+    if(!e.target.closest || !e.target.closest('#pdf2Frame')) return;
+    var verso=FontiZoom.verso(e); if(!verso) return;
+    e.preventDefault();
+    var host=$('#pdf2Frame'); if(!host) return;
+    var s=FONTE2.viewer.currentScale || 1;
+    var n=FontiZoom.passo(s, verso>0); if(n===null) return;
+    var r=host.getBoundingClientRect();
+    var origine=[ (e.clientX-r.left)+host.offsetLeft, (e.clientY-r.top)+host.offsetTop ];
+    try{ FONTE2.viewer.updateScale({ scaleFactor:n/s, origin:origine, drawingDelay:400 }); }
+    catch(err){ return; }
+    fonte2ZoomRicorda(FONTE2.viewer.currentScale || n);
+    fonte2Aggiorna();
+  }, {passive:false});
+})();
+
 /* ===== Zoom e ricerca dentro il documento ================================
    Due leve del DOCUMENTO, non della lezione: stanno nella barra dell'anteprima
    e non nella topbar, che parla del capitolo che stai leggendo.
@@ -8626,6 +8846,7 @@ function contenitoreMolla(){
     }
   }catch(e){ console.error('mappe/cambioContenitore:', e); }
   try{ MATERIALI.lista=null; }catch(e){}
+  try{ if(typeof fonte2Chiudi==='function' && fonte2Aperta()) fonte2Chiudi(); }catch(e){}
   try{ if(typeof fotoChiudiVista==='function' && fotoVistaAperta()) fotoChiudiVista();
     FOTOVISTA.voci=[]; FOTOVISTA.filtro=''; var fc=$('#fotoCerca'); if(fc) fc.value='';
     ALBUMVISTA.voci=[]; ALBUMVISTA.filtro=''; var ac=$('#albCerca'); if(ac) ac.value='';
@@ -9036,6 +9257,7 @@ function cambiaCorso(id){
   try{ ripassoCarica().then(function(){ return ripassoPota(); }); }catch(e){}
   /* L'album è di un corso: quello di prima resterebbe a schermo con i suoi
      ritagli, e un click ci lavorerebbe sopra nel corso sbagliato. */
+  try{ if(typeof fonte2Chiudi==='function' && fonte2Aperta()) fonte2Chiudi(); }catch(e){}
   try{ if(typeof fotoChiudiVista==='function' && fotoVistaAperta()) fotoChiudiVista();
     FOTOVISTA.voci=[]; FOTOVISTA.filtro=''; var fc=$('#fotoCerca'); if(fc) fc.value='';
     ALBUMVISTA.voci=[]; ALBUMVISTA.filtro=''; var ac=$('#albCerca'); if(ac) ac.value='';
@@ -10153,6 +10375,10 @@ document.addEventListener('mouseup',function(e){
      una selezione è buona è `selezioneAttiva()`, in un posto solo. */
   if(e.target.closest && (e.target.closest('#selBarra')||e.target.closest('#selMenu')||
                           e.target.closest('#notePane')||
+                          /* nel CONFRONTO niente barra: le sue voci (evidenzia,
+                             appunta, keyword) sono ancorate alla Fonte, e qui
+                             citerebbero il documento sbagliato */
+                          e.target.closest('#pdfPane2')||
                           (e.target.closest('#pdfPane') && !e.target.closest('.textLayer')))) return;
   // al `mouseup` la selezione non è ancora aggiornata: si legge al giro dopo
   setTimeout(function(){
@@ -10328,6 +10554,11 @@ function selMenuApri(x, y, sel){
 document.addEventListener('contextmenu', function(e){
   if(!e.target.closest) return;
   if(!e.target.closest('#content') && !e.target.closest('.textLayer')) return;
+  /* ⚠️ Nel CONFRONTO la selezione si copia con ⌘C e basta: il menu offre
+     evidenzia/appunta/keyword, che sono ancorati alla Fonte principale — un
+     «appunta» qui citerebbe il documento SBAGLIATO, che è peggio di nessun
+     menu. Quando il confronto avrà il suo corredo (B2 vero), la guardia cade. */
+  if(e.target.closest('#pdfPane2')) return;
   if(siStaRidimensionando()) return;
   var sel=selezioneAttiva();
   if(!sel || !puntoNellaSelezione(sel.range, e.clientX, e.clientY)) return;
@@ -12996,6 +13227,10 @@ function bancoStrumenti(){
        per ogni cosa (il segno d'ascolto, la citazione, i tasti rapidi), per un
        guadagno che non c'è — due media non si ascoltano insieme. */
     player:    { nome:'Player',          famiglia:'fonte',    sel:'#playerPane' },
+    /* Il Confronto: un secondo documento affiancato. Vive in TUTTE le modalità
+       — confrontare due dispense serve nei corsi quanto negli zaini — e il suo
+       unico ingresso è il pannellino dei documenti nella sua barra. */
+    fonte2:    { nome:'Confronto',       famiglia:'fonte',    sel:'#pdfPane2' },
     appunti:   { nome:'Appunti',         famiglia:'quaderno', sel:'#notePane' },
     mappa:     { nome:'Mappa',           famiglia:'quaderno', sel:'#mappaView' },
     keyword:   { nome:'Parole chiave',   famiglia:'quaderno', sel:'#keywordPane' },
@@ -16662,6 +16897,45 @@ window.addEventListener('keydown', function(e){
      riproduce, quindi nessun dubbio su chi risponde a 🔖 e ai tasti rapidi.
      Un `<video>` suona anche l'audio: il tipo cambia il vestito
      (`#plHost[data-tipo]`), non il motore. -->
+<!-- ========================= IL CONFRONTO ================================
+     La SECONDA fonte: un documento affiancato a quello principale, per
+     confrontare due testi fianco a fianco. È uno strumento del banco come gli
+     altri — `bancoMonta` lo sposta nel blocco che lo ospita.
+
+     ⚠️ È dichiaratamente più semplice della Fonte: si legge, si scorre, si
+     zooma e si COPIA. Le evidenze, i ritagli, la ricerca e «appunta» vivono
+     nella Fonte principale — un secondo corredo completo vorrebbe dire
+     raddoppiare ANTEPRIMA, le evidenze e le citazioni (B2 vero, dopo lo
+     smontaggio); un corredo a metà che sembra intero vorrebbe dire un «appunta»
+     che cita il documento sbagliato. Meglio un riquadro che dice che cos'è. -->
+<section id="pdfPane2" aria-label="Confronto: un secondo documento">
+  <div class="tbar pdfbar">
+    <strong id="pdf2Title">Confronto</strong>
+    <button class="tbtn" id="pdf2Doc" type="button" aria-haspopup="menu" aria-expanded="false"
+            title="Scegli il documento da confrontare" aria-label="Scegli il documento da confrontare">Documenti &#9662;</button>
+    <span class="tbspazio"></span>
+    <i class="tbsep" aria-hidden="true"></i>
+    <span class="pdfpag" id="pdf2Pag" hidden>
+      <button class="tbtn" id="pdf2Prev" type="button" title="Pagina precedente" aria-label="Pagina precedente">&#8249;</button>
+      <span id="pdf2PagN">p. 1</span>
+      <button class="tbtn" id="pdf2Next" type="button" title="Pagina successiva" aria-label="Pagina successiva">&#8250;</button>
+    </span>
+    <i class="tbsep" aria-hidden="true"></i>
+    <span class="pdfzoom" id="pdf2Zoom" hidden>
+      <button class="tbtn" id="pdf2ZoomOut" type="button" title="Riduci" aria-label="Riduci">&#8722;</button>
+      <button class="tbtn" id="pdf2ZoomLvl" type="button" title="Adattata alla larghezza — segue il riquadro; clicca per adattare alla pagina intera">&#10231;</button>
+      <button class="tbtn" id="pdf2ZoomIn" type="button" title="Ingrandisci" aria-label="Ingrandisci">+</button>
+    </span>
+    <button class="tbtn" id="pdf2Close" type="button" aria-label="Chiudi il confronto">&#10005;</button>
+  </div>
+  <div id="pdf2Host">
+    <div id="pdf2Frame" tabindex="0" aria-label="Documento a confronto"><div class="pdfViewer"></div></div>
+  </div>
+  <div class="pdfvuoto" id="pdf2Vuoto">
+    <span>Nessun documento a confronto.<br>Scegline uno da <b>Documenti &#9662;</b> qui sopra.<br>
+    <small>Qui si legge e si copia: evidenze, ritagli e «appunta» stanno nella Fonte.</small></span>
+  </div>
+</section>
 <section id="playerPane" aria-label="Player: video e audio">
   <div class="tbar plbar">
     <strong id="plTitle">Player</strong>

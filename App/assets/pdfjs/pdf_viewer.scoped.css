@@ -1,15 +1,15 @@
 /* GENERATO DA bin/pdfjs-css.js — NON MODIFICARE A MANO.
  *
- * È `pdf_viewer.css` di pdf.js incapsulato sotto `#pdfPane`: senza il guscio
+ * È `pdf_viewer.css` di pdf.js incapsulato sotto `:is(#pdfPane, #pdfPane2)`: senza il guscio
  * il suo `.sidebar` riscrive l'indice dei capitoli di StudIA, che ha lo stesso
  * nome di classe e meno fortuna nell'ordine di caricamento.
  *
- * I 7 blocchi `:root` sono diventati `#pdfPane`: annidati non
+ * I 7 blocchi `:root` sono diventati `:is(#pdfPane, #pdfPane2)`: annidati non
  * corrisponderebbero a niente e le variabili del viewer sparirebbero tutte.
  *
  * Si rigenera con:  node bin/pdfjs-css.js
  */
-#pdfPane {
+:is(#pdfPane, #pdfPane2) {
 /* Copyright 2014 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1244,13 +1244,13 @@
   }
 }
 
-#pdfPane{
+:is(#pdfPane, #pdfPane2){
   --xfa-unfocused-field-background:url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
   --xfa-focus-outline:auto;
 }
 
 @media screen and (forced-colors: active){
-  #pdfPane{
+  :is(#pdfPane, #pdfPane2){
     --xfa-focus-outline:2px solid CanvasText;
   }
   .xfaLayer *:required{
@@ -1878,7 +1878,7 @@
   }
 }
 
-#pdfPane{
+:is(#pdfPane, #pdfPane2){
   --clear-signature-button-icon:url(images/editor-toolbar-delete.svg);
   --signature-bg:light-dark(#f9f9fb, #2b2a33);
   --signature-hover-bg:light-dark(#f0f0f4, var(--signature-bg));
@@ -3372,7 +3372,7 @@
   }
 }
 
-#pdfPane{
+:is(#pdfPane, #pdfPane2){
   --editor-toolbar-vert-offset:6px;
   --outline-width:2px;
   --outline-color:#0060df;
@@ -3434,13 +3434,13 @@
 }
 
 @media (min-resolution: 1.1dppx){
-  #pdfPane{
+  :is(#pdfPane, #pdfPane2){
     --editorFreeText-editing-cursor:url(images/cursor-editorFreeText.svg) 0 16, text;
   }
 }
 
 @media screen and (forced-colors: active){
-  #pdfPane{
+  :is(#pdfPane, #pdfPane2){
     --outline-color:CanvasText;
     --outline-around-color:ButtonFace;
     --resizer-bg-color:ButtonText;
@@ -6139,7 +6139,7 @@ button.hasPopupMenu{
   }
 }
 
-#pdfPane{
+:is(#pdfPane, #pdfPane2){
   color-scheme:light dark;
 
   --viewer-container-height:0;
