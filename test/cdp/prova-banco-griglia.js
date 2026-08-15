@@ -85,6 +85,14 @@ function sezione(t) { console.log('\n== ' + t); }
     return { quante:f.length, chiave:f.length?f[f.length-1].chiave:'', forma:bancoStato().forma }; })()`);
   ok('la forma è entrata nel localStorage', 1, salvata.quante);
   ok('e il banco ci è già sopra', salvata.chiave, salvata.forma);
+  /* ⚠️ E il pittore SI CHIUDE. `closePops()` chiude ciò che è scritto nel suo
+     elenco, non «tutto»: il pittore non c'era, e dopo il salvataggio restava in
+     overlay sopra il banco — l'unico modo di levarselo era ricaricare. */
+  ok('il pittore si è chiuso', false,
+    await val("document.getElementById('pittorePop').hasAttribute('open')"));
+  ok('e non copre più niente', true,
+    await val(`(()=>{ const p=document.getElementById('pittorePop');
+      return getComputedStyle(p).display==='none' || p.getBoundingClientRect().height===0; })()`));
 
   /* ⚠️ Il giro dell'avvio: si ricarica l'app e la forma personale deve tornare
      PRIMA che il banco rilegga lo stato, o `normalizzaStato` lo riporterebbe

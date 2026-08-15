@@ -92,6 +92,23 @@ const PDF = 'Piano-di-studio-della-Scuola-dell-obbligo-ticinese.pdf';
     await val("document.getElementById('selBarra').classList.contains('aperta')"));
   await val('getSelection().removeAllRanges(), 1');
 
+  sezione('⚠️ La barra del Confronto sta sul token, come tutte le altre');
+  /* Le regole della `.pdfbar` erano ancorate a `#pdfPane`: nel Confronto la
+     barra restava coi caratteri di fabbrica — titolo enorme, comandi fuori
+     misura. Adesso `:is(#pdfPane,#pdfPane2)`, e qui si misura. */
+  const misure = await val(`(()=>{
+    function h(sel){ const e=[...document.querySelectorAll(sel)].filter(x=>x.getBoundingClientRect().height>0)[0];
+      return e ? Math.round(e.getBoundingClientRect().height) : null; }
+    return { token:parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tb-h'),10),
+             zoom:h('#pdf2ZoomIn'), livello:h('#pdf2ZoomLvl'), pagina:h('#pdf2Prev'), chiudi:h('#pdf2Close'),
+             titolo:Math.round(parseFloat(getComputedStyle(document.getElementById('pdf2Title')).fontSize)),
+             titoloFonte:Math.round(parseFloat(getComputedStyle(document.getElementById('pdfTitle')).fontSize)) }; })()`);
+  console.log('   ' + JSON.stringify(misure));
+  ok('i comandi stanno tutti dentro il token',
+    [misure.token, misure.token, misure.token, misure.token],
+    [misure.zoom, misure.livello, misure.pagina, misure.chiudi]);
+  ok('e il titolo ha lo stesso corpo di quello della Fonte', misure.titoloFonte, misure.titolo);
+
   sezione('La ✕ chiude solo il confronto');
   await val('fonte2Chiudi(), 1'); await pausa(400);
   ok('il confronto è vuoto', false, await val('fonte2Aperta()'));

@@ -361,7 +361,7 @@
      storici (`.mtoolbar`, `.pdfbar`, `.editor-toolbar`, `.albar`, `.kwbar`)
      restano nell'elenco come alias, così il markup vecchio non si rompe e non
      c'è una seconda definizione da tenere allineata a mano. */
-  .tbar, .tbar-lg, .topbar, .mtoolbar, #pdfPane .pdfbar, #noteHost .editor-toolbar, .albar, .kwbar,
+  .tbar, .tbar-lg, .topbar, .mtoolbar, :is(#pdfPane,#pdfPane2) .pdfbar, #noteHost .editor-toolbar, .albar, .kwbar,
   .media-head, .guida-head, .media-foot, .wz-head, .wz-foot, .pa-foot, .ps-row{
     display:flex; align-items:center; gap:0; flex-wrap:wrap;
     row-gap:var(--tb-bar-rowgap); flex:0 0 auto;
@@ -1005,18 +1005,22 @@
      il titolo. `min-width:0` sul titolo è ciò che gli permette di accorciarsi
      davvero — senza, il contenuto ne impone la larghezza e a cedere sono gli
      altri. */
-  #pdfPane .pdfbar > *{ flex:0 0 auto; }
-  #pdfPane .pdfbar > .tbspazio{ flex:1 1 auto; }   /* …tranne lo spazio elastico, che deve crescere */
-  #pdfPane .pdfbar strong{ font-size:12px; font-weight:700; overflow:hidden; text-overflow:ellipsis;
+  /* ⚠️ `:is(#pdfPane, #pdfPane2)`: le due fonti sono due riquadri con la STESSA
+     barra, e una regola ancorata al primo lasciava la barra del Confronto coi
+     caratteri di fabbrica — titolo enorme, comandi che non stavano sul token.
+     Stessa forma del guscio in `bin/pdfjs-css.js`, e per la stessa ragione. */
+  :is(#pdfPane,#pdfPane2) .pdfbar > *{ flex:0 0 auto; }
+  :is(#pdfPane,#pdfPane2) .pdfbar > .tbspazio{ flex:1 1 auto; }   /* …tranne lo spazio elastico, che deve crescere */
+  :is(#pdfPane,#pdfPane2) .pdfbar strong{ font-size:12px; font-weight:700; overflow:hidden; text-overflow:ellipsis;
     white-space:nowrap; flex:0 1 auto; min-width:0; }
   /* L'etichetta del selettore è VIVA: dice quale documento è aperto, perché
      nello zaino è l'unico posto in cui lo si legge — il titolo accanto si
      accorcia fino a sparire quando il riquadro è stretto. Stessa regola delle
      tendine del banco, e per lo stesso motivo. */
-  #pdfPane .pdfbar #pdfDoc{ white-space:nowrap; max-width:min(38cqw,260px); overflow:hidden;
+  :is(#pdfPane,#pdfPane2) .pdfbar :is(#pdfDoc,#pdf2Doc){ white-space:nowrap; max-width:min(38cqw,260px); overflow:hidden;
     text-overflow:ellipsis; display:inline-block; line-height:calc(var(--tb-h) - 2px);
     text-transform:none; letter-spacing:0; font-weight:600; }
-  #pdfPane .pdfbar a{ font-size:11px; color:var(--blue-strong); text-decoration:underline; white-space:nowrap; }
+  :is(#pdfPane,#pdfPane2) .pdfbar a{ font-size:11px; color:var(--blue-strong); text-decoration:underline; white-space:nowrap; }
   /* Il riquadro che si allunga, e dentro il contenitore assoluto che pdf.js
      pretende. Lo scroll è nostro: `pdf_viewer.css` stila le pagine, non il
      contenitore — quella regola sta in `viewer.css`, che non è vendorizzato. */
@@ -1028,9 +1032,8 @@
   #pdf2Frame{ position:absolute; inset:0; overflow:auto; outline:0; }
   #pdf2Frame .pdfViewer{ margin:0 auto; }
   #pdfPane2[data-doc="0"] #pdf2Host{ display:none; }
-  #pdfPane2 .pdfzoom #pdf2ZoomLvl{ width:auto; padding:0 .4rem; font-size:11px; font-weight:700;
-    font-variant-numeric:tabular-nums; min-width:calc(5.5ch + .8rem); }
-  #pdf2Title{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+  /* (il livello e il titolo li vestono le regole di `.pdfbar` qui sopra, che
+     adesso valgono per tutt'e due i riquadri) */
   #pdfFrame{ position:absolute; inset:0; overflow:auto; outline:0; }
   #pdfFrame .pdfViewer{ margin:0 auto; }
   /* Il documento non c'è ancora, o si sta caricando: si dice, invece di
@@ -1180,9 +1183,9 @@
     padding:.35rem .5rem; font-size:13px; font-family:var(--font-text),var(--emoji-font),sans-serif; }
   .pdffind-conto{ margin-top:.35rem; font-size:11px; color:var(--muted); min-height:14px; }
   .pdffind-conto.vuoto{ color:var(--red-strong,#b91c1c); }
-  #pdfPane .pdfzoom{ display:flex; align-items:center; gap:0; }
-  #pdfPane .pdfpag{ display:flex; align-items:center; gap:0; }
-  #pdfPane .pdfpag #pdfPagN{ font-size:11px; font-variant-numeric:tabular-nums; padding:0 .3rem;
+  :is(#pdfPane,#pdfPane2) .pdfzoom{ display:flex; align-items:center; gap:0; }
+  :is(#pdfPane,#pdfPane2) .pdfpag{ display:flex; align-items:center; gap:0; }
+  :is(#pdfPane,#pdfPane2) .pdfpag :is(#pdfPagN,#pdf2PagN){ font-size:11px; font-variant-numeric:tabular-nums; padding:0 .3rem;
     white-space:nowrap; color:var(--muted); }
   /* Il selettore del documento vive nello ZAINO: in un corso i documenti si
      aprono dai rimandi del capitolo, che dicono anche la pagina. */
@@ -1211,7 +1214,7 @@
      occupano più di quattro larghezze di cifra. Misurato a schermo — 4,3ch dava
      39px contro i 46 che «500%» chiede davvero: il numero giusto è **5,5ch**,
      che con l'imbottitura fa esattamente la larghezza del caso peggiore. */
-  #pdfPane .pdfzoom #pdfZoomLvl{ width:auto; padding:0 .4rem; font-size:11px; font-weight:700;
+  :is(#pdfPane,#pdfPane2) .pdfzoom :is(#pdfZoomLvl,#pdf2ZoomLvl){ width:auto; padding:0 .4rem; font-size:11px; font-weight:700;
     font-variant-numeric:tabular-nums; min-width:calc(5.5ch + .8rem); }
   #searchInput{ height:var(--ctl-h); width:min(420px,80vw); background:var(--panel); color:var(--ink);
     border:1px solid var(--line); border-radius:0; padding:0 .6rem; font-size:12px; font-family:inherit; }
@@ -7862,7 +7865,11 @@ function closePops(){
      leggere), cioè quella che non funzionava. */
   var fp=$('#pdfFindPop');
   if(fp && fp.hasAttribute('open') && typeof pdfFindChiudi==='function') pdfFindChiudi();
-  ['#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#pdfFindPop','#zainoPop','#pdfDocPop','#plMediaPop']
+  /* ⚠️ Un pannellino nuovo va DENTRO questo elenco. È la trappola del `PROVE=(`
+     in salsa DOM: `closePops()` sembra chiudere «tutto», e invece chiude ciò
+     che è scritto qui — il pittore delle forme restava aperto sopra il banco
+     dopo aver salvato, e l'unico modo di levarselo era ricaricare. */
+  ['#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#pdfFindPop','#zainoPop','#pdfDocPop','#plMediaPop','#pittorePop']
     .forEach(function(s){ var e=$(s); if(e) e.removeAttribute('open'); });
   /* Chi apre un pannellino lo dichiara con `aria-expanded`: chiuderlo senza
      rimetterlo a posto lascerebbe il bottone a promettere un riquadro aperto. */
@@ -8519,7 +8526,7 @@ function barreSeparatori(){
   /* ⚠️ `.editor-toolbar` e non solo `.notectl`: da quando i comandi dell'appunto
      stanno sulla riga degli strumenti, le barrette da spegnere sono figlie
      della barra, non del gruppo. */
-  var barre=document.querySelectorAll('.tbar, .topbar .controls, .mtoolbar, #pdfPane .pdfbar, #noteHost .editor-toolbar, #noteHost .editor-toolbar .notectl');
+  var barre=document.querySelectorAll('.tbar, .topbar .controls, .mtoolbar, :is(#pdfPane,#pdfPane2) .pdfbar, #noteHost .editor-toolbar, #noteHost .editor-toolbar .notectl');
   for(var b=0;b<barre.length;b++){
     var bar=barre[b];
     var sep=bar.querySelectorAll('.tbsep, .msep');
