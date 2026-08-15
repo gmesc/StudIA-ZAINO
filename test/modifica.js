@@ -717,5 +717,23 @@ sezione('La pila degli annullamenti conosce anche ciò che non è grafo');
   check('lo stato messo da parte è una copia profonda', 'dag', M.annulla(p).extra.vista.motore);
 }
 
+sezione('Sostituire l\'immagine di un nodo: il pezzo prende il posto dell\'intera');
+{
+  const g = { nodi: [{ id: 'n1', testo: 'foto', immagine: { id: 'aaaa111111', w: 300, h: 200, scala: 1.5 } },
+                     { id: 'n2', testo: 'senza immagine' }], archi: [] };
+  const r = M.sostituisciImmagine(g, 'n1', { id: 'bbbb222222', w: 150, h: 100 });
+  check('l\'immagine è quella nuova', 'bbbb222222', r.nodi[0].immagine.id);
+  check('con le sue misure', [150, 100], [r.nodi[0].immagine.w, r.nodi[0].immagine.h]);
+  /* ⚠️ La scala è la misura che l'utente ha dato al riquadro sulla mappa: non ha
+     niente a che vedere con quale immagine ci sta dentro, e rifarla partire da 1
+     disferebbe un aggiustamento fatto a mano. */
+  check('e la scala del nodo si conserva', 1.5, r.nodi[0].immagine.scala);
+  check('il grafo di partenza non si tocca', 'aaaa111111', g.nodi[0].immagine.id);
+  check('un nodo senza immagine non ne guadagna una', undefined,
+    M.sostituisciImmagine(g, 'n2', { id: 'cccc333333', w: 1, h: 1 }).nodi[1].immagine);
+  check('un nodo che non esiste non cambia niente', 'aaaa111111',
+    M.sostituisciImmagine(g, 'n9', { id: 'd', w: 1, h: 1 }).nodi[0].immagine.id);
+}
+
 console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
 process.exit(ko ? 1 : 0);

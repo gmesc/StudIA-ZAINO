@@ -5604,6 +5604,14 @@ function albumChiudiGesto(x2, y2){
     });
     if(rf2.error){ toast('Ritaglio non salvato: '+rf2.error, false); return; }
     albumAggiorna();
+    /* Se questo ritaglio nasce da un «solo una parte…», prende il posto
+       dell'immagine intera là dove era stata messa — e allora non serve
+       chiedere di nuovo che farne. */
+    if(FOTOINS.foto===g.voce.id){
+      var messo=fotoSostituisciInserimento(rf2.voce);
+      try{ albumRitaglioModo(false); }catch(e2){}
+      if(messo) return;
+    }
     toast(rf2.giaCera ? 'Quest’area era già nei Ritagli' : 'Ritaglio salvato nei Ritagli', true);
     albumBolla(rf2.voce, x2, y2);
     return;
@@ -5664,7 +5672,12 @@ function albumChiudiGesto(x2, y2){
 var ALBUMVISTA = { voci:[], filtro:'' };
 
 /** Apre un menu dove si è cliccato, dentro la finestra. Stessa legge di `selMenuApri`. */
+/* Dove è stato aperto l'ultimo menu dell'album: la bolla che segue un gesto
+   deve comparire lì, non al centro dello schermo — chi ha appena premuto sta
+   guardando quel punto. */
+var MENUPUNTO = { x:0, y:0 };
 function albumMenuA(m, x, y){
+  MENUPUNTO={ x:x, y:y };
   m.classList.add('open');
   var r=m.getBoundingClientRect();
   m.style.left=Math.max(8, Math.min(x, window.innerWidth-r.width-8))+'px';
@@ -5944,6 +5957,133 @@ function fotoZoomRiadatta(){
   }, {passive:false});
 })();
 
+/* ===== METTERE UN'IMMAGINE IN UN APPUNTO O IN UNA MAPPA ===================
+ *
+ * Le porte sono quattro — le due voci di menu e i due trascinamenti — e i verbi
+ * due: scrivere nell'appunto e fare un nodo. In mezzo sta questa funzione,
+ * che non aggiunge un modo di inserire ma una DOMANDA: di una foto intera,
+ * spesso, serviva solo un pezzo.
+ *
+ * ⚠️ La domanda arriva DOPO, non prima. Chiederlo prima vorrebbe dire mettere un
+ * bivio davanti a un gesto che oggi è immediato — trascina e c'è — e farlo
+ * pagare a chi voleva davvero tutta l'immagine, che è il caso normale. Così
+ * invece l'inserimento avviene subito e la bolla offre di cambiare idea: se si
+ * ritaglia, il pezzo PRENDE IL POSTO dell'intera, non le si aggiunge.
+ *
+ * Vale solo per le FOTO: di un ritaglio non si ritaglia un ritaglio (per ora), e
+ * di un fermo immagine nemmeno.
+ */
+var FOTOINS = { dove:'', foto:'', nodo:'', testo:'' };
+
+function fotoInsAzzera(){ FOTOINS={ dove:'', foto:'', nodo:'', testo:'' }; }
+
+/** Mette l'immagine dove si è chiesto, e poi offre di ritagliarla. `dove` è
+ *  `'appunto'` o `'mappa'`; `punto` è dove è stata lasciata, sulla mappa. */
+function albumInserisci(v, dove, punto, x, y){
+  if(!v) return false;
+  var fatto=false, nodo='', testo='';
+  if(dove==='mappa'){
+    nodo=mappaNodoImmagine(v, punto) || '';
+    fatto=!!nodo;
+  } else {
+    testo=albumMarkdown(v);
+    fatto=noteScriviAlCursore(testo);
+    if(fatto) toast('Messa nell’appunto', true);
+  }
+  if(!fatto) return false;
+  /* La domanda si fa solo per le foto, e solo se c'è un posto dove aprirle. */
+  if(v.origine==='foto' && modoAttivo()==='zaino'){
+    FOTOINS={ dove:dove, foto:v.id, nodo:nodo, testo:testo };
+    fotoBollaParte(v, x, y);
+  }
+  return true;
+}
+
+/** Il markdown con cui un'immagine entra in un appunto. In un posto solo: è la
+ *  stessa stringa che poi va RITROVATA per sostituirla, e due versioni di essa
+ *  vorrebbero dire una sostituzione che non trova niente. */
+function albumMarkdown(v){
+  return '\n![' + String(v.didascalia||'immagine').replace(/[\[\]]/g,'') + '](album:' + v.id + ')\n';
+}
+/** Scrive nel punto in cui sta il cursore. Torna `false` se non c'è un appunto. */
+function noteScriviAlCursore(testo){
+  if(!NOTES.cur || !NOTES.mde){ toast('Apri prima un appunto', false); return false; }
+  NOTES.mde.codemirror.replaceSelection(testo);
+  NOTES.mde.codemirror.focus();
+  return true;
+}
+
+/** La bolla che chiede se serviva tutta. Stesso vestito delle altre bolle
+ *  dell'album: le classi sono quelle, non colori che gli somigliano. */
+function fotoBollaParte(v, x, y){
+  var m=$('#albBolla'); if(!m || !v) return;
+  function it(az, testo, spento){
+    return '<button class="ctx-item" role="menuitem" data-alb="'+az+'" data-id="'+escHtml(v.id)+'"'+
+      (spento?' disabled':'')+'>'+escHtml(testo)+(spento?'<span class="ctx-scorc">'+escHtml(spento)+'</span>':'')+'</button>';
+  }
+  m.innerHTML='<div class="ctx-head">Immagine inserita</div>'+
+    it('interanulla','Va bene tutta','')+
+    it('parte','Solo una parte…','');
+  albumMenuA(m, x||window.innerWidth/2, y||window.innerHeight/2);
+}
+
+/**
+ * «Solo una parte…»: si apre l'immagine e le forbici sono già accese.
+ *
+ * ⚠️ Il modo si accende APPICCICATO e non col modificatore: qui l'utente ha
+ * appena dichiarato che vuole ritagliare, e chiedergli anche di tenere premuto
+ * ⌘ sarebbe far ripetere una cosa già detta.
+ */
+function fotoRitagliaPerInserimento(id){
+  if(!FOTOINS.foto || FOTOINS.foto!==id){ fotoInsAzzera(); }
+  fotoApri(id);
+  try{ albumRitaglioModo(true); }catch(e){}
+  toast('Trascina il rettangolo: prenderà il posto dell’immagine intera', true);
+}
+
+/**
+ * Il ritaglio appena fatto prende il posto dell'immagine inserita.
+ *
+ * ⚠️ Nell'appunto si cerca la STRINGA che si era scritta, non «l'ultima riga»:
+ * fra l'inserimento e il ritaglio l'utente può aver scritto altrove, mosso il
+ * cursore, salvato. Se quella stringa non c'è più — l'ha cancellata lui — non si
+ * inventa niente: si dice che il ritaglio è nell'album e basta.
+ */
+function fotoSostituisciInserimento(nuova){
+  var stato=FOTOINS; fotoInsAzzera();
+  if(!stato.dove || !nuova || nuova.da!==stato.foto) return false;
+  if(stato.dove==='mappa'){
+    if(!(mappaPronta() && mappaMie() && MAPPA.mia.grafo && stato.nodo)) return false;
+    var g=MappaModifica.sostituisciImmagine(MAPPA.mia.grafo, stato.nodo,
+      { id:nuova.id, w:nuova.w, h:nuova.h });
+    if(g===MAPPA.mia.grafo){ toast('Il nodo con quell’immagine non c’è più: il ritaglio resta nei Ritagli', false); return false; }
+    MAPPA.mia.grafo=g;
+    mappaTocca(); mappaRidisegna();
+    toast('Sulla mappa è rimasto il ritaglio', true);
+    return true;
+  }
+  if(!NOTES.cur || !NOTES.mde) return false;
+  var cm=NOTES.mde.codemirror;
+  var testo=cm.getValue();
+  var i=testo.indexOf(stato.testo);
+  if(i<0){
+    /* Il rimando alla foto intera potrebbe esserci con un'altra didascalia (una
+       rinomina in mezzo): si prova con il solo indirizzo, che è la parte che
+       non cambia mai. */
+    i=testo.indexOf('(album:'+stato.foto+')');
+    if(i<0){ toast('Non ho ritrovato l’immagine nell’appunto: il ritaglio è nei Ritagli', false); return false; }
+    var fine=testo.indexOf(')', i)+1;
+    var inizio=testo.lastIndexOf('![', i);
+    if(inizio<0) return false;
+    cm.setValue(testo.slice(0, inizio) + albumMarkdown(nuova).trim() + testo.slice(fine));
+    toast('Nell’appunto è rimasto il ritaglio', true);
+    return true;
+  }
+  cm.setValue(testo.slice(0, i) + albumMarkdown(nuova) + testo.slice(i+stato.testo.length));
+  toast('Nell’appunto è rimasto il ritaglio', true);
+  return true;
+}
+
 /** Rilegge l'album dei ritagli e ridisegna la griglia. */
 function albumAggiorna(){ albumDisegnaVista('album'); }
 /** Lo stesso, per le immagini importate. */
@@ -6086,13 +6226,18 @@ function albumAzione(az, id){
   if(az==='appunti'){
     /* Si REFERENZIA, non si copia: il file resta uno solo, e cancellarlo saprà
        dire in quanti posti è usato invece di lasciare riquadri rotti. */
-    if(inserisciImmagine(v.didascalia||'ritaglio', 'album:'+v.id)) toast('Messa nell’appunto', true);
+    albumInserisci(v, 'appunto', null, MENUPUNTO.x, MENUPUNTO.y);
     return;
   }
   if(az==='mappa'){
-    if(typeof mappaNodoImmagine==='function'){ mappaNodoImmagine(v); return; }
-    toast('La mappa non è pronta', false); return;
+    if(typeof mappaNodoImmagine!=='function'){ toast('La mappa non è pronta', false); return; }
+    albumInserisci(v, 'mappa', null, MENUPUNTO.x, MENUPUNTO.y);
+    return;
   }
+  /* Le due risposte alla bolla «e adesso?»: la prima è un modo di dire «ho
+     capito, chiudi» — e vale come dichiarazione, quindi lo stato si azzera. */
+  if(az==='interanulla'){ fotoInsAzzera(); return; }
+  if(az==='parte'){ fotoRitagliaPerInserimento(id); return; }
   if(az==='rinomina'){
     askText('Didascalia dell’immagine', v.didascalia||'').then(function(t){
       if(t===null) return;
@@ -6358,7 +6503,7 @@ function albumElimina(corso, v){
       var cm=NOTES.mde && NOTES.mde.codemirror;
       if(cm && cm.coordsChar) cm.setCursor(cm.coordsChar({ left:e.clientX, top:e.clientY }));
     }catch(err){ /* niente punto: si scrive dove sta il cursore */ }
-    if(inserisciImmagine(v.didascalia||'ritaglio', 'album:'+v.id)) toast('Messa nell’appunto', true);
+    albumInserisci(v, 'appunto', null, e.clientX, e.clientY);
   }, true);
 })();
 
@@ -7927,13 +8072,11 @@ function inserisciLink(etichetta, schema){
  * la sintassi è quella del markdown, e il testo fra parentesi quadre è la
  * didascalia — non un'etichetta cliccabile.
  */
-function inserisciImmagine(didascalia, schema){
-  if(!NOTES.cur || !NOTES.mde){ toast('Apri prima un appunto',false); return false; }
-  var cm=NOTES.mde.codemirror;
-  cm.replaceSelection('\n![' + String(didascalia||'').replace(/[\[\]]/g,'') + '](' + schema + ')\n');
-  cm.focus();
-  return true;
-}
+/* ⚠️ `inserisciImmagine(didascalia, schema)` stava qui e non la chiama più
+   nessuno: da quando l'inserimento di un'immagine passa da `albumInserisci` —
+   che scrive E offre di ritagliare — il markdown lo compone `albumMarkdown` in
+   un posto solo. Due verbi per lo stesso gesto sarebbero la seconda copia
+   destinata a divergere, e la stringa scritta va RITROVATA per sostituirla. */
 
 /** Link al video a un dato secondo. */
 function citaVideo(num, sec, etichetta){
@@ -10659,7 +10802,7 @@ document.addEventListener('drop', function(e){
     e.preventDefault();
     var v=albumVoce(idAlbum);
     if(!v){ toast('Immagine non trovata nell’album', false); return; }
-    mappaNodoImmagine(v, mappaPunto(e));
+    albumInserisci(v, 'mappa', mappaPunto(e), e.clientX, e.clientY);
     return;
   }
   var id=e.dataTransfer.getData('application/x-studia-evidenza'); if(!id) return;
@@ -11023,25 +11166,36 @@ function mappaEstrai(testo, range){
  *  lo passa il trascinamento. Senza, il nodo nasce dove il motore decide — che
  *  è giusto per il menu contestuale, dove nessuno ha indicato un posto. */
 function mappaNodoImmagine(v, punto){
-  if(!v || !v.id) return;
-  if(!mappaPronta()){ toast('Moduli della mappa non caricati', false); return; }
+  if(!v || !v.id) return '';
+  if(!mappaPronta()){ toast('Moduli della mappa non caricati', false); return ''; }
   if(!(mappaMie() && MAPPA.mia.grafo)){
     toast('Apri una mappa tua: su una generata il nodo sparirebbe alla prossima lettura', false);
-    return;
+    return '';
   }
   try{ bancoMostra('mappa'); }catch(e){}
+  /* L'id che il nodo AVRÀ: si chiede prima, perché `estrai` torna il grafo e non
+     il nodo — e senza quell'id non si potrebbe più tornare a sostituire
+     l'immagine con un suo ritaglio. */
+  var nodo=MappaModifica.prossimoId(MAPPA.mia.grafo);
   MAPPA.mia.grafo=MappaModifica.estrai(MAPPA.mia.grafo, {
     testo:v.didascalia||'', immagine:{ id:v.id, w:v.w, h:v.h },
     x:(punto && Number.isFinite(punto.x)) ? Math.round(punto.x) : null,
     y:(punto && Number.isFinite(punto.y)) ? Math.round(punto.y) : null,
     /* Il rimando fa quello che fa per gli altri nodi estratti: rende il nodo
-       navigabile fino alla pagina da cui il ritaglio viene. */
-    rimando:(v.t!=null)
+       navigabile fino alla pagina da cui il ritaglio viene.
+       ⚠️ Ma una FOTO non viene da nessuna pagina, e nemmeno un ritaglio preso da
+       una foto: `materiale` per loro è il nome del file da cui l'immagine è
+       entrata, non un documento del contenitore. Un rimando costruito lì sopra
+       sarebbe un nodo che promette di riportare da qualche parte e non ci
+       riporta — meglio nessun rimando che uno rotto. */
+    rimando:(v.origine==='foto' || v.da) ? null
+      : (v.t!=null)
       ? { type:'video', file:v.materiale, t:Math.floor(v.t), label:v.didascalia||v.materiale }
       : { type:'pdf', file:v.materiale, page:v.pagina, label:v.didascalia||v.materiale }
   });
   mappaTocca(); mappaRidisegna();
   toast('Immagine aggiunta a «'+(MAPPA.mia.titolo||'la mappa aperta')+'»', true);
+  return nodo;
 }
 
 function evidenzaCancella(range){

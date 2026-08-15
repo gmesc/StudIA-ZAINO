@@ -261,6 +261,27 @@
     return out;
   }
 
+  /**
+   * Sostituisce l'immagine di un nodo con un'altra. Serve a un gesto solo, ma
+   * preciso: si mette in mappa una foto intera, poi si decide che ne bastava un
+   * pezzo — e il pezzo deve prendere il posto della foto, non aggiungersi.
+   *
+   * ⚠️ La `scala` del nodo si CONSERVA: è la misura che l'utente ha dato a quel
+   * riquadro sulla mappa, e non ha niente a che vedere con quale immagine ci
+   * sta dentro. Rifarla partire da 1 vorrebbe dire disfare un aggiustamento a
+   * mano ogni volta che si cambia idea sul contenuto.
+   */
+  function sostituisciImmagine(g, id, immagine) {
+    var out = copia(g), i = indiceNodo(out, id);
+    if (i < 0 || !out.nodi[i].immagine) return g;
+    var im = copiaImmagine(immagine);
+    if (!im) return g;
+    var vecchia = out.nodi[i].immagine;
+    if (vecchia && vecchia.scala) im.scala = vecchia.scala;
+    out.nodi[i].immagine = im;
+    return out;
+  }
+
   function creaNodo(g, opt) {
     opt = opt || {};
     var out = copia(g);
@@ -642,7 +663,7 @@
 
   return {
     copia: copia, prossimoId: prossimoId, trovaArco: trovaArco,
-    ridimensionaImmagine: ridimensionaImmagine,
+    ridimensionaImmagine: ridimensionaImmagine, sostituisciImmagine: sostituisciImmagine,
     creaNodo: creaNodo, estrai: estrai, rinomina: rinomina, eliminaNodo: eliminaNodo,
     creaArco: creaArco, eliminaArco: eliminaArco, inverti: inverti,
     etichetta: etichetta, direzione: direzione,

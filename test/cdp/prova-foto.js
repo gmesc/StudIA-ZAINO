@@ -303,6 +303,64 @@ const FABBRICA = `
   ok('«Alla fonte» riapre la foto madre', cartello.id, await val('FOTOV.aperta'));
   await val('fotoChiudiVista(), 1'); await pausa(400);
 
+  sezione('Inserire una foto: entra intera, e la bolla offre di ritagliarla');
+  /* La domanda arriva DOPO: chi voleva tutta l'immagine non paga un bivio, e chi
+     ne voleva un pezzo lo dice subito dopo — e il pezzo PRENDE IL POSTO
+     dell'intera, non le si aggiunge. */
+  /* ⚠️ `noteNew` con titolo vuoto lo CHIEDE con un modale: si passa il titolo,
+     come fa il tasto rapido del player quando non c'è un appunto aperto. */
+  /* ⚠️ NON si aspetta la promessa di `noteNew`: quella si risolve solo quando il
+     modale del titolo è stato compilato, e compilarlo è la riga DOPO. Aspettarla
+     qui blocca la prova per sempre — misurato, con dieci minuti di silenzio. */
+  await val(`noteNew(null, null, ''), 1`);
+  await pausa(900);
+  const modale = await val(`(()=>{ const i=document.getElementById('umInput');
+    if(!i || !document.querySelector('#uiModal[open]')) return 0; i.value='Prova inserimento'; return 1; })()`);
+  if (modale) { await val(`(()=>{ document.getElementById('umOk').click(); return 1; })()`); }
+  await finoA('(NOTES.cur && NOTES.mde) ? 1 : 0', 12000); await pausa(600);
+  const gita = (voci || []).find((v) => /Gita/.test(v.didascalia));
+  await val(`albumAzione('appunti', ${JSON.stringify(gita.id)}), 1`);
+  await pausa(700);
+  const testoDopo = await val('NOTES.mde.codemirror.getValue()');
+  ok('nell\'appunto c\'è il rimando all\'immagine intera', true,
+    testoDopo.indexOf('album:' + gita.id) >= 0);
+  const bolla = await val(`(()=>{ const m=document.getElementById('albBolla');
+    return { aperta:m.classList.contains('open'),
+             voci:[...m.querySelectorAll('.ctx-item')].map(b=>b.getAttribute('data-alb')) }; })()`);
+  ok('e la bolla chiede se serviva tutta', true, bolla.aperta);
+  ok('con le due risposte', ['interanulla', 'parte'], bolla.voci);
+
+  await val(`albumAzione('parte', ${JSON.stringify(gita.id)}), 1`);
+  await pausa(900);
+  const armato = await val(`({ aperta:FOTOV.aperta, forbici:ALBUM.attivo,
+    croce:document.getElementById('fotoHost').classList.contains('ritaglio') })`);
+  ok('«Solo una parte…» apre l\'immagine', gita.id, armato.aperta);
+  /* ⚠️ Le forbici si accendono APPICCICATE: l'utente ha appena detto che vuole
+     ritagliare, e chiedergli anche di tenere premuto ⌘ sarebbe farglielo
+     ripetere. */
+  ok('con le forbici già accese', true, armato.forbici && armato.croce);
+
+  const box2 = await val(`(()=>{ const i=document.getElementById('fotoImg').getBoundingClientRect();
+    const h=document.getElementById('fotoHost').getBoundingClientRect();
+    const x=Math.max(i.left,h.left), y=Math.max(i.top,h.top);
+    return { x:Math.round(x), y:Math.round(y),
+             w:Math.round(Math.min(i.right,h.right)-x), h:Math.round(Math.min(i.bottom,h.bottom)-y) }; })()`);
+  await trascina(box2.x + Math.round(box2.w * 0.15), box2.y + Math.round(box2.h * 0.15),
+                 box2.x + Math.round(box2.w * 0.6), box2.y + Math.round(box2.h * 0.6));
+  const finito = await finoA(`(()=>{ const t=NOTES.mde.codemirror.getValue();
+    return t.indexOf('album:${gita.id}')<0 ? t : null; })()`, 20000);
+  ok('il ritaglio ha preso il posto dell\'immagine intera', true, !!finito);
+  const ritagli = await val(`(window.vault.album.elenco(${JSON.stringify(corso)},'ritaglio').voci||[])`);
+  const ultimo = ritagli[ritagli.length - 1];
+  ok('e nell\'appunto c\'è proprio quel ritaglio', true,
+    !!finito && finito.indexOf('album:' + ultimo.id) >= 0);
+  ok('che sa da quale foto viene', gita.id, ultimo.da);
+  /* Una sola immagine nell'appunto, non due: è una SOSTITUZIONE. */
+  ok('e non ne sono rimaste due', 1, (finito.match(/\(album:/g) || []).length);
+  ok('le forbici si sono spente da sé', false, await val('ALBUM.attivo'));
+
+  await val('fotoChiudiVista(), 1'); await pausa(400);
+
   sezione('E si rimette tutto com\'era');
   await val(`(async()=>{ await cambiaModo('corso'); return 1; })()`);
   await pausa(700);
