@@ -11186,24 +11186,36 @@ try{
     });
 
     /* --- "?" con esempi: mostra cosa è utile scrivere e cosa no, e inserisce la frase --- */
+    /* ⚠️ Gli esempi «utili» qui sotto mostrano SOLO ciò che i menu non coprono.
+       La prima versione suggeriva frasi che erano menu travestiti — «la cornice
+       generale prima dei dettagli» È Lezioni › Cornici e ponti — e chi le
+       scriveva mandava la stessa direttiva due volte al modello, credendo per
+       giunta di aver toccato la scaletta: il testo libero entra SOLO nella
+       generazione, il menu anche nella proposta. Quelle frasi ora stanno fra i
+       «Da evitare», ognuna col menu che la fa meglio; la spiegazione completa
+       di ogni menu è l'Atlante (apriAtlante, bottone nel piede). Le prove in
+       test/atlante.js tengono fuori le frasi-menu da questi elenchi. */
     var HELP={
       come:{ campo:'profComeImparo',
-        regola:'Una frase per esigenza. Descrivi <b>come</b> vuoi che il testo sia fatto, non quali argomenti deve trattare.',
-        ok:['Ho bisogno della cornice generale prima dei dettagli.',
-            'Imparo meglio dagli esempi concreti, la regola dopo.',
-            'Mi aiutano gli schemi con pochi elementi per volta.',
-            'Preferisco frasi brevi e una sola idea per paragrafo.'],
-        no:[['Va bene tutto, decidi tu.','non cambia niente nella generazione'],
+        regola:'Una frase per esigenza, solo per ciò che i menu qui sopra non dicono già. Descrivi <b>come</b> vuoi che il testo sia fatto, non quali argomenti deve trattare.',
+        ok:['Le analogie con oggetti di tutti i giorni mi restano impresse.',
+            'Mi aiuta vedere l\'errore tipico accanto alla regola giusta.',
+            'Il grassetto sulle parole chiave mi guida quando rileggo.',
+            'Preferisco il «tu» diretto a un tono impersonale.'],
+        no:[['Ho bisogno della cornice generale prima dei dettagli.','lo fa il menu Lezioni › «Cornici e ponti» — e scelto lì agisce anche sulla scaletta, il testo libero no'],
+            ['Imparo meglio dagli esempi, la regola dopo.','lo fa il menu Capitoli › «Esempi prima, teoria dopo»'],
+            ['Frasi brevi, una sola idea per paragrafo.','lo fanno Lettura › «Leggo lentamente» e Attenzione › «Mi distraggo facilmente»'],
             ['Salta la parte sulla discalculia.','è una richiesta di contenuto: qui non ha effetto'],
-            ['Ho avuto la diagnosi nel 2019, alle medie…','racconto biografico: non diventa una scelta di stile'],
-            ['Dipende dai giorni.','non è traducibile in una regola']] },
+            ['Va bene tutto, decidi tu.','non cambia niente nella generazione']] },
       affatica:{ campo:'profCosaAffatica',
-        regola:'Elenca ciò che ti costa fatica <b>nel testo</b>, una cosa per riga. Serve a togliere ostacoli, non contenuti.',
-        ok:['I testi lunghi senza sottotitoli.',
-            'Le digressioni dentro il paragrafo: le preferisco come collegamento a parte.',
-            'Troppi termini nuovi nella stessa pagina.',
-            'Le tabelle larghe con molte colonne.'],
-        no:[['Tutto. La scuola.','troppo generico per produrre una direttiva'],
+        regola:'Elenca ciò che ti costa fatica <b>nel testo</b> e che i menu non colgono, una cosa per riga. Serve a togliere ostacoli, non contenuti.',
+        ok:['Troppi termini nuovi nella stessa pagina.',
+            'Le frasi col doppio negativo («non è escluso che…»).',
+            'Le domande retoriche lasciate senza risposta.',
+            'Gli elenchi puntati troppo lunghi: oltre le sei voci mi perdo.'],
+        no:[['I testi lunghi senza sottotitoli.','lo fa il menu Spazio › «Mi oriento male»: intestazioni frequenti'],
+            ['Le tabelle larghe con molte colonne.','lo fa Carico › «Le pagine affollate mi affaticano»'],
+            ['Le digressioni dentro il paragrafo.','lo fa il menu Approfondimenti: «ricchi» le sposta in coda, «minimi» le toglie'],
             ['Non mettere i quiz.','spegne una funzione: usa il menu «Quiz» qui sopra'],
             ['Scrivi in inglese.','non è una preferenza di forma, viene ignorata']] },
       altro:{ campo:'profBisogniAltro',
@@ -11221,7 +11233,9 @@ try{
         '<ul class="hp-ok">'+h.ok.map(function(t){ return '<li><button type="button" data-ins="'+escHtml(t)+'" data-campo="'+h.campo+'">'+escHtml(t)+'</button></li>'; }).join('')+'</ul>'+
         '<div class="hp-h">Da evitare</div>'+
         '<ul class="hp-no">'+h.no.map(function(p){ return '<li>«'+escHtml(p[0])+'» <i>— '+escHtml(p[1])+'</i></li>'; }).join('')+'</ul>'+
-        '<p class="hp-foot">In caso di contrasto fra questi campi e i menu qui sopra, vincono i menu.</p>';
+        '<p class="hp-foot">In caso di contrasto fra questi campi e i menu qui sopra, vincono i menu. '+
+          'Che cosa fa davvero ogni menu lo mostra l\'Atlante:</p>'+
+        '<button type="button" class="tbtn" id="hpAtlante">Apri l\'Atlante delle opzioni</button>';
       popAt(pop, anchorEl);
       helpSegna(anchorEl);
     }
@@ -11235,6 +11249,13 @@ try{
     document.addEventListener('click', function(e){
       var hb=e.target.closest && e.target.closest('.helpbtn');
       if(hb){ e.preventDefault(); openHelp(hb.getAttribute('data-help'), hb); return; }
+      /* il piede del riquadro apre l'ATLANTE: stessa funzione del bottone in
+         Impostazioni (invariante 6), e il riquadro si richiude da sé — l'atlante
+         gli passa sopra, e al ritorno un popover orfano non spiegherebbe più niente */
+      if(e.target.closest && e.target.closest('#hpAtlante')){
+        var hp0=document.getElementById('helpPop'); if(hp0) hp0.removeAttribute('open');
+        helpSegna(null); apriAtlante(); return;
+      }
       var ins=e.target.closest && e.target.closest('#helpPop button[data-ins]');
       if(ins){
         var el=document.getElementById(ins.getAttribute('data-campo')); if(!el) return;

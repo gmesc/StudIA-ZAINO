@@ -120,6 +120,24 @@ async function schermoPulito() {
   vero('Esc chiude l\'atlante', await val(`document.getElementById('atlante').hidden`));
   vero('…e lascia aperte le impostazioni', await val(`!document.getElementById('settingsModal').hidden`));
 
+  /* Il riquadro del «?» rimanda qui: il suo piede apre l'ATLANTE con la stessa
+     funzione del bottone in Impostazioni (invariante 6), e il popover si
+     richiude da sé. Il click è via JS: il bottone sta in fondo a un riquadro
+     che scorre, e un click a coordinate senza scroll finirebbe fuori — è
+     successo alla prima sonda di questo gesto. */
+  const rimando = await val(`(()=>{
+    const hb=document.querySelector('#settingsModal .helpbtn'); hb.click();
+    const hp=document.getElementById('helpPop');
+    const b=document.getElementById('hpAtlante'); if(!b) return { manca:true };
+    b.click();
+    return { atlante: !document.getElementById('atlante').hidden,
+             popChiuso: !hp.hasAttribute('open'),
+             segno: !!document.querySelector('.helpbtn[aria-expanded]') };
+  })()`);
+  ok('il piede del «?» apre l\'atlante e richiude il riquadro',
+    { atlante: true, popChiuso: true, segno: false }, rimando);
+  await val(`(()=>{chiudiAtlante(); return 1})()`);
+
   console.log(ko ? '\n' + ko + ' controlli falliti' : '\n✓ tutti i controlli passati');
   process.exit(ko ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

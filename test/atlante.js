@@ -157,4 +157,25 @@ prova('l\'esempio di una variante strutturale mostra un indice', () => {
   }
 });
 
+prova('gli esempi del «?» non suggeriscono frasi che i menu già coprono', () => {
+  /* È il difetto da cui è nato l'Atlante: il riquadro d'aiuto suggeriva di
+     scrivere a mano «la cornice generale prima dei dettagli», che È il menu
+     Lezioni › Cornici — stessa direttiva due volte al modello, e per giunta il
+     testo libero non tocca la scaletta mentre il menu sì. Le frasi-menu devono
+     stare SOLO fra i «Da evitare» (l'elenco `no:`), mai fra gli esempi `ok:`.
+     Il controllo è sul sorgente: gli elenchi `ok:` del blocco HELP non devono
+     contenere le parole-spia delle leve coperte. */
+  const i = HTML.indexOf('var HELP={');
+  assert.ok(i > 0, 'il blocco HELP non si trova più');
+  const blocco = HTML.slice(i, HTML.indexOf('};', i));
+  const ok = [...blocco.matchAll(/ok:\[([\s\S]*?)\]/g)].map((m) => m[1]).join('\n');
+  for (const spia of ['cornice generale', 'la regola dopo', 'una sola idea per paragrafo',
+    'senza sottotitoli', 'tabelle larghe con molte colonne', 'digressioni dentro il paragrafo']) {
+    assert.ok(!ok.toLowerCase().includes(spia.toLowerCase()),
+      'fra gli esempi «utili» del «?» è tornata una frase-menu: «' + spia + '»');
+  }
+  assert.ok(/Atlante/.test(blocco) || /hpAtlante/.test(HTML.slice(i, i + 12000)),
+    'il riquadro del «?» non rimanda più all\'Atlante');
+});
+
 console.log('atlante: ' + fatte + ' prove passate');
