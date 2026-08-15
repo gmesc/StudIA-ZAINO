@@ -238,6 +238,12 @@ contextBridge.exposeInMainWorld('vault', {
     summary: () => ipcRenderer.invoke('costs:summary'),
     log: (entry) => ipcRenderer.invoke('costs:log', entry)
   },
+  /* crediti e licenze: l'inventario sta su disco, non nel renderer */
+  crediti: {
+    leggi: () => ipcRenderer.invoke('crediti:leggi'),
+    chromium: () => ipcRenderer.invoke('crediti:chromium'),
+    notice: (percorso) => ipcRenderer.invoke('crediti:notice', { percorso: percorso || '' })
+  },
   notes: {
     // leggi() dice anche che cosa è andato storto; list() resta per compatibilità
     leggi: (courseId) => vaultPath ? appunti.read(vaultPath, courseId) : { notes: [], error: 'nessuna cartella vault impostata' },

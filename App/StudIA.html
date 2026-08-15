@@ -1854,16 +1854,39 @@
     border-left:3px solid var(--no-bd); padding:.5rem .7rem; margin:.4rem 0; line-height:1.55; }
   .exp-rotti ul{ margin:.3rem 0 0 1rem; }
   .exp-rotti code{ font-size:11px; }
-  /* crediti: una riga per progetto libero */
+  /* crediti: una riga per progetto libero, e sotto il testo integrale della licenza */
   .cred-list{ list-style:none; margin:0; padding:.4rem 0; }
   .cred-list li{ display:flex; flex-wrap:wrap; align-items:baseline; gap:.5rem;
     padding:.7rem 1.1rem; border-bottom:1px solid var(--line-weak); font-size:13px; }
   .cred-list li:last-child{ border-bottom:0; }
   .cred-list .c-nome{ font-weight:700; }
+  .cred-list .c-ver{ font-size:11px; color:var(--muted); }
   .cred-list .c-lic{ font-size:10px; text-transform:uppercase; letter-spacing:.1em; font-weight:700;
     color:var(--muted); border:1px solid var(--line); padding:.1rem .4rem; }
   .cred-list .c-ruolo{ flex:1 1 100%; font-size:12px; color:var(--muted); line-height:1.5; }
   .cred-list .c-url{ flex:1 1 100%; font-size:11px; }
+  .cred-list .c-cop{ flex:1 1 100%; font-size:11px; color:var(--ink); }
+  .cred-list .c-avviso{ flex:1 1 100%; font-size:11px; line-height:1.5; color:var(--ink);
+    background:color-mix(in srgb, var(--yellow) 14%, var(--panel)); border-left:3px solid var(--no-bd);
+    padding:.35rem .55rem; }
+  /* il testo di licenza: chiuso di suo, si apre riga per riga */
+  .cred-list details{ flex:1 1 100%; margin-top:.35rem; }
+  .cred-list summary{ cursor:pointer; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+  .cred-list pre.c-testo{ margin:.45rem 0 0; padding:.6rem .7rem; background:var(--hover);
+    border:1px solid var(--line-weak); max-height:22rem; overflow:auto;
+    font-size:11px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+  /* la testata dei crediti: chi siamo, e i due bottoni che servono davvero */
+  .cred-top{ padding:.9rem 1.1rem; border-bottom:1px solid var(--line); font-size:12px; line-height:1.6; }
+  .cred-top b{ font-size:13px; }
+  .cred-azioni{ display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.6rem; }
+  .cred-cerca{ flex:1 1 220px; min-width:180px; }
+  /* gli obblighi: la parte che si legge prima di ridistribuire */
+  .cred-obb{ margin:0; padding:.2rem 0 .6rem; list-style:none; }
+  .cred-obb li{ padding:.5rem 1.1rem; font-size:12px; line-height:1.6; border-bottom:1px solid var(--line-weak); }
+  .cred-obb li b{ display:block; font-size:12px; }
+  .cred-gruppo{ padding:.75rem 1.1rem .25rem; font-size:11px; text-transform:uppercase; letter-spacing:.1em;
+    font-weight:700; color:var(--muted); border-bottom:1px solid var(--line); background:var(--hover); }
+  .cred-vuoto{ padding:1rem 1.1rem; font-size:12px; color:var(--muted); }
   .guida-card{ background:var(--panel); border:1px solid var(--line); box-shadow:var(--sh-3d);
     width:min(1180px,96vw); max-height:88vh; display:flex; flex-direction:column; }
   .guida-head{ display:flex; align-items:center; gap:.7rem; padding:.8rem 1.1rem; border-bottom:1px solid var(--line); }
@@ -6912,31 +6935,25 @@ var GUIDA=[
   { nome:'Emoji', sintassi:'Da ripassare 🧠 prima dell\'esame 📖', nota:'Il pulsante 😀 della barra apre il selettore con la ricerca per parola. Sono disegnate in stile OpenMoji.' }
 ];
 
-var CREDITI=[
-  { nome:'EasyMDE', ruolo:'editor markdown', url:'https://github.com/Ionaru/easy-markdown-editor', licenza:'MIT' },
-  { nome:'CodeMirror 5', ruolo:'motore di scrittura dentro EasyMDE', url:'https://github.com/codemirror/codemirror5', licenza:'MIT' },
-  { nome:'marked', ruolo:'anteprima markdown di EasyMDE', url:'https://github.com/markedjs/marked', licenza:'MIT' },
-  { nome:'OpenMoji', ruolo:'icone ed emoji', url:'https://github.com/hfg-gmuend/openmoji', licenza:'CC BY-SA 4.0' },
-  { nome:'Electron', ruolo:'applicazione desktop', url:'https://github.com/electron/electron', licenza:'MIT' },
-  { nome:'mlx-whisper', ruolo:'trascrizione dei video sulla GPU del Mac', url:'https://github.com/ml-explore/mlx-examples', licenza:'MIT' },
-  { nome:'faster-whisper', ruolo:'trascrizione di riserva su CPU', url:'https://github.com/SYSTRAN/faster-whisper', licenza:'MIT' },
-  { nome:'pypdf', ruolo:'estrazione del testo dai PDF', url:'https://github.com/py-pdf/pypdf', licenza:'BSD-3' },
-  /* Vendorizzata in `App/assets/pdfjs/` come EasyMDE — file copiati a mano,
-     nessuna riga in package.json. È la build `legacy/`, e non è una scelta di
-     comodo: dalla 6.0 pdf.js usa `Map.prototype.getOrInsertComputed`, che
-     Chromium spedisce dalla 145, mentre Electron 39 sta alla 142. Misurato
-     nell'app: il documento si carica e poi il primo `render()` muore. La
-     legacy porta i polyfill di core-js e funziona (80 pagine disegnate).
-     Il giorno che si passa a Electron 41+ si può tornare alla build moderna
-     e risparmiare 58 KB — ma va verificato, non dedotto. */
-  { nome:'PDF.js', ruolo:'visualizzatore dei PDF', url:'https://github.com/mozilla/pdf.js', licenza:'Apache-2.0' },
-  { nome:'Ajv', ruolo:'validazione degli schemi', url:'https://github.com/ajv-validator/ajv', licenza:'MIT' },
-  /* La pila dell'OCR dello zaino è tutta Apache/MIT di proposito: ocrmypdf si
-     porterebbe dietro Ghostscript (AGPL), e i pesi di Chandra hanno un tetto
-     di fatturato. Vedi lib/ocrpdf.js. Le lingue stanno in App/assets/tesseract/. */
-  { nome:'tesseract.js', ruolo:'riconoscimento del testo nei documenti fotografati', url:'https://github.com/naptha/tesseract.js', licenza:'Apache-2.0' },
-  { nome:'Tesseract OCR (tessdata)', ruolo:'i modelli di lingua del riconoscimento (ita, eng)', url:'https://github.com/tesseract-ocr/tessdata', licenza:'Apache-2.0' },
-  { nome:'pdf-lib', ruolo:'scrive il layer di testo invisibile nei PDF riconosciuti', url:'https://github.com/Hopding/pdf-lib', licenza:'MIT' }
+/* ── Crediti e licenze ──────────────────────────────────────────────────────
+   L'elenco NON sta più qui. Era una costante di quindici voci mentre l'app ne
+   spediva novantacinque: una schermata che dichiara meno di quello che c'è è
+   peggio di nessuna schermata, perché l'attribuzione richiesta da MIT, BSD e
+   Apache la si è promessa e non mantenuta. Adesso l'inventario si RICAVA dal
+   disco (lib/crediti.js legge node_modules + App/assets/dati/crediti-extra.json,
+   `npm run crediti` lo rigenera, test/crediti.js fallisce se resta indietro) e
+   il renderer lo chiede al main con `vault.crediti.leggi()`. Qui c'è solo il
+   vestito. */
+var CREDITI = { voci: [], obblighi: [], app: {}, caricato: false };
+
+/* le famiglie, nell'ordine in cui hanno senso per chi legge */
+var CRED_GRUPPI = [
+  { chiave:'piattaforma', titolo:'La piattaforma su cui gira l\'app' },
+  { chiave:'vendor',      titolo:'Librerie copiate dentro l\'app' },
+  { chiave:'dati',        titolo:'Modelli e dati di lingua' },
+  { chiave:'python',      titolo:'Strumenti Python della pipeline (installati dall\'utente)' },
+  { chiave:'servizio',    titolo:'Servizi remoti richiamati con le chiavi dell\'utente' },
+  { chiave:'npm',         titolo:'Pacchetti npm spediti con l\'app' }
 ];
 
 function guidaRighe(){
@@ -6950,23 +6967,121 @@ function guidaRighe(){
   }).join('');
 }
 /* --- crediti: finestra a sé, aperta dal 🧙 nella testata delle Impostazioni --- */
-function creditiRighe(){
-  return CREDITI.map(function(c){
-    return '<li>'+
-      '<span class="c-nome">'+escHtml(c.nome)+'</span>'+
-      '<span class="c-lic">'+escHtml(c.licenza)+'</span>'+
-      '<span class="c-ruolo">'+escHtml(c.ruolo)+'</span>'+
-      '<span class="c-url"><a href="'+escHtml(c.url)+'" target="_blank" rel="noopener">'+escHtml(c.url)+'</a></span>'+
-    '</li>';
+/** Una voce dell'inventario, col testo integrale della licenza a scomparsa.
+ *  Il testo c'è SEMPRE quando esiste: è l'attribuzione che le licenze
+ *  chiedono, e nasconderla dietro un link a internet significherebbe non
+ *  averla nell'app (che gira anche senza rete, e nel .dmg firmato). */
+function creditoRiga(c){
+  var testo = c.testo ? ('<details><summary>Testo della licenza</summary>'+
+      '<pre class="c-testo">'+escHtml(c.testo)+'</pre></details>') : '';
+  var notice = c.notice ? ('<details><summary>File NOTICE del progetto</summary>'+
+      '<pre class="c-testo">'+escHtml(c.notice)+'</pre></details>') : '';
+  return '<li>'+
+    '<span class="c-nome">'+escHtml(c.nome)+'</span>'+
+    (c.versione ? '<span class="c-ver">'+escHtml(c.versione)+'</span>' : '')+
+    '<span class="c-lic">'+escHtml(c.licenza||'licenza non dichiarata')+'</span>'+
+    (c.ruolo ? '<span class="c-ruolo">'+escHtml(c.ruolo)+'</span>' : '')+
+    (c.copyright ? '<span class="c-cop">'+escHtml(c.copyright)+'</span>' : '')+
+    (c.url ? '<span class="c-url"><a href="'+escHtml(c.url)+'" target="_blank" rel="noopener">'+escHtml(c.url)+'</a></span>' : '')+
+    (c.avviso ? '<span class="c-avviso">'+escHtml(c.avviso)+'</span>' : '')+
+    testo + notice +
+  '</li>';
+}
+
+/** L'elenco filtrato dalla ricerca, raggruppato per famiglia. */
+function creditiRighe(filtro){
+  var f = String(filtro||'').trim().toLowerCase();
+  var voci = CREDITI.voci.filter(function(c){
+    if(!f) return true;
+    return (c.nome+' '+(c.licenza||'')+' '+(c.ruolo||'')+' '+(c.copyright||'')).toLowerCase().indexOf(f) >= 0;
+  });
+  if(!voci.length) return '<li class="cred-vuoto">Nessuna voce per «'+escHtml(filtro)+'».</li>';
+  var out='';
+  CRED_GRUPPI.forEach(function(g){
+    var dentro = voci.filter(function(c){ return c.categoria===g.chiave; });
+    if(!dentro.length) return;
+    out += '<li class="cred-gruppo">'+escHtml(g.titolo)+' · '+dentro.length+'</li>';
+    out += dentro.map(creditoRiga).join('');
+  });
+  // una categoria nuova nel file dichiarativo non deve sparire in silenzio
+  var noti = CRED_GRUPPI.map(function(g){ return g.chiave; });
+  var altri = voci.filter(function(c){ return noti.indexOf(c.categoria) < 0; });
+  if(altri.length){
+    out += '<li class="cred-gruppo">Altro · '+altri.length+'</li>' + altri.map(creditoRiga).join('');
+  }
+  return out;
+}
+
+/** Gli obblighi: ciò che va letto prima di ridistribuire l'app. */
+function creditiObblighi(){
+  return (CREDITI.obblighi||[]).map(function(o){
+    return '<li><b>'+escHtml(o.titolo)+'</b>'+escHtml(o.testo)+'</li>';
   }).join('');
 }
+
+/** La testata: chi è l'app, quante voci, e i bottoni che servono davvero. */
+function creditiTesta(){
+  var a = CREDITI.app||{};
+  var n = CREDITI.voci.length;
+  return '<div class="cred-top">'+
+    '<b>'+escHtml(a.nome||'StudIA')+(a.versione?' '+escHtml(a.versione):'')+'</b> — '+
+    escHtml(a.copyright||'')+(a.licenza?' · licenza '+escHtml(a.licenza):'')+
+    '<div style="margin-top:.35rem;">'+escHtml(a.nota||'')+'</div>'+
+    '<div class="cred-azioni">'+
+      '<input class="cred-cerca" type="search" id="creditsCerca" placeholder="Cerca un progetto o una licenza…" aria-label="Cerca nei crediti">'+
+      '<button class="tbtn" id="creditsNotice" type="button">Esporta NOTICE.txt</button>'+
+      (CREDITI.chromium ? '<button class="tbtn" id="creditsChromium" type="button">Componenti di Chromium</button>' : '')+
+      '<span class="c-ver">'+n+' voci</span>'+
+    '</div>'+
+  '</div>'+
+  '<ul class="cred-obb">'+creditiObblighi()+'</ul>';
+}
+
+/** Ridisegna solo l'elenco (la ricerca non deve perdere il fuoco). */
+function creditiAggiorna(){
+  var campo=document.getElementById('creditsCerca');
+  var lista=document.getElementById('creditsBody');
+  if(lista) lista.innerHTML = creditiRighe(campo ? campo.value : '');
+}
+
 function apriCrediti(){
   var m=document.getElementById('creditsModal'); if(!m) return;
-  document.getElementById('creditsBody').innerHTML = creditiRighe();
   m.hidden=false;
   document.documentElement.dataset.crediti='1';
+  var testa=document.getElementById('creditsTesta');
+  var lista=document.getElementById('creditsBody');
+  if(!lista) return;
+  if(CREDITI.caricato){ if(testa) testa.innerHTML=creditiTesta(); creditiAggiorna(); return; }
+  lista.innerHTML='<li class="cred-vuoto">Leggo l\'inventario delle licenze…</li>';
+  Promise.resolve(window.vault && window.vault.crediti ? window.vault.crediti.leggi() : null)
+    .then(function(d){
+      if(!d || d.errore){
+        // invariante 4: un inventario illeggibile si dichiara, non si finge vuoto
+        lista.innerHTML='<li class="cred-vuoto">'+escHtml((d&&d.errore)||'Le licenze non si sono potute leggere.')+'</li>';
+        return;
+      }
+      CREDITI = { voci:d.voci||[], obblighi:d.obblighi||[], app:d.app||{}, chromium:!!d.chromium, generato:d.generato||'', caricato:true };
+      if(testa) testa.innerHTML=creditiTesta();
+      creditiAggiorna();
+    })
+    .catch(function(e){ lista.innerHTML='<li class="cred-vuoto">Le licenze non si sono potute leggere: '+escHtml(e.message||String(e))+'</li>'; });
 }
 function chiudiCrediti(){ var m=document.getElementById('creditsModal'); if(m) m.hidden=true; document.documentElement.dataset.crediti=''; }
+
+/** Il NOTICE.txt da allegare a una distribuzione: lo scrive il main, che ha
+ *  l'inventario intero e il dialogo di salvataggio. */
+function creditiEsporta(){
+  Promise.resolve(window.vault.crediti.notice()).then(function(r){
+    if(!r || r.annullato) return;
+    if(r.error){ toast('NOTICE non salvato: '+r.error, false); return; }
+    toast('Crediti e licenze esportati in '+r.percorso, true);
+  });
+}
+
+/* la ricerca nasce dentro la testata ridisegnata: si ascolta in delega */
+document.addEventListener('input', function(e){
+  if(e.target && e.target.id==='creditsCerca') creditiAggiorna();
+});
 function apriGuida(){
   var m=document.getElementById('guidaModal'); if(!m) return;
   document.getElementById('guidaBody').innerHTML =
@@ -8842,6 +8957,13 @@ document.addEventListener('click',function(e){
   if(e.target.closest && e.target.closest('#pdfFindPrev')){ pdfFindDispatch('again', true); return; }
   if(e.target.closest && e.target.closest('#creditsBtn')){ apriCrediti(); return; }
   if(e.target.closest && (e.target.closest('#creditsClose') || e.target===document.getElementById('creditsModal'))){ chiudiCrediti(); return; }
+  if(e.target.closest && e.target.closest('#creditsNotice')){ creditiEsporta(); return; }
+  if(e.target.closest && e.target.closest('#creditsChromium')){
+    Promise.resolve(window.vault.crediti.chromium()).then(function(r){
+      if(r && r.error) toast('Elenco Chromium non apribile: '+r.error, false);
+    });
+    return;
+  }
   /* ⚠️ `#editorBtn` non è più in topbar (gli appunti si scelgono dalla tendina
      di un blocco), ma il gesto resta scritto qui e chiamabile: è la funzione
      che apre l'editor con l'appunto giusto già dentro, e la usa anche
@@ -15441,13 +15563,16 @@ window.addEventListener('keydown', function(e){
 <div id="creditsModal" hidden role="dialog" aria-modal="true" aria-labelledby="creditsTitolo">
   <div class="guida-card">
     <div class="guida-head">
-      <b id="creditsTitolo">Costruita con</b>
-      <span class="mh-sub">Progetti liberi che fanno funzionare StudIA</span>
+      <b id="creditsTitolo">Crediti e licenze</b>
+      <span class="mh-sub">Tutto ciò che StudIA spedisce o richiama, con la sua licenza</span>
       <span style="flex:1"></span>
       <button class="iconbtn" id="creditsClose" type="button" aria-label="Chiudi i crediti">&#10005;</button>
     </div>
-    <div class="guida-body"><ul class="cred-list" id="creditsBody"></ul></div>
-    <div class="guida-foot">Le emoji e le icone <b style="display:inline;text-transform:none;letter-spacing:0;">OpenMoji</b> sono distribuite con licenza CC BY-SA 4.0: se ridistribuisci l'app, mantieni l'attribuzione.</div>
+    <div class="guida-body">
+      <div id="creditsTesta"></div>
+      <ul class="cred-list" id="creditsBody"></ul>
+    </div>
+    <div class="guida-foot">L'elenco è ricavato dai pacchetti installati, non scritto a mano: si rigenera con <code>npm run crediti</code>. Attribuzione richiesta da OpenMoji: «Emoji e icone: OpenMoji — CC BY-SA 4.0».</div>
   </div>
 </div>
 

@@ -555,6 +555,55 @@ ipcMain.handle('ocrpdf:applica', async (e, { corso, file, pagine } = {}) => {
   return r;
 });
 
+/* ── CREDITI E LICENZE ─────────────────────────────────────────────────────
+ * L'inventario sta su disco (App/assets/dati/crediti.json, generato da
+ * `npm run crediti`) e non in una costante nel renderer: era una costante, ed
+ * era ferma a quindici voci mentre i pacchetti spediti erano novantacinque —
+ * la trappola ④ applicata a una schermata che ha valore legale.
+ * Qui si legge, si esporta il NOTICE.txt e si apre l'elenco di Chromium. */
+const creditiLib = require('./lib/crediti');
+
+/** L'elenco Chromium (14 MB) non entra nel JSON: lo si spedisce come risorsa
+ *  accanto all'app (build.extraResources) e in sviluppo si legge da node_modules. */
+function chromiumLicenses() {
+  const candidati = [
+    path.join(process.resourcesPath || '', 'LICENSES.chromium.html'),
+    path.join(__dirname, 'node_modules', 'electron', 'dist', 'LICENSES.chromium.html')
+  ];
+  return candidati.find((p) => p && fs.existsSync(p)) || '';
+}
+
+ipcMain.handle('crediti:leggi', () => {
+  const dati = creditiLib.leggi(path.join(__dirname, 'App', 'assets', 'dati', 'crediti.json'));
+  dati.chromium = !!chromiumLicenses();
+  return dati;
+});
+
+ipcMain.handle('crediti:chromium', async () => {
+  const p = chromiumLicenses();
+  if (!p) return { error: 'L\'elenco dei componenti di Chromium non è stato trovato accanto all\'app.' };
+  const err = await shell.openPath(p);
+  return err ? { error: err } : { ok: true };
+});
+
+ipcMain.handle('crediti:notice', async (e, { percorso } = {}) => {
+  const dati = creditiLib.leggi(path.join(__dirname, 'App', 'assets', 'dati', 'crediti.json'));
+  if (dati.errore) return { error: dati.errore };
+  let dest = percorso || '';
+  if (!dest) {
+    const r = await dialog.showSaveDialog(win, {
+      title: 'Esporta crediti e licenze',
+      defaultPath: path.join(app.getPath('downloads'), 'StudIA-NOTICE.txt'),
+      filters: [{ name: 'Testo', extensions: ['txt'] }]
+    });
+    if (r.canceled || !r.filePath) return { annullato: true };
+    dest = r.filePath;
+  }
+  try { fs.writeFileSync(dest, creditiLib.notice(dati), 'utf8'); }
+  catch (err) { return { error: err.message }; }
+  return { ok: true, percorso: dest };
+});
+
 // ---- pacchetto: un corso in un file solo, e ritorno ----
 // Il caso d'uso è un docente che passa il corso agli allievi: dentro ci va tutto
 // quello che serve a leggerlo altrove, niente di ciò che appartiene solo a chi

@@ -97,6 +97,9 @@ App/assets/…             i moduli UMD (lettura, mappa, banco, evidenze, rimand
                          appunti, ricerca, player, dati). Provabili in Node, caricati con <script src>
 lib/                     logica Node del main: corsi, appunti, evidenze, fonti, ripasso, genera,
                          mdser (serializzazione .md), validate (ajv), profilo, percorsi, pacchetto…
+lib/crediti.js           l'inventario delle licenze: lo RICAVA da node_modules + crediti-extra.json
+                         (`npm run crediti` → App/assets/dati/crediti.json). Mai scriverlo a mano:
+                         un elenco di licenze fermo è una dichiarazione falsa (test/crediti.js lo difende)
 lib/ai/                  i provider (anthropic, openai, google, claudecode) dietro provider.js;
                          modelli.js è l'elenco; STUDIA_FINTO=1 = modello finto per provare a vuoto
 main.js / preload.js     IPC: canali corti («leggi tutto, scrivi tutto»), l'identità si calcola
