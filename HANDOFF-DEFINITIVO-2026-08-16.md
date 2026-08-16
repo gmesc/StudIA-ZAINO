@@ -24,7 +24,7 @@
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
-npm test                                                   # 35 file, exit 0
+npm test                                                   # 36 file, exit 0
 STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # 45 prove sull'app viva
 STUDIA_PORTA=9346 STUDIA_APP="$PWD/dist/mac-arm64/StudIA.app" \
   ./test/cdp/con-vault-di-prova.sh                         # le stesse DENTRO il pacchetto
