@@ -20,7 +20,7 @@
 | rami | **`pacchetto`** (3 commit) e **`selmenu-closepops`**, che parte da lui e lo contiene — nessuno dei due unito a `main` |
 | commit | `selmenu-closepops` alla testa · `main` ferma a `b005214` |
 | remoto | `git@github.com:gmesc/StudIA.git` (privato); **nessuno dei due rami è salito** |
-| suite | ✅ **34** file di unità · ✅ **43** prove CDP sul codice · ✅ **43** prove CDP **dentro il pacchetto** |
+| suite | ✅ **35** file di unità · ✅ **44** prove CDP sul codice · ✅ le stesse **dentro il pacchetto** |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
@@ -67,6 +67,27 @@ solo per compensare `identity: null`.
 
 ### `prova-testolayer` — chiuso, e non era il layer
 Vedi §3: era la prova, in tre modi diversi.
+
+### L'icona dell'app — `npm run icona`
+Il tocco accademico di OpenMoji (1F393) su tile bianco, 824×824 dentro una tela di 1024 (i 100 px
+di margine sono lo spazio dell'ombra di sistema). ⚠️ La forma dell'angolo è **misurata**, non
+indovinata: campionata da un'icona di sistema — bordo sinistro a dieci altezze e rientro sulla
+diagonale — e riprodotta da un quarto di superellisse con raggio 0,2803 del lato ed esponente 2,56.
+Scarto sotto i 3 px ovunque, 1 px sulla diagonale. Un arco di cerchio sbaglierebbe di 37 px lì: è
+la differenza fra «icona di macOS» e «quadrato stondato». I crediti dichiaravano già l'icona come
+opera derivata CC BY-SA 4.0; ora quella riga corrisponde a un fatto.
+
+### La tavolozza di emoji — `npm run emoji`
+Il selettore della barra degli appunti passa da 89 emoji scelte a mano a **2111**: tutte le emoji
+Unicode che il font dell'app sa disegnare, con le curate in testa. Non pesa quasi niente perché
+sono **caratteri**, non immagini: il font OpenMoji era già nel pacchetto, e l'elenco costa 128 KB
+di testo. Che il font le disegni è verificato disegnando ogni carattere due volte, con e senza —
+se i pixel coincidono a disegnarlo è il sistema, e quella voce non entra (scartate: zero).
+Le parole di ricerca sono **italiane** (Unicode CLDR): «attenzione» trova ⚠️.
+
+⚠️ Restano fuori le 405 icone «extra» in area a uso privato: dentro StudIA si vedrebbero, ma
+finiscono negli appunti dell'utente, che devono restare leggibili in Obsidian o in una mail —
+fuori di qui sarebbero quadratini.
 
 ---
 
@@ -161,3 +182,8 @@ Le suite misurano, non guardano — e più di un difetto vero l'ha trovato Giaco
    qualsiasi — materiali, ricerca, la tendina di un blocco. Il menu e la barra della selezione
    devono sparire con gli altri, e la barra deve continuare a comparire alla selezione dopo
    (§3.3: il rischio era spegnerla nello stesso gesto che la apre).
+5. **L'icona**: nel Dock e nel Finder, a tutte le taglie — 16 px è dove un disegno troppo fine
+   diventa una macchia grigia.
+6. **Le emoji**: nella barra dell'editor, la faccina. Scorrere le categorie, cercare in italiano
+   («attenzione», «gatto», «bandiera»), inserirne una e **riaprire l'appunto in Obsidian** per
+   vedere che il carattere è lo stesso anche fuori.
