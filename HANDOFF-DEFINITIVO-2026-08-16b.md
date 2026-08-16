@@ -101,9 +101,36 @@ passa ogni cambio di modalità.
 ⚠️ Va chiamata **anche a `DOMContentLoaded`**: `#searchPop` sta in fondo al documento, e il primo
 `modoAggiorna()` del disegno iniziale non lo trova ancora.
 
+### I titoli di un appunto hanno la misura che si scrive
+Nell'editor «# sole» era alto 44px, nell'anteprima 24: scrivere e rileggere sembravano due documenti.
+Due difetti sotto, e il secondo peggiore del primo: la **scala** (due tabelle diverse, una fissa e una
+elastica) e i **livelli** (`mdToHtml` spostava di due e schiacciava a h6, quindi «####», «#####» e
+«######» uscivano identici — tre livelli scritti diversi, resi uguali).
+Adesso: una scala sola in sei variabili (`--tit-1`…`--tit-6`) letta **sia** da `.cm-header-N` **sia**
+dall'anteprima, e in un appunto i sei livelli restano sei (`#` = h1). Nei capitoli lo spostamento resta:
+là la pagina ha già il suo h1 e `mappa/genera.js` conta sulla relatività. La discriminante c'era già ed
+è `aCapo`, la stessa che distingue un testo scritto a mano.
+⚠️ Dove un appunto è reso DENTRO qualcos'altro (riquadri, «I miei appunti», tabella della guida) servono
+le regole per tutti e sei i livelli, o l'h1 dell'appunto eredita quello della pagina: 44px, MAIUSCOLO.
+⚠️ La prova non fissa numeri — cambierebbero con la finestra: pretende che le due scale **coincidano** e
+che nessun livello resti senza misura (due elenchi vuoti sono uguali: sarebbe un verde che non prova
+niente, ed è successo davvero mentre la scrivevo).
+
 ---
 
 ## 3. Una trappola pagata nelle prove
+
+**Due**, tutte e due nelle prove nuove.
+
+`prova-note.js` ha fatto fallire **nove prove dopo di lei**: la sezione nuova cambiava modalità
+(`cambiaModo('zaino')`) e non la rimetteva a posto. Le prove girano contro la stessa istanza, una dopo
+l'altra, e quella che esce lasciando l'app da un'altra parte le fa cadere con errori che non c'entrano
+(«la barra flottante non compare», «nei Ritagli non ce n'è nessuna»). Rimedio: la scala dei titoli non
+dipende dalla modalità, quindi la prova non la tocca più — e richiude l'editor che ha aperto.
+Nella stessa sezione, un secondo inciampo: l'appunto di prova era salvato in `corsoAttivo()` mentre
+l'editor legge da `curMeta().courseId`, e questa prova apre un capitolo cercandolo **anche negli altri
+corsi del vault**: i due possono essere due contenitori diversi, e `noteOpen` rispondeva «Appunto non
+trovato».
 
 `prova-wikilink.js` è diventata rossa per una misura, non per una regola: contava le voci dell'indice con
 `SEARCH.docs.map(d=>d.lessonId)` e le voci senza lezione — gli appunti — risultavano «una variante fuori

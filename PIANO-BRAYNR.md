@@ -37,6 +37,35 @@ concordata per le figure Chandra: zero codice nuovo per il click).
 | Braynr Card (pacchetto condivisibile) | `course:export` / `lib/pacchetto.js` (esiste; fuori scope qui) |
 | chat con la fonte | fuori scope; il motore (`lib/ai/provider`) c'è già quando servirà |
 
+## 0-quater. Fatto — i titoli di un appunto hanno la misura che si scrive (16 ago 2026)
+
+Un appunto è markdown, e i suoi titoli si vedevano in due misure diverse: 44px mentre si scriveva,
+24px appena resi. Scrivere e rileggere sembravano due documenti.
+
+Sotto c'erano **due** difetti, e il secondo era il più grave:
+1. **La scala**. L'anteprima aveva la sua tabella di pixel fissi, l'editor quella di EasyMDE
+   (`calc(rem + vw)`, che cresce con la finestra). Adesso la scala è **una sola**, in sei variabili
+   (`--tit-1`…`--tit-6`) che *entrambe* le parti leggono — ricopiarne i valori accanto sarebbe di nuovo
+   il guasto di partenza.
+2. **I livelli**. `mdToHtml` spostava ogni titolo di due (`#`→h3) e schiacciava a h6 tutto il resto:
+   «####», «#####» e «######» uscivano **identici**, tre livelli scritti diversi resi uguali. Lo
+   spostamento serve nei CAPITOLI, dove la pagina ha già il suo h1 e il suo h2 e `mappa/genera.js`
+   conta sulla relatività; in un APPUNTO il markdown **è** il documento, e i sei livelli restano sei.
+   La discriminante c'era già: `aCapo`, la stessa che distingue «un Invio va a capo» — cioè un testo
+   scritto a mano.
+
+⚠️ Da quando un «#» di appunto esce come h1, i posti dove un appunto è reso **dentro** qualcos'altro
+(riquadri nel pannello «I miei appunti», tabella della guida) devono avere le loro regole per tutti e
+sei i livelli: senza, quell'h1 erediterebbe l'h1 della pagina — 44px, MAIUSCOLO e con la spaziatura
+stretta della testata. Là la scala resta piccola e fissa: una citazione dentro una pagina, non un
+documento.
+
+⚠️ La prova viva non fissa dei numeri (cambierebbero con la finestra): pretende che le **due scale
+coincidano**, livello per livello, e che nessuno dei sei resti senza misura — due elenchi vuoti sono
+uguali, e sarebbe un verde che non prova niente.
+
+---
+
 ## 0-ter. Che cosa NON portare, e perché
 
 - **Il tracciamento fragile dei file locali** (file spostato = fonte rotta, «cerca il file»). StudIA

@@ -359,7 +359,19 @@
             out.push('<ol'+(inizio!==1?' start="'+inizio+'"':'')+'>'+
               gruppo.map(function(l){ return '<li>'+_mdInline(orli(l.replace(NUM,'')), nota)+'</li>'; }).join('')+'</ol>');
           } else {
-            var hm=TIT.exec(gruppo[0]); var lv=Math.min(6,hm[1].length+2);
+            var hm=TIT.exec(gruppo[0]);
+            /* ⚠️ I titoli valgono due livelli diversi secondo chi scrive.
+               In un CAPITOLO il markdown è il corpo di una pagina che ha già il
+               suo h1 (il titolo della lezione) e il suo h2 (il capitolo): un
+               «#» del testo esce come h3, o l'indice del documento avrebbe due
+               teste. `mappa/genera.js` conta su questa relatività.
+               In un APPUNTO — `aCapo`, cioè un testo scritto a mano — il
+               markdown È il documento: «#» è l'h1, e i sei livelli restano sei.
+               ⚠️ Con lo spostamento di due, «####», «#####» e «######»
+               finivano TUTTI in h6: tre livelli scritti diversi e resi
+               identici, mentre l'editor accanto li mostrava di tre misure —
+               chi scriveva vedeva la differenza sparire nell'anteprima. */
+            var lv=aCapo ? hm[1].length : Math.min(6,hm[1].length+2);
             out.push('<h'+lv+'>'+_mdInline(hm[2], nota)+'</h'+lv+'>');
           }
           gruppo=[]; tipo=null;

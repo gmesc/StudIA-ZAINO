@@ -1266,18 +1266,67 @@
   .ucallout .uc-body ol[start]>li::before{ content:none; }
   .ucallout .uc-body>*:first-child{ margin-top:0; }
   .ucallout .uc-body>*:last-child{ margin-bottom:0; }
-  /* Titoli dentro agli appunti (callout, pannello «I miei appunti», anteprima
-     dell'editor, tabella della guida): corpo fisso per livello — # = 24px,
-     ## = 22px, ### = 20px, #### = 16px. Valori assoluti (non più relativi al
-     corpo del contesto): stessa dimensione ovunque questi titoli compaiano. */
-  .uc-body h3, .myotes .nt-body h3, table.guida .g-out h3,
-  #noteHost .editor-preview h3, #noteHost .editor-preview-side h3{ font-size:24px; font-weight:700; margin:.6em 0 .4em; }
-  .uc-body h4, .myotes .nt-body h4, table.guida .g-out h4,
-  #noteHost .editor-preview h4, #noteHost .editor-preview-side h4{ font-size:22px; font-weight:700; margin:.6em 0 .4em; }
-  .uc-body h5, .myotes .nt-body h5, table.guida .g-out h5,
-  #noteHost .editor-preview h5, #noteHost .editor-preview-side h5{ font-size:20px; font-weight:700; margin:.6em 0 .35em; }
-  .uc-body h6, .myotes .nt-body h6, table.guida .g-out h6,
-  #noteHost .editor-preview h6, #noteHost .editor-preview-side h6{ font-size:16px; font-weight:700; margin:.6em 0 .35em; color:var(--muted); }
+  /* ===== I TITOLI SCRITTI A MANO =====
+     Un appunto è markdown, e i suoi titoli si vedono in due posti: mentre si
+     scrive (l'editor) e appena resi (l'anteprima ▣ / ◫). Devono avere LA STESSA
+     misura, o scrivere e rileggere sembrano due documenti diversi — ed è quello
+     che succedeva: «#» arrivava a 44px nell'editor e a 24px nell'anteprima.
+
+     ⚠️ UNA SCALA SOLA, LETTA DA TUTTI E DUE. I valori sono quelli di EasyMDE
+     (`.cm-header-N` in `assets/easymde/easymde.min.css`, vendorizzato e da non
+     toccare): riscriverli qui accanto in un secondo elenco vorrebbe dire due
+     scale che divergono al primo ritocco — cioè di nuovo il guasto di partenza.
+     Le variabili sono la copia unica, e la regola qui sotto le dà a ENTRAMBI.
+     ⚠️ Sono `calc(rem + vw)`: crescono con la finestra. Vanno bene perché
+     crescono INSIEME; una scala fissa accanto a una elastica si scollerebbe a
+     ogni ridimensionamento. */
+  :root{
+    --tit-1:calc(1.375rem + 1.5vw); --tit-2:calc(1.325rem + .9vw);
+    --tit-3:calc(1.3rem + .6vw);    --tit-4:calc(1.275rem + .3vw);
+    --tit-5:1.25rem;                --tit-6:1rem;
+  }
+  #noteHost .cm-s-easymde .cm-header-1,
+  #noteHost .editor-preview h1, #noteHost .editor-preview-side h1{ font-size:var(--tit-1); }
+  #noteHost .cm-s-easymde .cm-header-2,
+  #noteHost .editor-preview h2, #noteHost .editor-preview-side h2{ font-size:var(--tit-2); }
+  #noteHost .cm-s-easymde .cm-header-3,
+  #noteHost .editor-preview h3, #noteHost .editor-preview-side h3{ font-size:var(--tit-3); }
+  #noteHost .cm-s-easymde .cm-header-4,
+  #noteHost .editor-preview h4, #noteHost .editor-preview-side h4{ font-size:var(--tit-4); }
+  #noteHost .cm-s-easymde .cm-header-5,
+  #noteHost .editor-preview h5, #noteHost .editor-preview-side h5{ font-size:var(--tit-5); }
+  #noteHost .cm-s-easymde .cm-header-6,
+  #noteHost .editor-preview h6, #noteHost .editor-preview-side h6{ font-size:var(--tit-6); }
+  /* Il resto del vestito, uguale da tutte e due le parti: il maiuscolo e la
+     spaziatura negativa dell'h1 di pagina qui non c'entrano — questo è il
+     titolo di un appunto, non l'intestazione dell'app. */
+  #noteHost .editor-preview :is(h1,h2,h3,h4,h5,h6),
+  #noteHost .editor-preview-side :is(h1,h2,h3,h4,h5,h6){
+    font-weight:700; line-height:1.2; letter-spacing:0; text-transform:none;
+    margin:.6em 0 .4em; color:var(--ink);
+  }
+  #noteHost .editor-preview h6, #noteHost .editor-preview-side h6{ color:var(--muted); }
+
+  /* ===== Gli stessi titoli, ma DENTRO qualcos'altro =====
+     Un appunto reso dentro un callout, nel pannello «I miei appunti» o in una
+     cella della tabella della guida non è un documento: è una citazione dentro
+     una pagina che ha già i suoi titoli. Lì la scala resta piccola e fissa —
+     24px per «#», giù fino a 16px — o un titolo di primo livello sfonderebbe il
+     riquadro che lo contiene.
+     ⚠️ E le regole devono esserci per TUTTI E SEI i livelli: da quando un «#»
+     di un appunto esce come h1, senza queste due righe erediterebbe l'h1 della
+     pagina — 44px, MAIUSCOLO e con la spaziatura stretta della testata. */
+  .uc-body :is(h1,h2,h3,h4,h5,h6), .myotes .nt-body :is(h1,h2,h3,h4,h5,h6),
+  table.guida .g-out :is(h1,h2,h3,h4,h5,h6){
+    font-weight:700; line-height:1.25; letter-spacing:0; text-transform:none;
+    margin:.6em 0 .4em; color:inherit;
+  }
+  .uc-body h1, .myotes .nt-body h1, table.guida .g-out h1{ font-size:24px; }
+  .uc-body h2, .myotes .nt-body h2, table.guida .g-out h2{ font-size:22px; }
+  .uc-body h3, .myotes .nt-body h3, table.guida .g-out h3{ font-size:20px; }
+  .uc-body h4, .myotes .nt-body h4, table.guida .g-out h4{ font-size:18px; }
+  .uc-body h5, .myotes .nt-body h5, table.guida .g-out h5{ font-size:17px; }
+  .uc-body h6, .myotes .nt-body h6, table.guida .g-out h6{ font-size:16px; color:var(--muted); }
   .uc-nota{ --uc-col:var(--teal); --uc-ink:var(--teal-strong); }
   .uc-importante{ --uc-col:var(--yellow); --uc-ink:var(--yellow-strong); }
   .uc-dubbio{ --uc-col:var(--blue); --uc-ink:var(--blue-strong); }

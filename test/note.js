@@ -210,6 +210,27 @@ sezione('Il resto della resa non si accorge di niente');
     breve.brief.indexOf('href="#nota-01-fondamenti-c01-1"') > 0);
 }
 
+sezione('Il livello dei titoli: un appunto è un documento, un capitolo no');
+{
+  /* ⚠️ In un CAPITOLO il markdown è il corpo di una pagina che ha già il suo h1
+     (la lezione) e il suo h2 (il capitolo): un «#» esce come h3, e
+     `mappa/genera.js` conta su quella relatività. In un APPUNTO — testo scritto
+     a mano, `aCapo=true` — il markdown È il documento: «#» è l'h1. */
+  check('nel capitolo «#» resta un h3', '<h3>uno</h3>', P.mdToHtml('# uno', false));
+  check('e «###» un h5', '<h5>tre</h5>', P.mdToHtml('### tre', false));
+  check('nell\'appunto «#» è l\'h1', '<h1>uno</h1>', P.mdToHtml('# uno', true));
+  check('e «###» un h3', '<h3>tre</h3>', P.mdToHtml('### tre', true));
+  /* ⚠️ Il guasto che questa sezione difende: con lo spostamento di due livelli
+     «####», «#####» e «######» finivano TUTTI in h6 — tre livelli scritti
+     diversi, resi identici. Nell'editor accanto si vedevano di tre misure, e
+     nell'anteprima diventavano la stessa cosa. */
+  check('e i sei livelli di un appunto restano sei',
+    ['<h1>x</h1>', '<h2>x</h2>', '<h3>x</h3>', '<h4>x</h4>', '<h5>x</h5>', '<h6>x</h6>'],
+    [1, 2, 3, 4, 5, 6].map(function (n) { return P.mdToHtml('#'.repeat(n) + ' x', true); }));
+  /* Sette cancelletti non sono un titolo: il markdown si ferma a sei. */
+  check('sette cancelletti non fanno un h7', true, P.mdToHtml('####### x', true).indexOf('<h7') < 0);
+}
+
 console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti  (' + (ok + ko) + ' controlli)'
                         : '✓ tutto verde  (' + ok + ' controlli)'));
 process.exit(ko ? 1 : 0);
