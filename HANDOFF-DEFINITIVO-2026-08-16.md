@@ -17,17 +17,17 @@
 
 | | |
 |---|---|
-| rami | **`pacchetto`** (3 commit) e **`selmenu-closepops`**, che parte da lui e lo contiene — nessuno dei due unito a `main` |
+| rami | **`pacchetto`** (3 commit) e **`selmenu-closepops`**, che parte da lui e lo contiene (fix di closePops, icona, emoji, evidenziatore) — nessuno dei due unito a `main` |
 | commit | `selmenu-closepops` alla testa · `main` ferma a `b005214` |
 | remoto | `git@github.com:gmesc/StudIA.git` (privato); **nessuno dei due rami è salito** |
-| suite | ✅ **35** file di unità · ✅ **44** prove CDP sul codice · ✅ le stesse **dentro il pacchetto** |
+| suite | ✅ **35** file di unità · ✅ **45** prove CDP sul codice · ✅ le stesse **dentro il pacchetto** |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
-npm test                                                   # 34 file, exit 0
-STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # 43 prove sull'app viva
+npm test                                                   # 35 file, exit 0
+STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # 45 prove sull'app viva
 STUDIA_PORTA=9346 STUDIA_APP="$PWD/dist/mac-arm64/StudIA.app" \
-  ./test/cdp/con-vault-di-prova.sh                         # le stesse 43 DENTRO il pacchetto
+  ./test/cdp/con-vault-di-prova.sh                         # le stesse DENTRO il pacchetto
 npm run pacchetto                                          # bundle + firma + dmg + controprova
 ```
 
@@ -88,6 +88,22 @@ Le parole di ricerca sono **italiane** (Unicode CLDR): «attenzione» trova ⚠�
 ⚠️ Restano fuori le 405 icone «extra» in area a uso privato: dentro StudIA si vedrebbero, ma
 finiscono negli appunti dell'utente, che devono restare leggibili in Obsidian o in una mail —
 fuori di qui sarebbero quadratini.
+
+### L'evidenziatore — il testo resta nero
+Il fondo pieno non è più diluito al 34%: i preset sono cinque colori **da evidenziatore** (giallo,
+verde, rosa, arancio, azzurro) in `evidenzeColori()`, e il testo sotto resta nero. ⚠️ Le due
+superfici ci arrivano per strade diverse perché sono fatte in modo diverso: nel **capitolo** il
+fondo sta dietro il testo, quindi basta imporre il nero; sul **documento** il testo è nel canvas e
+sopra c'è un layer di lettere trasparenti, quindi il layer si compone in `mix-blend-mode: multiply`
+— imporre `color` lì accenderebbe le lettere trasparenti sopra quelle disegnate, due testi quasi
+allineati.
+
+⚠️ La **riga** dei colori resta una sola (condivisa col menu della mappa), ma le **tavolozze** sono
+due: quelle della mappa sono tinte da tratto, queste sono inchiostro chiaro. Le evidenze già
+segnate portano il loro colore sul disco e non cambiano.
+
+`prova-evidenziatore.js` misura il contrasto dei preset col nero invece di giudicarlo: il più basso
+è il rosa, 8,8:1 contro i 4,5 di WCAG.
 
 ---
 
@@ -187,3 +203,6 @@ Le suite misurano, non guardano — e più di un difetto vero l'ha trovato Giaco
 6. **Le emoji**: nella barra dell'editor, la faccina. Scorrere le categorie, cercare in italiano
    («attenzione», «gatto», «bandiera»), inserirne una e **riaprire l'appunto in Obsidian** per
    vedere che il carattere è lo stesso anche fuori.
+7. **L'evidenziatore**: scegliere il fondo pieno, evidenziare una frase nel capitolo e una nel PDF,
+   con due colori diversi. Il testo deve restare leggibile in entrambi — e provare anche in tema
+   scuro, dove il pezzo evidenziato diventa un'isola chiara.
