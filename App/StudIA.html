@@ -1343,6 +1343,15 @@
      appena, e chi ritaglia deve vedere ESATTAMENTE che cosa sta prendendo. */
   #pdfHost.ritaglio{ cursor:crosshair; }
   #pdfHost.ritaglio .textLayer{ pointer-events:none; }
+  /* ⚠️ L'EVIDENZIATORE SUL DOCUMENTO si moltiplica, non si posa sopra. Il testo
+     del PDF è disegnato nel canvas; sopra c'è un layer di lettere trasparenti
+     che serve a selezionare, ed è lì che vive l'evidenza. Un fondo pieno steso
+     lì sopra nasconderebbe le parole che dovrebbe segnare — con `multiply` il
+     nero delle lettere per un colore resta nero, e il bianco della carta per lo
+     stesso colore dà il colore: esattamente quello che fa un evidenziatore
+     vero. Vale per il layer intero, quindi anche la selezione e i risultati
+     della ricerca smettono di coprire il testo. */
+  #pdfFrame .textLayer, #pdfFrame2 .textLayer{ mix-blend-mode:multiply; }
   #albRett{ position:fixed; z-index:305; border:2px dashed var(--teal-strong,#0d9488);
     background:color-mix(in srgb, var(--teal-strong,#0d9488) 14%, transparent); pointer-events:none; }
   #pdfPane .pdfbar #pdfRitaglia[aria-pressed="true"]{ background:var(--teal-strong,#0d9488); color:#fff; }
@@ -10530,15 +10539,16 @@ function selMenuHTML(sel){
   var conEvidenze=!!corsoAttivo() && evidenzePronte() && !!supMenu && !!evIndirizzo(supMenu);
   var sopra=conEvidenze ? evidenzaSotto(sel.range) : null;
   /* La riga dei colori È l'evidenziatore: cinque preset più il picker, letti da
-     `mappaColori()` — la stessa tavolozza delle mappe, che segue il tema chiaro
-     e scuro. Sceglierne uno evidenzia e diventa il colore corrente.
+     `evidenzeColori()` — i colori di un astuccio, non quelli della mappa, per
+     la ragione scritta lì. Sceglierne uno evidenzia e diventa il colore
+     corrente.
      ⚠️ Non è una voce di menu a sé: `Keyword` e la riga fanno la stessa cosa
      con due gradi di precisione, e una terza voce «Evidenzia» che ripete la
      prima sarebbe un bottone che non aggiunge niente. */
   var righeColore='';
   if(conEvidenze){
     righeColore='<div class="ctx-colori" role="group" aria-label="Colore della parola chiave">';
-    (mappaColori()||[]).forEach(function(c){
+    (evidenzeColori()||[]).forEach(function(c){
       righeColore+='<button class="ctx-col" data-evcol="'+escHtml(c)+'" style="background:'+escHtml(c)+
         '" title="Evidenzia con questo colore" aria-label="Evidenzia con questo colore"></button>';
     });
@@ -10996,11 +11006,23 @@ function evidenzeDi(sup){
  * lo stesso giallo può segnare per sottolineatura in un punto e a fondo pieno in
  * un altro, e un `::highlight()` porta una regola sola.
  *
- * ⚠️ Il fondo pieno usa il colore **diluito** (`color-mix`, 34%) e non il colore
- * nudo: i preset sono tinte sature scelte per una linea sotto il testo, e stese
- * dietro le lettere lascerebbero un testo scuro su fondo scuro. Il 34% è quello
- * che tiene il contrasto della prosa sopra il minimo restando riconoscibile come
- * evidenziatore.
+ * ⚠️ Il fondo pieno è il COLORE NUDO, e il testo sopra si impone nero. Prima era
+ * diluito al 34%, e la ragione era buona finché i preset erano tinte sature da
+ * sottolineatura: stese dietro le lettere avrebbero dato scuro su scuro. Ora i
+ * preset sono colori da evidenziatore — chiari per definizione, perché un
+ * evidenziatore è inchiostro trasparente su carta bianca — e il modo giusto di
+ * renderli non è diluirli ma fare quello che fa un evidenziatore vero: lasciare
+ * il testo nero e colorare intorno.
+ *
+ * ⚠️ E le due superfici lo ottengono in due modi diversi, perché sono fatte in
+ * due modi diversi. Nel capitolo il testo è testo: il fondo gli sta DIETRO,
+ * quindi basta imporre il nero e in tema scuro il pezzo evidenziato diventa
+ * un'isola chiara, come un segno su carta. Nel documento il testo sta nel
+ * CANVAS, sotto un layer di lettere trasparenti: lì un fondo pieno lo
+ * coprirebbe, e imporre `color` accenderebbe le lettere trasparenti sopra
+ * quelle disegnate — due testi quasi allineati. Perciò lì si moltiplica
+ * (`mix-blend-mode` sul layer, vedi il foglio di stile): il nero per un colore
+ * resta nero, il bianco per un colore dà il colore.
  */
 function evidenzeStile(chiavi){
   var el=document.getElementById('evStile');
@@ -11010,9 +11032,11 @@ function evidenzeStile(chiavi){
     var c=taglio<0 ? k : String(k).slice(0,taglio);
     var tratto=taglio<0 ? 'sotto' : String(k).slice(taglio+1);
     if(tratto==='overlay'){
-      /* Niente `color` imposto: il testo resta quello del tema, e con il fondo
-         al 34% si legge in chiaro e in scuro senza due palette da mantenere. */
-      return '::highlight(ev-'+i+'){ background-color: color-mix(in srgb, '+c+' 34%, transparent); }';
+      /* Due regole per un tratto solo: il colore vale ovunque, il nero **solo
+         dentro il capitolo** — nel layer del documento accenderebbe le lettere
+         trasparenti sopra quelle del canvas. */
+      return '::highlight(ev-'+i+'){ background-color: '+c+'; }\n' +
+             '#content ::highlight(ev-'+i+'){ color:#111; }';
     }
     /* La sottolineatura spessa resta il default, e la ragione è scritta in
        `evidenzeTratto`: il fondo pieno litiga col giallo della lettura vocale. */
@@ -11247,10 +11271,10 @@ document.addEventListener('contextmenu', function(e){
   var m=document.getElementById('kwMenu'); if(!m) return;
   var h='<div class="ctx-head">'+escHtml(ev.exact)+'</div>';
   h+='<div class="ctx-colori" role="group" aria-label="Colore della parola chiave">';
-  (mappaColori()||[]).forEach(function(col){
+  (evidenzeColori()||[]).forEach(function(col){
     h+='<button class="ctx-col" data-kwcol="'+escHtml(col)+'" style="background:'+escHtml(col)+'" aria-label="Questo colore"></button>';
   });
-  h+='<input type="color" id="kwColPick" value="'+escHtml(ev.colore||'#a16207')+'" aria-label="Un altro colore">';
+  h+='<input type="color" id="kwColPick" value="'+escHtml(ev.colore||evidenzeColori()[0])+'" aria-label="Un altro colore">';
   h+='</div>';
   /* Il tratto si cambia da qui come il colore: sono i due modi in cui una parola
      chiave si vede, e governarli in due posti diversi vorrebbe dire cercarne uno
@@ -11345,10 +11369,31 @@ window.addEventListener('keydown', function(e){
 window.addEventListener('resize', kwMenuChiudi);
 /** Il colore con cui si evidenzia adesso: l'ultimo scelto, che sopravvive alla
  *  chiusura. Di fabbrica il primo dei preset, che li legge dal tema. */
+/**
+ * I colori dell'evidenziatore: quelli di un astuccio, non quelli della mappa.
+ *
+ * ⚠️ La RIGA dei colori resta una sola — la stessa che usa il menu della mappa,
+ * e copiarla sarebbe la seconda che diverge al primo ritocco — ma la TAVOLOZZA
+ * sono due, e devono esserlo: i colori della mappa sono tinte sature da tratto
+ * (un nodo teal scuro si legge sul fondo chiaro), mentre un evidenziatore è
+ * inchiostro chiaro che passa sopra le lettere senza cancellarle. Stese dietro
+ * il testo, le tinte della mappa darebbero scuro su scuro; questi, che vengono
+ * dagli evidenziatori da banco, restano leggibili proprio perché sono chiari.
+ *
+ * Le evidenze già segnate portano il loro colore scritto sul disco e non si
+ * toccano: cambiano i preset, non il passato.
+ */
+function evidenzeColori(){
+  return ['#fdf14d',   // giallo
+          '#b6f34d',   // verde
+          '#ff8ad0',   // rosa
+          '#ffb24d',   // arancio
+          '#6fdcff'];  // azzurro
+}
 function evidenzeColore(){
   if(EVIDENZE.colore) return EVIDENZE.colore;
   try{ EVIDENZE.colore=localStorage.getItem('studia.evidenze.colore')||''; }catch(e){}
-  if(!EVIDENZE.colore) EVIDENZE.colore=(mappaColori()||[])[1] || '#a16207';
+  if(!EVIDENZE.colore) EVIDENZE.colore=evidenzeColori()[0];
   return EVIDENZE.colore;
 }
 function evidenzeColoreScegli(c){
@@ -11468,9 +11513,13 @@ function evidenzaScrivi(prep, opt){
      (`kwEParolaChiave`): annunciarla come «parola chiave aggiunta» manderebbe a
      cercarla in una lista dove non c'è. */
   if(!(opt && opt.silenzioso)){
+    /* ⚠️ E dice anche il verbo giusto: i due tratti adesso si vedono diversi —
+       uno sottolinea, l'altro passa l'evidenziatore — e annunciare «sottolineato»
+       a chi ha appena steso il colore descriverebbe un'altra azione. */
+    var fatto=((prep.tratto||evidenzeTratto())==='overlay') ? 'Evidenziato' : 'Sottolineato';
     toast(kwEParolaChiave({ exact:prep.sel.exact })
       ? 'Parola chiave aggiunta'
-      : 'Sottolineato. Troppo lungo per l’elenco delle parole chiave', true);
+      : fatto+'. Troppo lungo per l’elenco delle parole chiave', true);
   }
   return true;
 }
