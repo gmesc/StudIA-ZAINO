@@ -9,20 +9,41 @@
 
 ---
 
+## 0. Da dove ripartire, in tre righe
+
+**Il lavoro di oggi è finito e verificato; manca UNA decisione: unire in `main`.** Le quattro
+condizioni del merge (GUIDA-ARCHITETTO §7.2) sono soddisfatte tranne una riga — vedi §5. Se Giacomo
+dice di sì, si fa il merge; se invece si riparte a costruire, la cosa più matura è la proposta del §4
+(«rinominare una fonte»), che è già istruita e aspetta solo il via.
+
+⚠️ **Non ricominciare da capo la lettura del codice**: la mappa di tutta la modalità ZAINO — etichette
+esatte, selettori, gesti, che cosa succede su disco — è già scritta e verificata nella **guida
+illustrata** (`../StudIA - tutorial ZAINO/index.html`, 93 immagini scattate sull'app viva). È la
+documentazione utente, ma è anche il censimento più aggiornato di che cosa l'app fa davvero.
+
+---
+
 ## 1. Dove sono i lavori
 
 | | |
 |---|---|
 | rami | quattro, in fila: `pacchetto` → `selmenu-closepops` → `installer-windows` → **`zaino-ricerca-rinomina`** (oggi). L'ultimo contiene tutti: unendo quello entra tutto in un colpo |
-| commit | `zaino-ricerca-rinomina` alla testa · `main` ferma a `b005214` |
-| suite | ✅ **37** file di unità · ✅ **45** prove CDP sull'app viva |
-| fuori dal repo | `../StudIA - tutorial ZAINO/` — la guida illustrata della modalità ZAINO (99 immagini scattate sull'app viva, aggiornata oggi con le cose nuove) |
+| commit | `3bb8f6c` alla testa di `zaino-ricerca-rinomina`, **18 avanti** a `main` (ferma a `b005214`); albero pulito, niente in sospeso |
+| oggi | `d391a50` (lente negli appunti · rinomina zaino · nomi dei tasti · etichette) e `3bb8f6c` (i titoli degli appunti) |
+| suite | ✅ **37** file di unità · ✅ **45** prove CDP sull'app viva, rieseguite sul codice committato |
+| remoto | `git@github.com:gmesc/StudIA.git` (privato); **nessun ramo è salito** |
+| fuori dal repo | `../StudIA - tutorial ZAINO/` — la guida illustrata (93 immagini, `_lab/` con la ricetta per rifarle) · la skill globale `~/.claude/skills/guida-app-screenshot/` |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
 npm test                                                   # 37 file, exit 0
 STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # 45 prove sull'app viva
+STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh prova-zaino.js   # una sola
 ```
+
+⚠️ **La porta 9346 e non la 9333**: 9333 è quella di fabbrica del runner, e se un'altra sessione la
+sta usando le due corse si contendono la stessa app — misure rosse a caso. Con `STUDIA_PORTA` non
+succede.
 
 ---
 
@@ -165,3 +186,41 @@ riscritto, e si dice quante ne sono state cambiate e quante lasciate. La forma: 
 `fonteElimina` con «Ci si appoggiano: …»), e il rifiuto se un file è illeggibile — «non lo so» non è «no».
 
 Le altre cose ancora aperte restano quelle del §4 del [14 agosto](HANDOFF-DEFINITIVO-2026-08-14.md).
+
+---
+
+## 5. Prima del merge: che cosa c'è e che cosa manca
+
+Le quattro condizioni (GUIDA-ARCHITETTO §7.2):
+
+| condizione | stato |
+|---|---|
+| le due suite verdi | ✅ 37 unità · 45 CDP, sul codice committato |
+| i gesti provati a mano da Giacomo | ✅ per `d391a50` — «tutti i gesti li ho provati e funzionano» · ⚠️ **restano da provare quelli di `3bb8f6c`** (i titoli) |
+| piani e handoff aggiornati | ✅ PIANO-ZAINO §Z9, PIANO-BRAYNR §0-quater, GUIDA-ARCHITETTO (mappa + conto), questo file, e la guida illustrata |
+| `main` non si è mossa | ✅ ferma a `b005214` |
+
+**I gesti che restano** (dieci minuti, in un appunto qualunque):
+
+1. Scrivi `#` … `######` su sei righe e guarda l'anteprima **▣**: sette misure distinte, uguali a
+   quelle che vedi mentre scrivi. Poi allarga la finestra: devono crescere insieme.
+2. La stessa cosa in affiancata **◫**.
+3. Un titolo dentro un riquadro (`> [!nota]` e sotto `> # titolo`): grande come nell'editor, ma dentro
+   il suo box.
+4. **🖨 Stampa** un appunto con i titoli: sulla carta la scala è in punti e resta piccola — è giusto.
+
+Se sono verdi: `git checkout main && git merge zaino-ricerca-rinomina` — e ⚠️ **la suite intera si
+riesegue sul codice unito**, che non è mai girato prima (GUIDA-ARCHITETTO §7.2d).
+
+---
+
+## 6. Il laboratorio degli screenshot (serve se si tocca l'interfaccia)
+
+`../StudIA - tutorial ZAINO/_lab/` — `lab.js` pilota l'app viva via CDP e scatta: puntatore
+evidenziato, cornici, numeri cerchiati, ritagli, tendine e `confirm()` nativi «ridisegnati» col testo
+vero. `campagna.js` rifà tutte le 93 immagini della guida in un colpo, su un vault di prova vuoto,
+finestra **1470×956 @2x** (il MacBook Air 13" a schermo intero: è la misura che Giacomo ha chiesto).
+La ricetta e le trappole stanno in `_lab/README.md` e nella skill `guida-app-screenshot`.
+
+⚠️ Il laboratorio usa la porta **9345** e una cartella dati sua: non tocca né il vault vero né la
+config. Se resta un'istanza orfana, `pgrep -f "remote-debugging-port=9345"` e `kill`.
