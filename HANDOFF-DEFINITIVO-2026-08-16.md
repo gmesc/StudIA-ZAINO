@@ -20,7 +20,7 @@
 | rami | **`pacchetto`** (3 commit) e **`selmenu-closepops`**, che parte da lui e lo contiene (fix di closePops, icona, emoji, evidenziatore) — nessuno dei due unito a `main` |
 | commit | `selmenu-closepops` alla testa · `main` ferma a `b005214` |
 | remoto | `git@github.com:gmesc/StudIA.git` (privato); **nessuno dei due rami è salito** |
-| suite | ✅ **35** file di unità · ✅ **45** prove CDP sul codice · ✅ le stesse **dentro il pacchetto** |
+| suite | ✅ **36** file di unità · ✅ **45** prove CDP sul codice · ✅ le stesse **dentro il pacchetto** (macOS) |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
@@ -28,7 +28,8 @@ npm test                                                   # 35 file, exit 0
 STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # 45 prove sull'app viva
 STUDIA_PORTA=9346 STUDIA_APP="$PWD/dist/mac-arm64/StudIA.app" \
   ./test/cdp/con-vault-di-prova.sh                         # le stesse DENTRO il pacchetto
-npm run pacchetto                                          # bundle + firma + dmg + controprova
+npm run pacchetto                                          # macOS: bundle + firma + dmg + controprova
+npm run dist:win                                           # Windows: l'installer NSIS x64
 ```
 
 **Il rosso di `prova-testolayer` non esiste più**: non era ambientale (§3).
@@ -88,6 +89,34 @@ Le parole di ricerca sono **italiane** (Unicode CLDR): «attenzione» trova ⚠�
 ⚠️ Restano fuori le 405 icone «extra» in area a uso privato: dentro StudIA si vedrebbero, ma
 finiscono negli appunti dell'utente, che devono restare leggibili in Obsidian o in una mail —
 fuori di qui sarebbero quadratini.
+
+### L'installer per Windows 11 — `npm run dist:win`
+`dist/StudIA-1.0.0-setup-x64.exe` (142 MB): un NSIS che **non** è a un click solo — chiede dove
+installare, mette il collegamento sul desktop, si disinstalla dal pannello. Si costruisce **dal
+Mac senza Wine**: le dipendenze del progetto sono tutte JS, non c'è niente da ricompilare.
+L'icona viene dalla stessa sorgente del Mac (`bin/icona.js` scrive anche `build/icon.ico`), ed è
+verificata *dentro* `StudIA.exe` e dentro l'installer, non solo accanto.
+
+⚠️ **Quello che il porting ha fatto emergere** sono le assunzioni macOS che non fanno rumore —
+l'app parte lo stesso e mente. Tutte in `lib/ambiente.js`: i candidati Python erano solo percorsi
+Unix; «quello di sistema» era scritto come `/usr/bin/python3` (su Windows il confronto era sempre
+falso, quindi l'avviso «stai usando un altro interprete» non sarebbe comparso mai); e il rimedio
+suggerito a chi non ha Python era `xcode-select --install`. `test/ambiente.js` prova il
+comportamento Windows **da un Mac**, ridefinendo `process.platform`.
+
+⚠️ **Non è ancora stato eseguito su Windows.** Da qui si può misurare che l'installer è un NSIS
+valido, che contiene l'app intera e che l'icona è dentro l'exe — non che si installi e parta. Serve
+una macchina o una VM Windows 11, ed è la prima cosa da fare prima di darlo a un tester.
+
+Che cosa aspettarsi là, dichiarato:
+- **SmartScreen**: l'installer non è firmato (serve un certificato EV o OV, a pagamento), quindi
+  Windows dirà «ha protetto il PC» → «Ulteriori informazioni» → «Esegui comunque». È l'equivalente
+  di «Apri comunque» del Mac;
+- **HEIC**: niente conversione, `sips` è di macOS — il codice lo dice già all'utente;
+- **la voce di sistema** (`say`) non c'è, ma la lettura ad alta voce **funziona lo stesso** con
+  `speechSynthesis`, che su Windows usa le voci installate;
+- **la pipeline** (trascrizione, OCR) dipende da un Python installato: il venv usa già
+  `Scripts\python.exe`, ma quel percorso non è mai stato eseguito.
 
 ### L'evidenziatore — il testo resta nero
 Il fondo pieno non è più diluito al 34%: i preset sono cinque colori **da evidenziatore** (giallo,
@@ -203,6 +232,10 @@ Le suite misurano, non guardano — e più di un difetto vero l'ha trovato Giaco
 6. **Le emoji**: nella barra dell'editor, la faccina. Scorrere le categorie, cercare in italiano
    («attenzione», «gatto», «bandiera»), inserirne una e **riaprire l'appunto in Obsidian** per
    vedere che il carattere è lo stesso anche fuori.
-7. **L'evidenziatore**: scegliere il fondo pieno, evidenziare una frase nel capitolo e una nel PDF,
+7. **L'installer Windows**, su una macchina o VM Windows 11: installazione, primo avvio
+   (SmartScreen → «Esegui comunque»), scelta della cartella del vault, apertura di una lezione e
+   di un PDF. Poi, se c'è Python: un ingest vero. È l'unica parte di tutto questo che **nessuna**
+   prova automatica ha toccato.
+8. **L'evidenziatore**: scegliere il fondo pieno, evidenziare una frase nel capitolo e una nel PDF,
    con due colori diversi. Il testo deve restare leggibile in entrambi — e provare anche in tema
    scuro, dove il pezzo evidenziato diventa un'isola chiara.
