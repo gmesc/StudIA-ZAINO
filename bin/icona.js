@@ -102,6 +102,47 @@ function pagina() {
   </style><div class="tela"><div class="tile">${disegno}</div></div>`;
 }
 
+/* Le taglie di un `.ico` per Windows. La 256 è quella che si vede nel menu
+   Start e nell'installer; le piccole servono alla barra delle applicazioni e
+   alle liste, dove un disegno rimpicciolito al volo dal sistema perde i tratti
+   sottili — averle nel file significa deciderle noi. */
+const TAGLIE_ICO = [16, 24, 32, 48, 64, 128, 256];
+
+/**
+ * Scrive un `.ico` mettendoci dentro i PNG già rimpiccioliti.
+ *
+ * Un ICO è un indice più i dati: sei byte di intestazione, sedici per ogni
+ * immagine, e poi le immagini una dopo l'altra. Da Windows Vista le immagini
+ * possono essere PNG invece che bitmap — che è la ragione per cui questo sta in
+ * venti righe invece di richiedere una libreria: si impacchettano i file che
+ * `sips` ha già prodotto, senza ricodificare niente.
+ *
+ * ⚠️ Nella tabella il lato 256 si scrive come 0: il campo è di un byte solo, e
+ * 256 non ci sta. Scriverci 255 darebbe un'icona che Windows disegna storta.
+ */
+function scriviIco(png, dove) {
+  const testa = Buffer.alloc(6);
+  testa.writeUInt16LE(0, 0);              // riservato
+  testa.writeUInt16LE(1, 2);              // 1 = icona (2 sarebbe un cursore)
+  testa.writeUInt16LE(png.length, 4);
+  const voci = [];
+  let offset = 6 + png.length * 16;
+  for (const { lato, dati } of png) {
+    const v = Buffer.alloc(16);
+    v.writeUInt8(lato >= 256 ? 0 : lato, 0);   // larghezza
+    v.writeUInt8(lato >= 256 ? 0 : lato, 1);   // altezza
+    v.writeUInt8(0, 2);                        // colori della tavolozza: nessuna
+    v.writeUInt8(0, 3);                        // riservato
+    v.writeUInt16LE(1, 4);                     // piani
+    v.writeUInt16LE(32, 6);                    // bit per pixel
+    v.writeUInt32LE(dati.length, 8);
+    v.writeUInt32LE(offset, 12);
+    offset += dati.length;
+    voci.push(v);
+  }
+  fs.writeFileSync(dove, Buffer.concat([testa, ...voci, ...png.map((p) => p.dati)]));
+}
+
 /** Le taglie che un .icns deve contenere, con i loro nomi obbligati. */
 const TAGLIE = [
   ['icon_16x16.png', 16], ['icon_16x16@2x.png', 32],
@@ -147,6 +188,22 @@ async function main() {
   fs.rmSync(set, { recursive: true, force: true });
   const peso = fs.statSync(path.join(FUORI, 'icon.icns')).size;
   console.log('  build/icon.icns  ' + Math.round(peso / 1024) + ' KB, ' + TAGLIE.length + ' taglie');
+
+  /* E il `.ico` per Windows, dalle stesse taglie: una sola sorgente per le due
+     piattaforme, o fra sei mesi l'icona del Mac e quella del PC saranno due
+     disegni diversi senza che nessuno l'abbia deciso. */
+  const tmp = path.join(FUORI, '_ico');
+  fs.rmSync(tmp, { recursive: true, force: true });
+  fs.mkdirSync(tmp, { recursive: true });
+  const pezzi = TAGLIE_ICO.map((lato) => {
+    const f = path.join(tmp, lato + '.png');
+    execFileSync('sips', ['-z', String(lato), String(lato), png, '--out', f], { stdio: 'ignore' });
+    return { lato, dati: fs.readFileSync(f) };
+  });
+  scriviIco(pezzi, path.join(FUORI, 'icon.ico'));
+  fs.rmSync(tmp, { recursive: true, force: true });
+  console.log('  build/icon.ico   ' + Math.round(fs.statSync(path.join(FUORI, 'icon.ico')).size / 1024) +
+              ' KB, ' + TAGLIE_ICO.length + ' taglie (' + TAGLIE_ICO.join(', ') + ')');
   app.quit();
 }
 
