@@ -468,6 +468,10 @@ contextBridge.exposeInMainWorld('vault', {
   zaino: {
     list: () => ipcRenderer.invoke('zaino:list'),
     create: (nome) => ipcRenderer.invoke('zaino:create', { nome }),
+    /* Torna `{ id, title, spostato }`: `id` è quello NUOVO — quando il titolo
+       cambia lo slug, cambia anche la cartella, e chi chiama deve riagganciarsi
+       a quello o continuerebbe a scrivere in una cartella che non c'è più. */
+    rinomina: (id, nome) => ipcRenderer.invoke('zaino:rinomina', { id, nome }),
     elimina: (id) => ipcRenderer.invoke('zaino:elimina', { id })
   },
   /* Il segno di lettura di ogni documento. Sta nel vault e non nel

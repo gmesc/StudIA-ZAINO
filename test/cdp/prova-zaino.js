@@ -179,6 +179,75 @@ const ZAINO = 'zaino-di-prova';
   ok('e il testo vero c\'è', true, /Lezione 3/.test(corpo));
   ok('l\'appunto si è aperto da sé', true, !!(await val('NOTES.cur ? 1 : 0')));
 
+  sezione('La lente cerca anche negli APPUNTI');
+  /* ⚠️ Gli appunti erano l'unica cosa che l'utente scrive e non poteva
+     rileggere cercando: la lente guardava le pagine dei documenti e basta.
+     Qui si scrive una parola che nel PDF non c'è di sicuro, e si pretende di
+     ritrovarla — e di aprire l'appunto giusto. */
+  await val(`(()=>{ window.vault.notes.save('${ZAINO}', null, { title:'Zibaldone' },
+    'La parola introvabile è zibaldonemio, e sta solo qui.\\n'); notesReload(); return 1; })()`);
+  await pausa(400);
+  const trovati = await val(`(()=>{ const r=searchRun('zibaldonemio')||[];
+    return r.map(function(x){ return { appunto:x.d.appunto||'', gruppo:x.d.lessonTitle }; }); })()`);
+  ok('la parola scritta in un appunto si trova', 1, (trovati || []).length);
+  ok('il risultato dice quale appunto aprire', true, !!(trovati[0] && /\.md$/.test(trovati[0].appunto)));
+  ok('ed è raggruppato sotto «Appunti»', 'Appunti', trovati[0] && trovati[0].gruppo);
+  /* Il risultato si apre nel suo strumento, dalla porta di sempre. */
+  await val(`(()=>{ const r=searchRun('zibaldonemio')[0]; searchGoto(r, 'zibaldonemio'); return 1; })()`);
+  const apertoApp = await finoA(`(NOTES.cur && NOTES.cur.title==='Zibaldone') ? 1 : 0`, 8000);
+  ok('e cliccarlo apre quell\'appunto', 1, apertoApp);
+  /* ⚠️ L'indice della lente è una COPIA: senza invalidarlo a ogni rilettura,
+     un appunto appena scritto non si troverebbe fino al cambio di contenitore.
+     Questo controllo è l'unico che se ne accorgerebbe. */
+  await val(`(()=>{ const n=window.vault.notes.leggi('${ZAINO}').notes.filter(x=>x.title==='Zibaldone')[0];
+    window.vault.notes.save('${ZAINO}', n.file, { title:'Zibaldone' }, 'Adesso dice cavolfiorbis.\\n');
+    notesReload(); return 1; })()`);
+  await pausa(400);
+  ok('e un appunto appena cambiato si trova subito', 1, await val(`(searchRun('cavolfiorbis')||[]).length`));
+  ok('mentre la parola di prima non c\'è più', 0, await val(`(searchRun('zibaldonemio')||[]).length`));
+
+  sezione('Le etichette della lente dicono DOVE si cerca');
+  ok('nello zaino parlano dello zaino', true,
+    /nello zaino/.test(await val(`document.getElementById('searchInput').placeholder`)));
+  /* ⚠️ Il suggerimento del bottone nomina un tasto: su un Mac «⌘F», altrove
+     «Ctrl+F». Che sia uno dei due lo dice la piattaforma di chi esegue. */
+  const sugg = await val(`document.getElementById('searchBtn').title`);
+  ok('e il bottone nomina il tasto della piattaforma giusta', true,
+    /Cerca nello zaino \((⌘F|Ctrl\+F)\)/.test(sugg));
+  ok('nessun «Cmd+» rimasto in giro', 0,
+    await val(`[...document.querySelectorAll('[title],[aria-label]')]
+      .filter(function(e){ return /Cmd[+-]/.test(e.getAttribute('title')||'') || /Cmd[+-]/.test(e.getAttribute('aria-label')||''); }).length`));
+
+  sezione('Rinominare lo zaino: il titolo, la cartella, e il lavoro che ci sta dentro');
+  const primaFile = fs.readdirSync(path.join(dirZaino, 'APPUNTI')).filter((f) => f.endsWith('.md')).length;
+  /* Si passa dalla porta vera — il ✎ di Impostazioni › Zaino — e dalla sua
+     finestrella, che è la stessa di ogni rinomina dell'app. */
+  await val(`(()=>{ zainoRinomina('${ZAINO}'); return 1; })()`);
+  await finoA(`document.querySelector('#uiModal[open]') ? 1 : 0`, 8000);
+  ok('la finestrella chiede il nome nuovo', 'Nuovo nome della materia',
+    await val(`document.getElementById('umTitle').textContent`));
+  ok('col nome di adesso già dentro', true,
+    !!(await val(`document.getElementById('umInput').value.length>0`)));
+  await val(`(()=>{ document.getElementById('umInput').value='Zaino ribattezzato'; return 1; })()`);
+  await clicca('#umOk');
+  const nuovoId = await finoA(`zainoAttivo()==='zaino-ribattezzato' ? 1 : 0`, 12000);
+  ok('lo zaino attivo è quello col nome nuovo', 1, nuovoId);
+  /* ⚠️ Il controllo che conta: la cartella si è spostata E il lavoro è dentro.
+     Un id che cambia senza portarsi il contenuto sarebbe uno zaino svuotato. */
+  const dirNuova = path.join(vault, 'Zaini', 'zaino-ribattezzato');
+  ok('la cartella vecchia non c\'è più', false, fs.existsSync(dirZaino));
+  ok('e quella nuova ha gli appunti di prima', primaFile,
+    fs.readdirSync(path.join(dirNuova, 'APPUNTI')).filter((f) => f.endsWith('.md')).length);
+  ok('la tendina in barra dice il nome nuovo', true,
+    /Zaino ribattezzato/.test(await val(`document.getElementById('zainoSelect').selectedOptions[0].textContent`)));
+  /* E la sidebar non si è svuotata: legge la cartella nuova, non quella di prima. */
+  ok('la sidebar continua a elencare gli appunti', true,
+    (await val(`document.querySelectorAll('#zainoNav .zn-appunto').length`)) > 0);
+  /* Il banco è memoria della macchina, sotto una chiave che contiene l'id: se
+     non traslocasse, rinominare sembrerebbe aver resettato lo zaino. */
+  ok('e la disposizione del banco ha traslocato', false,
+    await val(`localStorage.getItem('studia.banco.c.${ZAINO}') !== null`));
+
   sezione('Tornando ai corsi la sidebar torna quella dei capitoli');
   await val(`(async()=>{ await cambiaModo('corso'); return 1; })()`);
   await pausa(700);
@@ -187,6 +256,8 @@ const ZAINO = 'zaino-di-prova';
       return !!h && !h.hidden && h.getBoundingClientRect().height>0; })()`));
   ok('e l\'indice dei capitoli torna', 'Capitoli',
     await val(`document.getElementById('sidebarTitolo').textContent`));
+  ok('e la lente torna a parlare del corso', true,
+    /nel corso/.test(await val(`document.getElementById('searchInput').placeholder`)));
 
   console.log('');
   console.log(ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati');

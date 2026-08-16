@@ -379,6 +379,10 @@ ipcMain.handle('zaino:elimina', (e, { id } = {}) =>
   zainiLib.elimina(vaultDir(), id, { cestina: (p) => shell.trashItem(p) }));
 ipcMain.handle('zaino:create', (e, { nome } = {}) =>
   zainiLib.crea(vaultDir(), nome, new Date().toISOString().slice(0, 10)));
+/* Rinominare uno zaino cambia il titolo E la cartella: il perché sta in
+   `lib/zaini.js`. Qui non c'è logica — nemmeno la guardia sull'unicità, che è
+   la stessa della creazione e vive in un posto solo. */
+ipcMain.handle('zaino:rinomina', (e, { id, nome } = {}) => zainiLib.rinomina(vaultDir(), id, nome));
 
 /* ---- il segno di lettura: a che pagina si era arrivati ----
  * Vale per i corsi come per gli zaini: `lib/lettura.js` passa da

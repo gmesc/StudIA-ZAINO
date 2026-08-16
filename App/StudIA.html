@@ -75,6 +75,11 @@
 <script src="assets/dati/icone.js"></script>
 <script src="assets/dati/emoji.js"></script>
 <script src="assets/ricerca/indice.js"></script>
+<!-- I nomi dei tasti secondo la tastiera che si ha davvero sotto le mani: «⌘F»
+     su un Mac, «Ctrl+F» altrove. Il codice funzionava già di là (tutte le
+     guardie sono `metaKey || ctrlKey`): erano i suggerimenti a nominare un
+     tasto che su Windows non esiste. Puro, provato in Node. -->
+<script src="assets/tasti/nomi.js"></script>
 <!-- La carta: formato del foglio, margini, scala tipografica e il piè coi
      numeri di pagina. Sta qui — prima dell'inline — perché `stampaFoglio()` gli
      chiede le regole al momento di stampare, e perché il suo `@page` deve
@@ -3791,6 +3796,46 @@ function ttsVoceUI(){
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ttsVoceUI);
 else ttsVoceUI();
 
+/* ===================== I NOMI DEI TASTI =====================
+ * «Salva (⌘S)» su un Mac, «Salva (Ctrl+S)» altrove. Il codice funzionava già
+ * su Windows — le guardie sono tutte `e.metaKey || e.ctrlKey` — ma i
+ * suggerimenti nominavano un tasto che là non esiste: chi legge «⌘F» cerca un
+ * tasto che non ha e conclude che la scorciatoia non c'è.
+ *
+ * La regola sta in `assets/tasti/nomi.js` (pura, provata in Node). Qui c'è solo
+ * ciò che è pagina: dove sono i suggerimenti e quando riscriverli.
+ */
+var TASTI_MAC = (typeof TastiNomi!=='undefined') ? TastiNomi.suMac(navigator) : true;
+function tasti(s){ return (typeof TastiNomi!=='undefined') ? TastiNomi.perPiattaforma(s, TASTI_MAC) : String(s==null?'':s); }
+/**
+ * Riscrive i suggerimenti già scritti nel markup.
+ *
+ * ⚠️ Anche quelli dentro i `<template>`: la barra dell'editor si clona da lì a
+ * ogni apertura, e un template non riscritto rimetterebbe «Cmd+S» a ogni clone
+ * — un guasto che ricompare da solo dopo essere stato corretto, che è il modo
+ * peggiore di sembrare risolto. `querySelectorAll` non entra nel contenuto di un
+ * template: ci si entra a mano, ed è il motivo per cui questa funzione ricorre.
+ */
+function tastiNelDom(radice){
+  if(typeof TastiNomi==='undefined') return;
+  (function visita(host){
+    host.querySelectorAll('[title],[aria-label]').forEach(function(el){
+      ['title','aria-label'].forEach(function(a){
+        var v=el.getAttribute(a);
+        if(v && TastiNomi.haTasti(v)) el.setAttribute(a, tasti(v));
+      });
+    });
+    host.querySelectorAll('template').forEach(function(t){ visita(t.content); });
+  })(radice||document);
+}
+/* ⚠️ Il markup sta in gran parte SOTTO questo script: si aspetta il documento,
+   o si riscriverebbe metà pagina — quella già letta. Per la stessa ragione qui
+   dentro c'è anche la lente: le sue etichette vivono in `#searchPop`, che sta in
+   fondo, e `modoAggiorna()` durante il primo disegno non lo trova ancora. */
+function etichetteIniziali(){ tastiNelDom(); try{ ricercaEtichette(); }catch(e){} }
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', etichetteIniziali);
+else etichetteIniziali();
+
 /* ---- Impostazioni ---- */
 const root=document.documentElement;
 $('#themeToggle').addEventListener('click',()=>{ root.dataset.theme = root.dataset.theme==='scuro' ? 'chiaro' : 'scuro'; });
@@ -5826,7 +5871,7 @@ function albumRitaglioModo(on){
   ALBUM.attivo=(on==null) ? !ALBUM.attivo : !!on;
   albumVestito();
   if(!ALBUM.attivo) albumRettTogli();
-  if(ALBUM.attivo) toast('Trascina un rettangolo sulla pagina per ritagliarla — o tieni premuto ⌘', true);
+  if(ALBUM.attivo) toast(tasti('Trascina un rettangolo sulla pagina per ritagliarla — o tieni premuto ⌘'), true);
 }
 
 /**
@@ -6067,7 +6112,7 @@ function albumChiudiMenu(){
 var ALBUMVISTE = {
   album: { origine:'ritaglio', lista:'#albLista', conto:'#albConto', cerca:'#albCerca',
            uno:'ritaglio', molti:'ritagli',
-           vuoto:'Nessun ritaglio, per ora.<br>Apri un documento nella <b>Fonte</b>, accendi le forbici ✂ nella sua barra (o tieni premuto ⌘) e trascina un rettangolo sulla pagina.' },
+           vuoto:tasti('Nessun ritaglio, per ora.<br>Apri un documento nella <b>Fonte</b>, accendi le forbici ✂ nella sua barra (o tieni premuto ⌘) e trascina un rettangolo sulla pagina.') },
   foto:  { origine:'foto', lista:'#fotoLista', conto:'#fotoConto', cerca:'#fotoCerca',
            uno:'immagine', molti:'immagini',
            vuoto:'Nessuna immagine, per ora.<br>Trascina qui sopra dei file <b>.jpg .png .gif .webp .heic</b> — o lasciali cadere sulla finestra.' }
@@ -8192,7 +8237,7 @@ function guidaRighe(){
     if(r.sezione) return '<tr class="sezione"><td colspan="3">'+escHtml(r.sezione)+'</td></tr>';
     var reso=''; try{ reso=renderNoteMd(r.sintassi); }catch(e){ reso=escHtml(r.sintassi); }
     return '<tr>'+
-      '<td><span class="g-nome">'+escHtml(r.nome)+'</span>'+(r.nota?'<span class="g-nota">'+escHtml(r.nota)+'</span>':'')+'</td>'+
+      '<td><span class="g-nome">'+escHtml(r.nome)+'</span>'+(r.nota?'<span class="g-nota">'+escHtml(tasti(r.nota))+'</span>':'')+'</td>'+
       '<td><pre class="g-sint">'+escHtml(r.sintassi)+'</pre></td>'+
       '<td><div class="g-out">'+reso+'</div></td></tr>';
   }).join('');
@@ -8793,6 +8838,8 @@ function modoAggiorna(){
      tre sezioni dello zaino — fonti, appunti, mappe — arrivano con Z3; fino ad
      allora la sidebar dello zaino è vuota, che è meno falso di piena. */
   var tit=document.getElementById('sidebarTitolo'); if(tit) tit.textContent = zaino ? 'Zaino' : 'Capitoli';
+  /* La lente cerca in due posti diversi nelle due modalità, e lo deve dire. */
+  try{ ricercaEtichette(); }catch(e){ console.error('lente/etichette:', e); }
   var sel=document.getElementById('zainoSelect');
   if(sel && sel.value!==(MODO.zaino||'')) sel.value = MODO.zaino || '';
   /* La sidebar dello zaino si riempie da sé: chiamarla qui vuol dire che ogni
@@ -9077,12 +9124,80 @@ async function setZainiDisegna(){
   if(!lista.length){ host.innerHTML='<div class="set-note">Nessuno zaino. Si creano con il «+» in barra, in modalità Zaino.</div>'; return; }
   host.innerHTML=lista.map(function(z){
     var conto=z.documenti ? (z.documenti+(z.documenti===1?' documento':' documenti')) : 'vuoto';
+    var nome=escHtml(z.title||z.id);
+    /* ✎ prima di 🗑, come nella barra degli appunti e in quella della mappa:
+       rinominare e eliminare stanno sempre in quest'ordine, e la mano lo sa. */
     return '<div class="zx-riga">'+
-      '<b>'+escHtml(z.title||z.id)+'</b><span class="set-note">'+escHtml(conto)+'</span>'+
+      '<b>'+nome+'</b><span class="set-note">'+escHtml(conto)+'</span>'+
+      '<button type="button" class="tbtn zx-rinomina" data-zaino="'+escHtml(z.id)+'"'+
+      ' title="Rinomina «'+nome+'»"'+
+      ' aria-label="Rinomina lo zaino '+nome+'">&#9998;</button>'+
       '<button type="button" class="tbtn zx-elimina" data-zaino="'+escHtml(z.id)+'"'+
-      ' title="Elimina «'+escHtml(z.title||z.id)+'»: la cartella intera va nel Cestino"'+
-      ' aria-label="Elimina lo zaino '+escHtml(z.title||z.id)+'">&#128465;</button></div>';
+      ' title="Elimina «'+nome+'»: la cartella intera va nel Cestino"'+
+      ' aria-label="Elimina lo zaino '+nome+'">&#128465;</button></div>';
   }).join('');
+}
+/**
+ * La memoria della MACCHINA di uno zaino che cambia id: disposizione del banco,
+ * zoom, e che cosa era aperto.
+ *
+ * ⚠️ Sta in `localStorage` sotto chiavi che contengono l'id, e l'id cambia
+ * quando cambia il titolo. Senza questo trasloco chi rinomina si ritroverebbe il
+ * banco di fabbrica e i riquadri vuoti — «rinominare ha resettato lo zaino» —
+ * mentre sul disco non si è perso niente. È lo stesso elenco di chiavi che
+ * `zainoElimina` cancella: se un giorno se ne aggiunge una, va aggiunta qui.
+ */
+function zainoMemoriaSposta(da, a){
+  if(!da || !a || da===a) return;
+  try{
+    ['studia.banco.c.'+da, 'studia.banco.c.'+da+'.zoom'].forEach(function(k){
+      var v=localStorage.getItem(k); if(v==null) return;
+      localStorage.setItem(k.replace('.c.'+da, '.c.'+a), v);
+      localStorage.removeItem(k);
+    });
+  }catch(e){}
+  try{
+    var t=apertoLeggi();
+    if(t && t[da]!==undefined){ t[a]=t[da]; delete t[da]; localStorage.setItem('studia.aperto', JSON.stringify(t)); }
+  }catch(e){}
+}
+/**
+ * Rinomina uno zaino. Cambia il titolo e — se il titolo produce un altro slug —
+ * la cartella: il perché sta in `lib/zaini.js`.
+ *
+ * ⚠️ Se è lo zaino APERTO si molla prima (`contenitoreMolla`): l'appunto e la
+ * mappa in canna vanno scritti nella cartella di adesso, che fra un istante avrà
+ * un altro nome. Dopo, il riaggancio passa da `cambiaZaino`, che è la porta vera
+ * per «adesso il contenitore è quest'altro» — rifarne qui il rito vorrebbe dire
+ * due liturgie da tenere allineate.
+ */
+async function zainoRinomina(id){
+  if(!id) return;
+  var z=(MODO.zaini||[]).filter(function(x){ return x.id===id; })[0];
+  var vecchio=(z&&z.title)||id;
+  var nome=await askText('Nuovo nome della materia', vecchio);
+  if(nome===null || nome===undefined) return;               // annullato
+  nome=String(nome).trim();
+  if(!nome){ toast('Il nome non può essere vuoto', false); return; }
+  if(nome===vecchio) return;                                 // niente da fare
+  var eraAttivo=(zainoAttivo()===id);
+  if(eraAttivo) contenitoreMolla();
+  var r;
+  try{ r=await window.vault.zaino.rinomina(id, nome); }
+  catch(e){ toast('Non rinominato: '+((e&&e.message)||e), false); return; }
+  if(!r || r.error){ toast('Non rinominato: '+((r&&r.error)||'?'), false); return; }
+  if(r.spostato) zainoMemoriaSposta(id, r.id);
+  /* ⚠️ Il riaggancio va fatto PRIMA di `zainiAggiorna()`, non dopo: quella
+     funzione, vedendo che lo zaino attivo non è più nell'elenco (l'id è
+     cambiato), lo azzera e apre IL PRIMO della lista. Rinominare lo zaino
+     aperto avrebbe portato dentro un altro zaino, che è l'ultima cosa che si
+     chiede a una rinomina. Si passa da `cambiaZaino`, l'unica porta di «adesso
+     il contenitore è quest'altro»; `MODO.zaino=null` è ciò che le impedisce di
+     uscire alla prima riga, dove confronta il nuovo id con quello di adesso. */
+  if(eraAttivo && r.spostato){ MODO.zaino=null; cambiaZaino(r.id, true); }
+  await zainiAggiorna();
+  try{ await setZainiDisegna(); }catch(e){}
+  toast('Zaino rinominato: «'+r.title+'»', true);
 }
 /**
  * Elimina uno zaino: il gesto più grosso dell'app — dentro ci sono anche
@@ -9180,6 +9295,8 @@ async function zainoCrea(nome){
       return;
     }
     if(e.target.closest('#zainoCrea')){ zainoCrea((document.getElementById('zainoNome')||{}).value); return; }
+    var zr=e.target.closest('.zx-rinomina');
+    if(zr){ zainoRinomina(zr.dataset.zaino); return; }
     var zx=e.target.closest('.zx-elimina');
     if(zx){ zainoElimina(zx.dataset.zaino); return; }
     /* Le voci della sidebar. Ognuna passa dalla porta VERA dello strumento —
@@ -9547,6 +9664,12 @@ function notesReload(){
     NOTES.listError=err; console.error('appunti/list:', err); return;
   }
   NOTES.list=lista; NOTES.listCourse=m.courseId; NOTES.listError=err;
+  /* ⚠️ La lente cerca anche negli appunti, e il suo indice è una COPIA fatta al
+     momento: senza questa riga un appunto appena scritto non si troverebbe
+     finché non cambia contenitore — e chi cerca concluderebbe di non averlo mai
+     scritto. Questo è l'unico punto in cui l'elenco cambia, quindi è l'unico
+     posto in cui l'indice va dichiarato vecchio. */
+  SEARCH.docs=null;
   /* Nello zaino gli appunti sono anche una sezione della sidebar: se cambia
      l'elenco e lei non lo sa, un appunto appena creato non compare finché non
      si cambia zaino. */
@@ -9619,7 +9742,7 @@ function ensureMde(){
       '|',
       { name:'cita', title:'Cita il punto che stai guardando', className:'ncb-cita',
         action:function(){ citaCorrente(); } },
-      { name:'materiali', title:'Cita un materiale del corso', className:'ncb-mat',
+      { name:'materiali', title:'Cita un materiale di questo contenitore', className:'ncb-mat',
         action:function(){ apriMateriali(host.querySelector('.ncb-mat')); } },
       '|','link','code','|','preview','side-by-side',
       { name:'guida', title:'Come si scrive in StudIA', className:'ncb-guida',
@@ -9662,6 +9785,11 @@ function ensureMde(){
   NOTES.mde.codemirror.setOption('extraKeys', Object.assign({}, NOTES.mde.codemirror.getOption('extraKeys')||{}, {
     'Cmd-S':function(){ noteSave(); }, 'Ctrl-S':function(){ noteSave(); }
   }));
+  /* ⚠️ I suggerimenti della barra li scrive EasyMDE, ADESSO, e nella sua lingua
+     («Bold (Cmd-B)»): la spazzata di partenza è passata prima che esistessero.
+     Chi fabbrica markup che nomina dei tasti lo ridà a questa funzione — è la
+     stessa regola, applicata una seconda volta, non una seconda regola. */
+  try{ tastiNelDom(host); }catch(e){}
   return NOTES.mde;
 }
 /**
@@ -11709,6 +11837,11 @@ window.addEventListener('focus', function(){
 /* ===================== RICERCA nel corso attivo (indice JS puro) =====================
    Nessuna dipendenza esterna: indice in memoria su 200-300 capitoli, ricostruito al cambio corso. */
 var SEARCH={ docs:null, courseId:undefined, percorso:undefined, sel:-1, last:[] };
+/* L'intestazione sotto cui l'elenco raggruppa gli appunti. Una costante e non
+   una stringa scritta due volte: il gruppo lo scrive l'indice, e il renderer lo
+   confronta per decidere l'icona — due scritture diverse e il confronto sarebbe
+   sempre falso, in silenzio. */
+var GRUPPO_APPUNTI='Appunti';
 /* L'indice, il punteggio e il frammento stanno in `assets/ricerca/indice.js` —
    la testata di quel file dice perché. Qui resta ciò che è PAGINA: da dove
    arrivano i capitoli, come si disegna l'elenco, come si salta al punto. */
@@ -11725,6 +11858,11 @@ var sNorm = RicercaIndice.sNorm;
  * quella lezione fra le sue opzioni non c'è. Stessa porta di `mappaCorsoCorrente()`.
  */
 function searchBuild(){
+  /* ⚠️ Gli appunti si rileggono PRIMA di aprire `SEARCH.docs`, non dopo:
+     `notesReload()` azzera l'indice della lente (è il punto da cui si sa che un
+     appunto è cambiato), e chiamarlo a metà costruzione lo toglierebbe da sotto
+     i piedi a questa stessa funzione — `push` su `null`. */
+  if(!(NOTES.list||[]).length){ try{ notesReload(); }catch(e){ console.error('lente/appunti:', e); } }
   var m=curMeta(); var pid=m?m.courseId:null;
   SEARCH.courseId=pid; SEARCH.percorso=(percorsoScelto()||{}).id||null; SEARCH.docs=[];
   /* ⚠️ Nello ZAINO non ci sono capitoli: si cerca DENTRO I DOCUMENTI, una voce
@@ -11737,14 +11875,22 @@ function searchBuild(){
       var titolo=titoloMateriale(d.pdf)||d.pdf;
       (d.pagine||[]).forEach(function(p){ SEARCH.docs.push(RicercaIndice.docPagina(d.pdf, titolo, p)); });
     });
-    return;
-  }
-  lezioniOrdinati().forEach(function(c){
-    var cid=c.id;
-    var co=LESSONS[cid]; if(!co||!co.chapters) return;
-    co.chapters.forEach(function(ch,idx){
-      SEARCH.docs.push(RicercaIndice.docCapitolo(ch, { lessonId:cid, lessonTitle:co.title, idx:idx }, stripHtml));
+  } else {
+    lezioniOrdinati().forEach(function(c){
+      var cid=c.id;
+      var co=LESSONS[cid]; if(!co||!co.chapters) return;
+      co.chapters.forEach(function(ch,idx){
+        SEARCH.docs.push(RicercaIndice.docCapitolo(ch, { lessonId:cid, lessonTitle:co.title, idx:idx }, stripHtml));
+      });
     });
+  }
+  /* Gli appunti entrano in TUTTE E DUE le modalità, ed è il motivo per cui
+     stanno qui fuori e non nel ramo dello zaino: erano l'unica cosa che
+     l'utente SCRIVE e non poteva rileggere cercando — nei corsi mancavano
+     esattamente come negli zaini. */
+  (NOTES.list||[]).forEach(function(n,i){
+    if(!n || !n.file) return;
+    SEARCH.docs.push(RicercaIndice.docAppunto(n, GRUPPO_APPUNTI, i));
   });
 }
 function searchRun(q){
@@ -11760,7 +11906,8 @@ function searchRender(res,q){
   SEARCH.last=res; SEARCH.sel=-1;
   if(!q.trim()){ box.classList.remove('open'); box.innerHTML=''; return; }
   if(!res.length){ box.innerHTML='<div class="sr-empty">Nessun risultato per «'+escHtml(q)+'» '+
-    (modoAttivo()==='zaino' ? 'nei documenti di questo zaino.' : 'nel corso attivo.')+'</div>'; }
+    (modoAttivo()==='zaino' ? 'nei documenti e negli appunti di questo zaino.'
+                            : 'nei capitoli e negli appunti del corso attivo.')+'</div>'; }
   else{
     var html='', lastLesson=null, i=0;
     res.forEach(function(r){
@@ -11785,6 +11932,27 @@ function searchClose(){ var b=$('#searchRes'); if(b){ b.classList.remove('open')
  * riti separati uno dei due dimenticherebbe qualcosa (qui: rialzare i risultati
  * già scritti quando si riapre con del testo dentro).
  */
+/**
+ * Le etichette della lente dicono DOVE si cerca, e dipende dalla modalità.
+ *
+ * ⚠️ Erano scritte nel markup una volta per tutte — «Cerca nel corso…» — e
+ * restavano quelle anche nello zaino, dove un corso non c'è: chi leggeva
+ * concludeva che la lente cercasse altrove, e non provava. Stanno qui, in una
+ * funzione sola chiamata da `modoAggiorna()`, che è il punto da cui passa ogni
+ * cambio di modalità: due posti che scrivono le stesse etichette divergono al
+ * primo che cambia.
+ */
+function ricercaEtichette(){
+  var zaino=modoAttivo()==='zaino';
+  var dove=zaino ? 'nello zaino' : 'nel corso';
+  var dentro=zaino ? 'Cerca nei documenti e negli appunti dello zaino'
+                   : 'Cerca nei capitoli e negli appunti del corso attivo';
+  var btn=$('#searchBtn');
+  if(btn){ btn.title=tasti('Cerca '+dove+' (⌘F)'); btn.setAttribute('aria-label','Cerca '+dove); }
+  var pop=$('#searchPop'); if(pop) pop.setAttribute('aria-label','Cerca '+dove);
+  var inp=$('#searchInput');
+  if(inp){ inp.placeholder='Cerca '+dove+'…'; inp.setAttribute('aria-label', dentro); }
+}
 function ricercaApri(){
   var pop=$('#searchPop'), inp=$('#searchInput');
   if(!pop || !inp) return;
@@ -11794,6 +11962,17 @@ function ricercaApri(){
 }
 function searchGoto(r,q){
   searchClose();
+  /* Un appunto si apre nel suo strumento, dalla porta di sempre (`noteOpen`),
+     e il blocco glielo fa `bancoMostra` — le stesse due chiamate della voce in
+     sidebar. ⚠️ La parola trovata NON si riaccende dentro l'editor: CodeMirror
+     ha una selezione sua, e accendere lì dentro vorrebbe dire un secondo motore
+     di evidenziazione che nessuno spegne. Chi cerca arriva sull'appunto giusto;
+     dentro ci sono ⌘F del sistema e gli occhi. */
+  if(r.d.appunto){
+    try{ bancoMostra('appunti'); }catch(e){}
+    noteOpen(r.d.appunto);
+    return;
+  }
   /* Un risultato dello zaino è un documento a una pagina: ci si va con la porta
      di sempre, e la parola cercata si riaccende con la ricerca del
      visualizzatore — che è l'unica che sa evidenziare dentro un PDF. */
@@ -12072,7 +12251,7 @@ document.addEventListener('click', function(e){
        faceva NIENTE, per sempre, senza un segno. La figura lo dice già
        («documento NN non trovato»), la nota mostra un errore: erano tre esiti
        diversi per lo stesso guasto. */
-    if(!pf){ toast('Il documento di questo rimando non è fra i materiali del corso', false); return; }
+    if(!pf){ toast('Il documento di questo rimando non è fra i materiali '+(modoAttivo()==='zaino'?'di questo zaino':'del corso'), false); return; }
     openPdf(pf, parseInt(a.getAttribute('data-page'),10), a.getAttribute('data-label')); }
   else if(a.classList.contains('clink')){ var c=a.getAttribute('data-cap');
     if(!vaiAlCapitolo(c)) toast('Capitolo non trovato: '+c+' — forse la lezione è stata rigenerata',false); }
@@ -17070,7 +17249,7 @@ window.addEventListener('keydown', function(e){
        due righe di barra su un editor alto quanto mezza colonna. -->
   <template id="noteCtlTpl">
     <span class="notectl">
-      <select id="noteSelect" aria-label="Appunti del corso"></select>
+      <select id="noteSelect" aria-label="I tuoi appunti"></select>
       <span id="noteDirty" class="dirty" hidden title="Modifiche non salvate">&#9679;</span>
       <span id="noteWhere" class="nwhere" hidden></span>
       <button class="ncbtn" id="noteNew" type="button" title="Nuovo appunto" aria-label="Nuovo appunto">+</button>

@@ -159,6 +159,61 @@ sezione('Scrivere davvero: un appunto nello zaino finisce nello zaino');
     fs.existsSync(path.join(VAULT, 'Corsi', 'diritto-pubblico')));
 }
 
+sezione('Rinominare uno zaino: il titolo e la cartella');
+{
+  /* Uno zaino con dentro del lavoro: rinominare deve portarselo appresso. Se la
+     cartella si spostasse senza il contenuto, o il contenuto restasse indietro,
+     è qui che si vede — e non a schermo, dove si vedrebbe come «lo zaino si è
+     svuotato». */
+  Z.crea(VAULT, 'Storia romana', QUANDO);
+  appunti.save(VAULT, 'storia-romana', null, { title: 'Le guerre puniche' }, 'Zama.\n', QUANDO);
+
+  const solo = Z.rinomina(VAULT, 'storia-romana', 'Storia romana antica');
+  check('l\'esito porta il nuovo id e il nuovo titolo',
+    { id: 'storia-romana-antica', title: 'Storia romana antica', spostato: true }, solo);
+  check('la cartella vecchia non c\'è più', false, fs.existsSync(path.join(VAULT, 'Zaini', 'storia-romana')));
+  check('e quella nuova sì', true, Z.esiste(VAULT, 'storia-romana-antica'));
+  /* Il lavoro dell'utente viaggia con la cartella: è tutto lì dentro, e questa
+     è la ragione per cui rinominare non è un'operazione pericolosa. */
+  check('l\'appunto è dentro quella nuova', true,
+    fs.readdirSync(path.join(VAULT, 'Zaini', 'storia-romana-antica', 'APPUNTI'))
+      .some((n) => /guerre puniche/i.test(n)));
+
+  const dopo = Z.elenco(VAULT).filter((z) => z.id === 'storia-romana-antica')[0];
+  check('l\'elenco legge il titolo nuovo', 'Storia romana antica', dopo.title);
+  /* ⚠️ La data di nascita non è un dato da rifare: `rinomina` la rilegge e la
+     riscrive. Perderla vorrebbe dire uno zaino che dichiara di essere nato oggi
+     ogni volta che cambia nome. */
+  check('e la data di nascita è quella di prima', QUANDO, dopo.creato);
+
+  /* Un titolo che si riscrive senza cambiare lo slug: la cartella non si tocca,
+     e `spostato` lo dice — è il campo su cui il renderer decide se traslocare la
+     memoria della macchina. */
+  const stesso = Z.rinomina(VAULT, 'storia-romana-antica', 'Storia Romana Antica');
+  check('cambiare solo le maiuscole non sposta la cartella',
+    { id: 'storia-romana-antica', title: 'Storia Romana Antica', spostato: false }, stesso);
+
+  /* Le stesse guardie della creazione, perché è lo stesso rischio: due
+     contenitori con un id solo. */
+  Z.crea(VAULT, 'Chimica', QUANDO);
+  check('un nome già preso è rifiutato',
+    { error: 'esiste già un corso o uno zaino con questo nome' },
+    Z.rinomina(VAULT, 'storia-romana-antica', 'Chimica'));
+  fs.mkdirSync(path.join(VAULT, 'Corsi', 'fisica'), { recursive: true });
+  check('anche se il nome è di un CORSO',
+    { error: 'esiste già un corso o uno zaino con questo nome' },
+    Z.rinomina(VAULT, 'storia-romana-antica', 'Fisica'));
+  check('un nome vuoto è rifiutato', { error: 'dai un nome allo zaino' },
+    Z.rinomina(VAULT, 'storia-romana-antica', '   '));
+  check('un nome che non lascia lettere è rifiutato', { error: 'dai un nome allo zaino' },
+    Z.rinomina(VAULT, 'storia-romana-antica', '???'));
+  check('uno zaino che non esiste è rifiutato', { error: 'zaino non trovato' },
+    Z.rinomina(VAULT, 'mai-esistito', 'Qualcosa'));
+  /* E dopo tutti i rifiuti lo zaino è ancora al suo posto, col suo nome: un
+     rifiuto che lasciasse la cartella spostata sarebbe peggio di un errore. */
+  check('nessun rifiuto ha spostato niente', true, Z.esiste(VAULT, 'storia-romana-antica'));
+}
+
 try { fs.rmSync(VAULT, { recursive: true, force: true }); } catch (e) { /* era temporanea */ }
 
 console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');

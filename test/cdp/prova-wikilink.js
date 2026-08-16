@@ -147,14 +147,26 @@ const TROVA_LINK = `(()=>{
      volte con lo STESSO titolo — le varianti lo condividono per costruzione — e
      aprire il risultato sbagliato porterebbe su una lezione che la tendina non
      contiene. */
+  /* ⚠️ Si contano i CAPITOLI, non le voci: dal 16 agosto nell'indice della lente
+     stanno anche gli appunti (`d.appunto`) e, negli zaini, le pagine dei
+     documenti (`d.materiale`) — che una lezione non ce l'hanno per costruzione.
+     Prima si guardava `SEARCH.docs.map(d=>d.lessonId)` e le voci senza lezione
+     risultavano «una variante fuori percorso» chiamata `undefined`: la misura
+     era diventata imprecisa, non la regola. */
   const ric = await val(`(()=>{ searchBuild();
     const visibili=new Set(lezioniOrdinati().map(c=>c.id));
-    const dentro=SEARCH.docs.map(d=>d.lessonId);
+    const capitoli=SEARCH.docs.filter(d=>!d.appunto && !d.materiale);
+    const dentro=capitoli.map(d=>d.lessonId);
     return { doc:dentro.length, fuori:[...new Set(dentro.filter(id=>!visibili.has(id)))],
-             lezioniIndicizzate:new Set(dentro).size, visibili:visibili.size }; })()`);
+             lezioniIndicizzate:new Set(dentro).size, visibili:visibili.size,
+             appunti:SEARCH.docs.filter(d=>!!d.appunto).length,
+             appuntiVeri:(window.vault.notes.leggi(corsoAttivo()).notes||[]).length }; })()`);
   ok('nessun capitolo di una variante fuori percorso', [], ric.fuori);
   ok('e le lezioni indicizzate non superano quelle visibili', true,
     ric.lezioniIndicizzate <= ric.visibili);
+  /* E il fatto nuovo, dichiarato invece che ignorato: gli appunti del corso
+     sono nell'indice, tutti. */
+  ok('gli appunti del corso sono nell\'indice', ric.appuntiVeri, ric.appunti);
 
   sezione('Un rimando verso il nulla resta rotto, e lo dice');
   const finto = await val(`(()=>{

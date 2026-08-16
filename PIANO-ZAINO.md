@@ -555,6 +555,60 @@ serve) — il gesto oggi vive tutto nel flusso del documento.
 **Crediti**: fatti — `tesseract.js`, `Tesseract OCR (tessdata)` (Apache-2.0) e `pdf-lib` (MIT) in
 `CREDITI`, accanto a pypdf e PDF.js.
 
+### Z9 — La lente cerca anche negli appunti, e lo zaino si rinomina ✅ *fatto il 16 agosto 2026*
+
+Tre cose che la guida illustrata (`StudIA - tutorial ZAINO/`) ha fatto emergere elencandole fra i «non
+esiste»: scritte in una guida, si vedeva che erano buchi e non scelte.
+
+**La lente cerca negli appunti**, in tutte e due le modalità. Erano l'unica cosa che l'utente SCRIVE e
+non poteva rileggere cercando: la lente guardava i capitoli (nei corsi) o le pagine dei documenti
+(negli zaini), mai il quaderno — e chi cercava una frase che sapeva di aver scritto concludeva di non
+averla scritta. `RicercaIndice.docAppunto` (titolo + corpo, il titolo pesa 30 come per i capitoli),
+`searchGoto` apre l'appunto con `bancoMostra('appunti')` + `noteOpen`.
+⚠️ **L'indice della lente è una copia**: senza invalidarlo, un appunto appena scritto non si troverebbe
+fino al cambio di contenitore. Il punto da cui si sa che l'elenco è cambiato è uno solo — `notesReload()`
+— e lì c'è `SEARCH.docs=null`.
+⚠️ E gli appunti si rileggono **prima** di aprire `SEARCH.docs`, non dopo: `notesReload()` azzera
+l'indice, e chiamarlo a metà costruzione lo toglierebbe da sotto i piedi alla funzione che lo sta
+riempiendo (`push` su `null`).
+Dentro l'editor la parola trovata **non** si riaccende: CodeMirror ha una selezione sua, e accendere lì
+vorrebbe dire un secondo motore di evidenziazione che nessuno spegne.
+
+**Rinominare uno zaino** — ✎ accanto al 🗑 in Impostazioni › Zaino, l'ordine di ogni altra barra
+dell'app. Cambia il titolo **e la cartella**: l'id di uno zaino *è* il suo titolo ridotto a nome di
+cartella, e lasciare `Zaini/diritto-pubblico/` intitolato «Storia romana» sarebbe una seconda verità in
+un vault che l'utente apre col Finder. Non fa paura perché **dentro la cartella nessuno cita lo zaino
+per id**: i rimandi sono relativi al contenitore, evidenze e ritagli citano il nome del file, appunti e
+mappe stanno lì dentro. Resta un timbro vecchio nel campo `corso` delle mappe già salvate: nessuno lo
+legge — è una firma, non un puntatore.
+⚠️ **Il riaggancio va fatto PRIMA di `zainiAggiorna()`**: quella funzione, vedendo che lo zaino attivo
+non è più nell'elenco (l'id è cambiato), lo azzera e apre **il primo della lista** — rinominare lo zaino
+aperto avrebbe portato dentro un altro zaino. Si passa da `cambiaZaino`, e `MODO.zaino=null` è ciò che
+le impedisce di uscire alla prima riga.
+⚠️ **La memoria della macchina trasloca** (`zainoMemoriaSposta`): `studia.banco.c.<id>`, `.zoom`, la voce
+in `studia.aperto`. Senza, rinominare sembrerebbe aver resettato lo zaino — banco di fabbrica, riquadri
+vuoti — mentre sul disco non si è perso niente.
+
+**I nomi dei tasti secondo la tastiera che si ha davvero sotto le mani** (`App/assets/tasti/nomi.js`):
+«⌘F» su un Mac, «Ctrl+F» altrove. Il codice funzionava già su Windows — le guardie sono tutte
+`metaKey || ctrlKey` — ma i suggerimenti nominavano un tasto che là non esiste.
+⚠️ Non è una sostituzione ma una regola: «⌘F» → «Ctrl+F», mentre «tieni premuto ⌘» → «tieni premuto
+Ctrl», senza il più. Il «+» appartiene alla combinazione, non al tasto.
+⚠️ La spazzata (`tastiNelDom`) entra anche nei `<template>`: la barra dell'editor si clona da lì a ogni
+apertura, e un template non riscritto rimetterebbe «Cmd+S» a ogni clone — un guasto che ricompare da
+solo dopo essere stato corretto. E si richiama dopo `ensureMde()`, perché i suggerimenti della sua barra
+li scrive EasyMDE al momento, dopo la spazzata di partenza.
+⚠️ «Maiusc» non si traduce: su una tastiera italiana quel tasto si chiama così su tutte e due le
+piattaforme.
+
+**Le etichette che dicevano «corso» dentro uno zaino**: la lente («Cerca nel corso…» anche fra i
+documenti), il rimando orfano («non è fra i materiali del corso»), il 📎 dell'editor. `ricercaEtichette()`
+sta in un posto solo e la chiama `modoAggiorna()`, che è il punto da cui passa ogni cambio di modalità.
+
+`test/tasti.js` (27 controlli, nuovo nella catena di `npm test`), `test/ricerca.js` (+16), `test/zaini.js`
+(+13), e la sezione viva in `test/cdp/prova-zaino.js` (+18): la lente che trova un appunto appena
+scritto, le etichette della piattaforma, la rinomina che sposta la cartella col lavoro dentro.
+
 ---
 
 ## 6. Che cosa NON si fa

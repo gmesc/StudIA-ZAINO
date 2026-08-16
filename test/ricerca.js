@@ -147,5 +147,48 @@ sezione('Il frammento: acceso dov\'è, e senza HTML rotto');
   check('con gli accenti si accende la parola giusta', true, fa.indexOf('<mark>memòria</mark>') >= 0);
 }
 
+sezione('Gli appunti entrano nell\'indice');
+{
+  /* ⚠️ Erano l'unica cosa che l'utente SCRIVE e non poteva rileggere cercando:
+     la lente guardava i capitoli (nei corsi) o le pagine dei documenti (negli
+     zaini), mai il quaderno. Chi cercava una frase che sapeva di aver scritto
+     non la trovava, e non c'era modo di capire che era la lente a non guardare. */
+  const n = { file: 'Pianeti rocciosi.md', title: 'Pianeti rocciosi',
+    body: '# I quattro interni\n\nMercurio, Venere, Terra e Marte hanno una crosta solida.\n' };
+  const d = R.docAppunto(n, 'Appunti', 3);
+  check('il titolo si cerca', true, R.cerca([d], 'rocciosi').length === 1);
+  check('e anche il corpo', true, R.cerca([d], 'crosta solida').length === 1);
+  check('il risultato dice quale appunto aprire', 'Pianeti rocciosi.md', R.cerca([d], 'crosta')[0].d.appunto);
+  check('e sotto quale intestazione raggrupparlo', 'Appunti', d.lessonTitle);
+  check('il titolo dell\'appunto è quello della voce', 'Pianeti rocciosi', d.title);
+  check('la posizione nell\'elenco è l\'ordine di parità', 3, d.idx);
+
+  /* Il titolo pesa 30, come per i capitoli: un appunto che si INTITOLA come
+     quello che cerchi è la risposta, anche se un altro lo nomina di sfuggita. */
+  const altro = R.docAppunto({ file: 'Diario.md', title: 'Diario',
+    body: 'rocciosi rocciosi rocciosi rocciosi' }, 'Appunti', 0);
+  check('chi si intitola così viene prima', 'Pianeti rocciosi.md',
+    R.cerca([altro, d], 'rocciosi')[0].d.appunto);
+
+  /* Un appunto senza titolo nel frontmatter: il nome del file, senza `.md`. */
+  const senza = R.docAppunto({ file: 'Appunti di classe.md', body: 'Zama e le guerre puniche.' }, 'Appunti', 0);
+  check('senza titolo si usa il nome del file', 'Appunti di classe', senza.title);
+  check('e resta cercabile', 1, R.cerca([senza], 'puniche').length);
+
+  /* Un appunto vuoto non deve rompere l'indice: `body` assente è la condizione
+     normale di un appunto appena creato. */
+  const vuoto = R.docAppunto({ file: 'Nuovo.md', title: 'Nuovo' }, 'Appunti', 0);
+  check('un appunto vuoto non rompe niente', 1, R.cerca([vuoto], 'nuovo').length);
+
+  /* Capitoli, pagine e appunti convivono nello stesso indice: è una lente
+     sola, e ognuno dei tre porta il campo che dice come aprirlo. */
+  const cap = R.docCapitolo({ title: 'La memoria', html: '<p>rocciosi</p>' }, { lessonId: 'l1', lessonTitle: 'L', idx: 0 }, via);
+  const pag = R.docPagina('01 Sistema solare.pdf', 'Sistema solare', { page: 4, text: 'pianeti rocciosi interni' });
+  const misti = R.cerca([cap, pag, d], 'rocciosi');
+  check('tre tipi di voce nello stesso indice', 3, misti.length);
+  check('e ognuna dice come si apre', [true, true, true],
+    [misti.some((r) => r.d.appunto), misti.some((r) => r.d.materiale), misti.some((r) => r.d.lessonId !== undefined)]);
+}
+
 console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
 process.exit(ko ? 1 : 0);

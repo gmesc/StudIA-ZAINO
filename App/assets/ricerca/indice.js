@@ -59,6 +59,31 @@
     };
   }
 
+  /**
+   * Una voce dell'indice a partire da un APPUNTO.
+   *
+   * ⚠️ Gli appunti sono l'unica cosa dell'indice che l'utente ha SCRITTO, ed
+   * erano l'unica che non si poteva cercare: la lente guardava i capitoli (nei
+   * corsi) o le pagine dei documenti (negli zaini), mai il quaderno. Chi cercava
+   * una frase che sapeva di aver scritto non la trovava, e non c'era modo di
+   * capire che era la lente a non guardare lì.
+   *
+   * Nel testo cercabile entrano il titolo e il corpo — che è già markdown, cioè
+   * testo: nessuno `stripHtml` da passare, al contrario del capitolo.
+   *
+   * `idx` è la posizione nell'elenco: serve solo a dare un ordine stabile fra
+   * appunti dello stesso punteggio, come l'indice del capitolo nella lezione.
+   */
+  function docAppunto(nota, gruppo, idx) {
+    var n = nota || {};
+    var titolo = n.title || String(n.file || '').replace(/\.md$/i, '');
+    var text = [titolo, n.body || ''].join('  ');
+    return {
+      appunto: n.file, lessonTitle: gruppo || 'Appunti', idx: idx || 0, title: titolo,
+      text: text, ntext: sNorm(text), ntitle: sNorm(titolo)
+    };
+  }
+
   /** Una voce dell'indice a partire da una PAGINA di documento (lo zaino: là non
    *  ci sono capitoli, e l'unità che si può aprire è la pagina). */
   function docPagina(pdf, titolo, pagina) {
@@ -146,5 +171,6 @@
     return h;
   }
 
-  return { sNorm: sNorm, docCapitolo: docCapitolo, docPagina: docPagina, cerca: cerca, frammento: frammento };
+  return { sNorm: sNorm, docCapitolo: docCapitolo, docPagina: docPagina, docAppunto: docAppunto,
+    cerca: cerca, frammento: frammento };
 }));

@@ -97,7 +97,8 @@ stata pagata almeno una volta.
 App/StudIA.html          il guscio: markup, <style>, e il renderer che CABLA i moduli.
                          Monolite in smontaggio controllato: criterio e metriche in PIANO-MODULI.md
 App/assets/…             i moduli UMD (lettura, mappa, banco, evidenze, rimandi, ripasso, tts, stampa,
-                         appunti, ricerca, player, dati, fonti/zoom, album/foto, appunti/importa).
+                         appunti, ricerca, player, dati, fonti/zoom, album/foto, appunti/importa,
+                         tasti/nomi = i nomi dei tasti secondo la piattaforma).
                          Provabili in Node, caricati con <script src>
 App/assets/pdfjs/        pdf.js vendorizzato (build LEGACY) + `pdf_viewer.scoped.css`, GENERATO da
                          bin/pdfjs-css.js: il foglio del viewer incapsulato sotto
@@ -150,7 +151,7 @@ in silenzio.
 ## 6. Come si verifica
 
 ```bash
-npm test                                   # unità: tutti i file di test/, in catena (36 al 16 ago)
+npm test                                   # unità: tutti i file di test/, in catena (37 al 16 ago)
 ./test/cdp/con-vault-di-prova.sh           # tutte le prove sull'app viva (45 al 16 ago)
 ./test/cdp/con-vault-di-prova.sh <nome>    # una sola — è così che si lavora
 STUDIA_APP=dist/mac-arm64/StudIA.app \
