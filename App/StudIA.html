@@ -1636,7 +1636,7 @@
   #calloutMenu button:hover{ background:var(--hover); }
   #emojiPop{ width:min(320px,92vw); padding:.5rem; }
   #emojiPop input{ width:100%; border:1px solid var(--line); background:var(--bg); color:var(--ink); padding:.4rem .5rem; font-size:13px; margin-bottom:.4rem; }
-  #emojiGrid{ display:grid; grid-template-columns:repeat(8,1fr); gap:2px; max-height:240px; overflow:auto; }
+  #emojiGrid{ display:grid; grid-template-columns:repeat(8,1fr); gap:2px; max-height:300px; overflow:auto; }
   #emojiGrid button{ border:0; background:transparent; cursor:pointer; font-size:20px; line-height:1; padding:.25rem 0;
     font-family:var(--emoji-font),sans-serif; }
   #emojiGrid button:hover{ background:var(--hover); }
@@ -7761,6 +7761,16 @@ function emojiRender(q){
   var grid=$('#emojiGrid'); if(!grid) return;
   q=String(q||'').trim().toLowerCase();
   var list=q? EMOJI_FLAT.filter(function(e){ return e.kw.indexOf(q)>=0 || e.kw.split(' ').some(function(w){ return w.indexOf(q)===0; }); }) : EMOJI_FLAT;
+  /* ⚠️ Nella RICERCA la stessa emoji non deve comparire due volte. Da quando la
+     tavolozza è completa, le poche scelte a mano stanno in testa E nel loro
+     gruppo — che sfogliando è giusto (la prima riga è l'accesso rapido) ma
+     cercando no: «attenzione» rispondeva «⚠️ ⚠️», e i due sembrano lo stesso
+     carattere perché lo sono, a meno del selettore di variante che non si vede.
+     Si tiene il primo, cioè quello curato, che porta le parole italiane. */
+  if(q){
+    var visti={}; list=list.filter(function(e){
+      var k=e.ch.replace(/️/g,''); if(visti[k]) return false; visti[k]=1; return true; });
+  }
   if(!list.length){ grid.innerHTML='<div class="ep-empty">Nessuna emoji per «'+escHtml(q)+'»</div>'; return; }
   var html='', cur=null;
   list.forEach(function(e){

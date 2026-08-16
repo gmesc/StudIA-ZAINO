@@ -1,0 +1,388 @@
+[
+ [
+  "Studio",
+  [
+   {
+    "ch": "📖",
+    "kw": "libro leggere lettura studio"
+   },
+   {
+    "ch": "📚",
+    "kw": "libri biblioteca studio"
+   },
+   {
+    "ch": "📝",
+    "kw": "appunto nota scrivere"
+   },
+   {
+    "ch": "✏️",
+    "kw": "matita scrivere"
+   },
+   {
+    "ch": "📋",
+    "kw": "appunti lista blocco"
+   },
+   {
+    "ch": "📒",
+    "kw": "quaderno"
+   },
+   {
+    "ch": "🎓",
+    "kw": "laurea scuola studente"
+   },
+   {
+    "ch": "👩‍🏫",
+    "kw": "insegnante maestra docente"
+   },
+   {
+    "ch": "🗂️",
+    "kw": "archivio schedario"
+   },
+   {
+    "ch": "📄",
+    "kw": "foglio documento"
+   },
+   {
+    "ch": "📎",
+    "kw": "allegato graffetta"
+   },
+   {
+    "ch": "🔍",
+    "kw": "cerca lente ricerca"
+   },
+   {
+    "ch": "🧠",
+    "kw": "cervello mente memoria"
+   },
+   {
+    "ch": "💡",
+    "kw": "idea lampadina intuizione"
+   },
+   {
+    "ch": "🧩",
+    "kw": "esempio incastro puzzle"
+   },
+   {
+    "ch": "🖥️",
+    "kw": "computer schermo"
+   }
+  ]
+ ],
+ [
+  "Segnali",
+  [
+   {
+    "ch": "✅",
+    "kw": "fatto giusto completato"
+   },
+   {
+    "ch": "❌",
+    "kw": "sbagliato errore no"
+   },
+   {
+    "ch": "⚠️",
+    "kw": "attenzione pericolo avviso"
+   },
+   {
+    "ch": "❗",
+    "kw": "importante esclamativo"
+   },
+   {
+    "ch": "❓",
+    "kw": "dubbio domanda"
+   },
+   {
+    "ch": "⭐",
+    "kw": "stella importante preferito"
+   },
+   {
+    "ch": "🔴",
+    "kw": "rosso urgente"
+   },
+   {
+    "ch": "🟡",
+    "kw": "giallo medio"
+   },
+   {
+    "ch": "🟢",
+    "kw": "verde ok"
+   },
+   {
+    "ch": "🔵",
+    "kw": "blu"
+   },
+   {
+    "ch": "🎯",
+    "kw": "obiettivo bersaglio target"
+   },
+   {
+    "ch": "🚩",
+    "kw": "bandiera segnala"
+   },
+   {
+    "ch": "📌",
+    "kw": "puntina fissa"
+   },
+   {
+    "ch": "🔑",
+    "kw": "chiave concetto chiave"
+   },
+   {
+    "ch": "🔒",
+    "kw": "chiuso bloccato"
+   },
+   {
+    "ch": "🚫",
+    "kw": "vietato divieto"
+   }
+  ]
+ ],
+ [
+  "Tempo e numeri",
+  [
+   {
+    "ch": "⏱️",
+    "kw": "cronometro tempo"
+   },
+   {
+    "ch": "⏰",
+    "kw": "sveglia tempo scadenza"
+   },
+   {
+    "ch": "📅",
+    "kw": "calendario data"
+   },
+   {
+    "ch": "🗓️",
+    "kw": "agenda giorno"
+   },
+   {
+    "ch": "⏩",
+    "kw": "avanti veloce"
+   },
+   {
+    "ch": "⏪",
+    "kw": "indietro"
+   },
+   {
+    "ch": "🔝",
+    "kw": "presto nuovo"
+   },
+   {
+    "ch": "1️⃣",
+    "kw": "uno primo"
+   },
+   {
+    "ch": "2️⃣",
+    "kw": "due secondo"
+   },
+   {
+    "ch": "3️⃣",
+    "kw": "tre terzo"
+   },
+   {
+    "ch": "🔢",
+    "kw": "numeri conta"
+   }
+  ]
+ ],
+ [
+  "Frecce e relazioni",
+  [
+   {
+    "ch": "➡️",
+    "kw": "destra freccia quindi"
+   },
+   {
+    "ch": "⬅️",
+    "kw": "sinistra freccia"
+   },
+   {
+    "ch": "⬆️",
+    "kw": "su aumenta"
+   },
+   {
+    "ch": "⬇️",
+    "kw": "giu diminuisce"
+   },
+   {
+    "ch": "🔁",
+    "kw": "ciclo ripeti loop"
+   },
+   {
+    "ch": "🔀",
+    "kw": "incrocia mescola"
+   },
+   {
+    "ch": "↔️",
+    "kw": "bidirezionale relazione"
+   },
+   {
+    "ch": "🔗",
+    "kw": "link collegamento"
+   },
+   {
+    "ch": "🗺️",
+    "kw": "mappa panoramica"
+   },
+   {
+    "ch": "🌐",
+    "kw": "rete globale web"
+   },
+   {
+    "ch": "⚖️",
+    "kw": "equilibrio confronto bilancia"
+   },
+   {
+    "ch": "📊",
+    "kw": "grafico dati statistica"
+   },
+   {
+    "ch": "📈",
+    "kw": "crescita aumento"
+   },
+   {
+    "ch": "📉",
+    "kw": "calo diminuzione"
+   }
+  ]
+ ],
+ [
+  "Persone e DSA",
+  [
+   {
+    "ch": "👤",
+    "kw": "persona utente"
+   },
+   {
+    "ch": "👥",
+    "kw": "gruppo classe persone"
+   },
+   {
+    "ch": "🧑‍🎓",
+    "kw": "studente allievo"
+   },
+   {
+    "ch": "👶",
+    "kw": "bambino"
+   },
+   {
+    "ch": "👨‍👩‍👦",
+    "kw": "famiglia genitori"
+   },
+   {
+    "ch": "🗣️",
+    "kw": "parlare orale voce"
+   },
+   {
+    "ch": "👂",
+    "kw": "ascolto udito"
+   },
+   {
+    "ch": "👁️",
+    "kw": "vista occhio lettura"
+   },
+   {
+    "ch": "✍️",
+    "kw": "scrittura mano"
+   },
+   {
+    "ch": "🤝",
+    "kw": "collaborazione aiuto"
+   },
+   {
+    "ch": "❤️",
+    "kw": "cuore emozione motivazione"
+   },
+   {
+    "ch": "😊",
+    "kw": "contento positivo"
+   },
+   {
+    "ch": "😕",
+    "kw": "confuso difficolta"
+   },
+   {
+    "ch": "😫",
+    "kw": "stanco fatica affaticamento"
+   },
+   {
+    "ch": "💪",
+    "kw": "forza impegno"
+   },
+   {
+    "ch": "🌟",
+    "kw": "successo brillante"
+   }
+  ]
+ ],
+ [
+  "Materie",
+  [
+   {
+    "ch": "🔠",
+    "kw": "lettere alfabeto italiano"
+   },
+   {
+    "ch": "🔤",
+    "kw": "parole lessico"
+   },
+   {
+    "ch": "🇮🇹",
+    "kw": "italiano lingua"
+   },
+   {
+    "ch": "🇬🇧",
+    "kw": "inglese lingua"
+   },
+   {
+    "ch": "➕",
+    "kw": "matematica addizione calcolo"
+   },
+   {
+    "ch": "🧮",
+    "kw": "calcolo abaco matematica"
+   },
+   {
+    "ch": "📐",
+    "kw": "geometria misura"
+   },
+   {
+    "ch": "🔬",
+    "kw": "scienze microscopio"
+   },
+   {
+    "ch": "🌍",
+    "kw": "geografia mondo"
+   },
+   {
+    "ch": "🏛️",
+    "kw": "storia antico"
+   },
+   {
+    "ch": "🎵",
+    "kw": "musica nota"
+   },
+   {
+    "ch": "🎨",
+    "kw": "arte disegno"
+   },
+   {
+    "ch": "🎮",
+    "kw": "gioco videogioco"
+   },
+   {
+    "ch": "🎬",
+    "kw": "video film lezione"
+   },
+   {
+    "ch": "🎧",
+    "kw": "audio ascolto cuffie"
+   },
+   {
+    "ch": "📱",
+    "kw": "tecnologia telefono app"
+   }
+  ]
+ ]
+]

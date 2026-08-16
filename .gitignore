@@ -31,3 +31,10 @@ config.json
 build/icon.png
 build/icon.icns
 build/icon.iconset/
+
+# Le sorgenti che bin/emoji.js scarica per rigenerare la tavolozza: pesano 3 MB
+# e si riprendono da sole. Il prodotto (App/assets/dati/emoji.js) invece si
+# versiona, perché senza rete deve esserci.
+build/openmoji.json
+build/cldr-it.json
+build/cldr-it-derived.json
