@@ -57,8 +57,9 @@ guasti prima di arrivarci, tutti invisibili finché non si guarda la copia giust
    morta non rompe niente e nasconde che nessuno guarda quella lista.
 
 Il pacchetto è stato provato, non solo costruito: l'app estratta dal dmg parte su un vault suo, la
-card di primo avvio compare, **zero errori di console**, e le **43 prove CDP girano dentro il
-bundle** (`STUDIA_APP=…`, interruttore nuovo del runner). Quindi pdf.js vendorizzato, tesseract,
+card di primo avvio compare, **zero errori di console**, e **tutte le prove CDP girano dentro il
+bundle** (`STUDIA_APP=…`, interruttore nuovo del runner; erano 43 quel giorno, 45 stasera). Quindi
+pdf.js vendorizzato, tesseract,
 OCR, album e stampa funzionano *impacchettati*, non solo in cartella.
 
 ⚠️ La firma resta **ad-hoc**: `spctl` dirà sempre «rejected» e al primo avvio serve Impostazioni di
