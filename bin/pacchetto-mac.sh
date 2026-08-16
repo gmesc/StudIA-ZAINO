@@ -18,18 +18,33 @@
 # (da Sequoia il vecchio destro → Apri non basta più). Per togliere quel passo servono
 # l'Apple Developer Program e la notarizzazione vera: allora questo script si **butta**,
 # non si adatta — esiste solo per compensare `identity: null`.
+#
+# ⚠️ L'ARCHITETTURA si passa, e cambia due cose insieme: dove electron-builder
+# mette il bundle e come si chiama il dmg. Scriverne una a mano è il modo di
+# firmare un bundle e spedirne un altro.
+#
+#   npm run pacchetto            Apple Silicon (arm64)
+#   npm run pacchetto -- x64     Intel — gira anche su Apple Silicon, con Rosetta
+#
 set -euo pipefail
 
 QUI="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$QUI"
 
+ARCH="${1:-arm64}"
+case "$ARCH" in
+  arm64) CARTELLA="dist/mac-arm64" ;;
+  x64)   CARTELLA="dist/mac" ;;      # è così che le chiama electron-builder
+  *) echo "✗ architettura sconosciuta: $ARCH (arm64 | x64)"; exit 1 ;;
+esac
+
 NOME="$(node -p "require('./package.json').build.productName")"
 VERSIONE="$(node -p "require('./package.json').version")"
-APP="dist/mac-arm64/$NOME.app"
-DMG="dist/$NOME-$VERSIONE-arm64.dmg"
+APP="$CARTELLA/$NOME.app"
+DMG="dist/$NOME-$VERSIONE-$ARCH.dmg"
 
-echo "── 1/4  il bundle ──────────────────────────────────────"
-npm run dist:mac
+echo "── 1/4  il bundle ($ARCH) ──────────────────────────────"
+npx electron-builder --mac "--$ARCH"
 
 [ -d "$APP" ] || { echo "✗ manca $APP"; exit 1; }
 
@@ -61,6 +76,13 @@ if codesign --verify --strict "$MONTA/$NOME.app"; then
 else
   ESITO=1; echo "  ✗ l'app dentro il dmg NON è firmata"
 fi
+# ⚠️ E che sia l'architettura CHIESTA: i due dmg si chiamano quasi uguale, e un
+# tester con un Mac Intel che riceve l'arm64 vede solo «l'app non si apre».
+DENTRO="$(lipo -archs "$MONTA/$NOME.app/Contents/MacOS/$NOME" 2>/dev/null || echo '?')"
+case "$ARCH:$DENTRO" in
+  arm64:*arm64*|x64:*x86_64*) echo "  ✓ ed è $DENTRO, come chiesto" ;;
+  *) ESITO=1; echo "  ✗ dentro c'è $DENTRO, ma si è chiesto $ARCH" ;;
+esac
 hdiutil detach "$MONTA" >/dev/null; rmdir "$MONTA" 2>/dev/null || true
 
 echo ""

@@ -55,7 +55,7 @@
       "category": "public.app-category.education",
       "icon": "build/icon.icns",
       "identity": null,
-      "artifactName": "StudIA-${version}-arm64.${ext}"
+      "artifactName": "StudIA-${version}-${arch}.${ext}"
     },
     "dmg": {
       "title": "StudIA ${version}"
