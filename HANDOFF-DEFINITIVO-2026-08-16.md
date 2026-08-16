@@ -17,9 +17,9 @@
 
 | | |
 |---|---|
-| ramo | **`pacchetto`** — due commit, non ancora unito a `main` |
-| commit | `b1d87f1` (16 agosto) · `main` ferma a `b005214` |
-| remoto | `git@github.com:gmesc/StudIA.git` (privato); il ramo `pacchetto` **non è salito** |
+| rami | **`pacchetto`** (3 commit) e **`selmenu-closepops`**, che parte da lui e lo contiene — nessuno dei due unito a `main` |
+| commit | `selmenu-closepops` alla testa · `main` ferma a `b005214` |
+| remoto | `git@github.com:gmesc/StudIA.git` (privato); **nessuno dei due rami è salito** |
 | suite | ✅ **34** file di unità · ✅ **43** prove CDP sul codice · ✅ **43** prove CDP **dentro il pacchetto** |
 
 ```bash
@@ -94,11 +94,17 @@ Il metodo che l'ha sciolto: **far portare al rosso la sua diagnosi**. «Il testo
    `closePops()` **non lo chiude**: `#selMenu` e `#selBarra` non sono nel suo elenco e si chiudono
    con funzioni proprie. `elementFromPoint` sul punto di partenza restituiva `button.ctx-item`.
 
-**Questo terzo strato riguarda anche l'app**, non solo la prova: è la stessa forma del pittore che
-restava aperto (15 agosto), e il commento ⚠️ dentro `closePops()` la annuncia da sé. Valutare se
-aggiungere `selMenuChiudi()`/`selBarraChiudi()` a quell'elenco — prima verificando chi chiama
-`closePops()` e quando, perché chiudere il menu della selezione *mentre l'utente lo sta per usare*
-sarebbe un guasto nuovo al posto di uno vecchio.
+**Questo terzo strato riguardava anche l'app**, non solo la prova — ed è stato corretto in giornata
+sul ramo `selmenu-closepops`: `closePops()` chiama ora `selMenuChiudi()` e `selBarraChiudi()`.
+Erano rimasti fuori perché non hanno un attributo `open` da togliere ma uno stato in una classe;
+`popAt()` comincia con `closePops()`, quindi ogni apertura di pannellino lasciava il menu sopra il
+testo.
+
+⚠️ Il rovescio, verificato prima di toccare, è il guasto 10.3.3: chi si apre al RILASCIO del
+puntatore viene poi chiuso dal `click` che il browser manda subito dopo. Qui non succede — la barra
+non nasce nel `mouseup` ma nel `setTimeout` del giro dopo, e il menu si apre col tasto destro, che
+un click sinistro non genera. Lo misura `prova-selezione-menu`, che seleziona col mouse vero e
+controlla «la barra è aperta».
 
 E la regola di sempre: **una misura che contraddice un esperimento minimo identico va sospettata
 prima del codice**. Qui la prova isolata era verde e la suite rossa: la differenza non era il layer,
@@ -108,10 +114,15 @@ era ciò che le altre prove lasciavano dietro (zoom, menu, larghezza del riquadr
 
 ## 4. Che cosa resta aperto, in ordine
 
-### 1. Unire `pacchetto` a `main`
+### 1. Unire i due rami a `main`
+`selmenu-closepops` parte da `pacchetto` e lo contiene: unito lui, è unito tutto — oppure
+`pacchetto` prima e `selmenu-closepops` subito dopo, se si vogliono due passi distinti.
 Le quattro condizioni: (a) le suite sono verdi — anche dentro il bundle; (b) **mancano i gesti
 provati a mano** (§5); (c) piani e handoff aggiornati — fatto; (d) `main` ferma, **da riverificare
 al momento del merge**, non ricordata.
+
+⚠️ Il dmg in `dist/` è stato costruito **prima** del fix di `closePops()`: se serve un pacchetto che
+lo contenga, `npm run pacchetto` da rifare dopo il merge.
 
 ### 2. F3 — gli usi e le lapidi delle immagini → [PIANO-FOTO §3](PIANO-FOTO.md)
 Chiesto esplicitamente da Giacomo, non ancora iniziato. Le tre regole già decise (invariate):
@@ -146,5 +157,7 @@ Le suite misurano, non guardano — e più di un difetto vero l'ha trovato Giaco
 3. **La pipeline nel pacchetto**: un ingest vero (python + whisper) — è l'unico pezzo che le prove
    CDP non toccano, e nel bundle i percorsi sono altri (`Resources/app/ingest.py`, venv in
    `userData`).
-4. **Selezione su PDF**: doppio click su una parola, poi trascina una riga **senza** chiudere il
-   menu. Se il menu ti copre il testo che vuoi prendere, è il difetto del §3.3.
+4. **Selezione su PDF**: seleziona del testo (la barra deve comparire), poi apri un pannellino
+   qualsiasi — materiali, ricerca, la tendina di un blocco. Il menu e la barra della selezione
+   devono sparire con gli altri, e la barra deve continuare a comparire alla selezione dopo
+   (§3.3: il rischio era spegnerla nello stesso gesto che la apre).
