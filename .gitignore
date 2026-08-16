@@ -24,3 +24,10 @@ config.json
 # per far girare un lavoro in parallelo senza toccare questa copia. Sono
 # repository dentro il repository — versionarle non ha senso e git protesta.
 .claude/worktrees/
+
+# I prodotti di `npm run icona`: si rifanno dalla sorgente OpenMoji che sta
+# accanto a loro (build/1F393.svg), e un .icns versionato è la seconda copia
+# che diverge — la sola cosa da tenere è la ricetta, in bin/icona.js.
+build/icon.png
+build/icon.icns
+build/icon.iconset/
