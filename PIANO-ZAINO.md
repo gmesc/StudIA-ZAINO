@@ -531,6 +531,25 @@ l'alto e il segno si inverte — è l'unica inversione del file, e sta in `scriv
 **Non fa**: la prospettiva (foto di sbieco, righe che convergono). Servirebbe OpenCV.js/jscanify —
 licenze verificate il 13/8/26, **Apache-2.0 e MIT, vendibili** — ma è ~8 MB di WASM e riscriverebbe
 l'immagine: da decidere a parte.
+**Quanto costa, misurato il 16/8/26** — la domanda «ci gira sul portatile vecchio?» merita numeri,
+non impressioni. Un documento fotografato di pagine A4 a 150 dpi, riconosciuto per intero:
+
+| | Apple Silicon | pacchetto Intel (via Rosetta) |
+|---|---|---|
+| memoria col documento aperto | 705 MB | 624 MB |
+| **picco durante il riconoscimento** | **1325 MB** | **1295 MB** |
+| tempo per pagina | 1,7 s | 6,2 s |
+
+⚠️ Il dato che decide non è il picco ma la sua **stabilità**: 1312 MB su 30 pagine contro 1325 su
+10. Il riconoscimento lavora una pagina per volta e libera, quindi un documento lungo costa *tempo*
+e non *memoria* — non esiste la lunghezza oltre la quale la macchina si pianta. È la differenza fra
+questo motore e la lettura avanzata (Chandra), che carica un modello da 10,6 GB e su una macchina
+da 4 GB non si può nemmeno installare.
+
+Su una macchina piccola, quindi: le schede e le dispense corte si fanno lì; un libro intero conviene
+riconoscerlo altrove e portarsi il vault, perché il risultato si scrive **nel documento** e si fa
+una volta sola.
+
 **Resta di Z7**: la scheda Impostazioni › ZAINO (stato del componente, spiegazione di quando
 serve) — il gesto oggi vive tutto nel flusso del documento.
 **Crediti**: fatti — `tesseract.js`, `Tesseract OCR (tessdata)` (Apache-2.0) e `pdf-lib` (MIT) in

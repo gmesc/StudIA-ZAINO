@@ -116,6 +116,16 @@ main.js / preload.js     IPC: canali corti («leggi tutto, scrivi tutto»), l'id
 schema/                  i contratti (capitolo, profilo, …) — vedi invariante 10
 bin/studia.js            la stessa pipeline da terminale, senza Electron: ingest, schede,
                          architettura, tutto. Stessi moduli dell'app, nessuna logica doppia
+bin/pacchetto-mac.sh     il pacchetto per macOS in un comando (`npm run pacchetto [-- x64]`):
+                         bundle, firma ad-hoc, dmg RIFATTO dall'app firmata, e la controprova che
+                         monta il dmg. ⚠️ electron-builder fa il dmg PRIMA della firma: sono due
+                         copie diverse, e solo una viene spedita
+bin/icona.js             l'icona, GENERATA dal tocco OpenMoji (`npm run icona`): .png, .icns e .ico
+                         dalla stessa sorgente. La forma dell'angolo è misurata su un'icona di
+                         sistema, non indovinata
+bin/emoji.js             la tavolozza del selettore, GENERATA (`npm run emoji`) da OpenMoji +
+                         Unicode CLDR: verifica che il font disegni ogni carattere prima di
+                         offrirlo. Ciò che si cura a mano sta in dati/emoji-curate.json
 test/*.js                unità (npm test): ogni file gira anche da solo con node test/<file>.js
 test/cdp/                le prove sull'app viva + con-vault-di-prova.sh (vedi §6)
 ```
@@ -140,12 +150,14 @@ in silenzio.
 ## 6. Come si verifica
 
 ```bash
-npm test                                   # unità: tutti i file di test/, in catena (34 al 15 ago)
-./test/cdp/con-vault-di-prova.sh           # tutte le prove sull'app viva (43 al 15 ago)
+npm test                                   # unità: tutti i file di test/, in catena (36 al 16 ago)
+./test/cdp/con-vault-di-prova.sh           # tutte le prove sull'app viva (45 al 16 ago)
 ./test/cdp/con-vault-di-prova.sh <nome>    # una sola — è così che si lavora
 STUDIA_APP=dist/mac-arm64/StudIA.app \
   ./test/cdp/con-vault-di-prova.sh         # le stesse prove DENTRO il pacchetto
 npm run pacchetto                          # bundle + firma ad-hoc + dmg, con la controprova
+npm run pacchetto -- x64                   # …e per i Mac Intel (gira qui con Rosetta)
+npm run dist:win                           # l'installer per Windows 11
 ```
 
 ⚠️ **La suite intera si lancia al CANCELLETTO, non a ogni passo**: durante il lavoro si lanciano le
@@ -170,6 +182,14 @@ trovato fuori dalla catena: esisteva e non girava mai. È la stessa forma del gu
   qualcosa e la firma può mancare. `STUDIA_APP=…` esegue le stesse prove lì dentro; `npm run
   pacchetto` chiude verificando la firma dell'app **dentro il dmg**, non di quella in `dist/`
   (electron-builder fa il dmg *prima* della firma ad-hoc: sono due copie diverse).
+- ⚠️ **Gli esemplari sono più di due**: arm64, Intel, Windows. Un binario x64 si può *eseguire* su
+  Apple Silicon con Rosetta, quindi il pacchetto Intel si prova davvero invece di supporlo — e le
+  prove là sono più lente: le 8 rosse misurate il 16 agosto erano attese troppo corte, non guasti
+  (il layer di testo di un PDF da 266 pagine arriva dopo 12,4 s invece di 1-2). Windows invece **non
+  si prova da qui**: si misura che l'installer sia valido e completo, non che parta.
+- **Una macchina piccola è un requisito, non un'ipotesi**: 560 MB a riposo, 670 con PDF e mappa,
+  1,3 GB al picco dell'OCR — e quel picco **non cresce con le pagine**. I numeri stanno in
+  PIANO-ONBOARDING e nel README perché servono a rispondere «ci gira?» senza riaprire il profiler.
 
 ## 7. Come si lavora
 
@@ -207,6 +227,16 @@ Le più costose, distillate dagli handoff. Ogni ⚠️ è stato pagato almeno un
   falso: 33 coincidono).
 - **`mappaFlush()` non salva se la mappa non è sporca**: scrivere nel documento in memoria e
   chiamare flush *sembra* salvare.
+- **Un valore scritto a mano dove ce n'è uno vero**: `artifactName` conteneva «arm64» invece di
+  `${arch}`, e la build Intel provava a sovrascrivere il dmg dell'altra architettura, morendo
+  dentro `hdiutil` con un errore che parlava d'altro. La stessa forma della lista bianca: qualcosa
+  che *sembra* generico e invece nomina un caso solo.
+- **Quello che si genera si genera**, e la ricetta si versiona al posto del prodotto: crediti,
+  icona (`.png`/`.icns`/`.ico`), tavolozza delle emoji. Un binario rigenerabile messo in git e poi
+  ritoccato a mano è la trappola ④ in forma di file: fra sei mesi nessuno sa più da quale sorgente
+  venisse. E il generatore **misura invece di assumere** — il font disegna davvero quel carattere?
+  la forma dell'angolo coincide con quella di sistema? — perché è lì che si nascondono le bugie
+  silenziose.
 - **Le liste bianche mangiano i campi nuovi**: `CHIAVI` in `lib/appunti.js`, `noteMeta` nel
   renderer, `normalizza()` in `lib/mappe.js`. Il controllo giusto non è «il campo esiste» ma
   **«il campo torna indietro dal disco»**. (E la stessa forma prende anche le **guardie**: la
@@ -253,5 +283,6 @@ Chi riceve un braindump dell'utente e deve produrne un piano:
 | `PIANO-MODULI.md` | lo smontaggio del monolite: criterio, albero dei moduli, metriche |
 | `PIANO-ZAINO.md` · `PIANO-BANCO.md` · `PIANO-MAPPE-EDITOR.md` · `PIANO-ONBOARDING.md` | le altre aree |
 | `PIANO-FOTO.md` | le immagini dell'utente: import, Album Foto, visualizzatore, ritagli sulle foto |
+| `PIANO-ONBOARDING.md` | il primo avvio, **i tre pacchetti** (mac arm64 · mac Intel · Windows) e i requisiti misurati |
 | `~/.claude/skills/studia-app-layout/` | il design system, riusabile fuori da StudIA |
-| `README.md` | ⚠️ fotografa il layout **vecchio** (pre 3 ago 2026): non è una fonte |
+| `README.md` | riscritto il 16 ago 2026: che cos'è, come si comincia, i pacchetti, come si verifica. Ora è una fonte (prima fotografava il layout pre 3 agosto) |

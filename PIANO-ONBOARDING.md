@@ -188,6 +188,57 @@ Claude Code. Entrambi morivano zitti. Risolto con `var esc=escHtml;` in testa a
 `initSettingsTabs` (`escHtml` è globale). Andava sistemato comunque: l'onboarding
 riusa quella stessa diagnosi.
 
+## I pacchetti, oggi — ✅ *16 agosto 2026*
+
+Tre, e si fanno con un comando ciascuno:
+
+```bash
+npm run pacchetto            # macOS Apple Silicon
+npm run pacchetto -- x64     # macOS Intel
+npm run dist:win             # Windows 11, installer NSIS x64
+```
+
+⚠️ Sui due per macOS il comando **non si ferma al dmg**: firma il bundle ad-hoc e **rifà il dmg
+dall'app firmata**, poi lo monta e verifica che dentro ci sia l'app firmata *e* dell'architettura
+chiesta. La ragione è che electron-builder il dmg lo fa **prima** della firma: firmare
+`dist/mac-arm64` e spedire quel dmg è il modo più facile di credere di aver rimediato senza aver
+rimediato — e il tester vede «l'app è danneggiata», non «non è verificata».
+
+⚠️ Il nome del dmg si costruisce da `${arch}`, mai a mano: finché conteneva «arm64» scritto nella
+configurazione, chiedere una build Intel provava a sovrascrivere il dmg dell'altra architettura e
+moriva dentro `hdiutil` con un errore che parlava d'altro.
+
+**Requisiti misurati** (non stimati):
+
+| | |
+|---|---|
+| macOS minimo | **12.0** — lo dichiara Electron 39. Un MacBook Air 2013/2014, che si ferma a Big Sur, **non** apre l'app |
+| memoria | ~560 MB appena aperta · ~670 MB con PDF e mappa · ~1,3 GB al picco durante l'OCR, **e il picco non cresce con le pagine** |
+| Intel | il pacchetto x64 parte e passa 37 prove CDP su 45: le 8 rosse sono **attese troppo corte**, non guasti — il layer di testo di un PDF da 266 pagine compare dopo 12,4 s invece di 1-2 |
+
+### Windows 11 — che cosa cambia là
+
+L'installer si costruisce **dal Mac senza Wine**: le dipendenze sono tutte JS, non c'è niente da
+ricompilare. L'icona esce dalla stessa sorgente (`bin/icona.js` scrive anche `build/icon.ico`).
+
+⚠️ **Non è ancora stato eseguito su Windows**: da qui si misura che è un NSIS valido, che contiene
+l'app intera e che l'icona è dentro l'exe — non che si installi e parta. Serve una macchina o una
+VM prima di darlo a un tester.
+
+Quello che il porting ha fatto emergere sono le assunzioni macOS che **non fanno rumore** — l'app
+parte lo stesso e mente. Erano tutte in `lib/ambiente.js` e ora sono chiuse: i candidati Python
+erano solo percorsi Unix (ora anche il launcher `py`, le cartelle di python.org, il PATH, e in
+fondo lo stub del Microsoft Store, che si chiama `python3.exe` e **non è Python**); «quello di
+sistema» era scritto come `/usr/bin/python3`, quindi su Windows il confronto era sempre falso e
+l'avviso «stai usando un altro interprete» non sarebbe comparso mai; il rimedio suggerito a chi non
+ha Python era `xcode-select --install`. `test/ambiente.js` prova tutto questo **da un Mac**,
+ridefinendo `process.platform`.
+
+Le degradazioni dichiarate: **SmartScreen** («Windows ha protetto il PC» → «Esegui comunque»: non
+c'è firma, servirebbe un certificato a pagamento), **HEIC** non convertibile (`sips` è di macOS),
+la **voce di sistema** `say` assente — ma la lettura ad alta voce funziona lo stesso con
+`speechSynthesis`, che usa le voci di Windows.
+
 ## Notarizzazione del `.dmg` — che cosa serve
 
 Il muro è l'iscrizione all'**Apple Developer Program** (99 €/anno): la firma ad-hoc

@@ -83,7 +83,30 @@ concordata per le figure Chandra: zero codice nuovo per il click).
 
 ### Proposte
 
-**P1.1 — Evidenze (le keyword di Braynr), il pezzo mancante più visibile.**
+**P1.1 — Evidenze (le keyword di Braynr), il pezzo mancante più visibile.** ✅ **FATTO**, e il
+**16 agosto 2026** ha preso la veste definitiva: l'evidenziatore lascia il **testo nero**.
+
+Il fondo pieno era diluito al 34%, e la ragione era buona finché i preset erano le tinte della
+mappa — sature, scelte per una linea *sotto* il testo, che stese dietro le lettere davano scuro su
+scuro. Ora i preset sono cinque colori **da astuccio** (`evidenzeColori()`: giallo, verde, rosa,
+arancio, azzurro) e il modo giusto di renderli non è diluirli ma fare quello che fa un
+evidenziatore vero: colorare intorno e lasciare nero il testo.
+
+⚠️ **Le due superfici ci arrivano per strade diverse, perché sono fatte in modo diverso.** Nel
+capitolo il testo è testo e il fondo gli sta dietro: basta imporre il nero, e in tema scuro il
+pezzo evidenziato diventa un'isola chiara, come un segno su carta. Sul documento il testo è
+disegnato nel **canvas** e sopra c'è un layer di lettere trasparenti: lì un fondo pieno coprirebbe
+le parole che dovrebbe segnare, e imporre `color` accenderebbe le lettere trasparenti sopra quelle
+disegnate — due testi quasi allineati. Perciò il layer si compone in `mix-blend-mode: multiply`.
+
+⚠️ **Una riga sola, due tavolozze.** La riga dei colori resta quella condivisa col menu della mappa
+(copiarla sarebbe la seconda che diverge), ma le liste sono due e devono esserlo: i colori della
+mappa sono da tratto, questi sono inchiostro chiaro. Le evidenze già segnate portano il loro colore
+scritto sul disco e non cambiano: cambiano i preset, non il passato.
+`prova-evidenziatore.js` misura il contrasto col nero invece di giudicarlo — il più basso è il rosa,
+8,8:1 contro i 4,5 di WCAG.
+
+Il disegno originale, che resta valido:
 Doppio click su una parola (o selezione + voce «Evidenzia» nel menu che già compare per
 «Salva come appunto») → la parola entra in `APPUNTI/_evidenze.md`: una riga per evidenza, con
 `lezioneId`, `capitoloId`, il testo e l'`anchor` (la frase attorno). Il lettore le rimonta come fa già

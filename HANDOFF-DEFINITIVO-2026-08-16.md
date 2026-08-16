@@ -17,9 +17,9 @@
 
 | | |
 |---|---|
-| rami | **`pacchetto`** (3 commit) e **`selmenu-closepops`**, che parte da lui e lo contiene (fix di closePops, icona, emoji, evidenziatore) — nessuno dei due unito a `main` |
-| commit | `selmenu-closepops` alla testa · `main` ferma a `b005214` |
-| remoto | `git@github.com:gmesc/StudIA.git` (privato); **nessuno dei due rami è salito** |
+| rami | tre, in fila: **`pacchetto`** → **`selmenu-closepops`** (fix di closePops, icona, emoji, evidenziatore) → **`installer-windows`** (Windows, pacchetto Intel, `lib/ambiente.js`). L'ultimo contiene tutti: unendo quello entra tutto in un colpo |
+| commit | `installer-windows` alla testa · `main` ferma a `b005214` |
+| remoto | `git@github.com:gmesc/StudIA.git` (privato); **nessun ramo è salito** |
 | suite | ✅ **36** file di unità · ✅ **45** prove CDP sul codice · ✅ le stesse **dentro il pacchetto** (macOS) |
 
 ```bash
@@ -118,6 +118,30 @@ Che cosa aspettarsi là, dichiarato:
 - **la pipeline** (trascrizione, OCR) dipende da un Python installato: il venv usa già
   `Scripts\python.exe`, ma quel percorso non è mai stato eseguito.
 
+### Il pacchetto per i Mac Intel — `npm run pacchetto -- x64`
+⚠️ Il pacchetto era **arm64 puro**: su un Mac Intel non parte — non «va lento», proprio non si apre.
+Ora c'è anche `dist/StudIA-1.0.0-x64.dmg`. Il difetto che lo nascondeva: `artifactName` conteneva
+«arm64» **scritto a mano**, quindi la build Intel provava a sovrascrivere il dmg dell'altra
+architettura e moriva dentro `hdiutil` con un errore che parlava d'altro. Ora è `${arch}`, e la
+controprova fa `lipo` sull'app **dentro il dmg**: due file che si chiamano quasi uguale sono due
+file che si scambiano, e un tester Intel che riceve l'arm64 non vede un errore utile.
+
+Misurato eseguendolo qui con Rosetta: parte, e passa **37 prove CDP su 45**. Le 8 rosse sono
+**attese troppo corte, non guasti** — il layer di testo di un PDF da 266 pagine compare dopo 12,4 s
+invece di 1-2, senza un errore di console.
+
+### Quanto chiede la macchina — i numeri, non le impressioni
+| | |
+|---|---|
+| macOS minimo | **12.0** (Electron 39): un Air 2013/2014, fermo a Big Sur, non apre l'app |
+| memoria | 558 MB appena aperta · 667 MB con PDF da 266 pagine e mappa |
+| OCR di un documento fotografato | picco **1,3 GB**, e ⚠️ **non cresce con le pagine** (1312 MB su 30 contro 1325 su 10): lavora una pagina per volta e libera |
+| OCR, tempo per pagina | 1,7 s su Apple Silicon · 6,2 s sul pacchetto Intel |
+| lettura avanzata (Chandra) | modello da 10,6 GB e 15,6 GB liberi richiesti: **fuori portata** su una macchina da 4 GB, ed è dichiaratamente opzionale |
+
+Servono a rispondere «ci gira sul portatile vecchio?» senza riaprire il profiler: su 4 GB si studia
+e si fa OCR di schede corte, non si trascrive e non si installa Chandra.
+
 ### L'evidenziatore — il testo resta nero
 Il fondo pieno non è più diluito al 34%: i preset sono cinque colori **da evidenziatore** (giallo,
 verde, rosa, arancio, azzurro) in `evidenzeColori()`, e il testo sotto resta nero. ⚠️ Le due
@@ -180,15 +204,22 @@ era ciò che le altre prove lasciavano dietro (zoom, menu, larghezza del riquadr
 
 ## 4. Che cosa resta aperto, in ordine
 
-### 1. Unire i due rami a `main`
-`selmenu-closepops` parte da `pacchetto` e lo contiene: unito lui, è unito tutto — oppure
-`pacchetto` prima e `selmenu-closepops` subito dopo, se si vogliono due passi distinti.
+### 1. Unire i tre rami a `main`
+Sono in fila e l'ultimo contiene gli altri: unito `installer-windows`, è unito tutto — oppure i tre
+uno dopo l'altro, se si vogliono passi distinti.
 Le quattro condizioni: (a) le suite sono verdi — anche dentro il bundle; (b) **mancano i gesti
-provati a mano** (§5); (c) piani e handoff aggiornati — fatto; (d) `main` ferma, **da riverificare
-al momento del merge**, non ricordata.
+provati a mano** (§5); (c) piani e handoff aggiornati — fatto il 16 agosto, insieme al README, che
+prima fotografava il layout di luglio; (d) `main` ferma, **da riverificare al momento del merge**,
+non ricordata.
 
-⚠️ Il dmg in `dist/` è stato costruito **prima** del fix di `closePops()`: se serve un pacchetto che
-lo contenga, `npm run pacchetto` da rifare dopo il merge.
+⚠️ I pacchetti in `dist/` sono stati rifatti dopo l'ultimo cambiamento del codice, ma è una cosa da
+riverificare invece che da ricordare: dopo un merge, `npm run pacchetto` (e `-- x64`, e
+`dist:win`) prima di consegnare a un tester.
+
+### 1-bis. Provare l'installer su Windows 11
+È l'unico pezzo di oggi che **nessuna prova automatica ha toccato** — vedi §2. Serve una macchina o
+una VM: installazione, primo avvio con SmartScreen, scelta del vault, una lezione, un PDF. E se là
+c'è Python, un ingest vero: `Scripts\python.exe` non è mai stato eseguito.
 
 ### 2. F3 — gli usi e le lapidi delle immagini → [PIANO-FOTO §3](PIANO-FOTO.md)
 Chiesto esplicitamente da Giacomo, non ancora iniziato. Le tre regole già decise (invariate):
