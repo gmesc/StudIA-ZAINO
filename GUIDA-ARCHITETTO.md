@@ -143,6 +143,9 @@ in silenzio.
 npm test                                   # unità: tutti i file di test/, in catena (34 al 15 ago)
 ./test/cdp/con-vault-di-prova.sh           # tutte le prove sull'app viva (43 al 15 ago)
 ./test/cdp/con-vault-di-prova.sh <nome>    # una sola — è così che si lavora
+STUDIA_APP=dist/mac-arm64/StudIA.app \
+  ./test/cdp/con-vault-di-prova.sh         # le stesse prove DENTRO il pacchetto
+npm run pacchetto                          # bundle + firma ad-hoc + dmg, con la controprova
 ```
 
 ⚠️ **La suite intera si lancia al CANCELLETTO, non a ogni passo**: durante il lavoro si lanciano le
@@ -162,6 +165,11 @@ trovato fuori dalla catena: esisteva e non girava mai. È la stessa forma del gu
 - **Le prove misurano, non guardano.** Dopo ogni passo si consegna all'utente una lista corta di
   gesti da provare a mano: più di un difetto reale è stato trovato da lui con tutte le suite
   verdi. Uno screenshot via CDP prima di dichiarare finito un lavoro di UI.
+- ⚠️ **Il pacchetto è un secondo esemplare, e va provato come tale**: quello che i tester
+  eseguono non è la cartella ma il bundle, dove la whitelist `files` può aver lasciato fuori
+  qualcosa e la firma può mancare. `STUDIA_APP=…` esegue le stesse prove lì dentro; `npm run
+  pacchetto` chiude verificando la firma dell'app **dentro il dmg**, non di quella in `dist/`
+  (electron-builder fa il dmg *prima* della firma ad-hoc: sono due copie diverse).
 
 ## 7. Come si lavora
 

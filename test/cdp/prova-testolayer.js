@@ -67,6 +67,20 @@ async function clickXY(x, y, quanti) {
   const pagine = await finoA('(PDFJS.doc && PDFJS.doc.numPages) || 0');
   ok('il documento è caricato', true, pagine > 0);
 
+  /* ⚠️ Lo zoom è RICORDATO, e questa prova non lo sceglieva: si prendeva quello
+     lasciato dalla prova precedente. Con una scala alta la pagina è più larga
+     del riquadro, e allora nessuna riga sta dentro la finestra: da sola la prova
+     era verde, dentro la suite no. Qui si dichiara `page-width`, perché la
+     domanda è «il layer di testo è allineato ai glifi», non «con che zoom era
+     rimasto». */
+  await val(`(PDFJS.viewer.currentScaleValue='page-width'), 1`);
+  await pausa(700);
+  /* ⚠️ Cambiare la scala rifà il layout, e pdf.js smonta le pagine lontane da
+     quella corrente: se non si torna alla 30 il suo layer non esiste più, e la
+     prova accuserebbe il layer di un'assenza che ha causato lei. */
+  await val(`(PDFJS.viewer.currentPageNumber=${PAGINA}), 1`);
+  await pausa(500);
+
   sezione('Il layer di testo esiste e contiene testo');
   /* ⚠️ Si aspetta il layer della pagina CORRENTE, non «un layer qualsiasi»:
      pdf.js monta anche le pagine vicine, e la prima montata potrebbe essere
@@ -128,13 +142,55 @@ async function clickXY(x, y, quanti) {
   }
 
   sezione('Il trascinamento seleziona un intervallo continuo');
-  const riga = await val(`(()=>{ const p=document.querySelector(${JSON.stringify(SEL_PAG)});
-    const t=p.querySelector('.textLayer');
+  /* ⚠️ I doppi click qui sopra lasciano una selezione, e sulla selezione l'app
+     apre il suo menu (Appunta · Mappa · Keyword · …) con la sua barra. Quel menu
+     COPRE il testo — misurato: sotto il punto di partenza c'era un
+     `button.ctx-item` — e il trascinamento premerebbe lì invece che sul layer.
+     Si chiudono con le funzioni dell'app, non con un Esc a mano: `closePops()`
+     NON basta, perché il menu della selezione non è nel suo elenco (la stessa
+     forma del pittore che restava aperto, handoff del 15 agosto). */
+  await val(`(typeof closePops === 'function') && closePops(),
+             (typeof selMenuChiudi === 'function') && selMenuChiudi(),
+             (typeof selBarraChiudi === 'function') && selBarraChiudi(),
+             getSelection().removeAllRanges(), 1`);
+  await pausa(250);
+  /* ⚠️ La riga da trascinare dev'essere dentro la FINESTRA anche in orizzontale,
+     e non solo in verticale. Questo controllo guardava `top` e `bottom` e non
+     `left` e `right`: quando il riquadro della Fonte è più stretto della pagina
+     — cioè quasi sempre, appena il banco ospita altri blocchi — la riga esce a
+     destra, e il punto di arrivo del trascinamento cade FUORI dalla finestra
+     (misurato: da x=1243 a x=1759, con la finestra larga 1320).
+     Lì il browser non trova nessun carattere e porta il fuoco all'inizio del
+     contenitore: la selezione diventa all'indietro, dalla PAGINA 1 — che nel DOM
+     c'è ancora, sei span, il frontespizio — fino al punto di partenza. Di qui il
+     rosso «a corse alterne» dal 15 agosto: dipendeva dalla larghezza del
+     riquadro, cioè da quali prove avevano lasciato il banco com'era.
+     ⚠️ Che il press fosse giusto era già misurabile («caret alla pagina 30,
+     collassato»): il guasto era tutto nel punto di ARRIVO. Una prova che
+     trascina fuori dalla finestra non misura il layer di testo, misura il
+     comportamento di Chrome ai bordi. */
+  const misuraRiga = `(()=>{ const p=document.querySelector(${JSON.stringify(SEL_PAG)});
+    if(!p) return null; const t=p.querySelector('.textLayer'); if(!t) return null;
     const sp=[...t.querySelectorAll('span')].filter(s=>{ const r=s.getBoundingClientRect();
-      return r.width>80 && r.top>0 && r.bottom<innerHeight && s.textContent.trim().length>20; });
+      return r.width>80 && r.top>0 && r.bottom<innerHeight &&
+             r.left>0 && r.right<innerWidth && s.textContent.trim().length>20; });
     if(!sp.length) return null; const s=sp[Math.floor(sp.length/2)]; const r=s.getBoundingClientRect();
-    return { testo:s.textContent, x1:Math.round(r.left+2), x2:Math.round(r.right-2),
-             y:Math.round(r.top+r.height/2) }; })()`);
+    /* Non due pixel dentro il rettangolo: quello è ancora il bordo dello span, e
+       il calcolo del caret non ci trova nessun glifo. Un decimo dentro la riga
+       un carattere c'è di sicuro. */
+    const x1=Math.round(r.left+Math.max(6, r.width*0.1)), y=Math.round(r.top+r.height/2);
+    const sotto=document.elementFromPoint(x1,y);
+    const pag=sotto && sotto.closest ? sotto.closest('.page') : null;
+    return { testo:s.textContent, x1, x2:Math.round(r.right-2), y,
+             fermo: !!(pag && pag.getAttribute('data-page-number')==='${PAGINA}'),
+             sopra: pag ? pag.getAttribute('data-page-number') : null,
+             chiCopre: sotto ? (sotto.tagName.toLowerCase()+'.'+String(sotto.className||'')) : 'niente' }; })()`;
+  let riga = await finoA(`(()=>{ const m=${misuraRiga}; return m && m.fermo ? m : null; })()`, 5000);
+  if (!riga) {                      // non si è fermato: si dice quello che si è visto
+    const ultima = await val(misuraRiga);
+    console.log('   ⚠️ il punto non è sulla pagina ' + PAGINA + ': ' + JSON.stringify(ultima));
+    riga = ultima;
+  }
   ok('c\'è una riga lunga da trascinare', true, !!riga);
   if (riga) {
     await val('getSelection().removeAllRanges(), 1');
@@ -148,6 +204,16 @@ async function clickXY(x, y, quanti) {
       return s.getRangeAt(0).toString(); })()`);
     console.log('   trascinato: ' + JSON.stringify(preso.slice(0, 70)));
     ok('il trascinamento seleziona qualcosa', true, preso.trim().length > 3);
+    /* Dove ANCORA la selezione, non solo che cosa restituisce: un range che
+       parte da un'altra pagina è la firma del press che ha mancato il testo, e
+       senza questo controllo si presenta travestito da «il testo non sta nella
+       pagina 30». */
+    const daPagina = await val(`(()=>{ const s=getSelection();
+      if(!s.rangeCount) return null; const r=s.getRangeAt(0);
+      const el = r.startContainer.nodeType===1 ? r.startContainer : r.startContainer.parentElement;
+      const pag = el && el.closest ? el.closest('.page') : null;
+      return pag ? pag.getAttribute('data-page-number') : null; })()`);
+    ok('la selezione parte dalla pagina ' + PAGINA, String(PAGINA), String(daPagina));
     /* Il testo preso col mouse deve ritrovarsi nel testo VERO della pagina —
        quello che pdf.js estrae dal documento, non quello del DOM: è il
        confronto che smaschera un layer che mostra una pagina e ne selezziona
@@ -160,6 +226,26 @@ async function clickXY(x, y, quanti) {
       if(!preso) return null;
       return testo.indexOf(preso.slice(0, 40)) >= 0; })()`);
     ok('e quel testo sta davvero nella pagina ' + PAGINA, true, nellaPagina === true);
+    /* ⚠️ Quando questo controllo è rosso, «non sta nella pagina 30» non dice
+       DOVE sta — e questo rosso compare a corse alterne dal 15 agosto, con
+       sintomi diversi ogni volta (una corsa non seleziona niente, un'altra
+       restituisce testo del frontespizio). Provata da sola, e anche subito dopo
+       prova-confronto, la sequenza è verde: quello che manca per capirlo non è
+       un altro tentativo, è la provenienza del testo preso. Perciò il rosso se
+       la porta dietro. */
+    if (nellaPagina !== true) {
+      const dove = await val(`(()=>{ const s=getSelection();
+        if(!s.rangeCount) return null; const r=s.getRangeAt(0);
+        const el = r.startContainer.nodeType===1 ? r.startContainer : r.startContainer.parentElement;
+        const pag = el && el.closest ? el.closest('.page') : null;
+        return { daPagina: pag ? pag.getAttribute('data-page-number') : null,
+                 dentroTextLayer: !!(el && el.closest && el.closest('.textLayer')),
+                 inQualeRiquadro: el && el.closest && el.closest('#pdfPane2') ? 'confronto' : 'fonte',
+                 viewerAllaPagina: PDFJS.viewer && PDFJS.viewer.currentPageNumber,
+                 pagineVisibili: (PDFJS.viewer && PDFJS.viewer._getVisiblePages
+                                  ? PDFJS.viewer._getVisiblePages().views.map(v=>v.id) : null) }; })()`);
+      console.log('      il testo preso viene da: ' + JSON.stringify(dove));
+    }
   }
 
   await val('getSelection().removeAllRanges(), 1');
