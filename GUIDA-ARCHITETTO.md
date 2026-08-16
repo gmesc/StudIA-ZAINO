@@ -248,7 +248,7 @@ Chi riceve un braindump dell'utente e deve produrne un piano:
 
 | documento | che cosa dice |
 |---|---|
-| `HANDOFF-DEFINITIVO-<data>.md` (il più recente: **15 agosto 2026**) | lo stato: che cosa è appena successo, che cosa viene dopo, le trappole fresche |
+| `HANDOFF-DEFINITIVO-<data>.md` (il più recente: **16 agosto 2026**) | lo stato: che cosa è appena successo, che cosa viene dopo, le trappole fresche |
 | `PIANO-BRAYNR.md` | appunti, evidenze, mappe, flashcard/ripasso (aree P1–P3) |
 | `PIANO-MODULI.md` | lo smontaggio del monolite: criterio, albero dei moduli, metriche |
 | `PIANO-ZAINO.md` · `PIANO-BANCO.md` · `PIANO-MAPPE-EDITOR.md` · `PIANO-ONBOARDING.md` | le altre aree |
