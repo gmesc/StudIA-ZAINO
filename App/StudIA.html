@@ -7871,6 +7871,19 @@ function closePops(){
      dopo aver salvato, e l'unico modo di levarselo era ricaricare. */
   ['#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#pdfFindPop','#zainoPop','#pdfDocPop','#plMediaPop','#pittorePop']
     .forEach(function(s){ var e=$(s); if(e) e.removeAttribute('open'); });
+  /* ⚠️ Il menu della selezione e la sua barra non si chiudono togliendo un
+     attributo: hanno uno stato in una CLASSE (`open`, `aperta`) e due funzioni
+     apposta. Per questo erano rimasti fuori dall'elenco qui sopra — e restavano
+     aperti SOPRA il testo quando l'app chiudeva «tutto». Misurato il 16 agosto
+     sul layer del PDF: `elementFromPoint` sul punto da leggere restituiva
+     `button.ctx-item`, cioè il menu al posto della pagina.
+     ⚠️ Chiuderli qui è sicuro per la ragione opposta al guasto 10.3.3 (la bolla
+     delle fonti che si chiudeva da sola): la barra non si apre al rilascio del
+     puntatore ma nel `setTimeout` del giro dopo, quindi il `click` che passa da
+     qui la trova ancora chiusa e non ha niente da spegnere; il menu si apre col
+     tasto destro, che un click sinistro non lo genera. */
+  if(typeof selMenuChiudi==='function') selMenuChiudi();
+  if(typeof selBarraChiudi==='function') selBarraChiudi();
   /* Chi apre un pannellino lo dichiara con `aria-expanded`: chiuderlo senza
      rimetterlo a posto lascerebbe il bottone a promettere un riquadro aperto. */
   /* Il «?» delle spiegazioni è un rimando a una nota, non un pannellino con
