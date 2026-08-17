@@ -9377,6 +9377,16 @@ async function zainoCrea(nome){
     if(zr){ zainoRinomina(zr.dataset.zaino); return; }
     var zx=e.target.closest('.zx-elimina');
     if(zx){ zainoElimina(zx.dataset.zaino); return; }
+    /* La guida illustrata: la finestra la apre il main, che è l'unico che sa
+       dove sta il file dentro il pacchetto. ⚠️ Se manca (una copia dell'app
+       senza la cartella) si DICE, invece di lasciare un bottone che non fa
+       niente: un comando muto si legge come app rotta. */
+    if(e.target.closest('#setGuida')){
+      (window.vault.guida ? window.vault.guida.apri() : Promise.resolve({ error:'non disponibile' }))
+        .then(function(r){ if(r && r.error) toast('Guida non disponibile: '+r.error, false); })
+        .catch(function(err){ toast('Guida non disponibile: '+((err&&err.message)||err), false); });
+      return;
+    }
     /* Le voci della sidebar. Ognuna passa dalla porta VERA dello strumento —
        `openPdf`, `noteOpen`, `mappaApriMia` — invece di montarlo a mano: sono
        le stesse funzioni che usano il testo, il menu e la tendina, e una quarta
@@ -18078,7 +18088,11 @@ window.addEventListener('keydown', function(e){
            cosa che azzera. Questo pannello governa gli ZAINI come contenitori:
            l'unico posto da cui se ne può togliere uno. -->
       <section class="set-pane" data-pane="zaino" hidden>
-        <div class="set-sec-h">I tuoi zaini</div>
+        <div class="set-sec-h">Come si usa lo zaino</div>
+        <p class="set-note">La guida illustrata di questa modalità: novantatré schermate dell'app vera, con i gesti e le scorciatoie. Si apre in una finestra sua, e si può tenere aperta accanto mentre lavori.</p>
+        <p><button class="tbtn" id="setGuida" type="button">📖 Apri la guida allo ZAINO</button></p>
+
+        <div class="set-sec-h" style="margin-top:1.4rem;">I tuoi zaini</div>
         <p class="set-note">Uno zaino è la cartella dei tuoi materiali: documenti, media, appunti, mappe e ritagli. Eliminarlo manda <b>l'intera cartella nel Cestino di sistema</b> — da lì si può ancora ripescare, ma l'app non la vedrà più.</p>
         <div id="setZaini" class="setzaini"></div>
       </section>

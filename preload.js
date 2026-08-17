@@ -204,6 +204,10 @@ contextBridge.exposeInMainWorld('vault', {
     pdf: (o) => ipcRenderer.invoke('stampa:pdf', o || {}),
     mostra: (percorso) => ipcRenderer.invoke('stampa:mostra', { percorso: percorso })
   },
+  /* La guida illustrata dello ZAINO, in una finestra sua. Sta dentro l'app
+     (`App/guida-zaino/`) e non su disco accanto al vault: dev'esserci anche
+     sul computer di chi installa il pacchetto e non ha mai visto questo repo. */
+  guida: { apri: () => ipcRenderer.invoke('guida:apri') },
   schede: {
     stato: (corso) => ipcRenderer.invoke('schede:stato', { corso }),
     build: (corso, rifai) => ipcRenderer.send('schede:build', { corso, rifai }),

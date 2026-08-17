@@ -557,7 +557,7 @@ serve) — il gesto oggi vive tutto nel flusso del documento.
 
 ### Z9 — La lente cerca anche negli appunti, e lo zaino si rinomina ✅ *fatto il 16 agosto 2026*
 
-Tre cose che la guida illustrata (`StudIA - tutorial ZAINO/`) ha fatto emergere elencandole fra i «non
+Tre cose che la guida illustrata (oggi in `App/guida-zaino/`) ha fatto emergere elencandole fra i «non
 esiste»: scritte in una guida, si vedeva che erano buchi e non scelte.
 
 **La lente cerca negli appunti**, in tutte e due le modalità. Erano l'unica cosa che l'utente SCRIVE e

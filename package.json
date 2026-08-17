@@ -37,6 +37,7 @@
       "ingest.py",
       "index_videos.py",
       "App/**/*",
+      "!App/guida-zaino/_lab/**",
       "package.json"
     ],
     "extraResources": [

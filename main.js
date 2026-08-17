@@ -732,6 +732,33 @@ ipcMain.handle('stampa:pdf', async (e, { html, nome, landscape, percorso } = {})
   }
 });
 
+/* ---- la guida illustrata dello ZAINO, in una finestra sua ----------------
+ * ⚠️ La finestra è SENZA `preload`: la guida è una pagina statica, e darle il
+ * ponte verso il vault vorrebbe dire che una pagina di documentazione può
+ * scrivere sui file dell'utente. Non le serve, e ciò che non serve non si dà.
+ * ⚠️ Una sola finestra: il bottone si preme più volte (è dentro Impostazioni,
+ * e Impostazioni si riapre), e senza questa memoria si accumulerebbero copie
+ * identiche una sopra l'altra. Se c'è già, si porta davanti. */
+let guidaWin = null;
+ipcMain.handle('guida:apri', async () => {
+  const file = path.join(__dirname, 'App', 'guida-zaino', 'index.html');
+  if (!fs.existsSync(file)) return { error: 'la guida non è installata con questa copia dell’app' };
+  if (guidaWin && !guidaWin.isDestroyed()) { guidaWin.show(); guidaWin.focus(); return { ok: true }; }
+  guidaWin = new BrowserWindow({
+    width: 1180, height: 900, title: 'Guida allo ZAINO',
+    webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false }
+  });
+  /* I link http della guida vanno nel browser di sistema, come nella finestra
+     principale: una finestra di documentazione non è un browser. */
+  guidaWin.webContents.setWindowOpenHandler(({ url: u }) => {
+    if (/^https?:/i.test(u)) { shell.openExternal(u); return { action: 'deny' }; }
+    return { action: 'allow' };
+  });
+  guidaWin.on('closed', () => { guidaWin = null; });
+  await guidaWin.loadFile(file);
+  return { ok: true };
+});
+
 /* Mostra nel Finder ciò che si è appena salvato: si accetta SOLO un file che
    esiste, e si passa da `showItemInFolder`, che apre la cartella senza aprire
    il file — un PDF che si apre da solo è una finestra che nessuno ha chiesto. */

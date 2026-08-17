@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="chiaro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guida allo ZAINO di StudIA</title>
+<meta name="description" content="Come si usa la modalità ZAINO di StudIA: creare uno zaino, portarci dentro PDF, video, audio, foto e testi, e studiarci sopra con appunti, mappe, parole chiave e ritagli. Spiegato come a un bambino di cinque anni, ma con tutte le cose vere.">
+<link rel="stylesheet" href="stile.css?v=2026081604">
+</head>
+<body>
+<a class="skip" href="#inizio">Salta al contenuto</a>
+
+<header class="topbar">
+  <button class="tbtn menubtn" id="menuBtn" aria-label="Mostra o nascondi l'indice">☰</button>
+  <a class="brand" href="#inizio"><span class="cap">🎓</span><b>StudIA</b><span>Guida allo Zaino</span></a>
+  <span class="tbsep"></span>
+  <button class="tbtn" id="temaBtn" aria-label="Cambia tema chiaro o scuro">☀️ / 🌙</button>
+</header>
+
+<div class="wrap">
+  <aside class="sidebar" aria-label="Indice della guida">
+    <h2>Indice</h2>
+    <ol class="toc" id="toc"></ol>
+    <div class="sidebar-foot">StudIA · agosto 2026</div>
+  </aside>
+
+  <main id="inizio">
+    <article>
+      <p class="kicker">StudIA · modalità Zaino · guida completa</p>
+      <h1>Lo Zaino, spiegato come a un bambino di cinque anni</h1>
+      <p class="lead">Immagina uno zaino di scuola. Ci metti dentro i tuoi fogli, i tuoi libri, le foto della lavagna, la registrazione della lezione. Poi arrivi al banco, apri lo zaino e ti metti a studiare: sottolinei, prendi appunti, ritagli le figure, disegni una mappa. Lo <strong>ZAINO</strong> di StudIA fa esattamente questo, sul computer.</p>
+
+      <div class="callout eli5">
+        <div class="ch">🧒 Detto in due parole</div>
+        <p>StudIA ha due «stanze». Nella stanza <strong>CORSO</strong> il computer legge i tuoi materiali e ti costruisce lezioni, quiz e riassunti. Nella stanza <strong>ZAINO</strong> il computer non scrive niente: <em>ci sono solo i tuoi documenti e tu</em>. È la stanza per studiare sulle proprie dispense, sui PDF del professore, sulle foto delle schede.</p>
+      </div>
+
+      <figure class="fig-intera">
+        <img src="img/12-pdf-aperto.png" alt="La finestra di StudIA in modalità Zaino: a sinistra la sidebar con Fonti, Appunti e Mappe; al centro il documento PDF aperto; a destra l'editor degli appunti." loading="lazy">
+        <figcaption><b>Lo zaino al lavoro.</b> A sinistra l'elenco di ciò che c'è dentro (Fonti · Appunti · Mappe). Al centro il documento. A destra il quaderno degli appunti. Tutto quello che vedi in questa guida è fotografato sull'app vera, a schermo intero su un MacBook Air 13″.</figcaption>
+      </figure>
+
+      <div class="callout fonte">
+        <div class="ch">📎 Come leggere questa guida</div>
+        <p>Ogni immagine si <strong>ingrandisce</strong> con un click (si chiude con <kbd>Esc</kbd> o cliccando fuori; le frecce ← → passano da un'immagine all'altra). Dove serve indicare un bottone preciso, c'è un <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#f2b705;vertical-align:-2px;box-shadow:0 0 0 2px #fff"></span> pallino giallo attorno al puntatore o dei numeri cerchiati con la legenda sotto. Le parole fra «virgolette» sono <em>esattamente</em> quelle che leggi a schermo. Le combinazioni di tasti sono scritte per macOS (<kbd>⌘</kbd>); su Windows <kbd>⌘</kbd> diventa <kbd>Ctrl</kbd> e <kbd>⌥</kbd> diventa <kbd>Alt</kbd>.</p>
+      </div>
+
+      <!-- ============================================================ -->
+      <section class="cap" id="creare">
+        <h2 data-n="01">Creare il primo zaino</h2>
+
+        <p>Quando apri StudIA sei nella stanza dei <strong>corsi</strong>. Per andare nella stanza dello zaino c'è una porta sola: il <strong>logo «StudIA»</strong> in alto a sinistra, con il cappello da laurea. Non sembra un bottone, ma lo è: la prima volta <em>batte</em> piano piano per farsi notare, e il cappello si solleva quando ci passi sopra col mouse.</p>
+
+        <figure class="fig-pannello">
+          <img src="img/01-logo-commutatore.png" alt="Il logo StudIA in alto a sinistra con il puntatore sopra" loading="lazy">
+          <figcaption><b>Il logo è l'interruttore.</b> Un click e passi allo Zaino; un altro click e torni ai corsi. Il suggerimento che compare passandoci sopra dice «Passa alla modalità Zaino» oppure «Torna ai corsi».</figcaption>
+        </figure>
+
+        <div class="callout">
+          <div class="ch">✅ Non si perde niente</div>
+          <p>Passare da una stanza all'altra non chiude nulla: il corso che stavi leggendo resta esattamente com'era, e quando torni lo ritrovi. Anche lo zaino si ricorda dov'eri: quale documento avevi aperto, a che pagina, quale appunto, quale mappa.</p>
+        </div>
+
+        <h3 id="creare-passi">I passi, uno alla volta</h3>
+        <ol class="passi">
+          <li>Clicca il logo <strong>StudIA</strong>. La barra in alto cambia: al posto di CORSO · PERCORSO · LEZIONE compare la tendina <strong>«ZAINO ▾»</strong> con accanto un <strong>«+»</strong>. La sidebar a sinistra ora si intitola «Zaino» e, se non hai ancora zaini, ti dice: <em>«Nessuno zaino. Creane uno con il «+» accanto alla tendina.»</em></li>
+          <li>Clicca il <strong>«+»</strong>. Si apre un pannellino con un solo campo: <strong>«Nome della materia»</strong> (dentro c'è scritto, come esempio, «es. Diritto pubblico»).</li>
+          <li>Scrivi il nome — qui abbiamo scritto <em>Sistema solare</em> — e premi <strong>«Crea»</strong> oppure <kbd>Invio</kbd>.</li>
+          <li>Fatto. Compare un avviso in basso: <em>«Zaino creato: Sistema solare»</em>. Lo zaino è vuoto, ma è pronto.</li>
+        </ol>
+
+        <div class="griglia2">
+          <figure class="fig-pannello">
+            <img src="img/03-sidebar-vuota.png" alt="La sidebar dice: Nessuno zaino. Creane uno con il + accanto alla tendina." loading="lazy">
+            <figcaption><b>Passo 1.</b> Appena entri, senza zaini, la sidebar ti dice che cosa fare.</figcaption>
+          </figure>
+          <figure class="fig-pannello">
+            <img src="img/04-pop-crea-zaino.png" alt="Il pannellino Nome della materia aperto dal +" loading="lazy">
+            <figcaption><b>Passo 2.</b> Il «+» apre il pannellino. Il campo ha già il fuoco: puoi scrivere subito.</figcaption>
+          </figure>
+          <figure class="fig-pannello">
+            <img src="img/05-pop-nome-scritto.png" alt="Il nome Sistema solare scritto e il puntatore su Crea" loading="lazy">
+            <figcaption><b>Passo 3.</b> Nome scritto, click su «Crea» (o Invio).</figcaption>
+          </figure>
+          <figure class="fig-pannello">
+            <img src="img/07-sidebar-tre-sezioni.png" alt="La sidebar dello zaino con le tre sezioni Fonti, Appunti, Mappe, tutte vuote" loading="lazy">
+            <figcaption><b>Passo 4.</b> Lo zaino nuovo ha tre cassetti vuoti: Appunti e Mappe ti dicono anche dove si creano; le Fonti si portano dentro trascinandole (capitolo 04).</figcaption>
+          </figure>
+        </div>
+
+        <figure class="fig-intera">
+          <img src="img/03b-zaino-senza-zaini.png" alt="La finestra intera in modalità Zaino senza nessuno zaino: la tendina ZAINO è vuota, la sidebar spiega come crearne uno" loading="lazy">
+          <figcaption><b>La stanza dello zaino, ancora vuota.</b> Prima del primo zaino: la tendina «ZAINO ▾» non ha voci, e la sidebar dice come cominciare.</figcaption>
+        </figure>
+        <figure class="fig-intera">
+          <img src="img/06-zaino-appena-creato.png" alt="La finestra intera dopo la creazione dello zaino, con la scritta Nessuna fonte aperta e il toast Zaino creato" loading="lazy">
+          <figcaption><b>Lo zaino appena nato.</b> Due blocchi affiancati: a sinistra le <strong>Fonti</strong> («Nessuna fonte aperta. Scegline una da Documenti ▾ qui sopra, o dalle fonti nella sidebar.»), a destra gli <strong>Appunti</strong>. In basso l'avviso verde di conferma.</figcaption>
+        </figure>
+
+        <h3 id="creare-nome">Che cosa succede al nome che scegli</h3>
+        <ul>
+          <li>Il nome che scrivi è il <strong>titolo</strong> dello zaino (quello che leggi nella tendina). Dal titolo StudIA ricava un <strong>nome di cartella</strong> tutto minuscolo e senza accenti: «Sistema solare» → <code>sistema-solare</code>; «Città &amp; Società» → <code>citta-societa</code>.</li>
+          <li>Due zaini non possono avere lo stesso nome di cartella, e uno zaino non può chiamarsi come un <strong>corso</strong> che hai già: in quel caso il pannellino dice in rosso <em>«esiste già un corso o uno zaino con questo nome»</em>. Se lasci il campo vuoto: <em>«Dai un nome alla materia.»</em></li>
+          <li>Il titolo si può leggere ma <strong>non si può cambiare dall'app</strong> (vedi <a href="#non-esiste">che cosa non esiste ancora</a>).</li>
+        </ul>
+
+        <h3 id="creare-piu">Più zaini, e come passare dall'uno all'altro</h3>
+        <p>Puoi avere quanti zaini vuoi: uno per materia, per esempio. La tendina <strong>«ZAINO ▾»</strong> in alto li elenca tutti, con accanto quanti documenti PDF contengono. Ne scegli uno e l'app cambia zaino (avviso: <em>«Zaino: Storia romana»</em>). Ogni zaino ha il suo banco, i suoi appunti, le sue mappe: non si mescolano.</p>
+        <figure class="fig-pannello">
+          <img src="img/08-tendina-zaini.png" alt="La tendina ZAINO aperta con due zaini: Sistema solare · 1 documento, Storia romana" loading="lazy">
+          <figcaption><b>La tendina degli zaini.</b> Il conteggio accanto al nome conta solo i PDF (i video, gli audio e le foto non si contano).</figcaption>
+        </figure>
+
+        <div class="callout fonte">
+          <div class="ch">💾 Dove finisce sul disco</div>
+          <p>Ogni zaino è una cartella dentro la tua cartella dati («StudIA - file»), sotto <code>Zaini/</code>. Nasce con un biglietto d'identità (<code>_zaino.md</code>: titolo e data) e i cassetti vuoti. Puoi aprirla con il Finder o con Obsidian: sono file normali, tuoi.</p>
+<pre class="albero">StudIA - file/
+  Zaini/
+    sistema-solare/
+      _zaino.md               <i>titolo, data di nascita</i>
+      MATERIALI/PDF/          <i>i documenti (copie numerate)</i>
+      MATERIALI/Indici-PDF/   <i>il testo di ogni pagina, per la ricerca</i>
+      APPUNTI/                <i>i tuoi appunti (.md) e le parole chiave</i>
+      MAPPE/                  <i>le tue mappe (.json)</i>
+      ALBUM/                  <i>ritagli e foto</i></pre>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section class="cap" id="come-faccio">
+        <h2 data-n="02">Come faccio a…</h2>
+        <p>Il resto della guida è ordinato per <em>pezzi</em> (la barra, la sidebar, ogni strumento). Questo capitolo è ordinato per <em>domande</em>: parte da una cosa che vuoi fare e raccoglie in un posto solo gli strumenti che ci lavorano, i gesti, i tasti e dove finisce il risultato sul disco. Ogni passo rimanda al capitolo che lo spiega per esteso.</p>
+
+        <h3 id="cf-appunti">Come faccio a creare appunti?</h3>
+        <div class="callout eli5"><p>Il quaderno è lo strumento <strong>Appunti</strong>. Si scrive in Markdown (segni semplici: <code>**grassetto**</code>, <code>- elenco</code>), si salva da solo, e si riempie in due modi: <em>scrivendo</em>, oppure <em>portando dentro</em> pezzi del documento — frasi, parole chiave, ritagli, foto — che entrano già con il rimando alla pagina da cui vengono.</p></div>
+        <ol class="passi">
+          <li><strong>Apri il quaderno.</strong> Nella testata di un blocco scegli <strong>Appunti</strong> dalla tendina (o clicca un appunto in sidebar: StudIA glielo trova un blocco da sé). → <a href="#finestra-blocchi">I blocchi</a></li>
+          <li><strong>Crea l'appunto.</strong> Premi <strong>+</strong> nella barra: titolo e — nello zaino — <strong>«Nasce dal documento»</strong>. Se hai un PDF aperto è già scelto; altrimenti <em>PERSONALE</em>. <kbd>Invio</kbd> conferma. Scorciatoia: comincia a scrivere e basta, alla quinta parola ti chiede il titolo. → <a href="#am-nuovo-appunto">Un appunto nuovo</a></li>
+          <li><strong>Scrivi.</strong> La barra ha grassetto, corsivo, titoli, elenchi, citazione, i sette <strong>riquadri</strong> ☰ (Nota, Importante, Definizione…), le <strong>emoji</strong> 😀 cercabili in italiano. Il bottone <strong>?</strong> mostra tutte le notazioni. → <a href="#str-appunti">La barra degli appunti</a> · <a href="#am-callout-emoji">Riquadri ed emoji</a></li>
+          <li><strong>Porta dentro il documento.</strong> Seleziona una frase nel PDF e premi <strong>Appunta</strong> nella barra della selezione: la frase entra nell'appunto con il rimando <code>(pdf:01#p=3)</code>, senza riquadro o dentro uno dei sette. Se è corta (fino a tre parole piene) diventa anche <strong>parola chiave</strong>. → <a href="#am-appunta">«Appunta»</a> · <a href="#str-fonti">La barra della selezione</a></li>
+          <li><strong>Cita il punto.</strong> 🔖 «Cita il punto che stai guardando» mette la pagina del PDF o il minuto del video (il minuto anche con <kbd>⌘⇧C</kbd>, mentre scrivi); 📎 ti fa scegliere un altro documento e la pagina. → <a href="#am-importare">Importare</a></li>
+          <li><strong>Aggiungi parole chiave, ritagli e foto.</strong> Trascina un chip dello strumento Parole chiave nell'editor (o tasto destro → «Negli appunti»); trascina una card dei Ritagli o dell'Album Foto, o dalla bolla «Ritaglio salvato» scegli «Metti nell'appunto aperto». → <a href="#am-importare">Importare</a> · <a href="#str-ritagli">Ritagli</a></li>
+          <li><strong>Rileggi.</strong> <strong>▣</strong> anteprima (<kbd>⌘J</kbd>) o <strong>◫</strong> affiancata (<kbd>F9</kbd>): i riquadri prendono colore, i rimandi diventano link che aprono il documento alla pagina, le immagini si vedono. → <a href="#am-appunta">L'anteprima</a></li>
+          <li><strong>Non salvare: si salva da solo</strong>, 1,8 secondi dopo l'ultimo tasto (● in barra finché non è scritto) e subito quando cambi appunto o chiudi. <kbd>⌘S</kbd> se ti fa stare tranquillo. → <a href="#am-salvataggio">Il salvataggio</a></li>
+          <li><strong>Ritrova.</strong> La tendina <strong>QUADERNO</strong> elenca gli appunti del documento aperto e poi gli altri; la sidebar li elenca tutti; la <strong>lente</strong> in barra (🔍, o <kbd>⌘F</kbd> quando il fuoco non è sul documento) cerca anche dentro gli appunti, e la sezione «Appunti» dei risultati sta sempre in cima. → <a href="#am-tendina">La tendina</a> · <a href="#finestra-lente">La lente</a></li>
+        </ol>
+        <div class="tabwrap">
+        <table>
+          <thead><tr><th>Strumento</th><th>Dove</th><th>Che cosa ci fai per gli appunti</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Appunti</strong></td><td>un blocco del banco</td><td>scrivi, crei (+), rinomini (✎), stampi (🖨 <kbd>⌘P</kbd>), salvi in PDF</td></tr>
+            <tr><td><strong>Fonti</strong> (il PDF)</td><td>un altro blocco</td><td>selezioni il testo → <strong>Appunta</strong>, <strong>Keyword</strong>, colori; 🔖 cita la pagina</td></tr>
+            <tr><td><strong>Player</strong></td><td>un blocco</td><td>🔖 o <kbd>⌘⇧C</kbd> segnano il minuto negli appunti</td></tr>
+            <tr><td><strong>Parole chiave</strong></td><td>un blocco</td><td>trascini un chip nell'editor → <code>[perielio](pdf:01#p=4)</code></td></tr>
+            <tr><td><strong>Ritagli</strong> · <strong>Album Foto</strong></td><td>un blocco</td><td>trascini una card nell'editor → <code>![didascalia](album:id)</code></td></tr>
+            <tr><td><strong>Sidebar</strong> · <strong>Lente</strong></td><td>a sinistra · in barra</td><td>apri un appunto · cerca dentro gli appunti</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <p><strong>Sul disco:</strong> <code>Zaini/&lt;zaino&gt;/APPUNTI/Titolo.md</code> — un file di testo per appunto, che puoi aprire con qualunque programma; le evidenze e le parole chiave in <code>APPUNTI/_evidenze.json</code>. → <a href="#fonti-disco">La cartella dello zaino</a></p>
+
+        <h3 id="cf-mappa">Come faccio a creare una mappa?</h3>
+        <div class="callout eli5"><p>La mappa è lo strumento <strong>Mappa</strong>, nel registro <strong>Mie</strong> (nello zaino «Generata» è vuota: non c'è nessuna lezione da cui generarla). È una tela: nodi che scrivi tu, legami con una parola sopra, e nodi che arrivano dal documento — una parola chiave trascinata, un ritaglio, una frase «Alla mappa» — con il pallino che riapre la fonte.</p></div>
+        <ol class="passi">
+          <li><strong>Apri la Mappa e vai su «Mie».</strong> Nella testata di un blocco scegli <strong>Mappa</strong>; in barra premi <strong>Mie</strong>. → <a href="#str-mappa">La barra della mappa</a></li>
+          <li><strong>Crea la mappa.</strong> <strong>+</strong> → «Titolo della nuova mappa» → conferma. Nasce con un nodo solo: il titolo. → <a href="#am-mappa">Una mappa nuova</a></li>
+          <li><strong>Aggiungi nodi dalla tastiera.</strong> Seleziona un nodo, <kbd>Tab</kbd> = un <strong>figlio</strong>, <kbd>Invio</kbd> = un nodo <strong>accanto</strong>; la casella del testo si apre da sola, <kbd>Invio</kbd> conferma. <strong>Doppio click sul vuoto</strong> = nodo libero dove clicchi. <kbd>F2</kbd> (o doppio click su un nodo) rinomina.</li>
+          <li><strong>Collega.</strong> Trascina dalla <strong>porta</strong> (il cerchietto sul bordo) fino all'altro nodo, o tasto destro → «Collega a…». Il legame chiede subito la sua parola («ha un», «causa»…); doppio click sul legame per cambiarla, tasto destro per invertirlo o dargli due punte.</li>
+          <li><strong>Porta dentro il documento.</strong> Trascina un chip delle <strong>Parole chiave</strong> sulla tela (il nodo prende il colore dell'evidenza e il pallino della fonte); dalla card di un <strong>Ritaglio</strong> «Metti nella mappa» → un nodo-immagine ridimensionabile; dalla selezione del PDF <strong>Alla mappa</strong> → un nodo col testo (ma senza il rimando alla pagina). → <a href="#am-importare">Importare</a></li>
+          <li><strong>Sistema la vista.</strong> Trascina i nodi (la posizione resta fissata); tasto destro sul vuoto → il <strong>motore</strong> (Albero, DAG, Percorso, Anelli); <strong>TD / SX</strong> dall'alto o da sinistra; <strong>⚙</strong> distanze e misure; <strong>⤢</strong> adatta alla finestra; le <strong>memorie 1–5</strong> per salvare e richiamare una disposizione. <kbd>⌘Z</kbd> annulla fino a 20 passi.</li>
+          <li><strong>Torna alla fonte.</strong> Il pallino nell'angolo di un nodo nato da una parola chiave o da un ritaglio riapre il documento alla pagina giusta; dal menu del nodo, «Vai alla fonte». → <a href="#am-mappa">Il pallino della fonte</a></li>
+          <li><strong>Non salvare: si salva da sola</strong>, 1,2 secondi dopo ogni modifica e prima di chiuderla. <strong>✎</strong> rinomina e le assegna un documento; <strong>🖨</strong> stampa, <strong>PDF</strong> la salva in foglio coricato. → <a href="#am-rinominare-mappa">Rinominare</a></li>
+        </ol>
+        <div class="tabwrap">
+        <table>
+          <thead><tr><th>Strumento</th><th>Dove</th><th>Che cosa ci fai per la mappa</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Mappa</strong> (registro Mie)</td><td>un blocco del banco</td><td>crei (+), disegni nodi e legami, motore, memorie, ⚙ vista, stampa e PDF</td></tr>
+            <tr><td><strong>Fonti</strong> (il PDF)</td><td>un altro blocco</td><td>selezioni il testo → <strong>Alla mappa</strong> (nodo) o <strong>Keyword</strong> (chip da trascinare dopo)</td></tr>
+            <tr><td><strong>Parole chiave</strong></td><td>un blocco</td><td>trascini un chip sulla tela → nodo colorato con il pallino della fonte</td></tr>
+            <tr><td><strong>Ritagli</strong> · <strong>Album Foto</strong></td><td>un blocco</td><td>«Metti nella mappa» o trascini la card → nodo-immagine</td></tr>
+            <tr><td><strong>Sidebar</strong></td><td>a sinistra</td><td>la sezione MAPPE elenca le tue mappe; click per aprirne una</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <p><strong>Sul disco:</strong> <code>Zaini/&lt;zaino&gt;/MAPPE/Titolo.json</code> — una mappa per file. Non c'è esportazione in PNG/SVG: c'è la stampa e il PDF. → <a href="#fonti-disco">La cartella dello zaino</a></p>
+
+        <div class="callout"><div class="ch">💡 Il banco per fare tutte e due</div><p>La forma che serve è <strong>Tre · colonna sinistra intera</strong> o <strong>Quattro blocchi</strong>: il documento da una parte, il quaderno e la mappa dall'altra, e in un quarto blocco le Parole chiave o i Ritagli da cui trascinare. Si sceglie da <strong>◫ BANCO</strong>. → <a href="#finestra-banco">Le forme del banco</a></p></div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section class="cap" id="finestra">
+        <h2 data-n="03">La finestra: barra in alto, sidebar, banco e blocchi</h2>
+
+        <p>La finestra dello zaino ha tre parti. In alto una <strong>barra</strong> con pochi comandi. A sinistra la <strong>sidebar</strong>, che è l'elenco di ciò che c'è nello zaino. Tutto il resto è il <strong>banco</strong>: uno spazio che puoi dividere in blocchi, e in ogni blocco metti uno «strumento» (il documento, gli appunti, la mappa…). Come un banco vero: da una parte il libro aperto, dall'altra il quaderno.</p>
+
+        <h3 id="finestra-topbar">La barra in alto</h3>
+        <figure class="fig-intera">
+          <img src="img/02-topbar-zaino.png" alt="La parte destra della barra in alto con otto elementi numerati" loading="lazy">
+          <figcaption><b>La barra in alto, in modalità Zaino.</b> A sinistra (fuori dall'immagine) c'è il logo-interruttore.</figcaption>
+        </figure>
+        <ol class="legenda">
+          <li data-n="1"><strong>ZAINO ▾</strong> — la tendina degli zaini: quale zaino hai aperto, e per cambiarlo.</li>
+          <li data-n="2"><strong>+</strong> — crea uno zaino nuovo («Crea uno zaino nuovo»).</li>
+          <li data-n="3"><strong>🔍 Lente</strong> — cerca dentro i documenti dello zaino, una voce per pagina (anche <kbd>⌘F</kbd>).</li>
+          <li data-n="4"><strong>◫ BANCO</strong> — «Come dividere lo schermo»: sceglie la forma del banco.</li>
+          <li data-n="5"><strong>⚙ Impostazioni</strong> — fra le schede c'è «Zaino»: da lì si rinominano ed eliminano gli zaini, e si apre questa guida.</li>
+          <li data-n="6"><strong>☀️ / 🌙</strong> — tema chiaro o scuro.</li>
+          <li data-n="7"><strong>A−</strong> — testo più piccolo.</li>
+          <li data-n="8"><strong>A+</strong> — testo più grande.</li>
+        </ol>
+        <div class="callout attenzione">
+          <div class="ch">⚠️ Piccola cosa da sapere</div>
+          <p>Il tema (chiaro/scuro) e la dimensione del testo <strong>non vengono ricordati</strong> alla riapertura dell'app: ripartono sempre dal chiaro e dalla misura normale.</p>
+        </div>
+
+        <h3 id="finestra-sidebar">La sidebar: i tre cassetti</h3>
+        <p>La sidebar elenca ciò che sta nello zaino, in tre sezioni sempre nello stesso ordine: <strong>FONTI</strong> (documenti, video e audio), <strong>APPUNTI</strong> e <strong>MAPPE</strong>. Accanto al titolo c'è il conteggio. La voce «accesa» (bordo colorato a sinistra e grassetto) è quella aperta adesso.</p>
+        <div class="griglia2">
+          <figure class="fig-pannello">
+            <img src="img/13-sidebar-fonti-tipi.png" alt="Sidebar con tre fonti: un PDF, un video con il triangolino, un audio con la nota musicale; un appunto; nessuna mappa" loading="lazy">
+            <figcaption><b>I tre tipi di fonte.</b> Il PDF senza simbolo, il video con «▶», l'audio con «♪». Il nome è quello del file, ripulito dal numero e dall'estensione.</figcaption>
+          </figure>
+          <figure class="fig-pannello">
+            <img src="img/46a-maniglia-sidebar.png" alt="Il bottone a forma di fantasmino nell'angolo fra la barra e la sidebar" loading="lazy">
+            <figcaption><b>Il fantasmino.</b> Il bottoncino nell'angolo nasconde e mostra la sidebar (utile su schermi piccoli). Non ha un tasto rapido.</figcaption>
+          </figure>
+        </div>
+        <ul>
+          <li><strong>Click su una fonte</strong> → si apre nel blocco Fonti (i PDF) o nel Player (video e audio), <em>alla pagina o al minuto dove eri rimasto</em>.</li>
+          <li><strong>Click su un appunto</strong> → si apre nel blocco Appunti. <strong>Click su una mappa</strong> → si apre nel blocco Mappa.</li>
+          <li>Se lo strumento non è a schermo, StudIA glielo fa: lo mette in un blocco vuoto, se ce n'è uno; altrimenti allarga il banco di un blocco.</li>
+          <li>Sulle voci della sidebar <strong>non c'è il tasto destro</strong>: per togliere un documento si usa il cestino nella barra del documento (vedi <a href="#eliminare-fonti">Eliminare le fonti</a>).</li>
+        </ul>
+        <figure class="fig-intera">
+          <img src="img/46b-sidebar-nascosta.png" alt="La finestra con la sidebar nascosta: il banco prende tutta la larghezza" loading="lazy">
+          <figcaption><b>Sidebar nascosta.</b> Il fantasmino si sposta all'angolo sinistro; un altro click la riporta.</figcaption>
+        </figure>
+
+        <h3 id="finestra-banco">Il banco: le forme</h3>
+        <p>Il banco è una griglia. Con il bottone <strong>◫ BANCO</strong> scegli in quanti blocchi dividerlo e come. Ci sono <strong>dodici forme pronte</strong> più una casella «+» per disegnare la tua. Quella in uso ha il bordo verde-acqua.</p>
+        <figure class="fig-blocco">
+          <img src="img/41-banco-forme.png" alt="Il pannello delle forme del banco con tredici caselle numerate" loading="lazy">
+          <figcaption><b>Il pannello «Disposizione dei blocchi».</b> Passandoci sopra col mouse ogni casella dice il suo nome.</figcaption>
+        </figure>
+        <ol class="legenda">
+          <li data-n="1">Un blocco solo</li>
+          <li data-n="2">Due · affiancati <em>(la forma di fabbrica dello zaino)</em></li>
+          <li data-n="3">Due · impilati</li>
+          <li data-n="4">Tre · colonna sinistra intera</li>
+          <li data-n="5">Tre · colonna destra intera</li>
+          <li data-n="6">Tre · riga sopra intera</li>
+          <li data-n="7">Tre · riga sotto intera</li>
+          <li data-n="8">Quattro blocchi</li>
+          <li data-n="9">Tre · colonne affiancate</li>
+          <li data-n="10">Tre colonne · la terza divisa</li>
+          <li data-n="11">Tre colonne · la prima divisa</li>
+          <li data-n="12">Sei blocchi</li>
+          <li data-n="13">Disegna una forma tua (trascini sui riquadri di una griglia 3×3; il tasto destro su una forma tua la elimina, senza chiedere)</li>
+        </ol>
+        <figure class="fig-intera">
+          <img src="img/40-banco-quattro.png" alt="Il banco a quattro blocchi: Fonti in alto a sinistra, Ritagli in basso a sinistra, Appunti in alto a destra, Mappa in basso a destra" loading="lazy">
+          <figcaption><b>Quattro blocchi.</b> Lo zaino nasce con quattro strumenti già assegnati — <strong>Fonti</strong>, <strong>Ritagli</strong>, <strong>Appunti</strong>, <strong>Mappa</strong> — ma nella forma di fabbrica «Due · affiancati» se ne vedono due (Fonti e Appunti). Passando a «Quattro blocchi» compaiono anche gli altri.</figcaption>
+        </figure>
+
+        <h3 id="finestra-blocchi">I blocchi: che cosa ci metto dentro</h3>
+        <p>Ogni blocco ha una <strong>testata</strong> con una tendina. La tendina dice quale strumento c'è nel blocco e ti lascia cambiarlo. Nello zaino gli strumenti possibili sono otto:</p>
+        <figure class="fig-blocco">
+          <img src="img/42-tendina-strumenti.png" alt="La tendina della testata di un blocco aperta: Fonti, Player, Confronto, Appunti, Mappa, Parole chiave, Ritagli, Album Foto" loading="lazy">
+          <figcaption><b>La tendina di un blocco.</b> (Il menu qui è ridisegnato per farlo vedere: dal vivo è la tendina di sistema.) L'ordine è sempre questo: <strong>Fonti · Player · Confronto · Appunti · Mappa · Parole chiave · Ritagli · Album Foto</strong>.</figcaption>
+        </figure>
+        <ul>
+          <li><strong>Uno strumento sta in un blocco solo.</strong> Se scegli «Mappa» in un blocco dove c'era «Appunti», e la mappa stava già in un altro blocco, i due blocchi si <em>scambiano</em> il contenuto. Non si trascina niente: si sceglie dalla tendina del blocco di destinazione.</li>
+          <li>Per <strong>svuotare</strong> un blocco si chiude la mappa con la sua ✕ (o con <kbd>Esc</kbd>): il blocco resta lì, vuoto, con la scritta «Scegli uno strumento qui sopra.» e la tendina che mostra «—». La ✕ delle Fonti e del Player invece chiude solo il documento o il media: il blocco resta «Fonti» (o «Player»), pronto per un'altra fonte.</li>
+          <li>Se passi a una forma con <em>meno</em> blocchi, gli strumenti che escono non spariscono: aspettano da parte. Un avviso lo dice: <em>«Fuori dal banco: Ritagli · Mappa — tornano cambiando forma»</em>.</li>
+          <li>La riga colorata in cima a un blocco dice la famiglia: <span class="dove">blu = fonti</span> (documento, player, confronto), <span class="dove t">verde-acqua = quaderno</span> (appunti, mappa, parole chiave, ritagli, foto).</li>
+        </ul>
+        <div class="griglia2">
+          <figure class="fig-blocco">
+            <img src="img/45-blocco-vuoto.png" alt="Un blocco vuoto con la scritta Scegli uno strumento qui sopra" loading="lazy">
+            <figcaption><b>Blocco vuoto.</b> Non è rotto: aspetta che tu scelga dalla tendina.</figcaption>
+          </figure>
+          <figure class="fig-pannello">
+            <img src="img/43-divisore.png" alt="Il divisore verticale fra due blocchi, evidenziato in verde-acqua, con il puntatore sopra" loading="lazy">
+            <figcaption><b>Il divisore.</b> Fra due blocchi c'è una striscia sottile: la trascini per cambiare le misure; <strong>doppio click</strong> per rimettere a metà.</figcaption>
+          </figure>
+        </div>
+
+        <h3 id="finestra-tuttobanco">Un blocco a tutto schermo, e ritorno</h3>
+        <p>Vuoi leggere il documento senza distrazioni? <strong>Doppio click sulla testata</strong> del blocco (non sulla tendina, ma sullo spazio accanto). Il banco passa a «Un blocco solo» con dentro quello strumento; un avviso dice <em>«A tutto banco — doppio click sulla testata per tornare»</em>. Un altro doppio click e tutto torna com'era, misure comprese.</p>
+        <div class="griglia2">
+          <figure class="fig-pannello">
+            <img src="img/44a-testata-doppio-click.png" alt="La testata di un blocco con il puntatore sullo spazio libero accanto alla tendina" loading="lazy">
+            <figcaption><b>Dove fare doppio click.</b> Sulla testata, accanto alla parola.</figcaption>
+          </figure>
+          <figure class="fig-intera">
+            <img src="img/44b-a-tutto-banco.png" alt="Il documento a tutto banco con l'avviso in basso" loading="lazy">
+            <figcaption><b>A tutto banco.</b> L'avviso in basso ricorda come si torna.</figcaption>
+          </figure>
+        </div>
+        <div class="callout">
+          <div class="ch">🧠 Il banco ha memoria</div>
+          <p>Ogni zaino ricorda la propria forma, gli strumenti nei blocchi e le misure dei divisori. Ricorda anche che cosa avevi aperto. Questa memoria sta nel computer che stai usando (non nella cartella dello zaino): se copi lo zaino su un altro computer riparte dalla forma di fabbrica, ma la pagina a cui eri arrivato nel documento quella sì, viaggia con lo zaino.</p>
+        </div>
+
+        <h3 id="finestra-lente">La lente: cercare dentro i documenti</h3>
+        <p>La lente in alto (o <kbd>⌘F</kbd> quando non hai un documento aperto, o quando stai scrivendo altrove, per esempio negli appunti) cerca in <strong>tutte le pagine di tutti i PDF</strong> dello zaino <strong>e in tutti i tuoi appunti</strong>. Ogni risultato è una pagina o un appunto: cliccando una pagina il documento si apre lì e la parola viene accesa nel testo; cliccando un appunto si apre l'appunto. Se hai un documento aperto e il fuoco è lì — o non è in nessun campo — <kbd>⌘F</kbd> apre invece la ricerca <em>dentro quel documento</em> (la vediamo tra poco).</p>
+        <div class="callout">
+          <div class="ch">✅ Anche quello che hai scritto tu</div>
+          <p>I risultati sono raggruppati per documento, e gli appunti stanno tutti sotto <strong>«Appunti»</strong>, che è sempre la prima sezione dell'elenco: quello che hai scritto tu viene prima di quello che hai letto. Un appunto appena scritto si trova subito: non serve riavviare né cambiare zaino. Dentro l'appunto la parola non viene accesa — ci arrivi tu, che l'hai scritta.</p>
+        </div>
+        <div class="griglia2">
+          <figure class="fig-blocco">
+            <img src="img/47-lente-risultati.png" alt="I risultati della lente per Plutone: una voce per pagina, con il frammento di testo" loading="lazy">
+            <figcaption><b>Una voce per pagina.</b> «Plutone — Sistema solare — p. 14», con il pezzetto di testo attorno.</figcaption>
+          </figure>
+          <figure class="fig-blocco">
+            <img src="img/48-lente-appunti.png" alt="I risultati della lente per «rocciosi»: sotto APPUNTI l'appunto Pianeti rocciosi, sotto Scheda fotografata e Sistema solare le pagine dei documenti" loading="lazy">
+            <figcaption><b>Documenti e appunti, insieme.</b> Il gruppo <strong>APPUNTI</strong> raccoglie quello che hai scritto tu e sta <em>sempre in cima</em>; sotto vengono i documenti, una voce per pagina, in ordine di pertinenza.</figcaption>
+          </figure>
+          <figure class="fig-pannello">
+            <img src="img/47b-lente-nessun-risultato.png" alt="La lente senza risultati: Nessun risultato per zzzz nei documenti di questo zaino." loading="lazy">
+            <figcaption><b>Se non trova niente lo dice.</b> Cerca nei documenti e negli appunti; i video e gli audio no (nello zaino non vengono trascritti).</figcaption>
+          </figure>
+        </div>
+
+        <h3 id="finestra-tema">Tema scuro e testo grande</h3>
+        <figure class="fig-intera">
+          <img src="img/49-tema-scuro.png" alt="La finestra dello zaino con il tema scuro" loading="lazy">
+          <figcaption><b>Il tema scuro.</b> Il documento resta bianco, com'è; è la cornice che cambia. Con A+ e A− il testo dell'app cresce o cala di uno scalino alla volta.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ============================================================ -->
+      <section class="cap" id="strumenti">
+        <h2 data-n="04">Che cosa c'è dentro ogni blocco (gli strumenti)</h2>
+        <p>Otto strumenti, uno per volta. Qui li apriamo tutti e guardiamo la loro barra dei comandi. Ogni barra segue la stessa grammatica: prima <em>che cosa</em> stai guardando, poi i comandi che ci lavorano sopra, in fondo a destra i comandi che si premono per ultimi (stampa, chiudi).</p>
+
+        <h3 id="str-fonti">Fonti — il documento PDF</h3>
+        <figure class="fig-intera">
+          <img src="img/20-pdfbar-numerata.png" alt="La barra del documento con dodici comandi numerati" loading="lazy">
+          <figcaption><b>La barra del documento</b> (qui a tutta larghezza per leggerla meglio: in un blocco stretto va a capo, ma i comandi sono gli stessi).</figcaption>
+        </figure>
+        <ol class="legenda">
+          <li data-n="1"><strong>Il selettore «Documenti ▾»</strong> — a documento aperto mostra il suo titolo. Un click e scegli un altro documento dello zaino. Accanto a ciascuno c'è la pagina dove eri rimasto («— p. 9»).</li>
+          <li data-n="2"><strong>‹</strong> Pagina precedente.</li>
+          <li data-n="3"><strong>p. 1 di 24</strong> — dove sei. (Non si scrive un numero qui: si va avanti con le frecce, con la rotella, o cliccando un rimando.)</li>
+          <li data-n="4"><strong>›</strong> Pagina successiva.</li>
+          <li data-n="5"><strong>−</strong> Riduci.</li>
+          <li data-n="6"><strong>⟷ / ⤢ / 74%</strong> — lo zoom a tre stati (sotto).</li>
+          <li data-n="7"><strong>+</strong> Ingrandisci.</li>
+          <li data-n="8"><strong>✂ Forbici</strong> — ritaglia un'area della pagina e la mette nei Ritagli («o tieni premuto ⌘ e trascina»).</li>
+          <li data-n="9"><strong>🔍</strong> Cerca dentro questo documento (<kbd>⌘F</kbd>).</li>
+          <li data-n="10"><strong>Apri in una scheda ↗</strong> — apre il PDF in una finestra a parte, alla pagina a cui l'hai aperto (non segue lo sfogliare: se sei andato avanti con le frecce, la finestra parte comunque dalla pagina di apertura).</li>
+          <li data-n="11"><strong>🗑</strong> — «Togli questo documento dallo zaino» (c'è solo nello zaino: vedi <a href="#eliminare-fonti">Eliminare le fonti</a>).</li>
+          <li data-n="12"><strong>✕</strong> Chiudi il documento (anche <kbd>Esc</kbd>, se il fuoco non è nell'editor).</li>
+        </ol>
+        <p>Quando un documento è <em>fotografato</em> (senza testo) compare un comando in più, <strong>Aa↗</strong>, di cui parliamo alla fine (<a href="#pdf">quali PDF e come vengono lavorati</a>).</p>
+
+        <div class="griglia2">
+          <figure class="fig-blocco">
+            <img src="img/21-pop-documenti.png" alt="Il pannellino Documenti aperto: Sistema solare — p. 9" loading="lazy">
+            <figcaption><b>Il selettore dei documenti.</b> «— p. 9» è il segno di lettura: riaprendo il documento si riparte da lì.</figcaption>
+          </figure>
+          <figure class="fig-blocco">
+            <img src="img/22-cerca-nel-documento.png" alt="La ricerca nel documento con la parola pianeti evidenziata e il conteggio 58 di 83" loading="lazy">
+            <figcaption><b>Cerca nel documento.</b> <kbd>Invio</kbd> = successivo, <kbd>⇧Invio</kbd> = precedente, <kbd>Esc</kbd> chiude. Le occorrenze si accendono nella pagina.</figcaption>
+          </figure>
+        </div>
+
+        <h4>Lo zoom a tre stati</h4>
+        <p>Il bottone in mezzo a − e + non è un numero fisso: è un interruttore. <strong>⟷</strong> vuol dire «adattato alla larghezza del blocco» (segue il blocco: se lo allarghi, la pagina si allarga). <strong>⤢</strong> vuol dire «pagina intera». Un click passa dall'uno all'altro. Se premi + o − (o <kbd>⇧</kbd>+rotella sopra la pagina) diventa una percentuale scelta a mano, e un click sul numero torna ad adattarsi. Lo zoom viene ricordato.</p>
+        <div class="griglia2">
+          <figure class="fig-dettaglio"><img src="img/23a-zoom-larghezza.png" alt="Zoom adattato alla larghezza: freccia orizzontale" loading="lazy"><figcaption><b>⟷</b> larghezza</figcaption></figure>
+          <figure class="fig-dettaglio"><img src="img/23b-zoom-pagina.png" alt="Zoom adattato alla pagina intera: freccia diagonale" loading="lazy"><figcaption><b>⤢</b> pagina intera</figcaption></figure>
+          <figure class="fig-dettaglio"><img src="img/23c-zoom-percento.png" alt="Zoom a percentuale: 79%" loading="lazy"><figcaption><b>79%</b> a mano</figcaption></figure>
+        </div>
+
+        <h4>Selezionare testo: la barra della selezione</h4>
+        <p>Trascina il mouse sul testo del PDF (sì, si seleziona come in un testo normale) e compare da sola una <strong>barra</strong> con tutto quello che puoi fare con quel pezzo di testo. La stessa barra si apre col <strong>tasto destro</strong> dentro la selezione.</p>
+        <figure class="fig-pannello">
+          <img src="img/31-menu-selezione-numerato.png" alt="La barra della selezione con otto gruppi numerati" loading="lazy">
+          <figcaption><b>La barra della selezione.</b> In cima, in corsivo, i primi caratteri del testo selezionato.</figcaption>
+        </figure>
+        <ol class="legenda">
+          <li data-n="1"><strong>Appunta</strong> — copia il testo nell'appunto aperto, con il rimando alla pagina.</li>
+          <li data-n="2"><strong>Come appuntare</strong> — otto stili: <strong>¶</strong> senza riquadro, poi sette riquadri colorati (Nota 📝, Importante ⭐, Definizione 📖, Esempio 🧩, Dubbio ❓, Attenzione ⚠️, Da fare ✅). Lo stile che scegli resta quello predefinito.</li>
+          <li data-n="3"><strong>Alla mappa</strong> — fa un nodo di mappa con quel testo.</li>
+          <li data-n="4"><strong>Keyword</strong> — evidenzia il testo e, se è corto (fino a 3 parole «piene»), lo mette fra le parole chiave.</li>
+          <li data-n="5"><strong>I colori</strong> — cinque colori più un selettore libero: cliccarne uno evidenzia subito.</li>
+          <li data-n="6"><strong>Sottolinea / Evidenzia</strong> — una riga sotto il testo, oppure il fondo pieno come un evidenziatore.</li>
+          <li data-n="7"><strong>Cancella evidenziatura</strong> — toglie l'evidenza che sta sotto la selezione (spenta, «qui non ce n'è», se non ce n'è).</li>
+          <li data-n="8"><strong>Copia</strong> — negli appunti del computer.</li>
+        </ol>
+        <figure class="fig-intera">
+          <img src="img/32-evidenza-gialla.png" alt="Una frase del PDF sottolineata in giallo" loading="lazy">
+          <figcaption><b>Un'evidenza.</b> Resta lì per sempre: la ritrovi a ogni apertura, a ogni zoom, e nello strumento «Parole chiave» se è corta.</figcaption>
+        </figure>
+
+        <h3 id="str-confronto">Confronto — un secondo documento accanto</h3>
+        <p>«Confronto» è un secondo visualizzatore, per tenere due PDF affiancati (o due pagine dello stesso). Ha il suo selettore «Documenti ▾», le sue frecce e il suo zoom, indipendenti dalla Fonte. Ma è solo per <em>leggere e copiare</em>: lì dentro la selezione non apre nessuna barra, niente evidenze, niente ritagli. Il vuoto lo dice: <em>«Qui si legge e si copia: evidenze, ritagli e «appunta» stanno nella Fonte.»</em></p>
+        <figure class="fig-intera">
+          <img src="img/24-confronto.png" alt="Due documenti affiancati: la Fonte a sinistra e il Confronto a destra, a pagine diverse" loading="lazy">
+          <figcaption><b>Fonte e Confronto.</b> Lo stesso documento a due pagine diverse; potrebbero essere due documenti.</figcaption>
+        </figure>
+
+        <h3 id="str-player">Player — video e audio</h3>
+        <p>Il Player non è nella forma di fabbrica: compare da solo quando importi un video o un audio, oppure lo scegli dalla tendina di un blocco. Video e audio sono lo stesso strumento (un audio è un video senza immagine).</p>
+        <figure class="fig-intera">
+          <img src="img/25-playerbar-numerata.png" alt="La barra del player con dieci comandi numerati" loading="lazy">
+          <figcaption><b>La barra del Player</b> con un video aperto.</figcaption>
+        </figure>
+        <ol class="legenda">
+          <li data-n="1"><strong>Media ▾</strong> — quale video/audio è aperto; click per cambiarlo (con «▶» i video, «♪» gli audio, e il minuto dove eri: «— 0:03»).</li>
+          <li data-n="2"><strong>‹‹</strong> Indietro di 10 secondi (<kbd>J</kbd>).</li>
+          <li data-n="3"><strong>▶ / ❚❚</strong> Riproduci o metti in pausa (<kbd>K</kbd> o <kbd>spazio</kbd>).</li>
+          <li data-n="4"><strong>››</strong> Avanti di 10 secondi (<kbd>L</kbd>).</li>
+          <li data-n="5"><strong>0:02 / 0:40</strong> — dove sei e quanto dura.</li>
+          <li data-n="6"><strong>1×</strong> — velocità: 0,75 · 1 · 1,25 · 1,5 · 1,75 · 2 (<kbd>&lt;</kbd> e <kbd>&gt;</kbd>).</li>
+          <li data-n="7"><strong>✂</strong> — solo sui video: ritaglia un fermo immagine nei Ritagli.</li>
+          <li data-n="8"><strong>✎</strong> — «Segna questo minuto negli appunti» (<kbd>⌘⇧C</kbd>): mette in pausa e scrive nell'appunto una riga cliccabile col minuto.</li>
+          <li data-n="9"><strong>🗑</strong> — «Togli questo media dallo zaino».</li>
+          <li data-n="10"><strong>✕</strong> Chiudi il player.</li>
+        </ol>
+        <div class="griglia2">
+          <figure class="fig-blocco">
+            <img src="img/26-pop-media.png" alt="Il pannellino Media con un video e un audio, il video segnato al minuto 0:03" loading="lazy">
+            <figcaption><b>Il selettore Media.</b> Come per i documenti, ricorda dove eri.</figcaption>
+          </figure>
+          <figure class="fig-blocco">
+            <img src="img/27-cita-minuto.png" alt="L'editor degli appunti con la riga - [0:12](video:01#t=12) appena scritta" loading="lazy">
+            <figcaption><b>Il minuto segnato.</b> <kbd>⌘⇧C</kbd> (o ✎) lascia negli appunti <code>- [0:12](video:01#t=12)</code>: cliccandolo il video riparte da lì. Se non c'è un appunto aperto, ne crea uno.</figcaption>
+          </figure>
+        </div>
+        <div class="callout eli5">
+          <div class="ch">🧒 Le lettere sole e le combinazioni</div>
+          <p><kbd>K</kbd>, <kbd>J</kbd>, <kbd>L</kbd>, <kbd>spazio</kbd>, <kbd>&lt;</kbd> <kbd>&gt;</kbd> funzionano solo quando <em>non stai scrivendo</em> (se no scrivendo «job» in un appunto il video salterebbe indietro due volte). <kbd>⌘⇧C</kbd> invece funziona <em>sempre</em>, anche mentre scrivi: è fatto apposta per prendere appunti mentre la lezione va avanti. Nello zaino video e audio <strong>non vengono trascritti</strong>: si guardano e si citano al secondo.</p>
+        </div>
+
+        <h3 id="str-appunti">Appunti — il quaderno</h3>
+        <figure class="fig-intera">
+          <img src="img/50-notebar-numerata.png" alt="La barra dell'editor degli appunti con ventitré comandi numerati" loading="lazy">
+          <figcaption><b>La barra degli appunti</b> (a tutta larghezza; in un blocco stretto va a capo).</figcaption>
+        </figure>
+        <ol class="legenda">
+          <li data-n="1"><strong>QUADERNO ▾</strong> — la tendina degli appunti: quale appunto è aperto, e per aprirne un altro.</li>
+          <li data-n="2"><strong>+</strong> Nuovo appunto.</li>
+          <li data-n="3"><strong>💾</strong> Salva (<kbd>⌘S</kbd>) — ma salva anche da solo, 1,8 secondi dopo che smetti di scrivere.</li>
+          <li data-n="4"><strong>✎</strong> Rinomina appunto (e, nello zaino, cambia il documento a cui appartiene).</li>
+          <li data-n="5"><strong>🗑</strong> Elimina appunto.</li>
+          <li data-n="6"><strong>B</strong> grassetto (<kbd>⌘B</kbd>).</li>
+          <li data-n="7"><strong>I</strong> corsivo (<kbd>⌘I</kbd>).</li>
+          <li data-n="8"><strong>H</strong> titolo (<kbd>⌘H</kbd>).</li>
+          <li data-n="9"><strong>”</strong> citazione.</li>
+          <li data-n="10"><strong>••</strong> elenco puntato (<kbd>⌘L</kbd>).</li>
+          <li data-n="11"><strong>1.</strong> elenco numerato.</li>
+          <li data-n="12"><strong>☰</strong> «Inserisci un riquadro (callout)»: Nota, Importante, Definizione, Esempio, Dubbio, Attenzione, Da fare.</li>
+          <li data-n="13"><strong>😀</strong> «Inserisci un'emoji (OpenMoji)»: una tavolozza con più di duemila simboli, cercabili in italiano.</li>
+          <li data-n="14"><strong>🔖</strong> «Cita il punto che stai guardando»: la pagina del documento aperto, oppure il minuto del player.</li>
+          <li data-n="15"><strong>📎</strong> «Cita un materiale di questo contenitore»: scegli un documento dall'elenco e la pagina (o il minuto).</li>
+          <li data-n="16"><strong>↗</strong> link (<kbd>⌘K</kbd>).</li>
+          <li data-n="17"><strong>&lt;/&gt;</strong> codice.</li>
+          <li data-n="18"><strong>▣</strong> anteprima (il testo come verrà letto) (<kbd>⌘J</kbd>).</li>
+          <li data-n="19"><strong>◫</strong> scrittura e anteprima affiancate (<kbd>F9</kbd>).</li>
+          <li data-n="20"><strong>?</strong> «Come si scrive in StudIA»: la tabella di tutte le notazioni.</li>
+          <li data-n="21"><strong>🖨</strong> Stampa appunto (<kbd>⌘P</kbd>).</li>
+          <li data-n="22"><strong>PDF</strong> Salva l'appunto come PDF.</li>
+          <li data-n="23"><strong>✕</strong> Chiudi editor (salva prima, se c'è qualcosa in sospeso).</li>
+        </ol>
+        <p>Il quaderno si scrive in Markdown, cioè con segni semplici (<code>**grassetto**</code>, <code>- elenco</code>, <code>&gt; citazione</code>). Il bottone <strong>?</strong> ti mostra tutte le notazioni con un esempio. Come si creano, si scelgono, si rinominano gli appunti lo vediamo nel capitolo <a href="#appunti-mappe">Appunti e mappe</a>.</p>
+
+        <h3 id="str-mappa">Mappa — la mappa concettuale</h3>
+        <p>La Mappa ha due «registri»: <strong>Generata</strong> (una mappa calcolata dalle lezioni di un corso: nello zaino non serve, e può mostrare la lezione dell'ultimo corso aperto — o dire che non c'è niente da mappare) e <strong>Mie</strong> (le mappe che disegni tu, salvate nella cartella dello zaino). <strong>Nello zaino si usa sempre «Mie».</strong></p>
+        <figure class="fig-intera">
+          <img src="img/68-mappabar-numerata.png" alt="La barra della mappa con dodici comandi numerati" loading="lazy">
+          <figcaption><b>La barra della mappa</b> nel registro «Mie», con una mappa aperta.</figcaption>
+        </figure>
+        <ol class="legenda">
+          <li data-n="1"><strong>Generata / Mie</strong> — il registro. Nello zaino: Mie.</li>
+          <li data-n="2"><strong>MAPPE ▾</strong> — la tendina delle tue mappe («titolo · N nodi»).</li>
+          <li data-n="3"><strong>+</strong> Nuova mappa vuota (nasce con un nodo solo: il titolo).</li>
+          <li data-n="4"><strong>✎</strong> Rinomina la mappa (e, nello zaino, il documento a cui appartiene).</li>
+          <li data-n="5"><strong>🗑</strong> Elimina la mappa.</li>
+          <li data-n="6"><strong>1 2 3 4 5</strong> — cinque «memorie» di disposizione: click su una vuota (o tasto destro) per salvarci la posizione dei nodi di adesso, click su una piena per richiamarla.</li>
+          <li data-n="7"><strong>TD / SX</strong> — dall'alto verso il basso, o da sinistra verso destra.</li>
+          <li data-n="8"><strong>⚙</strong> «Aggiustamenti della vista»: distanze, dimensione del testo, larghezza delle card, stile delle linee, parole sui legami.</li>
+          <li data-n="9"><strong>🖨</strong> Stampa la mappa (<kbd>⌘P</kbd>).</li>
+          <li data-n="10"><strong>PDF</strong> Salva la mappa come PDF (foglio coricato).</li>
+          <li data-n="11"><strong>⤢</strong> Adatta la mappa alla finestra.</li>
+          <li data-n="12"><strong>✕</strong> Chiudi la mappa (<kbd>Esc</kbd>).</li>
+        </ol>
+        <p>Il motore di disposizione (Albero, DAG, Percorso, Anelli) si cambia col <strong>tasto destro sul vuoto</strong> della tela. Non c'è un bottone «Salva»: la mappa si salva da sola poco dopo ogni modifica (un pallino giallo ● in barra dice «modifiche non salvate» finché non è scritta). Non c'è esportazione in PNG/SVG: solo stampa e PDF.</p>
+
+        <h3 id="str-keyword">Parole chiave — le tue evidenze corte</h3>
+        <p>Ogni volta che evidenzi un pezzetto di testo corto (fino a tre parole «piene»: gli articoli e le preposizioni non contano) diventa una <strong>parola chiave</strong>: un chip colorato del colore della sua evidenza. Lo strumento le raccoglie tutte, di tutti i documenti dello zaino, con un campo di ricerca e un bottone «Aa» per ordinarle.</p>
+        <div class="griglia2">
+          <figure class="fig-blocco">
+            <img src="img/62-parole-chiave.png" alt="Lo strumento Parole chiave con quattro chip: afelio, eclittica, In ordine di distanza dal…, perielio" loading="lazy">
+            <figcaption><b>I chip.</b> Il colore sotto è quello dell'evidenza. Doppio click per andare al punto del documento.</figcaption>
+          </figure>
+          <figure class="fig-pannello">
+            <img src="img/63-menu-parola-chiave.png" alt="Il menu del tasto destro su un chip: colori, Sottolinea/Evidenzia, Vai al documento, Negli appunti, Togli dall'elenco" loading="lazy">
+            <figcaption><b>Tasto destro su un chip.</b> Cambia colore o tratto, «Vai al documento», «Negli appunti», «Togli dall'elenco».</figcaption>
+          </figure>
+        </div>
+        <figure class="fig-intera">
+          <img src="img/60-keyword-toast.png" alt="Dopo aver evidenziato perielio: la parola sottolineata in giallo nel documento e l'avviso Parola chiave aggiunta" loading="lazy">
+          <figcaption><b>Nasce una parola chiave.</b> Selezioni «perielio», clicchi un colore, e l'avviso dice «Parola chiave aggiunta».</figcaption>
+        </figure>
+        <p>Un chip si può anche <strong>trascinare</strong>: nell'editor degli appunti (ci lascia <code>[parola](pdf:01#p=4)</code>, un link cliccabile), oppure sulla mappa (ci fa un nodo del suo colore, con il pallino della fonte che riapre la pagina).</p>
+
+        <h3 id="str-ritagli">Ritagli — le figure che hai ritagliato</h3>
+        <p>Con le forbici ✂ della Fonte (o tenendo premuto <kbd>⌘</kbd> e trascinando) disegni un rettangolo sulla pagina: quel pezzo diventa un'immagine nell'archivio <strong>Ritagli</strong>. Lo stesso vale per un fermo immagine di un video e per un pezzo di una foto.</p>
+        <div class="griglia2">
+          <figure class="fig-dettaglio">
+            <img src="img/74-forbici-accese.png" alt="Il bottone forbici acceso in verde-acqua nella barra del documento" loading="lazy">
+            <figcaption><b>Forbici accese.</b> Il cursore diventa una croce; <kbd>Esc</kbd> le spegne.</figcaption>
+          </figure>
+          <figure class="fig-blocco">
+            <img src="img/75-ritaglio-rettangolo.png" alt="Un rettangolo tratteggiato disegnato sull'immagine del sistema solare nella pagina" loading="lazy">
+            <figcaption><b>Il rettangolo.</b> Trascini, lasci, e il ritaglio è salvato.</figcaption>
+          </figure>
+          <figure class="fig-dettaglio">
+            <img src="img/76-bolla-ritaglio-salvato.png" alt="La bolla Ritaglio salvato: Mostra nell'album, Metti nell'appunto aperto, Metti nella mappa, Dai una didascalia" loading="lazy">
+            <figcaption><b>La bolla dopo il ritaglio.</b> Quattro cose che puoi fare subito.</figcaption>
+          </figure>
+          <figure class="fig-blocco">
+            <img src="img/77-ritagli-griglia.png" alt="Lo strumento Ritagli con una card: l'immagine, la didascalia e la provenienza 01 Sistema solare — p. 1" loading="lazy">
+            <figcaption><b>L'archivio dei ritagli.</b> Ogni card dice da quale documento e da quale pagina viene.</figcaption>
+          </figure>
+        </div>
+        <figure class="fig-pannello">
+          <img src="img/78-menu-ritaglio.png" alt="Il menu su una card dei ritagli: Apri l'immagine, Alla fonte, Metti nell'appunto aperto, Metti nella mappa, Rinomina la didascalia, Rivela nel Finder, Copia l'immagine, Elimina" loading="lazy">
+          <figcaption><b>Click (o tasto destro) su una card.</b> «Alla fonte» riapre il documento alla pagina del ritaglio. Le card si possono anche trascinare nell'editor o sulla mappa.</figcaption>
+        </figure>
+
+        <h3 id="str-foto">Album Foto — le immagini che porti tu</h3>
+        <p>Le foto che trascini nella finestra (la lavagna, una scheda fotografata col telefono) finiscono nell'<strong>Album Foto</strong>. Ritagli e Album Foto sono lo stesso archivio visto con due filtri: nei Ritagli ci sono i pezzi presi da documenti, video e foto; nell'Album Foto le immagini intere che hai portato dentro.</p>
+        <div class="griglia2">
+          <figure class="fig-blocco">
+            <img src="img/79-album-foto.png" alt="L'Album Foto con una card: Foto lavagna" loading="lazy">
+            <figcaption><b>L'Album Foto.</b> Doppio click su una card la apre nel visualizzatore.</figcaption>
+          </figure>
+          <figure class="fig-blocco">
+            <img src="img/80-foto-visualizzatore.png" alt="Il visualizzatore della foto con la barra: torna all'album, zoom, forbici" loading="lazy">
+            <figcaption><b>Il visualizzatore.</b> Zoom con − ⟷ + o <kbd>⇧</kbd>+rotella; con le forbici ✂ ritagli un pezzo della foto (finisce nei Ritagli, e «Alla fonte» riapre la foto madre).</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section class="cap" id="fonti">
+        <h2 data-n="05">Le fonti: come si portano dentro e dove finiscono</h2>
+
+        <div class="callout eli5">
+          <div class="ch">🧒 La regola d'oro</div>
+          <p>Nello zaino c'è <strong>un solo gesto</strong> per mettere dentro le cose: <strong>trascinare i file sulla finestra</strong>. Non c'è un bottone «Importa» né una finestra «Scegli file». Prendi il file dal Finder (o dalla scrivania), lo trascini sopra StudIA, e lo lasci andare.</p>
+        </div>
+
+        <figure class="fig-intera">
+          <img src="img/10-trascina-cartello.png" alt="La finestra scurita col cartello: Rilascia qui documenti, video, audio, immagini e testi da mettere nello zaino" loading="lazy">
+          <figcaption><b>Mentre trascini.</b> La finestra si scurisce e un cartello dice che cosa può entrare.</figcaption>
+        </figure>
+
+        <h3 id="fonti-cosa">Che cosa entra, e dove va</h3>
+        <div class="tabwrap">
+        <table>
+          <thead><tr><th>Trascini…</th><th>Diventa…</th><th>Sul disco (dentro <code>Zaini/&lt;zaino&gt;/</code>)</th><th>Note</th></tr></thead>
+          <tbody>
+            <tr><td><strong>.pdf</strong></td><td>una <strong>Fonte</strong> (documento)</td><td><code>MATERIALI/PDF/01 nome.pdf</code> + il suo indice in <code>MATERIALI/Indici-PDF/</code></td><td>copiato, numerato, indicizzato per pagina; il primo si apre da solo. Nessun limite di dimensione.</td></tr>
+            <tr><td><strong>video</strong> .mp4 .mov .mkv .webm .avi .mpeg .mpg</td><td>un media nel <strong>Player</strong></td><td><code>MATERIALI/Video/01 nome.mp4</code></td><td>copiato; il primo si apre nel Player. Non viene trascritto.</td></tr>
+            <tr><td><strong>audio</strong> .m4a .mp3 .wav .aac .flac .ogg .opus .aiff</td><td>un media nel <strong>Player</strong></td><td><code>MATERIALI/Audio/01 nome.m4a</code></td><td>il numero è unico fra video e audio (un «03» solo). ⚠️ .ogg .opus .aiff entrano ma non compaiono in sidebar né nel selettore Media.</td></tr>
+            <tr><td><strong>immagini</strong> .jpg .jpeg .png .gif .webp .heic</td><td>una <strong>foto</strong> nell'Album Foto</td><td><code>ALBUM/foto nome_id.jpg</code> (+ miniatura in <code>ALBUM/_mini/</code>)</td><td>massimo 15 MB e 3000 px sul lato lungo (le più grandi vengono ridotte); i JPEG vengono ricodificati (raddrizzati e senza dati GPS); HEIC solo su macOS. La stessa immagine due volte non fa due voci.</td></tr>
+            <tr><td><strong>testi</strong> .md .markdown .txt</td><td>un <strong>appunto</strong></td><td><code>APPUNTI/Titolo.md</code></td><td>massimo 2 MB. Il titolo: dal frontmatter, altrimenti dal primo «# Titolo», altrimenti dal nome del file. Nasce PERSONALE (senza documento).</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <p>Puoi trascinare più file insieme, anche di tipi diversi: la dispensa e la registrazione della stessa lezione in un colpo solo. Quello che <em>non</em> entra viene detto, con il motivo.</p>
+
+        <div class="griglia2">
+          <figure class="fig-intera">
+            <img src="img/11-dopo-import-toast.png" alt="Dopo il trascinamento: il PDF si apre e in basso l'avviso Documento aggiunto: 01 Sistema solare.pdf" loading="lazy">
+            <figcaption><b>Un PDF entrato.</b> Avviso «Documento aggiunto: 01 Sistema solare.pdf», e il documento si apre da solo.</figcaption>
+          </figure>
+          <figure class="fig-intera">
+            <img src="img/25a-media-importati-toast.png" alt="Dopo aver trascinato un video e un audio: avviso 2 media aggiunti e il Player che si apre" loading="lazy">
+            <figcaption><b>Un video e un audio.</b> «2 media aggiunti»; il Player compare da solo in un blocco nuovo.</figcaption>
+          </figure>
+          <figure class="fig-intera">
+            <img src="img/14-import-md.png" alt="Un file .md importato: si apre come appunto PERSONALE, con il frontmatter dell'altro programma in un blocco yaml in cima; avviso in basso" loading="lazy">
+            <figcaption><b>Un file .md.</b> Diventa un appunto e si apre. Se veniva da un altro programma (Obsidian, per esempio) i suoi metadati restano in cima come blocco di testo, e un avviso lo dice.</figcaption>
+          </figure>
+          <figure class="fig-intera">
+            <img src="img/15-import-foto-toast.png" alt="Una foto importata: avviso Immagine aggiunta" loading="lazy">
+            <figcaption><b>Una foto.</b> «Immagine aggiunta»: la trovi nell'Album Foto.</figcaption>
+          </figure>
+        </div>
+        <figure class="fig-intera">
+          <img src="img/16-rifiuto-toast.png" alt="Avviso: In uno zaino entrano documenti .pdf, video, audio, immagini e testi (.md .txt) — compiti.docx no" loading="lazy">
+          <figcaption><b>Se non entra, lo dice.</b> Un file Word, per esempio, non entra: prima va salvato come PDF.</figcaption>
+        </figure>
+
+        <h3 id="fonti-numero">Il numero davanti al nome</h3>
+        <p>Ogni documento riceve un numero a due cifre: <code>01 Sistema solare.pdf</code>, <code>02 Scheda fotografata.pdf</code>… Quel numero è importante: è quello che gli appunti e le mappe usano per <em>indicare</em> il documento (<code>pdf:01#p=7</code> = documento 01, pagina 7). Il numero nuovo è sempre «il più alto + 1», e i numeri dei documenti tolti restano prenotati (vedi <a href="#eliminare-fonti">le lapidi</a>). Lo stesso file trascinato due volte diventa 03 e 04: niente viene mai sovrascritto.</p>
+        <p>Il <strong>titolo</strong> che leggi in sidebar e nella barra è il nome del file ripulito: senza numero, senza estensione, con gli spazi al posto di <code>_</code> e <code>-</code>. Quindi <code>03 Dispensa_di-diritto.pdf</code> si legge «Dispensa di diritto».</p>
+
+        <h3 id="fonti-rinominare">Rinominare una fonte</h3>
+        <div class="callout no">
+          <div class="ch">🚫 Non si può, dall'app</div>
+          <p>Non esiste un comando «Rinomina» per un documento, un video o un audio: il nome è quello del file, e il numero è quello che i rimandi citano. Il consiglio pratico: <strong>dai al file il nome giusto prima di trascinarlo</strong>. Se proprio devi rinominare a mano nel Finder (dentro <code>MATERIALI/PDF/</code>), tieni il prefisso «01 » e ricorda che le evidenze e i ritagli sono agganciati al nome intero e resterebbero orfani. Le <strong>foto</strong> invece hanno una didascalia che si può cambiare (menu della card → «Rinomina la didascalia»): cambia l'etichetta, non il file.</p>
+        </div>
+
+        <h3 id="fonti-disco">La cartella dello zaino, dopo un po' di lavoro</h3>
+<pre class="albero">Zaini/sistema-solare/
+  _zaino.md                       <i>titolo e data</i>
+  _lettura.json                   <i>l'ultima pagina guardata di ogni PDF</i>
+  _ascolto.json                   <i>l'ultimo secondo di ogni video/audio</i>
+  MATERIALI/
+    PDF/01 Sistema solare.pdf     <i>le copie dei documenti</i>
+    Indici-PDF/01 Sistema solare.json   <i>il testo di ogni pagina (per la lente)</i>
+    Video/01 Videolezione pianeti.mp4
+    Audio/02 Podcast astronomia.m4a
+    _rimossi.json                 <i>le «lapidi» dei documenti tolti</i>
+  APPUNTI/
+    Pianeti rocciosi.md           <i>un appunto</i>
+    _indice.md                    <i>l'indice degli appunti (lo scrive l'app)</i>
+    _evidenze.json                <i>le parole chiave e le evidenze</i>
+  MAPPE/Il sistema solare.json    <i>una mappa</i>
+  ALBUM/
+    _album.json                   <i>l'elenco di ritagli e foto</i>
+    01 Sistema solare__p001_ab12cd.png   <i>un ritaglio (documento, pagina)</i>
+    foto Foto lavagna_266492c141.jpg     <i>una foto</i></pre>
+        <p>Regola di casa: <strong>i tuoi file non si toccano mai</strong>. Quando trascini un PDF, StudIA ne fa una <em>copia</em> nello zaino; l'originale resta dov'era. Le cartelle APPUNTI, MAPPE e ALBUM sono tue e nessun automatismo ci scrive dentro (tranne <code>_indice.md</code>, che è un indice).</p>
+      </section>
+
+      <!-- ============================================================ -->
+      <section class="cap" id="appunti-mappe">
+        <h2 data-n="06">Appunti e mappe: crearli e riempirli</h2>
+
+        <h3 id="am-nuovo-appunto">Un appunto nuovo, e a chi appartiene</h3>
+        <p>Premi <strong>+</strong> nella barra degli appunti. Si apre una finestrella con due domande: il <strong>titolo</strong>, e — solo nello zaino — <strong>«Nasce dal documento»</strong>: a quale documento appartiene questo appunto. Se hai un PDF aperto è già scelto; puoi anche dire <em>«PERSONALE — nessun documento»</em>. Conferma, e l'appunto è creato e aperto (avviso «Appunto creato»).</p>
+        <div class="griglia2">
+          <figure class="fig-pannello">
+            <img src="img/51-nuovo-appunto-battesimo.png" alt="La finestra Titolo dell'appunto con il campo Pianeti rocciosi e la tendina Nasce dal documento" loading="lazy">
+            <figcaption><b>Il battesimo.</b> Titolo e documento di appartenenza. <kbd>Invio</kbd> conferma, <kbd>Esc</kbd> annulla.</figcaption>
+          </figure>
+          <figure class="fig-pannello">
+            <img src="img/53-chip-dove.png" alt="Nella barra degli appunti il chip giallo ↪ PERSONALE" loading="lazy">
+            <figcaption><b>Il chip «↪».</b> Se l'appunto aperto <em>non</em> appartiene al documento che stai guardando, la barra lo dice: «↪ PERSONALE» oppure «↪ Sistema solare». Serve a non scrivere nel quaderno sbagliato.</figcaption>
+          </figure>
+        </div>
+        <p>C'è anche una scorciatoia: se cominci a scrivere nel quaderno senza aver creato l'appunto, alla <strong>quinta parola</strong> StudIA ti chiede il titolo e quello che hai scritto diventa il corpo. Se annulli, l'appunto non è salvato: te lo ricorda con un avviso.</p>
+
+        <h3 id="am-tendina">La tendina QUADERNO: quale appunto</h3>
+        <figure class="fig-pannello">
+          <img src="img/52-tendina-quaderno.png" alt="La tendina Quaderno aperta: il gruppo Questo documento con Pianeti rocciosi, e Altri appunti dello zaino (2) con due appunti PERSONALE" loading="lazy">
+          <figcaption><b>La tendina degli appunti</b> (ridisegnata per farla vedere). Prima gli appunti del documento aperto («Questo documento»; senza documento: «Appunti personali»), poi «Altri appunti dello zaino (N)» con accanto il documento a cui appartengono o PERSONALE.</figcaption>
+        </figure>
+
+        <h3 id="am-appunta">Portare dentro il testo del documento: «Appunta»</h3>
+        <p>Selezioni una frase nel PDF, premi <strong>Appunta</strong> nella barra della selezione, e la frase finisce nell'appunto aperto <em>con il rimando alla pagina</em>. La forma la scegli tu con la riga degli otto stili:</p>
+        <ul>
+          <li><strong>¶ senza riquadro</strong>: <code>La contrazione causò… — [Sistema solare, p. 3](pdf:01#p=3)</code></li>
+          <li><strong>con riquadro</strong> (Nota, Importante, Definizione, Esempio, Dubbio, Attenzione, Da fare): un blocco «Dal documento» con la frase e, sotto, il rimando.</li>
+        </ul>
+        <div class="griglia2">
+          <figure class="fig-intera">
+            <img src="img/54-appunta-riquadro.png" alt="Dopo Appunta con lo stile Definizione: nell'editor un blocco Dal documento con la frase e il rimando; avviso in basso" loading="lazy">
+            <figcaption><b>Appunta in un riquadro «Definizione».</b> L'avviso spiega anche perché la frase non è diventata parola chiave: troppo lunga.</figcaption>
+          </figure>
+          <figure class="fig-blocco">
+            <img src="img/54b-appunta-senza-riquadro.png" alt="L'editor con due frammenti: uno con riquadro e uno senza" loading="lazy">
+            <figcaption><b>Senza riquadro.</b> Testo e rimando, in riga.</figcaption>
+          </figure>
+        </div>
+        <figure class="fig-blocco">
+          <img src="img/55-anteprima.png" alt="L'anteprima dell'appunto: il riquadro Dal documento colorato e i rimandi come link" loading="lazy">
+          <figcaption><b>L'anteprima (▣).</b> Il riquadro prende il suo colore, e «Sistema solare, p. 3» è un link: cliccandolo il documento si apre a pagina 3.</figcaption>
+        </figure>
+        <p>Se il frammento è corto (fino a tre parole piene) viene <em>anche</em> evidenziato e messo fra le parole chiave; l'avviso lo dice: «Appuntato, e aggiunto alle parole chiave.» Se non c'è un appunto aperto, «Appunta» te lo fa creare al volo.</p>
+
+        <h3 id="am-importare">Importare parole chiave, ritagli e immagini</h3>
+        <ul>
+          <li><strong>Una parola chiave</strong> → negli appunti: trascina il chip nell'editor, oppure tasto destro sul chip → «Negli appunti». Ci lascia <code>[perielio](pdf:01#p=4)</code>. → sulla mappa: trascina il chip sulla tela; il nodo prende il colore dell'evidenza e il pallino della fonte.</li>
+          <li><strong>Un ritaglio</strong> → negli appunti: dalla bolla «Ritaglio salvato» o dal menu della card «Metti nell'appunto aperto», o trascinando la card nell'editor. Ci lascia <code>![didascalia](album:id)</code>, che nell'anteprima è l'immagine. → sulla mappa: «Metti nella mappa» o trascinando la card sulla tela: nasce un <em>nodo-immagine</em>, ridimensionabile dagli angoli.</li>
+          <li><strong>Una foto</strong> → uguale al ritaglio; in più, appena inserita, una bolla chiede <em>«Va bene tutta»</em> oppure <em>«Solo una parte…»</em> (apre la foto con le forbici già accese, e il pezzo che ritagli prende il posto dell'immagine intera).</li>
+          <li><strong>La pagina o il minuto</strong> → 🔖 «Cita il punto che stai guardando» inserisce <code>[p. 7](pdf:01#p=7)</code> o <code>[0:12](video:01#t=12)</code>; 📎 ti fa scegliere un altro materiale e la pagina.</li>
+        </ul>
+        <div class="griglia2">
+          <figure class="fig-intera">
+            <img src="img/81-foto-nell-appunto.png" alt="La foto inserita nell'appunto: nell'editor la riga ![Foto lavagna](album:…) e la bolla Immagine inserita" loading="lazy">
+            <figcaption><b>Una foto nell'appunto.</b> La riga <code>![Foto lavagna](album:…)</code> e la bolla che chiede se serviva tutta.</figcaption>
+          </figure>
+          <figure class="fig-dettaglio">
+            <img src="img/81b-bolla-va-bene-tutta.png" alt="La bolla Immagine inserita: Va bene tutta / Solo una parte…" loading="lazy">
+            <figcaption><b>«Va bene tutta» / «Solo una parte…».</b></figcaption>
+          </figure>
+          <figure class="fig-blocco">
+            <img src="img/83-anteprima-con-immagine.png" alt="L'anteprima dell'appunto con la foto resa come immagine" loading="lazy">
+            <figcaption><b>In anteprima l'immagine si vede.</b> Cliccandola si apre l'album sulla card.</figcaption>
+          </figure>
+          <figure class="fig-blocco">
+            <img src="img/82-nodo-immagine.png" alt="La mappa con un nodo-immagine in alto a destra: il ritaglio della figura del sistema solare" loading="lazy">
+            <figcaption><b>Un nodo-immagine sulla mappa.</b> Dal menu del nodo: «Ridimensiona · 100%» con − e +.</figcaption>
+          </figure>
+        </div>
+
+        <h3 id="am-salvataggio">Il salvataggio</h3>
+        <p>Non devi ricordarti di salvare. L'appunto si scrive da solo <strong>1,8 secondi</strong> dopo l'ultimo tasto (un pallino ● in barra dice «Modifiche non salvate» nel frattempo), e <em>subito</em> quando cambi appunto, chiudi l'editor, passi a un altro zaino o la finestra va in secondo piano. Quello che arriva da un gesto (Appunta, una parola chiave, un minuto) si scrive subito. <kbd>⌘S</kbd> salva a mano, se ti fa stare tranquillo. La mappa si salva 1,2 secondi dopo ogni modifica, e sempre prima di chiuderla.</p>
+
+        <h3 id="am-rinominare">Rinominare un appunto e assegnarlo a un documento</h3>
+        <p>La matitina <strong>✎</strong> nella barra degli appunti apre <em>«Nuovo titolo dell'appunto»</em>. Nello zaino ha sotto la stessa tendina <strong>«Nasce dal documento»</strong>: è l'unico posto in cui puoi cambiare il documento di un appunto già esistente, o dichiararlo PERSONALE. Cambiando il titolo cambia anche il nome del file (<code>Titolo.md</code>); cambiando solo il documento l'avviso dice «Appunto: nasce da «Sistema solare»».</p>
+        <figure class="fig-pannello">
+          <img src="img/58-rinomina-appunto.png" alt="La finestra Nuovo titolo dell'appunto con la tendina Nasce dal documento" loading="lazy">
+          <figcaption><b>Rinomina e riassegna.</b> Titolo e documento di appartenenza, nello stesso posto.</figcaption>
+        </figure>
+
+        <h3 id="am-mappa">Una mappa nuova, e come si costruisce</h3>
+        <ol class="passi">
+          <li>Nel blocco Mappa premi <strong>Mie</strong> (nello zaino «Generata» è vuota: «Nessuna lezione aperta»).</li>
+          <li>Premi <strong>+</strong>, dai un titolo («Titolo della nuova mappa»), conferma. La mappa nasce con un nodo solo: il titolo.</li>
+          <li>Seleziona un nodo (click) e premi <kbd>Tab</kbd> per aggiungere un <strong>figlio</strong>, <kbd>Invio</kbd> per un nodo <strong>accanto</strong>. Si apre subito la casella per scrivere il testo; <kbd>Invio</kbd> conferma.</li>
+          <li><strong>Doppio click sul vuoto</strong> crea un nodo libero dove clicchi. <strong>Doppio click su un nodo</strong> (o <kbd>F2</kbd>) lo rinomina.</li>
+          <li>Per collegare due nodi: trascina dalla <strong>porta</strong> (il cerchietto sul bordo del nodo) fino all'altro nodo, oppure tasto destro → «Collega a…» e click sul nodo d'arrivo. Il legame nasce muto e ti chiede subito la parola («ha un», «richiede», «causa»…).</li>
+          <li>Trascina i nodi dove vuoi: la posizione resta fissata. <kbd>⌘Z</kbd> annulla (fino a 20 passi).</li>
+        </ol>
+        <div class="griglia2">
+          <figure class="fig-blocco">
+            <img src="img/64b-mappa-mie-vuota.png" alt="Il registro Mie senza mappe: il testo spiega che + ne crea una" loading="lazy">
+            <figcaption><b>Mie, vuoto.</b> «Non hai ancora mappe… «+» ne crea una».</figcaption>
+          </figure>
+          <figure class="fig-pannello">
+            <img src="img/65-nuova-mappa-modale.png" alt="La finestra Titolo della nuova mappa" loading="lazy">
+            <figcaption><b>Il titolo della mappa.</b></figcaption>
+          </figure>
+          <figure class="fig-blocco">
+            <img src="img/66-nuovo-nodo-casella.png" alt="La mappa con la radice e, sotto, un nodo nuovo con la casella di testo aperta" loading="lazy">
+            <figcaption><b><kbd>Tab</kbd> = figlio.</b> La casella si apre da sola sul nodo nuovo.</figcaption>
+          </figure>
+          <figure class="fig-blocco">
+            <img src="img/67-mappa-con-nodi.png" alt="La mappa con la radice, due figli, due nipoti e a destra il nodo giallo perielio venuto da una parola chiave" loading="lazy">
+            <figcaption><b>Dopo qualche nodo.</b> A destra «perielio», arrivato trascinando il chip: giallo come la sua evidenza, con il pallino della fonte in alto a destra.</figcaption>
+          </figure>
+        </div>
+        <div class="griglia2">
+          <figure class="fig-pannello">
+            <img src="img/69-menu-nodo.png" alt="Il menu del tasto destro su un nodo: Rinomina F2, Aggiungi figlio Tab, Aggiungi accanto Invio, Collega a, colori, applica ai discendenti, Vai alla fonte, Metti a fuoco, Elimina il nodo Canc, Annulla ⌘Z" loading="lazy">
+            <figcaption><b>Tasto destro su un nodo.</b> Il menu scrive accanto a ogni voce il tasto rapido: è il posto dove impararli.</figcaption>
+          </figure>
+          <figure class="fig-pannello">
+            <img src="img/70-menu-vuoto.png" alt="Il menu del tasto destro sul vuoto: Nuovo nodo qui, Adatta alla vista, Collassa tutto, Motore: Albero in uso, DAG, Percorso, Anelli" loading="lazy">
+            <figcaption><b>Tasto destro sul vuoto.</b> Qui si cambia il motore (Albero, DAG, Percorso, Anelli).</figcaption>
+          </figure>
+          <figure class="fig-intera">
+            <img src="img/71-arco-verbo.png" alt="La mappa con un legame fra Terra e perielio e la casella per la parola del legame" loading="lazy">
+            <figcaption><b>Un legame con la sua parola.</b> Doppio click su un legame per cambiarla; tasto destro per invertirlo o dargli due punte.</figcaption>
+          </figure>
+          <figure class="fig-pannello">
+            <img src="img/72-vista-pop.png" alt="Il pannellino Aggiustamenti della vista con i cursori" loading="lazy">
+            <figcaption><b>⚙ Aggiustamenti della vista.</b> Distanze, testo, larghezza delle card, stile delle linee. Su una mappa tua Glossario, Fonti citate e Ponti sono spenti: quei nodi li hai già messi tu.</figcaption>
+          </figure>
+        </div>
+        <figure class="fig-pannello">
+          <img src="img/69b-nodo-con-fonte.png" alt="Ingrandimento del nodo perielio con il pallino giallo della fonte in alto a destra" loading="lazy">
+          <figcaption><b>Il pallino della fonte.</b> Il puntino nell'angolo in alto a destra di un nodo: click, e si apre il documento alla pagina giusta. Funziona sui nodi nati da una parola chiave trascinata o da un ritaglio di un documento (non su una foto). <em>«Alla mappa» dalla selezione</em> porta il testo e la frase attorno, ma <strong>non</strong> la pagina: su quel nodo il pallino compare lo stesso, ma cliccarlo non apre niente. Se vuoi il pallino che riapre la pagina, passa dalla parola chiave o dal ritaglio.</figcaption>
+        </figure>
+
+        <h3 id="am-rinominare-mappa">Rinominare una mappa e assegnarla a un documento</h3>
+        <p>La matitina <strong>✎</strong> nella barra della mappa apre <em>«Nuovo titolo della mappa»</em> con la tendina «Nasce dal documento», come per gli appunti. Il titolo diventa anche il nome del file (<code>MAPPE/Il sistema solare.json</code>). Il documento di appartenenza è un'etichetta: serve a te per ricordare da dove viene la mappa (la sidebar non filtra per documento).</p>
+        <figure class="fig-pannello">
+          <img src="img/73-rinomina-mappa.png" alt="La finestra Nuovo titolo della mappa con la tendina Nasce dal documento" loading="lazy">
+          <figcaption><b>Rinomina la mappa.</b></figcaption>
+        </figure>
+
+        <h3 id="am-callout-emoji">Riquadri, emoji, guida delle notazioni</h3>
+        <div class="griglia2">
+          <figure class="fig-dettaglio"><img src="img/56-menu-callout.png" alt="Il menu dei riquadri: Nota, Importante, Definizione, Esempio, Dubbio, Attenzione, Da fare" loading="lazy"><figcaption><b>☰ I sette riquadri.</b></figcaption></figure>
+          <figure class="fig-dettaglio"><img src="img/57-emoji.png" alt="La tavolozza emoji con la ricerca pianeta e i risultati" loading="lazy"><figcaption><b>😀 Le emoji.</b> Si cercano in italiano («pianeta»).</figcaption></figure>
+          <figure class="fig-pannello"><img src="img/59-cita-materiale.png" alt="Il pannellino Cita un materiale con l'elenco: 01 Sistema solare.pdf, 01 Videolezione pianeti.mp4, 02 Podcast astronomia.m4a" loading="lazy"><figcaption><b>📎 Cita un materiale.</b> Scegli il documento, poi la pagina (o il minuto).</figcaption></figure>
+          <figure class="fig-intera"><img src="img/59b-guida-notazioni.png" alt="La finestra Come si scrive in StudIA con la tabella delle notazioni" loading="lazy"><figcaption><b>? Come si scrive in StudIA.</b> Tutte le notazioni, con come si scrivono e come vengono.</figcaption></figure>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section class="cap" id="eliminare-fonti">
+        <h2 data-n="07">Eliminare le fonti (e che cosa succede a quello che ci avevi scritto sopra)</h2>
+
+        <div class="callout eli5">
+          <div class="ch">🧒 Le lapidi</div>
+          <p>Quando togli un documento dallo zaino, StudIA lo manda nel <strong>Cestino</strong> del computer (non lo cancella) e al suo posto lascia una piccola <strong>lapide</strong>: un biglietto che dice «qui c'era il documento 01, si chiamava così, aveva questa impronta». A che cosa serve? Se un giorno ritrascini lo stesso documento, StudIA lo riconosce dall'impronta, gli ridà il suo <strong>numero di prima</strong>, e tutti gli appunti, le mappe, le parole chiave e i ritagli che lo citavano tornano a funzionare da soli. Nel frattempo quelle cose <em>non vengono cancellate</em>: restano lì, in attesa.</p>
+        </div>
+
+        <h3 id="ef-come">Come si toglie un documento</h3>
+        <ol class="passi">
+          <li>Apri il documento nel blocco Fonti (il cestino c'è <em>solo</em> con un documento aperto, e solo nello zaino).</li>
+          <li>Premi il <strong>🗑</strong> nella barra del documento, accanto alla ✕ («Togli questo documento dallo zaino»).</li>
+          <li>Leggi la domanda: ti dice <em>quante</em> cose ci si appoggiano — parole chiave, appunti, mappe, ritagli — e che restano dove sono. Conferma.</li>
+          <li>Il file va nel Cestino, la lapide viene scritta, e l'avviso dice: <em>««Sistema solare» è nel Cestino: reimportandolo si riaggancia»</em>.</li>
+        </ol>
+        <div class="griglia2">
+          <figure class="fig-pannello">
+            <img src="img/85-togli-documento-bottone.png" alt="La parte destra della barra del documento con il puntatore sul cestino" loading="lazy">
+            <figcaption><b>Il cestino della barra.</b> È il solo gesto dell'app che tocca un file portato dentro da te: perciò sta accanto alla ✕ ma è un'altra cosa.</figcaption>
+          </figure>
+          <figure class="fig-pannello">
+            <img src="img/86-conferma-togli-documento.png" alt="La finestra di conferma: Togliere Sistema solare dallo zaino? Ci si appoggiano: 4 parole chiave · 1 appunto · 1 mappa · 1 ritaglio. Restano dove sono, in attesa. Il file va nel Cestino di sistema…" loading="lazy">
+            <figcaption><b>La domanda</b> (il testo è quello vero; la finestra è quella di sistema). Ti dice che cosa ci si appoggia e che non si perde niente di scritto.</figcaption>
+          </figure>
+        </div>
+        <figure class="fig-intera">
+          <img src="img/87-documento-tolto.png" alt="Dopo aver tolto il documento: la sidebar mostra solo il video e l'audio, il blocco Fonti è vuoto, in basso l'avviso è nel Cestino: reimportandolo si riaggancia" loading="lazy">
+          <figcaption><b>Documento tolto.</b> In sidebar restano il video e l'audio; il blocco Fonti si svuota; l'avviso in basso.</figcaption>
+        </figure>
+
+        <h3 id="ef-cosa-resta">Che cosa resta, e come si comporta</h3>
+        <ul>
+          <li><strong>Le parole chiave</strong> restano nello strumento Parole chiave. Se dal loro menu premi «Vai al documento», il blocco Fonti risponde <em>«Non riesco ad aprire questo documento…»</em>: normale, il file non c'è.</li>
+          <li><strong>Gli appunti</strong> restano tali e quali. I rimandi <code>[Sistema solare, p. 3](pdf:01#p=3)</code> restano scritti; cliccandoli il documento non si apre (dopo un riavvio l'avviso dice <em>«Il documento di questo rimando non è fra i materiali del corso»</em>). Nella tendina della rinomina l'appunto risulta di «Sistema solare (non più nello zaino)».</li>
+          <li><strong>I ritagli</strong> restano nell'archivio; «Alla fonte» dà lo stesso errore di sopra.</li>
+          <li><strong>I nodi di mappa</strong> restano, col loro pallino; «Vai alla fonte» non trova il documento.</li>
+          <li><strong>Il numero</strong> (01) resta prenotato: un documento nuovo prenderà 02, non 01.</li>
+        </ul>
+        <div class="griglia2">
+          <figure class="fig-intera">
+            <img src="img/88-rimando-orfano.png" alt="La parola chiave è ancora nell'elenco; il blocco Fonti dice Non riesco ad aprire questo documento" loading="lazy">
+            <figcaption><b>Un rimando orfano.</b> Le parole chiave sono ancora lì; il documento no.</figcaption>
+          </figure>
+          <figure class="fig-intera">
+            <img src="img/89-documento-tornato.png" alt="Dopo aver ritrascinato lo stesso PDF: è tornato 01 Sistema solare, aperto, e la sidebar lo mostra al suo posto" loading="lazy">
+            <figcaption><b>Il ritorno.</b> Ritrascinato lo stesso file: riprende il numero 01, il nome di prima, e tutto si riaggancia. Se cambiassi il file (anche di una virgola) l'impronta sarebbe diversa e prenderebbe un numero nuovo. ⚠️ Se il documento era stato riconosciuto con Aa↗, quello che si riaggancia è il file finito nel Cestino (la copia con il testo riconosciuto dentro), non il tuo originale: l'originale entrerebbe come documento nuovo. Ripesca il file dal Cestino e trascina quello.</figcaption>
+          </figure>
+        </div>
+
+        <h3 id="ef-altri">E le altre cose?</h3>
+        <div class="tabwrap">
+        <table>
+          <thead><tr><th>Che cosa</th><th>Dove sta il comando</th><th>Cestino o cancellazione?</th><th>Lapide?</th></tr></thead>
+          <tbody>
+            <tr><td>Documento PDF</td><td>🗑 nella barra del documento</td><td>Cestino di sistema</td><td><strong>Sì</strong> (riaggancio al ritorno)</td></tr>
+            <tr><td>Video / audio</td><td>🗑 nella barra del Player</td><td>Cestino di sistema</td><td>No: reimportandolo prende un numero con la regola di sempre (il vecchio, se era l'ultimo; altrimenti uno nuovo)</td></tr>
+            <tr><td>Foto o ritaglio</td><td>menu della card → «Elimina…»</td><td>Cancellazione vera (chiede conferma e dice in quanti appunti/mappe è usata)</td><td>No</td></tr>
+            <tr><td>Appunto</td><td>🗑 nella barra degli appunti</td><td>Cancellazione vera («L'operazione non è reversibile»)</td><td>No</td></tr>
+            <tr><td>Mappa</td><td>🗑 nella barra della mappa</td><td>Cancellazione vera («non si può annullare»)</td><td>No</td></tr>
+            <tr><td>Nodo di mappa</td><td>menu del nodo → «Elimina il nodo», o <kbd>Canc</kbd></td><td>—</td><td><kbd>⌘Z</kbd> lo riporta</td></tr>
+            <tr><td>Evidenza / parola chiave</td><td>«Cancella evidenziatura» nella barra della selezione; «Togli dall'elenco» nel menu del chip</td><td>voce tolta dall'elenco</td><td>No</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section class="cap" id="eliminare-zaino">
+        <h2 data-n="08">Rinominare ed eliminare uno zaino</h2>
+        <p>Gli zaini si governano da un posto solo: <strong>⚙ Impostazioni → scheda «Zaino»</strong>. Lì c'è l'elenco «I tuoi zaini», con quanti documenti contengono e, accanto a ciascuno, due comandi: <strong>✎ rinomina</strong> e <strong>🗑 elimina</strong>. Non li trovi nella tendina ZAINO, né in sidebar, né col tasto destro: è voluto, perché eliminare è il gesto più grande che si possa fare.</p>
+        <div class="callout eli5"><p>In cima alla stessa scheda c'è <strong>📖 Apri la guida allo ZAINO</strong>: è questa guida, che viaggia dentro l'app. Si apre in una finestra sua, e la puoi tenere accanto a StudIA mentre provi i gesti.</p></div>
+
+        <h3 id="ez-rinominare">Rinominare uno zaino</h3>
+        <p>Premi il <strong>✎</strong> accanto allo zaino, scrivi il nome nuovo, conferma. Cambia il titolo che leggi ovunque — tendina, elenco, Impostazioni — <em>e</em> il nome della cartella sul disco: «Storia romana» → «Storia romana antica» sposta <code>Zaini/storia-romana/</code> in <code>Zaini/storia-romana-antica/</code>. Tutto quello che c'era dentro (documenti, media, appunti, mappe, ritagli) viaggia con la cartella, e se lo zaino era aperto resta aperto, con il banco e i riquadri come li avevi lasciati.</p>
+        <div class="callout attenzione">
+          <div class="ch">⚠️ Le due regole della rinomina</div>
+          <p>Il nome nuovo deve essere <strong>libero</strong>, come alla creazione: non puoi chiamare uno zaino come un altro zaino o come un corso che hai già («esiste già un corso o uno zaino con questo nome»). E se cambi solo le maiuscole o la punteggiatura — «Diritto pubblico» → «Diritto Pubblico» — la cartella <em>non</em> si sposta: il nome di cartella è lo stesso, cambia solo il titolo.</p>
+        </div>
+
+        <figure class="fig-pannello">
+          <img src="img/93-rinomina-zaino.png" alt="La finestrella «Nuovo nome della materia» con il nome attuale già scritto" loading="lazy">
+          <figcaption><b>La finestrella della rinomina.</b> Dentro c'è già il nome di adesso: lo correggi e confermi con <kbd>Invio</kbd>.</figcaption>
+        </figure>
+
+        <h3 id="ez-eliminare">Eliminare uno zaino</h3>
+        <ol class="passi">
+          <li>Premi <strong>⚙</strong> in alto a destra, poi la scheda <strong>«Zaino»</strong>.</li>
+          <li>Premi il <strong>🗑</strong> accanto allo zaino da eliminare («Elimina «Storia romana»: la cartella intera va nel Cestino»). Attenzione a non confonderlo con il ✎ che gli sta accanto.</li>
+          <li>Leggi la domanda e conferma.</li>
+          <li>L'intera cartella dello zaino — documenti, media, appunti, mappe e ritagli — va nel <strong>Cestino di sistema</strong>. Da lì puoi ancora ripescarla, ma StudIA non la vedrà più. Avviso: <em>«Zaino «Storia romana» nel Cestino»</em>.</li>
+        </ol>
+        <div class="griglia2">
+          <figure class="fig-blocco">
+            <img src="img/90b-impostazioni-zaino-riga.png" alt="La scheda Zaino delle Impostazioni: I tuoi zaini, Sistema solare 1 documento, Storia romana vuoto, con il cestino accanto" loading="lazy">
+            <figcaption><b>Impostazioni › Zaino.</b> L'elenco, e per ogni zaino ✎ per rinominare e 🗑 per eliminare.</figcaption>
+          </figure>
+          <figure class="fig-pannello">
+            <img src="img/91-conferma-elimina-zaino.png" alt="La finestra di conferma: Eliminare lo zaino Storia romana? La sua cartella va nel Cestino di sistema. L'app non la vedrà più." loading="lazy">
+            <figcaption><b>La domanda.</b> Testo vero, finestra di sistema.</figcaption>
+          </figure>
+        </div>
+        <figure class="fig-intera">
+          <img src="img/92-zaino-nel-cestino.png" alt="Dopo l'eliminazione: nell'elenco resta solo Sistema solare; in basso l'avviso Zaino Storia romana nel Cestino" loading="lazy">
+          <figcaption><b>Fatto.</b> Resta un solo zaino; l'avviso in basso.</figcaption>
+        </figure>
+        <div class="callout attenzione">
+          <div class="ch">⚠️ Due cose da sapere</div>
+          <p>Se elimini lo zaino <em>aperto</em>, StudIA prima chiude tutto per bene (salva l'appunto e la mappa in sospeso). Se invece sposti la cartella nel Cestino <em>a mano</em> dal Finder (ad app chiusa) il risultato sul disco è lo stesso, ma nel computer resta la memoria del banco di quello zaino: uno zaino futuro con lo stesso nome la erediterebbe. Meglio farlo dall'app.</p>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section class="cap" id="tasti">
+        <h2 data-n="09">Tasti rapidi (macOS e Windows)</h2>
+        <p>Su Windows <kbd>⌘</kbd> = <kbd>Ctrl</kbd>, <kbd>⌥</kbd> = <kbd>Alt</kbd>, <kbd>⇧</kbd> = <kbd>Maiusc</kbd>. Regola generale: le <strong>combinazioni</strong> valgono sempre, anche mentre scrivi; le <strong>lettere sole</strong> del player valgono solo se non stai scrivendo in un campo di testo.</p>
+        <div class="callout">
+          <div class="ch">✅ I suggerimenti parlano la tua lingua</div>
+          <p>Non devi tradurre a mente: i suggerimenti dell'app (quelli che compaiono passando il mouse su un bottone) scrivono <kbd>⌘F</kbd> su un Mac e <kbd>Ctrl</kbd>+<kbd>F</kbd> su Windows. Questa tabella li elenca nella forma di macOS perché è quella delle immagini.</p>
+        </div>
+
+        <h4>Ovunque nell'app</h4>
+        <div class="tabwrap">
+        <table>
+          <thead><tr><th>Che cosa fa</th><th>macOS</th><th>Windows</th><th>Dove vale</th></tr></thead>
+          <tbody>
+            <tr><td>Segna il minuto del video/audio negli appunti (crea l'appunto se manca)</td><td><kbd>⌘</kbd><kbd>⇧</kbd><kbd>C</kbd></td><td><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>C</kbd></td><td>sempre, anche scrivendo; serve un media aperto</td></tr>
+            <tr><td>Cerca nel documento (se il fuoco è sul documento o in nessun campo, con un PDF aperto) / cerca nello zaino (altrimenti: per esempio dall'editor degli appunti, anche col PDF aperto)</td><td><kbd>⌘</kbd><kbd>F</kbd></td><td><kbd>Ctrl</kbd><kbd>F</kbd></td><td>ovunque</td></tr>
+            <tr><td>Nella ricerca: risultato successivo / precedente</td><td><kbd>Invio</kbd> / <kbd>⇧</kbd><kbd>Invio</kbd></td><td><kbd>Invio</kbd> / <kbd>Shift</kbd><kbd>Invio</kbd></td><td>nel campo di ricerca del documento; nella lente ↓ ↑ scorrono e Invio apre</td></tr>
+            <tr><td>Salva l'appunto</td><td><kbd>⌘</kbd><kbd>S</kbd></td><td><kbd>Ctrl</kbd><kbd>S</kbd></td><td>ovunque (salva comunque da solo)</td></tr>
+            <tr><td>Stampa l'appunto aperto, o la mappa</td><td><kbd>⌘</kbd><kbd>P</kbd></td><td><kbd>Ctrl</kbd><kbd>P</kbd></td><td>ovunque, anche col cursore nell'editor</td></tr>
+            <tr><td>Commuta l'anteprima dell'appunto (▣)</td><td><kbd>⌘</kbd><kbd>J</kbd></td><td><kbd>Ctrl</kbd><kbd>J</kbd></td><td>nell'editor degli appunti</td></tr>
+            <tr><td>Scrittura e anteprima affiancate (◫)</td><td><kbd>F9</kbd></td><td><kbd>F9</kbd></td><td>nell'editor degli appunti</td></tr>
+            <tr><td>Forbici «al volo»: ritaglia mentre tieni premuto</td><td><kbd>⌘</kbd> + trascina</td><td><kbd>Ctrl</kbd> + trascina</td><td>su PDF, foto o video</td></tr>
+            <tr><td>Zoom del PDF / del Confronto / della foto</td><td><kbd>⇧</kbd> + rotella</td><td><kbd>Shift</kbd> + rotella</td><td>sopra la pagina</td></tr>
+            <tr><td>Zoom della mappa</td><td>rotella</td><td>rotella</td><td>sopra la tela</td></tr>
+            <tr><td>Zoom di <em>tutta</em> l'app</td><td><kbd>⌘</kbd><kbd>+</kbd> <kbd>⌘</kbd><kbd>−</kbd> <kbd>⌘</kbd><kbd>0</kbd></td><td><kbd>Ctrl</kbd><kbd>+</kbd> <kbd>Ctrl</kbd><kbd>−</kbd> <kbd>Ctrl</kbd><kbd>0</kbd></td><td>menu View del sistema (non è lo zoom del PDF)</td></tr>
+            <tr><td>Chiudi uno strato alla volta: forbici → menu della selezione → barra della selezione → ricerca nel documento → mappa (e il suo pannellino ⚙) → pannellini e finestre → documento</td><td><kbd>Esc</kbd></td><td><kbd>Esc</kbd></td><td>⚠️ un Esc «a vuoto» con un PDF aperto chiude il documento (il blocco resta)</td></tr>
+            <tr><td>Crea lo zaino / conferma una finestrella / annulla</td><td><kbd>Invio</kbd> / <kbd>Esc</kbd></td><td><kbd>Invio</kbd> / <kbd>Esc</kbd></td><td>nel campo del nome; nelle finestre «Titolo…»</td></tr>
+            <tr><td>Schermo intero · chiudi finestra · ricarica l'app</td><td><kbd>⌃</kbd><kbd>⌘</kbd><kbd>F</kbd> · <kbd>⌘</kbd><kbd>W</kbd> · <kbd>⌘</kbd><kbd>R</kbd></td><td><kbd>F11</kbd> · <kbd>Ctrl</kbd><kbd>W</kbd> · <kbd>Ctrl</kbd><kbd>R</kbd></td><td>menu del sistema (su Windows la barra dei menu è visibile, in inglese)</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h4>Nel Player (video e audio)</h4>
+        <div class="tabwrap">
+        <table>
+          <thead><tr><th>Che cosa fa</th><th>macOS</th><th>Windows</th><th>Dove vale</th></tr></thead>
+          <tbody>
+            <tr><td>Riproduci / pausa</td><td><kbd>K</kbd> o <kbd>spazio</kbd></td><td><kbd>K</kbd> o <kbd>spazio</kbd></td><td>media aperto, non stai scrivendo</td></tr>
+            <tr><td>Indietro / avanti di 10 secondi</td><td><kbd>J</kbd> / <kbd>L</kbd></td><td><kbd>J</kbd> / <kbd>L</kbd></td><td>idem</td></tr>
+            <tr><td>Velocità più lenta / più veloce (0,75× … 2×)</td><td><kbd>&lt;</kbd> / <kbd>&gt;</kbd></td><td><kbd>&lt;</kbd> / <kbd>&gt;</kbd></td><td>idem</td></tr>
+            <tr><td>Indietro / avanti di 5 secondi</td><td><kbd>←</kbd> / <kbd>→</kbd></td><td><kbd>←</kbd> / <kbd>→</kbd></td><td>solo col fuoco dentro il Player (dopo un click sul video)</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h4>Nell'editor degli appunti (col cursore nel testo)</h4>
+        <div class="tabwrap">
+        <table>
+          <thead><tr><th>Che cosa fa</th><th>macOS</th><th>Windows</th></tr></thead>
+          <tbody>
+            <tr><td>Grassetto · corsivo · link</td><td><kbd>⌘</kbd><kbd>B</kbd> · <kbd>⌘</kbd><kbd>I</kbd> · <kbd>⌘</kbd><kbd>K</kbd></td><td><kbd>Ctrl</kbd><kbd>B</kbd> · <kbd>Ctrl</kbd><kbd>I</kbd> · <kbd>Ctrl</kbd><kbd>K</kbd></td></tr>
+            <tr><td>Titolo più piccolo · più grande</td><td><kbd>⌘</kbd><kbd>H</kbd> · <kbd>⇧</kbd><kbd>⌘</kbd><kbd>H</kbd></td><td><kbd>Ctrl</kbd><kbd>H</kbd> · <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>H</kbd></td></tr>
+            <tr><td>Citazione · elenco puntato · elenco di caselle · pulisci formattazione</td><td><kbd>⌘</kbd><kbd>'</kbd> · <kbd>⌘</kbd><kbd>L</kbd> · <kbd>⇧</kbd><kbd>⌘</kbd><kbd>L</kbd> · <kbd>⌘</kbd><kbd>E</kbd></td><td><kbd>Ctrl</kbd><kbd>'</kbd> · <kbd>Ctrl</kbd><kbd>L</kbd> · <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>L</kbd> · <kbd>Ctrl</kbd><kbd>E</kbd></td></tr>
+            <tr><td>Immagine · elenco numerato · blocco di codice</td><td><kbd>⌘</kbd><kbd>⌥</kbd><kbd>I</kbd> · <kbd>⌘</kbd><kbd>⌥</kbd><kbd>L</kbd> · <kbd>⌘</kbd><kbd>⌥</kbd><kbd>C</kbd></td><td><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>I</kbd> · <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>L</kbd> · <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>C</kbd></td></tr>
+            <tr><td>Anteprima · affiancato · editor a tutto schermo</td><td><kbd>⌘</kbd><kbd>P</kbd> · <kbd>F9</kbd> · <kbd>F11</kbd></td><td><kbd>Ctrl</kbd><kbd>P</kbd> · <kbd>F9</kbd> · <kbd>F11</kbd></td></tr>
+            <tr><td>Continua l'elenco · rientra · togli il rientro</td><td><kbd>Invio</kbd> · <kbd>Tab</kbd> · <kbd>⇧</kbd><kbd>Tab</kbd></td><td><kbd>Invio</kbd> · <kbd>Tab</kbd> · <kbd>Shift</kbd><kbd>Tab</kbd></td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h4>Nella mappa (registro «Mie», col fuoco fuori dai campi di testo)</h4>
+        <div class="tabwrap">
+        <table>
+          <thead><tr><th>Che cosa fa</th><th>macOS</th><th>Windows</th><th>Serve</th></tr></thead>
+          <tbody>
+            <tr><td>Aggiungi un figlio · un nodo accanto</td><td><kbd>Tab</kbd> · <kbd>Invio</kbd></td><td><kbd>Tab</kbd> · <kbd>Invio</kbd></td><td>un nodo selezionato</td></tr>
+            <tr><td>Rinomina il nodo</td><td><kbd>F2</kbd> (o doppio click)</td><td><kbd>F2</kbd></td><td>un nodo selezionato</td></tr>
+            <tr><td>Elimina il nodo</td><td><kbd>Canc</kbd> / <kbd>⌫</kbd></td><td><kbd>Canc</kbd> / <kbd>Backspace</kbd></td><td>un nodo selezionato</td></tr>
+            <tr><td>Annulla (fino a 20 passi)</td><td><kbd>⌘</kbd><kbd>Z</kbd></td><td><kbd>Ctrl</kbd><kbd>Z</kbd></td><td>—</td></tr>
+            <tr><td>Conferma / annulla la casella di testo</td><td><kbd>Invio</kbd> / <kbd>Esc</kbd></td><td><kbd>Invio</kbd> / <kbd>Esc</kbd></td><td>casella aperta</td></tr>
+            <tr><td>Salva la disposizione in una memoria senza passare dal menu</td><td><kbd>⌥</kbd> + click sullo slot</td><td><kbd>Alt</kbd> + click</td><td>—</td></tr>
+            <tr><td>Nuovo nodo dove clicchi · parola del legame</td><td>doppio click sul vuoto · doppio click sul legame</td><td>idem</td><td>—</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <div class="callout attenzione">
+          <div class="ch">⚠️ Tasti che NON esistono (per non cercarli)</div>
+          <p>Non c'è un tasto per: passare da Corso a Zaino, cambiare zaino, mostrare/nascondere la sidebar, cambiare la forma del banco o lo strumento di un blocco, il tema, A−/A+, la pagina precedente/successiva del PDF (frecce ‹ › o rotella), lo zoom del PDF o della mappa da tastiera. Non c'è una schermata «tutte le scorciatoie» dentro l'app: questa tabella è quella. Nota: <kbd>⌘⇧C</kbd> cita <em>solo</em> il minuto del player; per citare la pagina del documento c'è il bottone 🔖 (senza tasto). E ⚠️ nello zaino le frecce ← → premute fuori dai campi di testo (anche col fuoco sul documento o sul player, dove in più saltano di 5 secondi; solo l'editor e la mappa a schermo le fermano) sfogliano in silenzio i capitoli del corso che era aperto prima: non se ne vede niente, ma tornando ai corsi il capitolo può essere cambiato.</p>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section class="cap" id="pdf">
+        <h2 data-n="10">Quali PDF si possono importare, e come diventano «lavorabili»</h2>
+
+        <div class="callout eli5">
+          <div class="ch">🧒 Due tipi di PDF</div>
+          <p>Ci sono PDF <strong>«veri»</strong>, con dentro il testo (quelli fatti da Word, dai siti, dai libri digitali): il computer può leggerlo, selezionarlo, cercarlo. E ci sono PDF che sono solo <strong>fotografie</strong> di fogli (la scheda fotografata col telefono, la scansione): per il computer sono immagini, e non c'è niente da selezionare. StudIA riconosce da solo di che tipo è il PDF, e per le fotografie propone di «insegnargli a leggere».</p>
+        </div>
+
+        <h3 id="pdf-nativi">I PDF con testo</h3>
+        <p>Appena entrano, StudIA legge il testo di ogni pagina e lo scrive nell'<strong>indice</strong> del documento (<code>MATERIALI/Indici-PDF/01 nome.json</code>). L'indice non si vede mai: serve solo alla lente per cercare, e a decidere se il documento è una fotografia. È veloce: 266 pagine in meno di un secondo. Da subito puoi selezionare, evidenziare, appuntare, ritagliare, cercare.</p>
+
+        <h3 id="pdf-scansioni">I PDF fotografati: il riconoscimento del testo (OCR)</h3>
+        <p>Se più della metà delle pagine ha meno di 200 caratteri di testo, per StudIA il documento è <strong>fotografato</strong>. Alla fine dell'import ti chiede se vuoi che riconosca il testo. Puoi dire di no: il gesto resta a portata di mano nel bottone <strong>Aa↗</strong> della barra del documento, che compare solo per i documenti fotografati.</p>
+        <div class="griglia2">
+          <figure class="fig-pannello">
+            <img src="img/95-proposta-ocr.png" alt="La finestra: 02 Scheda fotografata.pdf sembra fotografato: 3 pagine su 3 senza testo selezionabile. Riconosco il testo per poterlo selezionare, evidenziare e cercare? Circa mezzo minuto…" loading="lazy">
+            <figcaption><b>La proposta.</b> Con la stima del tempo. Puoi fermare quando vuoi e riprendere dopo.</figcaption>
+          </figure>
+          <figure class="fig-pannello">
+            <img src="img/96-bottone-aa-ocr.png" alt="La barra del documento con il bottone Aa↗ e il puntatore sopra" loading="lazy">
+            <figcaption><b>Aa↗.</b> «Riconosci il testo di questo documento fotografato». Durante la corsa diventa verde-acqua e un altro click lo ferma («Mi fermo alla fine di questa pagina…»).</figcaption>
+          </figure>
+        </div>
+        <ol class="passi">
+          <li>Premi <strong>Aa↗</strong> (o rispondi OK alla proposta).</li>
+          <li>Segui gli avvisi in basso: «Preparo il riconoscimento del testo…», poi «Riconosco la pagina 1 — 1 di 3…», e così via. Se una pagina è storta ti dice che la rilegge raddrizzata.</li>
+          <li>Alla fine: «Scrivo il testo dentro il documento…» e poi <em>«Fatto: ora il testo si seleziona, si evidenzia e si cerca.»</em> Il documento si riapre alla stessa pagina.</li>
+          <li>Da questo momento il PDF fotografato si comporta come uno vero: selezioni, evidenzi, cerchi. Il bottone Aa↗ sparisce.</li>
+        </ol>
+        <div class="griglia2">
+          <figure class="fig-intera">
+            <img src="img/97-ocr-in-corso.png" alt="Il riconoscimento in corso: il bottone Aa↗ acceso e l'avviso Riconosco la pagina 1 — 1 di 3" loading="lazy">
+            <figcaption><b>In corso.</b> Il bottone acceso, l'avviso che conta le pagine.</figcaption>
+          </figure>
+          <figure class="fig-intera">
+            <img src="img/98-ocr-fatto.png" alt="Alla fine: l'avviso Fatto: ora il testo si seleziona, si evidenzia e si cerca." loading="lazy">
+            <figcaption><b>Fatto.</b></figcaption>
+          </figure>
+        </div>
+        <figure class="fig-intera">
+          <img src="img/99-ocr-evidenza.png" alt="Sulla pagina fotografata la parola sistema è evidenziata in verde: il testo ora si seleziona" loading="lazy">
+          <figcaption><b>La prova.</b> Sulla scansione, dopo il riconoscimento, la parola «sistema» si seleziona ed evidenzia come su un PDF vero.</figcaption>
+        </figure>
+
+        <h4>Che cosa succede davvero (per chi vuole saperlo)</h4>
+        <ul>
+          <li>Il motore è <strong>Tesseract</strong> (dentro l'app, italiano + inglese, niente da installare, niente internet). Legge una pagina alla volta e scrive un <strong>testo invisibile</strong> sopra le immagini, dentro la <em>copia</em> del PDF che sta nello zaino. Il tuo file originale, fuori dallo zaino, non viene toccato.</li>
+          <li>Le righe storte fino a 10° vengono seguite; oltre i 2° la pagina viene anche riletta raddrizzata (si tiene la lettura migliore). Le foto «di sbieco», con le righe che convergono, non vengono raddrizzate.</li>
+          <li>Tempi misurati: circa <strong>1,7 secondi a pagina</strong> su Mac con Apple Silicon (6 secondi su Mac Intel). Memoria: circa 1,3 GB al picco, e il picco <em>non cresce</em> con il numero di pagine: un libro lungo costa tempo, non memoria.</li>
+          <li>L'indice ricorda che il documento è stato riconosciuto e quali pagine. Se dopo ritrascini l'<em>originale</em> non riconosciuto, StudIA lo scarta: «già nello zaino come «02 Scheda fotografata.pdf» (testo riconosciuto)».</li>
+          <li>Il testo riconosciuto non si vede e non si corregge: serve a selezionare, evidenziare, cercare. Testo brutto è meglio di testo spostato: le parole vengono scritte tutte, anche quelle lette male, perché un buco farebbe slittare la selezione di tutta la riga.</li>
+        </ul>
+
+        <h3 id="pdf-limiti">Casi particolari e limiti</h3>
+        <div class="tabwrap">
+        <table>
+          <thead><tr><th>Caso</th><th>Che cosa succede</th></tr></thead>
+          <tbody>
+            <tr><td>PDF <strong>protetto da password</strong></td><td>Entra (viene copiato) ma non si apre: «Non riesco ad aprire questo documento: No password given». Non c'è modo di inserire la password: toglila prima, con un altro programma.</td></tr>
+            <tr><td>Un file <strong>non PDF rinominato .pdf</strong></td><td>Entra ma non si apre («Non riesco ad aprire questo documento…»).</td></tr>
+            <tr><td>PDF <strong>misto</strong> (poche pagine fotografate, la maggior parte con testo)</td><td>Non viene proposto il riconoscimento e il bottone Aa↗ non compare: le pagine fotografate restano immagini.</td></tr>
+            <tr><td>PDF con <strong>font strani</strong> che escono come simboli</td><td>Se ci sono più di 200 caratteri per pagina l'app lo considera «con testo»: la lente cerca sul testo sbagliato e non propone l'OCR. Se il testo estratto è pochissimo, viene trattato come fotografia e il riconoscimento aiuta.</td></tr>
+            <tr><td>PDF <strong>enormi</strong> (centinaia di pagine, decine di MB)</td><td>Nessun limite. L'indice e l'OCR lavorano pagina per pagina.</td></tr>
+            <tr><td><strong>Modificare o annotare</strong> il PDF</td><td>Non si fa: StudIA non scrive nel PDF (tranne il testo invisibile dell'OCR). Le evidenze stanno in <code>APPUNTI/_evidenze.json</code>, i ritagli in <code>ALBUM/</code>. Il PDF resta pulito.</td></tr>
+            <tr><td><strong>Più PDF in linguette</strong></td><td>Non c'è: un documento per volta nella Fonte, più eventualmente uno nel Confronto.</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section class="cap" id="non-esiste">
+        <h2 data-n="11">Che cosa non esiste (ancora), e piccole trappole</h2>
+        <p>Per non farti cercare quello che non c'è, ecco l'elenco onesto:</p>
+        <ul>
+          <li><strong>Rinominare un documento, un video, un audio</strong> — non c'è. Dai il nome giusto al file prima di trascinarlo.</li>
+          <li><strong>Un bottone «Importa» / «Aggiungi documento»</strong> — non c'è: si trascina.</li>
+          <li><strong>Esportare la mappa in PNG/SVG</strong> — solo stampa e PDF.</li>
+          <li><strong>Trascrizione di video e audio nello zaino</strong> — no: si guardano e si citano al minuto (la trascrizione è dei corsi).</li>
+          <li><strong>Il corso «fantasma»</strong>: entrando nello zaino il corso di prima non viene chiuso, solo nascosto. Per questo il badge del Ripasso in alto (se ne hai) mostra i numeri del corso, la mappa «Generata» mostra la lezione di prima e le frecce ← → premute a vuoto sfogliano i suoi capitoli. Nello zaino usa «Mie» e ignora quel badge.</li>
+          <li><strong>Su Windows</strong> l'app non è ancora stata provata dal vivo (l'installer esiste); tutto ciò che è «Ctrl» in questa guida viene dal codice, non da uno schermo Windows.</li>
+        </ul>
+        <div class="callout fonte">
+          <div class="ch">📎 Glossario minimo</div>
+          <p><strong>Zaino</strong>: la cartella dei tuoi materiali senza lezioni generate. <strong>Fonte</strong>: un documento (PDF), un video o un audio dentro lo zaino. <strong>Banco</strong>: lo spazio di lavoro diviso in blocchi. <strong>Strumento</strong>: quello che sta in un blocco (Fonti, Player, Confronto, Appunti, Mappa, Parole chiave, Ritagli, Album Foto). <strong>Rimando</strong>: l'indirizzo di un punto preciso di una fonte, come <code>pdf:01#p=7</code> o <code>video:01#t=12</code>. <strong>Evidenza / parola chiave</strong>: un pezzo di testo evidenziato; se corto, è una parola chiave. <strong>Lapide</strong>: il segno lasciato da un documento tolto, che permette di riagganciarlo. <strong>PERSONALE</strong>: un appunto o una mappa che non appartiene a nessun documento.</p>
+        </div>
+      </section>
+
+      <footer>
+        Guida alla modalità Zaino di StudIA · fotografata sull'app del 16 agosto 2026 · <a href="mailto:giacomo@insegnai.ch">giacomo@insegnai.ch</a> · icone dell'app: OpenMoji (CC BY-SA 4.0)
+      </footer>
+    </article>
+  </main>
+</div>
+
+<div id="lb" role="dialog" aria-modal="true" aria-label="Immagine ingrandita">
+  <button class="lbx" aria-label="Chiudi">✕</button>
+  <button class="lbp" aria-label="Immagine precedente">‹</button>
+  <img src="" alt="">
+  <button class="lbn" aria-label="Immagine successiva">›</button>
+  <figcaption></figcaption>
+</div>
+
+<script src="guida.js?v=2026081604"></script>
+</body>
+</html>
