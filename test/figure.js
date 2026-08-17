@@ -66,6 +66,34 @@ sezione('Dal markdown alla figura che si vede');
     /class="plink"/.test(testo) && /class="figura"/.test(testo));
 }
 
+sezione('La larghezza scritta nella didascalia arriva fino al vestito');
+{
+  /* Una misura si scrive `![Titolo|60%](…)` — la grammatica sta in
+     `App/assets/lettura/misura.js` e si prova per intero in
+     `test/misura-immagini.js`. Qui si prova il pezzo che riguarda la resa: che
+     la misura esca dalla didascalia e diventi la larghezza della figura, e che
+     sotto l'immagine e nell'`alt` resti il testo pulito. */
+  const con = P._mdInline('![I quattro processi|60%](fig:03#p=7&i=2)');
+  check('la figura si dichiara misurata', true, /class="figura misurata"/.test(con));
+  check('e porta la sua larghezza', true, con.indexOf('style="--figw:60%"') > 0);
+  /* ⚠️ La misura NON deve finire sotto l'immagine: è un comando dato all'app,
+     non una cosa che l'utente ha scritto per sé. */
+  check('la didascalia resta pulita', true, /<span class="figcap">I quattro processi<\/span>/.test(con));
+  check('e anche il testo alternativo', true, /alt="I quattro processi"/.test(con));
+
+  const senza = P._mdInline('![I quattro processi](fig:03#p=7&i=2)');
+  check('senza misura non si dichiara niente', false, /misurata|--figw/.test(senza));
+
+  /* Una misura fuori scala scritta a mano non sfonda la colonna: si legge
+     limitata, come la legge il menu. */
+  check('sopra il tetto si ferma al tetto', true,
+    P._mdInline('![x|400%](fig:03#p=7&i=1)').indexOf('style="--figw:100%"') > 0);
+  /* Quello che non è una misura resta didascalia, invece di sparire. */
+  const finta = P._mdInline('![schema|3](fig:03#p=7&i=1)');
+  check('quello che non è una misura resta didascalia', true,
+    /<span class="figcap">schema\|3<\/span>/.test(finta) && !/misurata/.test(finta));
+}
+
 sezione('Il capitolo porta con sé l\'elenco delle sue figure');
 {
   const md = [
