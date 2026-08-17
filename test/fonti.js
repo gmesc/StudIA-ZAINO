@@ -214,9 +214,34 @@ sezione('Togliere una fonte, e il filo del lavoro che ci sta sopra');
       check('e dimenticarne una che non c\'è lo dice', 'traccia non trovata',
         F.dimentica(VAULT, Z2, 'nessuna').error);
 
-      for (const dd of [VAULT, FUORI]) { try { fs.rmSync(dd, { recursive: true, force: true }); } catch (e) {} }
-      console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
-      process.exit(ko ? 1 : 0);
+      /* ⚠️ Una SCANSIONE riconosciuta e poi tolta. Dopo l'OCR il file nel
+         contenitore ha un layer in più e un'altra impronta; l'originale, in casa
+         dell'utente, è rimasto quello di prima. Ritrascinarlo è un ritorno, e
+         deve riprendere il numero — misurato il contrario il 17 agosto 2026 nel
+         laboratorio della guida: «02 Scheda fotografata» tolta e rimessa tornava
+         come «03», con evidenze e ritagli appesi a un numero senza documento. */
+      const scan = path.join(FUORI, 'scheda.pdf');
+      fs.writeFileSync(scan, '%PDF-1.4 sole immagini, niente testo');
+      const impOrig = F.impronta(scan);
+      const s0 = F.importa(VAULT, Z2, [scan]).copiati[0];
+      check('la scansione entra col numero dopo', '04 scheda.pdf', s0.nome);
+      /* «Il riconoscimento»: il file nel contenitore cambia, l'indice se lo ricorda. */
+      fs.appendFileSync(path.join(F.dirPdf(VAULT, Z2), '04 scheda.pdf'), '\n% layer di testo aggiunto dal riconoscimento');
+      F.scriviIndice(VAULT, Z2, '04 scheda.pdf', [{ n: 1, t: 'testo riconosciuto' }], 'tesseract', { improntaOriginale: impOrig });
+      check('nel contenitore l\'impronta è cambiata', true, F.impronta(path.join(F.dirPdf(VAULT, Z2), '04 scheda.pdf')) !== impOrig);
+      F.elimina(VAULT, Z2, '04 scheda.pdf').then((r3) => {
+        check('la scansione si toglie', '', r3.error);
+        const lap = F.rimossi(VAULT, Z2).filter((x) => x.nome === '04 scheda.pdf')[0];
+        check('la traccia porta ANCHE l\'impronta dell\'originale', impOrig, lap && lap.improntaOriginale);
+        const s1 = F.importa(VAULT, Z2, [scan]).copiati[0];
+        check('l\'originale che torna è un ritorno', true, s1.tornata);
+        check('e riprende il numero di prima', '04 scheda.pdf', s1.nome);
+        check('la traccia se ne va', 0, F.rimossi(VAULT, Z2).filter((x) => x.nome === '04 scheda.pdf').length);
+
+        for (const dd of [VAULT, FUORI]) { try { fs.rmSync(dd, { recursive: true, force: true }); } catch (e) {} }
+        console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
+        process.exit(ko ? 1 : 0);
+      });
     });
   });
 }
