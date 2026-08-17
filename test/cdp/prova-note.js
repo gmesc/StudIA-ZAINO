@@ -195,6 +195,53 @@ async function capitoloConNote() {
   await val(`(()=>{ try{ closeEditor(); }catch(e){} return 1; })()`);
   await pausa(300);
 
+  console.log('\n== Nell\'elenco della lente «Appunti» è la prima sezione');
+  /* ⚠️ Ciò che l'utente ha SCRITTO viene prima di ciò che ha letto. Non è una
+     preferenza: l'elenco scrive un'intestazione ogni volta che il gruppo
+     cambia, e un appunto piazzato a metà classifica spezzava in due il
+     documento attorno a lui — la stessa fonte compariva sotto due intestazioni
+     identiche, come se fossero due cose diverse.
+     La parola su cui si misura si prende dai CAPITOLI veri invece di
+     scriverla qui: una inventata potrebbe non esserci da nessuna parte, e la
+     prova diventerebbe verde senza aver misurato niente. */
+  const comune = await val(`(()=>{ searchBuild();
+    const cap=SEARCH.docs.filter(function(d){ return !d.appunto && !d.materiale; });
+    const conta={};
+    cap.forEach(function(d){ new Set(d.ntext.match(/[a-z]{6,}/g)||[]).forEach(function(w){ conta[w]=(conta[w]||0)+1; }); });
+    return Object.keys(conta).filter(function(w){ return conta[w]>=2; })[0]||null; })()`);
+  ok('una parola dei capitoli su cui misurare', true, !!comune);
+  if (comune) {
+    console.log('   «' + comune + '»');
+    await val(`(()=>{ const c=(curMeta()||{}).courseId;
+      window.vault.notes.save(c, null, { title:'Lente' }, 'Anche qui si parla di ${comune}.\\n');
+      notesReload(); return 1; })()`);
+    await pausa(400);
+    const elenco = await val(`(()=>{ const q=${JSON.stringify(comune)};
+      searchRender(searchRun(q), q);
+      const box=document.getElementById('searchRes');
+      const primo=box.firstElementChild;
+      return { sezioni:[...box.querySelectorAll('.sr-lesson')].map(function(e){ return e.textContent; }),
+               primoÈIntestazione:!!primo && primo.classList.contains('sr-lesson'),
+               primoTesto:primo ? primo.textContent : null,
+               voci:box.querySelectorAll('.sr-item').length }; })()`);
+    console.log('   sezioni: ' + JSON.stringify(elenco && elenco.sezioni));
+    ok('la lente trova nell\'appunto E nei capitoli', true, !!elenco && elenco.voci > 1);
+    ok('l\'elenco comincia con un\'intestazione', true, !!elenco && elenco.primoÈIntestazione);
+    ok('ed è quella degli appunti', 'Appunti', elenco && elenco.primoTesto);
+    /* ⚠️ Una volta sola: due sezioni «Appunti» sono lo stesso difetto visto
+       dall'altra parte — gli appunti davanti, ma non tutti.
+       Delle ALTRE intestazioni non si pretende l'unicità: le lezioni si
+       alternano per punteggio, ed è l'ordine di pertinenza che chi cerca si
+       aspetta. Qui si difende una regola sola, quella degli appunti. */
+    ok('e compare una volta sola', 1,
+      elenco ? elenco.sezioni.filter(function (t) { return t === 'Appunti'; }).length : 0);
+    ok('sotto ci sono anche i capitoli', true, !!elenco && elenco.sezioni.length > 1);
+    /* Si richiude ciò che si è aperto: un elenco di risultati lasciato a
+       schermo è la tenda che fa cadere il click della prova dopo. */
+    await val(`(()=>{ try{ searchClose(); }catch(e){} return 1; })()`);
+    await pausa(200);
+  }
+
   console.log(ko ? '\n✗ ' + ko + ' controlli falliti' : '\n✓ tutti i controlli passati');
   process.exit(ko ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

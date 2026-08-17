@@ -109,6 +109,19 @@
    *
    * A parità si ordina per lezione e poi per posizione nella lezione: l'ordine
    * di lettura, che è l'unico che chi studia riconosce.
+   *
+   * ⚠️ GLI APPUNTI VENGONO PRIMA DI TUTTO IL RESTO, anche col punteggio più
+   * basso: ciò che l'utente ha SCRITTO precede ciò che ha letto. Non è una
+   * preferenza di gusto, è ciò che tiene insieme l'elenco — l'intestazione la
+   * scrive il renderer quando `lessonTitle` cambia, quindi un appunto piazzato a
+   * metà classifica spezza in due il documento che lo circonda e la stessa fonte
+   * compare sotto due intestazioni uguali, come se fossero due cose diverse.
+   * Ordinandoli in blocco davanti, «Appunti» è una sezione sola e in cima, e ogni
+   * documento resta intero.
+   *
+   * ⚠️ E si ordina PRIMA di tagliare a `max`: un appunto quarantunesimo per
+   * punteggio, senza questo, non entrerebbe nell'elenco — «sempre prima» diventa
+   * «prima, se ci arriva».
    */
   function cerca(docs, q, opt) {
     var max = (opt && opt.max) || 40;
@@ -127,7 +140,8 @@
       if (ok) out.push({ d: d, score: score, pos: pos, toks: hits });
     });
     out.sort(function (a, b) {
-      return (b.score - a.score) ||
+      return ((b.d.appunto ? 1 : 0) - (a.d.appunto ? 1 : 0)) ||
+        (b.score - a.score) ||
         String(a.d.lessonTitle || '').localeCompare(String(b.d.lessonTitle || '')) ||
         (a.d.idx - b.d.idx);
     });

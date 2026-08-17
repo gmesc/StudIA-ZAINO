@@ -190,5 +190,45 @@ sezione('Gli appunti entrano nell\'indice');
     [misti.some((r) => r.d.appunto), misti.some((r) => r.d.materiale), misti.some((r) => r.d.lessonId !== undefined)]);
 }
 
+sezione('Gli appunti sono la PRIMA sezione dell\'elenco');
+{
+  /* ⚠️ Ciò che l'utente ha scritto viene prima di ciò che ha letto, e viene
+     prima anche col punteggio più basso. Il motivo non è di gusto: l'elenco
+     scrive un'intestazione ogni volta che `lessonTitle` cambia, e un appunto
+     piazzato a metà classifica spezzava in due il documento attorno a lui —
+     la stessa fonte compariva sotto due intestazioni identiche, come se
+     fossero due cose diverse. */
+  const capForte = R.docCapitolo({ title: 'Il Sole e il Sole', html: '<p>' + 'sole '.repeat(30) + '</p>' },
+    { lessonId: 'l1', lessonTitle: 'Sistema solare', idx: 0 }, via);
+  const appDebole = R.docAppunto({ file: 'Generali.md', title: 'Generali', body: 'una riga sul sole' }, 'Appunti', 0);
+  check('un appunto debole batte un capitolo fortissimo', 'Generali.md',
+    R.cerca([capForte, appDebole], 'sole')[0].d.appunto);
+
+  const pagForte = R.docPagina('01 Sistema solare.pdf', 'Sistema solare',
+    { page: 2, text: 'sole sole sole sole sole' });
+  check('e batte anche una pagina di documento', 'Generali.md',
+    R.cerca([pagForte, appDebole], 'sole')[0].d.appunto);
+
+  /* ⚠️ Gli appunti stanno TUTTI davanti, non solo il primo: se ne restasse uno
+     indietro l'elenco avrebbe due sezioni «Appunti», che è esattamente il
+     difetto che si sta togliendo. La prova guarda la forma dell'elenco intero —
+     un blocco di appunti e poi il resto — non la posizione di una voce sola. */
+  const appAltro = R.docAppunto({ file: 'Diario.md', title: 'Diario', body: 'ancora sole' }, 'Appunti', 1);
+  const forma = R.cerca([capForte, appDebole, pagForte, appAltro], 'sole').map((r) => !!r.d.appunto);
+  check('prima gli appunti, poi tutto il resto', [true, true, false, false], forma);
+  check('e nessuno si perde per strada', 4, forma.length);
+
+  /* ⚠️ L'ordine si decide PRIMA del taglio a `max`: un appunto quarantunesimo
+     per punteggio, tagliato via, sarebbe «primo» in un elenco in cui non c'è. */
+  const folla = [R.docAppunto({ file: 'Ultimo.md', title: 'Ultimo', body: 'ripetuta una volta' }, 'Appunti', 0)];
+  for (let i = 0; i < 60; i++) {
+    folla.push(R.docCapitolo({ title: 'ripetuta ' + i, html: '<p>' + 'ripetuta '.repeat(10) + '</p>' },
+      { lessonTitle: 'L', idx: i }, via));
+  }
+  const tagliata = R.cerca(folla, 'ripetuta');
+  check('l\'appunto c\'è anche quando i capitoli riempiono l\'elenco', 'Ultimo.md', tagliata[0].d.appunto);
+  check('e il tetto resta quello', 40, tagliata.length);
+}
+
 console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
 process.exit(ko ? 1 : 0);
