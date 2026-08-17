@@ -151,8 +151,8 @@ in silenzio.
 ## 6. Come si verifica
 
 ```bash
-npm test                                   # unità: tutti i file di test/, in catena (37 al 16 ago)
-./test/cdp/con-vault-di-prova.sh           # tutte le prove sull'app viva (45 al 16 ago)
+npm test                                   # unità: tutti i file di test/, in catena (37 al 17 ago)
+./test/cdp/con-vault-di-prova.sh           # tutte le prove sull'app viva (45 al 17 ago)
 ./test/cdp/con-vault-di-prova.sh <nome>    # una sola — è così che si lavora
 STUDIA_APP=dist/mac-arm64/StudIA.app \
   ./test/cdp/con-vault-di-prova.sh         # le stesse prove DENTRO il pacchetto
@@ -169,6 +169,11 @@ finito, prima di un merge, e **dopo un rebase** — dove il codice unito non è 
 runner CDP e la catena di `npm test` in `package.json`. Il 15 agosto `test/atlante.js` è stato
 trovato fuori dalla catena: esisteva e non girava mai. È la stessa forma del guasto di
 `closePops()`, che chiude i pannellini scritti nel suo elenco e non «tutti».
+⚠️ E il conto si fa, non si ricorda: al 17 agosto in `test/cdp/` ci sono **48** file `prova-*.js` e
+l'elenco del runner ne nomina **45**. I tre fuori (`prova-l1`, `prova-l2`, `prova-l3l4`) non sono
+dimenticati per caso: chiedono un `cdp.js` dentro uno scratchpad temporaneo di luglio, quindi non
+partirebbero nemmeno. Un file di prove che non gira è la stessa bugia di un verde che non prova
+niente — si riporta a casa o si toglie.
 
 - Le prove CDP girano su una **copia magra del vault** (23 GB → ~2 MB) e una cartella dati tutta
   loro: non toccano niente dell'utente, e la sua app può restare aperta.

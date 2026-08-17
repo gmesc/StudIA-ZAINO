@@ -281,6 +281,39 @@ sezione('Gli appunti entrano nell\'indice');
     [misti.some((r) => r.d.appunto), misti.some((r) => r.d.materiale), misti.some((r) => r.d.lessonId !== undefined)]);
 }
 
+sezione('Ogni fonte compare UNA VOLTA SOLA');
+{
+  /* ⚠️ Ordinando per punteggio puro le pagine di due documenti si alternavano, e
+     siccome l'intestazione la scrive il renderer a ogni cambio di gruppo, lo
+     stesso documento si presentava tre volte in dodici righe — misurato a schermo
+     il 17 agosto. Adesso i gruppi sono contigui: dove va un gruppo lo decide il
+     suo risultato MIGLIORE, non la somma (premierebbe il documento lungo) né la
+     media (punirebbe quello che risponde benissimo in un punto solo). */
+  const a1 = R.docPagina('01 A.pdf', 'Alfa', { page: 1, text: 'sole' });
+  const a2 = R.docPagina('01 A.pdf', 'Alfa', { page: 2, text: 'sole sole sole' });
+  const b1 = R.docPagina('02 B.pdf', 'Beta', { page: 1, text: 'sole sole' });
+  const b2 = R.docPagina('02 B.pdf', 'Beta', { page: 2, text: 'sole' });
+  const ord = R.cerca([a1, b1, a2, b2], 'sole');
+  check('i risultati di una fonte stanno insieme', ['Alfa', 'Alfa', 'Beta', 'Beta'],
+    ord.map((r) => r.d.lessonTitle));
+  /* Alfa va davanti perché ha il risultato migliore (tre occorrenze in una
+     pagina), anche se Beta ne ha di più in totale contando tutte le pagine. */
+  check('e il gruppo col risultato migliore viene prima', 'Alfa', ord[0].d.lessonTitle);
+  check('dentro il gruppo comanda la pertinenza', [2, 1], [ord[0].d.pagina, ord[1].d.pagina]);
+
+  /* Gli appunti restano davanti a tutto: le due regole non si contendono niente,
+     perché la prima riguarda il tipo e la seconda l'ordine dei gruppi. */
+  const app = R.docAppunto({ file: 'Mio.md', title: 'Mio', body: 'sole' }, 'Appunti', 0);
+  check('e gli appunti restano comunque in cima', ['Appunti', 'Alfa', 'Alfa', 'Beta', 'Beta'],
+    R.cerca([a1, b1, app, a2, b2], 'sole').map((r) => r.d.lessonTitle));
+
+  /* La prova che conta per chi legge: nessuna intestazione si ripete, cioè
+     nessun gruppo torna dopo essere già comparso. */
+  const gruppi = R.cerca([a1, b1, a2, b2, app], 'sole').map((r) => r.d.lessonTitle);
+  const intestazioni = gruppi.filter((g, i) => g !== gruppi[i - 1]);
+  check('nessuna intestazione compare due volte', intestazioni.length, new Set(intestazioni).size);
+}
+
 sezione('Gli appunti sono la PRIMA sezione dell\'elenco');
 {
   /* ⚠️ Ciò che l'utente ha scritto viene prima di ciò che ha letto, e viene

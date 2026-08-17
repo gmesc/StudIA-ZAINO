@@ -609,6 +609,46 @@ sta in un posto solo e la chiama `modoAggiorna()`, che è il punto da cui passa 
 (+13), e la sezione viva in `test/cdp/prova-zaino.js` (+18): la lente che trova un appunto appena
 scritto, le etichette della piattaforma, la rinomina che sposta la cartella col lavoro dentro.
 
+### Z10 — la lente e la ricerca del documento (17 agosto 2026) ✅
+
+**Gli appunti sono la prima sezione dei risultati**, e i risultati si raggruppano **per fonte**:
+ogni documento compare una volta sola, i gruppi in ordine del loro risultato migliore, dentro il
+gruppo prima la pertinenza e poi l'ordine di lettura. Prima le pagine di due documenti si
+alternavano e la stessa fonte si presentava tre volte in dodici righe.
+⚠️ La riga di un risultato dice SOLTANTO dove si va («p. 4», il titolo dell'appunto): ripeteva anche
+la parola cercata e il nome del documento — cioè quello che l'utente ha appena scritto e quello che
+sta nell'intestazione due centimetri più su.
+
+**Le virgolette cercano «così com'è»**, in tutte e due le ricerche: `RicercaIndice.interpreta` sta in
+un posto solo perché una convenzione con due significati non è una convenzione. Nel documento
+diventa `entireWord` di pdf.js; nella lente diventa la frase in quell'ordine più i confini di parola.
+⚠️ L'apostrofo è un confine (`"acqua"` trova «dell'acqua»); una virgoletta spaiata NON è una
+richiesta (la ricerca riparte a ogni 220 ms, mentre si scrive).
+
+**La ricerca dentro il documento si vede e si chiude.** Arrivando da un risultato della lente si
+apre la sua barra invece di accendere il colore di nascosto; il click fuori non la chiude più (si
+cambia lo zoom senza perderla), e si esce con Esc, con la ✕ o col 🔍, che è un interruttore.
+⚠️ `PDFFIND.accese` non è `PDFFIND.cercando`: il secondo vive quanto la scansione, il primo dice
+«sulla pagina c'è del colore». Le guardie chiedono al primo — guardare l'attributo `open` del
+pannellino era guardare la veste al posto dello stato, ed era il bug.
+
+### Z11 — l'anteprima degli appunti si scrive (17 agosto 2026)
+
+Nell'affiancata ◫ la parte resa è modificabile **un blocco per volta**: `renderNoteMd(md,
+{mappa:true})` avvolge ogni blocco in `<div class="mdb" data-da data-a>` (le righe da cui viene),
+cliccarlo lo riapre come markdown, uscendo si riscrivono solo quelle righe.
+⚠️ L'HTML non si converte MAI in markdown: le notazioni di quest'app (`pdf:NN#p=`, `album:id`,
+`> [!nota]`) non hanno un HTML ritraducibile senza perderle, e un giro andata-e-ritorno sbagliato
+cambierebbe il file dell'utente in silenzio.
+⚠️ `.mdb` è `display:contents`: un appiglio nel DOM senza una scatola, o l'anteprima cambierebbe
+impaginazione per una funzione che non c'entra con come si legge.
+⚠️ `sideBySideFullscreen:false`: di fabbrica ◫ chiama anche `toggleFullScreen`, e l'editor si
+prendeva tutta la finestra — la sidebar spariva sotto e la maniglia restava inchiodata dov'era.
+Qui il banco è il modello: uno strumento sta nel suo blocco.
+
+Restano gli incrementi: elenchi e riquadri riga per riga, il cursore dove si è cliccato, ↹ al blocco
+successivo.
+
 ---
 
 ## 6. Che cosa NON si fa

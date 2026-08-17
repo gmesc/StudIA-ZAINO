@@ -184,8 +184,10 @@
    * lavoro» è la risposta a «memoria di lavoro» anche se un altro la nomina
    * dieci volte di sfuggita, e senza quel peso finiva sotto.
    *
-   * A parità si ordina per lezione e poi per posizione nella lezione: l'ordine
-   * di lettura, che è l'unico che chi studia riconosce.
+   * I risultati escono RAGGRUPPATI PER FONTE: ogni documento (o lezione) compare
+   * una volta sola, i gruppi in ordine del loro risultato migliore, e dentro un
+   * gruppo prima la pertinenza e poi l'ordine di lettura — che è l'unico che chi
+   * studia riconosce.
    *
    * ⚠️ GLI APPUNTI VENGONO PRIMA DI TUTTO IL RESTO, anche col punteggio più
    * basso: ciò che l'utente ha SCRITTO precede ciò che ha letto. Non è una
@@ -230,10 +232,27 @@
          mostrare come risposta qualcosa che la ricerca ha scartato. */
       if (ok) out.push({ d: d, score: score, pos: pos, toks: hits, esatta: esatta });
     });
+    /* ⚠️ I RISULTATI SI RAGGRUPPANO PER FONTE, e ogni fonte compare UNA VOLTA
+       SOLA. Ordinando per punteggio puro le pagine di due documenti si
+       alternavano, e siccome l'intestazione la scrive il renderer a ogni cambio
+       di gruppo, lo stesso documento si presentava tre volte in dodici righe:
+       chi legge non sa se sta guardando una fonte nuova o quella di prima.
+       Dove va un gruppo lo decide il suo risultato MIGLIORE — non la somma, che
+       premierebbe il documento lungo, e non la media, che punirebbe quello che
+       risponde benissimo in un punto solo. Dentro il gruppo comanda la
+       pertinenza, poi l'ordine di lettura: è la stessa scala di prima, applicata
+       un piano più sotto. */
+    var meglio = {};
+    out.forEach(function (r) {
+      var k = String(r.d.lessonTitle || '');
+      if (!(k in meglio) || r.score > meglio[k]) meglio[k] = r.score;
+    });
     out.sort(function (a, b) {
+      var ka = String(a.d.lessonTitle || ''), kb = String(b.d.lessonTitle || '');
       return ((b.d.appunto ? 1 : 0) - (a.d.appunto ? 1 : 0)) ||
+        (meglio[kb] - meglio[ka]) ||
+        ka.localeCompare(kb) ||
         (b.score - a.score) ||
-        String(a.d.lessonTitle || '').localeCompare(String(b.d.lessonTitle || '')) ||
         (a.d.idx - b.d.idx);
     });
     return out.slice(0, max);

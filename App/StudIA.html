@@ -1101,6 +1101,47 @@
     max-width:150px; overflow:hidden; text-overflow:ellipsis; }
   #noteHost{ flex:1; min-height:0; overflow:auto; }
   #noteHost .EasyMDEContainer{ height:100%; display:flex; flex-direction:column; }
+  /* ---- Scrivere dentro l'anteprima: il blocco e il suo campo --------------
+     ⚠️ `display:contents`: l'involucro che porta la mappa delle righe non deve
+     generare una scatola, o l'anteprima cambierebbe impaginazione per una
+     funzione che non c'entra con come si legge. Diventa un blocco vero solo
+     mentre lo si sta scrivendo. */
+  #noteHost .mdb{ display:contents; }
+  #noteHost .mdb[data-edit]{ display:block; }
+  /* Il puntatore dice che si può scrivere lì: senza, l'unica maniera di
+     scoprirlo è cliccare per caso. */
+  #noteHost .editor-preview-active-side .mdb, #noteHost .editor-preview-active .mdb{ cursor:text; }
+  #noteHost .mdb-edit{
+    display:block; width:100%; box-sizing:border-box; resize:none; overflow:hidden;
+    font-family:var(--font-text),var(--emoji-font),sans-serif; font-size:14px; line-height:1.55;
+    color:var(--ink); background:var(--bg); border:1px solid var(--teal);
+    outline:0; padding:.35rem .5rem; }
+  /* ---- ◫ AFFIANCATA, dentro il blocco ------------------------------------
+     ⚠️ Queste tre righe non sono cosmetica: il foglio di EasyMDE veste
+     l'affiancata «senza fullscreen» con `.sided--no-fullscreen`, ma le sue
+     regole sono di sola CLASSE e qui sopra c'è un `#noteHost` — un id batte
+     due classi, quindi senza ridichiararlo il contenitore resterebbe in colonna
+     e la vista affiancata uscirebbe una sopra l'altra. La barra sta sempre per
+     intero sulla prima riga (`width:100%`), poi testo e anteprima si dividono
+     lo spazio che resta. */
+  /* ⚠️ GRIGLIA, non `flex-wrap`. Con il flex a capo le due righe si dividono
+     l'altezza in parti uguali: la barra dei comandi finiva a mezz'aria, con
+     duecento pixel di vuoto sopra e il testo che cominciava a metà riquadro
+     (misurato). Una griglia dice quello che si intende davvero — una riga per la
+     barra, alta quanto le serve, e tutto il resto al testo — e le tre caselle si
+     assegnano a mano, così un figlio in più di EasyMDE non sposta niente. */
+  #noteHost .EasyMDEContainer.sided--no-fullscreen{
+    display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto minmax(0,1fr); }
+  #noteHost .EasyMDEContainer.sided--no-fullscreen .editor-toolbar{ grid-area:1 / 1 / 2 / 3; width:auto; }
+  #noteHost .EasyMDEContainer.sided--no-fullscreen .CodeMirror-sided{
+    grid-area:2 / 1 / 3 / 2; width:auto!important; min-width:0; height:auto; }
+  /* L'anteprima affiancata è nel flusso, non appesa alla finestra: `position` e
+     `top` di fabbrica la incollavano al bordo dello schermo, cioè fuori dal
+     blocco che la contiene. */
+  #noteHost .EasyMDEContainer.sided--no-fullscreen .editor-preview-active-side{
+    grid-area:2 / 2 / 3 / 3; position:static; width:auto; height:auto; min-width:0; overflow:auto;
+    border:0; border-top:1px solid var(--line); border-left:1px solid var(--line);
+    background:var(--panel); }
   #noteHost .EasyMDEContainer .CodeMirror{ flex:1; min-height:0; border:0; border-top:1px solid var(--line);
     background:var(--panel); color:var(--ink); font-size:14px; line-height:1.55; padding:.4rem .2rem;
     font-family:var(--font-text),var(--emoji-font),sans-serif; }
@@ -1247,16 +1288,34 @@
   /* ⚠️ Sopra i pannellini (310) e non sotto: i risultati si posano SOTTO il
      campo, che adesso sta dentro un pannellino — e chi arriva dopo, in SVG come
      in CSS, è chi si vede. */
-  #searchRes{ position:fixed; z-index:320; width:min(560px,92vw); max-height:60vh; overflow:auto; display:none;
+  #searchRes{ position:fixed; z-index:320; width:min(520px,92vw); max-height:52vh; overflow:auto; display:none;
     background:var(--panel); border:1px solid var(--line); box-shadow:var(--sh-3d); }
   #searchRes.open{ display:block; }
-  #searchRes .sr-lesson{ position:sticky; top:0; background:var(--panel); border-bottom:1px solid var(--line);
-    font-size:10px; text-transform:uppercase; letter-spacing:.12em; font-weight:700; padding:.45rem .7rem; color:var(--muted); }
-  #searchRes .sr-item{ display:block; width:100%; text-align:left; border:0; border-bottom:1px solid var(--line);
-    background:transparent; color:var(--ink); cursor:pointer; padding:.55rem .7rem; font-size:13px; font-family:inherit; }
+  /* ⚠️ L'INTESTAZIONE PORTA L'ACCENTO DELL'APP, e non è decorazione: in un
+     elenco lungo è l'unica cosa che dice «da qui in poi si parla di un'altra
+     fonte», e in grigio spento si confondeva con i frammenti, che sono grigi
+     anche loro. Il teal è il colore che in tutta l'app vuol dire «questo», e la
+     riga sotto lo ripete sottile: due segni deboli invece di uno forte, perché
+     il pannello non diventi una bandiera. */
+  #searchRes .sr-lesson{ position:sticky; top:0; z-index:1;
+    background:color-mix(in srgb, var(--teal) 10%, var(--panel));
+    border-bottom:1px solid color-mix(in srgb, var(--teal) 35%, var(--line));
+    font-size:10px; text-transform:uppercase; letter-spacing:.12em; font-weight:700;
+    padding:.3rem .6rem; color:var(--teal-strong); }
+  #searchRes .sr-item{ display:block; width:100%; text-align:left; border:0; border-bottom:1px solid var(--line-weak);
+    background:transparent; color:var(--ink); cursor:pointer; padding:.4rem .6rem; font-size:13px; font-family:inherit; }
   #searchRes .sr-item:hover, #searchRes .sr-item.sel{ background:var(--hover); }
   #searchRes .sr-head{ font-weight:700; font-size:12px; }
-  #searchRes .sr-snip{ color:var(--muted); font-size:12px; margin-top:.15rem; }
+  /* Il titolo di un APPUNTO è ciò che l'utente ha scritto lui, e prende
+     l'accento come l'intestazione: nell'elenco è la voce che sta cercando più
+     spesso, ed è quella che nel gruppo «Appunti» distingue una riga dall'altra. */
+  #searchRes .sr-item[data-tipo="appunto"] .sr-head{ color:var(--teal-strong); }
+  /* ⚠️ Il frammento si ferma a DUE RIGHE. Prima ne prendeva tre o quattro quando
+     il testo attorno era fitto, e otto risultati riempivano lo schermo: il
+     pannello serve a scegliere una riga, non a leggere il documento — quello si
+     fa dopo, nel documento. */
+  #searchRes .sr-snip{ color:var(--muted); font-size:12px; margin-top:.1rem;
+    display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
   #searchRes mark{ background:color-mix(in srgb, var(--yellow) 55%, var(--panel)); color:var(--ink); }
   #searchRes .sr-empty{ padding:.9rem .7rem; color:var(--muted); font-size:12px; }
   /* Il lampo sull'occorrenza trovata dalla ricerca. Non è un elemento: è un
@@ -5410,7 +5469,11 @@ function pdfjsAvvia(){
       var testo=c.total ? (c.current+' di '+c.total) : '';
       /* WRAPPED: si è ripartiti dall'inizio. Senza dirlo, l'utente crede di
          avanzare e invece sta rivedendo le stesse occorrenze. */
-      if(e && e.state===2) testo=(testo?testo+' — ':'')+'ripartito dall\'inizio';
+      /* ⚠️ Un SEGNO, non una frase: «1 di 3 — ripartito dall'inizio · intera» è
+         più largo della barra e la manda a capo, e una barra che cresce copre le
+         occorrenze che ha appena acceso. Il glifo si spiega da sé nel
+         suggerimento, che `pdfFindConto` compone leggendo lo stato. */
+      if(e && e.state===2) testo=(testo?testo+' ':'')+'↻';
       pdfFindConto(testo, false);
     });
     /* ⚠️ QUESTA è l'inversione. La pagina non la decide più chi apre il
@@ -5880,6 +5943,12 @@ function pdfFindConto(testo, vuoto){
   if(t && PDFFIND.esatta) t+=' · intera';
   el.textContent=t;
   el.classList.toggle('vuoto', !!vuoto);
+  /* I due segni corti si spiegano qui, dove il mouse li trova: nella barra ci
+     sta il glifo, non la frase. */
+  var spiega=[];
+  if(t.indexOf('↻')>=0) spiega.push('Ripartito dall’inizio: dopo l’ultima occorrenza si ricomincia dalla prima.');
+  if(PDFFIND.esatta) spiega.push('Fra virgolette: solo la parola intera, non i pezzi dentro un’altra parola.');
+  if(spiega.length) el.title=spiega.join('\n'); else el.removeAttribute('title');
 }
 /**
  * Apre la barra della ricerca nel documento.
@@ -7914,26 +7983,51 @@ function insertCallout(k){
   cm.focus();
 }
 /* riquadri in stile Obsidian:  > [!nota] Titolo  +  righe successive con ">" */
-function renderNoteMd(md){
+/**
+ * Il markdown di un appunto, reso in HTML.
+ *
+ * `opt.mappa` avvolge ogni BLOCCO in un `<div class="mdb" data-da data-a>` che
+ * dice da quali righe del sorgente viene. Serve alla scrittura dentro
+ * l'anteprima: cliccando un blocco si riapre il suo markdown, e uscendo si
+ * riscrivono SOLO quelle righe.
+ *
+ * ⚠️ L'involucro non si vede e non sposta niente: è `display:contents`, cioè un
+ * appiglio nel DOM senza una scatola. Senza quella riga di CSS l'anteprima
+ * cambierebbe impaginazione per una funzione che non c'entra con come si legge.
+ *
+ * ⚠️ E la mappa si chiede, non si dà sempre: il lettore, la stampa e l'atlante
+ * usano la stessa funzione, e lì un blocco cliccabile non solo è inutile — è
+ * una promessa che quelle viste non possono mantenere.
+ */
+function renderNoteMd(md, opt){
+  var mappa=!!(opt && opt.mappa);
   var lines=String(md==null?'':md).split('\n');
-  var out='', buf=[], i=0;
-  function flush(){ if(buf.length){ out+=mdToHtml(buf.join('\n'), true); buf=[]; } }
+  var out='', i=0;
+  function avvolgi(html, da, a){
+    if(!mappa || !html) return html||'';
+    return '<div class="mdb" data-da="'+da+'" data-a="'+a+'">'+html+'</div>';
+  }
   while(i<lines.length){
+    if(!lines[i].trim()){ i++; continue; }        // le righe vuote separano, non appartengono
     var m=/^>\s*\[!([A-Za-zàèéìòù-]+)\]\s*(.*)$/.exec(lines[i]);
     if(m){
-      flush();
-      var d=calloutDef(m[1]), titolo=(m[2]||'').trim()||d.label, body=[];
+      var da=i, d=calloutDef(m[1]), titolo=(m[2]||'').trim()||d.label, body=[];
       i++;
       // il corpo finisce anche quando comincia un ALTRO callout: senza questo,
       // due riquadri attaccati (senza riga vuota in mezzo) si fondevano in uno
       while(i<lines.length && /^>/.test(lines[i]) && !/^>\s*\[!/.test(lines[i])){ body.push(lines[i].replace(/^>\s?/,'')); i++; }
-      out+='<div class="ucallout uc-'+d.k+'"><div class="uc-head"><span>'+d.emoji+'</span>'+escHtml(titolo)+'</div>'+
-           '<div class="uc-body">'+mdToHtml(body.join('\n'), true)+'</div></div>';
+      out+=avvolgi('<div class="ucallout uc-'+d.k+'"><div class="uc-head"><span>'+d.emoji+'</span>'+escHtml(titolo)+'</div>'+
+           '<div class="uc-body">'+mdToHtml(body.join('\n'), true)+'</div></div>', da, i-1);
       continue;
     }
-    buf.push(lines[i]); i++;
+    /* Un blocco è un gruppo di righe piene di seguito. Prima si accumulava tutto
+       fino al callout successivo e si rendeva in un colpo: usciva lo stesso
+       HTML — `mdToHtml` spezza a sua volta sulle righe vuote — ma i confini dei
+       blocchi non li sapeva più nessuno, e senza confini non c'è mappa. */
+    var inizio=i, buf=[];
+    while(i<lines.length && lines[i].trim() && !/^>\s*\[!/.test(lines[i])){ buf.push(lines[i]); i++; }
+    out+=avvolgi(mdToHtml(buf.join('\n'), true), inizio, i-1);
   }
-  flush();
   return out;
 }
 
@@ -9888,6 +9982,14 @@ function ensureMde(){
     element:document.getElementById('noteArea'),
     autoDownloadFontAwesome:false, spellChecker:false, status:false,
     autofocus:false, forceSync:true, indentWithTabs:false, tabSize:2,
+    /* ⚠️ L'AFFIANCATA RESTA DENTRO IL SUO BLOCCO. Di fabbrica EasyMDE, premendo
+       ◫, chiama anche `toggleFullScreen`: l'editor si prende tutta la finestra,
+       la sidebar sparisce sotto — e la maniglia, che è `position:fixed`, resta
+       inchiodata dov'era, accanto a una sidebar che non si vede più. Ma il
+       fullscreen è un'idea di un'altra app: qui l'editor è uno STRUMENTO dentro
+       un blocco del banco, e il banco è il modello. `sideBySideFullscreen:false`
+       divide in due il blocco e lascia il resto della finestra dov'è. */
+    sideBySideFullscreen:false,
     placeholder:'Scrivi qui il tuo appunto…',
     toolbar:['bold','italic','heading','|','quote','unordered-list','ordered-list','|',
       { name:'callout', title:'Inserisci un riquadro (callout)', className:'ncb-callout',
@@ -9902,21 +10004,28 @@ function ensureMde(){
       '|','link','code','|','preview','side-by-side',
       { name:'guida', title:'Come si scrive in StudIA', className:'ncb-guida',
         action:function(){ apriGuida(); } }],
-    /* ⚠️ L'anteprima su ⌘J e NON su ⌘P, che è di fabbrica in EasyMDE: dentro
-       l'editor quel tasto rubava la stampa: chi premeva ⌘P per stampare
-       l'appunto si vedeva commutare l'anteprima, e la stampa non partiva.
-       ⌘J è l'unica lettera libera di tutte e tre le tastiere che si
-       sovrappongono qui — il keymap di CodeMirror (A D Z Y S F G U), le
-       scorciatoie di EasyMDE (B I H K L E P), le nostre (F P S Z) — senza
-       contare quelle che il sistema si tiene (C V X W Q M N R O T).
-       EasyMDE traduce `Cmd-` in `Ctrl-` fuori dal Mac: il nome che l'utente
-       legge lo scrive `tastiNelDom`, questa riga vale per tutti e due. */
-    shortcuts:{ toggleSideBySide:'F9', togglePreview:'Cmd-J' },
+    /* ⚠️ L'anteprima NON è più una scorciatoia di EasyMDE, ed è il motivo per cui
+       qui c'è `null`. Le sue scorciatoie vivono nel keymap di CodeMirror, e in
+       anteprima CodeMirror è NASCOSTO: il tasto accendeva la vista e poi non la
+       spegneva più, perché non arrivava più a nessuno. ⌘J lo possiede l'app, con
+       un gestore sulla finestra che lo vede in tutti e due gli stati (poco più
+       sotto, accanto a `ensureMde`).
+       Resta ⌘J e non ⌘P — di fabbrica in EasyMDE — perché quel tasto rubava la
+       stampa: chi premeva ⌘P per stampare l'appunto si vedeva commutare
+       l'anteprima. ⌘J è l'unica lettera libera fra il keymap di CodeMirror
+       (A D Z Y S F G U), le scorciatoie di EasyMDE (B I H K L E P) e le nostre
+       (F P S Z), senza contare quelle che il sistema si tiene. */
+    shortcuts:{ toggleSideBySide:'F9', togglePreview:null },
     previewClass:['editor-preview','md-prev'],
-    previewRender:function(plain){ try{ return renderNoteMd(plain); }catch(e){ return escHtml(plain); } }
+    /* `mappa:true` SOLO qui: è l'anteprima dell'editor, l'unica vista in cui i
+       blocchi si possono riaprire e riscrivere. */
+    previewRender:function(plain){ try{ return renderNoteMd(plain, { mappa:true }); }catch(e){ return escHtml(plain); } }
   });
   // le due voci custom non hanno icona Font Awesome: gliene diamo una testuale/emoji
-  var cb=host.querySelector('.ncb-callout'); if(cb) cb.innerHTML='&#9776;';
+  /* 📜 la pergamena (OpenMoji 1F4DC) al posto delle tre righe ☰: quel segno in
+     tutte le interfacce vuol dire «menu», e qui apre invece i riquadri — chi lo
+     vedeva si aspettava un elenco di comandi, non una cornice attorno al testo. */
+  var cb=host.querySelector('.ncb-callout'); if(cb) cb.innerHTML='&#128220;';
   var eb=host.querySelector('.ncb-emoji'); if(eb) eb.innerHTML='&#128512;';
   var gb=host.querySelector('.ncb-guida'); if(gb) gb.innerHTML='?';
   var cb2=host.querySelector('.ncb-cita'); if(cb2) cb2.innerHTML='&#128278;';
@@ -9953,9 +10062,131 @@ function ensureMde(){
      («Bold (Cmd-B)»): la spazzata di partenza è passata prima che esistessero.
      Chi fabbrica markup che nomina dei tasti lo ridà a questa funzione — è la
      stessa regola, applicata una seconda volta, non una seconda regola. */
+  /* Il suggerimento dell'anteprima lo scriviamo noi: da quando ⌘J non è più una
+     scorciatoia di EasyMDE, la sua etichetta non nomina più nessun tasto — e un
+     comando con una scorciatoia che non dice è una scorciatoia che nessuno usa.
+     Va PRIMA della spazzata, che è ciò che traduce ⌘ in Ctrl fuori dal Mac. */
+  var pv=host.querySelector('.editor-toolbar button.preview');
+  if(pv) pv.title='Anteprima (⌘J)';
   try{ tastiNelDom(host); }catch(e){}
   return NOTES.mde;
 }
+/* ===== SCRIVERE DENTRO L'ANTEPRIMA ========================================
+ *
+ * Cliccando un blocco dell'anteprima, quel blocco — e solo quello — torna a
+ * essere markdown in un campo di testo; uscendo si riscrivono le sue righe e
+ * l'anteprima si rifà. È il modo in cui lavora un editor «vivo», ed è l'unico
+ * che si può fare senza rischiare gli appunti dell'utente.
+ *
+ * ⚠️ PERCHÉ NON SI CONVERTE L'HTML IN MARKDOWN. La strada ovvia — rendere
+ * l'anteprima `contenteditable` e ritradurre indietro ciò che si scrive —
+ * significa che ogni giro andata-e-ritorno riscrive il file: e le notazioni di
+ * quest'app (`[testo](pdf:01#p=3)`, `![](album:id)`, `> [!nota]`) non hanno un
+ * HTML che le rappresenti in modo reversibile. Un errore lì non dà un errore:
+ * cambia il testo sul disco, in silenzio. Qui invece il markdown resta l'unica
+ * verità, e il pannello non lo traduce mai — lo mostra o lo lascia scrivere.
+ *
+ * ⚠️ E si riscrivono SOLO le righe del blocco (`replaceRange` con le due
+ * coordinate), non l'intero documento: così l'annulla di CodeMirror resta un
+ * passo per modifica, il cursore di chi stava scrivendo a sinistra non salta, e
+ * un errore qui può rovinare un blocco, mai l'appunto.
+ */
+function mdbChiudi(salva){
+  var t=document.querySelector('#noteHost .mdb-edit'); if(!t) return false;
+  var box=t.closest('.mdb'); if(!box) return false;
+  var da=parseInt(box.getAttribute('data-da'),10), a=parseInt(box.getAttribute('data-a'),10);
+  var testo=t.value;
+  box.removeAttribute('data-edit');
+  if(salva && NOTES.mde && !isNaN(da) && !isNaN(a)){
+    var cm=NOTES.mde.codemirror, righe=cm.lineCount();
+    if(a<righe){
+      var vecchio=cm.getRange({line:da,ch:0},{line:a,ch:cm.getLine(a).length});
+      if(testo!==vecchio) cm.replaceRange(testo, {line:da,ch:0}, {line:a,ch:cm.getLine(a).length});
+    }
+  }
+  /* L'anteprima si rifà comunque: in affiancata ci pensa EasyMDE a ogni
+     modifica, ma se non c'è stata modifica (o si è annullato) il campo va tolto
+     lo stesso, o resterebbe lì a fingere di essere il testo. */
+  noteAnteprimaRidisegna();
+  return true;
+}
+/** Ridisegna il pannello dell'anteprima con il markdown di adesso. */
+function noteAnteprimaRidisegna(){
+  if(!NOTES.mde) return;
+  var host=document.getElementById('noteHost'); if(!host) return;
+  var pv=host.querySelector('.editor-preview-active-side, .editor-preview-active');
+  if(!pv) return;
+  try{ pv.innerHTML=renderNoteMd(NOTES.mde.value(), { mappa:true }); }catch(e){}
+}
+(function(){
+  document.addEventListener('click', function(e){
+    if(!e.target || !e.target.closest) return;
+    var host=document.getElementById('noteHost'); if(!host) return;
+    var box=e.target.closest('#noteHost .mdb');
+    /* Fuori da un blocco (o su un altro blocco) si chiude quello aperto: è la
+       stessa regola del click fuori da un pannellino. */
+    if(!box || box.hasAttribute('data-edit')){
+      if(!e.target.closest('.mdb-edit')) mdbChiudi(true);
+      if(!box) return;
+      if(box.hasAttribute('data-edit')) return;
+    }
+    /* ⚠️ I link e le immagini fanno il LORO mestiere: un rimando cliccato apre
+       il documento alla sua pagina, e una figura apre l'album. Sono i due gesti
+       per cui l'anteprima esiste, e non si perdono per aprire un campo. */
+    if(e.target.closest('a') || e.target.closest('img')) return;
+    var da=parseInt(box.getAttribute('data-da'),10), a=parseInt(box.getAttribute('data-a'),10);
+    if(isNaN(da) || isNaN(a) || !NOTES.mde) return;
+    var cm=NOTES.mde.codemirror;
+    if(a>=cm.lineCount()) return;
+    var sorgente=cm.getRange({line:da,ch:0},{line:a,ch:cm.getLine(a).length});
+    box.setAttribute('data-edit','1');
+    box.innerHTML='';
+    var t=document.createElement('textarea');
+    t.className='mdb-edit'; t.value=sorgente; t.spellcheck=false;
+    t.setAttribute('aria-label','Il markdown di questo blocco');
+    box.appendChild(t);
+    /* L'altezza segue il testo: un campo di tre righe sopra un paragrafo di
+       sei nasconde metà di quello che si sta modificando. */
+    var cresci=function(){ t.style.height='auto'; t.style.height=(t.scrollHeight+2)+'px'; };
+    t.addEventListener('input', cresci);
+    t.addEventListener('keydown', function(ev){
+      if(ev.key==='Escape'){ ev.preventDefault(); ev.stopPropagation(); mdbChiudi(false); }
+      /* ⌘Invio chiude e salva: è la scorciatoia che chi scrive in un campo si
+         aspetta, e lascia Invio libero di andare a capo dentro il blocco. */
+      else if(ev.key==='Enter' && (ev.metaKey||ev.ctrlKey)){ ev.preventDefault(); ev.stopPropagation(); mdbChiudi(true); }
+    });
+    cresci(); t.focus();
+    var fine=t.value.length; t.setSelectionRange(fine, fine);
+  });
+})();
+
+/**
+ * ⌘J: accende e SPEGNE l'anteprima dell'appunto.
+ *
+ * ⚠️ Perché non è una scorciatoia di EasyMDE (là sopra c'è `togglePreview:null`).
+ * Le sue scorciatoie stanno nel keymap di CodeMirror, e in anteprima CodeMirror
+ * è nascosto: il tasto accendeva la vista e poi non la spegneva più, perché non
+ * arrivava più a nessuno — misurato da Giacomo il 17 agosto. Un gestore sulla
+ * FINESTRA vede il tasto in tutti e due gli stati. È la stessa ragione per cui la
+ * ricerca dentro il documento ha il suo.
+ *
+ * ⚠️ E rientrando si rimette il cursore nel testo: uscire dall'anteprima per
+ * continuare a scrivere e trovarsi a battere nel vuoto è peggio che non uscire.
+ */
+(function(){
+  window.addEventListener('keydown', function(e){
+    if(!(e.metaKey||e.ctrlKey) || e.altKey || e.shiftKey) return;
+    if(String(e.key||'').toLowerCase()!=='j') return;
+    if(typeof NOTES==='undefined' || !NOTES || !NOTES.mde) return;
+    var host=document.getElementById('noteHost');
+    if(!host || !host.offsetParent) return;      // l'editor non è a schermo
+    e.preventDefault(); e.stopPropagation();
+    try{
+      NOTES.mde.togglePreview();
+      if(!host.querySelector('.editor-preview-active')) NOTES.mde.codemirror.focus();
+    }catch(err){ console.error('anteprima:', err); }
+  }, true);
+})();
 /**
  * L'invito al battesimo: scritte CINQUE parole senza un appunto aperto — quando
  * è chiaro che non è un tasto per sbaglio — si apre la finestra di nome e
@@ -12084,8 +12315,17 @@ function searchRender(res,q){
     var html='', lastLesson=null, i=0;
     res.forEach(function(r){
       if(r.d.lessonTitle!==lastLesson){ html+='<div class="sr-lesson">'+escHtml(r.d.lessonTitle)+'</div>'; lastLesson=r.d.lessonTitle; }
-      html+='<button type="button" class="sr-item" role="option" data-i="'+i+'">'+
-        '<div class="sr-head">'+escHtml(q.trim())+' — '+escHtml(r.d.lessonTitle)+' — '+escHtml(r.d.title)+'</div>'+
+      /* ⚠️ La testa di una riga dice SOLTANTO dove si va: «p. 4», il titolo
+         dell'appunto, il titolo del capitolo. Prima diceva anche la parola
+         cercata e il documento — cioè quello che l'utente ha appena scritto e
+         quello che c'è scritto nell'intestazione due centimetri più su. Ripetuti
+         su ogni riga erano due terzi della larghezza, e l'elenco diventava alto
+         il doppio del necessario per dire la stessa cosa.
+         Il tipo viaggia nel markup perché il colore dipende da lui: il titolo di
+         un appunto è ciò che l'utente ha SCRITTO, e si vede. */
+      var tipo=r.d.appunto ? 'appunto' : (r.d.materiale ? 'pagina' : 'capitolo');
+      html+='<button type="button" class="sr-item" role="option" data-i="'+i+'" data-tipo="'+tipo+'">'+
+        '<div class="sr-head">'+escHtml(r.d.title)+'</div>'+
         '<div class="sr-snip">'+searchSnippet(r)+'</div></button>';
       i++;
     });

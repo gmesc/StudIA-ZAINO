@@ -136,13 +136,23 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
     await L.scatta('46b-sidebar-nascosta');
     await L.clicca('#menuBtn'); await L.pausa(500);
   });
+  /* ⚠️ Il ritaglio si calcola dalle DUE geometrie — il pannellino del campo e
+     l'elenco dei risultati — perché non sono allineati: l'elenco è più stretto
+     e si posa dove ci sta. Con una `x` scritta a mano le intestazioni uscivano
+     tagliate a metà (misurato il 17 agosto, quando l'elenco è passato da 560 a
+     520 px e le foto vecchie sono diventate sbagliate senza che nulla lo dicesse). */
+  async function scattaLente(nome, parola, attesa) {
+    await L.val(`document.getElementById('searchInput').value=''`);
+    await L.clicca('#searchInput'); await L.scrivi(parola); await L.pausa(attesa || 900);
+    const sp = await L.rect('#searchPop'), rr = await L.rect('#searchRes');
+    const x = Math.max(0, Math.min(sp.x, rr.x) - 8), y = Math.max(0, sp.y - 8);
+    await L.scatta(nome, { clip: { x: x, y: y,
+      width: Math.max(sp.x + sp.w, rr.x + rr.w) + 8 - x, height: rr.y + rr.h + 8 - y }, scala: 2 });
+  }
   await passo('47 lente', async () => {
-    await L.clicca('#searchBtn'); await L.pausa(300);
-    await L.val(`document.getElementById('searchInput').value=''`); await L.clicca('#searchInput'); await L.scrivi('zzzz'); await L.pausa(600);
-    const sp = await L.rect('#searchPop');
-    await L.scatta('47b-lente-nessun-risultato', { clip: { x: sp.x - 10, y: 30, width: W - sp.x + 10, height: 140 }, scala: 2 });
-    await L.val(`document.getElementById('searchInput').value=''`); await L.scrivi('Plutone'); await L.pausa(700);
-    await L.scatta('47-lente-risultati', { clip: { x: sp.x - 10, y: 30, width: W - sp.x + 10, height: 520 }, scala: 2 });
+    await L.clicca('#searchBtn'); await L.pausa(400);
+    await scattaLente('47b-lente-nessun-risultato', 'zzzz', 700);
+    await scattaLente('47-lente-risultati', 'Plutone');
   });
   await passo('49 tema scuro', async () => {
     await L.val(`document.documentElement.dataset.theme='scuro'`); await L.pausa(400);
@@ -317,11 +327,27 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
      si vede che «Appunti» è la prima sezione, sopra i documenti. Era in uno
      script a parte (fuori dalla campagna, e quindi non ripetibile). */
   await passo('48 lente appunti', async () => {
-    await L.clicca('#searchBtn'); await L.pausa(300);
-    await L.val(`document.getElementById('searchInput').value=''`);
-    await L.clicca('#searchInput'); await L.scrivi('rocciosi'); await L.pausa(800);
-    const sp = await L.rect('#searchPop');
-    await L.scatta('48-lente-appunti', { clip: { x: sp.x - 10, y: 30, width: W - sp.x + 10, height: 470 }, scala: 2 });
+    await L.clicca('#searchBtn'); await L.pausa(400);
+    await scattaLente('48-lente-appunti', 'rocciosi');
+  });
+  /* Scrivere dentro l'anteprima: il gesto si vede solo col campo APERTO, quindi
+     si clicca un blocco e si fotografa mentre è in scrittura. */
+  await passo('56b scrivere nell\'anteprima', async () => {
+    await L.val(`closePdf()`); await L.pausa(400);
+    await L.val(`openEditor()`); await L.pausa(1200);
+    await L.val(`NOTES.mde.value('# Il sistema solare\\n\\nIl Sole contiene il 99,86% della massa di tutto il sistema.\\n\\n> [!nota]\\n> I quattro pianeti interni sono rocciosi.\\n')`);
+    await L.pausa(500);
+    if(!(await L.val(`!!document.querySelector('#noteHost .editor-preview-active-side')`))){
+      await L.val(`NOTES.mde.toggleSideBySide()`); await L.pausa(1200);
+    }
+    const sel = '#noteHost .editor-preview-active-side .mdb[data-da="2"] p';
+    const p = await L.centro(sel);
+    await L.clicca(sel); await L.pausa(600);
+    await L.puntatore(p.x, p.y);
+    const cont = await L.rect('#noteHost .EasyMDEContainer');
+    await L.scatta('56b-scrivere-nell-anteprima', { clip: { x: cont.x, y: cont.y - 6, width: cont.w, height: Math.min(420, cont.h) }, scala: 2 });
+    await L.overlayPulisci();
+    await L.val(`NOTES.mde.toggleSideBySide()`); await L.pausa(600);
   });
   await passo('54-55 appunta e anteprima', async () => {
     await L.val(`vaiAPagina(3)`); await L.pausa(1200);
