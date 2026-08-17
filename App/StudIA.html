@@ -53,6 +53,11 @@
 <!-- ⚠️ Anche questa PRIMA di `capitolo.js`: è chi decide che nome ha un capitolo,
      e la testata di quel file dice perché i nomi sono più d'uno. -->
 <script src="assets/lettura/identita.js"></script>
+<!-- ⚠️ E anche questa PRIMA di `capitolo.js`: è la grammatica con cui una
+     didascalia dice quanto è larga l'immagine (`![Titolo|60%](album:…)`). La
+     usano tutt'e due i lati — `capitolo.js` per leggerla, il menu dell'immagine
+     nell'appunto per scriverla — ed è per questo che è un file suo. -->
+<script src="assets/lettura/misura.js"></script>
 <script src="assets/lettura/capitolo.js"></script>
 <script src="assets/lettura/lezioni.js"></script>
 <!-- ⚠️ DOPO `rimandi/sintassi.js`: la factory di `lettore.js` legge
@@ -2327,27 +2332,49 @@
      dire ricominciare a cercare la riga, che è il difetto da cui si è partiti. */
   #content sup.fnref a.flash{ animation:noteflash 1.3s ease; }
 
-  /* ---- Le figure ritagliate dai documenti ----
+  /* ---- Le figure: ritagliate dai documenti, o portate dall'album ----
      Un `<span>` che si comporta da blocco: dentro un `<p>` un `<figure>` sarebbe
      markup illegale e il browser spezzerebbe il paragrafo (vedi `figuraHtml`).
      Il bordo e la didascalia dicono che è un pezzo di un'altra pagina, non
-     un'illustrazione dell'app; il cursore dice che si può aprire. */
-  #content .figura{ display:block; margin:1.4rem 0; text-align:center; }
-  #content .figura a.figlink{ display:inline-block; max-width:100%; border-bottom:0; line-height:0;
+     un'illustrazione dell'app; il cursore dice che si può aprire.
+
+     ⚠️ SENZA `#content` DAVANTI, e non è cosmetica. Queste regole erano
+     agganciate all'id del lettore, e la stessa `renderNoteMd` disegna figure in
+     tre posti: il capitolo, il foglio di stampa e — da ieri — l'anteprima
+     dell'appunto. Là dentro non arrivava NESSUNA di queste righe, quindi
+     nemmeno il tetto: una foto importata (lato lungo fino a 3000px, PIANO-FOTO
+     §2) si disegnava a 3000px e sfondava il riquadro. La figura è un
+     componente, e il suo vestito sta addosso a lei, non al contenitore che la
+     ospita (invariante 8). */
+  .figura{ display:block; margin:1.4rem 0; text-align:center; }
+  /* ⚠️ Tutte e due le ancore. `figlink` apre il documento e `alink` apre
+     l'album: sono due destinazioni, non due figure — e finché il vestito
+     nominava solo la prima, la stessa immagine si comportava in due modi
+     secondo da dove veniva. */
+  .figura a.figlink, .figura a.alink{ display:inline-block; max-width:100%; border-bottom:0; line-height:0;
     transition:box-shadow var(--speed); }
   /* La freccia ↗ che marca i rimandi a pagina qui non serve: davanti a
      un'immagine grande è un segno che galleggia, e che si apra il documento lo
      dicono già il cursore e il titolo. */
-  #content .figura a.figlink::before{ content:none; }
-  #content .figura a.figlink:hover{ box-shadow:var(--sh-3d); opacity:1; }
-  #content .figimg{ max-width:100%; height:auto; border:1px solid var(--line);
+  .figura a.figlink::before, .figura a.alink::before{ content:none; }
+  .figura a.figlink:hover, .figura a.alink:hover{ box-shadow:var(--sh-3d); opacity:1; }
+  .figimg{ max-width:100%; height:auto; border:1px solid var(--line);
     background:#fff;  /* i ritagli hanno spesso il fondo trasparente: su tema scuro sparirebbero */
     cursor:zoom-in; }
-  #content .figcap{ display:block; margin-top:.4rem; font-size:12px; line-height:1.45; color:var(--muted); text-align:left; }
-  #content .figcap::before{ content:"↳ "; opacity:.6; }
-  #content .figmanca{ display:inline-block; padding:.5rem .7rem; border:1px dashed var(--line);
+  /* ---- La misura scritta nell'appunto (`![didascalia|60%](album:…)`) --------
+     La larghezza sta sull'ANCORA, che è figlia di un blocco largo quanto la
+     colonna: lì una percentuale ha un senso. L'immagine poi riempie l'ancora.
+     ⚠️ Solo `.misurata`: senza quella classe l'ancora si stringe addosso
+     all'immagine, e un `width:100%` sull'immagine sarebbe una larghezza che si
+     calcola da sé (l'ancora è larga quanto l'immagine, l'immagine quanto
+     l'ancora). Senza misura non si tocca niente. */
+  .figura.misurata a.figlink, .figura.misurata a.alink{ width:var(--figw); }
+  .figura.misurata .figimg{ width:100%; }
+  .figcap{ display:block; margin-top:.4rem; font-size:12px; line-height:1.45; color:var(--muted); text-align:left; }
+  .figcap::before{ content:"↳ "; opacity:.6; }
+  .figmanca{ display:inline-block; padding:.5rem .7rem; border:1px dashed var(--line);
     font-size:12px; color:var(--muted); background:var(--panel); }
-  #content .figura.figvuota{ text-align:left; }
+  .figura.figvuota{ text-align:left; }
 
   /* ===== Composer degli indici =====
      Pagina piena e non modale stretta: righe = lezioni, colonne = indici proposti.
@@ -2719,6 +2746,11 @@
      domande diverse, e mescolarle darebbe un menu che a volte mente. -->
 <div class="ctxmenu selmenu" id="albBolla" role="menu" aria-label="Che cosa fare del ritaglio"></div>
 <div class="ctxmenu selmenu" id="albMenu" role="menu" aria-label="Comandi sull'immagine"></div>
+<!-- E un terzo, che non è un doppione dei due sopra: quelli parlano di
+     un'immagine NELL'ALBUM (aprila, rinominala, eliminala), questo di
+     un'immagine DENTRO UN APPUNTO — dove l'unica cosa che le si può fare, e che
+     nell'album non vorrebbe dire niente, è dire quanto dev'essere larga lì. -->
+<div class="ctxmenu selmenu" id="figMenu" role="menu" aria-label="Comandi sull'immagine dell'appunto"></div>
 <!-- L'anteprima di una disposizione salvata, e il menu del suo slot. L'anteprima
      è un riquadro che NON risponde al puntatore: deve poter comparire sotto il
      dito senza rubargli il bottone che sta per premere. -->
@@ -6622,9 +6654,14 @@ function albumInserisci(v, dove, punto, x, y){
 
 /** Il markdown con cui un'immagine entra in un appunto. In un posto solo: è la
  *  stessa stringa che poi va RITROVATA per sostituirla, e due versioni di essa
- *  vorrebbero dire una sostituzione che non trova niente. */
+ *  vorrebbero dire una sostituzione che non trova niente.
+ *
+ *  ⚠️ La didascalia si ripulisce anche della BARRA, non solo delle quadre: da
+ *  quando una misura si scrive `![Titolo|60%](album:…)`, un file che si
+ *  chiamasse «schema|2» entrerebbe come una didascalia con dentro una misura
+ *  che nessuno ha chiesto. */
 function albumMarkdown(v){
-  return '\n![' + String(v.didascalia||'immagine').replace(/[\[\]]/g,'') + '](album:' + v.id + ')\n';
+  return '\n![' + LetturaMisura.ripulisci(v.didascalia||'immagine') + '](album:' + v.id + ')\n';
 }
 /** Scrive nel punto in cui sta il cursore. Torna `false` se non c'è un appunto. */
 function noteScriviAlCursore(testo){
@@ -6703,6 +6740,28 @@ function fotoSostituisciInserimento(nuova){
   cm.setValue(testo.slice(0, i) + albumMarkdown(nuova) + testo.slice(i+stato.testo.length));
   toast('Nell’appunto è rimasto il ritaglio', true);
   return true;
+}
+
+/**
+ * Un'immagine citata in un testo, mostrata dove si governa.
+ *
+ * ⚠️ In QUALE delle due griglie sta? Lo dice l'immagine, non chi clicca: una
+ * foto vive nell'Album Foto e un ritaglio nei Ritagli, e portare sempre nella
+ * stessa vista vorrebbe dire, una volta su due, aprire un riquadro dove
+ * quell'immagine non c'è.
+ *
+ * È una funzione e non tre righe dentro un gestore perché le porte sono due —
+ * il click sulla figura e la voce del suo menu contestuale — e due riti per lo
+ * stesso verbo divergono al primo ritocco (invariante 6).
+ */
+function albumMostraCitata(id){
+  var v=albumVoce(id);
+  var dove=(v && v.origine==='foto') ? 'foto' : 'album';
+  try{ bancoMostra(dove); }catch(err){}
+  albumStato(dove).filtro='';
+  var ce=$(ALBUMVISTE[dove].cerca); if(ce) ce.value='';
+  albumDisegnaVista(dove);
+  albumEvidenzia(id);
 }
 
 /** Rilegge l'album dei ritagli e ridisegna la griglia. */
@@ -7028,20 +7087,7 @@ function albumElimina(corso, v){
     /* Un'immagine dell'album citata in un testo: il click la mostra nell'album,
        che è il posto da cui si governa (rinomina, elimina, torna alla fonte). */
     var al=e.target.closest('a.alink');
-    if(al){
-      e.preventDefault();
-      /* ⚠️ In QUALE delle due griglie sta? Lo dice l'immagine, non chi clicca:
-         una foto vive nell'Album Foto e un ritaglio nei Ritagli, e portare
-         sempre nella stessa vista vorrebbe dire, una volta su due, aprire un
-         riquadro dove quell'immagine non c'è. */
-      var v=albumVoce(al.getAttribute('data-album'));
-      var dove=(v && v.origine==='foto') ? 'foto' : 'album';
-      try{ bancoMostra(dove); }catch(err){}
-      albumStato(dove).filtro='';
-      var ce=$(ALBUMVISTE[dove].cerca); if(ce) ce.value='';
-      albumDisegnaVista(dove);
-      albumEvidenzia(al.getAttribute('data-album')); return;
-    }
+    if(al){ e.preventDefault(); albumMostraCitata(al.getAttribute('data-album')); return; }
     /* ⚠️ Le card delle due griglie sono la STESSA cosa: stesso menu, stesso
        trascinamento, stessa identità. Un secondo elenco di gestori sarebbe la
        seconda copia destinata a divergere (trappola ④). */
@@ -7087,7 +7133,11 @@ function albumElimina(corso, v){
     if(!card || !e.dataTransfer) return;
     var v=albumVoce(card.getAttribute('data-id')); if(!v) return;
     e.dataTransfer.setData('application/x-studia-album', v.id);
-    e.dataTransfer.setData('text/plain', '![' + String(v.didascalia||'ritaglio').replace(/[\[\]]/g,'') + '](album:' + v.id + ')');
+    /* ⚠️ `albumMarkdown`, non una seconda stesura della stessa riga. Erano due,
+       uguali a occhio e diverse nei dettagli (la didascalia di ripiego), e la
+       ripulitura della barra aggiunta il 18 agosto sarebbe entrata in una sola
+       delle due: la copia che diverge, in miniatura. */
+    e.dataTransfer.setData('text/plain', albumMarkdown(v).trim());
     e.dataTransfer.effectAllowed='copy';
     /* L'anteprima che segue il puntatore: l'immagine vera, non il rettangolo
        della card col suo testo. È l'unico modo di sapere che cosa si sta
@@ -10158,6 +10208,179 @@ function noteAnteprimaRidisegna(){
     cresci(); t.focus();
     var fine=t.value.length; t.setSelectionRange(fine, fine);
   });
+})();
+
+/* ===== QUANTO È LARGA UN'IMMAGINE DENTRO L'APPUNTO ========================
+ *
+ * Un'immagine importata entra grande com'è, e finché non c'era un modo di
+ * dirlo restava grande com'è. Il tasto destro sopra di lei, nell'anteprima,
+ * apre il suo menu: «Mostra nell'album», e una riga `−  com'era  +` per la
+ * larghezza.
+ *
+ * ⚠️ È IL GESTO DELLA MAPPA, non un secondo dialetto. Un nodo-immagine si
+ * ridimensiona già così (`mappaRidimensionaImmagine`): passo moltiplicativo
+ * ×1,25, il menu che resta aperto perché la misura giusta la si trova
+ * provandola, la percentuale in testa che si riscrive a ogni passo. Cambia
+ * dove finisce il numero — là nel grafo, qui nella didascalia — non come si fa.
+ *
+ * ⚠️ SOLO LE IMMAGINI DELL'ALBUM. Una figura di capitolo (`fig:03#p=7&i=2`)
+ * porta un rimando che dal DOM non si ricompone com'era scritto — l'`&` passa
+ * dall'escape dell'HTML e l'`i=1` può essere sottinteso — e riscrivere il file
+ * dell'utente indovinando la stringa da cercare è il modo di non trovarla, o di
+ * trovarne un'altra. Il tetto e la misura scritta a mano valgono per tutte; il
+ * menu si offre dove il bersaglio è esatto.
+ *
+ * ⚠️ E si riscrive SOLO il blocco, come tutto il resto della scrittura
+ * nell'anteprima: `data-da`/`data-a`, `replaceRange`, un passo di annulla per
+ * pressione.
+ */
+var FIGMENU={ da:-1, a:-1, bersaglio:'', occorrenza:0 };
+
+/** Il rimando che una figura dell'anteprima cita, nella forma esatta in cui è
+ *  scritto fra le parentesi del markdown. Vuoto se non è dell'album. */
+function figBersaglio(fig){
+  var a=fig && fig.querySelector && fig.querySelector('a.alink');
+  var id=a && a.getAttribute('data-album');
+  return id ? ('album:'+id) : '';
+}
+
+/** La misura scritta ADESSO per l'immagine su cui è aperto il menu. */
+function figMisuraOra(){
+  if(!NOTES.mde || !FIGMENU.bersaglio) return 0;
+  return LetturaMisura.misuraDi(NOTES.mde.value(), FIGMENU.bersaglio, FIGMENU.occorrenza);
+}
+
+/**
+ * Il menu, ridisegnato dalla sorgente.
+ *
+ * ⚠️ La testata dice la misura di ADESSO, letta dal testo: dopo un passo
+ * l'anteprima si rifà da capo e il nodo cliccato non esiste più, quindi
+ * ricordarsi un numero vorrebbe dire mostrarne uno vecchio mentre si continua a
+ * premere. È lo stesso motivo per cui il menu della mappa si riapre sul posto.
+ */
+function figMenuHTML(){
+  var p=figMisuraOra();
+  return '<div class="ctx-head">'+(p ? ('Immagine · '+p+'% della colonna') : 'Immagine · misura sua')+'</div>'+
+    '<button class="ctx-item" role="menuitem" data-fig="album">Mostra nell’album</button>'+
+    '<div class="ctx-sep"></div>'+
+    '<div class="ctx-colori" role="group" aria-label="Larghezza dell’immagine">'+
+      '<button class="ctx-item ctx-kimg" data-fig="-" title="Più stretta" aria-label="Più stretta">−</button>'+
+      '<button class="ctx-item ctx-kimg" data-fig="0" title="Torna alla misura sua" aria-label="Torna alla misura sua">com’era</button>'+
+      '<button class="ctx-item ctx-kimg" data-fig="+" title="Più larga" aria-label="Più larga">+</button>'+
+    '</div>';
+}
+function figMenuChiudi(){ var m=$('#figMenu'); if(m) m.classList.remove('open'); }
+function figMenuAperto(){ var m=$('#figMenu'); return !!m && m.classList.contains('open'); }
+
+/**
+ * Apre il menu su una figura dell'anteprima. Torna `false` se quella figura non
+ * si può governare da qui — e allora il tasto destro non viene intercettato,
+ * perché un menu che non compare senza dire niente è peggio del menu di sistema.
+ */
+function figMenuApri(fig, x, y){
+  var m=$('#figMenu'); if(!m || !NOTES.mde) return false;
+  var bersaglio=figBersaglio(fig); if(!bersaglio) return false;
+  var box=fig.closest('.mdb'); if(!box) return false;
+  var da=parseInt(box.getAttribute('data-da'),10), a=parseInt(box.getAttribute('data-a'),10);
+  if(isNaN(da) || isNaN(a)) return false;
+  /* Quale delle sue, se la stessa immagine compare più volte. ⚠️ Si conta
+     DENTRO IL BLOCCO e non in tutta l'anteprima: un blocco aperto in scrittura
+     è un campo di testo, le sue figure non sono nel DOM, e un conto fatto sulla
+     pagina intera salterebbe proprio quelle. Nel blocco o ci sono tutte o non
+     c'è il blocco. */
+  var pari=Array.prototype.filter.call(box.querySelectorAll('.figura'), function(f){
+    return figBersaglio(f)===bersaglio; });
+  var i=Array.prototype.indexOf.call(pari, fig);
+  if(i<0) return false;
+  FIGMENU={ da:da, a:a, bersaglio:bersaglio, occorrenza:i, fig:fig };
+  m.innerHTML=figMenuHTML();
+  albumMenuA(m, x, y);
+  return true;
+}
+
+/**
+ * La larghezza da cui partire quando l'immagine una misura non ce l'ha.
+ *
+ * ⚠️ Si MISURA a schermo invece di dare per buono il 100%: senza misura scritta
+ * l'immagine sta com'è — magari il 40% della colonna, magari tutta larga — e
+ * partire da 100 vorrebbe dire che il primo «più stretta» la fa prima diventare
+ * più grande. Il primo passo deve rimpicciolire quello che si vede.
+ */
+function figMisuraSchermo(){
+  var fig=FIGMENU.fig;
+  var img=fig && fig.querySelector && fig.querySelector('img.figimg');
+  if(!img) return 0;
+  var colonna=fig.getBoundingClientRect().width;
+  if(!colonna) return 0;
+  return LetturaMisura.limita(img.getBoundingClientRect().width/colonna*100);
+}
+
+/**
+ * Un passo di larghezza. `'+'`/`'-'` un passo, `'0'` toglie la misura.
+ *
+ * ⚠️ La riscrittura passa dal BLOCCO: si prendono le sue righe, la grammatica
+ * cambia la sola occorrenza toccata, e si rimettono. Se il testo non cambia non
+ * si scrive niente — un `replaceRange` a vuoto marcherebbe l'appunto da salvare
+ * e sporcherebbe la pila dell'annulla per un tasto che non ha fatto nulla.
+ */
+function figRidimensiona(verso){
+  if(!NOTES.mde || !FIGMENU.bersaglio) return;
+  var cm=NOTES.mde.codemirror;
+  if(FIGMENU.a>=cm.lineCount()) return;
+  var fine={ line:FIGMENU.a, ch:cm.getLine(FIGMENU.a).length }, inizio={ line:FIGMENU.da, ch:0 };
+  var vecchio=cm.getRange(inizio, fine);
+  var ora=LetturaMisura.misuraDi(vecchio, FIGMENU.bersaglio, FIGMENU.occorrenza);
+  var nuova = verso==='0' ? 0 : LetturaMisura.passo(ora || figMisuraSchermo(), verso);
+  var nuovo=LetturaMisura.cambia(vecchio, FIGMENU.bersaglio, FIGMENU.occorrenza, nuova);
+  if(nuovo!==vecchio) cm.replaceRange(nuovo, inizio, fine);
+  noteAnteprimaRidisegna();
+  /* Il menu resta dov'è e si riscrive: la misura giusta la si trova premendo
+     tre o quattro volte, e chiuderlo a ogni passo vorrebbe dire riaprirlo per
+     ogni ritocco. ⚠️ Il nodo cliccato però è stato buttato via dal ridisegno:
+     si ritrova per posizione dentro il blocco, o la misura a schermo del passo
+     successivo verrebbe presa da un elemento che non è più nella pagina. */
+  var box=document.querySelector('#noteHost .mdb[data-da="'+FIGMENU.da+'"]');
+  if(box){
+    var pari=Array.prototype.filter.call(box.querySelectorAll('.figura'), function(f){
+      return figBersaglio(f)===FIGMENU.bersaglio; });
+    FIGMENU.fig=pari[FIGMENU.occorrenza]||null;
+  } else FIGMENU.fig=null;
+  var m=$('#figMenu');
+  if(m && m.classList.contains('open')) m.innerHTML=figMenuHTML();
+}
+
+(function(){
+  /* Il tasto destro su una figura dell'anteprima. ⚠️ `preventDefault` SOLO se il
+     menu si è davvero aperto: dove non abbiamo niente da offrire, il menu di
+     sistema (copia l'immagine, ispeziona) è meglio di niente. */
+  document.addEventListener('contextmenu', function(e){
+    if(!e.target || !e.target.closest) return;
+    var fig=e.target.closest('#noteHost .figura'); if(!fig) return;
+    if(figMenuApri(fig, e.clientX, e.clientY)) e.preventDefault();
+  });
+  document.addEventListener('click', function(e){
+    if(!e.target || !e.target.closest) return;
+    var it=e.target.closest('#figMenu [data-fig]');
+    if(!it){ if(figMenuAperto() && !e.target.closest('#figMenu')) figMenuChiudi(); return; }
+    var az=it.getAttribute('data-fig');
+    if(az==='album'){
+      var b=FIGMENU.bersaglio; figMenuChiudi();
+      albumMostraCitata(b.slice('album:'.length));
+      return;
+    }
+    figRidimensiona(az);
+  });
+  /* Esc chiude, e in CATTURA su `window` per la stessa ragione del menu della
+     selezione: sul documento ci sono già `closePops()` e `closePdf()` registrati
+     prima, e chiudere questo menu non deve chiudere anche l'anteprima della
+     fonte. */
+  window.addEventListener('keydown', function(e){
+    if(e.key!=='Escape' || !figMenuAperto()) return;
+    e.stopPropagation(); figMenuChiudi();
+  }, true);
+  /* Il menu è posato a coordinate fisse: se la finestra cambia misura resta
+     appeso dove non c'è più niente. */
+  window.addEventListener('resize', figMenuChiudi);
 })();
 
 /**

@@ -34,14 +34,16 @@
    ============================================================================ */
 /* ⚠️ Questo modulo DIPENDE da `rimandi/sintassi.js`: la grammatica dei rimandi
    sta lì, e leggerla qui con espressioni regolari proprie sarebbe la sesta
-   copia della stessa cosa. La dipendenza si dichiara nei due modi che questo
+   copia della stessa cosa. Lo stesso vale per `misura.js`, che sa come una
+   didascalia dice quanto è larga l'immagine — e lo sa anche per chi la SCRIVE,
+   nel menu dell'appunto. La dipendenza si dichiara nei due modi che questo
    progetto usa — `require` in Node, il globale nel browser — e nell'`<head>`
-   `sintassi.js` va caricata PRIMA di questo file. */
+   `sintassi.js` e `misura.js` vanno caricate PRIMA di questo file. */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
-    module.exports = factory(require('../rimandi/sintassi.js'), require('./identita.js'));
-  } else root.LetturaCapitolo = factory(root.RimandiSintassi, root.LetturaIdentita);
-}(typeof self !== 'undefined' ? self : this, function (Rimandi, Identita) {
+    module.exports = factory(require('../rimandi/sintassi.js'), require('./identita.js'), require('./misura.js'));
+  } else root.LetturaCapitolo = factory(root.RimandiSintassi, root.LetturaIdentita, root.LetturaMisura);
+}(typeof self !== 'undefined' ? self : this, function (Rimandi, Identita, Misura) {
   'use strict';
 
   /** L'escape di ripiego: chi non passa il gancio non resta senza. */
@@ -116,6 +118,21 @@
    * uscirebbe da un altro contenitore. Il ruolo lo dice `role="figure"`.
    */
   /**
+   * Il vestito della misura: la classe che dice «questa figura una misura ce
+   * l'ha» e la variabile che dice quanta.
+   *
+   * ⚠️ Una CLASSE e una variabile, non la sola variabile. Senza un appiglio nel
+   * selettore il foglio di stile dovrebbe dare la larghezza sempre, con
+   * `var(--figw, auto)` come ripiego — e un'ancora che si stringe addosso
+   * all'immagine mentre l'immagine è larga quanto l'ancora è una misura che si
+   * calcola da sé. La classe rompe l'anello: senza misura non si tocca niente e
+   * vale il comportamento di sempre.
+   */
+  function _misuraVeste(percento){
+    var n = Misura.limita(percento);
+    return n ? { cls:' misurata', stile:' style="--figw:'+n+'%"' } : { cls:'', stile:'' };
+  }
+  /**
    * Un'immagine dell'album dentro il testo.
    *
    * Gemella di `figuraHtml`, con due differenze che contano: la sorgente la dà
@@ -129,12 +146,15 @@
    * `<img>` con la sorgente vuota — un'immagine rotta non spiega niente.
    */
   function albumHtml(didascalia, id){
-    var d=String(didascalia||'');
+    /* La didascalia arriva ancora attaccata alla sua misura (`Titolo|60%`): la
+       grammatica la scioglie qui, in un posto solo, e quello che si scrive
+       nell'`alt` e sotto la figura è il testo pulito. */
+    var m=Misura.leggi(didascalia), d=String(m.didascalia||''), v=_misuraVeste(m.percento);
     var src=(typeof window!=='undefined' && window.vault && window.vault.album &&
              typeof g.corsoAttivo==='function')
       ? window.vault.album.srcUrl(g.corsoAttivo(), id) : '';
     if(!src) return '<span class="figmanca">'+(d?g.esc(d)+' — ':'')+'immagine dell\'album non trovata</span>';
-    return '<span class="figura album" role="figure" aria-label="'+g.esc(d)+'">'+
+    return '<span class="figura album'+v.cls+'" role="figure" aria-label="'+g.esc(d)+'"'+v.stile+'>'+
       '<a href="#" class="alink" data-album="'+g.esc(id)+'" title="Mostra questa immagine nell\'album">'+
         '<img class="figimg" src="'+g.esc(src)+'" alt="'+g.esc(d)+'" loading="lazy" onerror="figuraRotta(this)">'+
       '</a>'+
@@ -142,6 +162,8 @@
     '</span>';
   }
   function figuraHtml(didascalia, nn, pg, i){
+    var mis=Misura.leggi(didascalia), veste=_misuraVeste(mis.percento);
+    didascalia=mis.didascalia;
     var file=figFile(nn,pg,i);
     /* ⚠️ Due file diversi, e confonderli è un guasto silenzioso: l'immagine è il
        RITAGLIO (`…__p007_f2.webp`), il link apre il DOCUMENTO (`03 ….pdf`). Con
@@ -164,7 +186,7 @@
     var contenitore=(typeof g.corsoAttivo==='function') ? g.corsoAttivo() : undefined;
     var src=(typeof window!=='undefined' && window.vault && window.vault.srcUrl)
       ? window.vault.srcUrl(file, contenitore) : ('../Fonti/'+encodeURIComponent(file));
-    return '<span class="figura" role="figure" aria-label="'+d+'">'+
+    return '<span class="figura'+veste.cls+'" role="figure" aria-label="'+d+'"'+veste.stile+'>'+
       '<a href="#" class="plink figlink" data-file="'+g.esc(pdf)+'" data-page="'+g.esc(String(pg))+'" data-label="'+d+'" '+
         'data-pdf="'+g.esc(String(nn))+'" title="Apri il documento a pagina '+g.esc(String(pg))+'">'+
         '<img class="figimg" src="'+g.esc(src)+'" alt="'+d+'" loading="lazy" onerror="figuraRotta(this)">'+

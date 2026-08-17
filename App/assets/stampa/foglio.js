@@ -232,6 +232,14 @@
          il riquadro quando il fondo non c'è. */
       '  ' + S + ' .st-corpo a { color:' + COL.inchiostro + '; text-decoration:underline; }',
       '  ' + S + ' .st-corpo img { max-width:100%; height:auto; break-inside:avoid; }',
+      /* ⚠️ La misura data a un'immagine nell'appunto vale anche sulla carta. Non
+         è vestito che si ricopia: è CONTENUTO — sta scritta nel markdown
+         (`![Titolo|60%](album:…)`), l'utente l'ha decisa lei, e un foglio che
+         la ignorasse direbbe una cosa diversa da quello che si vede a schermo.
+         Qui basta il minimo perché la percentuale abbia contro che cosa
+         calcolarsi: l'ancora larga quanto le si dice, l'immagine che la riempie. */
+      '  ' + S + ' .st-corpo .figura.misurata a { display:inline-block; width:var(--figw); max-width:100%; }',
+      '  ' + S + ' .st-corpo .figura.misurata img { width:100%; }',
       '  ' + S + ' .st-corpo pre { white-space:pre-wrap; word-wrap:break-word;',
       '     font-size:' + (f.pt * SCALA.piccolo).toFixed(1) + 'pt; background:' + COL.riquadro + ';',
       '     padding:.5em .7em; break-inside:avoid; }',

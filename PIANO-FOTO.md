@@ -144,6 +144,54 @@ riportare da qualche parte senza riportarci.
 `MappaModifica.sostituisciImmagine` è il verbo nuovo, puro e provato: conserva la `scala` del nodo,
 che è la misura data a mano a quel riquadro.
 
+### F2-ter — quanto è larga, dentro un appunto ✅ *fatto il 18 agosto 2026*
+Il tasto destro su un'immagine **nell'anteprima dell'appunto** apre il suo menu: «Mostra
+nell'album», e una riga `−  com'era  +` per la larghezza. La misura si scrive nella
+**didascalia** — `![Il panorama|60%](album:9f2c…)` — ed è una **percentuale della colonna**.
+
+⚠️ **Il difetto vero era un altro, e stava sotto**: le regole di stile delle figure erano
+agganciate a `#content`, cioè al lettore. La stessa `renderNoteMd` disegna figure in tre posti —
+capitolo, foglio di stampa, e da ieri l'anteprima dell'appunto — e là dentro non arrivava
+**nessuna** di quelle righe, nemmeno il tetto: una foto importata (lato lungo fino a 3000px, §2)
+si disegnava a 3000px e sfondava il riquadro. Adesso le regole sono di classe (invariante 8), e
+il tetto vale ovunque una figura compaia. La percentuale è ciò che si aggiunge sopra, non il
+rimedio.
+
+⚠️ **Perché la misura sta nell'alt e non nel rimando.** `(album:<id>)` deve restare identico
+carattere per carattere: `album.usi` lo cerca per sapere in quanti posti un'immagine è citata (§F3
+qui sotto), e `fotoSostituisciInserimento` per far prendere al ritaglio il posto della foto
+intera. E la barra è la convenzione di **Obsidian** per la stessa cosa: dove un modo di dirlo
+esiste già, non se ne inventa un secondo. Una misura è una proprietà di *come si vede lì*, non di
+*da dove viene*: la stessa foto in due appunti può essere larga in modi diversi.
+
+⚠️ **Percentuale della colonna, non della misura naturale.** Con la misura naturale il gesto non
+farebbe niente proprio nel caso che lo fa nascere: 80% di 3000px è ancora più largo della colonna,
+e l'immagine resterebbe identica mentre il menu dice che è cambiata.
+
+⚠️ **A misura assente non si scrive `|100%`.** Un campo scritto per dire «normale» sporca il file
+dell'utente — stessa regola con cui `mappa/modifica.js` cancella `scala` a 1. E 100% **non** è
+«come viene»: è un comando esplicito che riempie la colonna, come «alla larghezza» sulle fonti.
+
+**Il gesto è quello della mappa**, non un secondo dialetto: passo ×1,25, menu che resta aperto,
+percentuale in testa che si riscrive a ogni passo (`mappaRidimensionaImmagine`). Solo le immagini
+**dell'album**: il rimando di una figura di capitolo (`fig:03#p=7&i=2`) dal DOM non si ricompone
+com'era scritto — l'`&` passa dall'escape e l'`i=1` può essere sottinteso — e riscrivere il file
+dell'utente indovinando la stringa da cercare è il modo di non trovarla. Il tetto e una misura
+scritta a mano valgono per tutte lo stesso.
+
+| pezzo | dove |
+|---|---|
+| leggere **e** scrivere `\|N%` | `App/assets/lettura/misura.js` (UMD, puro) |
+| dalla misura alla figura | `lettura/capitolo.js` (`_misuraVeste`, `albumHtml`, `figuraHtml`) |
+| il vestito, e il tetto per tutti | `App/StudIA.html` (`.figura`, `.figura.misurata`) |
+| sulla carta | `App/assets/stampa/foglio.js` |
+| menu, gesto, riscrittura del blocco | `App/StudIA.html` (`figMenuApri`, `figRidimensiona`) |
+
+**Prove**: `test/misura-immagini.js` (la grammatica, 41 controlli) · la sezione nuova di
+`test/figure.js` · due controlli in `test/stampa-foglio.js` · `test/cdp/prova-misura-immagine.js`
+sull'app viva — dove si misura che l'immagine **non** sia più larga della colonna, che è il
+difetto da cui è nato tutto.
+
 ### F3 — gli usi, e le lapidi
 Il ritaglio sulle foto è entrato con F2. Restano tre regole:
 

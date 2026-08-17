@@ -83,6 +83,14 @@ ok('i riquadri invece sì', true, /blockquote[\s\S]{0,200}break-inside:avoid/.te
 ok('un titolo resta col suo testo', true, /break-after:avoid/.test(testo));
 ok('l’intestazione di una tabella si ripete', true, /thead \{ display:table-header-group/.test(testo));
 ok('le immagini non sfondano la colonna', true, /img \{ max-width:100%/.test(testo));
+/* ⚠️ La larghezza data a un'immagine dentro un appunto vale anche sulla carta.
+   Non è vestito ricopiato: sta scritta nel markdown (`![Titolo|60%](album:…)`),
+   l'utente l'ha decisa, e un foglio che la ignorasse direbbe una cosa diversa
+   da quella che si vede a schermo. */
+ok('e la misura scritta nell’appunto arriva sul foglio', true,
+  /\.figura\.misurata a \{[^}]*width:var\(--figw\)/.test(testo));
+ok('con l’immagine che riempie la sua larghezza', true,
+  /\.figura\.misurata img \{ width:100%/.test(testo));
 
 sezione('La testata');
 const t = F.testata({ titolo: 'Il <DSA>', dove: 'Lezione 3', data: new Date('2026-08-14T10:00:00Z') });
