@@ -35,6 +35,83 @@
   }
 
   /**
+   * Che cosa ha chiesto chi scrive nel campo: il testo, e se l'ha messo fra
+   * VIRGOLETTE.
+   *
+   * Le virgolette vogliono dire «la parola così com'è, non un pezzo di
+   * un'altra»: cercando `per` si trovano anche *perché* e *periodo*, e chi
+   * cercava la preposizione scorre venti risultati che non gli servono. Con
+   * `"per"` la ricerca pretende i confini di parola.
+   *
+   * ⚠️ La regola sta QUI e non nel renderer perché deve valere per tutte e due
+   * le ricerche — quella dentro il documento e la lente — e due letture della
+   * stessa convenzione divergono al primo caso strano. Questa funzione non
+   * cerca niente: dice soltanto che cosa è stato chiesto.
+   *
+   * ⚠️ Si accettano anche le virgolette CURVE e le caporali: su una tastiera
+   * italiana con la correzione automatica «"» diventa «“” » senza che chi
+   * scrive lo voglia, e una regola che le rifiuta sembra rotta a chi la usa.
+   *
+   * ⚠️ Una virgoletta SPAIATA non è una richiesta di parola intera: `"per` è
+   * uno che ha cominciato a scrivere, e trattarlo come esatto gli cambierebbe i
+   * risultati sotto le mani a metà digitazione. Il testo resta com'è, virgoletta
+   * compresa — è quello che ha scritto.
+   */
+  function interpreta(q) {
+    var s = String(q == null ? '' : q).trim();
+    var m = /^(["'“«])([\s\S]*)(["'”»])$/.exec(s);
+    if (!m) return { testo: s, esatta: false };
+    /* Le coppie che si chiudono davvero. Un apostrofo iniziale e una virgoletta
+       finale non sono una coppia: sarebbero due segni diversi per caso. */
+    var coppie = { '"': '"', "'": "'", '“': '”', '«': '»' };
+    if (coppie[m[1]] !== m[3]) return { testo: s, esatta: false };
+    var dentro = m[2].trim();
+    /* Virgolette vuote non sono una ricerca esatta di niente: sono due segni. */
+    if (!dentro) return { testo: s, esatta: false };
+    return { testo: dentro, esatta: true };
+  }
+
+  /* Che cosa è «dentro una parola», nel testo NORMALIZZATO: `sNorm` ha già
+     appiattito gli accenti su a-z, quindi qui bastano lettere e cifre. Tutto il
+     resto — spazi, punteggiatura, e l'APOSTROFO — è un confine: cercando
+     `"acqua"` si deve trovare anche in «dell'acqua», che in italiano è la forma
+     più comune in cui una parola compare attaccata a un'altra. */
+  var PAROLA = /[a-z0-9]/;
+  function confine(s, a, b) {
+    return (a === 0 || !PAROLA.test(s.charAt(a - 1))) &&
+           (b >= s.length || !PAROLA.test(s.charAt(b)));
+  }
+
+  /**
+   * Quante volte un termine compare in un testo, e dove comincia la prima volta.
+   *
+   * `intera` è la richiesta fra virgolette: si contano soltanto le occorrenze
+   * che stanno fra due confini di parola. Senza, `per` conta anche i pezzi
+   * dentro *perché* e *periodo* — che è il comportamento giusto quando nessuno
+   * ha chiesto altro, e quello sbagliato quando l'utente ha messo le virgolette.
+   *
+   * ⚠️ Torna anche la POSIZIONE, e deve essere quella della prima occorrenza
+   * VALIDA: è da lì che si ritaglia il frammento, e ritagliare attorno a un
+   * pezzo di un'altra parola mostrerebbe una riga che non è una risposta.
+   */
+  function occorrenze(ntesto, termine, intera) {
+    var s = String(ntesto == null ? '' : ntesto);
+    if (!termine) return { n: 0, pos: -1 };
+    if (!intera) {
+      var at = s.indexOf(termine);
+      return { n: at < 0 ? 0 : s.split(termine).length - 1, pos: at };
+    }
+    var n = 0, pos = -1, i = 0;
+    for (;;) {
+      var k = s.indexOf(termine, i);
+      if (k < 0) break;
+      if (confine(s, k, k + termine.length)) { n++; if (pos < 0) pos = k; }
+      i = k + 1;
+    }
+    return { n: n, pos: pos };
+  }
+
+  /**
    * Una voce dell'indice a partire da un CAPITOLO.
    *
    * ⚠️ Nel testo cercabile entrano titolo, sommario, corpo, punti chiave e
@@ -122,22 +199,36 @@
    * ⚠️ E si ordina PRIMA di tagliare a `max`: un appunto quarantunesimo per
    * punteggio, senza questo, non entrerebbe nell'elenco — «sempre prima» diventa
    * «prima, se ci arriva».
+   *
+   * ⚠️ FRA VIRGOLETTE la richiesta è UNA SOLA e va presa alla lettera: la frase
+   * in quell'ordine, e con i confini di parola ai suoi due capi. Senza
+   * virgolette ogni parola è un termine a sé e servono tutti, in qualunque punto
+   * del documento — che è la ricerca larga, quella che serve quando si ricorda
+   * un argomento e non una frase. Le virgolette vogliono dire la stessa cosa che
+   * vogliono dire nella ricerca dentro il documento: «così com'è, non un pezzo
+   * di un'altra parola». Una convenzione con due significati non è una
+   * convenzione.
    */
   function cerca(docs, q, opt) {
     var max = (opt && opt.max) || 40;
-    var toks = sNorm(q).split(/\s+/).filter(Boolean);
+    var chiesto = interpreta(q);
+    var esatta = chiesto.esatta;
+    var toks = esatta ? [sNorm(chiesto.testo)]
+                      : sNorm(chiesto.testo).split(/\s+/).filter(Boolean);
     if (!toks.length) return [];
     var out = [];
     (docs || []).forEach(function (d) {
       var score = 0, pos = -1, ok = true, hits = [];
       for (var i = 0; i < toks.length; i++) {
-        var t = toks[i], at = d.ntext.indexOf(t);
-        if (at < 0) { ok = false; break; }
-        var n = d.ntext.split(t).length - 1;
-        score += n; if (d.ntitle.indexOf(t) >= 0) score += 30;
-        hits.push(t); if (pos < 0 || at < pos) pos = at;
+        var t = toks[i], o = occorrenze(d.ntext, t, esatta);
+        if (!o.n) { ok = false; break; }
+        score += o.n; if (occorrenze(d.ntitle, t, esatta).n) score += 30;
+        hits.push(t); if (pos < 0 || o.pos < pos) pos = o.pos;
       }
-      if (ok) out.push({ d: d, score: score, pos: pos, toks: hits });
+      /* `esatta` viaggia col risultato perché serve anche a `frammento`:
+         accendere nel frammento un pezzo che non ha fatto match sarebbe
+         mostrare come risposta qualcosa che la ricerca ha scartato. */
+      if (ok) out.push({ d: d, score: score, pos: pos, toks: hits, esatta: esatta });
     });
     out.sort(function (a, b) {
       return ((b.d.appunto ? 1 : 0) - (a.d.appunto ? 1 : 0)) ||
@@ -160,6 +251,12 @@
    * `esc` la passa chi chiama: qui si compone HTML, e l'escape è l'unica cosa
    * che separa un frammento da un'iniezione. Chi non la passa ottiene comunque
    * un escape di ripiego — mancarlo in silenzio sarebbe peggio.
+   *
+   * ⚠️ Se la ricerca era ESATTA (fra virgolette) si accendono soltanto le
+   * occorrenze fra confini di parola, come ha fatto `cerca`. Accendere anche i
+   * pezzi dentro un'altra parola mostrerebbe come risposta proprio ciò che la
+   * ricerca ha scartato — e chi legge concluderebbe che le virgolette non
+   * funzionano.
    */
   function frammento(r, esc) {
     var escape = typeof esc === 'function' ? esc : function (x) {
@@ -175,6 +272,12 @@
       while (true) {
         var at = hn.indexOf(tok, i);
         if (at < 0) { acc += h.slice(i); break; }
+        /* Ricerca esatta: un'occorrenza dentro un'altra parola non ha fatto
+           match, quindi non si accende — si scavalca come si scavalca ciò che
+           sta già dentro un `<mark>`. */
+        if (r.esatta && !confine(hn, at, at + tok.length)) {
+          acc += h.slice(i, at + tok.length); i = at + tok.length; continue;
+        }
         if (h.slice(0, at).lastIndexOf('<mark>') > h.slice(0, at).lastIndexOf('</mark>')) {
           acc += h.slice(i, at + tok.length); i = at + tok.length; continue;
         }
@@ -185,6 +288,7 @@
     return h;
   }
 
-  return { sNorm: sNorm, docCapitolo: docCapitolo, docPagina: docPagina, docAppunto: docAppunto,
+  return { sNorm: sNorm, interpreta: interpreta,
+    docCapitolo: docCapitolo, docPagina: docPagina, docAppunto: docAppunto,
     cerca: cerca, frammento: frammento };
 }));

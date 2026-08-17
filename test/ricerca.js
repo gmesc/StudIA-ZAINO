@@ -39,6 +39,42 @@ sezione('La normalizzazione preserva la lunghezza');
   check('e le virgolette curve diventano dritte', '"l\'altro"', R.sNorm('“l’altro”'));
 }
 
+sezione('Le virgolette: «la parola così com\'è»');
+{
+  /* Cercando `per` si trovano anche *perché* e *periodo*: chi cercava la
+     preposizione scorre venti risultati che non gli servono. `"per"` chiede i
+     confini di parola. Questa funzione non cerca: dice che cosa è stato chiesto. */
+  check('senza virgolette non è esatta', { testo: 'per', esatta: false }, R.interpreta('per'));
+  check('fra virgolette dritte sì', { testo: 'per', esatta: true }, R.interpreta('"per"'));
+  check('le spaziature attorno non contano', { testo: 'per', esatta: true }, R.interpreta('  " per "  '));
+  /* Su una tastiera italiana la correzione automatica trasforma «"» in «“”»
+     senza che chi scrive lo voglia: una regola che le rifiuta sembra rotta. */
+  check('anche fra virgolette curve', { testo: 'sole', esatta: true }, R.interpreta('“sole”'));
+  check('e fra caporali', { testo: 'sole', esatta: true }, R.interpreta('«sole»'));
+  check('e fra apici singoli', { testo: 'sole', esatta: true }, R.interpreta("'sole'"));
+  /* Una frase fra virgolette resta una frase: chi cerca la ricerca nel documento
+     la trova come sequenza, e i confini valgono ai suoi due capi. */
+  check('una frase fra virgolette resta la frase', { testo: 'sistema solare', esatta: true },
+    R.interpreta('"sistema solare"'));
+
+  /* ⚠️ Una virgoletta SPAIATA è uno che ha cominciato a scrivere: trattarla come
+     esatta gli cambierebbe i risultati sotto le mani a metà digitazione. */
+  check('una virgoletta aperta e non chiusa non è una richiesta', { testo: '"per', esatta: false },
+    R.interpreta('"per'));
+  check('né una chiusa senza apertura', { testo: 'per"', esatta: false }, R.interpreta('per"'));
+  /* Due segni diversi non sono una coppia, anche se stanno ai due capi. */
+  check('l\'apostrofo iniziale non fa coppia con la virgoletta finale',
+    { testo: "'per\"", esatta: false }, R.interpreta("'per\""));
+  check('virgolette vuote sono due segni, non una ricerca', { testo: '""', esatta: false },
+    R.interpreta('""'));
+  check('e una ricerca vuota resta vuota', { testo: '', esatta: false }, R.interpreta('   '));
+  check('niente al posto della stringa non rompe niente', { testo: '', esatta: false },
+    R.interpreta(null));
+  /* Le virgolette DENTRO non si toccano: sono citazione, non richiesta. */
+  check('le virgolette in mezzo restano nel testo',
+    { testo: 'la "cosa" giusta', esatta: false }, R.interpreta('la "cosa" giusta'));
+}
+
 sezione('Che cosa di un capitolo diventa cercabile');
 {
   /* I cinque posti in cui chi studia si aspetta di ritrovare una parola letta.
@@ -78,6 +114,61 @@ sezione('Tutti i termini, non uno qualsiasi');
   check('e nemmeno una di sole spaziature', [], R.cerca(docs, '\t\n'));
   check('gli accenti non contano', 1, R.cerca(
     [R.docCapitolo({ title: 'X', html: 'perché è così' }, { lessonTitle: 'L', idx: 0 }, via)], 'perche').length);
+}
+
+sezione('Le virgolette nella LENTE: la frase, e la parola intera');
+{
+  /* Senza virgolette la lente è larga: ogni parola è un termine e servono tutti,
+     in qualunque punto. Fra virgolette la richiesta è UNA — quella frase, in
+     quell'ordine — e con i confini di parola, come nella ricerca dentro il
+     documento. Una convenzione con due significati non è una convenzione. */
+  const insieme = R.docCapitolo({ title: 'A', html: 'il sistema solare è vasto' }, { lessonTitle: 'L', idx: 0 }, via);
+  const sparsi = R.docCapitolo({ title: 'B', html: 'il sistema nervoso e l\'anno solare' }, { lessonTitle: 'L', idx: 1 }, via);
+  check('senza virgolette bastano le due parole, dove capitano', ['A', 'B'],
+    R.cerca([insieme, sparsi], 'sistema solare').map((r) => r.d.title).sort());
+  check('fra virgolette serve la frase in quell\'ordine', ['A'],
+    R.cerca([insieme, sparsi], '"sistema solare"').map((r) => r.d.title));
+
+  /* I confini di parola: `per` sta dentro *perché* e *periodo*. */
+  const dentro = R.docCapitolo({ title: 'Dentro', html: 'perché e periodo, personale' }, { lessonTitle: 'L', idx: 0 }, via);
+  const sola = R.docCapitolo({ title: 'Sola', html: 'una cosa per volta' }, { lessonTitle: 'L', idx: 1 }, via);
+  check('senza virgolette si trova anche dentro un\'altra parola', ['Dentro', 'Sola'],
+    R.cerca([dentro, sola], 'per').map((r) => r.d.title).sort());
+  check('fra virgolette no', ['Sola'], R.cerca([dentro, sola], '"per"').map((r) => r.d.title));
+
+  /* ⚠️ L'apostrofo è un confine: «dell'acqua» contiene la parola «acqua», ed è
+     la forma più comune in cui in italiano una parola sta attaccata a un'altra.
+     Se non lo fosse, la ricerca esatta di una parola comune sembrerebbe rotta. */
+  const apostrofo = R.docCapitolo({ title: 'Apostrofo', html: 'il livello dell\'acqua sale' }, { lessonTitle: 'L', idx: 0 }, via);
+  check('l\'apostrofo è un confine di parola', ['Apostrofo'],
+    R.cerca([apostrofo], '"acqua"').map((r) => r.d.title));
+
+  /* Il punteggio conta soltanto le occorrenze VALIDE: contare anche i pezzi
+     dentro altre parole farebbe vincere il documento che non ha risposto. */
+  const misto = R.docCapitolo({ title: 'Misto', html: 'perché periodo persona per' }, { lessonTitle: 'L', idx: 0 }, via);
+  check('e il punteggio conta solo le occorrenze intere', 1, R.cerca([misto], '"per"')[0].score);
+  check('mentre senza virgolette le conta tutte', 4, R.cerca([misto], 'per')[0].score);
+
+  /* Il peso del titolo vale con la stessa regola, o un titolo che contiene il
+     termine dentro un'altra parola prenderebbe trenta punti non dovuti. */
+  const titoloDentro = R.docCapitolo({ title: 'Periodico', html: 'testo per intero' }, { lessonTitle: 'L', idx: 0 }, via);
+  check('nel titolo i trenta punti si prendono solo per la parola intera', 1,
+    R.cerca([titoloDentro], '"per"')[0].score);
+
+  /* Il frammento non accende ciò che la ricerca ha scartato: mostrarlo come
+     risposta farebbe concludere che le virgolette non funzionano. */
+  const f = R.frammento(R.cerca([misto], '"per"')[0]);
+  check('nel frammento si accende una volta sola', 1, f.split('<mark>').length - 1);
+  check('e non dentro «perché»', false, /<mark>per<\/mark>ché/.test(f));
+
+  /* La richiesta viaggia col risultato: serve al frammento, e dice a chi legge
+     il codice che quel risultato è nato da una ricerca esatta. */
+  check('il risultato dichiara di essere esatto', [true, false],
+    [R.cerca([sola], '"per"')[0].esatta, R.cerca([sola], 'per')[0].esatta]);
+
+  /* Una frase fra virgolette che non c'è da nessuna parte non trova niente —
+     e non ripiega sulla ricerca larga, che sarebbe rispondere un'altra domanda. */
+  check('una frase che non c\'è non trova niente', [], R.cerca([insieme, sparsi], '"solare sistema"'));
 }
 
 sezione('Il titolo pesa più del corpo');

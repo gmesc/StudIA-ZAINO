@@ -400,6 +400,34 @@ async function finoA(expr, quanto) {
   ok('il bottone della ricerca c\'è', false, await val("document.getElementById('pdfFindBtn').hidden"));
   await val('pdfFindApri(), 1'); await pausa(300);
   ok('il pannellino si apre', true, await val("document.getElementById('pdfFindPop').hasAttribute('open')"));
+
+  /* ⚠️ La barra della ricerca parla la lingua delle barre — `.tbar`, `.tbtn`,
+     `.tbnota` — e non ha misure sue. Prima erano tre `.iconbtn` incorniciati e
+     larghi 40px: in mezzo a un'app di bottoni nudi sembravano di un'altra
+     applicazione. Come in `prova-impostazioni-token`, qui non si controlla che i
+     bottoni esistano ma che siano la STESSA cosa: l'altezza dei token, una riga
+     sola, e nessun dialetto sopravvissuto. */
+  const barraRic = await val(`(()=>{
+    const pop=document.getElementById('pdfFindPop');
+    const h=(el)=>el?Math.round(el.getBoundingClientRect().height):null;
+    const tb=getComputedStyle(document.documentElement).getPropertyValue('--tb-h').trim();
+    const btn=[...pop.querySelectorAll('button')];
+    return { dialetti:[...pop.querySelectorAll('.iconbtn')].map(x=>x.id),
+             tbtn:btn.length && btn.every(b=>b.classList.contains('tbtn')),
+             altezze:[...new Set(btn.map(h))],
+             campo:h(document.getElementById('pdfFindInput')),
+             token:tb, conto:document.getElementById('pdfFindCount').className,
+             righe:Math.round(pop.getBoundingClientRect().height),
+             larghezza:Math.round(pop.getBoundingClientRect().width) }; })()`);
+  console.log('   ' + JSON.stringify(barraRic));
+  ok('nessun dialetto di bottone nella barra della ricerca', [], barraRic.dialetti);
+  ok('i comandi sono `.tbtn`', true, barraRic.tbtn);
+  ok('e hanno tutti la stessa altezza, quella dei token', [parseInt(barraRic.token, 10)], barraRic.altezze);
+  ok('il campo è alto come i bottoni', parseInt(barraRic.token, 10), barraRic.campo);
+  ok('il conto usa il token della nota in barra', 'tbnota', barraRic.conto.trim());
+  /* Una riga sola: il pannellino sta sopra la pagina, e la seconda riga copriva
+     il primo risultato acceso. Il tetto è l'altezza dei token più l'imbottitura. */
+  ok('è alta una riga sola', true, barraRic.righe <= parseInt(barraRic.token, 10) + 12);
   ok('e il fuoco è nel campo', 'pdfFindInput', await val('document.activeElement.id'));
 
   await val("document.getElementById('pdfFindInput').value='scuola', pdfFindDispatch('',false), 1");
@@ -417,6 +445,46 @@ async function finoA(expr, quanto) {
   ok('il risultato successivo cambia il conto', true, !!dopo && dopo !== primo);
   console.log('   ' + primo + ' → ' + dopo);
 
+  /* ⚠️ LE VIRGOLETTE: «la parola così com'è». `per` trova anche *perché* e
+     *periodo*; `"per"` pretende i confini di parola. La regola pura sta in
+     `RicercaIndice.interpreta` con le sue prove in Node — qui si misura che
+     arrivi fino a pdf.js, e si misura nel solo modo che non mente: DUE CONTI a
+     confronto sullo stesso documento.
+     ⚠️ Il totale arriva a pezzi mentre le pagine vengono scandite, quindi si
+     aspetta che si FERMI: leggerlo al primo lampo darebbe due numeri parziali,
+     e il confronto sarebbe una monetina. */
+  const contoStabile = async () => {
+    let ultimo = null, fermo = 0;
+    for (let i = 0; i < 80; i++) {
+      const t = await val("document.getElementById('pdfFindCount').textContent");
+      const m = /(\d+)\s+di\s+(\d+)/.exec(t || '');
+      const tot = m ? parseInt(m[2], 10) : null;
+      if (tot !== null && tot === ultimo) { if (++fermo >= 4) return tot; } else { fermo = 0; ultimo = tot; }
+      await pausa(300);
+    }
+    return ultimo;
+  };
+  await val("(()=>{ const i=document.getElementById('pdfFindInput'); i.value='per'; pdfFindDispatch('',false); return 1; })()");
+  const totLargo = await contoStabile();
+  await val("(()=>{ const i=document.getElementById('pdfFindInput'); i.value='\"per\"'; pdfFindDispatch('',false); return 1; })()");
+  const totEsatto = await contoStabile();
+  console.log('   per: ' + totLargo + ' · "per": ' + totEsatto);
+  ok('la parola intera trova meno della parola dentro le altre', true,
+    !!totLargo && !!totEsatto && totEsatto < totLargo);
+  ok('e trova comunque qualcosa', true, !!totEsatto && totEsatto > 0);
+  ok('l\'app sa di essere in ricerca esatta', true, await val('PDFFIND.esatta'));
+  /* Le virgolette cambiano i risultati senza cambiare niente che si veda: il
+     conto lo dichiara, o «nessun risultato» sembrerebbe «la parola non c'è». */
+  ok('il conto dichiara «intera»', true,
+    /· intera/.test(await val("document.getElementById('pdfFindCount').textContent")));
+  ok('e nel documento cerca il testo SENZA le virgolette', false,
+    /"/.test(await val('PDFJS.find.state ? PDFJS.find.state.query : ""')));
+  /* Togliendo le virgolette si torna larghi, e il marchio se ne va. */
+  await val("(()=>{ const i=document.getElementById('pdfFindInput'); i.value='per'; pdfFindDispatch('',false); return 1; })()");
+  await pausa(600);
+  ok('e senza virgolette il marchio se ne va', false,
+    /· intera/.test(await val("document.getElementById('pdfFindCount').textContent")));
+
   await val("document.getElementById('pdfFindInput').value='qwertyzzz', pdfFindDispatch('',false), 1");
   const nulla = await finoA(`(()=>{ const e=document.getElementById('pdfFindCount');
     return /nessun risultato/.test(e.textContent) ? '1' : null; })()`, 20000);
@@ -432,16 +500,75 @@ async function finoA(expr, quanto) {
 
   sezione('I guasti che la verifica ostile ha trovato, e che non devono tornare');
 
-  /* ⚠️ La via di chiusura più naturale — un click sulla pagina per tornare a
-     leggere — passava da `closePops()`, che toglieva l'attributo e basta: le
-     evidenziazioni restavano accese e nessun comando visibile le spegneva. */
+  /* ⚠️ LA REGOLA SI È ROVESCIATA IL 17 AGOSTO, e questa prova con lei. Prima un
+     click fuori spegneva la ricerca — e allora bastava premere «+» dello zoom per
+     ingrandire la parola trovata per perderla. Adesso `closePops()` NON la
+     tocca: la barra è visibile, quindi si esce per volontà (Esc, la ✕, il 🔍) e
+     lo zoom si cambia senza danni. Ciò che va difeso qui è che il click fuori
+     **non** lasci uno stato invisibile: la barra resta a schermo, e il colore
+     con lei. */
   await val(`openPdf(${JSON.stringify(PDF)}, 3, 'Piano di studio'), 1`);
   await finoA('!!PDFJS.doc', 15000);
   await val('pdfFindApri(), 1'); await pausa(200);
   await val("document.getElementById('pdfFindInput').value='scuola', pdfFindDispatch('again',false), 1");
   await finoA("document.querySelectorAll('#pdfFrame .textLayer .highlight').length>0", 25000);
   await val('closePops(), 1'); await pausa(600);
-  ok('chiudendo col click fuori le evidenziazioni si spengono', 0,
+  ok('un click fuori NON spegne la ricerca', true,
+    (await val("document.querySelectorAll('#pdfFrame .textLayer .highlight').length")) > 0);
+  ok('e la barra resta a schermo con lei', true,
+    await val("document.getElementById('pdfFindPop').hasAttribute('open')"));
+  /* Lo zoom si cambia con la ricerca accesa: è il gesto che l'ha motivata. */
+  await val('pdfZoomPasso(true), 1'); await pausa(900);
+  ok('si può ingrandire senza perdere la ricerca', true,
+    (await val("document.querySelectorAll('#pdfFrame .textLayer .highlight').length")) > 0);
+  /* La ✕ del pannellino: una via d'uscita che si VEDE. */
+  await clicca('#pdfFindClose'); await pausa(600);
+  ok('la ✕ chiude la barra…', false,
+    await val("document.getElementById('pdfFindPop').hasAttribute('open')"));
+  ok('…e spegne il colore', 0,
+    await val("document.querySelectorAll('#pdfFrame .textLayer .highlight').length"));
+
+  /* ⚠️ IL COLORE ACCESO SENZA BARRA A SCHERMO. È il giro della lente: apre il
+     documento, scrive la parola nel campo e cerca. Fino al 17 agosto lo faceva
+     con `pdfFindDispatch` e la barra restava chiusa — e allora nessuna via
+     d'uscita spegneva più niente, perché tutte chiedevano se il pannellino era
+     `open`. Il colore restava fino alla ricerca dopo, in ogni fonte aperta dalla
+     lente. Qui si riproduce lo stato (colore acceso, pannellino chiuso) e si
+     pretende che le due vie d'uscita funzionino comunque. */
+  await val("(()=>{ pdfFindChiudi(); const i=document.getElementById('pdfFindInput'); i.value='scuola'; pdfFindDispatch('',false); return 1; })()");
+  await finoA("document.querySelectorAll('#pdfFrame .textLayer .highlight').length>0", 25000);
+  ok('il colore si accende anche a barra chiusa', false,
+    await val("document.getElementById('pdfFindPop').hasAttribute('open')"));
+  ok('e l\'app sa che c\'è qualcosa da spegnere', true, await val('pdfFindAccesa()'));
+  /* Il 🔍 in questo stato CHIUDE invece di riaprire: è l'interruttore, e la
+     domanda che si fa è «c'è del colore?», non «il pannellino è aperto?». */
+  await clicca('#pdfFindBtn'); await pausa(600);
+  ok('il 🔍 lo spegne lo stesso', 0,
+    await val("document.querySelectorAll('#pdfFrame .textLayer .highlight').length"));
+
+  /* E l'Esc: prima cadeva nel ramo `closePdf()` — spegneva il colore chiudendo
+     il DOCUMENTO, cioè facendo perdere il punto in cui si stava leggendo. */
+  await val("(()=>{ const i=document.getElementById('pdfFindInput'); i.value='scuola'; pdfFindDispatch('',false); return 1; })()");
+  await finoA("document.querySelectorAll('#pdfFrame .textLayer .highlight').length>0", 25000);
+  await val("document.body.focus && document.body.focus(), document.activeElement.blur && document.activeElement.blur(), 1");
+  await invia('Input.dispatchKeyEvent', { type:'keyDown', key:'Escape', code:'Escape', windowsVirtualKeyCode:27 });
+  await invia('Input.dispatchKeyEvent', { type:'keyUp', key:'Escape', code:'Escape', windowsVirtualKeyCode:27 });
+  await pausa(600);
+  ok('Esc spegne il colore…', 0,
+    await val("document.querySelectorAll('#pdfFrame .textLayer .highlight').length"));
+  ok('…senza chiudere il documento', true,
+    await val("!!PDFJS.doc && document.documentElement.dataset.pdf==='1'"));
+
+  /* La barra si apre anche SENZA prendere il cursore: chi arriva dalla lente la
+     parola l'ha già scritta, e vuole leggere la pagina. */
+  await val("document.getElementById('pdfFindInput').value='scuola', 1");
+  await val("pdfFindApri({ fuoco:false }), 1"); await pausa(300);
+  ok('la barra si apre', true, await val("document.getElementById('pdfFindPop').hasAttribute('open')"));
+  ok('e il cursore NON è nel campo', false, await val("document.activeElement.id==='pdfFindInput'"));
+  /* Il 🔍 è un interruttore: lo stesso bottone chiude quello che ha aperto. */
+  await clicca('#pdfFindBtn'); await pausa(500);
+  ok('il 🔍 richiude la ricerca', false, await val("document.getElementById('pdfFindPop').hasAttribute('open')"));
+  ok('e spegne il colore', 0,
     await val("document.querySelectorAll('#pdfFrame .textLayer .highlight').length"));
 
   /* Il colpo in canna del debounce partiva DOPO la chiusura e riaccendeva tutto. */
@@ -463,6 +590,26 @@ async function finoA(expr, quanto) {
   ok('e non ha aperto la ricerca del corso', false,
     await val("document.getElementById('searchPop').hasAttribute('open')"));
   await val('pdfFindChiudi(), 1');
+
+  /* ⚠️ Esc CON LA LENTE APERTA chiude la lente, e SOLO lei. I due gestori
+     stanno entrambi sul documento, quindi `stopPropagation` non li separa:
+     comanda l'ordine di registrazione, e quello del documento — registrato
+     prima — deve farsi da parte. Senza, un Esc dato sui risultati chiudeva la
+     lente E il documento sotto, con un colpo solo (riferito da Giacomo il 17
+     agosto: «Esc chiude sia il pannellino sia il documento»). */
+  await val('ricercaApri(), 1'); await pausa(400);
+  await val("(()=>{ const i=document.getElementById('searchInput'); i.value='scuola'; i.dispatchEvent(new Event('input',{bubbles:true})); i.focus(); return 1; })()");
+  await pausa(500);
+  ok('la lente è aperta con i suoi risultati', true,
+    await val("document.getElementById('searchPop').hasAttribute('open') && document.getElementById('searchRes').classList.contains('open')"));
+  await invia('Input.dispatchKeyEvent', { type:'keyDown', key:'Escape', code:'Escape', windowsVirtualKeyCode:27 });
+  await invia('Input.dispatchKeyEvent', { type:'keyUp', key:'Escape', code:'Escape', windowsVirtualKeyCode:27 });
+  await pausa(500);
+  ok('Esc chiude l\'elenco della lente…', false,
+    await val("document.getElementById('searchRes').classList.contains('open')"));
+  ok('…e il documento resta aperto', true,
+    await val("!!PDFJS.doc && document.documentElement.dataset.pdf==='1'"));
+  await val('closePops(), 1'); await pausa(200);
 
   /* Lo zoom non deve invertirsi quando la scala arriva da un adattamento fuori
      dai nostri limiti: premere «+» a 600% faceva SCENDERE a 500%. */

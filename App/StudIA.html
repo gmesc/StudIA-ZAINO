@@ -1191,12 +1191,23 @@
   #memPop svg{ width:100%; height:150px; display:block; background:var(--bg); border:1px solid var(--line-weak,var(--line)); }
   #memPop .mem-nome{ font-size:12px; font-weight:700; margin-bottom:.3rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   #memPop .mem-nota{ font-size:10px; color:var(--muted); margin-top:.3rem; }
-  #pdfFindPop{ padding:.5rem; width:min(340px,92vw); }
-  .pdffind-row{ display:flex; align-items:center; gap:.3rem; }
-  #pdfFindInput{ flex:1; min-width:0; border:1px solid var(--line); background:var(--bg); color:var(--ink);
-    padding:.35rem .5rem; font-size:13px; font-family:var(--font-text),var(--emoji-font),sans-serif; }
-  .pdffind-conto{ margin-top:.35rem; font-size:11px; color:var(--muted); min-height:14px; }
-  .pdffind-conto.vuoto{ color:var(--red-strong,#b91c1c); }
+  /* ---- La ricerca nel documento È UNA BARRA, e usa i token delle barre ------
+     Sta SOPRA la pagina che si sta leggendo e copre le occorrenze che ha appena
+     acceso: quindi una riga sola, il conto accanto al campo e non sotto, e la
+     larghezza che serve al campo. Ma soprattutto niente misure sue: `.tbar`,
+     `.tbtn` e `.tbnota` la vestono come la barra della mappa e quella degli
+     appunti — prima aveva tre bottoni `.iconbtn` incorniciati e larghi 40px, che
+     in mezzo a un'app di bottoni nudi sembravano di un'altra applicazione.
+     ⚠️ Dentro un pannellino la barra perde la LINEA DI CHIUSURA e il fondo: il
+     `.popmenu` porta già la sua cornice e il suo `--panel`, e la linea in fondo
+     a una barra che non ha niente sotto è una riga che non separa nulla. */
+  #pdfFindPop{ padding:0; width:min(300px,92vw); }
+  .popmenu .tbar{ border-bottom:0; background:transparent; min-height:0; }
+  #pdfFindPop .tbar{ padding:.15rem .2rem; }
+  /* Il conto: non va a capo, e quando è vuoto non occupa la sua fessura. */
+  #pdfFindCount{ padding:0 .3rem; }
+  #pdfFindCount:empty{ display:none; }
+  #pdfFindCount.vuoto{ color:var(--red-strong,#b91c1c); }
   :is(#pdfPane,#pdfPane2) .pdfzoom{ display:flex; align-items:center; gap:0; }
   :is(#pdfPane,#pdfPane2) .pdfpag{ display:flex; align-items:center; gap:0; }
   :is(#pdfPane,#pdfPane2) .pdfpag :is(#pdfPagN,#pdf2PagN){ font-size:11px; font-variant-numeric:tabular-nums; padding:0 .3rem;
@@ -5820,36 +5831,72 @@ document.addEventListener('wheel', function(e){
    soprattutto EVIDENZIA le occorrenze dentro il layer. Riscriverlo darebbe
    risultati che non si vedono sulla pagina, che è metà di ciò che serve.
    Si parla con lui via bus, che è l'unica porta che espone. */
-var PDFFIND = { timer:null, cercando:false, scalaPronta:false };
+/* ⚠️ `cercando` e `accese` NON sono la stessa cosa, e confonderle è costato il
+   difetto del 17 agosto. `cercando` vive quanto la SCANSIONE: `pdf.js` la spegne
+   da sé appena il conto è pronto (`updatefindcontrolstate`). `accese` dice
+   invece che sulla pagina c'è del colore, e resta vera finché non si spedisce
+   `findbarclose` — che è l'unica cosa che lo toglie. Chi vuole sapere «c'è una
+   ricerca da chiudere?» deve chiedere ad `accese`: guardare l'attributo `open`
+   del pannellino è guardare la VESTE al posto dello stato, ed era il bug. */
+var PDFFIND = { timer:null, cercando:false, accese:false, esatta:false, scalaPronta:false };
+
+/** C'è del colore da spegnere sulla pagina? */
+function pdfFindAccesa(){ return !!PDFFIND.accese; }
 
 function pdfFindDispatch(tipo, indietro){
   if(!PDFJS.pronto || !PDFJS.doc) return;
   clearTimeout(PDFFIND.timer); PDFFIND.timer=null;
-  var inp=$('#pdfFindInput'); var q=inp ? inp.value : '';
-  PDFFIND.cercando=!!q;
+  var inp=$('#pdfFindInput'); var scritto=inp ? inp.value : '';
+  /* LE VIRGOLETTE: `"per"` cerca la parola intera, `per` anche dentro *perché*.
+     La regola sta in `RicercaIndice.interpreta` — un posto solo, provato in
+     Node, e domani la stessa convenzione servirà alla lente. Qui si traduce ciò
+     che ha chiesto l'utente nei parametri che pdf.js capisce. */
+  var chiesto=RicercaIndice.interpreta(scritto);
+  var q=chiesto.testo;
+  PDFFIND.cercando=!!q; PDFFIND.accese=!!q; PDFFIND.esatta=!!q && chiesto.esatta;
   /* ⚠️ Nessun `phraseSearch`: in questa build non esiste più (zero occorrenze in
      `pdf_viewer.mjs`) e verrebbe ignorato in silenzio. La ricerca di frase si
-     esprime passando `query` come stringa — che è quello che facciamo. */
+     esprime passando `query` come stringa — che è quello che facciamo.
+     ⚠️ `entireWord` NON è «una parola sola»: pretende i confini di parola ai due
+     capi di ciò che si cerca, quindi funziona anche su una frase intera. */
   PDFJS.bus.dispatch('find', {
     source:window, type:tipo||'', query:q,
-    caseSensitive:false, entireWord:false,
+    caseSensitive:false, entireWord:PDFFIND.esatta,
     highlightAll:true, findPrevious:!!indietro, matchDiacritics:false
   });
-  if(!q){ PDFFIND.cercando=false; pdfFindConto(''); }
+  if(!q){ PDFFIND.cercando=false; PDFFIND.accese=false; PDFFIND.esatta=false; pdfFindConto(''); }
 }
-/** Il conto sotto il campo: «3 di 47», o il fatto che non c'è niente. */
+/**
+ * Il conto accanto al campo: «3 di 47», o il fatto che non c'è niente.
+ *
+ * ⚠️ Con le virgolette il conto dice anche «intera», e non è un vezzo: le
+ * virgolette cambiano i risultati senza cambiare niente che si veda, e chi non
+ * ha capito la convenzione leggerebbe «nessun risultato» concludendo che la
+ * parola non c'è. Il posto dove dirlo è quello dove si guarda il numero.
+ */
 function pdfFindConto(testo, vuoto){
   var el=$('#pdfFindCount'); if(!el) return;
-  el.textContent=testo||'';
+  var t=testo||'';
+  if(t && PDFFIND.esatta) t+=' · intera';
+  el.textContent=t;
   el.classList.toggle('vuoto', !!vuoto);
 }
-function pdfFindApri(){
+/**
+ * Apre la barra della ricerca nel documento.
+ *
+ * `opt.fuoco:false` la apre SENZA prendere il cursore: serve a chi ci arriva
+ * dalla lente, che ha già scritto la parola e adesso vuole leggere la pagina —
+ * il fuoco nel campo gli farebbe scorrere il testo con le frecce dentro
+ * l'input. Chi la apre col 🔍 invece sta per scrivere, e il fuoco lo vuole.
+ */
+function pdfFindApri(opt){
   if(!PDFJS.pronto || !PDFJS.doc) return false;
+  var o=opt||{};
   var pop=$('#pdfFindPop'), btn=$('#pdfFindBtn'), inp=$('#pdfFindInput');
   if(!pop || !inp) return false;
   if(!pop.hasAttribute('open')) popAt(pop, btn);
   if(btn) btn.setAttribute('aria-expanded','true');
-  inp.focus(); inp.select();
+  if(o.fuoco!==false){ inp.focus(); inp.select(); }
   if(inp.value.trim()) pdfFindDispatch('again', false);
   return true;
 }
@@ -5857,7 +5904,8 @@ function pdfFindChiudi(){
   /* ⚠️ Il timer del debounce va spento qui e non solo nel ramo Invio: chiudendo
      entro i 220 ms della digitazione, il colpo in canna partiva DOPO
      `findbarclose` e riaccendeva le evidenziazioni su una barra ormai chiusa. */
-  clearTimeout(PDFFIND.timer); PDFFIND.timer=null; PDFFIND.cercando=false;
+  clearTimeout(PDFFIND.timer); PDFFIND.timer=null;
+  PDFFIND.cercando=false; PDFFIND.accese=false; PDFFIND.esatta=false;
   var pop=$('#pdfFindPop'); if(pop) pop.removeAttribute('open');
   var b=$('#pdfFindBtn'); if(b) b.setAttribute('aria-expanded','false');
   /* ⚠️ `findbarclose` non è cosmetico: senza, le evidenziazioni restano accese
@@ -7691,13 +7739,27 @@ function closePdf(){ document.documentElement.dataset.pdf='';
   document.addEventListener('keydown',function(e){
     if(e.key!=='Escape') return;
     var a=document.activeElement; if(a && a.closest && a.closest('#notePane')) return; // non chiudere mentre si scrive
+    /* ⚠️ SE LA LENTE È APERTA, LO STRATO PIÙ INTERNO È LEI: qui non si tocca
+       niente. Il suo gestore di Esc sta in fondo al file e chiude l'elenco dei
+       risultati, ma è sul DOCUMENTO come questo — e fra gestori sullo stesso
+       nodo `stopPropagation` non serve a nulla: comanda l'ordine di
+       registrazione, e questo è registrato prima. Quindi tocca a lui farsi da
+       parte. Senza, un Esc dato con i risultati a schermo chiudeva la lente E il
+       documento sotto, con un colpo solo — misurato il 17 agosto. */
+    var lente=$('#searchPop');
+    if((lente && lente.hasAttribute('open')) || (a && a.id==='searchInput')) return;
     /* ⚠️ Esc chiude UNA cosa per volta, la più interna: con la ricerca aperta
        chiude quella e lascia il documento dov'è. Chiudere tutto insieme fa
        perdere il punto in cui si stava leggendo per aver chiuso un pannellino.
        È la stessa regola dell'Esc sulle mappe, che esce dal focus prima di
        chiudere la mappa. */
+    /* Stessa regola di `closePops`: lo strato più interno è la RICERCA, e la
+       ricerca c'è se c'è del colore acceso — anche quando la barra non è a
+       schermo (è il caso di chi arriva dalla lente). Senza `pdfFindAccesa()`
+       questo Esc chiudeva il DOCUMENTO per spegnere un'evidenziatura, cioè
+       faceva perdere il punto in cui si stava leggendo. */
     var pop=$('#pdfFindPop');
-    if(pop && pop.hasAttribute('open')){ pdfFindChiudi(); return; }
+    if((pop && pop.hasAttribute('open')) || pdfFindAccesa()){ pdfFindChiudi(); return; }
     closePdf(); });
 })();
 /* ---- Ridimensionamento anteprima (drag sul bordo sinistro) ---- */
@@ -8000,18 +8062,23 @@ function tendinaViva(sel, opt){
 }
 
 function closePops(){
-  /* ⚠️ La ricerca nel documento non si chiude togliendole l'attributo: ha uno
-     stato DENTRO pdf.js. Senza `findbarclose` le evidenziazioni restano accese
-     su tutte le pagine e il controller si crede ancora in ricerca — e la via di
-     chiusura più naturale è proprio questa (un click sulla pagina per tornare a
-     leggere), cioè quella che non funzionava. */
-  var fp=$('#pdfFindPop');
-  if(fp && fp.hasAttribute('open') && typeof pdfFindChiudi==='function') pdfFindChiudi();
+  /* ⚠️ LA RICERCA NEL DOCUMENTO NON SI CHIUDE DA QUI, e non è una dimenticanza:
+     è la decisione del 17 agosto. `closePops()` la chiama ogni click fuori da un
+     pannellino, e finché la chiudeva bastava premere «+» dello zoom per
+     ingrandire e leggere meglio la parola trovata — per perdere la ricerca. Chi
+     cerca vuole *lavorare* sul documento con la ricerca accesa: si esce solo per
+     volontà, con Esc, con la ✕ del pannellino o col 🔍. È il contrario della
+     regola di prima, e vale perché adesso la barra è VISIBILE: uno stato che si
+     vede non ha bisogno di essere spento a tradimento. */
   /* ⚠️ Un pannellino nuovo va DENTRO questo elenco. È la trappola del `PROVE=(`
      in salsa DOM: `closePops()` sembra chiudere «tutto», e invece chiude ciò
      che è scritto qui — il pittore delle forme restava aperto sopra il banco
      dopo aver salvato, e l'unico modo di levarselo era ricaricare. */
-  ['#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#pdfFindPop','#zainoPop','#pdfDocPop','#plMediaPop','#pittorePop']
+  /* ⚠️ `#pdfFindPop` NON è in questo elenco, ed è la stessa decisione di sopra
+     vista da un altro lato: togliergli `open` lo farebbe sparire lasciando il
+     colore acceso sulla pagina — cioè ricreerebbe esattamente lo stato invisibile
+     che si è appena finito di togliere, per un click sul «+» dello zoom. */
+  ['#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#zainoPop','#pdfDocPop','#plMediaPop','#pittorePop']
     .forEach(function(s){ var e=$(s); if(e) e.removeAttribute('open'); });
   /* ⚠️ Il menu della selezione e la sua barra non si chiudono togliendo un
      attributo: hanno uno stato in una CLASSE (`open`, `aperta`) e due funzioni
@@ -10532,7 +10599,15 @@ document.addEventListener('click',function(e){
   if(e.target.closest && e.target.closest('#pdfZoomOut')){ pdfZoomPasso(false); return; }
   if(e.target.closest && e.target.closest('#pdfZoomLvl')){ pdfZoomAdatta(); return; }
   if(e.target.closest && e.target.closest('#pdfRitaglia')){ albumRitaglioModo(); return; }
-  if(e.target.closest && e.target.closest('#pdfFindBtn')){ pdfFindApri(); return; }
+  /* Il 🔍 è un INTERRUTTORE, come il «+» degli zaini: se una ricerca è in corso
+     — barra a schermo o soltanto colore acceso — lo stesso bottone la chiude.
+     Un bottone che apre e non chiude costringe a indovinare dove si spegne. */
+  if(e.target.closest && e.target.closest('#pdfFindBtn')){
+    var fpop=$('#pdfFindPop');
+    if((fpop && fpop.hasAttribute('open')) || pdfFindAccesa()) pdfFindChiudi(); else pdfFindApri();
+    return;
+  }
+  if(e.target.closest && e.target.closest('#pdfFindClose')){ pdfFindChiudi(); return; }
   if(e.target.closest && e.target.closest('#pdfFindNext')){ pdfFindDispatch('again', false); return; }
   if(e.target.closest && e.target.closest('#pdfFindPrev')){ pdfFindDispatch('again', true); return; }
   if(e.target.closest && e.target.closest('#creditsBtn')){ apriCrediti(); return; }
@@ -12048,7 +12123,14 @@ function ricercaEtichette(){
   if(btn){ btn.title=tasti('Cerca '+dove+' (⌘F)'); btn.setAttribute('aria-label','Cerca '+dove); }
   var pop=$('#searchPop'); if(pop) pop.setAttribute('aria-label','Cerca '+dove);
   var inp=$('#searchInput');
-  if(inp){ inp.placeholder='Cerca '+dove+'…'; inp.setAttribute('aria-label', dentro); }
+  if(inp){
+    inp.placeholder='Cerca '+dove+'…';
+    /* La convenzione delle virgolette si dice qui e nel campo della ricerca
+       dentro il documento, con le stesse parole: è la stessa regola, e sentirla
+       raccontare in due modi diversi farebbe credere che siano due. */
+    inp.setAttribute('aria-label', dentro+'; fra virgolette cerca la frase esatta');
+    inp.title='Più parole: le cerca tutte, dove capitano.\nFra virgolette: quella frase così com’è — "sistema solare" non trova «sistema nervoso e anno solare».';
+  }
 }
 function ricercaApri(){
   var pop=$('#searchPop'), inp=$('#searchInput');
@@ -12078,7 +12160,17 @@ function searchGoto(r,q){
     setTimeout(function(){
       try{
         var inp=$('#pdfFindInput'); if(inp) inp.value=q;
-        pdfFindDispatch('');
+        /* ⚠️ Si APRE LA BARRA, non si accende soltanto il colore. Fino al 17
+           agosto qui c'era `pdfFindDispatch('')` e basta: le occorrenze si
+           accendevano su una barra che non era a schermo, e allora nessuna via
+           d'uscita le spegneva — click sulla pagina ed Esc chiedevano se il
+           pannellino era `open`, e non lo era. Il colore restava fino alla
+           ricerca dopo, in ogni fonte aperta dalla lente. Con la barra aperta
+           l'utente vede che una ricerca è in corso, ha il conto («3 di 47») e
+           le frecce, e la chiude come chiuderebbe qualunque altra.
+           `fuoco:false`: la parola l'ha già scritta lui nella lente, e qui è
+           venuto per leggere. */
+        pdfFindApri({ fuoco:false });
       }catch(e){}
     }, 600);
     return;
@@ -12102,7 +12194,15 @@ var HIT_T=null;
    Del registro dei nomi si occupa solo «ricerca»: «evidenze» resta libero per
    le evidenziature dell'utente. */
 function searchHighlight(q){
-  var tok=sNorm(q).split(/\s+/).filter(Boolean)[0]; if(!tok) return;
+  /* ⚠️ Le virgolette si TOLGONO anche qui, e non è un dettaglio: il lampo cerca
+     nel testo del capitolo, e `"per"` con le virgolette dentro non sta scritto
+     da nessuna parte — chi arrivava da una ricerca esatta vedeva aprirsi il
+     capitolo giusto senza nessun lampo, cioè senza sapere dove guardare.
+     Fra virgolette si accende la frase intera; senza, la prima parola, com'era. */
+  var chiesto=RicercaIndice.interpreta(q);
+  var tok=chiesto.esatta ? sNorm(chiesto.testo)
+                         : sNorm(chiesto.testo).split(/\s+/).filter(Boolean)[0];
+  if(!tok) return;
   var root=$('#content'); if(!root) return;
   var walk=document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
   var node;
@@ -17621,14 +17721,31 @@ window.addEventListener('keydown', function(e){
      aprirebbe senza che nessuno lo chiuda. Cercare NEL DOCUMENTO è cosa diversa
      dal cercare NEL CORSO (`#searchPop`): due indici, due porte, due risultati. -->
 <div id="pdfFindPop" class="popmenu" role="dialog" aria-label="Cerca nel documento">
-  <div class="pdffind-row">
-    <input type="search" id="pdfFindInput" placeholder="Cerca nel documento…" aria-label="Testo da cercare nel documento" autocomplete="off">
-    <button class="iconbtn" id="pdfFindPrev" type="button" title="Precedente (Maiusc+Invio)" aria-label="Risultato precedente">&#8249;</button>
-    <button class="iconbtn" id="pdfFindNext" type="button" title="Successivo (Invio)" aria-label="Risultato successivo">&#8250;</button>
+  <!-- `tbar`: la stessa grammatica della barra della mappa e di quella degli
+       appunti — bottoni nudi e attaccati, campo alto quanto loro, misure dai
+       token (`--tb-h`, `--tb-fs`). Chi aggiunge un comando scrive `tbtn`. -->
+  <div class="tbar">
+    <!-- Il suggerimento dice la convenzione delle virgolette: è l'unico posto in
+         cui si può leggere, perché nel campo non ci sta e un'etichetta fissa
+         accanto occuperebbe lo spazio del testo da cercare. -->
+    <input type="search" id="pdfFindInput" placeholder="Cerca nel documento…" autocomplete="off"
+           aria-label="Testo da cercare nel documento; fra virgolette cerca la parola intera"
+           title="Fra virgolette cerca la parola intera: per → anche «perché»; &quot;per&quot; → solo «per»">
+    <button class="tbtn" id="pdfFindPrev" type="button" title="Precedente (Maiusc+Invio)" aria-label="Risultato precedente">&#8249;</button>
+    <button class="tbtn" id="pdfFindNext" type="button" title="Successivo (Invio)" aria-label="Risultato successivo">&#8250;</button>
+    <!-- `aria-live`: «3 di 47» e «nessun risultato» cambiano senza che nulla si
+         sposti, quindi vanno annunciati o non esistono per chi non li vede.
+         In RIGA col campo, e non sotto: il pannellino sta sopra la pagina e una
+         seconda riga copre le occorrenze appena accese. -->
+    <div class="tbnota" id="pdfFindCount" aria-live="polite"></div>
+    <!-- ⚠️ La ✕ non è un ornamento: da quando il click fuori NON chiude più la
+         ricerca (si va a cambiare lo zoom senza perderla), le vie d'uscita
+         visibili sono due — questa e il 🔍 — più l'Esc, che non si vede.
+         La barretta prima: cambia il mestiere, da «scorri i risultati» a
+         «chiudi», ed è la sola linea che questa barra si concede. -->
+    <i class="tbsep" aria-hidden="true"></i>
+    <button class="tbtn" id="pdfFindClose" type="button" title="Chiudi la ricerca (Esc)" aria-label="Chiudi la ricerca nel documento">&#10005;</button>
   </div>
-  <!-- `aria-live`: «3 di 47» e «nessun risultato» cambiano senza che nulla si
-       sposti, quindi vanno annunciati o non esistono per chi non li vede. -->
-  <div class="pdffind-conto" id="pdfFindCount" aria-live="polite"></div>
 </div>
 <div id="calloutMenu" class="popmenu" role="menu" aria-label="Tipo di riquadro"></div>
 <div id="helpPop" class="popmenu" role="dialog" aria-label="Esempi di cosa scrivere"></div>
