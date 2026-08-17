@@ -42,6 +42,7 @@ Due proprietà la definiscono più di ogni funzione:
 | **materiale** | un file sorgente in `MATERIALI/`, numerato (`01 dispensa.pdf`); il numero è ciò che i rimandi citano | il numero si riusa **solo** a impronta (sha1) uguale |
 | **rimando** | la grammatica dei link: `pdf:NN#p=7`, `video:NN#t=160`, `cap:<id>`, `fig:…`, `ev:<id>`, `[[lezione]]` | è UNA: mai inventarne una seconda (invariante 7). ⚠️ `ev:` è il solo che non nomina un posto ma un'**annotazione**: dove porti lo dice lei, e chi lo scrive ne prende anche l'aspetto invece di copiarselo accanto |
 | **evidenza / parola chiave** | testo evidenziato dall'utente, ancorato con TextQuoteSelector | l'ancoraggio è `App/assets/evidenze/ancoraggio.js`, scritto da zero: non deriva dai marker degli appunti |
+| **strato / lettura** | un insieme di evidenze che si accende e si spegne per intero (l'analisi metrica, le figure retoriche) | lo strato **entra nell'identità** di un'evidenza, e solo quando c'è: è ciò che permette di segnare le stesse parole due volte. Lo strato «Base» non è un record — è l'**assenza** di strato. Visibilità e lettura attiva stanno nel `localStorage`, il registro nel vault |
 | **carta** | un'unità di ripasso; identità = `hash(capitolo + domanda normalizzata)`, calcolata **nel main** | non si copia mai: è una *vista* sul quiz/glossario del capitolo |
 | **percorso / variante** | scalette alternative sugli stessi capitoli (`PERCORSI/*.json`, otto personaggi) | rimandi/tendina/ricerca seguono il percorso attivo; evidenze, mappe e appunti restano nella variante in cui sono nati |
 | **Ritagli / Album Foto** | le due VISTE dello stesso archivio `ALBUM/`: le voci dichiarano `origine` (`ritaglio` · `foto`) | non sono due cartelle: un archivio solo, due filtri — `album:<id>` non deve sapere che cosa ha dietro (invariante 7). La chiave dello strumento resta `album` |
@@ -295,6 +296,14 @@ Le più costose, distillate dagli handoff. Ogni ⚠️ è stato pagato almeno un
   evidenze a schermo» è **anche** l'istante in cui si toglie l'ultima, cioè quando gli appunti che
   la citavano devono scolorirsi. Ricolorare aggiornava, togliere no. Prima di mettere una scorciatoia
   sul caso vuoto, guardare che cosa sta **dopo** di lei.
+- **Aggiungere un campo al SEME di un'identità cambia gli id di ciò che è già nei vault**: si fa
+  solo *condizionalmente* — «chi ce l'ha usa il seme nuovo, chi non ce l'ha quello di sempre» — o
+  tutto ciò che cita quegli id (i rimandi `ev:`, `album:`, `cap:` scritti negli appunti) smette di
+  ritrovarli, in silenzio. Un valore d'oro nella prova è ciò che tiene ferma la promessa.
+- **Una chiave nuova nel file la cancella il primo salvataggio che non la conosce**: `salva()` di
+  `lib/evidenze.js` riscrive l'intero JSON, e il registro degli strati sarebbe sparito al primo
+  cambio di colore. La difesa sta *dentro la funzione che scrive* — rilegge ciò che non le è stato
+  passato — perché è l'unico punto da cui passano tutte le scritture.
 - **Copiare un colore è peggio che citarlo**: un aspetto scritto in due posti (l'indice *e* il file
   dell'utente) diverge al primo ritocco, e per non farlo divergere si finirebbe a riscrivere i file
   dell'utente per un gesto fatto altrove. Nel markdown va l'**indirizzo** (`ev:<id>`), e l'aspetto si

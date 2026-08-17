@@ -4,11 +4,21 @@
    Un'evidenza è un segno sul testo. Questo file risponde a una domanda sola:
    **fra quelle che ci sono, quali si dipingono adesso.**
 
-   Oggi la risposta dipende da un interruttore solo — le evidenze si vedono, o
-   non si vedono. Domani dipenderà anche dallo STRATO in cui l'evidenza vive
-   (`{ tutte:true, spenti:['metrica'] }`): due letture dello stesso testo, ognuna
-   che si accende per conto suo. La forma dello stato è già quella, e questo è il
-   motivo per cui esiste un file invece di un booleano nel renderer.
+   La risposta dipende da due cose: l'interruttore generale — le evidenze si
+   vedono o non si vedono — e lo STRATO in cui ogni evidenza vive.
+
+   UNO STRATO È UNA LETTURA. Sullo stesso testo un insegnante segna le stesse
+   parole per analisi diverse — la metrica, le figure retoriche, il lessico — e
+   ognuna si accende per conto suo. Lo stato è
+   `{ tutte:true, spenti:['a1b2c3d4'] }`: che cosa è acceso in generale, e quali
+   letture sono messe via.
+
+   ⚠️ LO STRATO «BASE» NON ESISTE SU DISCO. Le evidenze fatte prima che gli
+   strati esistessero — e quelle fatte senza sceglierne uno — hanno `strato`
+   vuoto, e quello vuoto **è** lo strato base: si accende e si spegne come gli
+   altri, ma non ha un record nel registro e nessuno lo scrive nel file di
+   nessuno. Un vault vecchio resta identico a se stesso finché il primo strato
+   non viene creato a mano.
 
    ⚠️ QUI NON SI DECIDE CHE COSA APPARTIENE A CHE COSA. Quali evidenze siano di
    una pagina o di un capitolo lo dice `evidenzeDi(sup)` nel renderer, ed è un
@@ -52,7 +62,48 @@
       try { g = JSON.parse(g); } catch (e) { return diFabbrica(); }
     }
     if (!g || typeof g !== 'object') return diFabbrica();
-    return { tutte: g.tutte !== false };
+    var spenti = [];
+    if (Array.isArray(g.spenti)) {
+      g.spenti.forEach(function (x) {
+        var s = String(x == null ? '' : x);
+        if (spenti.indexOf(s) < 0) spenti.push(s);
+      });
+    }
+    var out = { tutte: g.tutte !== false };
+    /* ⚠️ Il campo si scrive solo se dice qualcosa: uno `spenti:[]` in ogni
+       preferenza è rumore che si porta dietro per sempre, e la stessa regola
+       vale qui come vale per `scala` sui nodi e per la misura di un'immagine. */
+    if (spenti.length) out.spenti = spenti;
+    return out;
+  }
+
+  /** Uno strato spento resta spento anche quando il suo id è la stringa vuota:
+   *  quello vuoto È lo strato base, non «nessuno strato». */
+  function spento(stato, id) {
+    var s = normalizza(stato);
+    return (s.spenti || []).indexOf(String(id == null ? '' : id)) >= 0;
+  }
+
+  /** Accende o spegne UNA lettura. Torna uno stato nuovo: chi chiama lo salva e
+   *  ridisegna, come fa con l'interruttore generale. */
+  function commutaStrato(stato, id) {
+    var s = normalizza(stato), k = String(id == null ? '' : id);
+    var spenti = (s.spenti || []).slice();
+    var i = spenti.indexOf(k);
+    if (i >= 0) spenti.splice(i, 1); else spenti.push(k);
+    return normalizza({ tutte: s.tutte, spenti: spenti });
+  }
+
+  /** Uno strato che non c'è più non deve restare «spento» per sempre in una
+   *  preferenza: sarebbe uno stato invisibile che riemerge il giorno in cui
+   *  qualcuno riusa quell'id. */
+  function potaSpenti(stato, idEsistenti) {
+    var s = normalizza(stato);
+    if (!s.spenti) return s;
+    var vivi = Array.isArray(idEsistenti) ? idEsistenti.map(String) : [];
+    return normalizza({ tutte: s.tutte, spenti: s.spenti.filter(function (k) {
+      return k === '' || vivi.indexOf(k) >= 0;
+    }) });
   }
 
   /** Quello che si scrive nel `localStorage`. Stringa, perché è lì che va. */
@@ -78,7 +129,10 @@
    */
   function visibili(elenco, stato) {
     var lista = Array.isArray(elenco) ? elenco : [];
-    return accese(stato) ? lista.slice() : [];
+    if (!accese(stato)) return [];
+    var s = normalizza(stato);
+    if (!s.spenti) return lista.slice();
+    return lista.filter(function (e) { return !spento(s, e && e.strato); });
   }
 
   /**
@@ -93,8 +147,85 @@
     return { viste: viste, nascoste: lista.length - viste, tutte: lista.length };
   }
 
+  /* ------------------------------------------------------- il registro */
+
+  /** Il nome di una lettura, ridotto a ciò che può stare in una riga. */
+  function nomeValido(n) {
+    return String(n == null ? '' : n).replace(/[\x00-\x1f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60);
+  }
+
+  /**
+   * Un nome che non c'è già. ⚠️ Due letture con lo stesso nome sono due righe
+   * indistinguibili in un pannello dove l'unica cosa che si legge è il nome: si
+   * numera la seconda, come fa il Finder coi file.
+   */
+  function nomeLibero(nome, esistenti) {
+    var base = nomeValido(nome) || 'Lettura';
+    var presi = (Array.isArray(esistenti) ? esistenti : [])
+      .map(function (s) { return nomeValido(s && s.nome !== undefined ? s.nome : s).toLowerCase(); });
+    if (presi.indexOf(base.toLowerCase()) < 0) return base;
+    for (var i = 2; i < 999; i++) {
+      var tentativo = base + ' ' + i;
+      if (presi.indexOf(tentativo.toLowerCase()) < 0) return tentativo;
+    }
+    return base;
+  }
+
+  /** Raddrizza un record del registro. `null` se non è uno strato: senza id non
+   *  si può nominare, e senza nome il pannello mostrerebbe una riga muta. */
+  function normalizzaStrato(v) {
+    if (!v || typeof v !== 'object') return null;
+    var id = String(v.id == null ? '' : v.id).trim();
+    var nome = nomeValido(v.nome);
+    if (!id || !nome) return null;
+    return { id: id, nome: nome, creato: String(v.creato == null ? '' : v.creato) };
+  }
+
+  /** Il registro in ordine di nascita: è l'ordine in cui le letture sono state
+   *  pensate, e non chiede un campo in più da tenere aggiornato. */
+  function ordina(strati) {
+    var out = [];
+    (Array.isArray(strati) ? strati : []).forEach(function (s) {
+      var n = normalizzaStrato(s);
+      if (n && !out.some(function (x) { return x.id === n.id; })) out.push(n);
+    });
+    return out.sort(function (a, b) {
+      var d = String(a.creato).localeCompare(String(b.creato));
+      return d !== 0 ? d : a.nome.localeCompare(b.nome, 'it');
+    });
+  }
+
+  /**
+   * Le righe del pannello: una per lettura, più quella BASE.
+   *
+   * ⚠️ La riga base compare solo se qualcosa ci vive dentro. Un vault che non ha
+   * mai visto uno strato non deve trovarsi una riga «Base» a spiegargli una cosa
+   * che non gli serve; ma appena c'è anche una sola evidenza senza strato, quella
+   * riga è l'unico modo per spegnerla — e senza, sarebbe l'unica che non si può
+   * mettere via.
+   *
+   * ⚠️ Le righe portano il CONTO. Un pannello che dice «metrica» e basta non fa
+   * capire perché il testo è pulito: «metrica · 12» sì.
+   */
+  function righe(strati, elenco, stato) {
+    var lista = Array.isArray(elenco) ? elenco : [];
+    var s = normalizza(stato);
+    var quanteDi = function (id) {
+      return lista.filter(function (e) { return String((e && e.strato) || '') === id; }).length;
+    };
+    var out = ordina(strati).map(function (st) {
+      return { id: st.id, nome: st.nome, base: false, quante: quanteDi(st.id), spento: spento(s, st.id) };
+    });
+    var nudi = quanteDi('');
+    if (nudi) out.push({ id: '', nome: 'Base', base: true, quante: nudi, spento: spento(s, '') });
+    return out;
+  }
+
   return {
     diFabbrica: diFabbrica, normalizza: normalizza, scrivi: scrivi,
-    commuta: commuta, accese: accese, visibili: visibili, conta: conta
+    commuta: commuta, accese: accese, visibili: visibili, conta: conta,
+    spento: spento, commutaStrato: commutaStrato, potaSpenti: potaSpenti,
+    nomeValido: nomeValido, nomeLibero: nomeLibero, normalizzaStrato: normalizzaStrato,
+    ordina: ordina, righe: righe
   };
 }));

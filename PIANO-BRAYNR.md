@@ -214,10 +214,58 @@ e `$` torna `null` in silenzio. È la stessa trappola degli osservatori del visu
 **Prove**: `test/strati.js` (la regola, 24 controlli) · `test/cdp/prova-strati.js`, che guarda il
 **registro degli highlight** e non l'attributo di un bottone.
 
-**Resta M2**: gli strati veri — il campo `strato` nel record e nel seme dell'identità (è ciò che
-permette *le stesse parole in due letture*), il registro nel file, il pannellino, lo strato attivo.
-Il piano intero è nella conversazione del 18 agosto; il pezzo che non si può dimenticare è che lo
-strato entra nell'identità **solo quando c'è**, o gli id già scritti negli appunti cambierebbero.
+**P1.1-quater — Le letture (gli strati).** ✅ *fatto il 18 agosto 2026 (M2)*
+
+Uno **strato** è una **lettura** del testo: l'analisi metrica, le figure retoriche, il lessico. Un
+`.tbtn` sulla barra della Fonte apre il pannellino — la pila di Photoshop, con la grammatica di
+questa casa: ogni riga è una `.tbar`, ogni comando un `.tbtn`, nessuna misura nuova.
+
+⚠️ **LO STRATO ENTRA NEL SEME DELL'IDENTITÀ, e solo quando c'è.** È il cuore del lavoro. Fino a
+oggi le stesse parole avevano lo stesso id, quindi segnarle una seconda volta *cambiava il colore
+della prima*: giusto finché la lettura è una sola, impossibile per un insegnante che sullo stesso
+verso fa due analisi. Ora lo strato è in coda al seme — con la stessa regola già usata per il
+materiale: **chi ce l'ha usa il seme dello strato, chi non ce l'ha usa quello di sempre**. Le
+evidenze scritte prima conservano il loro id byte per byte (`test/evidenze.js` lo tiene fermo con
+un valore d'oro), quindi nessuna migrazione e nessun `ev:<id>` rotto negli appunti.
+
+⚠️ **Lo strato «Base» non esiste su disco**: è l'*assenza* di strato. Si accende e si spegne come
+gli altri, ma non ha un record, e un vault che non ha mai visto una lettura resta identico a se
+stesso — nel file non compare nemmeno la chiave `strati`.
+
+⚠️ **Il registro sta nello stesso file delle evidenze**, e `salva()` lo **conserva** quando nessuno
+glielo passa: `aggiungi`, `rimuovi`, `colora` e `tratta` scrivono tutte da lì, e senza quella riga
+il primo cambio di colore avrebbe cancellato il nome di ogni lettura mentre le evidenze
+continuavano a citarne l'id. È la trappola delle liste bianche applicata a una chiave intera.
+
+⚠️ **`evidenzaSotto` guarda solo dentro la lettura ATTIVA.** Altrimenti, segnando un verso già
+segnato nella metrica, la retorica ne *eredita* il colore invece di cominciare il suo: il gesto
+«cambia colore» vale dentro una lettura, non fra letture diverse.
+
+⚠️ **Sulle stesse identiche parole si dipinge un segno solo.** Non è un difetto degli strati: è
+come funziona l'ancoraggio, ed era già scritto nella sua testata — due evidenze sugli stessi
+caratteri sono entrambe legittime, ma nessuna marcatura del DOM può avvolgerle tutte e due senza
+spezzarne una; vince quella che comincia prima. **Con le letture questo smette di essere un limite
+e diventa il gesto**: si guarda l'analisi che si sta facendo e si spegne l'altra. La prova CDP
+misura proprio quello.
+
+⚠️ **Togliere una lettura non porta via i segni in silenzio**: si chiede, e `rimuoviStrato`
+risponde con quanti sono stati spostati e con i loro **cambi di identità** (`rinati`) — spostandoli
+l'id cambia, perché lo strato è nel seme, e un `ev:<id>` scritto in un appunto non li ritrova più.
+Meglio dirlo che lasciarlo scoprire (invariante 4).
+
+**Le decisioni dichiarate**: le letture sono del **contenitore** (uno zaino con dieci poesie vuole
+«analisi metrica» su tutte); un'evidenza sta in **una** lettura sola; **visibilità e lettura attiva
+stanno nel `localStorage`** — sono preferenze di lettura, non dati del vault; l'ordine è quello di
+nascita, senza un campo in più da tenere aggiornato.
+
+**Prove**: `test/strati.js` (51 controlli: filtro, registro, righe del pannello) · la sezione degli
+strati in `test/evidenze.js` — dove il controllo che vale più di tutti è l'id invariato ·
+`test/cdp/prova-strati.js`, che segna **le stesse parole due volte** e misura che su disco ce ne
+siano due, non una ricolorata.
+
+**Possibili seguiti**: un colore di default per lettura (applicato ai segni nuovi); riordino delle
+righe; l'elenco delle parole chiave che segue la visibilità delle letture — oggi mostra tutto, e la
+nota nel codice dice perché e da dove ripartire.
 
 Il disegno originale, che resta valido:
 Doppio click su una parola (o selezione + voce «Evidenzia» nel menu che già compare per

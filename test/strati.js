@@ -84,6 +84,106 @@ sezione('⚠️ Quante sono nascoste si sa sempre: è ciò che permette di dirlo
     { viste: 0, nascoste: 0, tutte: 0 }, S.conta(null, { tutte: false }));
 }
 
+sezione('Una lettura per volta: si spegne quella, non tutte');
+{
+  const evd = [
+    { id: 'a1', strato: '' }, { id: 'b2', strato: 'metrica' },
+    { id: 'c3', strato: 'metrica' }, { id: 'd4', strato: 'retorica' }
+  ];
+  const senzaMetrica = { tutte: true, spenti: ['metrica'] };
+  check('restano quelle delle altre letture', ['a1', 'd4'],
+    S.visibili(evd, senzaMetrica).map((e) => e.id));
+  check('e il conto lo dice', { viste: 2, nascoste: 2, tutte: 4 }, S.conta(evd, senzaMetrica));
+  /* ⚠️ Lo strato BASE si spegne come gli altri, e il suo id è la stringa vuota:
+     è l'assenza di strato, non «nessuno strato». Senza questo, le evidenze fatte
+     prima che le letture esistessero sarebbero le uniche che non si possono
+     mettere via. */
+  check('anche la base si spegne', ['b2', 'c3', 'd4'],
+    S.visibili(evd, { tutte: true, spenti: [''] }).map((e) => e.id));
+  check('e l\'interruttore generale vince su tutto', 0,
+    S.visibili(evd, { tutte: false, spenti: ['metrica'] }).length);
+}
+
+sezione('L\'interruttore di una lettura, e quello che NON scrive');
+{
+  check('spegnerla la mette fra le spente', { tutte: true, spenti: ['metrica'] },
+    S.commutaStrato({ tutte: true }, 'metrica'));
+  check('riaccenderla la toglie, e il campo sparisce', { tutte: true },
+    S.commutaStrato({ tutte: true, spenti: ['metrica'] }, 'metrica'));
+  check('una spenta due volte non si duplica', { tutte: true, spenti: ['metrica'] },
+    S.normalizza({ tutte: true, spenti: ['metrica', 'metrica'] }));
+  check('la base si spegne col suo id vuoto', { tutte: true, spenti: [''] },
+    S.commutaStrato({ tutte: true }, ''));
+  check('«spento» risponde per la base', true, S.spento({ tutte: true, spenti: [''] }, ''));
+  check('e dice di no per una che non c\'è', false, S.spento({ tutte: true, spenti: [''] }, 'metrica'));
+}
+
+sezione('⚠️ Una lettura cancellata non resta spenta per sempre');
+{
+  /* Uno stato che nomina una lettura che non esiste più è invisibile: riemerge
+     il giorno in cui qualcuno riusa quell'id, e nessuno saprebbe perché quei
+     segni non si accendono. */
+  check('si pota quello che non esiste', { tutte: true, spenti: ['viva'] },
+    S.potaSpenti({ tutte: true, spenti: ['viva', 'morta'] }, ['viva']));
+  check('ma la base non si pota mai: non è nel registro', { tutte: true, spenti: [''] },
+    S.potaSpenti({ tutte: true, spenti: [''] }, []));
+  check('e senza spenti non si inventa il campo', { tutte: false },
+    S.potaSpenti({ tutte: false }, ['viva']));
+}
+
+sezione('Il registro: nomi che si distinguono, ordine di nascita');
+{
+  check('un nome si ripulisce', 'Analisi metrica', S.nomeValido('  Analisi   metrica  '));
+  check('e non è infinito', 60, S.nomeValido('x'.repeat(200)).length);
+  /* ⚠️ Due letture con lo stesso nome sono due righe indistinguibili in un
+     pannello dove l'unica cosa che si legge è il nome. */
+  check('un nome già preso si numera', 'Metrica 2',
+    S.nomeLibero('Metrica', [{ nome: 'Metrica' }]));
+  check('e si continua a numerare', 'Metrica 3',
+    S.nomeLibero('Metrica', [{ nome: 'Metrica' }, { nome: 'Metrica 2' }]));
+  check('senza badare alle maiuscole', 'Metrica 2',
+    S.nomeLibero('Metrica', [{ nome: 'METRICA' }]));
+  check('un nome vuoto ne prende uno di comodo', 'Lettura', S.nomeLibero('   ', []));
+
+  const reg = S.ordina([
+    { id: 'b', nome: 'Seconda', creato: '2026-08-02T10:00:00.000Z' },
+    { id: 'a', nome: 'Prima', creato: '2026-08-01T10:00:00.000Z' },
+    { id: 'a', nome: 'Doppione', creato: '2026-08-03T10:00:00.000Z' },
+    { nome: 'Senza id' }, null, { id: 'z' }
+  ]);
+  check('in ordine di nascita, senza doppioni e senza voci mute',
+    [['a', 'Prima'], ['b', 'Seconda']], reg.map((s) => [s.id, s.nome]));
+}
+
+sezione('Le righe del pannello: una per lettura, più la Base');
+{
+  const strati = [
+    { id: 'me', nome: 'Metrica', creato: '2026-08-01T10:00:00.000Z' },
+    { id: 're', nome: 'Retorica', creato: '2026-08-02T10:00:00.000Z' }
+  ];
+  const evd = [
+    { id: '1', strato: 'me' }, { id: '2', strato: 'me' },
+    { id: '3', strato: 're' }, { id: '4', strato: '' }
+  ];
+  const r = S.righe(strati, evd, { tutte: true, spenti: ['re'] });
+  check('una riga per lettura, e la Base in fondo',
+    ['Metrica', 'Retorica', 'Base'], r.map((x) => x.nome));
+  /* ⚠️ Il conto è metà del pannello: «Metrica» e basta non fa capire perché il
+     testo è pulito, «Metrica · 2» sì. */
+  check('ognuna porta il suo conto', [2, 1, 1], r.map((x) => x.quante));
+  check('e dice se è spenta', [false, true, false], r.map((x) => x.spento));
+  check('la Base si dichiara tale', [false, false, true], r.map((x) => x.base));
+
+  /* ⚠️ La Base compare solo se ci vive qualcosa: un vault che non ha mai visto
+     una lettura non deve trovarsi una riga a spiegargli una cosa che non usa. */
+  check('senza evidenze nude, nessuna riga Base', ['Metrica', 'Retorica'],
+    S.righe(strati, [{ id: '1', strato: 'me' }, { id: '3', strato: 're' }], { tutte: true })
+      .map((x) => x.nome));
+  check('e una lettura vuota resta nell\'elenco, con zero',
+    0, S.righe(strati, [{ id: '4', strato: '' }], { tutte: true })[0].quante);
+  check('nessuna lettura e nessun segno: nessuna riga', 0, S.righe([], [], { tutte: true }).length);
+}
+
 sezione('Il confine: qui dentro non entra il DOM');
 {
   const sorgente = require('fs').readFileSync(

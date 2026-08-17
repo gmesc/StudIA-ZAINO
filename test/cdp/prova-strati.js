@@ -49,7 +49,7 @@ const ACCESI = `(()=>{ let n=0;
   await val(`(function(){ try{ Object.keys(localStorage)
     .filter(function(k){ return k.indexOf('studia.evidenze.viste.')===0; })
     .forEach(function(k){ localStorage.removeItem(k); }); }catch(e){}
-    EVIDENZE.strati=null; EVIDENZE.stratiCorso=''; return 1; })()`);
+    EVIDENZE.viste=null; EVIDENZE.visteCorso=''; return 1; })()`);
   await pausa(300);
 
   sezione('Si segna qualcosa, e si vede');
@@ -163,11 +163,145 @@ const ACCESI = `(()=>{ let n=0;
   ok('dopo un riavvio i segni sono ancora spenti', 'true',
     await val(`document.getElementById('pdfEvid').getAttribute('aria-pressed')`));
 
+  sezione('⚠️ LE LETTURE: le stesse parole, due analisi');
+  /* È la ragione per cui gli strati esistono. Prima del 18 agosto 2026 segnare
+     due volte le stesse parole cambiava il colore della prima evidenza: le
+     stesse parole, lo stesso id. */
+  await val(`(function(){ try{ Object.keys(localStorage)
+    .filter(function(k){ return k.indexOf('studia.evidenze.')===0; })
+    .forEach(function(k){ localStorage.removeItem(k); }); }catch(e){}
+    EVIDENZE.viste=null; EVIDENZE.visteCorso=''; return 1; })()`);
+  const corso = await val('corsoAttivo()');
+  /* Si parte da un capitolo pulito: le prove di prima hanno segnato qui. */
+  await val(`(function(){ var r=window.vault.evidenze.salva(corsoAttivo(), []);
+    EVIDENZE.elenco=r.evidenze||[]; evidenzeDisegna(); return 1; })()`);
+  await pausa(400);
+
+  const met = await val(`(function(){ var r=window.vault.evidenze.creaStrato(corsoAttivo(), 'Metrica');
+    EVIDENZE.strati=r.strati||[]; return r.strato ? r.strato.id : ''; })()`);
+  const ret = await val(`(function(){ var r=window.vault.evidenze.creaStrato(corsoAttivo(), 'Retorica');
+    EVIDENZE.strati=r.strati||[]; return r.strato ? r.strato.id : ''; })()`);
+  ok('due letture create', true, !!met && !!ret && met !== ret);
+
+  /* LO STESSO identico intervallo, segnato in due letture. */
+  const SEGNA = (colore) => `(function(){
+    var ps=document.querySelectorAll('#content p'); var p=ps[1]||ps[0];
+    var t=[].slice.call(p.childNodes).filter(function(n){ return n.nodeType===3 && n.nodeValue.trim().length>40; })[0];
+    var r=document.createRange(); r.setStart(t,0); r.setEnd(t,18);
+    evidenzia(r, ${JSON.stringify(colore)});
+    return r.toString(); })()`;
+  const colori = await val('evidenzeColori()');
+  await val(`evStratoAttivoScegli(${JSON.stringify(met)}), 1`);
+  const testo1 = await val(SEGNA(colori[0]));
+  await pausa(500);
+  await val(`evStratoAttivoScegli(${JSON.stringify(ret)}), 1`);
+  const testo2 = await val(SEGNA(colori[2]));
+  await pausa(600);
+  ok('si è segnato due volte lo stesso testo', true, !!testo1 && testo1 === testo2);
+
+  /* ⚠️ Non si cerca la stringa che il `Range` ha restituito: quello che finisce
+     su disco è il testo NORMALIZZATO del capitolo (gli spazi si riducono), e
+     confrontarlo con quello del DOM fa fallire il controllo per un motivo che
+     con gli strati non c'entra niente. Si chiede invece la cosa vera: c'è un
+     testo segnato due volte? */
+  const due = await val(`(function(){ var l=window.vault.evidenze.leggi(corsoAttivo());
+    var per={}; (l.evidenze||[]).forEach(function(x){ (per[x.exact]=per[x.exact]||[]).push(x); });
+    var doppi=Object.keys(per).filter(function(k){ return per[k].length>1; });
+    return doppi.length ? per[doppi[0]].map(function(x){
+      return { strato:x.strato, colore:x.colore, id:x.id }; }) : []; })()`);
+  ok('sul disco ce ne sono DUE, non una ricolorata', 2, due.length);
+  ok('una per lettura', [met, ret].sort(), due.map((x) => x.strato).sort());
+  ok('con id diversi', 2, new Set(due.map((x) => x.id)).size);
+  ok('e ognuna col suo colore', [colori[0], colori[2]].sort(), due.map((x) => x.colore).sort());
+
+  sezione('⚠️ Sulle STESSE parole si dipinge un segno solo — e le letture sono l\'interruttore');
+  /* Questo non è un difetto degli strati: è come funziona l'ancoraggio, ed è
+     scritto nella sua testata. Due evidenze che insistono sugli stessi caratteri
+     sono tutte e due legittime, ma nessuna marcatura del DOM può avvolgerle
+     entrambe senza spezzarne una: vince quella che comincia prima, l'altra
+     finisce in `sovrapposte`. Con le letture questo smette di essere un limite e
+     diventa il gesto: si guarda l'analisi che si sta facendo, e si spegne
+     l'altra. La prova misura proprio quello. */
+  const accesiDue = await finoA(ACCESI, 8000);
+  console.log('   accesi con tutt\'e due le letture: ' + accesiDue);
+  ok('sulle stesse parole se ne dipinge una', 1, accesiDue);
+  await val(`stratoCommuta(${JSON.stringify(met)}), 1`);
+  await pausa(600);
+  ok('spegnendo la metrica, il segno resta: è quello della retorica', 1, await val(ACCESI));
+  await val(`stratoCommuta(${JSON.stringify(ret)}), 1`);
+  await pausa(600);
+  ok('spegnendo anche la retorica non resta acceso niente', 0, await val(ACCESI));
+  await val(`stratoCommuta(${JSON.stringify(met)}), 1`);
+  await pausa(600);
+  ok('e riaccendendo la metrica torna il suo', 1, await val(ACCESI));
+  await val(`stratoCommuta(${JSON.stringify(ret)}), 1`);
+  await val(`stratoCommuta(${JSON.stringify(met)}), 1`);
+  await pausa(400);
+  ok('ma sul disco sono ancora due', 2,
+    await val(`(function(){ var l=window.vault.evidenze.leggi(corsoAttivo());
+      var per={}; (l.evidenze||[]).forEach(function(x){ per[x.exact]=(per[x.exact]||0)+1; });
+      var conti=Object.keys(per).map(function(k){ return per[k]; });
+      return conti.length ? Math.max.apply(null, conti) : 0; })()`));
+
+  sezione('Il pannellino: una riga per lettura, col conto e con l\'occhio');
+  await apriStrumento('fonte');
+  await pausa(400);
+  await val(`document.getElementById('pdfStrati').click(), 1`);
+  await pausa(400);
+  const pannello = await val(`(function(){ var p=document.getElementById('stratiPop');
+    if(!p || !p.hasAttribute('open')) return null;
+    var righe=[].slice.call(p.querySelectorAll('.stratoriga')).map(function(r){
+      return { id:r.getAttribute('data-strato'),
+               nome:r.querySelector('.stratonome').textContent,
+               conto:r.querySelector('.tbnota').textContent,
+               spenta:r.classList.contains('spenta'),
+               attiva:r.classList.contains('attiva'),
+               altBottone:Math.round(r.querySelector('.tbtn').getBoundingClientRect().height) };
+    });
+    return { aperto:true, righe:righe }; })()`);
+  ok('il pannellino si apre', true, !!pannello && pannello.aperto);
+  ok('con una riga per lettura', ['Metrica', 'Retorica'],
+    (pannello.righe || []).map((r) => r.nome));
+  ok('ognuna col suo conto', ['1', '1'], (pannello.righe || []).map((r) => r.conto));
+  ok('la metrica si vede che è spenta', [true, false], (pannello.righe || []).map((r) => r.spenta));
+  ok('e la retorica è quella che riceve i segni nuovi', [false, true],
+    (pannello.righe || []).map((r) => r.attiva));
+  /* ⚠️ I comandi del pannellino sono `.tbtn` come tutti gli altri: nessuna
+     misura sua (invariante 8). È la stessa verifica di `prova-tbar`. */
+  ok('e i suoi comandi sono alti quanto quelli di ogni barra', [30, 30],
+    (pannello.righe || []).map((r) => r.altBottone));
+
+  sezione('⚠️ Togliere una lettura non porta via i segni in silenzio');
+  const prima = await val('(EVIDENZE.elenco||[]).length');
+  const esito = await val(`(function(){ var r=window.vault.evidenze.rimuoviStrato(corsoAttivo(), ${JSON.stringify(met)}, '');
+    return { err:r.error, spostate:r.spostate, tolte:r.tolte, rinati:r.rinati.length, strati:r.strati.length }; })()`);
+  ok('la lettura si toglie', '', esito.err);
+  ok('e i suoi segni si spostano nella base', 1, esito.spostate);
+  ok('nessuno viene buttato', 0, esito.tolte);
+  /* ⚠️ Spostandoli l'id CAMBIA — lo strato è nel seme — e la funzione lo dice,
+     perché un `ev:<id>` scritto in un appunto non li ritrova più. */
+  ok('e il cambio di identità è dichiarato', 1, esito.rinati);
+  ok('nel registro ne resta una', 1, esito.strati);
+  await val(`(function(){ var l=window.vault.evidenze.leggi(corsoAttivo());
+    EVIDENZE.elenco=l.evidenze||[]; EVIDENZE.strati=l.strati||[]; evidenzeDisegna(); return 1; })()`);
+  await pausa(500);
+  ok('le evidenze sono ancora due', prima, await val('(EVIDENZE.elenco||[]).length'));
+
   sezione('E si rimette com\'era');
+  await val(`(function(){ var l=window.vault.evidenze.leggi(corsoAttivo());
+    (l.strati||[]).forEach(function(s){ window.vault.evidenze.rimuoviStrato(corsoAttivo(), s.id, 'via'); });
+    window.vault.evidenze.salva(corsoAttivo(), []);
+    var d=window.vault.evidenze.leggi(corsoAttivo());
+    EVIDENZE.elenco=d.evidenze||[]; EVIDENZE.strati=d.strati||[];
+    evidenzeDisegna(); return 1; })()`);
+  await pausa(500);
+  ok('il vault di prova torna senza letture', 0, await val('(EVIDENZE.strati||[]).length'));
+
+  sezione('E l\'interruttore generale torna com\'era');
   await val(`(function(){ try{ Object.keys(localStorage)
     .filter(function(k){ return k.indexOf('studia.evidenze.viste.')===0; })
     .forEach(function(k){ localStorage.removeItem(k); }); }catch(e){}
-    EVIDENZE.strati=null; EVIDENZE.stratiCorso=''; if(typeof evidenzeDisegna==='function') evidenzeDisegna();
+    EVIDENZE.viste=null; EVIDENZE.visteCorso=''; if(typeof evidenzeDisegna==='function') evidenzeDisegna();
     return 1; })()`);
   await pausa(500);
   ok('l\'interruttore torna a «si vedono»', 'false',

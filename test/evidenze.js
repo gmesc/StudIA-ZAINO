@@ -448,6 +448,99 @@ sezione('Su disco: scrivere, rileggere, non perdere niente');
     JSON.stringify(a.evidenza), JSON.stringify(r.evidenze[0]));
 }
 
+sezione('⚠️ Gli strati: le stesse parole, due letture');
+{
+  /* È LA RAGIONE PER CUI GLI STRATI ESISTONO. Fino al 18 agosto 2026 le stesse
+     parole avevano lo stesso id, quindi segnarle una seconda volta cambiava il
+     colore della prima — giusto finché la lettura è una sola, impossibile per un
+     insegnante che sullo stesso verso fa l'analisi metrica e quella retorica. */
+  const C = 'corso-strati';
+  const v = (extra) => Object.assign({
+    exact: 'nel mezzo del cammin', prefix: 'Dante: ', suffix: ' di nostra vita',
+    capitoloId: '01-inferno-c01', colore: '#fdf14d'
+  }, extra || {});
+
+  const base = E.normalizzaVoce(v()).id;
+  const metrica = E.normalizzaVoce(v({ strato: 'me01' })).id;
+  const retorica = E.normalizzaVoce(v({ strato: 're02' })).id;
+  check('lo stesso testo in due letture fa due id', 3,
+    new Set([base, metrica, retorica]).size);
+
+  /* ⚠️ IL CONTROLLO CHE VALE PIÙ DI TUTTI: un'evidenza SENZA strato conserva
+     l'id che aveva prima che gli strati esistessero. Il valore è scritto qui a
+     mano — se cambia, sono cambiati gli id nei vault di chi usa l'app, e i
+     `[==testo==](ev:<id>)` scritti negli appunti non ritrovano più niente. */
+  check('senza strato, l\'id è quello di sempre', '96d46b473551', base);
+
+  E.aggiungi(VAULT, C, v(), QUANDO);
+  E.aggiungi(VAULT, C, v({ strato: 'me01', colore: '#b6f34d' }), QUANDO);
+  E.aggiungi(VAULT, C, v({ strato: 're02', colore: '#ff8ad0' }), QUANDO);
+  const tre = E.leggi(VAULT, C);
+  check('e su disco convivono', 3, tre.evidenze.length);
+  check('ognuna con la sua lettura', ['', 'me01', 're02'],
+    tre.evidenze.map((e) => e.strato).sort());
+  /* Dentro la STESSA lettura invece resta idempotente: ri-segnare lo stesso
+     punto cambia il colore, non aggiunge una riga. */
+  E.aggiungi(VAULT, C, v({ strato: 'me01', colore: '#6fdcff' }), QUANDO);
+  const ancora = E.leggi(VAULT, C);
+  check('ri-segnare nella stessa lettura non duplica', 3, ancora.evidenze.length);
+  check('ma cambia il colore', '#6fdcff',
+    ancora.evidenze.filter((e) => e.strato === 'me01')[0].colore);
+}
+
+sezione('Il registro delle letture, accanto alle evidenze');
+{
+  const C = 'corso-registro';
+  const v = (t, extra) => Object.assign({
+    exact: t, prefix: 'x ', suffix: ' y', capitoloId: 'c1', colore: '#fdf14d'
+  }, extra || {});
+
+  check('un corso senza letture non ne ha', [], E.leggi(VAULT, C).strati);
+  const c1 = E.creaStrato(VAULT, C, '  Analisi   metrica ', '2026-08-18T10:00:00.000Z');
+  check('crearne una non dà errore', '', c1.error);
+  check('il nome si ripulisce', 'Analisi metrica', c1.strato.nome);
+  check('e l\'id è corto e stabile', true, /^[0-9a-f]{8}$/.test(c1.strato.id));
+  const c2 = E.creaStrato(VAULT, C, 'Retorica', '2026-08-18T11:00:00.000Z');
+  check('due letture stanno insieme', 2, E.leggi(VAULT, C).strati.length);
+  check('una senza nome non nasce', true, !!E.creaStrato(VAULT, C, '   ').error);
+
+  /* ⚠️ IL GUASTO CHE QUESTA SEZIONE SORVEGLIA: `aggiungi`/`colora`/`tratta`
+     scrivono l'elenco da `salva`, e se `salva` non rileggesse il registro il
+     primo cambio di colore cancellerebbe il nome di ogni lettura — mentre le
+     evidenze continuerebbero a citarne l'id. */
+  E.aggiungi(VAULT, C, v('parola', { strato: c1.strato.id }), QUANDO);
+  check('dopo un\'aggiunta il registro c\'è ancora', 2, E.leggi(VAULT, C).strati.length);
+  const primo = E.leggi(VAULT, C).evidenze[0];
+  E.colora(VAULT, C, primo.id, '#6fdcff');
+  check('e dopo un cambio di colore pure', 2, E.leggi(VAULT, C).strati.length);
+  E.tratta(VAULT, C, primo.id, 'overlay');
+  check('e dopo un cambio di tratto', 2, E.leggi(VAULT, C).strati.length);
+
+  const r = E.rinominaStrato(VAULT, C, c1.strato.id, 'Metrica');
+  check('rinominare cambia il nome', 'Metrica',
+    r.strati.filter((s) => s.id === c1.strato.id)[0].nome);
+  /* ⚠️ E NON l'id: l'id è nel seme delle sue evidenze, quindi cambiarlo le
+     staccherebbe tutte da lei. */
+  check('e le sue evidenze restano sue', 1,
+    E.leggi(VAULT, C).evidenze.filter((e) => e.strato === c1.strato.id).length);
+
+  /* Togliere una lettura: i segni si spostano, e chi chiama lo sa. */
+  const via = E.rimuoviStrato(VAULT, C, c1.strato.id, '');
+  check('la lettura non c\'è più', 1, via.strati.length);
+  check('i suoi segni sono stati spostati, non buttati', 1, via.spostate);
+  check('e nessuno è stato tolto', 0, via.tolte);
+  /* ⚠️ Spostandoli gli id CAMBIANO — lo strato è nel seme — e la funzione lo
+     DICE: un rimando `ev:<id>` in un appunto punterà a un'evidenza che non
+     esiste più, ed è meglio saperlo che scoprirlo. */
+  check('e i loro id sono cambiati, detto', 1, via.rinati.length);
+  check('l\'evidenza è nella base', '', E.leggi(VAULT, C).evidenze[0].strato);
+
+  const viaVia = E.rimuoviStrato(VAULT, C, c2.strato.id, 'via');
+  check('«via» toglie anche i segni', 0, viaVia.tolte);   // quella lettura era vuota
+  check('e il registro resta vuoto', 0, E.leggi(VAULT, C).strati.length);
+  check('una lettura che non c\'è lo dice', true, !!E.rimuoviStrato(VAULT, C, 'boh', '').error);
+}
+
 sezione('L\'id si può sapere PRIMA di scrivere — e dev\'essere lo stesso');
 {
   /* ⚠️ Perché questo controllo esiste. «Appunta» scrive nell'appunto

@@ -1797,6 +1797,28 @@
   #calloutMenu button{ display:flex; align-items:center; gap:.5rem; width:100%; border:0; background:transparent; cursor:pointer;
     padding:.45rem .8rem; font-size:13px; color:var(--ink); font-family:var(--font-text),var(--emoji-font),sans-serif; }
   #calloutMenu button:hover{ background:var(--hover); }
+  /* ---- Le letture (gli strati) --------------------------------------------
+     ⚠️ Qui NON ci sono misure: la geometria delle righe la dà `.tbar` e quella
+     dei comandi `.tbtn`, che è il punto del token (invariante 8). Restano solo
+     le tre cose che riguardano QUESTO pannello: quanto è largo, come si vede una
+     lettura spenta, e quale riceve i segni nuovi. */
+  #stratiPop{ width:min(340px,92vw); }
+  #stratiPop > .tbar strong{ font-size:11px; text-transform:uppercase; letter-spacing:.12em; }
+  #stratiLista{ max-height:min(50vh,360px); overflow:auto; }
+  .stratoriga{ border-bottom:1px solid var(--line-weak,var(--line)); }
+  .stratoriga:last-child{ border-bottom:0; }
+  /* Una lettura spenta si vede che è spenta: il nome si smorza, la riga no —
+     i suoi comandi devono restare leggibili, o non si potrebbe riaccenderla. */
+  .stratoriga.spenta .stratonome{ opacity:.5; text-decoration:line-through; }
+  /* Quella ATTIVA è dove finiscono i segni nuovi, ed è l'unica cosa del
+     pannello che si legge senza premere niente: grassetto e un filo a sinistra,
+     come la voce scelta nella sidebar dei capitoli. */
+  .stratoriga.attiva{ background:var(--hover); box-shadow:inset 3px 0 0 var(--primary); }
+  .stratoriga.attiva .stratonome{ font-weight:700; }
+  .stratoriga .stratonome{ text-align:left; justify-content:flex-start;
+    max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .stratinota{ font-size:11px; line-height:1.45; color:var(--muted);
+    padding:.45rem .6rem; border-top:1px solid var(--line); }
   #emojiPop{ width:min(320px,92vw); padding:.5rem; }
   #emojiPop input{ width:100%; border:1px solid var(--line); background:var(--bg); color:var(--ink); padding:.4rem .5rem; font-size:13px; margin-bottom:.4rem; }
   #emojiGrid{ display:grid; grid-template-columns:repeat(8,1fr); gap:2px; max-height:300px; overflow:auto; }
@@ -8269,7 +8291,7 @@ function closePops(){
      vista da un altro lato: togliergli `open` lo farebbe sparire lasciando il
      colore acceso sulla pagina — cioè ricreerebbe esattamente lo stato invisibile
      che si è appena finito di togliere, per un click sul «+» dello zoom. */
-  ['#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#zainoPop','#pdfDocPop','#plMediaPop','#pittorePop']
+  ['#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#zainoPop','#pdfDocPop','#plMediaPop','#pittorePop','#stratiPop']
     .forEach(function(s){ var e=$(s); if(e) e.removeAttribute('open'); });
   /* ⚠️ Il menu della selezione e la sua barra non si chiudono togliendo un
      attributo: hanno uno stato in una CLASSE (`open`, `aperta`) e due funzioni
@@ -10789,7 +10811,7 @@ function evidenzaIdFuturo(prep){
   var api=evidenzeApi(); if(!api || typeof api.identita!=='function') return '';
   var r=api.identita(Object.assign({
     exact:prep.sel.exact, prefix:prep.sel.prefix, suffix:prep.sel.suffix,
-    colore:prep.colore, tratto:prep.tratto
+    colore:prep.colore, tratto:prep.tratto, strato:prep.strato
   }, prep.indirizzo));
   return (r && r.id) || '';
 }
@@ -11563,8 +11585,12 @@ window.addEventListener('resize', function(){ selMenuChiudi(); selBarraChiudi();
    ⚠️ Il registro dei nomi è condiviso con la ricerca, che usa `'ricerca'`:
    questi si chiamano `ev-N`. Due funzioni che registrano lo stesso nome si
    spengono a vicenda senza un errore. */
-var EVIDENZE={ elenco:[], corso:'', mappa:null, orfane:0, nomi:[], colore:'',
-               strati:null, stratiCorso:'' };
+/* ⚠️ `viste` e `strati` sono due cose diverse, e i nomi devono dirlo: `viste` è
+   lo stato di ciò che si VEDE — una preferenza di questo computer — mentre
+   `strati` è il REGISTRO delle letture, che sta nel vault accanto alle evidenze.
+   Per un giorno si sono chiamate uguale, ed è bastato a confondere chi scriveva. */
+var EVIDENZE={ elenco:[], strati:[], corso:'', mappa:null, orfane:0, nomi:[], colore:'',
+               viste:null, visteCorso:'' };
 /* Che cosa, dentro `#content`, NON è testo del capitolo: il tooltip dei
    marcatori («Apri il documento»), le intestazioni dei riquadri, il quiz, il
    blocco degli appunti, la barra della lettura vocale. Senza questo elenco un
@@ -11811,12 +11837,12 @@ function rangeDaOffset(m, inizio, fine){
 
 function evidenzeCarica(){
   var api=evidenzeApi(), corso=corsoAttivo();
-  if(!api || !corso){ EVIDENZE.elenco=[]; EVIDENZE.corso=''; evidenzeBottoni(); return; }
+  if(!api || !corso){ EVIDENZE.elenco=[]; EVIDENZE.strati=[]; EVIDENZE.corso=''; evidenzeBottoni(); return; }
   var r=api.leggi(corso);
   // `error` si guarda PRIMA di `length`: «non ce n'è» e «non si legge» sono
   // due cose diverse, e dirle uguali nasconde un guasto di permessi
-  if(r && r.error){ console.error('evidenze:', r.error); EVIDENZE.elenco=[]; EVIDENZE.corso=corso; evidenzeBottoni(); return; }
-  EVIDENZE.elenco=(r && r.evidenze) || []; EVIDENZE.corso=corso;
+  if(r && r.error){ console.error('evidenze:', r.error); EVIDENZE.elenco=[]; EVIDENZE.strati=[]; EVIDENZE.corso=corso; evidenzeBottoni(); return; }
+  EVIDENZE.elenco=(r && r.evidenze) || []; EVIDENZE.strati=(r && r.strati) || []; EVIDENZE.corso=corso;
   /* ⚠️ Gli interruttori si rifanno QUI, e non solo quando si dipinge.
      `evidenzeDisegna()` gira quando c'è qualcosa da accendere — un capitolo
      aperto, una pagina a schermo — mentre questa funzione gira ogni volta che
@@ -11934,7 +11960,7 @@ function evidenzeDisegna(){
        ri-evidenziare una frase già segnata non l'avrebbe più riconosciuta: le
        avrebbe cambiato il colore di nascosto invece di dire «questa c'è già».
        Nascondere cambia come si VEDE, mai che cosa SUCCEDE. */
-    var mie=EvidenzeStrati.visibili(evidenzeDi(sup), evStrati());
+    var mie=EvidenzeStrati.visibili(evidenzeDi(sup), evViste());
     if(!mie.length) return;
     var m=evMappaDi(sup); if(!m.testo) return;
     var r=EvidenzeAncoraggio.risolvi(m.testo, mie);
@@ -12076,7 +12102,7 @@ function keywordDisegna(){
      ⚠️ Quando gli strati arriveranno la regola cambia: là un chip di uno strato
      spento direbbe una cosa falsa su quale lettura si sta guardando. Questa nota
      è il posto da cui ripartire. */
-  var avviso=EvidenzeStrati.accese(evStrati()) ? '' :
+  var avviso=EvidenzeStrati.accese(evViste()) ? '' :
     '<div class="kwvuoto">Le sottolineature sono nascoste sul testo. Sono tutte qui, e restano sul disco.</div>';
   if(!lista.length){
     /* Tre vuoti diversi, e vanno detti diversi. Il terzo è quello nuovo: ci sono
@@ -12403,19 +12429,33 @@ function evidenzeColoreScegli(c){
  * per leggerla d'un fiato non deve spegnerle anche nel corso che si apre dopo:
  * sono due letture diverse, e uno stato solo le confonderebbe.
  */
-function evStratiChiave(){ return 'studia.evidenze.viste.'+(corsoAttivo()||'-'); }
-function evStrati(){
-  var c=corsoAttivo()||'-';
-  if(EVIDENZE.stratiCorso===c && EVIDENZE.strati) return EVIDENZE.strati;
-  var grezzo=null; try{ grezzo=localStorage.getItem(evStratiChiave()); }catch(e){}
-  EVIDENZE.strati=EvidenzeStrati.normalizza(grezzo);
-  EVIDENZE.stratiCorso=c;
-  return EVIDENZE.strati;
+function evVisteChiave(){ return 'studia.evidenze.viste.'+(corsoAttivo()||'-'); }
+/** Quale lettura riceve i segni nuovi. Come la visibilità, è una preferenza di
+ *  questo computer: il registro delle letture sta nel vault, ma «quella su cui
+ *  sto lavorando adesso» no — è la stessa natura di un cursore. */
+function evAttivoChiave(){ return 'studia.evidenze.attivo.'+(corsoAttivo()||'-'); }
+function evStratoAttivo(){
+  var v=''; try{ v=localStorage.getItem(evAttivoChiave())||''; }catch(e){}
+  /* ⚠️ Una lettura cancellata non resta attiva: i segni nuovi finirebbero in
+     uno strato che il pannello non mostra, cioè invisibili appena fatti. */
+  if(v && !(EVIDENZE.strati||[]).some(function(s){ return s.id===v; })) return '';
+  return v;
 }
-function evStratiScegli(stato){
-  EVIDENZE.strati=EvidenzeStrati.normalizza(stato);
-  EVIDENZE.stratiCorso=corsoAttivo()||'-';
-  try{ localStorage.setItem(evStratiChiave(), EvidenzeStrati.scrivi(EVIDENZE.strati)); }catch(e){}
+function evStratoAttivoScegli(id){
+  try{ localStorage.setItem(evAttivoChiave(), String(id==null?'':id)); }catch(e){}
+}
+function evViste(){
+  var c=corsoAttivo()||'-';
+  if(EVIDENZE.visteCorso===c && EVIDENZE.viste) return EVIDENZE.viste;
+  var grezzo=null; try{ grezzo=localStorage.getItem(evVisteChiave()); }catch(e){}
+  EVIDENZE.viste=EvidenzeStrati.normalizza(grezzo);
+  EVIDENZE.visteCorso=c;
+  return EVIDENZE.viste;
+}
+function evVisteScegli(stato){
+  EVIDENZE.viste=EvidenzeStrati.normalizza(stato);
+  EVIDENZE.visteCorso=corsoAttivo()||'-';
+  try{ localStorage.setItem(evVisteChiave(), EvidenzeStrati.scrivi(EVIDENZE.viste)); }catch(e){}
 }
 /**
  * Accende e spegne i segni sul testo. UNA funzione, e la chiamano tutte e due le
@@ -12423,14 +12463,14 @@ function evStratiScegli(stato){
  * perché sono lo stesso verbo (invariante 6).
  */
 function evidenzeCommuta(){
-  evStratiScegli(EvidenzeStrati.commuta(evStrati()));
+  evVisteScegli(EvidenzeStrati.commuta(evViste()));
   evidenzeDisegna();
   /* ⚠️ Anche qui, e non solo dentro `evidenzeDisegna`: quella esce subito se il
      browser non ha la Custom Highlight API, e il bottone resterebbe a mostrare
      la posizione sbagliata di un comando che l'utente ha appena premuto. */
   evidenzeBottoni();
-  var n=EvidenzeStrati.conta(EVIDENZE.elenco||[], evStrati()).nascoste;
-  toast(EvidenzeStrati.accese(evStrati())
+  var n=EvidenzeStrati.conta(EVIDENZE.elenco||[], evViste()).nascoste;
+  toast(EvidenzeStrati.accese(evViste())
     ? 'Sottolineature accese'
     : (n ? 'Sottolineature nascoste: '+n+' restano sul disco' : 'Sottolineature nascoste'), true);
 }
@@ -12449,8 +12489,8 @@ function evidenzeCommuta(){
  * immagini (PIANO-FOTO §F2): lì si aspetta il documento, e si aspetta anche qui.
  */
 function evidenzeBottoni(){
-  var accese=EvidenzeStrati.accese(evStrati());
-  var n=EvidenzeStrati.conta(EVIDENZE.elenco||[], evStrati()).nascoste;
+  var accese=EvidenzeStrati.accese(evViste());
+  var n=EvidenzeStrati.conta(EVIDENZE.elenco||[], evViste()).nascoste;
   ['#pdfEvid','#kwEvid'].forEach(function(sel){
     var b=$(sel); if(!b) return;
     b.setAttribute('aria-pressed', accese ? 'false' : 'true');
@@ -12462,6 +12502,182 @@ function evidenzeBottoni(){
   });
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', evidenzeBottoni, { once:true });
+
+/* ===== LE LETTURE (gli strati) ============================================
+ *
+ * Uno strato è una LETTURA del testo: la metrica, le figure retoriche, il
+ * lessico. Le stesse parole possono stare in due letture diverse — è la sola
+ * ragione per cui gli strati esistono, ed è ciò che il seme dell'identità
+ * permette scrivendoci dentro lo strato (`lib/evidenze.js` → `identita`).
+ *
+ * Il pannellino è la pila di Photoshop: una riga per lettura, l'occhio che la
+ * accende, il conto dei suoi segni, e quella ATTIVA — dove finiscono i segni
+ * nuovi — marcata come tale. La riga «Base» sono le evidenze senza strato:
+ * compare solo se ce n'è qualcuna, e non ha un record da nessuna parte.
+ */
+function evStratiApi(){ var a=evidenzeApi(); return (a && a.creaStrato) ? a : null; }
+/** Il nome di una lettura, per i messaggi. La base non è nel registro. */
+function evStratoNome(id){
+  if(!id) return 'Base';
+  var s=(EVIDENZE.strati||[]).filter(function(x){ return x.id===id; })[0];
+  return s ? s.nome : id;
+}
+function stratiPopChiudi(){ var p=$('#stratiPop'); if(p) p.removeAttribute('open'); }
+function stratiPopAperto(){ var p=$('#stratiPop'); return !!p && p.hasAttribute('open'); }
+
+/**
+ * Disegna il pannellino dalle righe che la regola pura sa costruire.
+ *
+ * ⚠️ Le righe le fa `EvidenzeStrati.righe`, non questo codice: quali letture
+ * esistono, quante evidenze hanno ciascuna e se sono spente è aritmetica su
+ * elenchi, e in mezzo al DOM non si prova. Qui si scrive solo il markup.
+ */
+function stratiPopDisegna(){
+  var host=$('#stratiLista'); if(!host) return;
+  var righe=EvidenzeStrati.righe(EVIDENZE.strati||[], EVIDENZE.elenco||[], evViste());
+  var attivo=evStratoAttivo();
+  var gen=EvidenzeStrati.accese(evViste());
+  var b=$('#stratiTutte');
+  if(b){
+    b.setAttribute('aria-pressed', gen ? 'false' : 'true');
+    b.textContent=gen ? 'Nascondi tutto' : 'Rimostra tutto';
+  }
+  if(!righe.length){
+    host.innerHTML='<div class="kwvuoto">Nessuna lettura, e nessuna sottolineatura. '+
+      'Segna qualcosa nel testo, o crea una lettura qui sotto per tenerle separate.</div>';
+    return;
+  }
+  host.innerHTML=righe.map(function(r){
+    /* Una riga è una `.tbar`: l'occhio, il nome, il conto, e i comandi. Nessuna
+       misura nuova — è la stessa barra della mappa e degli appunti. */
+    var suo=(r.id===attivo);
+    return '<div class="tbar stratoriga'+(r.spento?' spenta':'')+(suo?' attiva':'')+'" data-strato="'+escHtml(r.id)+'">'+
+      /* ⚠️ Sempre l'occhio, e lo stato lo dice `aria-pressed` (premuto =
+         spenta), come per ogni comando a due posizioni di quest'app. Sulla
+         barra della Fonte il bottone ALTERNA matita e occhio perché lì è solo,
+         e il glifo è l'unica cosa che si legge; qui accanto c'è la ✎ del
+         rinomina, e due matite nella stessa riga si scambiano per lo stesso
+         comando — visto a schermo, non dedotto. */
+      '<button class="tbtn" type="button" data-str="occhio" aria-pressed="'+(r.spento?'true':'false')+'"'+
+        ' title="'+(r.spento?'Rimostra questa lettura':'Nascondi questa lettura')+'"'+
+        ' aria-label="'+(r.spento?'Rimostra':'Nascondi')+' la lettura '+escHtml(r.nome)+'">'+
+        '\u{1F441}</button>'+
+      '<button class="tbtn stratonome" type="button" data-str="attiva"'+
+        ' title="'+(suo?'È qui che finiscono i segni nuovi':'Segna in questa lettura')+'"'+
+        ' aria-pressed="'+(suo?'true':'false')+'">'+escHtml(r.nome)+'</button>'+
+      '<span class="tbnota">'+r.quante+'</span>'+
+      '<span class="tbspazio"></span>'+
+      /* La base non si rinomina e non si toglie: non è un record, è l'assenza
+         di uno strato. Un comando spento che non si può spiegare sarebbe
+         peggio di un comando che non c'è. */
+      (r.base ? '' :
+        '<button class="tbtn" type="button" data-str="rinomina" title="Rinomina questa lettura" aria-label="Rinomina la lettura '+escHtml(r.nome)+'">\u{270E}</button>'+
+        '<button class="tbtn" type="button" data-str="via" title="Togli questa lettura" aria-label="Togli la lettura '+escHtml(r.nome)+'">\u{1F5D1}</button>')+
+      '</div>';
+  }).join('');
+}
+function stratiPopApri(ancora){
+  var p=$('#stratiPop'); if(!p) return;
+  stratiPopDisegna();
+  popAt(p, ancora);
+}
+
+/** Crea una lettura e la rende attiva: chi la fa la sta per usare. */
+async function stratoNuovo(){
+  var api=evStratiApi();
+  if(!api){ toast('Aggiorna l’app per usare le letture', false); return; }
+  var corso=corsoAttivo(); if(!corso){ toast('Apri un corso o uno zaino', false); return; }
+  var proposto=EvidenzeStrati.nomeLibero('Lettura', EVIDENZE.strati||[]);
+  var nome=await askText('Come si chiama questa lettura?', proposto);
+  if(nome===null) return;
+  var r=api.creaStrato(corso, nome);
+  if(r.error){ toast('Lettura non creata: '+r.error, false); return; }
+  EVIDENZE.strati=r.strati;
+  evStratoAttivoScegli(r.strato.id);
+  stratiPopDisegna();
+  toast('«'+r.strato.nome+'»: i segni nuovi finiscono qui', true);
+}
+
+async function stratoRinomina(id){
+  var api=evStratiApi(); if(!api) return;
+  var nome=await askText('Come si chiama adesso?', evStratoNome(id));
+  if(nome===null) return;
+  var r=api.rinominaStrato(corsoAttivo(), id, nome);
+  if(r.error){ toast('Non rinominata: '+r.error, false); return; }
+  EVIDENZE.strati=r.strati; stratiPopDisegna();
+}
+
+/**
+ * Togliere una lettura: si CHIEDE che cosa ne è dei suoi segni.
+ *
+ * ⚠️ Nessun valore di comodo. Cancellare le annotazioni di qualcuno perché ha
+ * tolto un'etichetta è la perdita silenziosa dell'invariante 4; spostarle
+ * d'ufficio nella base sarebbe una decisione presa al posto suo. Si chiede, e
+ * si dice quante sono.
+ *
+ * ⚠️ Spostandole gli id CAMBIANO — lo strato è nel seme — e i rimandi
+ * `ev:<id>` scritti negli appunti puntano a un'evidenza che non esiste più.
+ * Si dice anche quello, invece di lasciarlo scoprire.
+ */
+async function stratoVia(id){
+  var api=evStratiApi(); if(!api) return;
+  var quante=(EVIDENZE.elenco||[]).filter(function(e){ return String(e.strato||'')===id; }).length;
+  var nome=evStratoNome(id);
+  var scelta='via';
+  if(quante){
+    var ok=(typeof confirm!=='function') || confirm('«'+nome+'» ha '+quante+' '+(quante===1?'sottolineatura':'sottolineature')+
+      '.\n\nOK le sposta nella Base e tiene i segni; Annulla non tocca niente.\n\n'+
+      'Per buttare via anche i segni, prima spostali e poi cancellali dall’elenco.');
+    if(!ok) return;
+    scelta='';
+  }
+  var r=api.rimuoviStrato(corsoAttivo(), id, scelta);
+  if(r.error){ toast('Non tolta: '+r.error, false); return; }
+  EVIDENZE.strati=r.strati;
+  var l=api.leggi(corsoAttivo()); EVIDENZE.elenco=(l && l.evidenze)||[];
+  if(evStratoAttivo()===id) evStratoAttivoScegli('');
+  evidenzeDisegna(); stratiPopDisegna();
+  toast(r.spostate
+    ? ('«'+nome+'» tolta: '+r.spostate+' '+(r.spostate===1?'segno spostato':'segni spostati')+' nella Base'+
+       (r.rinati.length ? ' — i rimandi negli appunti a questi segni non li ritrovano più' : ''))
+    : ('«'+nome+'» tolta'), true);
+}
+
+/** Accende o spegne UNA lettura. Stessa forma dell'interruttore generale: la
+ *  regola sta nel modulo, qui si salva e si ridisegna. */
+function stratoCommuta(id){
+  evVisteScegli(EvidenzeStrati.commutaStrato(evViste(), id));
+  evidenzeDisegna();
+  stratiPopDisegna();
+}
+
+(function(){
+  document.addEventListener('click', function(e){
+    if(!e.target || !e.target.closest) return;
+    var apri=e.target.closest('#pdfStrati');
+    if(apri){ if(stratiPopAperto()) stratiPopChiudi(); else stratiPopApri(apri); return; }
+    if(e.target.closest('#stratiNuovo')){ stratoNuovo(); return; }
+    if(e.target.closest('#stratiTutte')){ evidenzeCommuta(); stratiPopDisegna(); return; }
+    var b=e.target.closest('#stratiPop [data-str]');
+    if(b){
+      var riga=b.closest('[data-strato]'); if(!riga) return;
+      var id=riga.getAttribute('data-strato');
+      var az=b.getAttribute('data-str');
+      if(az==='occhio'){ stratoCommuta(id); return; }
+      if(az==='attiva'){ evStratoAttivoScegli(id); stratiPopDisegna();
+        toast('I segni nuovi finiscono in «'+evStratoNome(id)+'»', true); return; }
+      if(az==='rinomina'){ stratoRinomina(id); return; }
+      if(az==='via'){ stratoVia(id); return; }
+      return;
+    }
+    if(stratiPopAperto() && !e.target.closest('#stratiPop')) stratiPopChiudi();
+  });
+  window.addEventListener('keydown', function(e){
+    if(e.key!=='Escape' || !stratiPopAperto()) return;
+    e.stopPropagation(); stratiPopChiudi();
+  }, true);
+})();
+
 var EV_TRATTI=['sotto','overlay'];
 function evidenzeTratto(){
   if(EVIDENZE.tratto) return EVIDENZE.tratto;
@@ -12540,6 +12756,11 @@ function evidenzaPrepara(range, colore, opt){
      comandi (vedi la nota sopra). */
   var gia=evidenzaSotto(range);
   return { corso:corsoAttivo(), indirizzo:indirizzo, sel:sel,
+           /* La lettura in cui il segno nasce. ⚠️ Si prende quella ATTIVA e non
+              quella di `gia`: `evidenzaSotto` guarda già solo dentro la lettura
+              attiva, quindi le due coincidono quando il punto è occupato — e
+              scriverlo qui rende esplicito dove finisce un segno nuovo. */
+           strato: evStratoAttivo(),
            colore: colore || (gia && gia.colore) || evidenzeColore(),
            tratto: (opt && opt.tratto) || (gia && evTrattoDi(gia)) || evidenzeTratto() };
 }
@@ -12554,7 +12775,7 @@ function evidenzaScrivi(prep, opt){
   if(prep.corso!==corsoAttivo()){ toast('Il corso è cambiato: parola chiave non aggiunta',false); return false; }
   var r=api.aggiungi(prep.corso, Object.assign({
     exact:prep.sel.exact, prefix:prep.sel.prefix, suffix:prep.sel.suffix,
-    colore:prep.colore, tratto:prep.tratto||evidenzeTratto()
+    colore:prep.colore, tratto:prep.tratto||evidenzeTratto(), strato:prep.strato
   }, prep.indirizzo));
   if(r && r.error){ toast('Non salvata: '+r.error,false); return false; }
   EVIDENZE.elenco=r.evidenze; EVIDENZE.corso=prep.corso;
@@ -12585,7 +12806,14 @@ function evidenzia(range, colore, opt){
 function evidenzaSotto(range){
   if(!evidenzePronte()) return null;
   var q=evMappaPerRange(range); if(!q) return null;
-  var mie=evidenzeDi(q.sup); if(!mie.length) return null;
+  /* ⚠️ Solo dentro la lettura ATTIVA. Le stesse parole possono stare in due
+     letture — è il punto degli strati — e guardare in tutte vorrebbe dire che
+     segnando un verso già segnato nella metrica, la retorica ne EREDITA il
+     colore invece di cominciare il suo. Il gesto «cambia colore» vale dentro
+     una lettura, non fra letture diverse. */
+  var attivo=evStratoAttivo();
+  var mie=evidenzeDi(q.sup).filter(function(e){ return String(e.strato||'')===attivo; });
+  if(!mie.length) return null;
   var m=q.m, pos=offsetDaRange(m, range); if(!pos) return null;
   var r=EvidenzeAncoraggio.risolvi(m.testo, mie), vinta=null;
   r.trovate.forEach(function(t){
@@ -18085,6 +18313,13 @@ window.addEventListener('keydown', function(e){
     <button class="tbtn" id="pdfEvid" type="button" aria-pressed="false"
             title="Nascondi le sottolineature sul testo (restano salvate)"
             aria-label="Nascondi le sottolineature sul testo (restano salvate)">&#128397;</button>
+    <!-- Le LETTURE: sullo stesso testo si segnano le stesse parole per analisi
+         diverse, e ognuna si accende per conto suo. Il pannellino è accanto
+         all'interruttore perché sono la stessa domanda a due livelli — «che
+         cosa vedo» e «di quale lettura». -->
+    <button class="tbtn" id="pdfStrati" type="button" aria-haspopup="menu" aria-expanded="false"
+            title="Le letture: segna le stesse parole per analisi diverse"
+            aria-label="Le letture del testo">&#9776;</button>
     <button class="tbtn" id="pdfRitaglia" type="button" hidden aria-pressed="false" title="Ritaglia un'area della pagina — o tieni premuto &#8984; e trascina" aria-label="Ritaglia un'area della pagina">&#9986;</button>
     <button class="tbtn" id="pdfFindBtn" type="button" hidden aria-expanded="false" title="Cerca nel documento (⌘F)" aria-label="Cerca nel documento">&#128269;</button>
     <!-- Il riconoscimento del testo: compare SOLO quando il documento aperto è
@@ -18510,6 +18745,26 @@ window.addEventListener('keydown', function(e){
      Dentro il riquadro dell'anteprima sarebbe tagliato dal suo `overflow`, e si
      aprirebbe senza che nessuno lo chiuda. Cercare NEL DOCUMENTO è cosa diversa
      dal cercare NEL CORSO (`#searchPop`): due indici, due porte, due risultati. -->
+<!-- LE LETTURE. La pila di Photoshop, con la grammatica di questa casa: ogni
+     riga è una `.tbar`, ogni comando un `.tbtn`, nessuna misura sua. Sta al
+     livello della pagina e non dentro il riquadro della Fonte per la stessa
+     ragione della ricerca qui sotto: dentro sarebbe tagliato dall'`overflow`.
+     ⚠️ La riga «Base» sono le evidenze senza lettura — quelle fatte prima che
+     le letture esistessero. Non è un record su disco: è l'assenza di uno
+     strato, e compare solo quando qualcosa ci vive dentro. -->
+<div id="stratiPop" class="popmenu" role="dialog" aria-label="Le letture del testo">
+  <div class="tbar">
+    <strong>Letture</strong>
+    <span class="tbspazio"></span>
+    <button class="tbtn" id="stratiTutte" type="button" aria-pressed="false"
+            title="Accendi o spegni tutte le sottolineature">Nascondi tutto</button>
+    <button class="tbtn" id="stratiNuovo" type="button"
+            title="Una lettura nuova: le stesse parole, un'altra analisi"
+            aria-label="Nuova lettura">+</button>
+  </div>
+  <div id="stratiLista" role="list"></div>
+  <div class="stratinota">I segni nuovi finiscono nella lettura in grassetto. Premi un nome per cambiarla.</div>
+</div>
 <div id="pdfFindPop" class="popmenu" role="dialog" aria-label="Cerca nel documento">
   <!-- `tbar`: la stessa grammatica della barra della mappa e di quella degli
        appunti — bottoni nudi e attaccati, campo alto quanto loro, misure dai

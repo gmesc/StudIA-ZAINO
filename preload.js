@@ -330,6 +330,27 @@ contextBridge.exposeInMainWorld('vault', {
      * giallo acceso senza l'appunto che l'ha causato sarebbe comparso dal nulla.
      * Non tocca niente: è un calcolo, e non serve nemmeno il vault.
      */
+    /* Le LETTURE (gli strati): stesso file delle evidenze, stessa natura
+       sincrona del resto di questo blocco. Tre verbi soli — nasce, si rinomina,
+       si toglie — perché accendere e spegnere non tocca il disco: è una
+       preferenza di lettura, e vive nel localStorage del renderer. */
+    creaStrato: (courseId, nome) => {
+      if (!vaultPath) return { strato: null, strati: [], error: 'nessuna cartella vault impostata' };
+      try { return evidenzeLib.creaStrato(vaultPath, courseId, nome); }
+      catch (e) { return { strato: null, strati: [], error: e.message }; }
+    },
+    rinominaStrato: (courseId, id, nome) => {
+      if (!vaultPath) return { strati: [], error: 'nessuna cartella vault impostata' };
+      try { return evidenzeLib.rinominaStrato(vaultPath, courseId, id, nome); }
+      catch (e) { return { strati: [], error: e.message }; }
+    },
+    /* `dove`: `'via'` porta via anche i segni, l'id di un'altra lettura ce li
+       sposta. Non c'è un valore di comodo — chi chiama deve aver chiesto. */
+    rimuoviStrato: (courseId, id, dove) => {
+      if (!vaultPath) return { tolte: 0, spostate: 0, rinati: [], strati: [], error: 'nessuna cartella vault impostata' };
+      try { return evidenzeLib.rimuoviStrato(vaultPath, courseId, id, dove); }
+      catch (e) { return { tolte: 0, spostate: 0, rinati: [], strati: [], error: e.message }; }
+    },
     identita: (voce) => {
       try {
         /* ⚠️ Si passa da `normalizzaVoce`, che è la STESSA porta da cui passa
