@@ -9825,7 +9825,16 @@ function ensureMde(){
       '|','link','code','|','preview','side-by-side',
       { name:'guida', title:'Come si scrive in StudIA', className:'ncb-guida',
         action:function(){ apriGuida(); } }],
-    shortcuts:{ toggleSideBySide:'F9', togglePreview:'Cmd-P' },
+    /* ⚠️ L'anteprima su ⌘J e NON su ⌘P, che è di fabbrica in EasyMDE: dentro
+       l'editor quel tasto rubava la stampa: chi premeva ⌘P per stampare
+       l'appunto si vedeva commutare l'anteprima, e la stampa non partiva.
+       ⌘J è l'unica lettera libera di tutte e tre le tastiere che si
+       sovrappongono qui — il keymap di CodeMirror (A D Z Y S F G U), le
+       scorciatoie di EasyMDE (B I H K L E P), le nostre (F P S Z) — senza
+       contare quelle che il sistema si tiene (C V X W Q M N R O T).
+       EasyMDE traduce `Cmd-` in `Ctrl-` fuori dal Mac: il nome che l'utente
+       legge lo scrive `tastiNelDom`, questa riga vale per tutti e due. */
+    shortcuts:{ toggleSideBySide:'F9', togglePreview:'Cmd-J' },
     previewClass:['editor-preview','md-prev'],
     previewRender:function(plain){ try{ return renderNoteMd(plain); }catch(e){ return escHtml(plain); } }
   });
