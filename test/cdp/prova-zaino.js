@@ -248,6 +248,32 @@ const ZAINO = 'zaino-di-prova';
   ok('e la disposizione del banco ha traslocato', false,
     await val(`localStorage.getItem('studia.banco.c.${ZAINO}') !== null`));
 
+  sezione('La guida illustrata si apre da Impostazioni › Zaino');
+  /* ⚠️ Che cosa difende. La guida viaggia DENTRO il pacchetto
+     (`App/guida-zaino/`) e si apre da un bottone: se un giorno l'IPC cambia
+     nome, o la cartella non finisce nell'app impacchettata, il bottone resta
+     muto — nessun errore, nessun rosso, e chi preme conclude che l'app è rotta.
+     Qui si controllano i tre anelli separatamente, così un rosso dice QUALE si
+     è staccato.
+     ⚠️ La finestra NON si apre: aprirla lascerebbe una seconda finestra sopra
+     l'app per tutte le prove che seguono — è la trappola dello strascico, già
+     pagata con l'editor e con la modalità. Si prova che la porta c'è e che
+     dietro la porta c'è il file, non che la maniglia gira. */
+  ok('il ponte verso il main esiste', 'function',
+    await val(`typeof (window.vault.guida && window.vault.guida.apri)`));
+  await val(`document.getElementById('settingsBtn').click()`); await pausa(400);
+  await val(`document.querySelector('.set-tab[data-tab="zaino"]').click()`); await pausa(500);
+  const btnGuida = await val(`(()=>{ const b=document.getElementById('setGuida');
+    return b ? { c:b.textContent.trim(), visibile:b.getBoundingClientRect().height>0 } : null; })()`);
+  ok('il bottone è nella scheda Zaino, a schermo', true, !!btnGuida && btnGuida.visibile);
+  ok('e dice che cosa apre', true, !!btnGuida && /guida allo ZAINO/i.test(btnGuida.c));
+  await val(`document.getElementById('settingsClose')?.click()`); await pausa(300);
+  /* Il terzo anello: il file che il main aprirà. Si guarda sul disco, accanto
+     al codice che sta girando — nel pacchetto è la stessa cartella dentro
+     `app.asar`, ed è ciò che il giro degli installer deve verificare a mano. */
+  ok('la guida è sul disco, accanto all\'app', true,
+    fs.existsSync(path.join(__dirname, '..', '..', 'App', 'guida-zaino', 'index.html')));
+
   sezione('Tornando ai corsi la sidebar torna quella dei capitoli');
   await val(`(async()=>{ await cambiaModo('corso'); return 1; })()`);
   await pausa(700);

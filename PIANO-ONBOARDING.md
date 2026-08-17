@@ -239,30 +239,42 @@ c'è firma, servirebbe un certificato a pagamento), **HEIC** non convertibile (`
 la **voce di sistema** `say` assente — ma la lettura ad alta voce funziona lo stesso con
 `speechSynthesis`, che usa le voci di Windows.
 
-### Da fare al prossimo giro di installer — *aperto, 17 agosto 2026*
+### La guida dentro i pacchetti — ✅ *17 agosto 2026*
 
 Dal 17 agosto la **guida illustrata dello ZAINO vive dentro l'app**: `App/guida-zaino/` è la
 sorgente unica (~30 MB di immagini + `_lab/` con la ricetta e i materiali di prova), aperta dal
 bottone «📖 Apri la guida allo ZAINO» in Impostazioni › Zaino. Entra nel pacchetto da sé —
 `App/**/*` è già nei `files` di electron-builder — **tranne `_lab/`**, esclusa con
-`!App/guida-zaino/_lab/**`. Proprio perché entra da sé va guardata, invece che data per scontata:
+`!App/guida-zaino/_lab/**`. Proprio perché entra da sé è stata guardata invece che data per
+scontata, e i tre pacchetti del 17 agosto lo dicono:
 
-1. **Verificare che `_lab/` sia FUORI dal pacchetto** (sono 8 MB di video e PDF di prova che
-   nessun utente deve ricevere) e che `App/guida-zaino/img/` sia dentro. Un'esclusione in
-   `package.json` è una riga che si può perdere in un merge, e non fa rumore.
-2. **Verificare dentro il pacchetto** che ci sia `App/guida-zaino/index.html` e che il bottone
-   apra davvero la finestra — sul `.dmg` montato e sull'installer Windows. È un percorso
-   risolto con `__dirname`: nel bundle è dentro `app.asar`, e `BrowserWindow.loadFile` lo legge,
-   ma il giorno che `asar` cambia questa è la prima cosa che si rompe.
-3. **La prova CDP che oggi manca** (~10 righe in `test/cdp/prova-zaino.js`): il ponte
-   `window.vault.guida` esiste, il bottone `#setGuida` c'è nella scheda Zaino, il file è sul
-   disco — **senza aprire la finestra** durante la suite. ⚠️ Finché non c'è, un IPC rotto o una
-   cartella non impacchettata lasciano un bottone muto, e nessuna prova se ne accorge: è il
-   guasto silenzioso di sempre, qui in una feature che si vede solo dentro Impostazioni.
+| | arm64 | Intel | Windows |
+|---|---|---|---|
+| `App/guida-zaino/index.html` nel pacchetto | ✅ | ✅ | ✅ |
+| `img/` (101 immagini, 30 MB) | ✅ | ✅ | ✅ |
+| `_lab/` **fuori** (8 MB di materiali di prova) | ✅ | ✅ | ✅ |
+
+⚠️ **`asar` è disattivato** (`asar: false`, serve ai `.py` dell'ingest), quindi la guida nel
+bundle sta in `Contents/Resources/app/App/guida-zaino/` come file sciolti, e `loadFile` la
+apre da lì. Il giorno che `asar` si riaccende, questa è la prima cosa da riprovare: il
+percorso resta valido dentro l'archivio, ma vale la pena vederlo con gli occhi.
+
+La **prova CDP** promessa è stata scritta (`test/cdp/prova-zaino.js`, sezione «La guida
+illustrata si apre da Impostazioni › Zaino»): controlla i tre anelli **separatamente** — il
+ponte `window.vault.guida`, il bottone `#setGuida` nella scheda Zaino, il file sul disco — così
+un rosso dice quale si è staccato. ⚠️ Non apre la finestra: una seconda finestra sopra l'app
+resterebbe lì per tutte le prove che seguono (la trappola dello strascico, già pagata con
+l'editor e con la modalità). Che la maniglia giri davvero lo dice il gesto a mano.
 
 Sul peso: quei 30 MB sono PNG @2x/@3x. Convertirli in WebP li porterebbe intorno ai 6 senza
 perdita visibile — deciso di non farlo adesso, ma se l'installer Windows dovesse dimagrire è
 il primo posto dove guardare.
+
+⚠️ **Trappola del giro di build, pagata il 17 agosto**: costruendo il secondo pacchetto Mac
+subito dopo il primo, electron-builder muore in `hdiutil detach /Volumes/StudIA 1.0.0` — il
+volume del dmg precedente è ancora attaccato, e i due build usano lo stesso nome di volume.
+Non è un guasto del pacchetto: si rilancia lo stesso comando (o si smonta a mano) e passa.
+Fra un `npm run pacchetto` e l'altro conviene guardare `mount | grep -i studia`.
 
 ## Notarizzazione del `.dmg` — che cosa serve
 
