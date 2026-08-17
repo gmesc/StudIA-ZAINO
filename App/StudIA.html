@@ -1034,12 +1034,21 @@
   #pdfPane2{ display:none; flex-direction:column; height:100%; min-height:0; background:var(--panel); }
   .bcorpo > #pdfPane2{ display:flex!important; height:100%; }
   #pdf2Host{ flex:1; position:relative; min-height:0; background:var(--hover); }
-  #pdf2Frame{ position:absolute; inset:0; overflow:auto; outline:0; }
+  #pdf2Frame{ position:absolute; inset:0; overflow:auto; outline:0; scrollbar-gutter:stable; }
   #pdf2Frame .pdfViewer{ margin:0 auto; }
   #pdfPane2[data-doc="0"] #pdf2Host{ display:none; }
   /* (il livello e il titolo li vestono le regole di `.pdfbar` qui sopra, che
      adesso valgono per tutt'e due i riquadri) */
-  #pdfFrame{ position:absolute; inset:0; overflow:auto; outline:0; }
+  /* ⚠️ `scrollbar-gutter:stable` è la stessa medicina di `#fotoHost`, e qui serve
+     per la stessa ragione: «riempi larghezza» calcola la scala sulla larghezza
+     UTILE del riquadro, e dove le barre di scorrimento occupano spazio (misurato
+     qui: quindici pixel) quella che compare appena il documento è più alto del
+     riquadro li porterebbe via DOPO il conto — banda bianca a destra, o una
+     barra orizzontale per un pelo. Con la grondaia riservata la larghezza è la
+     stessa prima e dopo. Serve da quando la pagina arriva davvero al bordo
+     (`removePageBorders`): prima i 40 pixel tenuti da parte dalla libreria
+     coprivano l'oscillazione per caso. */
+  #pdfFrame{ position:absolute; inset:0; overflow:auto; outline:0; scrollbar-gutter:stable; }
   #pdfFrame .pdfViewer{ margin:0 auto; }
   /* Il documento non c'è ancora, o si sta caricando: si dice, invece di
      lasciare un rettangolo grigio che sembra un guasto. */
@@ -5310,6 +5319,25 @@ function pdfjsAvvia(){
          l'annotazione dei PDF: quel layer non è una funzione spenta, è una
          funzione che non abbiamo mai voluto. */
       annotationEditorMode:-1,
+      /* ⚠️ «RIEMPI LARGHEZZA» DEVE RIEMPIRE LA LARGHEZZA, e senza questa riga
+         non ci arrivava. Chi si mangiava lo spazio è UNO, e sta nella libreria:
+         calcolando la scala di `page-width`, `pdf_viewer.mjs` toglie
+         SCROLLBAR_PADDING = 40 dalla larghezza del contenitore — una banda
+         tenuta da parte per una barra di scorrimento, in un viewer che la
+         disegna dentro il contenitore invece che accanto. `removePageBorders`
+         è l'unico interruttore che la azzera (`hPadding = vPadding = 0`).
+         Misurato in un riquadro da 465px utili: la pagina era 424 — 41 pixel di
+         bianco, tutti a DESTRA perché senza `margin:auto` la pagina sta a
+         sinistra — e adesso è 465, con a destra soltanto la barra.
+         Il nome dell'opzione parla di bordi perché di norma toglie anche il
+         `border:9px solid transparent` di `.page`: qui non toglie niente,
+         perché quel bordo non c'è mai stato — le variabili che lo dichiarano
+         (`--page-border`, `--page-margin`) nascono in un blocco che
+         `bin/pdfjs-css.js` annida sotto il guscio, e `#pdfPane #pdfPane` non
+         corrisponde a niente. Ciò che cambia davvero, oltre alla larghezza, è
+         che la regola `.removePageBorders .page` porta con sé `margin:0 auto
+         10px`: le pagine si staccano di dieci pixel invece di toccarsi. */
+      removePageBorders:true,
       imageResourcesPath:'assets/pdfjs/images/'
     });
     PDFJS.link.setViewer(PDFJS.viewer);
@@ -5443,6 +5471,7 @@ function fonte2Avvia(){
       eventBus:FONTE2.bus, linkService:FONTE2.link,
       textLayerMode:1,                 // selezionare e COPIARE è metà del confronto
       annotationEditorMode:-1,         // stessa lezione della fonte: niente «timbri»
+      removePageBorders:true,          // «riempi larghezza» riempie: il perché sta in `pdfjsAvvia`
       imageResourcesPath:'assets/pdfjs/images/'
     });
     FONTE2.link.setViewer(FONTE2.viewer);
