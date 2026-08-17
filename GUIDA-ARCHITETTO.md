@@ -175,6 +175,44 @@ trovato fuori dalla catena: esisteva e non girava mai. È la stessa forma del gu
 - ⚠️ Porta 9333 a esemplare unico: un'istanza orfana di una corsa interrotta falsa **tutta** la
   suite con errori che non c'entrano (`fetch failed`, ENOENT). Prima di accusare il codice:
   `lsof -ti :9333`, oppure `STUDIA_PORTA=9334`.
+
+### 6.1 Convivere con un altro Electron sulla macchina
+
+Sulla macchina dell'utente girano più progetti Electron (StudIA, MappAI, e Claude.app stessa è
+Electron), e in sviluppo `npm start` è `electron .` per tutti: nella lista dei processi le
+istanze sono **binari con lo stesso nome**. Da qui tre regole, tutte pagate.
+
+1. ⚠️ **Non si chiude MAI per nome dell'applicazione.** `pkill -f Electron`, `killall Electron`,
+   `pkill -f "electron ."`: qualunque pattern su un nome di app prende **ogni** Electron della
+   macchina — l'app che l'utente sta usando a mano, quella dell'altro progetto, e Claude.app. Si
+   chiude **solo per PID annotato al lancio** — è ciò che fa il runner (`PID_APP=$!`, `kill
+   "$PID_APP"` dentro un `trap EXIT INT TERM`) — oppure per la **porta di debug**
+   (`pkill -f "remote-debugging-port=9345"`), che è un numero che nessun altro apre.
+   Misurato due volte: in MappAI il 9 agosto (chiuse le app aperte dell'utente nella notte), e in
+   StudIA il 17 agosto — l'app aperta a mano che «si chiudeva all'improvviso» mentre l'altra
+   sessione lavorava, senza nessun crash.
+2. ⚠️ **La porta di debug è a esemplare unico, e il guasto peggiore non è «occupata».** Se due
+   progetti scelgono lo stesso numero, la seconda app non riesce ad aprirla ma il client CDP, che
+   cerca `localhost:<porta>/json`, trova comunque un bersaglio: **quello dell'altro progetto**, e
+   comincia a pilotarlo — cioè prove che cliccano dentro un'altra app, con dietro un vault vero.
+   Per questo il runner controlla la porta con `lsof` **prima** di partire e si rifiuta di
+   continuare. I numeri dichiarati: **9333** la suite, **9345** il laboratorio degli screenshot,
+   **9222** MappAI — che è la porta di fabbrica di Chrome, quindi la più esposta agli incroci. Un
+   numero nuovo si dichiara qui.
+3. ⚠️ **Due campagne insieme si rubano il fuoco e si accorciano le attese.** Una finestra che si
+   apre viene davanti, e i gesti CDP passano da coordinate vere: la prova dell'altro progetto può
+   premere mentre è coperta — è la stessa trappola che `prova-wikilink` documenta per il divisore
+   del banco, e il rosso accusa la cosa sbagliata. E due Electron con PDF e OCR insieme allungano
+   tutto: le attese scritte per una macchina scarica diventano corte (è la forma delle 8 rosse
+   dell'Intel: attese, non guasti). Mentre gira una campagna, l'app **non** si tiene aperta a mano.
+
+Ciò che rende innocuo il resto è l'isolamento: `--user-data-dir` nella cartella temporanea e la
+copia magra del vault. Un progetto che non isola la cartella dati scrive nella config dell'app
+vera — ed è il motivo per cui quella riga esiste.
+
+**La diagnosi, quando un'app sparisce**: un crash lascia un rapporto in
+`~/Library/Logs/DiagnosticReports/` col nome `Electron-…`. Se lì non c'è niente all'ora giusta,
+non è crashata: è stata terminata da fuori, e il colpevole è la regola 1.
 - **Le prove misurano, non guardano.** Dopo ogni passo si consegna all'utente una lista corta di
   gesti da provare a mano: più di un difetto reale è stato trovato da lui con tutte le suite
   verdi. Uno screenshot via CDP prima di dichiarare finito un lavoro di UI.
@@ -221,6 +259,10 @@ Le più costose, distillate dagli handoff. Ogni ⚠️ è stato pagato almeno un
 - **CDP**: i click arrivano a coordinate dello **schermo** (`scrollIntoView` prima di premere);
   il tasto destro non genera `contextmenu` (evento a mano); il `localStorage` sopravvive al
   cambio di vault e falsa le prove («forma di fabbrica» che non è di fabbrica).
+- **Un processo si chiude per PID o per porta di debug, mai per nome**: `pkill -f Electron` prende
+  ogni app Electron della macchina, comprese quelle dell'utente e Claude.app. Regole intere in
+  §6.1 — è la trappola che si paga *sull'app di qualcun altro*, quindi non la si scopre da un
+  rosso nella propria suite.
 - **Niente apici inversi nei commenti dentro un template literal** (pagata sette volte).
 - **Una prova nuova va DENTRO `PROVE=(`** nel runner: sostituire la prima occorrenza del nome la
   infila nel commento d'uso, e la suite dice «verde» senza averla mai eseguita.
