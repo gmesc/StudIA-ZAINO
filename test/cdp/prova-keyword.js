@@ -83,10 +83,24 @@ const testi = () => val(`[...document.querySelectorAll('#kwLista .kwchip .kwtxt'
   ok('ed è trascinabile', true,
     await val(`[...document.querySelectorAll('#kwLista .kwchip')].every(c=>c.draggable)`));
   /* Il markdown che cade porta il rimando: è ciò che rende l'appunto
-     rileggibile fra un mese, e vale anche per il nodo di mappa. */
-  ok('e il markdown che lascia cadere porta il rimando al capitolo', true,
-    await val(`/^\\[alfabeto\\]\\(cap:02-altro-c03\\)$/.test(kwMarkdown(
+     rileggibile fra un mese, e vale anche per il nodo di mappa.
+     ⚠️ Dal 18 agosto 2026 quel rimando è `ev:<id>` e non più `cap:`/`pdf:`: la
+     parola chiave cita SE STESSA, così entra nell'appunto già evidenziata e col
+     suo colore, e ricolorandola cambia anche lì. Dove porta lo sa comunque
+     l'evidenza — è quello che fa «Vai» nel suo menu — quindi non si perde
+     niente per strada; si guadagna il colore, che nel markdown non è scritto. */
+  ok('e il markdown che lascia cadere cita la sua evidenza', true,
+    await val(`/^\\[==alfabeto==\\]\\(ev:[0-9a-f]{6,40}\\)$/.test(kwMarkdown(
       EVIDENZE.elenco.filter(e=>e.exact==='alfabeto')[0]))`));
+  ok('con l\'id di quell\'evidenza, non di un\'altra', true,
+    await val(`(()=>{ const e=EVIDENZE.elenco.filter(x=>x.exact==='alfabeto')[0];
+      return kwMarkdown(e).indexOf('(ev:'+e.id+')')>0; })()`));
+  /* E la resa mette il segno addosso al testo, non i due `==` a vista. */
+  ok('e nell\'appunto diventa un segno col colore dell\'evidenza', true,
+    await val(`(()=>{ const e=EVIDENZE.elenco.filter(x=>x.exact==='alfabeto')[0];
+      const h=renderNoteMd(kwMarkdown(e));
+      return h.indexOf('<mark class="evid"')>=0 && h.indexOf('data-ev="'+e.id+'"')>=0
+             && h.indexOf('==')<0; })()`));
 
   console.log('\n== ⚠️ il velo del trascinamento non riguarda i gesti interni');
   /* Il velo nero che dice «rilascia qui» serve a chi porta dei FILE dentro

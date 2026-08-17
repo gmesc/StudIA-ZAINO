@@ -448,6 +448,37 @@ sezione('Su disco: scrivere, rileggere, non perdere niente');
     JSON.stringify(a.evidenza), JSON.stringify(r.evidenze[0]));
 }
 
+sezione('L\'id si può sapere PRIMA di scrivere — e dev\'essere lo stesso');
+{
+  /* ⚠️ Perché questo controllo esiste. «Appunta» scrive nell'appunto
+     `[==testo==](ev:<id>)` e SOLO DOPO crea l'evidenza — l'ordine non si
+     inverte, perché un colore acceso sulla fonte senza l'appunto che l'ha
+     causato sarebbe comparso dal nulla. Quindi l'id lo si deve sapere prima, e
+     lo si chiede al main (`preload` → `evidenze.identita`), che passa da
+     `normalizzaVoce` come ci passa `aggiungi`. Se le due strade dessero due id
+     diversi, l'appunto citerebbe un'evidenza che non esiste: niente colore,
+     niente click, e nessun errore da nessuna parte. */
+  /* ⚠️ In un corso SUO: le sezioni qui sotto contano le voci di `CORSO` con dei
+     numeri scritti a mano, e una riga in più aggiunta qui le farebbe fallire
+     tutte per un motivo che non c'entra niente con loro. */
+  const CORSO_ID = 'corso-identita';
+  const futura = voce('ippocampo');
+  const previsto = E.normalizzaVoce(futura).id;
+  check('l\'id previsto è dodici cifre esadecimali', true, /^[0-9a-f]{12}$/.test(previsto));
+  const scritta = E.aggiungi(VAULT, CORSO_ID, futura, QUANDO);
+  check('ed è esattamente quello che poi viene scritto', previsto, scritta.evidenza.id);
+  /* E cambiare colore o tratto NON cambia l'id: sono aspetto, non identità —
+     altrimenti ricolorare una parola chiave ne farebbe nascere una seconda, e
+     l'appunto resterebbe a citare quella di prima. */
+  check('il colore non entra nell\'identità', previsto,
+    E.normalizzaVoce(voce('ippocampo', { colore: '#ff8ad0' })).id);
+  check('e nemmeno il tratto', previsto,
+    E.normalizzaVoce(voce('ippocampo', { tratto: 'overlay' })).id);
+  /* Una voce senza testo non ha id da dare: chi chiede lo deve poter capire,
+     invece di ricevere l'hash della stringa vuota. */
+  check('una voce senza testo non ha identità', null, E.normalizzaVoce({ exact: '  ' }));
+}
+
 sezione('L\'identità è il testo PIÙ il suo contorno');
 {
   const uno = E.identita(voce('memoria'));

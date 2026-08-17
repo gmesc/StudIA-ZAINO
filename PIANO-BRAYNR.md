@@ -135,6 +135,49 @@ scritto sul disco e non cambiano: cambiano i preset, non il passato.
 `prova-evidenziatore.js` misura il contrasto col nero invece di giudicarlo — il più basso è il rosa,
 8,8:1 contro i 4,5 di WCAG.
 
+**P1.1-bis — Il segno arriva anche nell'appunto.** ✅ *fatto il 18 agosto 2026*
+
+Quello che è evidenziato sulla fonte, portato in un appunto, si vede **col suo colore e col suo
+tratto**: «Appunta» e «Negli appunti» scrivono `[==la frase==](ev:9f2c1a4b7e01)` — il segno di
+Obsidian attorno al testo, e l'indirizzo dell'evidenza fra parentesi. La resa lo trasforma in un
+`<mark class="evid">` dentro un'ancora che riporta dov'era.
+
+⚠️ **Nel markdown il colore NON c'è: c'è la citazione.** È la decisione che regge tutto il resto.
+Il colore vive in un posto solo (`APPUNTI/_evidenze.json`) e l'appunto lo *chiede* al momento di
+disegnare, attraverso il gancio `evidenza(id)` di `lettura/capitolo.js`. Conseguenza:
+**ricolorare una parola chiave cambia anche gli appunti che la citano — perché non c'è niente da
+aggiornare**. La variante «scrivo anche il colore nel `.md`» sarebbe la trappola ④ in forma di
+file, e costringerebbe l'app a riscrivere i file dell'utente per un gesto fatto altrove, con la
+domanda irrisolvibile «e se nel frattempo quella frase l'ha modificata a mano?».
+
+⚠️ **`ev:<id>` è un rimando come gli altri** (`rimandi/sintassi.js`, invariante 7) ma è il solo che
+non nomina un posto: nomina un'annotazione dell'utente, e dove porti lo decide lei. Il click passa
+da `evidenzaVai`, che è la stessa funzione di «Vai» nel menu della parola chiave — nessun gestore
+nuovo.
+
+⚠️ **Un'evidenza tolta non porta via la frase**: il segno resta, scolorito (`.evorfana`), senza
+ancora e con il perché nel `title`. Invariante 4.
+
+⚠️ **Le misure del tratto sono salite in `:root`** (`--ev-spessore`, `--ev-stacco`): le leggono sia
+le regole `::highlight()` generate per la fonte sia il `<mark>` dell'appunto. Tre superfici fatte in
+tre modi diversi, un numero solo.
+
+⚠️ **Il rosso pagato scrivendo la prova**: `evidenzeDisegna()` usciva presto quando non c'era niente
+da accendere (`if(!quante) return`) — e «zero evidenze a schermo» è **anche** il momento in cui si
+toglie l'ultima, cioè proprio quando gli appunti che la citavano devono scolorirsi. Ricolorare
+aggiornava, togliere no.
+
+⚠️ **E il rosso pagato dalla prova stessa**: `prova-evidenziatore` gira prima e segna `#content p`
+dai primi 40 caratteri, sul vault di prova che resta scritto per tutte le prove dopo. Evidenziando
+lì sopra, `evidenzaPrepara` **eredita** quel colore (è il gesto «cambia colore»): da sola la prova
+era verde, nella suite no. Ora sceglie un punto suo.
+
+**Prove**: `test/evidenze-appunti.js` (la resa, 35 controlli) · la sezione dell'identità in
+`test/evidenze.js` — l'id che il main *predice* è quello che poi scrive, o l'appunto citerebbe
+un'evidenza che non esiste · `test/rimandi.js` · `test/stampa-foglio.js` ·
+`test/cdp/prova-evidenza-appunto.js`, che confronta il colore **calcolato** nell'appunto con quello
+dell'evidenza sulla fonte.
+
 Il disegno originale, che resta valido:
 Doppio click su una parola (o selezione + voce «Evidenzia» nel menu che già compare per
 «Salva come appunto») → la parola entra in `APPUNTI/_evidenze.md`: una riga per evidenza, con

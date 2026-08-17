@@ -315,6 +315,30 @@ contextBridge.exposeInMainWorld('vault', {
       if (!vaultPath) return { evidenza: null, evidenze: [], error: 'nessuna cartella vault impostata' };
       try { return evidenzeLib.tratta(vaultPath, courseId, id, tratto); }
       catch (e) { return { evidenza: null, evidenze: [], error: e.message }; }
+    },
+    /**
+     * Che id AVRÀ questa voce, senza scriverla.
+     *
+     * ⚠️ Sta nel main e non nel renderer per la sola ragione ammessa
+     * dall'invariante 5: l'id è uno `sha1`, e `crypto` di là non c'è. Rifarlo
+     * nel renderer sarebbe una seconda implementazione della stessa identità —
+     * e il giorno che le due divergessero, un appunto citerebbe un'evidenza che
+     * non esiste, in silenzio. È la stessa scelta già fatta per `ripasso:ids`.
+     *
+     * Serve ad «Appunta»: per scrivere `[==testo==](ev:<id>)` l'id lo si deve
+     * sapere PRIMA di scrivere l'appunto, e l'evidenza si crea dopo — perché un
+     * giallo acceso senza l'appunto che l'ha causato sarebbe comparso dal nulla.
+     * Non tocca niente: è un calcolo, e non serve nemmeno il vault.
+     */
+    identita: (voce) => {
+      try {
+        /* ⚠️ Si passa da `normalizzaVoce`, che è la STESSA porta da cui passa
+           `aggiungi`: l'id nasce dai campi raddrizzati, e chiamare `identita`
+           sulla voce grezza darebbe un id diverso da quello che verrà scritto
+           — cioè un appunto che cita un'evidenza che non esiste, in silenzio. */
+        const n = evidenzeLib.normalizzaVoce(voce);
+        return { id: n ? n.id : '', error: n ? '' : 'evidenza senza testo' };
+      } catch (e) { return { id: '', error: e.message }; }
     }
   },
   /* L'album delle immagini ritagliate dai documenti (ALBUM/ + _album.json).

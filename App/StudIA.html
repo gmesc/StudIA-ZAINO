@@ -127,6 +127,18 @@
     --maxw:68ch; --fs:17px; --lh:1.65; --ls:0em; --ws:0em; --speed:.16s; --topbar-h:56px;
     /* altezza unica di tutti i controlli (riferimento: bottone «Appunti» della topbar) */
     --ctl-h:40px;
+    /* Come si vede un'evidenza, in numeri. Stanno qui perché le superfici sono
+       TRE e sono fatte in tre modi diversi: il capitolo e il documento le
+       dipingono con la CSS Custom Highlight API (regole generate da
+       `evidenzeStile`), l'appunto con un `<mark>` vero. Tre segni che devono
+       somigliarsi non si somigliano per buona volontà: leggono lo stesso
+       numero. E il colore di ripiego è quello di una parola chiave che non c'è
+       più — grigio, cioè «era segnata, non lo è più». */
+    --ev-spessore:0.22em; --ev-stacco:0.14em; --ev-orfana:#c9c6c2;
+    /* Il giallo di un `==testo==` scritto a mano, che non cita nessuna evidenza
+       e quindi non ha un colore da chiedere a nessuno. ⚠️ È il PRIMO preset di
+       `evidenzeColori()`, e i due si muovono insieme: la nota sta anche là. */
+    --ev-nudo:#fdf14d;
     /* I bottoni delle barre degli strumenti (mappa, appunti, e chi verrà dopo).
        Cambiarli qui li cambia tutti: è il punto di questo blocco. */
     --tb-h:30px; --tb-min:30px; --tb-pad-x:.55rem;
@@ -2375,6 +2387,37 @@
   .figmanca{ display:inline-block; padding:.5rem .7rem; border:1px dashed var(--line);
     font-size:12px; color:var(--muted); background:var(--panel); }
   .figura.figvuota{ text-align:left; }
+
+  /* ---- Il testo evidenziato, dentro un appunto ----------------------------
+     Sulla fonte un'evidenza si dipinge con la CSS Custom Highlight API, che non
+     tocca il DOM. In un appunto no: lì il segno è scritto nel markdown
+     (`[==la frase==](ev:9f2c…)`), quindi è un `<mark>` vero — e deve avere lo
+     stesso aspetto. Le misure vengono dalle stesse variabili che
+     `evidenzeStile()` interpola nelle regole `::highlight()`: due segni che
+     devono essere lo stesso segno non possono avere due numeri (invariante 8).
+
+     Il colore invece arriva per riga, in `--ev`, e viene dall'INDICE delle
+     evidenze al momento di disegnare — non dal markdown. È il motivo per cui
+     ricolorare una parola chiave cambia anche gli appunti che la citano: non
+     c'è nessuna copia da aggiornare.
+
+     ⚠️ `<mark>` di fabbrica è giallo canarino con testo nero: qui il fondo lo
+     decidiamo noi, quindi si azzera prima. */
+  mark.evid{ background:transparent; color:inherit;
+    text-decoration:underline var(--ev, var(--ev-nudo)) var(--ev-spessore);
+    text-underline-offset:var(--ev-stacco); }
+  /* Il fondo pieno, alla Stabilo. ⚠️ Il testo si impone NERO come nel capitolo:
+     su tema scuro un inchiostro chiaro dietro un testo chiaro sparisce. */
+  mark.evid[data-tratto="overlay"]{ text-decoration:none;
+    background:var(--ev, var(--ev-nudo)); color:#111; }
+  /* Una parola chiave tolta dall'elenco: il testo resta, il colore no. Il grigio
+     dice «era segnata», il cursore dice che c'è una spiegazione. */
+  mark.evid.evorfana{ text-decoration-color:var(--ev-orfana); background:transparent;
+    color:inherit; cursor:help; }
+  /* L'ancora attorno al segno non deve vedersi: il segno È il link. */
+  a.evlink{ border-bottom:0; color:inherit; text-decoration:none; cursor:pointer; }
+  a.evlink::before{ content:none; }
+  a.evlink:hover mark.evid{ filter:brightness(.94); }
 
   /* ===== Composer degli indici =====
      Pagina piena e non modale stretta: righe = lezioni, colonne = indici proposti.
@@ -10509,12 +10552,12 @@ function noteNasce(esito, body, anchor){
    selezione: la regola delle parole chiave si applica DOPO, e deve poter
    distinguere «creato» da «annullato al titolo» — un'evidenza accesa dopo un
    annullamento sarebbe un giallo comparso dal nulla. */
-async function noteNew(anchor, origine, stile){
+async function noteNew(anchor, origine, stile, evId){
   var ctx=curCtx(); if(!ctx){ toast('Apri un capitolo del vault per prendere appunti',false); return false; }
   var api=notesApi(); if(!api){ toast('Appunti disponibili solo nell’app',false); return false; }
   var esito=await noteChiediNomeEOrigine('APPUNTI');
   if(esito===null) return false;
-  var body=anchor? frammentoAppuntato(anchor, ctx, origine, stile) : '';
+  var body=anchor? frammentoAppuntato(anchor, ctx, origine, stile, evId) : '';
   return noteNasce(esito, body, anchor);
 }
 /**
@@ -10528,10 +10571,22 @@ async function noteNew(anchor, origine, stile){
  * ⚠️ Il rimando sta nel CORPO e non nel titolo del riquadro perché
  * `renderNoteMd` passa il titolo da `escHtml` e il corpo da `mdToHtml`: un
  * `[testo](cap:…)` messo nel titolo resterebbe scritto così com'è, morto.
+ *
+ * `evId` è l'evidenza che segna quel testo sulla fonte, se c'è: allora il
+ * frammento entra evidenziato, e col SUO colore. ⚠️ Nel markdown finisce solo
+ * l'id — colore e tratto si chiedono all'indice al momento di disegnare — ed è
+ * per questo che ricolorare una parola chiave cambia anche gli appunti che la
+ * citano: non c'è nessuna copia da tenere d'accordo.
  */
-function frammentoAppuntato(testo, ctx, origine, stile){
+function frammentoAppuntato(testo, ctx, origine, stile, evId){
   var t=String(testo==null?'':testo).replace(/\s+/g,' ').trim();
   if(!t) return '';
+  /* ⚠️ Il segno avvolge il testo e non tocca il rimando: `[==frase==](ev:…)` e
+     `— [p. 7](pdf:03#p=7)` restano due cose distinte. Il primo dice COM'È
+     segnato, il secondo DA DOVE viene, e fonderli darebbe un solo link che
+     mente su una delle due. */
+  var rimEv=evId ? RimandiSintassi.scriviEv(evId) : '';
+  if(rimEv) t=RimandiSintassi.link('=='+t+'==', rimEv);
   var st=(stile===undefined || stile===null) ? appuntaStileAttivo(origine) : String(stile);
   /* Il rimando è lo stesso nelle due forme: cambia la cornice, non l'indirizzo.
      Calcolarlo una volta sola è ciò che impedisce che il riquadro e il testo
@@ -10668,13 +10723,13 @@ function origineDaRange(range){
  * Se un appunto aperto non c'è, si ricade su `noteNew`, che il titolo lo chiede:
  * è l'unico momento in cui la domanda ha senso.
  */
-async function noteAppend(testo, origine, stile){
+async function noteAppend(testo, origine, stile, evId){
   var t=String(testo==null?'':testo).trim();
   if(!t) return false;
   var ctx=curCtx(); if(!ctx){ toast('Apri un corso o uno zaino per prendere appunti',false); return false; }
   if(!notesApi()){ toast('Appunti disponibili solo nell’app',false); return false; }
-  if(!NOTES.cur || !NOTES.mde){ return noteNew(t, origine, stile); }   // niente di aperto: se ne crea uno
-  noteInserisci(frammentoAppuntato(t, ctx, origine, stile));
+  if(!NOTES.cur || !NOTES.mde){ return noteNew(t, origine, stile, evId); }   // niente di aperto: se ne crea uno
+  noteInserisci(frammentoAppuntato(t, ctx, origine, stile, evId));
   toast('Appuntato in «'+((NOTES.cur&&NOTES.cur.title)||'appunto')+'»', true);
   return true;
 }
@@ -10712,10 +10767,39 @@ var KW_MAX_PAROLE = 3;
  * `noteAppend` può fermarsi (nessun corso, creazione annullata), e un'evidenza
  * accesa senza l'appunto che l'ha causata sarebbe un giallo comparso dal nulla.
  */
+/**
+ * Che id AVRÀ questa evidenza, prima di scriverla.
+ *
+ * ⚠️ Lo calcola il MAIN e non il renderer: è uno `sha1`, e `crypto` di qua non
+ * c'è. È l'eccezione dell'invariante 5 — la stessa già presa per `ripasso:ids`
+ * — e rifarlo qui sarebbe una seconda idea di che cosa sia l'identità di
+ * un'evidenza: il giorno che divergessero, un appunto citerebbe un'evidenza
+ * che non esiste, in silenzio.
+ *
+ * Serve perché l'ordine dei gesti non cambia: si scrive prima l'appunto e poi
+ * l'evidenza (un giallo acceso senza l'appunto che l'ha causato sarebbe
+ * comparso dal nulla), ma il testo dell'appunto deve già citarla.
+ */
+function evidenzaIdFuturo(prep){
+  if(!prep) return '';
+  var api=evidenzeApi(); if(!api || typeof api.identita!=='function') return '';
+  var r=api.identita(Object.assign({
+    exact:prep.sel.exact, prefix:prep.sel.prefix, suffix:prep.sel.suffix,
+    colore:prep.colore, tratto:prep.tratto
+  }, prep.indirizzo));
+  return (r && r.id) || '';
+}
+
 async function appuntaSelezione(testo, range, stile){
   var piene=(typeof EvidenzeAncoraggio!=='undefined')
     ? EvidenzeAncoraggio.parolePiene(testo) : [];
   var breve=piene.length>0 && piene.length<=KW_MAX_PAROLE;
+  /* ⚠️ Prima si guarda se quel testo è GIÀ segnato, e questo vale a qualunque
+     lunghezza. La regola delle tre parole decide se appuntare crea anche una
+     parola chiave; non dice niente su un'evidenza che c'è già — e chi ha
+     evidenziato mezza pagina col pennarello e poi la appunta vuole ritrovarla
+     col suo colore, non scolorita perché è lunga. */
+  var gia=(typeof evidenzaSotto==='function') ? evidenzaSotto(range) : null;
   /* ⚠️ L'ancoraggio si prepara ADESSO, col `Range` ancora vivo e prima di
      qualunque attesa: vedi `evidenzaPrepara`. Il colore è quello corrente, lo
      stesso della voce «Keyword» e della riga dei colori — la parola nata così
@@ -10727,7 +10811,13 @@ async function appuntaSelezione(testo, range, stile){
      premuto «Appunta». */
   var prep=breve ? evidenzaPrepara(range, null, { silenzioso:true }) : null;
 
-  var esito=await noteAppend(testo, origineDaRange(range), stile);
+  /* L'id da citare nell'appunto: quello dell'evidenza che c'è già, o quello che
+     l'evidenza avrà fra tre righe. Senza né l'una né l'altra il frammento entra
+     nudo, come ha sempre fatto: un colore lì prometterebbe un legame che non
+     esiste, e premendolo non si andrebbe da nessuna parte. */
+  var evId=(gia && gia.id) || evidenzaIdFuturo(prep);
+
+  var esito=await noteAppend(testo, origineDaRange(range), stile, evId);
   if(esito===false) return;                       // l'appunto non c'è: niente da segnare
 
   if(!piene.length) return;                       // solo punteggiatura: non è una parola chiave
@@ -11793,8 +11883,12 @@ function evidenzeStile(chiavi){
              '#content ::highlight(ev-'+i+'){ color:#111; }';
     }
     /* La sottolineatura spessa resta il default, e la ragione è scritta in
-       `evidenzeTratto`: il fondo pieno litiga col giallo della lettura vocale. */
-    return '::highlight(ev-'+i+'){ text-decoration: underline '+c+' 0.22em; text-underline-offset:0.14em; }';
+       `evidenzeTratto`: il fondo pieno litiga col giallo della lettura vocale.
+       ⚠️ Le due misure vengono da `:root` (`--ev-spessore`, `--ev-stacco`) e non
+       sono più scritte qui: lo stesso segno si disegna anche dentro un appunto,
+       con un `<mark>` vero invece che con `::highlight()`, e due sottolineature
+       che devono essere la stessa non possono avere due numeri. */
+    return '::highlight(ev-'+i+'){ text-decoration: underline '+c+' var(--ev-spessore); text-underline-offset:var(--ev-stacco); }';
   }).join('\n');
 }
 /** Accende le evidenze del capitolo aperto. Le orfane — quelle il cui testo
@@ -11834,8 +11928,15 @@ function evidenzeDisegna(){
       perColore[k].push(rg); quante++;
     });
   });
-  if(!quante){ evidenzeStile(ordine); keywordDisegna(); return; }
   evidenzeStile(ordine);
+  /* ⚠️ Niente uscita anticipata quando non c'è niente da accendere. C'era —
+     `if(!quante) return` — e sembrava innocua: senza intervalli non ci sono
+     highlight da creare. Ma «zero evidenze a schermo» è ANCHE il momento in cui
+     se ne toglie l'ultima, cioè proprio quando gli appunti che la citavano
+     devono scolorirsi. Misurato il 18 agosto: ricolorare aggiornava l'appunto,
+     TOGLIERE no — il segno restava colorato finché non si riapriva l'anteprima.
+     Il ciclo qui sotto su un elenco vuoto non fa niente da sé: è la coda che
+     doveva girare comunque. */
   ordine.forEach(function(k,i){
     var h=new Highlight();
     perColore[k].forEach(function(rg){ h.add(rg); });
@@ -11843,6 +11944,27 @@ function evidenzeDisegna(){
     CSS.highlights.set(nome, h); EVIDENZE.nomi.push(nome);
   });
   keywordDisegna();
+  evidenzeNegliAppunti();
+}
+
+/**
+ * Gli appunti che citano un'evidenza si ridisegnano con lei.
+ *
+ * ⚠️ Un punto solo di reazione, e sta QUI: il colore di un'evidenza cambia da
+ * più parti — il menu di una parola chiave, la riga dei colori, una
+ * ri-evidenziatura sopra la stessa frase — e mettere il ridisegno accanto a
+ * ognuna vorrebbe dire tre riti per un fatto solo, con il quarto che nasce
+ * dimenticandosene. È la stessa forma di `bancoSincronizzaMappa`: i gesti
+ * cambiano il dato, il rilevatore reagisce.
+ *
+ * Non si riscrive nessun file: nel markdown il colore non c'è, c'è la
+ * citazione. Qui si ridisegna e basta.
+ */
+function evidenzeNegliAppunti(){
+  try{ if(typeof noteAnteprimaRidisegna==='function') noteAnteprimaRidisegna(); }catch(e){}
+  /* E il riquadro «I miei appunti» dentro il capitolo, che è l'altra vista in
+     cui un appunto si legge senza aprirlo. */
+  try{ if(typeof refreshMyNotes==='function') refreshMyNotes(); }catch(e){}
 }
 
 /* ===== Lo strumento «Parole chiave»: l'elenco a chip =======================
@@ -11879,10 +12001,19 @@ function kwEParolaChiave(e){
  *  capitolo. Una funzione sua perché la usano il trascinamento e — domani —
  *  qualunque altro modo di travasare una parola chiave altrove. */
 function kwMarkdown(e){
-  /* Una parola chiave presa su un documento porta il rimando al documento, con
-     la sua pagina: è la grammatica che l'app ha già (`pdf:NN#p=7`), non una
-     seconda. Senza il numero del materiale resta il testo nudo — meglio di un
-     rimando che non apre niente. */
+  /* Una parola chiave portata in un appunto cita SE STESSA: `ev:<id>`. Così
+     entra già evidenziata, col colore e il tratto che ha sulla fonte, e
+     ricolorandola cambia anche lì — perché nel markdown il colore non c'è, c'è
+     il suo indirizzo.
+     ⚠️ Prende il posto del rimando alla pagina, e non si affiancano: dove porta
+     lo sa già l'evidenza (è ciò che fa «Vai» nel suo menu), e due link sulla
+     stessa parola sarebbero due promesse per un gesto solo. Il prezzo, detto:
+     togliendo la parola chiave dall'elenco l'appunto conserva il testo e perde
+     la pagina — chi la toglie sta dicendo che quel segno non gli serve più. */
+  var rimEv=RimandiSintassi.scriviEv(e.id);
+  if(rimEv) return RimandiSintassi.link('=='+e.exact+'==', rimEv);
+  /* Senza un id — una voce arrivata da chissà dove — si ripiega sulla
+     grammatica di sempre: meglio un rimando alla pagina che niente. */
   if(e.materiale){
     var n=numDiFile(e.materiale, (typeof _pdfNum==='function'?_pdfNum():PDF_BY_NUM));
     if(!n) return e.exact;
@@ -11927,7 +12058,22 @@ function keywordDisegna(){
       '<span class="kwtxt">'+escHtml(e.exact)+'</span></button>';
   }).join('');
 }
-function kwDaId(id){ return (EVIDENZE.elenco||[]).filter(function(e){ return e.id===id; })[0]||null; }
+/**
+ * L'evidenza con quell'id. UNA sola ricerca per tutti: i chip delle parole
+ * chiave, il testo evidenziato dentro un appunto, e il gancio che dice a
+ * `capitolo.js` di che colore disegnarlo.
+ *
+ * ⚠️ L'elenco si carica se non è quello del corso aperto, invece di rispondere
+ * «non c'è». Un appunto si può disegnare senza aver mai aperto un capitolo — nel
+ * dock, appena si cambia contenitore — e lì l'elenco in memoria è quello di
+ * prima, o non c'è per niente: i segni uscivano scoloriti a seconda di che cosa
+ * si era guardato prima, cioè in modo imprevedibile.
+ */
+function kwDaId(id){
+  if(!id) return null;
+  if(EVIDENZE.corso!==corsoAttivo()) evidenzeCarica();
+  return (EVIDENZE.elenco||[]).filter(function(e){ return e.id===id; })[0]||null;
+}
 /** Dove è stata trovata: il capitolo, oppure il documento e la sua pagina. */
 function kwDove(e){
   if(!e) return '';
@@ -12066,11 +12212,40 @@ function kwNegliAppunti(ev){
   if(!NOTES.cur || !NOTES.mde){
     /* Nessun appunto aperto: se ne crea uno, e il titolo lo chiede — è l'unico
        momento in cui la domanda ha senso. */
-    noteNew(ev.exact, ev.materiale ? { tipo:'pdf', file:ev.materiale, pagina:ev.pagina } : null);
+    noteNew(ev.exact, ev.materiale ? { tipo:'pdf', file:ev.materiale, pagina:ev.pagina } : null,
+            undefined, ev.id);
     return;
   }
   if(noteInserisci(md)) toast('«'+ev.exact+'» negli appunti', true);
 }
+/**
+ * Dove è stata segnata quest'evidenza: il documento alla sua pagina, o il
+ * capitolo.
+ *
+ * ⚠️ Nessun gestore nuovo: `openPdf` e `vaiAlCapitolo` sono quelli di sempre.
+ * Ed è una funzione perché le porte sono DUE — «Vai» nel menu della parola
+ * chiave, e il testo evidenziato dentro un appunto — e due riti per lo stesso
+ * verbo divergono al primo ritocco (invariante 6).
+ */
+function evidenzaVai(ev){
+  if(!ev) return;
+  if(ev.materiale){ openPdf(ev.materiale, ev.pagina||1, titoloMateriale(ev.materiale)||ev.materiale); return; }
+  if(!vaiAlCapitolo(ev.capitoloId)) toast('Capitolo non trovato', false);
+}
+/* Il testo evidenziato dentro un appunto riporta dov'era. ⚠️ Il click sul
+   segno NON apre il campo di scrittura del blocco: quel gestore lascia passare
+   i link e le immagini per questa ragione esatta — sono i gesti per cui
+   l'anteprima esiste. */
+document.addEventListener('click', function(e){
+  if(!e.target || !e.target.closest) return;
+  var a=e.target.closest('a.evlink'); if(!a) return;
+  e.preventDefault();
+  var ev=kwDaId(a.getAttribute('data-ev'));
+  /* Se non c'è più, si dice — invece di non fare niente, che chi preme
+     interpreta come «l'app è rotta». La resa l'aveva già scolorita. */
+  if(!ev){ toast('Questa parola chiave non è più nell’elenco', false); return; }
+  evidenzaVai(ev);
+});
 function kwRicolora(id, colore){
   var api=evidenzeApi(); if(!api) return;
   var r=api.colora(corsoAttivo(), id, colore);
@@ -12099,10 +12274,7 @@ document.addEventListener('click', function(e){
   if(!it){ if(kwMenuAperto() && !e.target.closest('#kwMenu')) kwMenuChiudi(); return; }
   var az=it.getAttribute('data-kwaz'), ev=kwDaId(m.dataset.kw);
   kwMenuChiudi(); if(!ev) return;
-  if(az==='vai'){
-    if(ev.materiale){ openPdf(ev.materiale, ev.pagina||1, titoloMateriale(ev.materiale)||ev.materiale); return; }
-    if(!vaiAlCapitolo(ev.capitoloId)) toast('Capitolo non trovato', false); return;
-  }
+  if(az==='vai'){ evidenzaVai(ev); return; }
   if(az==='appunti'){ kwNegliAppunti(ev); return; }
   if(az==='togli'){
     var api=evidenzeApi(); if(!api) return;
@@ -12137,6 +12309,10 @@ window.addEventListener('resize', kwMenuChiudi);
  * Le evidenze già segnate portano il loro colore scritto sul disco e non si
  * toccano: cambiano i preset, non il passato.
  */
+/* ⚠️ Il PRIMO di questi cinque è anche `--ev-nudo` nel foglio di stile: è il
+   colore con cui si vede un `==testo==` scritto a mano dentro un appunto, che
+   non cita nessuna evidenza e quindi non ha un colore da chiedere. Se la
+   tavolozza cambia, quella variabile cambia con lei — la nota sta anche là. */
 function evidenzeColori(){
   return ['#fdf14d',   // giallo
           '#b6f34d',   // verde
@@ -12827,7 +13003,19 @@ var LETTURA_CAP = LetturaCapitolo.crea({
   esc: function (x) { return escHtml(x); },
   mediaNum: function () { return _mediaNum(); },
   pdfNum: function () { return _pdfNum(); },
-  corsoAttivo: function () { return corsoAttivo(); }
+  corsoAttivo: function () { return corsoAttivo(); },
+  /* L'aspetto di un'evidenza citata da un appunto. Si chiede all'elenco in
+     memoria — che è la vista di `APPUNTI/_evidenze.json` — e non al markdown,
+     dove del colore non c'è scritto niente. È così che ricolorare una parola
+     chiave cambia anche gli appunti che la citano: non c'è nessuna copia.
+     ⚠️ L'elenco può essere di un ALTRO corso: `EVIDENZE.corso` dice di chi è, e
+     rispondere con un colore preso dal corso sbagliato è peggio che non
+     rispondere — sarebbe un segno che cambia tinta cambiando corso. */
+  evidenza: function (id) {
+    if (!corsoAttivo()) return null;
+    var v = kwDaId(id);
+    return v ? { colore: v.colore, tratto: evTrattoDi(v) } : null;
+  }
 });
 /* I nomi di prima restano nomi: il resto del renderer chiama `mdChapter` da
    dieci punti, e rinominarli sarebbe un secondo cambiamento dentro il primo. */

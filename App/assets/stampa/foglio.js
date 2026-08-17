@@ -107,6 +107,14 @@
     pie: '#666'
   };
 
+  /* Come si vede un'evidenza sul FOGLIO. Sta qui, e non si legge da `:root`,
+     per la stessa ragione per cui ci sta `COL`: il foglio è un documento suo,
+     aperto in un'altra finestra, dove le variabili dell'app non arrivano. È una
+     copia dichiarata — se le misure a schermo cambiano (`--ev-spessore`,
+     `--ev-stacco`, `--ev-nudo`, `--ev-orfana` in `App/StudIA.html`), cambiano
+     anche qui, e `test/stampa-foglio.js` tiene fermo che ci siano. */
+  var EV = { spessore: '0.22em', stacco: '0.14em', nudo: '#fdf14d', orfana: '#c9c6c2' };
+
   /* ⚠️ Le stringhe dei margin-box sono VALORI CSS, non HTML. Un a-capo dentro
      una `content` invalida la dichiarazione e il piè sparisce SENZA errori:
      si appiattisce, e si proteggono barra rovescia e virgolette. */
@@ -240,6 +248,20 @@
          calcolarsi: l'ancora larga quanto le si dice, l'immagine che la riempie. */
       '  ' + S + ' .st-corpo .figura.misurata a { display:inline-block; width:var(--figw); max-width:100%; }',
       '  ' + S + ' .st-corpo .figura.misurata img { width:100%; }',
+      /* Il testo che sulla fonte era evidenziato resta evidenziato sul foglio.
+         ⚠️ Sulla carta il fondo pieno si stampa solo con «grafica di sfondo»
+         accesa (di norma è spenta), mentre la sottolineatura è un tratto e si
+         stampa sempre: per questo il ripiego, quando il colore non arriva, è
+         una riga sotto e non un fondo. Il colore per riga lo porta `--ev`,
+         scritto dalla resa; le misure sono le stesse dello schermo. */
+      '  ' + S + ' .st-corpo mark.evid { background:transparent; color:inherit;',
+      '     text-decoration:underline var(--ev, ' + EV.nudo + ') ' + EV.spessore + ';',
+      '     text-underline-offset:' + EV.stacco + '; }',
+      '  ' + S + ' .st-corpo mark.evid[data-tratto="overlay"] { text-decoration:none;',
+      '     background:var(--ev, ' + EV.nudo + '); color:' + COL.inchiostro + '; }',
+      '  ' + S + ' .st-corpo mark.evid.evorfana { text-decoration-color:' + EV.orfana + ';',
+      '     background:transparent; color:inherit; }',
+      '  ' + S + ' .st-corpo a.evlink { color:inherit; text-decoration:none; }',
       '  ' + S + ' .st-corpo pre { white-space:pre-wrap; word-wrap:break-word;',
       '     font-size:' + (f.pt * SCALA.piccolo).toFixed(1) + 'pt; background:' + COL.riquadro + ';',
       '     padding:.5em .7em; break-inside:avoid; }',

@@ -48,6 +48,14 @@ sezione('Scrivere: il numero è sempre a due cifre');
   check('e nemmeno una pagina che non è un numero', 'pdf:03', R.scriviPdf(3, 'boh'));
   check('il capitolo si scrive col suo id intero', 'cap:01-fondamenti-c03', R.scriviCap('01-fondamenti-c03'));
   check('un id storto non diventa un rimando', '', R.scriviCap('non valido/qui'));
+  /* Un'evidenza si cita col suo id — dodici cifre esadecimali, `lib/evidenze.js`
+     → `identita`. ⚠️ Quello che non è un id NON diventa un rimando: un
+     `[==testo==](ev:qualcosa)` scritto per sbaglio uscirebbe come un link morto
+     addosso a una frase, invece che come il testo che è. */
+  check('un\'evidenza si cita col suo id', 'ev:9f2c1a4b7e01', R.scriviEv('9f2c1a4b7e01'));
+  check('le maiuscole si abbassano', 'ev:9f2c1a4b7e01', R.scriviEv('9F2C1A4B7E01'));
+  check('un id che non è esadecimale non passa', '', R.scriviEv('parola-chiave'));
+  check('e nemmeno uno troppo corto', '', R.scriviEv('9f2c'));
 }
 
 sezione('Leggere: che cosa dice una stringa');
@@ -62,6 +70,8 @@ sezione('Leggere: che cosa dice una stringa');
   check('anche quando la e commerciale è già scappata',
     { tipo: 'fig', numero: '03', pagina: 4, i: 2 }, R.leggi('fig:03#p=4&amp;i=2'));
   check('una figura senza indice è la prima', { tipo: 'fig', numero: '03', pagina: 4, i: 1 }, R.leggi('fig:03#p=4'));
+  check('un\'evidenza', { tipo: 'ev', id: '9f2c1a4b7e01' }, R.leggi('ev:9f2c1a4b7e01'));
+  check('un\'evidenza con un id storto non è un rimando', null, R.leggi('ev:parola'));
   check('un indirizzo esterno si riconosce', 'esterno', (R.leggi('https://insegnai.ch') || {}).tipo);
 
   check('quello che non è un rimando è niente', [null, null, null, null],
@@ -82,7 +92,8 @@ sezione('Scrivere e rileggere si chiudono');
     [R.scriviPdf(11, 250), { tipo: 'pdf', numero: '11', pagina: 250 }],
     [R.scriviVideo(2, 0), { tipo: 'video', numero: '02', t: 0 }],
     [R.scriviVideo(2, 3599), { tipo: 'video', numero: '02', t: 3599 }],
-    [R.scriviCap('01-fondamenti-c03'), { tipo: 'cap', capitoloId: '01-fondamenti-c03' }]
+    [R.scriviCap('01-fondamenti-c03'), { tipo: 'cap', capitoloId: '01-fondamenti-c03' }],
+    [R.scriviEv('9f2c1a4b7e01'), { tipo: 'ev', id: '9f2c1a4b7e01' }]
   ];
   for (const [scritto, atteso] of giri) check('«' + scritto + '» si rilegge com\'è stato scritto', atteso, R.leggi(scritto));
 }
