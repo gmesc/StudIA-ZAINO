@@ -151,8 +151,8 @@ in silenzio.
 ## 6. Come si verifica
 
 ```bash
-npm test                                   # unità: tutti i file di test/, in catena (39 al 18 ago)
-./test/cdp/con-vault-di-prova.sh           # tutte le prove sull'app viva (47 al 18 ago)
+npm test                                   # unità: tutti i file di test/, in catena (40 al 18 ago)
+./test/cdp/con-vault-di-prova.sh           # tutte le prove sull'app viva (48 al 18 ago)
 ./test/cdp/con-vault-di-prova.sh <nome>    # una sola — è così che si lavora
 STUDIA_APP=dist/mac-arm64/StudIA.app \
   ./test/cdp/con-vault-di-prova.sh         # le stesse prove DENTRO il pacchetto
@@ -285,6 +285,11 @@ Le più costose, distillate dagli handoff. Ogni ⚠️ è stato pagato almeno un
   venisse. E il generatore **misura invece di assumere** — il font disegna davvero quel carattere?
   la forma dell'angolo coincide con quella di sistema? — perché è lì che si nascondono le bugie
   silenziose.
+- **Un filtro «che cosa si vede» non va messo nella funzione che dice «che cosa c'è»**: `evidenzeDi`
+  risponde a quali evidenze appartengono a una superficie — un fatto — e la usano sia chi dipinge sia
+  chi risponde ai gesti. Filtrandoci dentro l'interruttore delle sottolineature, con i segni spenti
+  `evidenzaSotto` avrebbe detto «qui non c'è niente» e ri-evidenziare una frase le avrebbe cambiato
+  il colore di nascosto. *Nascondere cambia come si vede, mai che cosa succede.*
 - **Un'uscita anticipata «tanto non c'è niente da fare» salta anche la coda che serviva**:
   `evidenzeDisegna()` tornava subito quando non c'era nessuna evidenza da accendere — e «zero
   evidenze a schermo» è **anche** l'istante in cui si toglie l'ultima, cioè quando gli appunti che

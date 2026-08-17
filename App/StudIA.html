@@ -43,6 +43,10 @@
      testo, quale offset) sta qui nel renderer, perché un modulo che importasse
      il DOM non si potrebbe più provare in Node. -->
 <script src="assets/evidenze/ancoraggio.js"></script>
+<!-- …e quali di quelle ritrovate si ACCENDONO: oggi un interruttore solo,
+     domani gli strati. Sta accanto all'ancoraggio perché è l'altra metà della
+     stessa domanda, e come quello non sa niente del DOM. -->
+<script src="assets/evidenze/strati.js"></script>
 <!-- Il parser dei capitoli. ⚠️ Prima stava dentro l'inline qui sotto e le prove
      in Node lo ritagliavano dal sorgente con due `indexOf`: adesso l'app e
      `test/roundtrip.js` caricano lo STESSO file. Non ha dipendenze: sta qui in
@@ -11559,7 +11563,8 @@ window.addEventListener('resize', function(){ selMenuChiudi(); selBarraChiudi();
    ⚠️ Il registro dei nomi è condiviso con la ricerca, che usa `'ricerca'`:
    questi si chiamano `ev-N`. Due funzioni che registrano lo stesso nome si
    spengono a vicenda senza un errore. */
-var EVIDENZE={ elenco:[], corso:'', mappa:null, orfane:0, nomi:[], colore:'' };
+var EVIDENZE={ elenco:[], corso:'', mappa:null, orfane:0, nomi:[], colore:'',
+               strati:null, stratiCorso:'' };
 /* Che cosa, dentro `#content`, NON è testo del capitolo: il tooltip dei
    marcatori («Apri il documento»), le intestazioni dei riquadri, il quiz, il
    blocco degli appunti, la barra della lettura vocale. Senza questo elenco un
@@ -11806,12 +11811,21 @@ function rangeDaOffset(m, inizio, fine){
 
 function evidenzeCarica(){
   var api=evidenzeApi(), corso=corsoAttivo();
-  if(!api || !corso){ EVIDENZE.elenco=[]; EVIDENZE.corso=''; return; }
+  if(!api || !corso){ EVIDENZE.elenco=[]; EVIDENZE.corso=''; evidenzeBottoni(); return; }
   var r=api.leggi(corso);
   // `error` si guarda PRIMA di `length`: «non ce n'è» e «non si legge» sono
   // due cose diverse, e dirle uguali nasconde un guasto di permessi
-  if(r && r.error){ console.error('evidenze:', r.error); EVIDENZE.elenco=[]; EVIDENZE.corso=corso; return; }
+  if(r && r.error){ console.error('evidenze:', r.error); EVIDENZE.elenco=[]; EVIDENZE.corso=corso; evidenzeBottoni(); return; }
   EVIDENZE.elenco=(r && r.evidenze) || []; EVIDENZE.corso=corso;
+  /* ⚠️ Gli interruttori si rifanno QUI, e non solo quando si dipinge.
+     `evidenzeDisegna()` gira quando c'è qualcosa da accendere — un capitolo
+     aperto, una pagina a schermo — mentre questa funzione gira ogni volta che
+     cambia il CONTENITORE, che è quando cambia anche la memoria di «viste o
+     nascoste» (è per contenitore). Misurato: riavviando l'app con i segni
+     spenti, il bottone tornava a mostrare «si vedono» finché non si apriva un
+     capitolo — cioè un comando che mente proprio nel momento in cui serve
+     capire perché il testo è pulito. */
+  evidenzeBottoni();
 }
 function evidenzeDelCapitolo(){
   var ctx=curCtx(); if(!ctx) return [];
@@ -11898,6 +11912,11 @@ function evidenzeDisegna(){
   if(!evidenzePronte()) return;
   // il corso può essere cambiato sotto: l'elenco in memoria sarebbe di un altro
   if(EVIDENZE.corso!==corsoAttivo()) evidenzeCarica();
+  /* I bottoni si rifanno QUI e non solo alla fine: la memoria di «viste o
+     nascoste» è per contenitore, quindi cambiando corso lo stato può essere
+     un altro — e un interruttore che mostra la posizione di prima è peggio di
+     un interruttore assente. */
+  evidenzeBottoni();
   EVIDENZE.nomi.forEach(function(n){ try{ CSS.highlights.delete(n); }catch(e){} });
   EVIDENZE.nomi=[];
   EVIDENZE.orfane=0;
@@ -11908,7 +11927,15 @@ function evidenzeDisegna(){
      tenerne due serie separate vorrebbe dire due elenchi di nomi da spegnere. */
   var perColore={}, ordine=[], quante=0;
   evSuperfici().forEach(function(sup){
-    var mie=evidenzeDi(sup); if(!mie.length) return;
+    /* ⚠️ Il filtro sta QUI, dove si dipinge, e non dentro `evidenzeDi`.
+       `evidenzeDi` risponde a «quali evidenze sono di questa superficie», che è
+       un FATTO e non cambia perché uno guarda o non guarda — e la chiama anche
+       `evidenzaSotto`, che serve ai GESTI. Filtrando là, con i segni nascosti
+       ri-evidenziare una frase già segnata non l'avrebbe più riconosciuta: le
+       avrebbe cambiato il colore di nascosto invece di dire «questa c'è già».
+       Nascondere cambia come si VEDE, mai che cosa SUCCEDE. */
+    var mie=EvidenzeStrati.visibili(evidenzeDi(sup), evStrati());
+    if(!mie.length) return;
     var m=evMappaDi(sup); if(!m.testo) return;
     var r=EvidenzeAncoraggio.risolvi(m.testo, mie);
     /* ⚠️ Le orfane si contano solo su ciò che è DAVVERO a schermo. Un'evidenza
@@ -12037,6 +12064,20 @@ function keywordDisegna(){
   lista.sort(KW.ordine==='alfa'
     ? function(a,b2){ return a.exact.localeCompare(b2.exact, 'it'); }
     : function(a,b2){ return String(b2.creato||'').localeCompare(String(a.creato||'')); });
+  /* ⚠️ Con i segni spenti l'elenco RESTA, e lo dice — e lo dice PRIMA di
+     sapere se ha dei chip da mostrare.
+     Spegnere serve a rileggere il testo pulito, non a mettere via le proprie
+     parole chiave: svuotare anche l'elenco toglierebbe l'unica cosa che ancora
+     permette di ritrovarle (un doppio click su un chip ci porta). Ma uno stato
+     che non si vede da nessuna parte è quello che si dimentica di aver acceso, e
+     la prima stesura di questa riga stava DENTRO il ramo dei chip: con l'elenco
+     vuoto — che è il caso in cui uno si chiede di più «dove sono finite» — non
+     compariva.
+     ⚠️ Quando gli strati arriveranno la regola cambia: là un chip di uno strato
+     spento direbbe una cosa falsa su quale lettura si sta guardando. Questa nota
+     è il posto da cui ripartire. */
+  var avviso=EvidenzeStrati.accese(evStrati()) ? '' :
+    '<div class="kwvuoto">Le sottolineature sono nascoste sul testo. Sono tutte qui, e restano sul disco.</div>';
   if(!lista.length){
     /* Tre vuoti diversi, e vanno detti diversi. Il terzo è quello nuovo: ci sono
        sottolineature, ma sono tutte frasi — senza questa riga l'elenco sembra
@@ -12047,10 +12088,10 @@ function keywordDisegna(){
     else if(quante) msg='Nessuna parola chiave: le sottolineature che hai fatto sono più lunghe di '+
       KW_MAX_PAROLE+' parole. Restano accese nel testo; nell’elenco entrano i termini brevi.';
     else msg='Nessuna parola chiave. Selezionane una nel capitolo o in un documento e scegli «Keyword».';
-    host.innerHTML='<div class="kwvuoto">'+msg+'</div>';
+    host.innerHTML=avviso+'<div class="kwvuoto">'+msg+'</div>';
     return;
   }
-  host.innerHTML=lista.map(function(e){
+  host.innerHTML=avviso+lista.map(function(e){
     return '<button class="kwchip'+(kwOrfana(e)?' orfana':'')+'" role="listitem" draggable="true"'+
       ' data-kw="'+escHtml(e.id)+'" style="--kw:'+escHtml(e.colore||'var(--line)')+'"'+
       ' title="'+escHtml(kwDove(e)+(kwOrfana(e)?' — il testo non è più lì':'')+
@@ -12089,6 +12130,13 @@ document.addEventListener('input', function(e){
 document.addEventListener('click', function(e){
   if(!e.target.closest || !e.target.closest('#kwOrdine')) return;
   KW.ordine=(KW.ordine==='alfa')?'data':'alfa'; keywordDisegna();
+});
+/* I due interruttori delle sottolineature — quello della Fonte e quello delle
+   Parole chiave — in un gestore solo: sono lo stesso comando, e due gestori
+   sarebbero due riti destinati a divergere (invariante 6). */
+document.addEventListener('click', function(e){
+  if(!e.target.closest || !e.target.closest('#pdfEvid, #kwEvid')) return;
+  evidenzeCommuta();
 });
 /* Doppio click: si va dove la parola è stata trovata. È il «recupero del
    contesto» di Braynr, e qui costa una riga perché il rimando al capitolo
@@ -12341,6 +12389,79 @@ function evidenzeColoreScegli(c){
  * l'evidenziatore vero adesso può sceglierlo; chi non tocca niente continua a
  * vedere quello che vedeva.
  */
+/* ===== SI VEDONO, O NON SI VEDONO =========================================
+ *
+ * Un interruttore per rileggere il testo pulito senza cancellare niente. La
+ * regola sta in `EvidenzeStrati` (puro, provabile in Node); qui restano la
+ * memoria e i due bottoni che la girano.
+ *
+ * ⚠️ È una PREFERENZA DI LETTURA, non un dato del vault — come il colore e il
+ * tratto correnti, e per la stessa ragione: nessun file dell'utente deve
+ * cambiare perché ha spento i segni per rileggere una pagina.
+ *
+ * ⚠️ E la memoria è PER CONTENITORE. Spegnere le sottolineature di un'antologia
+ * per leggerla d'un fiato non deve spegnerle anche nel corso che si apre dopo:
+ * sono due letture diverse, e uno stato solo le confonderebbe.
+ */
+function evStratiChiave(){ return 'studia.evidenze.viste.'+(corsoAttivo()||'-'); }
+function evStrati(){
+  var c=corsoAttivo()||'-';
+  if(EVIDENZE.stratiCorso===c && EVIDENZE.strati) return EVIDENZE.strati;
+  var grezzo=null; try{ grezzo=localStorage.getItem(evStratiChiave()); }catch(e){}
+  EVIDENZE.strati=EvidenzeStrati.normalizza(grezzo);
+  EVIDENZE.stratiCorso=c;
+  return EVIDENZE.strati;
+}
+function evStratiScegli(stato){
+  EVIDENZE.strati=EvidenzeStrati.normalizza(stato);
+  EVIDENZE.stratiCorso=corsoAttivo()||'-';
+  try{ localStorage.setItem(evStratiChiave(), EvidenzeStrati.scrivi(EVIDENZE.strati)); }catch(e){}
+}
+/**
+ * Accende e spegne i segni sul testo. UNA funzione, e la chiamano tutte e due le
+ * porte — il bottone sulla barra della Fonte e quello delle Parole chiave —
+ * perché sono lo stesso verbo (invariante 6).
+ */
+function evidenzeCommuta(){
+  evStratiScegli(EvidenzeStrati.commuta(evStrati()));
+  evidenzeDisegna();
+  /* ⚠️ Anche qui, e non solo dentro `evidenzeDisegna`: quella esce subito se il
+     browser non ha la Custom Highlight API, e il bottone resterebbe a mostrare
+     la posizione sbagliata di un comando che l'utente ha appena premuto. */
+  evidenzeBottoni();
+  var n=EvidenzeStrati.conta(EVIDENZE.elenco||[], evStrati()).nascoste;
+  toast(EvidenzeStrati.accese(evStrati())
+    ? 'Sottolineature accese'
+    : (n ? 'Sottolineature nascoste: '+n+' restano sul disco' : 'Sottolineature nascoste'), true);
+}
+/**
+ * I due bottoni dicono lo stato, non quello che faranno: è la stessa regola del
+ * bottone dell'ordine delle parole chiave, e vale per tutti i comandi che hanno
+ * due posizioni.
+ *
+ * ⚠️ E si rifanno ANCHE quando il documento è pronto. Questo inline sta in cima
+ * al corpo e i riquadri stanno in fondo: al primo giro — che è quando il
+ * contenitore si carica e `evidenzeCarica()` chiama di qui — `#pdfEvid` non
+ * esiste ancora, e `$` torna `null` in silenzio. Riavviando l'app con le
+ * sottolineature spente il bottone mostrava «si vedono», cioè un comando che
+ * mente proprio nel momento in cui serve capire perché il testo è pulito.
+ * È la stessa trappola pagata dagli osservatori del visualizzatore delle
+ * immagini (PIANO-FOTO §F2): lì si aspetta il documento, e si aspetta anche qui.
+ */
+function evidenzeBottoni(){
+  var accese=EvidenzeStrati.accese(evStrati());
+  var n=EvidenzeStrati.conta(EVIDENZE.elenco||[], evStrati()).nascoste;
+  ['#pdfEvid','#kwEvid'].forEach(function(sel){
+    var b=$(sel); if(!b) return;
+    b.setAttribute('aria-pressed', accese ? 'false' : 'true');
+    b.textContent = accese ? '\u{1F58D}' : '\u{1F441}';
+    b.title = accese
+      ? 'Nascondi le sottolineature sul testo (restano salvate)'
+      : ('Rimostra le sottolineature'+(n ? ' — '+n+' nascoste' : ''));
+    b.setAttribute('aria-label', b.title);
+  });
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', evidenzeBottoni, { once:true });
 var EV_TRATTI=['sotto','overlay'];
 function evidenzeTratto(){
   if(EVIDENZE.tratto) return EVIDENZE.tratto;
@@ -17954,6 +18075,16 @@ window.addEventListener('keydown', function(e){
       <button class="tbtn" id="pdfZoomIn" type="button" title="Ingrandisci" aria-label="Ingrandisci">+</button>
     </span>
     <i class="tbsep" aria-hidden="true"></i>
+    <!-- Le sottolineature si spengono per rileggere il testo pulito, e restano
+         dove sono. ⚠️ Il bottone dice lo STATO (la matita se sono accese,
+         l'occhio se sono spente), non che cosa farà: è la stessa regola del
+         bottone dell'ordine nelle Parole chiave, e l'unica che permette di
+         sapere come stanno le cose senza premerlo per scoprirlo. Il gemello sta
+         nella barra delle Parole chiave, e chiama la stessa funzione: nascondere
+         vale ovunque, quindi l'interruttore non può stare in un posto solo. -->
+    <button class="tbtn" id="pdfEvid" type="button" aria-pressed="false"
+            title="Nascondi le sottolineature sul testo (restano salvate)"
+            aria-label="Nascondi le sottolineature sul testo (restano salvate)">&#128397;</button>
     <button class="tbtn" id="pdfRitaglia" type="button" hidden aria-pressed="false" title="Ritaglia un'area della pagina — o tieni premuto &#8984; e trascina" aria-label="Ritaglia un'area della pagina">&#9986;</button>
     <button class="tbtn" id="pdfFindBtn" type="button" hidden aria-expanded="false" title="Cerca nel documento (⌘F)" aria-label="Cerca nel documento">&#128269;</button>
     <!-- Il riconoscimento del testo: compare SOLO quando il documento aperto è
@@ -18176,6 +18307,14 @@ window.addEventListener('keydown', function(e){
     <!-- un bottone solo che dice in che ordine sono ADESSO, non che cosa farà:
          l'etichetta è lo stato, e premerlo lo cambia -->
     <button class="tbtn" id="kwOrdine" type="button" title="Ordina per data di aggiunta">Aa</button>
+    <!-- Il gemello del bottone che sta sulla barra della Fonte: stessa funzione,
+         stesso stato. Sta anche qui perché nascondere vale su TUTTE le
+         superfici — sul capitolo come sul documento — e un interruttore che si
+         raggiunge solo aprendo una fonte lascerebbe chi legge un capitolo con i
+         segni spenti e nessun modo visibile di riaccenderli. -->
+    <button class="tbtn" id="kwEvid" type="button" aria-pressed="false"
+            title="Nascondi le sottolineature sul testo (restano salvate)"
+            aria-label="Nascondi le sottolineature sul testo (restano salvate)">&#128397;</button>
   </div>
   <div id="kwLista" class="kwlista" role="list"></div>
 </section>

@@ -178,6 +178,47 @@ un'evidenza che non esiste · `test/rimandi.js` · `test/stampa-foglio.js` ·
 `test/cdp/prova-evidenza-appunto.js`, che confronta il colore **calcolato** nell'appunto con quello
 dell'evidenza sulla fonte.
 
+**P1.1-ter — L'interruttore: i segni si spengono, e restano.** ✅ *fatto il 18 agosto 2026 (M1)*
+
+Un `.tbtn` sulla barra della **Fonte** (`#pdfEvid`) e il suo gemello sulla barra delle **Parole
+chiave** (`#kwEvid`) nascondono le sottolineature sul testo senza cancellarle. È il primo tempo
+degli **strati** (M2): la regola sta in `App/assets/evidenze/strati.js`, e la forma dello stato è
+già quella che servirà — `{ tutte:true }` oggi, `{ tutte:true, spenti:['metrica'] }` domani.
+
+⚠️ **Il filtro sta dove si DIPINGE, non dentro `evidenzeDi`.** Quella funzione risponde a «quali
+evidenze sono di questa superficie», che è un fatto e non cambia perché uno guarda o non guarda —
+e la chiama anche `evidenzaSotto`, che serve ai **gesti**. Filtrando là, con i segni spenti
+ri-evidenziare una frase già segnata non l'avrebbe più riconosciuta: le avrebbe cambiato il colore
+di nascosto invece di dire «questa c'è già». *Nascondere cambia come si vede, mai che cosa
+succede* — e la prova CDP lo misura apposta.
+
+⚠️ **Due porte, un interruttore.** Nascondere vale su tutte le superfici (il capitolo come il
+documento), quindi lo stato è uno; ma il bottone della Fonte vive dentro il suo riquadro, e chi
+legge un capitolo con i segni spenti non lo raggiungerebbe. Il gemello nelle Parole chiave — lo
+strumento che le possiede — chiama la stessa funzione (invariante 6).
+
+⚠️ **Spegnere non svuota l'elenco**: serve a rileggere il testo pulito, non a mettere via le proprie
+parole chiave, che restano anche l'unico modo per ritrovarle. Una riga sopra i chip dice che i segni
+sono nascosti — e la dice **prima** di sapere se ci sono chip: la prima stesura stava dentro il ramo
+dell'elenco pieno, e col vuoto — cioè quando uno si chiede di più «dove sono finite» — non compariva.
+
+⚠️ **La memoria è per CONTENITORE** (`studia.evidenze.viste.<corso>`), e sta nel `localStorage`: è
+una preferenza di lettura, non un dato del vault — la stessa scelta già dichiarata per il tratto.
+Spegnere le sottolineature di un'antologia non le spegne nel corso che si apre dopo.
+
+⚠️ **Il rosso pagato**: riavviando l'app con i segni spenti, il bottone mostrava «si vedono». Questo
+inline sta in cima al corpo e i riquadri stanno in fondo: al primo giro `#pdfEvid` non esiste ancora
+e `$` torna `null` in silenzio. È la stessa trappola degli osservatori del visualizzatore (PIANO-FOTO
+§F2) — si aspetta il documento.
+
+**Prove**: `test/strati.js` (la regola, 24 controlli) · `test/cdp/prova-strati.js`, che guarda il
+**registro degli highlight** e non l'attributo di un bottone.
+
+**Resta M2**: gli strati veri — il campo `strato` nel record e nel seme dell'identità (è ciò che
+permette *le stesse parole in due letture*), il registro nel file, il pannellino, lo strato attivo.
+Il piano intero è nella conversazione del 18 agosto; il pezzo che non si può dimenticare è che lo
+strato entra nell'identità **solo quando c'è**, o gli id già scritti negli appunti cambierebbero.
+
 Il disegno originale, che resta valido:
 Doppio click su una parola (o selezione + voce «Evidenzia» nel menu che già compare per
 «Salva come appunto») → la parola entra in `APPUNTI/_evidenze.md`: una riga per evidenza, con
