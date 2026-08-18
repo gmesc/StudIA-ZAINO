@@ -113,6 +113,39 @@ const righe = (sel) => val(`(()=>{const t=document.querySelector(${JSON.stringif
     await val(`['noteSelect','noteNew','noteSave','noteRen','noteDel','noteClose']
       .map(i=>!!document.getElementById(i))`));
 
+  console.log('\n== La guida elenca i tasti, e sono gli stessi della barra');
+  /* ⚠️ PERCHÉ QUESTA SEZIONE ESISTE. La sezione «Tasti» della guida è un elenco
+     scritto a mano accanto ai suggerimenti dei bottoni, cioè una seconda copia:
+     senza un controllo, il giorno che una scorciatoia cambia la guida continua a
+     insegnare quella di prima e nessuno se ne accorge (è la trappola ④). Qui si
+     misura che i due elenchi dicano la stessa cosa. */
+  await val('apriGuida(), 1');
+  await pausa(250);
+  ok('la tabella dei tasti è nella guida', true,
+    await val(`!!document.querySelector('table.guida.tasti')`));
+  const inGuida = await val(`[...document.querySelectorAll('table.guida.tasti .g-kbd')].map(e=>e.textContent.trim())`);
+  ok('…con almeno una dozzina di righe', true, inGuida.length >= 12);
+  /* I suggerimenti della barra: quelli di EasyMDE li scrive lui in inglese
+     («Bold (Cmd-B)») e `tastiNelDom` li traduce, quindi qui dentro i tasti si
+     leggono già nella scrittura della piattaforma — la stessa che usa la guida. */
+  const inBarra = await val(`[...document.querySelectorAll('#noteHost [title]')]
+    .map(e=>e.getAttribute('title')).join(' § ')`);
+  /* Non tutte le righe hanno un bottone (Invio, Esc, ⌘Invio non ne hanno): si
+     controllano quelle che ce l'hanno, che sono le sole che possono divergere. */
+  const daiDue = ['⌘S', '⌘B', '⌘I', '⌘K', '⌘L', 'F9', '⌘⇧C'];
+  for (const k of daiDue) {
+    const kk = await val(`tasti(${JSON.stringify(k)})`);
+    ok('«' + kk + '» sta nella guida e nella barra', [true, true],
+      [inGuida.some(t => t.indexOf(kk) >= 0), inBarra.indexOf(kk) >= 0]);
+  }
+  /* ⌘J non lo scrive EasyMDE — l'anteprima è nostra — ed è proprio la riga che
+     un elenco scritto a mano si dimentica per prima. */
+  const jj = await val('tasti("⌘J")');
+  ok('e «' + jj + '», che è dell\'app e non dell\'editor', [true, true],
+    [inGuida.some(t => t.indexOf(jj) >= 0), inBarra.indexOf(jj) >= 0]);
+  await val('chiudiGuida(), 1');
+  await pausa(150);
+
   if (process.env.STUDIA_FOTO) {
     const { invia } = require(S);
     const box = await val(`(()=>{const r=document.querySelector('#noteHost .editor-toolbar').getBoundingClientRect();

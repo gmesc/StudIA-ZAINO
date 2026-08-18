@@ -321,6 +321,81 @@ in Obsidian (elenco puntato raggruppato per capitolo), col frontmatter che lo di
 ⚠️ Trappola nota: la scrittura resta atomica e passa da `appunti.writeAtomic`, non da una seconda
 implementazione (trappola ④ dell'HANDOFF).
 
+**P1.1-sexies — I bottoni della barra scrivono markdown che l'app rende, e la guida dice i tasti.**
+✅ *fatto il 18 agosto 2026*
+
+Due comandi di serie di EasyMDE stavano nella barra da sempre e promettevano a vuoto: **«"»**
+scrive `> testo` e **«</>»** scrive un recinto ```` ``` ````, e il renderore non conosceva né l'uno
+né l'altro — quel markdown usciva **letterale**, maggiore e apici a vista. Adesso `mdToHtml` li
+rende, `<blockquote>` e `<pre class="md-code">`, con il vestito su tutte e cinque le superfici in
+cui un appunto si legge (anteprima, corpo di un riquadro, «I miei appunti», tabella della guida,
+foglio di stampa).
+
+- ⚠️ **Solo negli appunti** (`aCapo`): nei capitoli generati la sintassi non si usa, e accenderla là
+  cambierebbe la resa di file già scritti. Metà dei 26 controlli di `test/appunti-md.js` tiene ferma
+  quella riga di confine.
+- ⚠️ **I recinti si ritagliano PRIMA dello spezzettamento sui bianchi.** Un blocco di codice è
+  l'unica cosa che può *contenere* una riga vuota: lo `split(/\n{2,}/)` la tratterebbe da confine e
+  il codice uscirebbe in due pezzi con metà apici per uno. Un recinto **mai chiuso** torna indietro
+  com'era — chi sta ancora scrivendo non deve vedere metà appunto diventare codice — ed è anche la
+  condizione d'uscita della ricorsione.
+- ⚠️ **Il difetto trovato guardando, non misurando**: la riga di bianco scritta con ⌥+Spazio si
+  vedeva **dentro** un riquadro e spariva **fuori**. `renderNoteMd` decideva «riga vuota» con
+  `trim()`, e per `trim()` lo spazio insecabile è uno spazio: la riga moriva prima di arrivare al
+  renderore, che invece la sa rendere da giorni. Adesso il criterio è uno solo (`vuota()`), e la
+  differenza la sorveglia `test/cdp/prova-appunti-md.js` — che gira nell'app viva perché
+  `renderNoteMd` sta nel monolite e in Node non si carica.
+
+**Il bianco fra i paragrafi, che non c'era.** Il seguito immediato, chiesto guardando il
+risultato: premere Invio due volte non cambiava niente a schermo.
+
+- ⚠️ **Due difetti, non uno.** Il primo: `*{margin:0}` vale ovunque e lo stacco fra paragrafi era
+  scritto **solo per `article`**, cioè per i capitoli — in un appunto due paragrafi si sono sempre
+  toccati. Il secondo: le righe vuote in più si buttavano via tutte, e l'unico modo di lasciare un
+  bianco era una riga con lo spazio insecabile, un trucco che bisognava sapere.
+- La regola adesso è quella dell'«a capo»: **quello che si vede nell'editor si vede
+  nell'anteprima**. Una riga vuota cambia paragrafo, ognuna in più è una riga di bianco
+  (`vuote()`, nel modulo del parser: il conto lo fanno in due — `renderNoteMd` per il bianco fra i
+  blocchi, `mdToHtml` per quello dentro — ma la regola è una sola). Misurato: 17 · 45 · 73 px con
+  la riga a 28.
+- ⚠️ **`p:first-child{margin-top:0}` qui non funziona**, ed è la trappola che vale la pena
+  ricordare: nell'anteprima ogni blocco sta dentro un `.mdb` che è `display:contents`, quindi
+  **ogni** paragrafo è il primo figlio del suo involucro e si azzerava il margine da sé. Lo stacco
+  va messo da un lato solo (`margin:0 0 var(--par)`), e allora non c'è nemmeno un collasso da
+  governare.
+- ⚠️ **Una prova che costruisce il DOM invece di guardare quello vero dice verde per sbaglio**: la
+  prima versione fabbricava `<div class="editor-preview"><p>…` — senza `.mdb` — e non poteva
+  vedere il difetto di sopra. Adesso misura i paragrafi dell'anteprima viva. Lo stesso vale per il
+  bianco, che è un `<p>` e si prendeva i margini dei paragrafi: valeva una riga e mezza, e a
+  occhio si vedeva mentre le prove tacevano.
+- ⚠️ Il foglio di stampa si misura sullo **stile**, non sull'ingombro: vive dietro un
+  `display:none`, e là ogni rettangolo è alto zero.
+
+**La fonte nel frammento diventa opzionale.** «Appunta» scriveva sempre `— [p. 7](pdf:03#p=7)`, e
+la ragione era buona — una frase senza origine, fra un mese, è una frase di cui non si sa più di chi
+sia — ma non vale per ogni gesto: chi si copia una definizione da tenere sott'occhio non sta citando
+nessuno. Un 🔗 in fondo alla fila dei riquadri lo decide, e la scelta è ricordata
+(`studia.appunta.cita`).
+
+- ⚠️ **Due contratti nella stessa fila, e si vedono.** Gli otto quadratini hanno il patto della riga
+  dei colori — premerne uno FA il gesto — mentre il 🔗 dice soltanto *come* sarà fatto il prossimo:
+  per questo è staccato da una barretta, non chiude il menu, e si accende invece di sparire.
+- ⚠️ **Il difetto pagato scrivendolo, e trovato dalla prova**: il 🔗 era nato con la classe
+  `.ctx-cal` per ereditarne il vestito — e il gestore dei riquadri lavora **per classe**, quindi
+  premerlo appuntava davvero la frase. Il vestito si condivide scrivendo due selettori nel foglio di
+  stile; il ruolo no.
+- ⚠️ E va **dentro l'elenco delle eccezioni** di `closePops()` (la trappola del `PROVE=(` in salsa
+  DOM): senza, l'interruttore si portava via il menu da cui era stato premuto.
+- ⚠️ Il difetto è **acceso**: chi non sceglie ottiene il comportamento di sempre. E la prova
+  **rimette com'era** prima di finire — `prova-evidenze-pdf` misura un frammento con la sua fonte, e
+  lo stato che una prova lascia è l'ingresso di quella dopo.
+
+E la guida «Come si scrive in StudIA» ha una **seconda tabella, i tasti**: fino a ieri le
+scorciatoie degli appunti stavano solo nei `title` dei bottoni, cioè invisibili proprio a chi usa la
+tastiera. ⚠️ È un elenco scritto accanto a quei suggerimenti, cioè una seconda copia: la difesa è in
+`prova-appunti-barra.js`, che confronta i due elenchi tasto per tasto. **Ha già trovato la prima
+divergenza**: ⌘⇧C esisteva fra gli `extraKeys` e il suo bottone non lo nominava.
+
 **P1.2 — Tag negli appunti.**
 Aggiungere `tags` alle `CHIAVI` del frontmatter (`lib/appunti.js` le enumera: è un punto solo).
 Nell'editor: campo tag sotto il titolo (chip, come i filtri già disegnati altrove nell'app).
