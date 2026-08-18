@@ -38,3 +38,8 @@ build/icon.iconset/
 build/openmoji.json
 build/cldr-it.json
 build/cldr-it-derived.json
+
+# Il grafo della conoscenza (`/graphify`): 7 MB di prodotto, e si rifà dai
+# documenti e dal codice che stanno già qui. Si rigenera con
+# `/graphify . --update`, che riestrae solo i file cambiati.
+graphify-out/

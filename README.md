@@ -3,7 +3,7 @@
 App desktop (Electron) per **studiare da un corpus di materiali propri**. Decine di videolezioni e
 PDF entrano in un *vault*; una pipeline multiagente li trascrive, li indicizza, li legge per intero
 e ne costruisce corsi strutturati; un lettore li presenta con quiz, glossari, mappe concettuali,
-appunti, evidenze, album di ritagli e ripasso programmato.
+appunti, evidenze a **letture** sovrapposte, album di ritagli e ripasso programmato.
 
 Due proprietà contano più di ogni funzione:
 
@@ -104,6 +104,7 @@ non toccano niente di tuo, e la tua StudIA può restare aperta mentre lavorano.
 | [GUIDA-ARCHITETTO.md](GUIDA-ARCHITETTO.md) | **come si costruisce qui**: filosofia, invarianti numerati, mappa del codice, processo, trappole permanenti |
 | `HANDOFF-DEFINITIVO-<data>.md` (il più recente) | **a che punto siamo**: che cosa è appena entrato, che cosa resta aperto, le trappole fresche |
 | `PIANO-*.md` | il dettaglio di ogni area (zaino, banco, mappe, appunti, foto, onboarding, moduli) |
+| `graphify-out/` (non versionato) | il **grafo della conoscenza** del progetto: `graph.html` da aprire nel browser, `GRAPH_REPORT.md`, `graph.json` interrogabile. Si rifà con `/graphify .` e si aggiorna con `/graphify . --update` |
 | `App/guida-zaino/` | la **guida illustrata della modalità ZAINO**, con schermate dell'app vera: viaggia col pacchetto e si apre da Impostazioni › Zaino. La ricetta per rifarne le immagini sta in `_lab/` (fuori dal pacchetto) |
 
 Se la guida e un handoff sembrano in conflitto, ha ragione l'handoff: è più recente.

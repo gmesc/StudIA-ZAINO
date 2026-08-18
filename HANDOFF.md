@@ -1,7 +1,7 @@
 # Handoff — StudIA, 3-8 agosto 2026
 
 > ⚠️ **QUESTO FILE È VECCHIO.** Chi arriva adesso parte da
-> **[HANDOFF-DEFINITIVO-2026-08-14.md](HANDOFF-DEFINITIVO-2026-08-14.md)**, che racconta lo stato
+> **[HANDOFF-DEFINITIVO-2026-08-18.md](HANDOFF-DEFINITIVO-2026-08-18.md)**, che racconta lo stato
 > corrente e dice che cosa fare per primo. Quello che segue resta perché il vocabolario, le scelte
 > di fondo e le trappole del 3-8 agosto valgono ancora — ma i numeri e l'elenco dei lavori aperti
 > qui sotto sono superati.

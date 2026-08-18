@@ -1,6 +1,11 @@
 # Handoff definitivo — 17 agosto 2026
 
-> **A chi arriva adesso: questo file basta per ripartire.** Sostituisce
+> ⚠️ **SUPERATO** da [HANDOFF-DEFINITIVO-2026-08-18.md](HANDOFF-DEFINITIVO-2026-08-18.md), che è il
+> punto di ripartenza. Questo resta la lettura di dettaglio sull'anteprima scrivibile, sulla guida
+> dentro l'app e sui tre pacchetti del 17 agosto — e il §5 («committare») è **fatto**: quel lavoro è
+> il commit `7d65d99`.
+
+> **Al suo tempo era il punto di ripartenza.** Sostituiva
 > [HANDOFF-DEFINITIVO-2026-08-16b.md](HANDOFF-DEFINITIVO-2026-08-16b.md), che resta la lettura di
 > dettaglio sulla lente negli appunti, sulla rinomina di uno zaino e sui nomi dei tasti.
 >
