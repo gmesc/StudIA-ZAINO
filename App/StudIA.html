@@ -1427,6 +1427,40 @@
   .uc-body h4, .myotes .nt-body h4, table.guida .g-out h4{ font-size:18px; }
   .uc-body h5, .myotes .nt-body h5, table.guida .g-out h5{ font-size:17px; }
   .uc-body h6, .myotes .nt-body h6, table.guida .g-out h6{ font-size:16px; color:var(--muted); }
+  /* ===== CITAZIONI E CODICE SCRITTI A MANO =====
+     I due bottoni «"» e «</>» della barra scrivono `> testo` e ``` … ```, e
+     fino al 18 agosto quel markdown usciva LETTERALE — maggiore e apici a
+     vista — perché il renderore non lo conosceva. Adesso lo conosce (solo negli
+     appunti: `mdToHtml(…, aCapo)`), e qui c'è il suo vestito.
+     ⚠️ Le superfici sono CINQUE, come per i titoli scritti a mano poco più su:
+     l'anteprima dell'editor, il corpo di un riquadro, il pannello «I miei
+     appunti», la tabella della guida e il foglio di stampa. Vestirne quattro
+     vuol dire che la quinta mostra un appunto diverso dagli altri.
+     ⚠️ La citazione porta un filo SOTTILE e nessun fondo: con un bordo spesso e
+     un fondo colorato sarebbe un riquadro, e i riquadri qui vogliono dire
+     un'altra cosa. */
+  :is(#noteHost .editor-preview, #noteHost .editor-preview-side, .uc-body,
+      .myotes .nt-body, table.guida .g-out, #stampaFoglio .st-corpo) blockquote{
+    margin:.7rem 0; padding:.1rem 0 .1rem .8rem; border-left:2px solid var(--line);
+    color:var(--muted); font-style:italic;
+  }
+  :is(#noteHost .editor-preview, #noteHost .editor-preview-side, .uc-body,
+      .myotes .nt-body, table.guida .g-out, #stampaFoglio .st-corpo) blockquote>*:first-child{ margin-top:0; }
+  :is(#noteHost .editor-preview, #noteHost .editor-preview-side, .uc-body,
+      .myotes .nt-body, table.guida .g-out, #stampaFoglio .st-corpo) blockquote>*:last-child{ margin-bottom:0; }
+  /* Il codice non si manda a capo da sé: una riga spezzata dove capita è una
+     riga che dice un'altra cosa. Scorre nel suo riquadro, e il resto della
+     pagina non si allarga dietro di lui. */
+  .md-code{
+    margin:.7rem 0; padding:.55rem .7rem; border:1px solid var(--line);
+    background:color-mix(in srgb, var(--ink) 4%, var(--panel));
+    overflow-x:auto; white-space:pre; font-size:12.5px; line-height:1.5;
+    font-family:ui-monospace,SFMono-Regular,Menlo,var(--emoji-font),monospace;
+  }
+  .md-code code{ font:inherit; background:none; padding:0; }
+  /* In stampa il riquadro non può scorrere: là il codice va a capo, o le righe
+     lunghe finiscono fuori dal foglio e nessuno le legge mai. */
+  @media print{ .md-code{ white-space:pre-wrap; word-break:break-word; } }
   .uc-nota{ --uc-col:var(--teal); --uc-ink:var(--teal-strong); }
   .uc-importante{ --uc-col:var(--yellow); --uc-ink:var(--yellow-strong); }
   .uc-dubbio{ --uc-col:var(--blue); --uc-ink:var(--blue-strong); }
@@ -2247,6 +2281,13 @@
     background:var(--hover); padding:.5rem .6rem; line-height:1.5; }
   table.guida .g-out>*:first-child{ margin-top:0; } table.guida .g-out>*:last-child{ margin-bottom:0; }
   table.guida .g-out .ucallout{ margin:.2rem 0; }
+  /* La tabella dei tasti è la stessa tabella con una colonna in meno: le misure
+     fisse sono l'unica cosa che cambia (`table-layout:fixed` le vuole scritte). */
+  table.guida.tasti{ margin-top:1.6rem; }
+  table.guida.tasti th:nth-child(1){ width:70%; } table.guida.tasti th:nth-child(2){ width:30%; }
+  table.guida .g-kbd{ font-family:ui-monospace,SFMono-Regular,Menlo,var(--emoji-font),monospace;
+    font-size:12px; background:var(--hover); border:1px solid var(--line); padding:.2rem .45rem;
+    white-space:nowrap; }
   /* Il "?" accanto ai campi liberi: NON è un bottone di barra ed è giusto che
      non lo sembri — è un RIMANDO A UNA NOTA, come l'esponente di una potenza.
      Piccolo, in grassetto, rialzato e colorato di blu, che in quest'app è il
@@ -8118,6 +8159,15 @@ function insertCallout(k){
  * usano la stessa funzione, e lì un blocco cliccabile non solo è inutile — è
  * una promessa che quelle viste non possono mantenere.
  */
+/* ⚠️ UNA RIGA VUOTA NON È UNA RIGA CON LO SPAZIO INSECABILE, e `trim()` non sa
+   distinguerle: per lui U+00A0 è spazio, quindi una riga scritta con ⌥+Spazio
+   — che è il modo di lasciare un bianco visibile — spariva qui prima ancora di
+   arrivare al renderore, che invece la sa rendere (`mdToHtml` ha la sua guardia
+   scritta e commentata da giorni). Il bianco si vedeva dentro un riquadro e non
+   fuori, cioè la stessa scrittura dava due risultati secondo dove stava.
+   Misurato il 18 agosto guardando l'anteprima, non le prove: quelle chiamavano
+   `mdToHtml` da sole e passavano. */
+function vuota(l){ return !String(l).replace(/[ \t\r]+/g, '').length; }
 function renderNoteMd(md, opt){
   var mappa=!!(opt && opt.mappa);
   var lines=String(md==null?'':md).split('\n');
@@ -8127,7 +8177,7 @@ function renderNoteMd(md, opt){
     return '<div class="mdb" data-da="'+da+'" data-a="'+a+'">'+html+'</div>';
   }
   while(i<lines.length){
-    if(!lines[i].trim()){ i++; continue; }        // le righe vuote separano, non appartengono
+    if(vuota(lines[i])){ i++; continue; }         // le righe vuote separano, non appartengono
     var m=/^>\s*\[!([A-Za-zàèéìòù-]+)\]\s*(.*)$/.exec(lines[i]);
     if(m){
       var da=i, d=calloutDef(m[1]), titolo=(m[2]||'').trim()||d.label, body=[];
@@ -8144,7 +8194,7 @@ function renderNoteMd(md, opt){
        HTML — `mdToHtml` spezza a sua volta sulle righe vuote — ma i confini dei
        blocchi non li sapeva più nessuno, e senza confini non c'è mappa. */
     var inizio=i, buf=[];
-    while(i<lines.length && lines[i].trim() && !/^>\s*\[!/.test(lines[i])){ buf.push(lines[i]); i++; }
+    while(i<lines.length && !vuota(lines[i]) && !/^>\s*\[!/.test(lines[i])){ buf.push(lines[i]); i++; }
     out+=avvolgi(mdToHtml(buf.join('\n'), true), inizio, i-1);
   }
   return out;
@@ -8549,6 +8599,16 @@ var GUIDA=[
   { nome:'Titoletto', sintassi:'## Da rivedere', nota:'Da # a ###### : più cancelletti, titolo più piccolo.' },
   { nome:'A capo', sintassi:'Prima riga.\nSeconda riga.', nota:'Un solo Invio basta: negli appunti vale come interruzione di riga.' },
   { nome:'Paragrafo nuovo', sintassi:'Primo paragrafo.\n\nSecondo paragrafo.', nota:'Una riga vuota fra i due.' },
+  /* ⚠️ Il tasto si dice per la tastiera che si ha sotto le mani, e su Windows
+     non c'è: Alt+Spazio là apre il menu della finestra. Promettere lo stesso
+     gesto in tutte e due le lingue sarebbe la bugia che `tasti/nomi.js` esiste
+     per non dire — e qui non basta tradurre il simbolo, cambia la frase. */
+  { nome:'Riga vuota', sintassi:'Sopra il bianco.\n\n'+NBSP_GUIDA+'\n\nSotto il bianco.',
+    nota:(TASTI_MAC ? 'Una riga con il solo spazio insecabile: ⌥+Spazio.'
+                    : 'Una riga con il solo spazio insecabile (su Windows si incolla: la tastiera non ha un tasto per farlo).')+
+         ' Le righe DAVVERO vuote separano i paragrafi e non lasciano spazio, quante che siano.' },
+  { nome:'Citazione', sintassi:'> Le parole di qualcun altro.', nota:'Il pulsante " della barra. Per una cornice che dice CHE COSA è, usa un riquadro.' },
+  { nome:'Blocco di codice', sintassi:'```\nformula = a * b\n```', nota:'Il pulsante </> della barra (⌘⌥C). Dentro, il testo resta com\'è scritto: niente grassetto, niente rimandi.' },
   { sezione:'Elenchi' },
   { nome:'Elenco puntato', sintassi:'- prima voce\n- seconda voce' },
   { nome:'Elenco numerato', sintassi:'1. primo passaggio\n2. secondo passaggio', nota:'Va bene anche «1)». Se parti da un numero diverso, la numerazione riparte da lì.' },
@@ -8562,11 +8622,51 @@ var GUIDA=[
   { nome:'Vai al minuto del video', sintassi:'Vedi [2:12](video:05#t=132) della lezione.', nota:'Non serve scriverlo a mano: con il video in riproduzione premi ✎ (⌘⇧C) e il minuto esatto entra da sé. Con 📎 scegli il materiale da un elenco.' },
   { nome:'Vai alla pagina del PDF', sintassi:'Vedi la [p. 7](pdf:03#p=7) della dispensa.', nota:'Le frecce ‹ › nella barra dell\'anteprima cambiano pagina; 🔖 cita quella corrente.' },
   { nome:'Rimando a un\'altra lezione', sintassi:'Il tema prosegue in [[02-comorbidita]].', nota:'Il nome della cartella della lezione. Con «|» si cambia l\'etichetta: [[02-comorbidita|le comorbilità]].' },
-  { nome:'Rimando a un capitolo preciso', sintassi:'Ne parla [il capitolo sulla decodifica](cap:05-dislessia-decodifica-c02).', nota:'Il wiki-link porta all\'inizio della lezione; questo al capitolo esatto. Non serve scriverlo a mano: lo mette «Appunta» quando estrai un frammento dal testo.' },
+  { nome:'Rimando a un capitolo preciso', sintassi:'Ne parla [il capitolo sulla decodifica](cap:05-dislessia-decodifica-c02).', nota:'Il wiki-link porta all\'inizio della lezione; questo al capitolo esatto. Non serve scriverlo a mano: lo mette «Appunta» quando estrai un frammento dal testo. La fila di quadratini sotto «Appunta» decide come arriva: ¶ nudo, un\'emoji dentro il riquadro di quel tipo.' },
   { nome:'Link esterno', sintassi:'Fonte: [Consensus Conference](https://www.iss.it).', nota:'Si apre nel browser di sistema.' },
   { nome:'Nota a piè di pagina', sintassi:'Affermazione da documentare.[^1]', nota:'Nei capitoli generati il numero rimanda al testo della nota in fondo.' },
   { sezione:'Emoji' },
   { nome:'Emoji', sintassi:'Da ripassare 🧠 prima dell\'esame 📖', nota:'Il pulsante 😀 della barra apre il selettore con la ricerca per parola. Sono disegnate in stile OpenMoji.' }
+];
+
+/* ---- I tasti dell'editor ----
+ *
+ * ⚠️ PERCHÉ QUESTO ELENCO ESISTE. Fino al 18 agosto le scorciatoie degli
+ * appunti stavano in un posto solo: il `title` dei bottoni della barra. Chi non
+ * ci passa sopra col mouse — cioè chi usa la tastiera, cioè proprio chi le
+ * cercherebbe — non poteva scoprirne nessuna, e la domanda «lo shortcut è nella
+ * lista?» non aveva risposta perché la lista non c'era.
+ *
+ * ⚠️ E resta UN elenco, non una seconda copia: `prova-appunti-barra.js`
+ * controlla che ogni tasto nominato qui compaia davvero nel suggerimento del
+ * bottone che lo esegue. Il giorno che una scorciatoia cambia e questa riga no,
+ * la prova diventa rossa invece di lasciar mentire la guida.
+ *
+ * I simboli si scrivono alla maniera del Mac e li traduce `tasti()`: qui non si
+ * sceglie la piattaforma (invariante: la regola sta in `tasti/nomi.js`).
+ */
+var TASTI=[
+  { sezione:'L\'appunto' },
+  { nome:'Salva adesso', tasti:'⌘S', nota:'Si salva comunque da sé mentre scrivi.' },
+  { nome:'Stampa, o salva in PDF', tasti:'⌘P' },
+  { nome:'Cita il punto che stai guardando', tasti:'⌘⇧C', nota:'Il minuto del video, o la pagina del PDF aperto accanto.' },
+  { sezione:'Vedere' },
+  { nome:'Anteprima', tasti:'⌘J', nota:'Non ⌘P, che stampa.' },
+  { nome:'Testo e anteprima affiancati', tasti:'F9' },
+  { nome:'Chiudi il blocco aperto nell\'anteprima', tasti:'Esc', nota:'Cliccando un blocco dell\'anteprima torna a essere markdown.' },
+  { nome:'Chiudi il blocco e tieni le modifiche', tasti:'⌘Invio' },
+  { sezione:'Scrivere' },
+  { nome:'A capo', tasti:'Invio', nota:'Un solo Invio: negli appunti vale come interruzione di riga.' },
+  { nome:'Riga vuota', tasti:(TASTI_MAC?'⌥Spazio':'—'),
+    nota:(TASTI_MAC?'Una riga con il solo spazio insecabile.':'Su Windows non c\'è un tasto: lo spazio insecabile si incolla.') },
+  { nome:'Grassetto', tasti:'⌘B' },
+  { nome:'Corsivo', tasti:'⌘I' },
+  { nome:'Titoletto più piccolo, più grande', tasti:'⌘H · ⇧⌘H' },
+  { nome:'Collegamento', tasti:'⌘K' },
+  { nome:'Elenco puntato, numerato', tasti:'⌘L · ⌘⌥L' },
+  { nome:'Citazione', tasti:'⌘\'' },
+  { nome:'Blocco di codice', tasti:'⌘⌥C' },
+  { nome:'Annulla, rifai', tasti:'⌘Z · ⇧⌘Z' }
 ];
 
 /* ── Crediti e licenze ──────────────────────────────────────────────────────
@@ -8590,6 +8690,17 @@ var CRED_GRUPPI = [
   { chiave:'npm',         titolo:'Pacchetti npm spediti con l\'app' }
 ];
 
+/** Le righe della tabella dei tasti. Il simbolo passa da `tasti()`, che è
+ *  l'unico posto in cui si sa che tastiera c'è sotto le mani. */
+function tastiRighe(){
+  return TASTI.map(function(r){
+    if(r.sezione) return '<tr class="sezione"><td colspan="2">'+escHtml(r.sezione)+'</td></tr>';
+    return '<tr>'+
+      '<td><span class="g-nome">'+escHtml(r.nome)+'</span>'+
+        (r.nota?'<span class="g-nota">'+escHtml(tasti(r.nota))+'</span>':'')+'</td>'+
+      '<td><kbd class="g-kbd">'+escHtml(tasti(r.tasti||''))+'</kbd></td></tr>';
+  }).join('');
+}
 function guidaRighe(){
   return GUIDA.map(function(r){
     if(r.sezione) return '<tr class="sezione"><td colspan="3">'+escHtml(r.sezione)+'</td></tr>';
@@ -8836,8 +8947,12 @@ document.addEventListener('input', function(e){
 });
 function apriGuida(){
   var m=document.getElementById('guidaModal'); if(!m) return;
+  /* Due tabelle, non due finestre: «come si scrive» e «con che tasto» sono la
+     stessa domanda posta a due minuti di distanza, e chi ha aperto la guida per
+     la prima trova la seconda scorrendo. */
   document.getElementById('guidaBody').innerHTML =
-    '<table class="guida"><thead><tr><th>Funzione</th><th>Come si scrive</th><th>Come viene</th></tr></thead><tbody>'+guidaRighe()+'</tbody></table>';
+    '<table class="guida"><thead><tr><th>Funzione</th><th>Come si scrive</th><th>Come viene</th></tr></thead><tbody>'+guidaRighe()+'</tbody></table>'+
+    '<table class="guida tasti"><thead><tr><th>Comando</th><th>Tasti</th></tr></thead><tbody>'+tastiRighe()+'</tbody></table>';
   m.hidden=false;
   document.documentElement.dataset.guida='1';
 }
@@ -10116,7 +10231,11 @@ function ensureMde(){
       { name:'emoji', title:'Inserisci un\'emoji (OpenMoji)', className:'ncb-emoji',
         action:function(ed){ openEmojiPop(host.querySelector('.ncb-emoji')); } },
       '|',
-      { name:'cita', title:'Cita il punto che stai guardando', className:'ncb-cita',
+      /* ⚠️ Il tasto sta NEL suggerimento, come per l'anteprima: il comando c'è
+         da sempre (`Cmd-Shift-C` fra gli `extraKeys`, qui sotto) ma il bottone
+         non lo nominava, e una scorciatoia che non si dice non la usa nessuno.
+         Trovato dalla prova che confronta la guida con la barra, non a occhio. */
+      { name:'cita', title:'Cita il punto che stai guardando (⌘⇧C)', className:'ncb-cita',
         action:function(){ citaCorrente(); } },
       { name:'materiali', title:'Cita un materiale di questo contenitore', className:'ncb-mat',
         action:function(){ apriMateriali(host.querySelector('.ncb-mat')); } },
@@ -18853,7 +18972,7 @@ window.addEventListener('keydown', function(e){
   <div class="guida-card">
     <div class="guida-head">
       <b id="guidaTitolo">Come si scrive in StudIA</b>
-      <span class="mh-sub">Tutte le notazioni riconosciute negli appunti</span>
+      <span class="mh-sub">Tutte le notazioni riconosciute negli appunti, e i tasti dell’editor</span>
       <span class="tbspazio"></span>
       <button class="tbtn" id="guidaClose" type="button" aria-label="Chiudi la guida">&#10005;</button>
     </div>

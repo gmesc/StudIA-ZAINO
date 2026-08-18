@@ -391,6 +391,31 @@
     s=s.replace(/`([^`]+)`/g,'<code>$1</code>');
     s=s.replace(/\[\^([0-9A-Za-z]+)\]/g, function(m,n){ return notaRifHtml(n, nota); });
     return s; }
+  /**
+   * Spezza un markdown in pezzi di CODICE (dentro ``` … ```) e pezzi di testo,
+   * nell'ordine in cui stanno scritti.
+   *
+   * ⚠️ La lingua dichiarata dopo gli apici (```js) si legge e si butta: qui non
+   * c'è nessun colorista, e una classe `language-js` che non colora niente
+   * sarebbe una promessa scritta nel DOM e non mantenuta.
+   */
+  function _recinti(md){
+    var righe=md.split('\n'), out=[], testo=[], codice=null;
+    for(var i=0;i<righe.length;i++){
+      var apre=/^\s*```/.test(righe[i]);
+      if(codice===null){
+        if(apre){ if(testo.length){ out.push({ codice:false, testo:testo.join('\n') }); testo=[]; } codice=[]; }
+        else testo.push(righe[i]);
+        continue;
+      }
+      if(apre){ out.push({ codice:true, testo:codice.join('\n') }); codice=null; }
+      else codice.push(righe[i]);
+    }
+    // recinto aperto e mai chiuso: torna testo com'era, apici in testa compresi
+    if(codice!==null) testo=testo.concat(['```'], codice);
+    if(testo.length) out.push({ codice:false, testo:testo.join('\n') });
+    return out;
+  }
   /* aCapo=true: l'Invio singolo vale come interruzione di riga (come in Obsidian).
      Serve nei testi scritti a mano — gli appunti — dove chi scrive si aspetta di
      andare a capo premendo Invio. I capitoli generati restano al comportamento
@@ -407,6 +432,26 @@
     var unisci = aCapo
       ? function(righe){ return orli(righe.map(function(l){ return _mdInline(l, nota); }).join('<br>')); }
       : function(righe){ return _mdInline(orli(righe.join(' ')), nota); };
+    /* ⚠️ I RECINTI SI RITAGLIANO PRIMA DELLO SPEZZETTAMENTO SUI BIANCHI.
+       Un blocco ``` … ``` è l'unica cosa che può CONTENERE una riga vuota, e
+       lo `split(/\n{2,}/)` qui sotto la tratterebbe da confine: il codice
+       uscirebbe tagliato in due pezzi, ognuno con metà dei suoi apici.
+       Solo negli appunti (`aCapo`): nei capitoli generati i recinti che
+       contano — quiz, glossario — li ha già tolti `mdChapter`, e uno che
+       arrivasse fin qui non è mai stato reso come codice. */
+    if(aCapo && md.indexOf('```')>=0){
+      var pezzi=_recinti(String(md).replace(/\r/g,''));
+      /* ⚠️ Un recinto MAI CHIUSO torna indietro com'era, apici compresi: chi sta
+         ancora scrivendo non deve vedere metà appunto diventare codice. Ed è
+         anche la condizione d'uscita di questa ricorsione — senza il controllo
+         qui sotto, quel pezzo rientrerebbe da capo e si girerebbe in tondo. */
+      if(pezzi.length>1 || (pezzi[0] && pezzi[0].codice)){
+        return pezzi.map(function(p){
+          return p.codice ? '<pre class="md-code"><code>'+g.esc(p.testo)+'</code></pre>'
+                          : mdToHtml(p.testo, aCapo, nota);
+        }).filter(function(s){ return s; }).join('\n');
+      }
+    }
     var blocks=md.replace(/\r/g,'').split(/\n{2,}/); var out=[];
     blocks.forEach(function(b){ b=b.replace(/^\n+|\n+$/g,'');
       // NB: trim() tratta lo spazio insecabile (U+00A0) come spazio, quindi una riga
@@ -422,7 +467,16 @@
          Ogni riga di titolo chiude il proprio gruppo subito: due «#» consecutivi restano
          due titoli distinti, non un solo <hN> con le due righe unite. */
       var PUNTO=/^\s*[-*]\s+/, NUM=/^\s*\d+[.)]\s+/, TIT=/^(#{1,6})\s+(.*)$/;
-      var tipoDi=function(l){ return PUNTO.test(l) ? 'ul' : (NUM.test(l) ? 'ol' : (TIT.test(l) ? 'h' : 'testo')); };
+      /* ⚠️ La citazione vale solo negli APPUNTI, e non è pignoleria: il bottone
+         «"» della barra scrive «> testo» e finora quel testo usciva letterale,
+         maggiore compreso. Nei capitoli generati la sintassi non si usa, e
+         accenderla là vorrebbe dire cambiare la resa di file già scritti.
+         ⚠️ Un riquadro NON è una citazione: `> [!nota]` lo prende `renderNoteMd`,
+         che sta più in alto e non arriva mai qui. Il guardiano è comunque
+         scritto, perché il corpo di un riquadro ripassa da questa funzione. */
+      var CIT=/^\s*>(?!\s*\[!)/;
+      var tipoDi=function(l){ return PUNTO.test(l) ? 'ul' : (NUM.test(l) ? 'ol' :
+        (TIT.test(l) ? 'h' : ((aCapo && CIT.test(l)) ? 'q' : 'testo'))); };
       if(lines.some(function(l){ return l.trim() && tipoDi(l)!=='testo'; })){
         var gruppo=[], tipo=null;
         var chiudi=function(){
@@ -434,6 +488,15 @@
             var inizio=parseInt((/^\s*(\d+)/.exec(gruppo[0])||[0,1])[1],10)||1;
             out.push('<ol'+(inizio!==1?' start="'+inizio+'"':'')+'>'+
               gruppo.map(function(l){ return '<li>'+_mdInline(orli(l.replace(NUM,'')), nota)+'</li>'; }).join('')+'</ol>');
+          } else if(tipo==='q'){
+            /* Dentro la citazione si torna da capo con la funzione intera invece
+               di unire le righe a mano: là dentro ci possono stare un elenco, un
+               titoletto o una seconda citazione, e riconoscerli una seconda volta
+               qui sarebbe la stessa regola scritta in due posti. Il «>» si toglie
+               a ogni giro, quindi la discesa finisce sempre. */
+            out.push('<blockquote>'+
+              mdToHtml(gruppo.map(function(l){ return l.replace(/^\s*>\s?/,''); }).join('\n'), aCapo, nota)+
+              '</blockquote>');
           } else {
             var hm=TIT.exec(gruppo[0]);
             /* ⚠️ I titoli valgono due livelli diversi secondo chi scrive.

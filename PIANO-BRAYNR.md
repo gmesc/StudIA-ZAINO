@@ -321,6 +321,37 @@ in Obsidian (elenco puntato raggruppato per capitolo), col frontmatter che lo di
 ⚠️ Trappola nota: la scrittura resta atomica e passa da `appunti.writeAtomic`, non da una seconda
 implementazione (trappola ④ dell'HANDOFF).
 
+**P1.1-sexies — I bottoni della barra scrivono markdown che l'app rende, e la guida dice i tasti.**
+✅ *fatto il 18 agosto 2026*
+
+Due comandi di serie di EasyMDE stavano nella barra da sempre e promettevano a vuoto: **«"»**
+scrive `> testo` e **«</>»** scrive un recinto ```` ``` ````, e il renderore non conosceva né l'uno
+né l'altro — quel markdown usciva **letterale**, maggiore e apici a vista. Adesso `mdToHtml` li
+rende, `<blockquote>` e `<pre class="md-code">`, con il vestito su tutte e cinque le superfici in
+cui un appunto si legge (anteprima, corpo di un riquadro, «I miei appunti», tabella della guida,
+foglio di stampa).
+
+- ⚠️ **Solo negli appunti** (`aCapo`): nei capitoli generati la sintassi non si usa, e accenderla là
+  cambierebbe la resa di file già scritti. Metà dei 26 controlli di `test/appunti-md.js` tiene ferma
+  quella riga di confine.
+- ⚠️ **I recinti si ritagliano PRIMA dello spezzettamento sui bianchi.** Un blocco di codice è
+  l'unica cosa che può *contenere* una riga vuota: lo `split(/\n{2,}/)` la tratterebbe da confine e
+  il codice uscirebbe in due pezzi con metà apici per uno. Un recinto **mai chiuso** torna indietro
+  com'era — chi sta ancora scrivendo non deve vedere metà appunto diventare codice — ed è anche la
+  condizione d'uscita della ricorsione.
+- ⚠️ **Il difetto trovato guardando, non misurando**: la riga di bianco scritta con ⌥+Spazio si
+  vedeva **dentro** un riquadro e spariva **fuori**. `renderNoteMd` decideva «riga vuota» con
+  `trim()`, e per `trim()` lo spazio insecabile è uno spazio: la riga moriva prima di arrivare al
+  renderore, che invece la sa rendere da giorni. Adesso il criterio è uno solo (`vuota()`), e la
+  differenza la sorveglia `test/cdp/prova-appunti-md.js` — che gira nell'app viva perché
+  `renderNoteMd` sta nel monolite e in Node non si carica.
+
+E la guida «Come si scrive in StudIA» ha una **seconda tabella, i tasti**: fino a ieri le
+scorciatoie degli appunti stavano solo nei `title` dei bottoni, cioè invisibili proprio a chi usa la
+tastiera. ⚠️ È un elenco scritto accanto a quei suggerimenti, cioè una seconda copia: la difesa è in
+`prova-appunti-barra.js`, che confronta i due elenchi tasto per tasto. **Ha già trovato la prima
+divergenza**: ⌘⇧C esisteva fra gli `extraKeys` e il suo bottone non lo nominava.
+
 **P1.2 — Tag negli appunti.**
 Aggiungere `tags` alle `CHIAVI` del frontmatter (`lib/appunti.js` le enumera: è un punto solo).
 Nell'editor: campo tag sotto il titolo (chip, come i filtri già disegnati altrove nell'app).
