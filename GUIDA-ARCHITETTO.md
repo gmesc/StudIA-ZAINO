@@ -40,8 +40,9 @@ Due proprietà la definiscono più di ogni funzione:
 | **banco** | lo spazio di lavoro del lettore: griglia 2×2 di blocchi, otto forme, ogni blocco ospita uno *strumento* | |
 | **strumento** | capitolo, fonti, appunti, mappa, parole chiave, album, ripasso — registrati in `bancoStrumenti()` | la chiave `flashcard` mostra «Ripasso»: la chiave resta per le disposizioni salvate |
 | **materiale** | un file sorgente in `MATERIALI/`, numerato (`01 dispensa.pdf`); il numero è ciò che i rimandi citano | il numero si riusa **solo** a impronta (sha1) uguale |
-| **rimando** | la grammatica dei link: `pdf:NN#p=7`, `video:NN#t=160`, `cap:<id>`, `fig:…`, `[[lezione]]` | è UNA: mai inventarne una seconda (invariante 7) |
+| **rimando** | la grammatica dei link: `pdf:NN#p=7`, `video:NN#t=160`, `cap:<id>`, `fig:…`, `ev:<id>`, `[[lezione]]` | è UNA: mai inventarne una seconda (invariante 7). ⚠️ `ev:` è il solo che non nomina un posto ma un'**annotazione**: dove porti lo dice lei, e chi lo scrive ne prende anche l'aspetto invece di copiarselo accanto |
 | **evidenza / parola chiave** | testo evidenziato dall'utente, ancorato con TextQuoteSelector | l'ancoraggio è `App/assets/evidenze/ancoraggio.js`, scritto da zero: non deriva dai marker degli appunti |
+| **strato / lettura** | un insieme di evidenze che si accende e si spegne per intero (l'analisi metrica, le figure retoriche) | lo strato **entra nell'identità** di un'evidenza, e solo quando c'è: è ciò che permette di segnare le stesse parole due volte. Lo strato «Base» non è un record — è l'**assenza** di strato. Visibilità e lettura attiva stanno nel `localStorage`, il registro nel vault |
 | **carta** | un'unità di ripasso; identità = `hash(capitolo + domanda normalizzata)`, calcolata **nel main** | non si copia mai: è una *vista* sul quiz/glossario del capitolo |
 | **percorso / variante** | scalette alternative sugli stessi capitoli (`PERCORSI/*.json`, otto personaggi) | rimandi/tendina/ricerca seguono il percorso attivo; evidenze, mappe e appunti restano nella variante in cui sono nati |
 | **Ritagli / Album Foto** | le due VISTE dello stesso archivio `ALBUM/`: le voci dichiarano `origine` (`ritaglio` · `foto`) | non sono due cartelle: un archivio solo, due filtri — `album:<id>` non deve sapere che cosa ha dietro (invariante 7). La chiave dello strumento resta `album` |
@@ -151,8 +152,8 @@ in silenzio.
 ## 6. Come si verifica
 
 ```bash
-npm test                                   # unità: tutti i file di test/, in catena (37 al 17 ago)
-./test/cdp/con-vault-di-prova.sh           # tutte le prove sull'app viva (45 al 17 ago)
+npm test                                   # unità: tutti i file di test/, in catena (40 al 18 ago)
+./test/cdp/con-vault-di-prova.sh           # tutte le prove sull'app viva (48 al 18 ago)
 ./test/cdp/con-vault-di-prova.sh <nome>    # una sola — è così che si lavora
 STUDIA_APP=dist/mac-arm64/StudIA.app \
   ./test/cdp/con-vault-di-prova.sh         # le stesse prove DENTRO il pacchetto
@@ -285,6 +286,29 @@ Le più costose, distillate dagli handoff. Ogni ⚠️ è stato pagato almeno un
   venisse. E il generatore **misura invece di assumere** — il font disegna davvero quel carattere?
   la forma dell'angolo coincide con quella di sistema? — perché è lì che si nascondono le bugie
   silenziose.
+- **Un filtro «che cosa si vede» non va messo nella funzione che dice «che cosa c'è»**: `evidenzeDi`
+  risponde a quali evidenze appartengono a una superficie — un fatto — e la usano sia chi dipinge sia
+  chi risponde ai gesti. Filtrandoci dentro l'interruttore delle sottolineature, con i segni spenti
+  `evidenzaSotto` avrebbe detto «qui non c'è niente» e ri-evidenziare una frase le avrebbe cambiato
+  il colore di nascosto. *Nascondere cambia come si vede, mai che cosa succede.*
+- **Un'uscita anticipata «tanto non c'è niente da fare» salta anche la coda che serviva**:
+  `evidenzeDisegna()` tornava subito quando non c'era nessuna evidenza da accendere — e «zero
+  evidenze a schermo» è **anche** l'istante in cui si toglie l'ultima, cioè quando gli appunti che
+  la citavano devono scolorirsi. Ricolorare aggiornava, togliere no. Prima di mettere una scorciatoia
+  sul caso vuoto, guardare che cosa sta **dopo** di lei.
+- **Aggiungere un campo al SEME di un'identità cambia gli id di ciò che è già nei vault**: si fa
+  solo *condizionalmente* — «chi ce l'ha usa il seme nuovo, chi non ce l'ha quello di sempre» — o
+  tutto ciò che cita quegli id (i rimandi `ev:`, `album:`, `cap:` scritti negli appunti) smette di
+  ritrovarli, in silenzio. Un valore d'oro nella prova è ciò che tiene ferma la promessa.
+- **Una chiave nuova nel file la cancella il primo salvataggio che non la conosce**: `salva()` di
+  `lib/evidenze.js` riscrive l'intero JSON, e il registro degli strati sarebbe sparito al primo
+  cambio di colore. La difesa sta *dentro la funzione che scrive* — rilegge ciò che non le è stato
+  passato — perché è l'unico punto da cui passano tutte le scritture.
+- **Copiare un colore è peggio che citarlo**: un aspetto scritto in due posti (l'indice *e* il file
+  dell'utente) diverge al primo ritocco, e per non farlo divergere si finirebbe a riscrivere i file
+  dell'utente per un gesto fatto altrove. Nel markdown va l'**indirizzo** (`ev:<id>`), e l'aspetto si
+  chiede a chi lo possiede — è il motivo per cui ricolorare una parola chiave cambia anche gli
+  appunti che la citano senza toccarne uno.
 - **Le liste bianche mangiano i campi nuovi**: `CHIAVI` in `lib/appunti.js`, `noteMeta` nel
   renderer, `normalizza()` in `lib/mappe.js`. Il controllo giusto non è «il campo esiste» ma
   **«il campo torna indietro dal disco»**. (E la stessa forma prende anche le **guardie**: la

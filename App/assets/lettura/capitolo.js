@@ -21,6 +21,14 @@
      pdfNum()        la mappa NN → file dei DOCUMENTI del contenitore aperto
      corsoAttivo()   quale contenitore è aperto (serve solo alle immagini
                      dell'album, che vivono dentro di lui)
+     evidenza(id)    colore e tratto di un'evidenza → `{colore, tratto}` o null.
+                     ⚠️ È un gancio e non un dato SCRITTO nel markdown: il
+                     colore vive in un posto solo (`APPUNTI/_evidenze.json`), e
+                     un appunto che ne portasse una copia mostrerebbe il colore
+                     di ieri il giorno dopo averlo cambiato — la trappola ④ in
+                     forma di file. Chi non lo passa (Node, le prove, un vault
+                     chiuso) ottiene un segno neutro col testo intatto, non un
+                     errore: un'evidenza tolta non deve portarsi via la frase.
 
    ⚠️ Sono ganci e non variabili perché la risposta CAMBIA nel tempo: durante
    l'analisi di un corpus valgono i numeri del corso in lavorazione, dopo quelli
@@ -291,6 +299,38 @@
       return '<li id="'+notaIdVoce(nota,v.n)+'" role="doc-endnote" tabindex="-1">'+_mdInline(v.txt, nota)+torna+'</li>';
     }).join('')+'</ol></div>';
   }
+  /**
+   * Il testo che è stato evidenziato, dentro un appunto.
+   *
+   * Il segno è `==…==` — l'evidenziatura di Obsidian, perché il vault si legge
+   * anche di là — e il rimando dice QUALE evidenza: `[==la frase==](ev:9f2c…)`.
+   *
+   * ⚠️ Colore e tratto NON stanno nel markdown: si chiedono al gancio. È la
+   * differenza fra citare e ricopiare — ricolorando una parola chiave, gli
+   * appunti che la citano cambiano perché non c'è niente da aggiornare.
+   *
+   * ⚠️ Senza evidenza il segno resta, e resta MUTO: niente link (porterebbe a
+   * un posto che l'indice non sa più dire) e niente colore, ma il testo c'è
+   * tutto e il `title` dice perché è scolorito. È la regola dell'invariante 4 —
+   * quello che sparisce si dice — applicata a una riga di testo.
+   */
+  /* ⚠️ Il testo arriva GIÀ passato dall'escape — `_mdInline` lo fa sulla riga
+     intera, prima di qualunque regola — e ripassarlo qui darebbe `&amp;amp;` su
+     una frase con una «e» commerciale. Stessa assunzione di `figuraHtml`. */
+  function evidenzaHtml(testo, id){
+    var t=String(testo==null?'':testo);
+    var v=(typeof g.evidenza==='function') ? g.evidenza(id) : null;
+    if(!v) return '<mark class="evid evorfana" title="Questa parola chiave non è più nell\'elenco">'+t+'</mark>';
+    /* Il colore finisce in un attributo di stile: si ripulisce come lo ripulisce
+       `lib/evidenze.js` prima di scriverlo su disco. Due porte, la stessa
+       guardia — quella là difende il file, questa difende la pagina. */
+    var col=String(v.colore==null?'':v.colore).replace(/[\x00-\x1f;"'<>]/g,'').trim().slice(0,40);
+    var tratto=(v.tratto==='overlay') ? 'overlay' : 'sotto';
+    var segno='<mark class="evid" data-tratto="'+tratto+'"'+(col?' style="--ev:'+col+'"':'')+'>'+t+'</mark>';
+    var rim=Rimandi.scriviEv(id);
+    if(!rim) return segno;
+    return '<a href="#" class="evlink" data-ev="'+g.esc(id)+'" title="Torna dove l\'hai segnata">'+segno+'</a>';
+  }
   function _mdInline(s, nota){ s=g.esc(s);
     /* ⚠️ La figura si riconosce PRIMA del rimando normale: la regex dei link
        matcha anche la parte `[…](…)` che sta dopo il punto esclamativo, e
@@ -305,6 +345,20 @@
       return figuraHtml(cap, nn, pg, idx); });
     s=s.replace(/!\[([^\]]*)\]\(fig:(\d+)#p=(\d+)\)/g, function(m,cap,nn,pg){
       return figuraHtml(cap, nn, pg, 1); });
+    /* ⚠️ PRIMA della regola dei link, per la stessa ragione già pagata dalle
+       figure: la regex dei link matcha anche questo, e il testo uscirebbe da
+       un'ancora normale con i due `==` a vista. */
+    s=s.replace(/\[==([^\]]+?)==\]\(ev:([0-9a-f]{6,40})\)/g, function(m,txt,id){
+      return evidenzaHtml(txt, id); });
+    /* Un `==testo==` nudo: scritto a mano, o tornato da Obsidian, dove quella è
+       l'evidenziatura di casa. Non cita nessuna evidenza, quindi non ha un
+       colore da chiedere a nessuno — ma è un segno che l'utente ha fatto, e
+       ignorarlo lascerebbe i due `==` in mezzo alla frase.
+       ⚠️ Niente spazio subito dentro i due segni: senza questa condizione
+       «a == b == c» diventerebbe un'evidenziatura, e una riga di codice o una
+       formula si accenderebbero da sole. */
+    s=s.replace(/==(\S[^=]*?)==/g, function(m,txt){
+      return '<mark class="evid">'+txt+'</mark>'; });
     s=s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(m,txt,urlv){
       /* La grammatica la legge `rimandi/sintassi.js`: qui si decide solo che
          ANCORA disegnarci attorno. ⚠️ Il numero torna già a due cifre, che è la
@@ -460,6 +514,7 @@
       mdToHtml: mdToHtml, mdChapter: mdChapter,
       _mdInline: _mdInline, _stripFm: _stripFm,
       figuraHtml: figuraHtml, albumHtml: albumHtml, figFile: figFile,
+      evidenzaHtml: evidenzaHtml,
       figuraRotta: figuraRotta, _unq: _unq, _splitFlow: _splitFlow, _flowMap: _flowMap,
       /* Serve alle prove e a chi rende un pezzo di capitolo fuori da
          `mdChapter`: senza contesto i richiami di nota restano muti, e senza

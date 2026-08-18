@@ -135,6 +135,138 @@ scritto sul disco e non cambiano: cambiano i preset, non il passato.
 `prova-evidenziatore.js` misura il contrasto col nero invece di giudicarlo — il più basso è il rosa,
 8,8:1 contro i 4,5 di WCAG.
 
+**P1.1-bis — Il segno arriva anche nell'appunto.** ✅ *fatto il 18 agosto 2026*
+
+Quello che è evidenziato sulla fonte, portato in un appunto, si vede **col suo colore e col suo
+tratto**: «Appunta» e «Negli appunti» scrivono `[==la frase==](ev:9f2c1a4b7e01)` — il segno di
+Obsidian attorno al testo, e l'indirizzo dell'evidenza fra parentesi. La resa lo trasforma in un
+`<mark class="evid">` dentro un'ancora che riporta dov'era.
+
+⚠️ **Nel markdown il colore NON c'è: c'è la citazione.** È la decisione che regge tutto il resto.
+Il colore vive in un posto solo (`APPUNTI/_evidenze.json`) e l'appunto lo *chiede* al momento di
+disegnare, attraverso il gancio `evidenza(id)` di `lettura/capitolo.js`. Conseguenza:
+**ricolorare una parola chiave cambia anche gli appunti che la citano — perché non c'è niente da
+aggiornare**. La variante «scrivo anche il colore nel `.md`» sarebbe la trappola ④ in forma di
+file, e costringerebbe l'app a riscrivere i file dell'utente per un gesto fatto altrove, con la
+domanda irrisolvibile «e se nel frattempo quella frase l'ha modificata a mano?».
+
+⚠️ **`ev:<id>` è un rimando come gli altri** (`rimandi/sintassi.js`, invariante 7) ma è il solo che
+non nomina un posto: nomina un'annotazione dell'utente, e dove porti lo decide lei. Il click passa
+da `evidenzaVai`, che è la stessa funzione di «Vai» nel menu della parola chiave — nessun gestore
+nuovo.
+
+⚠️ **Un'evidenza tolta non porta via la frase**: il segno resta, scolorito (`.evorfana`), senza
+ancora e con il perché nel `title`. Invariante 4.
+
+⚠️ **Le misure del tratto sono salite in `:root`** (`--ev-spessore`, `--ev-stacco`): le leggono sia
+le regole `::highlight()` generate per la fonte sia il `<mark>` dell'appunto. Tre superfici fatte in
+tre modi diversi, un numero solo.
+
+⚠️ **Il rosso pagato scrivendo la prova**: `evidenzeDisegna()` usciva presto quando non c'era niente
+da accendere (`if(!quante) return`) — e «zero evidenze a schermo» è **anche** il momento in cui si
+toglie l'ultima, cioè proprio quando gli appunti che la citavano devono scolorirsi. Ricolorare
+aggiornava, togliere no.
+
+⚠️ **E il rosso pagato dalla prova stessa**: `prova-evidenziatore` gira prima e segna `#content p`
+dai primi 40 caratteri, sul vault di prova che resta scritto per tutte le prove dopo. Evidenziando
+lì sopra, `evidenzaPrepara` **eredita** quel colore (è il gesto «cambia colore»): da sola la prova
+era verde, nella suite no. Ora sceglie un punto suo.
+
+**Prove**: `test/evidenze-appunti.js` (la resa, 35 controlli) · la sezione dell'identità in
+`test/evidenze.js` — l'id che il main *predice* è quello che poi scrive, o l'appunto citerebbe
+un'evidenza che non esiste · `test/rimandi.js` · `test/stampa-foglio.js` ·
+`test/cdp/prova-evidenza-appunto.js`, che confronta il colore **calcolato** nell'appunto con quello
+dell'evidenza sulla fonte.
+
+**P1.1-ter — L'interruttore: i segni si spengono, e restano.** ✅ *fatto il 18 agosto 2026 (M1)*
+
+Un `.tbtn` sulla barra della **Fonte** (`#pdfEvid`) e il suo gemello sulla barra delle **Parole
+chiave** (`#kwEvid`) nascondono le sottolineature sul testo senza cancellarle. È il primo tempo
+degli **strati** (M2): la regola sta in `App/assets/evidenze/strati.js`, e la forma dello stato è
+già quella che servirà — `{ tutte:true }` oggi, `{ tutte:true, spenti:['metrica'] }` domani.
+
+⚠️ **Il filtro sta dove si DIPINGE, non dentro `evidenzeDi`.** Quella funzione risponde a «quali
+evidenze sono di questa superficie», che è un fatto e non cambia perché uno guarda o non guarda —
+e la chiama anche `evidenzaSotto`, che serve ai **gesti**. Filtrando là, con i segni spenti
+ri-evidenziare una frase già segnata non l'avrebbe più riconosciuta: le avrebbe cambiato il colore
+di nascosto invece di dire «questa c'è già». *Nascondere cambia come si vede, mai che cosa
+succede* — e la prova CDP lo misura apposta.
+
+⚠️ **Due porte, un interruttore.** Nascondere vale su tutte le superfici (il capitolo come il
+documento), quindi lo stato è uno; ma il bottone della Fonte vive dentro il suo riquadro, e chi
+legge un capitolo con i segni spenti non lo raggiungerebbe. Il gemello nelle Parole chiave — lo
+strumento che le possiede — chiama la stessa funzione (invariante 6).
+
+⚠️ **Spegnere non svuota l'elenco**: serve a rileggere il testo pulito, non a mettere via le proprie
+parole chiave, che restano anche l'unico modo per ritrovarle. Una riga sopra i chip dice che i segni
+sono nascosti — e la dice **prima** di sapere se ci sono chip: la prima stesura stava dentro il ramo
+dell'elenco pieno, e col vuoto — cioè quando uno si chiede di più «dove sono finite» — non compariva.
+
+⚠️ **La memoria è per CONTENITORE** (`studia.evidenze.viste.<corso>`), e sta nel `localStorage`: è
+una preferenza di lettura, non un dato del vault — la stessa scelta già dichiarata per il tratto.
+Spegnere le sottolineature di un'antologia non le spegne nel corso che si apre dopo.
+
+⚠️ **Il rosso pagato**: riavviando l'app con i segni spenti, il bottone mostrava «si vedono». Questo
+inline sta in cima al corpo e i riquadri stanno in fondo: al primo giro `#pdfEvid` non esiste ancora
+e `$` torna `null` in silenzio. È la stessa trappola degli osservatori del visualizzatore (PIANO-FOTO
+§F2) — si aspetta il documento.
+
+**Prove**: `test/strati.js` (la regola, 24 controlli) · `test/cdp/prova-strati.js`, che guarda il
+**registro degli highlight** e non l'attributo di un bottone.
+
+**P1.1-quater — Le letture (gli strati).** ✅ *fatto il 18 agosto 2026 (M2)*
+
+Uno **strato** è una **lettura** del testo: l'analisi metrica, le figure retoriche, il lessico. Un
+`.tbtn` sulla barra della Fonte apre il pannellino — la pila di Photoshop, con la grammatica di
+questa casa: ogni riga è una `.tbar`, ogni comando un `.tbtn`, nessuna misura nuova.
+
+⚠️ **LO STRATO ENTRA NEL SEME DELL'IDENTITÀ, e solo quando c'è.** È il cuore del lavoro. Fino a
+oggi le stesse parole avevano lo stesso id, quindi segnarle una seconda volta *cambiava il colore
+della prima*: giusto finché la lettura è una sola, impossibile per un insegnante che sullo stesso
+verso fa due analisi. Ora lo strato è in coda al seme — con la stessa regola già usata per il
+materiale: **chi ce l'ha usa il seme dello strato, chi non ce l'ha usa quello di sempre**. Le
+evidenze scritte prima conservano il loro id byte per byte (`test/evidenze.js` lo tiene fermo con
+un valore d'oro), quindi nessuna migrazione e nessun `ev:<id>` rotto negli appunti.
+
+⚠️ **Lo strato «Base» non esiste su disco**: è l'*assenza* di strato. Si accende e si spegne come
+gli altri, ma non ha un record, e un vault che non ha mai visto una lettura resta identico a se
+stesso — nel file non compare nemmeno la chiave `strati`.
+
+⚠️ **Il registro sta nello stesso file delle evidenze**, e `salva()` lo **conserva** quando nessuno
+glielo passa: `aggiungi`, `rimuovi`, `colora` e `tratta` scrivono tutte da lì, e senza quella riga
+il primo cambio di colore avrebbe cancellato il nome di ogni lettura mentre le evidenze
+continuavano a citarne l'id. È la trappola delle liste bianche applicata a una chiave intera.
+
+⚠️ **`evidenzaSotto` guarda solo dentro la lettura ATTIVA.** Altrimenti, segnando un verso già
+segnato nella metrica, la retorica ne *eredita* il colore invece di cominciare il suo: il gesto
+«cambia colore» vale dentro una lettura, non fra letture diverse.
+
+⚠️ **Sulle stesse identiche parole si dipinge un segno solo.** Non è un difetto degli strati: è
+come funziona l'ancoraggio, ed era già scritto nella sua testata — due evidenze sugli stessi
+caratteri sono entrambe legittime, ma nessuna marcatura del DOM può avvolgerle tutte e due senza
+spezzarne una; vince quella che comincia prima. **Con le letture questo smette di essere un limite
+e diventa il gesto**: si guarda l'analisi che si sta facendo e si spegne l'altra. La prova CDP
+misura proprio quello.
+
+⚠️ **Togliere una lettura non porta via i segni in silenzio**: si chiede, e `rimuoviStrato`
+risponde con quanti sono stati spostati e con i loro **cambi di identità** (`rinati`) — spostandoli
+l'id cambia, perché lo strato è nel seme, e un `ev:<id>` scritto in un appunto non li ritrova più.
+Meglio dirlo che lasciarlo scoprire (invariante 4).
+
+**Le decisioni dichiarate**: le letture sono del **contenitore** (uno zaino con dieci poesie vuole
+«analisi metrica» su tutte); un'evidenza sta in **una** lettura sola; **visibilità e lettura attiva
+stanno nel `localStorage`** — sono preferenze di lettura, non dati del vault; l'ordine è quello di
+nascita, senza un campo in più da tenere aggiornato.
+
+**Prove**: `test/strati.js` (51 controlli: filtro, registro, righe del pannello) · la sezione degli
+strati in `test/evidenze.js` — dove il controllo che vale più di tutti è l'id invariato ·
+`test/cdp/prova-strati.js`, che segna **le stesse parole due volte** e misura che su disco ce ne
+siano due, non una ricolorata.
+
+**Possibili seguiti**: un colore di default per lettura (applicato ai segni nuovi); riordino delle
+righe; l'elenco delle parole chiave che segue la visibilità delle letture — oggi mostra tutto, e la
+nota nel codice dice perché e da dove ripartire.
+
 Il disegno originale, che resta valido:
 Doppio click su una parola (o selezione + voce «Evidenzia» nel menu che già compare per
 «Salva come appunto») → la parola entra in `APPUNTI/_evidenze.md`: una riga per evidenza, con

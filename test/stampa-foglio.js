@@ -91,6 +91,15 @@ ok('e la misura scritta nell’appunto arriva sul foglio', true,
   /\.figura\.misurata a \{[^}]*width:var\(--figw\)/.test(testo));
 ok('con l’immagine che riempie la sua larghezza', true,
   /\.figura\.misurata img \{ width:100%/.test(testo));
+/* Il testo che sulla fonte era evidenziato resta evidenziato sul foglio: il
+   colore arriva per riga in `--ev`, le misure le porta il foglio. ⚠️ Il ripiego
+   è una SOTTOLINEATURA e non un fondo, perché un fondo si stampa solo con
+   «grafica di sfondo» accesa — di norma è spenta nel dialogo di Chromium. */
+ok('l’evidenza si stampa', true, /mark\.evid \{[^}]*text-decoration:underline var\(--ev/.test(testo));
+ok('e il fondo pieno resta il fondo pieno', true,
+  /mark\.evid\[data-tratto="overlay"\] \{[^}]*background:var\(--ev/.test(testo));
+ok('una parola chiave tolta si stampa scolorita, non sparisce', true,
+  /mark\.evid\.evorfana \{[^}]*text-decoration-color:#c9c6c2/.test(testo));
 
 sezione('La testata');
 const t = F.testata({ titolo: 'Il <DSA>', dove: 'Lezione 3', data: new Date('2026-08-14T10:00:00Z') });

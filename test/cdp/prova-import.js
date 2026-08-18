@@ -142,14 +142,23 @@ const ZAINO = 'zaino-import';
       colore:'#a16207', materiale:${JSON.stringify(nome)}, pagina:12 });
     evidenzeCarica();
     const e=(r.evidenze||[]).filter(function(x){ return x.exact==='competenza'; })[0];
-    return { md:kwMarkdown(e), reso:renderNoteMd(kwMarkdown(e)) }; })()`);
+    return { md:kwMarkdown(e), reso:renderNoteMd(kwMarkdown(e)), id:e.id,
+             /* Dove porta il segno lo dice l'INDICE, non l'HTML: è la stessa
+                risposta che darebbe il click, chiesta da qui. */
+             risolve:(kwDaId(e.id)||{}).materiale||'' }; })()`);
   console.log('   ' + JSON.stringify(parola.md));
-  ok('la parola chiave porta il rimando al documento', true, /\]\(pdf:01#p=12\)$/.test(parola.md));
-  /* ⚠️ E il rimando si SCIOGLIE: nell'appunto reso diventa un link con dentro
-     il file vero. Un `pdf:01` che nessuna mappa sa risolvere darebbe un link
-     con `data-file` vuoto — cliccabile e muto. */
-  ok('e negli appunti diventa un link vivo', true,
-    parola.reso.indexOf('class="plink"') >= 0 && parola.reso.indexOf('data-file="' + nome + '"') >= 0);
+  /* ⚠️ Dal 18 agosto 2026 una parola chiave portata in un appunto cita SE
+     STESSA (`ev:<id>`) invece del documento: così entra già evidenziata, col
+     colore che ha sulla fonte, e ricolorandola cambia anche nell'appunto. */
+  ok('la parola chiave cita la sua evidenza', true, /^\[==competenza==\]\(ev:[0-9a-f]{6,40}\)$/.test(parola.md));
+  /* ⚠️ E il rimando si SCIOGLIE lo stesso: l'evidenza sa che è stata fatta su
+     QUEL documento, a quella pagina. Un id che l'indice non sa risolvere darebbe
+     un segno scolorito e muto, che è il guasto che questa riga sorveglia. */
+  ok('e l\'indice sa ancora che viene da quel documento', nome, parola.risolve);
+  ok('negli appunti diventa un segno vivo, col suo colore', true,
+    parola.reso.indexOf('class="evlink" data-ev="' + parola.id + '"') >= 0 &&
+    parola.reso.indexOf('--ev:#a16207') >= 0 &&
+    parola.reso.indexOf('evorfana') < 0);
 
   sezione('Nei corsi la lente continua a cercare nei capitoli');
   await val(`(async()=>{ await cambiaModo('corso'); return 1; })()`);
