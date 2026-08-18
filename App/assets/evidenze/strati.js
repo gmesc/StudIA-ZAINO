@@ -147,6 +147,57 @@
     return { viste: viste, nascoste: lista.length - viste, tutte: lista.length };
   }
 
+
+  /* ------------------------------------------- i segni che si accavallano */
+
+  /** Quante letture si distinguono, per tipo di segno, sulla stessa parola.
+   *  Oltre la quarta non c'è più un modo di disegnarle diverso dalle altre —
+   *  e una che si dipinge uguale a un'altra è peggio di una dichiarata. */
+  var TETTO = 4;
+
+  /**
+   * A ogni segno il suo posto nella pila.
+   *
+   * `segni` = `[{ id, tratto, inizio, fine }]` — gli intervalli sono già
+   * risolti sul testo, qui si guarda solo chi si sovrappone a chi. Torna
+   * `{ per: { id: { livello, pila, tagliato } }, oltre }`.
+   *
+   * ⚠️ Le due pile sono SEPARATE: un fondo e una riga sulla stessa parola non
+   * si danno fastidio (il colore sta dietro le lettere, la riga sotto), quindi
+   * contarli insieme metterebbe una riga al terzo posto per colpa di un fondo
+   * che non c'entra. È anche ciò che rende gratis il primo caso del braindump.
+   *
+   * ⚠️ `pila` dice se quel segno è SOLO o in compagnia, e serve a non cambiare
+   * l'aspetto di ciò che è sempre stato solo: una sottolineatura sola resta la
+   * riga piena di sempre, un fondo solo resta il colore pieno di sempre.
+   *
+   * ponytail: confronto a coppie (O(n²)) sui segni di UNA schermata — poche
+   * decine. Se un giorno se ne dipingessero migliaia, si ordina e si scorre.
+   */
+  function livelli(segni) {
+    var lista = (Array.isArray(segni) ? segni : [])
+      .filter(function (s) { return s && s.id != null; })
+      .map(function (s) {
+        return { id: String(s.id), tratto: (s.tratto === 'overlay' ? 'overlay' : 'sotto'),
+          inizio: Number(s.inizio) || 0, fine: Number(s.fine) || 0 };
+      })
+      .sort(function (a, b) { return (a.inizio - b.inizio) || (b.fine - a.fine); });
+    var per = {}, oltre = 0;
+    lista.forEach(function (s, i) {
+      var prima = 0, insieme = 1;
+      lista.forEach(function (x, j) {
+        if (j === i || x.tratto !== s.tratto) return;
+        if (!(x.inizio < s.fine && s.inizio < x.fine)) return;   // non si toccano
+        insieme++;
+        if (j < i) prima++;
+      });
+      var tagliato = prima >= TETTO;
+      if (tagliato) oltre++;
+      per[s.id] = { livello: tagliato ? TETTO - 1 : prima, pila: insieme, tagliato: tagliato };
+    });
+    return { per: per, oltre: oltre };
+  }
+
   /* ------------------------------------------------------- il registro */
 
   /** Il nome di una lettura, ridotto a ciò che può stare in una riga. */
@@ -225,6 +276,7 @@
     diFabbrica: diFabbrica, normalizza: normalizza, scrivi: scrivi,
     commuta: commuta, accese: accese, visibili: visibili, conta: conta,
     spento: spento, commutaStrato: commutaStrato, potaSpenti: potaSpenti,
+    TETTO: TETTO, livelli: livelli,
     nomeValido: nomeValido, nomeLibero: nomeLibero, normalizzaStrato: normalizzaStrato,
     ordina: ordina, righe: righe
   };

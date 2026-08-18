@@ -11589,7 +11589,7 @@ window.addEventListener('resize', function(){ selMenuChiudi(); selBarraChiudi();
    lo stato di ciò che si VEDE — una preferenza di questo computer — mentre
    `strati` è il REGISTRO delle letture, che sta nel vault accanto alle evidenze.
    Per un giorno si sono chiamate uguale, ed è bastato a confondere chi scriveva. */
-var EVIDENZE={ elenco:[], strati:[], corso:'', mappa:null, orfane:0, nomi:[], colore:'',
+var EVIDENZE={ elenco:[], strati:[], corso:'', mappa:null, orfane:0, oltre:0, nomi:[], colore:'',
                viste:null, visteCorso:'' };
 /* Che cosa, dentro `#content`, NON è testo del capitolo: il tooltip dei
    marcatori («Apri il documento»), le intestazioni dei riquadri, il quiz, il
@@ -11912,23 +11912,43 @@ function evidenzeStile(chiavi){
   var el=document.getElementById('evStile');
   if(!el){ el=document.createElement('style'); el.id='evStile'; document.head.appendChild(el); }
   el.textContent=chiavi.map(function(k,i){
-    var taglio=String(k).lastIndexOf('|');
-    var c=taglio<0 ? k : String(k).slice(0,taglio);
-    var tratto=taglio<0 ? 'sotto' : String(k).slice(taglio+1);
+    /* La chiave porta quattro cose in fondo, e si legge da DESTRA: un colore
+       può contenere una barra (`var(--x, a|b)` domani), il livello e la pila no. */
+    var parti=String(k).split('|');
+    var pila=parseInt(parti.pop(),10)||1;
+    var livello=parseInt(parti.pop(),10)||0;
+    var tratto=parti.pop()||'sotto';
+    var c=parti.join('|');
+    var sel='::highlight(ev-'+i+')';
     if(tratto==='overlay'){
-      /* Due regole per un tratto solo: il colore vale ovunque, il nero **solo
+      /* ⚠️ Il colore resta PIENO finché quel fondo è solo: è come si è sempre
+         visto, e non si cambia l'aspetto di ciò che nessuno ha toccato. Quando
+         due letture insistono sulla stessa parola diventano semitrasparenti e
+         il browser le MESCOLA — giallo su azzurro dà un verde-acqua che si vede
+         essere due cose. Non sono le bande orizzontali: quelle vorrebbero un
+         `background-image`, che `::highlight()` non applica (misurato sull'app
+         viva il 18 agosto, con un `linear-gradient` semplicemente ignorato).
+         Due regole per un tratto solo: il colore vale ovunque, il nero **solo
          dentro il capitolo** — nel layer del documento accenderebbe le lettere
          trasparenti sopra quelle del canvas. */
-      return '::highlight(ev-'+i+'){ background-color: '+c+'; }\n' +
-             '#content ::highlight(ev-'+i+'){ color:#111; }';
+      var fondo=(pila>1) ? 'color-mix(in srgb, '+c+' 55%, transparent)' : c;
+      return sel+'{ background-color: '+fondo+'; }\n' +
+             '#content '+sel+'{ color:#111; }';
     }
     /* La sottolineatura spessa resta il default, e la ragione è scritta in
        `evidenzeTratto`: il fondo pieno litiga col giallo della lettura vocale.
        ⚠️ Le due misure vengono da `:root` (`--ev-spessore`, `--ev-stacco`) e non
        sono più scritte qui: lo stesso segno si disegna anche dentro un appunto,
        con un `<mark>` vero invece che con `::highlight()`, e due sottolineature
-       che devono essere la stessa non possono avere due numeri. */
-    return '::highlight(ev-'+i+'){ text-decoration: underline '+c+' var(--ev-spessore); text-underline-offset:var(--ev-stacco); }';
+       che devono essere la stessa non possono avere due numeri.
+       ⚠️ E QUANDO SONO PIÙ D'UNA sulla stessa parola, il posto nella pila decide
+       il tratto. La riga TRATTEGGIATA sopra una piena lascia vedere l'altra fra
+       i trattini: la riga bicolore non si disegna, la fa il browser componendo
+       — misurato, non dedotto. La quarta scende invece di inventare un quarto
+       modo di tratteggiare, che a occhio non si distinguerebbe più. */
+    var stile=['', 'dashed ', 'dotted ', ''][livello] || '';
+    var giu=(livello===3) ? 'calc(var(--ev-stacco) + 0.26em)' : 'var(--ev-stacco)';
+    return sel+'{ text-decoration: underline '+stile+c+' var(--ev-spessore); text-underline-offset:'+giu+'; }';
   }).join('\n');
 }
 /** Accende le evidenze del capitolo aperto. Le orfane — quelle il cui testo
@@ -11947,6 +11967,7 @@ function evidenzeDisegna(){
   EVIDENZE.nomi=[];
   EVIDENZE.orfane=0;
   EVIDENZE.orfaneId=[];
+  EVIDENZE.oltre=0;
   /* Una passata per superficie — il capitolo e ogni pagina del documento a
      schermo — e i `Range` di tutte finiscono negli STESSI highlight per colore.
      Un highlight non appartiene a un contenitore: è un insieme di intervalli, e
@@ -11969,14 +11990,31 @@ function evidenzeDisegna(){
        come orfana direbbe a chi studia che ha perso qualcosa che è al suo posto. */
     EVIDENZE.orfane += r.orfane.length;
     r.orfane.forEach(function(v){ EVIDENZE.orfaneId.push(v.id); });
-    r.trovate.forEach(function(t){
+    /* ⚠️ ANCHE LE SOVRAPPOSTE si accendono, e non è una svista corretta: è il
+       vincolo di prima che è caduto. `risolvi` elegge un vincitore perché è
+       stato scritto quando i segni si facevano MARCANDO IL DOM, e due `<span>`
+       sugli stessi caratteri non si possono annidare. Con gli highlight quel
+       problema non esiste — un intervallo può stare in dieci Highlight diversi —
+       e scartarle voleva dire far sparire dallo schermo letture che l'utente
+       aveva fatto, contate nel pannellino e invisibili sul testo. Le orfane
+       restano fuori: quelle il loro posto non ce l'hanno più. */
+    var tutti=r.trovate.concat(r.sovrapposte);
+    /* Il posto di ognuno nella pila: due pile separate, una per i fondi e una
+       per le righe. La regola sta in `EvidenzeStrati.livelli`, che è aritmetica
+       su intervalli e si prova in Node. */
+    var pile=EvidenzeStrati.livelli(tutti.map(function(t){
+      return { id:t.voce.id, tratto:evTrattoDi(t.voce), inizio:t.inizio, fine:t.fine }; }));
+    EVIDENZE.oltre += pile.oltre;
+    tutti.forEach(function(t){
       var rg=rangeDaOffset(m, t.inizio, t.fine); if(!rg) return;
-      /* La chiave del gruppo è colore + tratto: due evidenze dello stesso giallo
-         ma segnate diversamente vogliono due regole CSS, quindi due highlight.
-         Il separatore è in fondo (`lastIndexOf`) perché un colore può contenerlo
-         — `color-mix(...)` no oggi, ma `var(--x, a|b)` sì domani. */
+      /* La chiave del gruppo è colore + tratto + posto nella pila: due evidenze
+         dello stesso giallo ma segnate diversamente — o allo stesso posto in due
+         pile diverse — vogliono due regole CSS, quindi due highlight. Si legge
+         da destra (vedi `evidenzeStile`) perché un colore può contenere una
+         barra: `color-mix(...)` no oggi, ma `var(--x, a|b)` sì domani. */
       var c=t.voce.colore || 'currentColor';
-      var k=c+'|'+evTrattoDi(t.voce);
+      var l=pile.per[t.voce.id] || { livello:0, pila:1 };
+      var k=c+'|'+evTrattoDi(t.voce)+'|'+l.livello+'|'+l.pila;
       if(!perColore[k]){ perColore[k]=[]; ordine.push(k); }
       perColore[k].push(rg); quante++;
     });
@@ -12541,6 +12579,13 @@ function stratiPopDisegna(){
   if(b){
     b.setAttribute('aria-pressed', gen ? 'false' : 'true');
     b.textContent=gen ? 'Nascondi tutto' : 'Rimostra tutto';
+  }
+  var oltre=$('#stratiOltre');
+  if(oltre){
+    var n=EVIDENZE.oltre||0;
+    oltre.hidden=!n;
+    oltre.textContent=n ? ('Su questa pagina '+n+(n===1?' segno si sovrappone':' segni si sovrappongono')+
+      ' oltre il quarto: si vede, ma non si distingue dagli altri della stessa pila.') : '';
   }
   if(!righe.length){
     host.innerHTML='<div class="kwvuoto">Nessuna lettura, e nessuna sottolineatura. '+
@@ -18763,6 +18808,10 @@ window.addEventListener('keydown', function(e){
             aria-label="Nuova lettura">+</button>
   </div>
   <div id="stratiLista" role="list"></div>
+  <!-- ⚠️ Sulla stessa parola si distinguono quattro fondi e quattro righe: oltre
+       quello un segno si dipingerebbe uguale a un altro, e uno che non si
+       distingue è peggio di uno dichiarato (invariante 4). -->
+  <div class="stratinota" id="stratiOltre" hidden></div>
   <div class="stratinota">I segni nuovi finiscono nella lettura in grassetto. Premi un nome per cambiarla.</div>
 </div>
 <div id="pdfFindPop" class="popmenu" role="dialog" aria-label="Cerca nel documento">

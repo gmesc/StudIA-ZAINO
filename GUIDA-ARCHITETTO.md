@@ -286,6 +286,11 @@ Le più costose, distillate dagli handoff. Ogni ⚠️ è stato pagato almeno un
   venisse. E il generatore **misura invece di assumere** — il font disegna davvero quel carattere?
   la forma dell'angolo coincide con quella di sistema? — perché è lì che si nascondono le bugie
   silenziose.
+- **Un vincolo può essere caduto senza che il codice se ne accorga**: `risolvi` elegge un vincitore
+  fra i segni che si accavallano perché fu scritto per marcare il DOM, dove due `<span>` sugli
+  stessi caratteri non si annidano. Con gli highlight quel problema non esisteva più da mesi, e
+  intanto si continuavano a buttare via segni che l'utente aveva fatto. Quando una regola ha una
+  ragione scritta, rileggerla dopo un cambio di tecnica.
 - **Un filtro «che cosa si vede» non va messo nella funzione che dice «che cosa c'è»**: `evidenzeDi`
   risponde a quali evidenze appartengono a una superficie — un fatto — e la usano sia chi dipinge sia
   chi risponde ai gesti. Filtrandoci dentro l'interruttore delle sottolineature, con i segni spenti

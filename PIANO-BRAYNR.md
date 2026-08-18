@@ -267,6 +267,45 @@ siano due, non una ricolorata.
 righe; l'elenco delle parole chiave che segue la visibilità delle letture — oggi mostra tutto, e la
 nota nel codice dice perché e da dove ripartire.
 
+**P1.1-quinquies — Più letture sulla stessa parola.** ✅ *fatto il 19 agosto 2026 (M3)*
+
+Quando due o più letture accese insistono sullo stesso testo si vedono **tutte**. Prima se ne
+dipingeva una: `EvidenzeAncoraggio.risolvi` elegge un vincitore e mette il resto in `sovrapposte`,
+e `evidenzeDisegna` le ignorava.
+
+⚠️ **Quel vincolo era caduto e nessuno se n'era accorto.** `risolvi` sceglie un vincitore perché è
+stato scritto quando i segni si facevano **marcando il DOM**, dove due `<span>` sugli stessi
+caratteri non si annidano. Con la Custom Highlight API un intervallo può stare in dieci `Highlight`
+diversi. Le orfane restano fuori — quelle il loro posto non ce l'hanno più.
+
+**Come si distinguono**, per posto nella pila (due pile separate, una per i fondi e una per le righe):
+
+| | 1ª | 2ª | 3ª | 4ª |
+|---|---|---|---|---|
+| **righe** | piena | **tratteggiata sopra la piena** | punteggiata | piena, più in basso |
+| **fondi** | colore pieno | i fondi diventano semitrasparenti e **si mescolano** | | |
+
+⚠️ **La riga bicolore non si disegna: la fa il browser.** Una riga tratteggiata sopra una piena
+lascia vedere l'altra fra i trattini. Misurato sull'app viva prima di scrivere una riga di codice.
+
+⚠️ **Le bande orizzontali non si possono fare**, ed è misurato: `::highlight()` applica solo
+`background-color`, un `linear-gradient` viene **ignorato**. Al loro posto la mescolanza — due
+fondi al 55% danno un terzo colore che *si vede* essere due cose. Per le bande servirebbe
+abbandonare gli highlight e disegnare rettangoli da `Range.getClientRects()`: un motore di pittura
+da risincronizzare a ogni scorrimento, zoom e ricostruzione del text layer di pdf.js, cioè il
+contrario della ragione per cui gli highlight sono stati scelti.
+
+⚠️ **Ciò che è solo resta com'era**: un fondo senza compagnia è pieno, una riga sola è piena. La
+mescolanza e i tratteggi arrivano **solo** quando la pila è di due o più — così tutto quello che
+c'era prima si vede identico a prima.
+
+⚠️ **Il tetto è 4 + 4** per parola. Oltre il quarto un segno si dipingerebbe uguale a un altro, e
+il pannellino lo **dice** («N segni si sovrappongono oltre il quarto: si vede, ma non si distingue»).
+
+**Prove**: `test/strati.js` → `livelli()` (pile separate, tetto, ingressi storti) ·
+`test/cdp/prova-strati.js`, dove la misura che vale è **quanti intervalli il browser sta
+dipingendo**: quattro letture sulla stessa parola, quattro accesi — ieri sarebbe stato uno.
+
 Il disegno originale, che resta valido:
 Doppio click su una parola (o selezione + voce «Evidenzia» nel menu che già compare per
 «Salva come appunto») → la parola entra in `APPUNTI/_evidenze.md`: una riga per evidenza, con
