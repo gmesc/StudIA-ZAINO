@@ -139,6 +139,35 @@ const firma = (sel) => val(`(()=>{const e=document.querySelector(${JSON.stringif
   ok('la barra è ancorata alla selezione', true,
     await val(`getComputedStyle(document.querySelector('#selBarra')).positionAnchor==='--selezione'`));
 
+  console.log('\n== Il 🔗: la fonte nel frammento si può togliere');
+  /* ⚠️ È l'unico bottone di queste barre che NON fa il gesto: dice come sarà
+     fatto il prossimo. Da qui tre cose da misurare — che ci sia in tutte e due
+     le superfici, che NON chiuda il menu (chi lo preme sta ancora decidendo) e
+     che i due interruttori dicano la stessa cosa: menu e barra possono essere a
+     schermo insieme, e uno acceso di qua e spento di là è peggio di nessuno. */
+  ok('il 🔗 c\'è in tutte e due', [1, 1],
+    await val(`[document.querySelectorAll('#selMenu .ctx-cita').length,
+                document.querySelectorAll('#selBarra .ctx-cita').length]`));
+  const fonteIn = (md) => /\]\(pdf:|\]\(cap:/.test(String(md));
+  const frammento = () => val(`frammentoAppuntato('Una frase presa dal testo.', curCtx(), null)`);
+  ok('di suo la fonte c\'è', true, fonteIn(await frammento()));
+  await val(`document.querySelector('#selMenu .ctx-cita').click(), 1`);
+  await pausa(150);
+  ok('premerlo non chiude il menu', true,
+    await val(`document.querySelector('#selMenu').classList.contains('open')`));
+  ok('adesso il frammento arriva senza la fonte', false, fonteIn(await frammento()));
+  ok('e i due interruttori dicono la stessa cosa', ['false', 'false'],
+    await val(`[...document.querySelectorAll('#selMenu .ctx-cita, #selBarra .ctx-cita')]
+      .map(b=>b.getAttribute('aria-pressed'))`));
+  ok('la scelta è scritta dove si ricorda', '0',
+    await val(`localStorage.getItem('studia.appunta.cita')`));
+  /* ⚠️ E si rimette com'era: lo stato che una prova lascia è l'ingresso di
+     quella dopo, e `prova-evidenze-pdf` misura un frammento CON la sua fonte.
+     È lo stesso guasto già pagato con l'evidenziatore, dall'altro lato. */
+  await val(`document.querySelector('#selMenu .ctx-cita').click(), 1`);
+  await pausa(150);
+  ok('rimessa, la fonte torna', true, fonteIn(await frammento()));
+
   console.log(ko ? '\n✗ ' + ko + ' controlli falliti' : '\n✓ tutti i controlli passati');
   process.exit(ko ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

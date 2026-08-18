@@ -309,12 +309,24 @@
      Quello in uso si dichiara col bordo, non con un segno di spunta: la riga è
      fatta di quadratini e una spunta dentro un quadratino di 24px non si legge. */
   .ctx-cals{ display:flex; flex-wrap:wrap; gap:.2rem; padding:.25rem .35rem .35rem; }
-  .ctx-cal{ width:26px; height:26px; padding:0; border:1px solid var(--line); background:var(--panel);
+  /* ⚠️ `.ctx-cita` porta lo STESSO VESTITO e non la stessa classe: quel bottone
+     non appunta — dice come sarà fatto il prossimo — e il gestore dei riquadri
+     lavora per classe (`.ctx-cal`). Con la classe in comune premerlo appuntava
+     davvero, misurato dalla prova: il vestito si condivide scrivendolo qui, il
+     ruolo no. */
+  .ctx-cal, .ctx-cita{ width:26px; height:26px; padding:0; border:1px solid var(--line); background:var(--panel);
     cursor:pointer; font-size:13px; line-height:1; display:inline-flex; align-items:center;
     justify-content:center; font-family:var(--font-text),var(--emoji-font),sans-serif; color:var(--ink); }
-  .ctx-cal:hover:not(:disabled){ background:var(--hover); }
-  .ctx-cal[aria-pressed="true"]{ border-color:var(--teal-strong); box-shadow:inset 0 0 0 1px var(--teal-strong); }
-  .ctx-cal:disabled{ opacity:.4; cursor:not-allowed; }
+  .ctx-cal:hover:not(:disabled), .ctx-cita:hover:not(:disabled){ background:var(--hover); }
+  .ctx-cal[aria-pressed="true"], .ctx-cita[aria-pressed="true"]{ border-color:var(--teal-strong); box-shadow:inset 0 0 0 1px var(--teal-strong); }
+  .ctx-cal:disabled, .ctx-cita:disabled{ opacity:.4; cursor:not-allowed; }
+  /* La barretta che separa i bottoni che APPUNTANO da quello che dice soltanto
+     come: è la stessa `.tbsep` delle barre degli strumenti, alla misura di
+     questa fila. Due contratti nella stessa riga si distinguono a vista. */
+  .ctx-cals__sep{ width:1px; height:18px; background:var(--line); margin:0 .25rem; align-self:center; }
+  /* ⚠️ Spento non vuol dire disabilitato: il 🔗 spento è un comando VIVO che
+     dice «la fonte adesso non arriva». Si smorza, non si cancella. */
+  .ctx-cita[aria-pressed="false"]{ opacity:.45; }
   .controls{ display:flex; flex-wrap:wrap; align-items:center; gap:.55rem .7rem; }
   select,button,input{ font-family:var(--font-text),var(--emoji-font),sans-serif; color:inherit; }
   /* ---- Altezza unica dei controlli in tutta l'app ----
@@ -8681,7 +8693,7 @@ var GUIDA=[
   { nome:'Vai al minuto del video', sintassi:'Vedi [2:12](video:05#t=132) della lezione.', nota:'Non serve scriverlo a mano: con il video in riproduzione premi ✎ (⌘⇧C) e il minuto esatto entra da sé. Con 📎 scegli il materiale da un elenco.' },
   { nome:'Vai alla pagina del PDF', sintassi:'Vedi la [p. 7](pdf:03#p=7) della dispensa.', nota:'Le frecce ‹ › nella barra dell\'anteprima cambiano pagina; 🔖 cita quella corrente.' },
   { nome:'Rimando a un\'altra lezione', sintassi:'Il tema prosegue in [[02-comorbidita]].', nota:'Il nome della cartella della lezione. Con «|» si cambia l\'etichetta: [[02-comorbidita|le comorbilità]].' },
-  { nome:'Rimando a un capitolo preciso', sintassi:'Ne parla [il capitolo sulla decodifica](cap:05-dislessia-decodifica-c02).', nota:'Il wiki-link porta all\'inizio della lezione; questo al capitolo esatto. Non serve scriverlo a mano: lo mette «Appunta» quando estrai un frammento dal testo. La fila di quadratini sotto «Appunta» decide come arriva: ¶ nudo, un\'emoji dentro il riquadro di quel tipo.' },
+  { nome:'Rimando a un capitolo preciso', sintassi:'Ne parla [il capitolo sulla decodifica](cap:05-dislessia-decodifica-c02).', nota:'Il wiki-link porta all\'inizio della lezione; questo al capitolo esatto. Non serve scriverlo a mano: lo mette «Appunta» quando estrai un frammento dal testo. La fila di quadratini sotto «Appunta» decide come arriva: ¶ nudo, un\'emoji dentro il riquadro di quel tipo, e il 🔗 (staccato, in fondo) se portarsi dietro la fonte o no.' },
   { nome:'Link esterno', sintassi:'Fonte: [Consensus Conference](https://www.iss.it).', nota:'Si apre nel browser di sistema.' },
   { nome:'Nota a piè di pagina', sintassi:'Affermazione da documentare.[^1]', nota:'Nei capitoli generati il numero rimanda al testo della nota in fondo.' },
   { sezione:'Emoji' },
@@ -10806,6 +10818,11 @@ function frammentoAppuntato(testo, ctx, origine, stile, evId){
   var rimandoCap=(ctx && ctx.capitoloId) ? RimandiSintassi.link(dàCap, RimandiSintassi.scriviCap(ctx.capitoloId)) : '';
   var daPdf=!!rimandoPdf;
   var rimando=daPdf ? rimandoPdf : rimandoCap;
+  /* ⚠️ La citazione si spegne QUI e non a monte: il rimando lo si calcola
+     comunque perché è lui a dire se il frammento viene da un documento o da un
+     capitolo — cioè che cosa scrivere nella testata del riquadro. Spegnerla
+     prima vorrebbe dire spegnere anche quella. */
+  if(!appuntaCitaAttiva()) rimando='';
   if(st){
     var def=calloutDef(st);
     var testa=daPdf ? 'Dal documento' : 'Dal capitolo';
@@ -10830,7 +10847,18 @@ function frammentoAppuntato(testo, ctx, origine, stile, evId){
  * callout «Dal capitolo» su una frase presa da un PDF direbbe una cosa falsa),
  * da un capitolo la nota. Dopo la prima scelta comanda quella, ed è ricordata.
  */
-var APPUNTA={ stile:undefined };
+/* ⚠️ E ACCANTO ALLO STILE C'È LA CITAZIONE, che è una domanda diversa:
+ * lo stile dice CON CHE CORNICE, la citazione se il frammento si porta dietro
+ * **da dove viene** (`— [p. 7](pdf:03#p=7)`). Prima era obbligatoria, e la
+ * ragione era buona — una frase senza origine, fra un mese, è una frase di cui
+ * non si sa più di chi sia — ma non vale per ogni gesto: chi si scrive una
+ * definizione da tenere sott'occhio non sta citando nessuno.
+ *
+ * ⚠️ Il difetto è ACCESO: chi non sceglie ottiene il comportamento di sempre.
+ * Un interruttore nuovo che parte spento cambia in silenzio ciò che l'app
+ * faceva ieri per tutti quelli che non se ne accorgono.
+ */
+var APPUNTA={ stile:undefined, cita:undefined };
 function appuntaStileScelto(){
   if(APPUNTA.stile!==undefined) return APPUNTA.stile;
   var v=null; try{ v=localStorage.getItem('studia.appunta.stile'); }catch(e){}
@@ -10840,6 +10868,17 @@ function appuntaStileScelto(){
 function appuntaStileScegli(k){
   APPUNTA.stile=String(k==null?'':k);
   try{ localStorage.setItem('studia.appunta.stile', APPUNTA.stile); }catch(e){}
+}
+/** La citazione si porta o no: la scelta di chi studia, o il difetto (sì). */
+function appuntaCitaAttiva(){
+  if(APPUNTA.cita!==undefined) return APPUNTA.cita;
+  var v=null; try{ v=localStorage.getItem('studia.appunta.cita'); }catch(e){}
+  APPUNTA.cita=(v===null ? true : v==='1');
+  return APPUNTA.cita;
+}
+function appuntaCitaScegli(v){
+  APPUNTA.cita=!!v;
+  try{ localStorage.setItem('studia.appunta.cita', APPUNTA.cita?'1':'0'); }catch(e){}
 }
 /** Lo stile che vale adesso: la scelta di chi studia, o il difetto dell'origine. */
 function appuntaStileAttivo(origine){
@@ -10887,6 +10926,20 @@ function appuntaRiga(origine, spento){
        ' title="Appunta in un riquadro «'+escHtml(c.label)+'»"'+
        ' aria-label="Appunta in un riquadro '+escHtml(c.label)+'">'+c.emoji+'</button>';
   });
+  /* ⚠️ IL 🔗 NON APPUNTA, e per questo è staccato dagli altri da una barretta.
+     Gli otto bottoni qui sopra hanno il patto della riga dei colori — premerne
+     uno FA il gesto e diventa il modo di farlo — mentre questo dice soltanto
+     *come* sarà fatto il prossimo. Due contratti nella stessa fila si
+     distinguono a vista, o il primo click lo si scopre a cose fatte: il
+     separatore e lo stato acceso/spento sono quella distinzione.
+     ⚠️ E non chiude il menu: chi lo preme sta ancora decidendo. */
+  var cita=appuntaCitaAttiva();
+  h+='<span class="ctx-cals__sep" aria-hidden="true"></span>';
+  h+='<button class="ctx-cita" type="button" data-cita="'+(cita?'0':'1')+'"'+
+     ' aria-pressed="'+(cita?'true':'false')+'"'+(spento?' disabled':'')+
+     ' title="'+(cita ? 'Il frammento porta da dove viene: premi per toglierla'
+                      : 'Il frammento arriva senza la fonte: premi per rimetterla')+'"'+
+     ' aria-label="Portare la fonte nel frammento">\uD83D\uDD17</button>';
   return h+'</div>';
 }
 
@@ -11324,7 +11377,12 @@ document.addEventListener('click',function(e){
      fonti si apre al RILASCIO del puntatore, poi il browser manda il `click` —
      che qui risulterebbe «fuori da ogni pannellino» e la richiuderebbe nello
      stesso gesto. Si nomina l'apritore, non lo si rincorre con un rinvio. */
-  if(!(e.target.closest && (e.target.closest('.popmenu')||e.target.closest('.ncb-callout')||e.target.closest('.ncb-emoji')||e.target.closest('.ncb-mat')||e.target.closest('#mVista')||e.target.closest('#bancoBtn')||e.target.closest('#mappaSvg .mfonte')||e.target.closest('#searchBtn')||e.target.closest('#searchRes')||e.target.closest('#zainoNuovo')||e.target.closest('#pdfDoc')))) closePops();
+  /* ⚠️ `.ctx-cita` è qui per la ragione opposta a tutte le altre: non è un
+     apritore, è un INTERRUTTORE dentro un menu che deve restare aperto mentre
+     lo si usa. `closePops()` chiude anche il menu della selezione, quindi
+     senza questa eccezione il 🔗 si spegneva e si portava via la superficie da
+     cui era stato premuto — cambiavi idea e dovevi riselezionare la frase. */
+  if(!(e.target.closest && (e.target.closest('.popmenu')||e.target.closest('.ncb-callout')||e.target.closest('.ncb-emoji')||e.target.closest('.ncb-mat')||e.target.closest('#mVista')||e.target.closest('#bancoBtn')||e.target.closest('#mappaSvg .mfonte')||e.target.closest('#searchBtn')||e.target.closest('#searchRes')||e.target.closest('#zainoNuovo')||e.target.closest('#pdfDoc')||e.target.closest('.ctx-cita')))) closePops();
   var a=e.target.closest && e.target.closest('.myotes a[data-note]');
   if(a){ e.preventDefault(); noteOpen(a.getAttribute('data-note')); return; }
   if(e.target.closest && e.target.closest('#addNoteBtn')){ noteNew(''); return; }
@@ -11707,6 +11765,24 @@ document.addEventListener('click', function(e){
      chiave vale qui come nella voce «Appunta», o dipenderebbe da quale dei due
      bottoni si è premuto. */
   appuntaSelezione(testo, range, k);
+});
+/* Il 🔗 della riga: dice se il frammento si porta dietro da dove viene. È
+   l'unico bottone di queste barre che NON fa il gesto — cambia come sarà fatto
+   il prossimo — quindi è anche l'unico che lascia il menu aperto e si limita a
+   riscriversi. ⚠️ Si riscrive in TUTTE E DUE le superfici: il menu e la barra
+   possono essere a schermo insieme, e un interruttore che dice «acceso» di qua
+   e «spento» di là è peggio di nessun interruttore. */
+document.addEventListener('click', function(e){
+  if(!e.target.closest) return;
+  var b=e.target.closest('#selMenu .ctx-cita, #selBarra .ctx-cita'); if(!b || b.disabled) return;
+  appuntaCitaScegli(b.getAttribute('data-cita')==='1');
+  var acceso=appuntaCitaAttiva();
+  document.querySelectorAll('#selMenu .ctx-cita, #selBarra .ctx-cita').forEach(function(x){
+    x.setAttribute('aria-pressed', acceso?'true':'false');
+    x.setAttribute('data-cita', acceso?'0':'1');
+    x.setAttribute('title', acceso ? 'Il frammento porta da dove viene: premi per toglierla'
+                                   : 'Il frammento arriva senza la fonte: premi per rimetterla');
+  });
 });
 /* La riga dei colori: sceglierne uno evidenzia CON quello e lo rende il colore
    di adesso. Due gesti in uno perché sono la stessa intenzione — «questa parola

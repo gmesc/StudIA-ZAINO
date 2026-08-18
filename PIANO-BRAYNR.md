@@ -371,6 +371,25 @@ risultato: premere Invio due volte non cambiava niente a schermo.
 - ⚠️ Il foglio di stampa si misura sullo **stile**, non sull'ingombro: vive dietro un
   `display:none`, e là ogni rettangolo è alto zero.
 
+**La fonte nel frammento diventa opzionale.** «Appunta» scriveva sempre `— [p. 7](pdf:03#p=7)`, e
+la ragione era buona — una frase senza origine, fra un mese, è una frase di cui non si sa più di chi
+sia — ma non vale per ogni gesto: chi si copia una definizione da tenere sott'occhio non sta citando
+nessuno. Un 🔗 in fondo alla fila dei riquadri lo decide, e la scelta è ricordata
+(`studia.appunta.cita`).
+
+- ⚠️ **Due contratti nella stessa fila, e si vedono.** Gli otto quadratini hanno il patto della riga
+  dei colori — premerne uno FA il gesto — mentre il 🔗 dice soltanto *come* sarà fatto il prossimo:
+  per questo è staccato da una barretta, non chiude il menu, e si accende invece di sparire.
+- ⚠️ **Il difetto pagato scrivendolo, e trovato dalla prova**: il 🔗 era nato con la classe
+  `.ctx-cal` per ereditarne il vestito — e il gestore dei riquadri lavora **per classe**, quindi
+  premerlo appuntava davvero la frase. Il vestito si condivide scrivendo due selettori nel foglio di
+  stile; il ruolo no.
+- ⚠️ E va **dentro l'elenco delle eccezioni** di `closePops()` (la trappola del `PROVE=(` in salsa
+  DOM): senza, l'interruttore si portava via il menu da cui era stato premuto.
+- ⚠️ Il difetto è **acceso**: chi non sceglie ottiene il comportamento di sempre. E la prova
+  **rimette com'era** prima di finire — `prova-evidenze-pdf` misura un frammento con la sua fonte, e
+  lo stato che una prova lascia è l'ingresso di quella dopo.
+
 E la guida «Come si scrive in StudIA» ha una **seconda tabella, i tasti**: fino a ieri le
 scorciatoie degli appunti stavano solo nei `title` dei bottoni, cioè invisibili proprio a chi usa la
 tastiera. ⚠️ È un elenco scritto accanto a quei suggerimenti, cioè una seconda copia: la difesa è in
