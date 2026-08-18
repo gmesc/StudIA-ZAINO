@@ -92,10 +92,27 @@ contiene('il codice in linea non è cambiato', '<code>_profilo.md</code>', appun
 console.log('— quello che c\'era prima, invariato —');
 check('a capo con un Invio solo', '<p>Prima<br>Seconda</p>', appunto('Prima\nSeconda'));
 check('due paragrafi', '<p>Uno</p>\n<p>Due</p>', appunto('Uno\n\nDue'));
-/* La riga di spazio bianco: una riga davvero vuota separa e basta, una riga con
-   lo spazio insecabile (⌥+Spazio) è contenuto e si vede. */
-check('le righe vuote non lasciano spazio', '<p>Uno</p>\n<p>Due</p>', appunto('Uno\n\n\n\nDue'));
-check('lo spazio insecabile sì',
+/* ⚠️ LE RIGHE VUOTE SI CONTANO, e non è markdown classico: là dieci righe
+   vuote rendono come una. Qui un appunto è un testo scritto a mano, e vale la
+   stessa regola dell'«a capo» — quello che si vede nell'editor si vede
+   nell'anteprima. La prima riga vuota cambia paragrafo (lo stacco lo dà il
+   margine del <p>), ognuna in più è una riga di bianco. */
+const bianchi = (h) => (h.match(/md-vuota/g) || []).length;
+check('una riga vuota cambia paragrafo e basta', 0, bianchi(appunto('Uno\n\nDue')));
+check('due righe vuote lasciano un bianco', 1, bianchi(appunto('Uno\n\n\nDue')));
+check('cinque righe vuote ne lasciano quattro', 4, bianchi(appunto('Uno\n\n\n\n\n\nDue')));
+check('una riga di soli spazi è vuota anche lei', 2, bianchi(appunto('Uno\n\n   \n\nDue')));
+/* Il bianco sta FRA due cose che si vedono: in cima e in fondo a un file le
+   righe vuote non sono spazio voluto, sono avanzi. */
+check('niente bianco in cima', 0, bianchi(appunto('\n\n\nUno')));
+check('niente bianco in fondo', 0, bianchi(appunto('Uno\n\n\n')));
+check('e dentro un riquadro vale la stessa regola', 1, bianchi(appunto('Prima.\n\n\nDopo.')));
+/* ⚠️ Nei capitoli generati la regola NON cambia: quei file sono già scritti. */
+check('un capitolo collassa come sempre', '<p>Uno</p>\n<p>Due</p>', capitolo('Uno\n\n\n\nDue'));
+/* ⚠️ Lo spazio insecabile era il modo di lasciare un bianco prima di questa
+   regola, e sta negli appunti della gente: resta CONTENUTO, cioè un paragrafo
+   suo, non una riga vuota da contare. */
+check('lo spazio insecabile resta un paragrafo',
   '<p>Uno</p>\n<p>' + NBSP + '</p>\n<p>Due</p>', appunto('Uno\n\n' + NBSP + '\n\nDue'));
 check('un riquadro non è una citazione',
   true, appunto('> [!nota] Titolo').indexOf('<blockquote>') < 0);

@@ -346,6 +346,31 @@ foglio di stampa).
   differenza la sorveglia `test/cdp/prova-appunti-md.js` — che gira nell'app viva perché
   `renderNoteMd` sta nel monolite e in Node non si carica.
 
+**Il bianco fra i paragrafi, che non c'era.** Il seguito immediato, chiesto guardando il
+risultato: premere Invio due volte non cambiava niente a schermo.
+
+- ⚠️ **Due difetti, non uno.** Il primo: `*{margin:0}` vale ovunque e lo stacco fra paragrafi era
+  scritto **solo per `article`**, cioè per i capitoli — in un appunto due paragrafi si sono sempre
+  toccati. Il secondo: le righe vuote in più si buttavano via tutte, e l'unico modo di lasciare un
+  bianco era una riga con lo spazio insecabile, un trucco che bisognava sapere.
+- La regola adesso è quella dell'«a capo»: **quello che si vede nell'editor si vede
+  nell'anteprima**. Una riga vuota cambia paragrafo, ognuna in più è una riga di bianco
+  (`vuote()`, nel modulo del parser: il conto lo fanno in due — `renderNoteMd` per il bianco fra i
+  blocchi, `mdToHtml` per quello dentro — ma la regola è una sola). Misurato: 17 · 45 · 73 px con
+  la riga a 28.
+- ⚠️ **`p:first-child{margin-top:0}` qui non funziona**, ed è la trappola che vale la pena
+  ricordare: nell'anteprima ogni blocco sta dentro un `.mdb` che è `display:contents`, quindi
+  **ogni** paragrafo è il primo figlio del suo involucro e si azzerava il margine da sé. Lo stacco
+  va messo da un lato solo (`margin:0 0 var(--par)`), e allora non c'è nemmeno un collasso da
+  governare.
+- ⚠️ **Una prova che costruisce il DOM invece di guardare quello vero dice verde per sbaglio**: la
+  prima versione fabbricava `<div class="editor-preview"><p>…` — senza `.mdb` — e non poteva
+  vedere il difetto di sopra. Adesso misura i paragrafi dell'anteprima viva. Lo stesso vale per il
+  bianco, che è un `<p>` e si prendeva i margini dei paragrafi: valeva una riga e mezza, e a
+  occhio si vedeva mentre le prove tacevano.
+- ⚠️ Il foglio di stampa si misura sullo **stile**, non sull'ingombro: vive dietro un
+  `display:none`, e là ogni rettangolo è alto zero.
+
 E la guida «Come si scrive in StudIA» ha una **seconda tabella, i tasti**: fino a ieri le
 scorciatoie degli appunti stavano solo nei `title` dei bottoni, cioè invisibili proprio a chi usa la
 tastiera. ⚠️ È un elenco scritto accanto a quei suggerimenti, cioè una seconda copia: la difesa è in

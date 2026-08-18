@@ -416,6 +416,33 @@
     if(testo.length) out.push({ codice:false, testo:testo.join('\n') });
     return out;
   }
+  /**
+   * L'HTML di `n` righe vuote di seguito, negli appunti.
+   *
+   * ⚠️ LA REGOLA, ED È LA STESSA DELL'«A CAPO». La prima riga vuota separa due
+   * paragrafi, e quello stacco lo dà già il margine del `<p>`: dalla seconda in
+   * poi ognuna è una riga che chi scrive VEDE nell'editor e si aspetta di
+   * ritrovare accanto. Prima si buttavano via tutte — dieci Invii rendevano
+   * come uno — e l'unico modo di lasciare un bianco era una riga con lo spazio
+   * insecabile: un trucco che bisognava sapere, scritto in fondo a una guida.
+   * Il markdown classico collassa; qui no, per la stessa ragione per cui un
+   * Invio solo vale come interruzione di riga (`aCapo`): un appunto è un testo
+   * scritto a mano, non un sorgente da compilare.
+   *
+   * ⚠️ Il paragrafo è VUOTO DAVVERO, senza lo spazio insecabile di prima:
+   * quel carattere finirebbe nel testo che la ricerca indicizza, che la voce
+   * legge e che si copia via. L'altezza gliela dà il foglio di stile (`.md-vuota`),
+   * che è il posto dove stanno le misure.
+   *
+   * ⚠️ Le righe scritte con ⌥+Spazio continuano a valere: sono CONTENUTO, non
+   * righe vuote, e stanno già dentro gli appunti della gente. Un cambiamento di
+   * regola non può riscrivere il passato.
+   */
+  function vuote(n){
+    var q = Math.max(0, (n | 0) - 1), s = '';
+    while (q--) s += '<p class="md-vuota"></p>';
+    return s;
+  }
   /* aCapo=true: l'Invio singolo vale come interruzione di riga (come in Obsidian).
      Serve nei testi scritti a mano — gli appunti — dove chi scrive si aspetta di
      andare a capo premendo Invio. I capitoli generati restano al comportamento
@@ -452,12 +479,33 @@
         }).filter(function(s){ return s; }).join('\n');
       }
     }
-    var blocks=md.replace(/\r/g,'').split(/\n{2,}/); var out=[];
-    blocks.forEach(function(b){ b=b.replace(/^\n+|\n+$/g,'');
+    /* ⚠️ I SEPARATORI SI TENGONO, non si buttano. `split(/\n{2,}/)` diceva
+       «qui finisce un blocco» e perdeva QUANTE righe vuote c'erano: la
+       differenza fra un Invio in più e dieci spariva prima di essere letta.
+       Con la parentesi di cattura i separatori restano nell'array, ai posti
+       dispari, e `vuote()` decide che cosa valgono.
+       ⚠️ E una riga di soli spazi è una riga vuota: chi la guarda nell'editor
+       vede il bianco, non i suoi caratteri. Lo spazio insecabile no — quello
+       è contenuto, e resta un paragrafo suo (è il trucco di prima, che deve
+       continuare a valere negli appunti già scritti). */
+    var sorgente=md.replace(/\r/g,'');
+    if(aCapo) sorgente=sorgente.replace(/^[ \t]+$/gm,'');
+    var blocks=[], seps=[];
+    sorgente.split(/(\n{2,})/).forEach(function(x, ix){ if(ix % 2) seps.push(x); else blocks.push(x); });
+    var out=[];
+    blocks.forEach(function(b, bi){ b=b.replace(/^\n+|\n+$/g,'');
       // NB: trim() tratta lo spazio insecabile (U+00A0) come spazio, quindi una riga
       // scritta con ⌥+Spazio per lasciare il bianco veniva scartata. Qui la conto come
       // contenuto: chi la scrive vuole proprio una riga vuota visibile.
       if(!b.replace(/[ \t\n\r]+/g,'').length) return;
+      /* Il bianco fra QUESTO blocco e il precedente. Va qui e non in cima al
+         giro perché lo si vuole solo FRA due cose che si vedono: `out.length`
+         dice che qualcosa prima c'è, e un blocco vuoto (l'inizio del file) è
+         già uscito di scena due righe sopra. */
+      if(aCapo && out.length && seps[bi-1]){
+        var bianco=vuote(seps[bi-1].length-1);
+        if(bianco) out.push(bianco);            // una riga vuota sola non lascia niente da scrivere
+      }
       var lines=b.split('\n');
       /* Un blocco può MESCOLARE testo, elenchi e titoli: prima si scorreva l'intero
          blocco e si riconosceva un titolo solo se stava sulla PRIMA riga del blocco —
@@ -575,6 +623,12 @@
     return {
       parseFrontmatter: parseFrontmatter, parseFenced: parseFenced,
       mdToHtml: mdToHtml, mdChapter: mdChapter,
+      /* Serve a `renderNoteMd`, che sta nel monolite e le righe vuote le conta
+         da sé: il bianco FRA due blocchi lo vede solo lui, perché è lui a
+         spezzare l'appunto in blocchi prima di chiamare `mdToHtml`. La regola
+         però è una sola, ed è questa — due funzioni che decidono quanto vale un
+         Invio in più sarebbero due regole destinate a divergere. */
+      vuote: vuote,
       _mdInline: _mdInline, _stripFm: _stripFm,
       figuraHtml: figuraHtml, albumHtml: albumHtml, figFile: figFile,
       evidenzaHtml: evidenzaHtml,

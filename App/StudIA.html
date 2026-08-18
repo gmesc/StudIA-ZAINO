@@ -763,7 +763,12 @@
   article h4{ font-size:1.12rem; font-weight:700; margin:2.1rem 0 .7rem; }
   article h5{ font-size:1.04rem; font-weight:700; margin:1.9rem 0 .6rem; }
   article h6{ font-size:1rem; font-weight:700; margin:1.7rem 0 .55rem; color:var(--muted); }
-  article p{ margin:1.05rem 0; }
+  /* Lo stacco fra due paragrafi: UN valore, e da qui lo prendono anche gli
+     appunti (poco più sotto, `--par`). Prima stava scritto solo qui, e fuori da
+     `article` — cioè in tutto ciò che è un appunto — i paragrafi ereditavano il
+     `margin:0` del reset: due paragrafi si toccavano, e la riga vuota che li
+     aveva separati nell'editor non si vedeva da nessuna parte. */
+  article p{ margin:var(--par) 0; }
   article ul{ margin:1rem 0 1rem 1.3rem; list-style:square; }
   article li{ margin:.5rem 0; }
   article li::marker{ color:var(--yellow-strong); }
@@ -1384,6 +1389,8 @@
     --tit-1:calc(1.375rem + 1.5vw); --tit-2:calc(1.325rem + .9vw);
     --tit-3:calc(1.3rem + .6vw);    --tit-4:calc(1.275rem + .3vw);
     --tit-5:1.25rem;                --tit-6:1rem;
+    /* lo stacco fra due paragrafi, uguale nel capitolo e nell'appunto */
+    --par:1.05rem;
   }
   #noteHost .cm-s-easymde .cm-header-1,
   #noteHost .editor-preview h1, #noteHost .editor-preview-side h1{ font-size:var(--tit-1); }
@@ -1458,6 +1465,45 @@
     font-family:ui-monospace,SFMono-Regular,Menlo,var(--emoji-font),monospace;
   }
   .md-code code{ font:inherit; background:none; padding:0; }
+  /* La riga di bianco: un paragrafo vuoto alto UNA RIGA di testo. `lh` è
+     l'unità che vale l'interlinea corrente, quindi il bianco è alto come la
+     riga della superficie che lo ospita — nell'anteprima, dentro un riquadro e
+     sul foglio di stampa l'interlinea è diversa, e una misura fissa scritta in
+     em darebbe tre bianchi di tre altezze. La riga in em resta sotto come
+     ripiego per chi `lh` non ce l'ha. */
+  /* ⚠️ LO STACCO FRA I PARAGRAFI DI UN APPUNTO, sulle stesse cinque superfici
+     dell'elenco qui sopra. Fuori da `article` comandava `*{margin:0}`: un
+     appunto di tre paragrafi si leggeva come un blocco solo, e premere Invio
+     due volte non cambiava niente a schermo. Il valore è quello del capitolo
+     (`--par`), non un numero nuovo: un appunto e un capitolo si leggono uno
+     accanto all'altro, e due arie diverse si notano.
+     ⚠️ Il primo e l'ultimo non sporgono, o il riquadro che li contiene si
+     aprirebbe di un'aria che non ha chiesto. */
+  /* ⚠️ LO STACCO STA SOTTO, E BASTA. La forma ovvia — `margin:var(--par) 0` più
+     un `p:first-child{margin-top:0}` perché il primo non sporga — qui non
+     funziona, e il perché vale la pena scriverlo: nell'anteprima ogni blocco è
+     avvolto in un `.mdb` che è `display:contents`, quindi OGNI paragrafo è il
+     primo figlio del suo involucro e si azzerava il margine da sé. Risultato:
+     stacco zero, e le prove che costruivano un DOM senza `.mdb` dicevano di sì.
+     Con il margine da un lato solo non c'è collasso da governare né primo da
+     eccettuare, e l'aria in fondo all'ultimo la toglie già chi ha un fondo da
+     difendere (`.uc-body>*:last-child`). */
+  :is(#noteHost .editor-preview, #noteHost .editor-preview-side, .uc-body,
+      .myotes .nt-body, table.guida .g-out, #stampaFoglio .st-corpo) p{ margin:0 0 var(--par); }
+  /* La riga di bianco: un paragrafo vuoto alto UNA RIGA di testo. `lh` è
+     l'unità che vale l'interlinea corrente, quindi il bianco è alto come la
+     riga della superficie che lo ospita — l'anteprima, un riquadro e il foglio
+     di stampa hanno interlinee diverse, e una misura fissa in em darebbe tre
+     bianchi di tre altezze. La riga in em resta come ripiego.
+     ⚠️ E STA QUI SOTTO, con la stessa lista di superfici della regola dei
+     paragrafi: è un `<p>`, quindi quella regola gli darebbe i suoi margini e
+     ogni Invio in più varrebbe una riga E MEZZA invece di una. Con la stessa
+     specificità vince chi viene dopo. Misurato guardando lo scatto: i bianchi
+     erano il doppio di quello che dicevano le prove. */
+  :is(#noteHost .editor-preview, #noteHost .editor-preview-side, .uc-body,
+      .myotes .nt-body, table.guida .g-out, #stampaFoglio .st-corpo) p.md-vuota{
+    margin:0; min-height:1.5em; min-height:1lh;
+  }
   /* In stampa il riquadro non può scorrere: là il codice va a capo, o le righe
      lunghe finiscono fuori dal foglio e nessuno le legge mai. */
   @media print{ .md-code{ white-space:pre-wrap; word-break:break-word; } }
@@ -8177,7 +8223,23 @@ function renderNoteMd(md, opt){
     return '<div class="mdb" data-da="'+da+'" data-a="'+a+'">'+html+'</div>';
   }
   while(i<lines.length){
-    if(vuota(lines[i])){ i++; continue; }         // le righe vuote separano, non appartengono
+    /* ⚠️ Le righe vuote SI CONTANO. La prima separa due blocchi — lo stacco lo
+       dà il margine del paragrafo — e ognuna in più è una riga di bianco che
+       chi scrive vede nell'editor e si aspetta di ritrovare qui. Prima si
+       saltavano e basta, quante che fossero.
+       ⚠️ La regola su quanto valgono NON è scritta qui: è `vuote()`, dentro il
+       modulo del parser, perché la stessa domanda se la pone anche `mdToHtml`
+       per il bianco DENTRO un blocco. Due conteggi (il bianco fra i blocchi lo
+       vede solo chi i blocchi li spezza, cioè questa funzione), una regola sola.
+       ⚠️ E il bianco si mette solo FRA due cose che si vedono: `out` dice che
+       qualcosa prima c'è, `i<lines.length` che qualcosa dopo arriva. Le righe
+       vuote in cima e in fondo a un file non sono spazio voluto, sono avanzi. */
+    if(vuota(lines[i])){
+      var salti=0;
+      while(i<lines.length && vuota(lines[i])){ salti++; i++; }
+      if(out && i<lines.length) out+=vuote(salti);
+      continue;
+    }
     var m=/^>\s*\[!([A-Za-zàèéìòù-]+)\]\s*(.*)$/.exec(lines[i]);
     if(m){
       var da=i, d=calloutDef(m[1]), titolo=(m[2]||'').trim()||d.label, body=[];
@@ -8590,7 +8652,6 @@ function stampaCorrente(){
    La colonna «esempio» non è scritta a mano: viene prodotta dal renderer vero
    (renderNoteMd) a partire dalla sintassi mostrata. Se un giorno il parser cambia,
    la guida cambia con lui e non può raccontare cose che l'app non fa più. */
-var NBSP_GUIDA=' ';
 var GUIDA=[
   { sezione:'Testo' },
   { nome:'Grassetto', sintassi:'La **decodifica** non è la comprensione.' },
@@ -8599,14 +8660,11 @@ var GUIDA=[
   { nome:'Titoletto', sintassi:'## Da rivedere', nota:'Da # a ###### : più cancelletti, titolo più piccolo.' },
   { nome:'A capo', sintassi:'Prima riga.\nSeconda riga.', nota:'Un solo Invio basta: negli appunti vale come interruzione di riga.' },
   { nome:'Paragrafo nuovo', sintassi:'Primo paragrafo.\n\nSecondo paragrafo.', nota:'Una riga vuota fra i due.' },
-  /* ⚠️ Il tasto si dice per la tastiera che si ha sotto le mani, e su Windows
-     non c'è: Alt+Spazio là apre il menu della finestra. Promettere lo stesso
-     gesto in tutte e due le lingue sarebbe la bugia che `tasti/nomi.js` esiste
-     per non dire — e qui non basta tradurre il simbolo, cambia la frase. */
-  { nome:'Riga vuota', sintassi:'Sopra il bianco.\n\n'+NBSP_GUIDA+'\n\nSotto il bianco.',
-    nota:(TASTI_MAC ? 'Una riga con il solo spazio insecabile: ⌥+Spazio.'
-                    : 'Una riga con il solo spazio insecabile (su Windows si incolla: la tastiera non ha un tasto per farlo).')+
-         ' Le righe DAVVERO vuote separano i paragrafi e non lasciano spazio, quante che siano.' },
+  /* ⚠️ Il bianco non si fa più con un trucco da sapere (una riga con lo spazio
+     insecabile): si fa con l'Invio, che è il tasto che chi scrive preme già.
+     La riga scritta a mano continua a valere — sta negli appunti della gente. */
+  { nome:'Riga vuota', sintassi:'Sopra il bianco.\n\n\nSotto il bianco.',
+    nota:'Un Invio in più di quelli che servono a cambiare paragrafo. Ogni Invio in più è una riga di bianco: quello che vedi mentre scrivi è quello che esce.' },
   { nome:'Citazione', sintassi:'> Le parole di qualcun altro.', nota:'Il pulsante " della barra. Per una cornice che dice CHE COSA è, usa un riquadro.' },
   { nome:'Blocco di codice', sintassi:'```\nformula = a * b\n```', nota:'Il pulsante </> della barra (⌘⌥C). Dentro, il testo resta com\'è scritto: niente grassetto, niente rimandi.' },
   { sezione:'Elenchi' },
@@ -8617,7 +8675,8 @@ var GUIDA=[
   { nome:'Riquadro', sintassi:'> [!nota] Titolo del riquadro\n> Il testo del riquadro.', nota:'Tipi: nota, importante, definizione, esempio, dubbio, attenzione, dafare. Il pulsante ☰ della barra li inserisce già fatti.' },
   { nome:'Attenzione', sintassi:'> [!attenzione] Da non confondere\n> La diagnosi non descrive la persona.' },
   { nome:'Paragrafo dentro il riquadro', sintassi:'> [!definizione] Decodifica\n> Trasformare i segni in suoni.\n>\n> È diverso dal capire il testo.', nota:'Una riga con il solo «>».' },
-  { nome:'Riga vuota dentro il riquadro', sintassi:'> [!nota] Con lo stacco\n> Prima frase.\n> '+NBSP_GUIDA+'\n> Seconda frase.', nota:'Il «>» seguito da uno spazio insecabile: ⌥+Spazio.' },
+  { nome:'Riga vuota dentro il riquadro', sintassi:'> [!nota] Con lo stacco\n> Prima frase.\n>\n>\n> Seconda frase.',
+    nota:'Due righe con il solo «>»: la prima cambia paragrafo, la seconda lascia il bianco.' },
   { sezione:'Collegamenti' },
   { nome:'Vai al minuto del video', sintassi:'Vedi [2:12](video:05#t=132) della lezione.', nota:'Non serve scriverlo a mano: con il video in riproduzione premi ✎ (⌘⇧C) e il minuto esatto entra da sé. Con 📎 scegli il materiale da un elenco.' },
   { nome:'Vai alla pagina del PDF', sintassi:'Vedi la [p. 7](pdf:03#p=7) della dispensa.', nota:'Le frecce ‹ › nella barra dell\'anteprima cambiano pagina; 🔖 cita quella corrente.' },
@@ -8657,8 +8716,8 @@ var TASTI=[
   { nome:'Chiudi il blocco e tieni le modifiche', tasti:'⌘Invio' },
   { sezione:'Scrivere' },
   { nome:'A capo', tasti:'Invio', nota:'Un solo Invio: negli appunti vale come interruzione di riga.' },
-  { nome:'Riga vuota', tasti:(TASTI_MAC?'⌥Spazio':'—'),
-    nota:(TASTI_MAC?'Una riga con il solo spazio insecabile.':'Su Windows non c\'è un tasto: lo spazio insecabile si incolla.') },
+  { nome:'Riga vuota', tasti:'Invio ×2',
+    nota:'Un Invio in più di quelli che cambiano paragrafo. Quello che vedi mentre scrivi è quello che esce.' },
   { nome:'Grassetto', tasti:'⌘B' },
   { nome:'Corsivo', tasti:'⌘I' },
   { nome:'Titoletto più piccolo, più grande', tasti:'⌘H · ⇧⌘H' },
@@ -13535,6 +13594,7 @@ var LETTURA_CAP = LetturaCapitolo.crea({
 var parseFrontmatter = LETTURA_CAP.parseFrontmatter;
 var parseFenced      = LETTURA_CAP.parseFenced;
 var mdToHtml         = LETTURA_CAP.mdToHtml;
+var vuote            = LETTURA_CAP.vuote;
 var mdChapter        = LETTURA_CAP.mdChapter;
 
 function buildVaultCourses(){
