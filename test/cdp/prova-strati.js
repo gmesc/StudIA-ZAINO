@@ -218,7 +218,7 @@ const ACCESI = `(()=>{ let n=0;
   /* ⚠️ Fino al 18 agosto qui ne veniva dipinta UNA sola: `risolvi` eleggeva un
      vincitore fra i segni che si accavallano — regola giusta quando i segni si
      facevano marcando il DOM, dove due `<span>` sugli stessi caratteri non si
-     annidano. Dal 19 si accendono tutti (vedi in fondo a questa prova); qui si
+     annidano. Dal 18 pomeriggio si accendono tutti (vedi in fondo a questa prova); qui si
      misura l'altra metà: che ogni lettura si spenga per conto suo. */
   const accesiDue = await finoA(ACCESI, 8000);
   console.log('   accesi con tutt\'e due le letture: ' + accesiDue);
@@ -287,7 +287,7 @@ const ACCESI = `(()=>{ let n=0;
 
   sezione('⚠️ PIÙ LETTURE SULLA STESSA PAROLA: si vedono tutte');
   /* La misura che vale: quanti intervalli il browser sta dipingendo davvero.
-     Prima del 19 agosto valeva 1 comunque — `risolvi` eleggeva un vincitore e
+     Prima di oggi valeva 1 comunque — `risolvi` eleggeva un vincitore e
      il resto spariva dallo schermo pur restando contato nel pannellino. */
   await val(`(function(){ try{ Object.keys(localStorage)
     .filter(function(k){ return k.indexOf('studia.evidenze.viste.')===0; })

@@ -211,7 +211,7 @@ inline sta in cima al corpo e i riquadri stanno in fondo: al primo giro `#pdfEvi
 e `$` torna `null` in silenzio. È la stessa trappola degli osservatori del visualizzatore (PIANO-FOTO
 §F2) — si aspetta il documento.
 
-**Prove**: `test/strati.js` (la regola, 24 controlli) · `test/cdp/prova-strati.js`, che guarda il
+**Prove**: `test/strati.js` (la regola) · `test/cdp/prova-strati.js`, che guarda il
 **registro degli highlight** e non l'attributo di un bottone.
 
 **P1.1-quater — Le letture (gli strati).** ✅ *fatto il 18 agosto 2026 (M2)*
@@ -258,7 +258,7 @@ Meglio dirlo che lasciarlo scoprire (invariante 4).
 stanno nel `localStorage`** — sono preferenze di lettura, non dati del vault; l'ordine è quello di
 nascita, senza un campo in più da tenere aggiornato.
 
-**Prove**: `test/strati.js` (51 controlli: filtro, registro, righe del pannello) · la sezione degli
+**Prove**: `test/strati.js` (filtro, registro, righe del pannello) · la sezione degli
 strati in `test/evidenze.js` — dove il controllo che vale più di tutti è l'id invariato ·
 `test/cdp/prova-strati.js`, che segna **le stesse parole due volte** e misura che su disco ce ne
 siano due, non una ricolorata.
@@ -267,7 +267,7 @@ siano due, non una ricolorata.
 righe; l'elenco delle parole chiave che segue la visibilità delle letture — oggi mostra tutto, e la
 nota nel codice dice perché e da dove ripartire.
 
-**P1.1-quinquies — Più letture sulla stessa parola.** ✅ *fatto il 19 agosto 2026 (M3)*
+**P1.1-quinquies — Più letture sulla stessa parola.** ✅ *fatto il 18 agosto 2026 (M3)*
 
 Quando due o più letture accese insistono sullo stesso testo si vedono **tutte**. Prima se ne
 dipingeva una: `EvidenzeAncoraggio.risolvi` elegge un vincitore e mette il resto in `sovrapposte`,
@@ -302,7 +302,8 @@ c'era prima si vede identico a prima.
 ⚠️ **Il tetto è 4 + 4** per parola. Oltre il quarto un segno si dipingerebbe uguale a un altro, e
 il pannellino lo **dice** («N segni si sovrappongono oltre il quarto: si vede, ma non si distingue»).
 
-**Prove**: `test/strati.js` → `livelli()` (pile separate, tetto, ingressi storti) ·
+**Prove**: `test/strati.js` → `livelli()` (pile separate, tetto, ingressi storti) — **68 controlli**
+in tutto, ed è l'unico posto dove il numero è scritto: una cifra si conta, non si ricorda ·
 `test/cdp/prova-strati.js`, dove la misura che vale è **quanti intervalli il browser sta
 dipingendo**: quattro letture sulla stessa parola, quattro accesi — ieri sarebbe stato uno.
 

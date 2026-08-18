@@ -355,11 +355,12 @@ Chi riceve un braindump dell'utente e deve produrne un piano:
 
 | documento | che cosa dice |
 |---|---|
-| `HANDOFF-DEFINITIVO-<data>.md` (il più recente: **16 agosto 2026, sera** — `HANDOFF-DEFINITIVO-2026-08-16b.md`) | lo stato: che cosa è appena successo, che cosa viene dopo, le trappole fresche |
+| `HANDOFF-DEFINITIVO-<data>.md` (il più recente: **18 agosto 2026** — `HANDOFF-DEFINITIVO-2026-08-18.md`) | lo stato: che cosa è appena successo, che cosa viene dopo, le trappole fresche |
 | `PIANO-BRAYNR.md` | appunti, evidenze, mappe, flashcard/ripasso (aree P1–P3) |
 | `PIANO-MODULI.md` | lo smontaggio del monolite: criterio, albero dei moduli, metriche |
 | `PIANO-ZAINO.md` · `PIANO-BANCO.md` · `PIANO-MAPPE-EDITOR.md` · `PIANO-ONBOARDING.md` | le altre aree |
 | `PIANO-FOTO.md` | le immagini dell'utente: import, Album Foto, visualizzatore, ritagli sulle foto |
 | `PIANO-ONBOARDING.md` | il primo avvio, **i tre pacchetti** (mac arm64 · mac Intel · Windows) e i requisiti misurati |
 | `~/.claude/skills/studia-app-layout/` | il design system, riusabile fuori da StudIA |
+| `graphify-out/` (non versionato) | il grafo della conoscenza del progetto: `graph.html`, `GRAPH_REPORT.md`, `graph.json` interrogabile. Si rifà con `/graphify .` e si aggiorna con `/graphify . --update` — si versiona la ricetta, non il prodotto |
 | `README.md` | riscritto il 16 ago 2026: che cos'è, come si comincia, i pacchetti, come si verifica. Ora è una fonte (prima fotografava il layout pre 3 agosto) |
