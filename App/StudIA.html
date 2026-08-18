@@ -10825,6 +10825,11 @@ function frammentoAppuntato(testo, ctx, origine, stile, evId){
   if(!appuntaCitaAttiva()) rimando='';
   if(st){
     var def=calloutDef(st);
+    /* ⚠️ LA TESTATA RESTA ANCHE COL 🔗 SPENTO, ed è una scelta, non una svista
+       (decisa il 19 agosto 2026). Titolo e citazione dicono due cose diverse:
+       «Dal documento» dice CHE GENERE di frammento è — un pezzo di fonte, non
+       un tuo pensiero — e resta vero anche senza il link che porta al punto.
+       Chi toglie la citazione toglie l'indirizzo, non la natura della frase. */
     var testa=daPdf ? 'Dal documento' : 'Dal capitolo';
     return '> [!'+def.k+'] '+testa+'\n> '+t+(rimando ? ('\n> — '+rimando) : '')+'\n\n';
   }
