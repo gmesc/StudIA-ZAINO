@@ -1889,6 +1889,11 @@
   #calloutMenu button{ display:flex; align-items:center; gap:.5rem; width:100%; border:0; background:transparent; cursor:pointer;
     padding:.45rem .8rem; font-size:13px; color:var(--ink); font-family:var(--font-text),var(--emoji-font),sans-serif; }
   #calloutMenu button:hover{ background:var(--hover); }
+  /* La voce su cui stanno le frecce. ⚠️ Non è `:hover` con un altro nome: il
+     mouse può stare altrove — o da nessuna parte, che è il caso normale quando
+     si sta scrivendo — e la riga scelta deve dirsi lo stesso. Il segno è lo
+     stesso dei bottoni accesi delle barre: fondo teal smorzato. */
+  #calloutMenu button.scelto{ background:color-mix(in srgb, var(--teal) 20%, var(--panel)); color:var(--teal-strong); }
   /* ---- Le letture (gli strati) --------------------------------------------
      ⚠️ Qui NON ci sono misure: la geometria delle righe la dà `.tbar` e quella
      dei comandi `.tbtn`, che è il punto del token (invariante 8). Restano solo
@@ -8187,9 +8192,18 @@ var CALLOUTS=[
   { k:'dafare', label:'Da fare', emoji:'✅' }
 ];
 function calloutDef(k){ k=String(k||'').toLowerCase().replace(/[^a-z]/g,''); return CALLOUTS.filter(function(c){ return c.k===k; })[0]||CALLOUTS[0]; }
+/** Le righe del menu dei riquadri: una funzione sola per le due porte — il 📜
+ *  della barra e la bolla che compare battendo «> ». Due costruzioni vorrebbero
+ *  dire due elenchi che un giorno divergono. */
+function calloutMenuHTML(){
+  return CALLOUTS.map(function(c, i){
+    return '<button type="button" role="menuitem" data-cal="'+c.k+'" data-i="'+i+'">'+
+           '<span>'+c.emoji+'</span>'+escHtml(c.label)+'</button>';
+  }).join('');
+}
 function openCalloutMenu(anchorEl){
   var menu=$('#calloutMenu'); if(!menu) return;
-  menu.innerHTML=CALLOUTS.map(function(c){ return '<button type="button" data-cal="'+c.k+'"><span>'+c.emoji+'</span>'+escHtml(c.label)+'</button>'; }).join('');
+  menu.innerHTML=calloutMenuHTML();
   popAt(menu, anchorEl);
 }
 function insertCallout(k){
@@ -8199,6 +8213,92 @@ function insertCallout(k){
   var corpo=(sel||'Scrivi qui').split('\n').map(function(l){ return '> '+l; }).join('\n');
   cm.replaceSelection('> [!'+d.k+'] '+d.label+'\n'+corpo+'\n');
   cm.focus();
+}
+/* ===== LA BOLLA DEI RIQUADRI ==============================================
+ *
+ * Si batte «> » a inizio riga e il menu dei riquadri compare al cursore: le
+ * frecce scorrono, Invio sceglie, Esc o qualunque altro tasto lo mandano via.
+ * È il gesto delle app di scrittura moderne, con una differenza che qui conta:
+ * **la bolla è un suggerimento, non un dirottamento**. Chi la ignora e continua
+ * a scrivere ottiene una citazione, che dal 18 agosto è una forma buona.
+ *
+ * ⚠️ SI AGGANCIA A CIÒ CHE È STATO BATTUTO, non a com'è fatta la riga, ed è la
+ * decisione che rende la cosa possibile: dentro un riquadro **l'Invio inserisce
+ * «> » da solo** (l'addon `continuelist` di CodeMirror, regex `>[> ]*`), e
+ * ⌘' fa lo stesso a comando. Una bolla appesa a «la riga è `> `» sbucherebbe a
+ * ogni Invio dentro ogni riquadro. `inputRead` scatta solo per il testo battuto
+ * o incollato: quello che scrive il programma non la sveglia.
+ *
+ * ⚠️ E non basta: si guarda anche la riga SOPRA. Chi batte «> » a mano sotto
+ * un'altra riga di riquadro sta continuando quel riquadro, non aprendone uno.
+ */
+var CALBOLLA={ attiva:false, i:0, cm:null, tasti:null };
+function calloutBollaAperta(){ return CALBOLLA.attiva && !!$('#calloutMenu') && $('#calloutMenu').hasAttribute('open'); }
+function calloutBollaSegna(){
+  var menu=$('#calloutMenu'); if(!menu) return;
+  var voci=menu.querySelectorAll('button[data-cal]');
+  for(var i=0;i<voci.length;i++){
+    var q=(i===CALBOLLA.i);
+    voci[i].classList.toggle('scelto', q);
+    voci[i].setAttribute('aria-selected', q?'true':'false');
+    if(q && voci[i].scrollIntoView) voci[i].scrollIntoView({ block:'nearest' });
+  }
+}
+function calloutBollaApri(cm){
+  var menu=$('#calloutMenu'); if(!menu) return;
+  menu.innerHTML=calloutMenuHTML();
+  /* Il cursore non è un elemento ma un rettangolo ce l'ha: `popAt` prende tutti
+     e due (vedi la sua testata). `'window'` perché i pannellini sono `fixed`. */
+  popAt(menu, cm.cursorCoords(true, 'window'));
+  CALBOLLA.attiva=true; CALBOLLA.i=0; CALBOLLA.cm=cm;
+  calloutBollaSegna();
+  /* ⚠️ I tasti si intercettano SOLO finché la bolla è aperta, e in cattura sul
+     guscio dell'editor: cambiare il keymap di CodeMirror vorrebbe dire togliere
+     alle frecce e a Invio il loro mestiere anche quando la bolla non c'è. */
+  CALBOLLA.tasti=function(e){
+    if(!calloutBollaAperta()){ calloutBollaChiudi(); return; }
+    if(e.key==='ArrowDown' || e.key==='ArrowUp'){
+      e.preventDefault(); e.stopPropagation();
+      var n=CALLOUTS.length;
+      CALBOLLA.i=(CALBOLLA.i + (e.key==='ArrowDown'?1:n-1)) % n;
+      calloutBollaSegna(); return;
+    }
+    if(e.key==='Enter'){
+      e.preventDefault(); e.stopPropagation();
+      calloutInserisci(CALLOUTS[CALBOLLA.i].k); return;
+    }
+    if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); calloutBollaChiudi(); return; }
+    /* Tutto il resto è scrittura: la bolla si toglie di mezzo e lascia fare —
+       chi continua a battere sta scrivendo una citazione, non un riquadro.
+       ⚠️ I modificatori da soli no: ⌘, ⇧ e ⌥ premuti per una scorciatoia non
+       sono «ha cambiato idea». */
+    if(e.key.length===1 || e.key==='Backspace' || e.key==='Delete') calloutBollaChiudi();
+  };
+  cm.getWrapperElement().addEventListener('keydown', CALBOLLA.tasti, true);
+}
+function calloutBollaChiudi(){
+  if(CALBOLLA.tasti && CALBOLLA.cm){
+    try{ CALBOLLA.cm.getWrapperElement().removeEventListener('keydown', CALBOLLA.tasti, true); }catch(e){}
+  }
+  CALBOLLA.attiva=false; CALBOLLA.tasti=null; CALBOLLA.cm=null;
+  var menu=$('#calloutMenu'); if(menu) menu.removeAttribute('open');
+}
+/**
+ * Inserisce un riquadro da QUALUNQUE porta: il 📜 della barra e la bolla.
+ *
+ * ⚠️ La bolla ha una cosa in più da fare, e una sola: il «> » battuto è ancora
+ * lì, e `insertCallout` scrive il suo — uscirebbe «> > [!nota]». Si cancella la
+ * riga di innesco e poi si chiama la funzione di sempre: due responsabilità,
+ * due funzioni (invariante 6), e il 📜 non sa nemmeno che la bolla esiste.
+ */
+function calloutInserisci(k){
+  var bolla=CALBOLLA.attiva, cm=CALBOLLA.cm || (NOTES.mde && NOTES.mde.codemirror);
+  if(bolla && cm){
+    var cur=cm.getCursor();
+    cm.replaceRange('', { line:cur.line, ch:0 }, { line:cur.line, ch:cur.ch });
+  }
+  calloutBollaChiudi();
+  insertCallout(k);
 }
 /* riquadri in stile Obsidian:  > [!nota] Titolo  +  righe successive con ">" */
 /**
@@ -8334,9 +8434,20 @@ function insertEmoji(ch){
  * bordo. È la stessa legge che `mapMenuApri` applica da sempre al menu
  * contestuale — qui mancava soltanto.
  */
+/**
+ * Apre un pannellino sotto un bersaglio.
+ *
+ * ⚠️ Il bersaglio può essere un ELEMENTO o un PUNTO (`{left,top,bottom}`): il
+ * secondo serve al cursore di scrittura, che non è un elemento e un rettangolo
+ * ce l'ha lo stesso — `cm.cursorCoords()` lo dà già in questa forma. Un secondo
+ * `popAtXY` avrebbe voluto dire due volte la logica che tiene il pannellino
+ * dentro la finestra, cioè due volte il giorno che una delle due si scorda un
+ * bordo.
+ */
 function popAt(pop, anchorEl){
   closePops();
-  var r=anchorEl? anchorEl.getBoundingClientRect() : {left:100,top:100,bottom:100};
+  var r = (anchorEl && anchorEl.getBoundingClientRect) ? anchorEl.getBoundingClientRect()
+        : (anchorEl || {left:100,top:100,bottom:100});
   pop.setAttribute('open','');
   var box=pop.getBoundingClientRect();
   var w=box.width||280, h=box.height||0;
@@ -8684,7 +8795,7 @@ var GUIDA=[
   { nome:'Elenco numerato', sintassi:'1. primo passaggio\n2. secondo passaggio', nota:'Va bene anche «1)». Se parti da un numero diverso, la numerazione riparte da lì.' },
   { nome:'Testo ed elenco insieme', sintassi:'Introduzione all\'elenco:\n- prima voce\n- seconda voce\nChiusura dopo l\'elenco.' },
   { sezione:'Riquadri (callout)' },
-  { nome:'Riquadro', sintassi:'> [!nota] Titolo del riquadro\n> Il testo del riquadro.', nota:'Tipi: nota, importante, definizione, esempio, dubbio, attenzione, dafare. Il pulsante ☰ della barra li inserisce già fatti.' },
+  { nome:'Riquadro', sintassi:'> [!nota] Titolo del riquadro\n> Il testo del riquadro.', nota:'Tipi: nota, importante, definizione, esempio, dubbio, attenzione, dafare. Non serve scriverlo: batti «> » a inizio riga e scegli con le frecce, oppure premi 📜 nella barra.' },
   { nome:'Attenzione', sintassi:'> [!attenzione] Da non confondere\n> La diagnosi non descrive la persona.' },
   { nome:'Paragrafo dentro il riquadro', sintassi:'> [!definizione] Decodifica\n> Trasformare i segni in suoni.\n>\n> È diverso dal capire il testo.', nota:'Una riga con il solo «>».' },
   { nome:'Riga vuota dentro il riquadro', sintassi:'> [!nota] Con lo stacco\n> Prima frase.\n>\n>\n> Seconda frase.',
@@ -8737,6 +8848,7 @@ var TASTI=[
   { nome:'Elenco puntato, numerato', tasti:'⌘L · ⌘⌥L' },
   { nome:'Citazione', tasti:'⌘\'' },
   { nome:'Blocco di codice', tasti:'⌘⌥C' },
+  { nome:'Riquadro al volo', tasti:'> ', nota:'Battuto a inizio riga apre l\'elenco dei riquadri: frecce per scegliere, Invio per metterlo. Esc, o continua a scrivere, e resta una citazione.' },
   { nome:'Annulla, rifai', tasti:'⌘Z · ⇧⌘Z' }
 ];
 
@@ -10343,6 +10455,28 @@ function ensureMde(){
   NOTES.mde.codemirror.setOption('extraKeys', Object.assign({}, NOTES.mde.codemirror.getOption('extraKeys')||{}, {
     'Cmd-Shift-C':function(){ citaCorrente(); }, 'Ctrl-Shift-C':function(){ citaCorrente(); }
   }));
+  /* La bolla dei riquadri: «> » battuto a inizio riga. `inputRead` è l'evento
+     di ciò che è stato BATTUTO o incollato — non di ciò che scrive il programma
+     — ed è per questo che l'Invio dentro un riquadro, che inserisce «> » da sé,
+     non la sveglia (il perché lungo sta sulla testata della bolla). */
+  NOTES.mde.codemirror.on('inputRead', function(cm, ev){
+    /* ⚠️ Qualunque cosa entri nel testo mentre la bolla è aperta la manda via, e
+       non è un doppione del tasto premuto: incollare, dettare e i metodi di
+       inserimento delle lingue che non si battono lettera per lettera non
+       emettono un `keydown` per ogni carattere. Chi sta scrivendo ha smesso di
+       scegliere — misurato da una prova che batteva col solo evento `char`. */
+    if(CALBOLLA.attiva) calloutBollaChiudi();
+    if(!ev || ev.origin!=='+input' || (ev.text||[]).join('')!==' ') return;
+    var cur=cm.getCursor();
+    if(cm.getLine(cur.line).slice(0, cur.ch)!=='> ') return;
+    var sopra=cur.line>0 ? (cm.getLine(cur.line-1)||'') : '';
+    if(/^\s*>/.test(sopra)) return;         // qui si sta continuando un riquadro, non aprendone uno
+    calloutBollaApri(cm);
+  });
+  /* Chi sposta il cursore col mouse, o esce dall'editor, ha smesso di scrivere
+     quella riga: la bolla non deve sopravvivergli. */
+  NOTES.mde.codemirror.on('mousedown', function(){ calloutBollaChiudi(); });
+  NOTES.mde.codemirror.on('blur', function(){ calloutBollaChiudi(); });
   /* I comandi dell'appunto entrano nella riga della toolbar, nei due posti che
      la barra della mappa insegna: il gruppo del DOCUMENTO in testa (prima degli
      strumenti di scrittura, come «Generata/Mie» e la tendina stanno prima dei
@@ -11374,7 +11508,7 @@ function refreshMyNotes(){ var b=$('#myNotesBox'); if(b) b.innerHTML=myNotesInne
 /* interazioni: click su un appunto, nuovo appunto, barra dell’editor */
 document.addEventListener('click',function(e){
   var cal=e.target.closest && e.target.closest('#calloutMenu button[data-cal]');
-  if(cal){ insertCallout(cal.getAttribute('data-cal')); closePops(); return; }
+  if(cal){ calloutInserisci(cal.getAttribute('data-cal')); closePops(); return; }
   var emo=e.target.closest && e.target.closest('#emojiGrid button[data-emo]');
   if(emo){ insertEmoji(emo.getAttribute('data-emo')); closePops(); return; }
   /* ⚠️ `#mappaSvg .mfonte` sta in questo elenco per la stessa ragione di
