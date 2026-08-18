@@ -184,6 +184,58 @@ sezione('Le righe del pannello: una per lettura, più la Base');
   check('nessuna lettura e nessun segno: nessuna riga', 0, S.righe([], [], { tutte: true }).length);
 }
 
+sezione('Il posto nella pila: chi si accavalla, e come lo si distingue');
+{
+  const L = (segni) => S.livelli(segni).per;
+  /* Due righe sulla stessa parola: la seconda va al posto 1 — è quella che si
+     disegnerà tratteggiata sopra la prima. */
+  const due = L([{ id: 'a', tratto: 'sotto', inizio: 0, fine: 10 },
+    { id: 'b', tratto: 'sotto', inizio: 2, fine: 8 }]);
+  check('la prima sta sotto', 0, due.a.livello);
+  check('la seconda le va sopra', 1, due.b.livello);
+  check('e tutte e due sanno di non essere sole', [2, 2], [due.a.pila, due.b.pila]);
+
+  /* ⚠️ Le due pile sono SEPARATE: un fondo e una riga sulla stessa parola non
+     si danno fastidio, e contarli insieme metterebbe la riga al secondo posto
+     per colpa di un fondo che non c'entra. È il primo caso del braindump. */
+  const misto = L([{ id: 'f', tratto: 'overlay', inizio: 0, fine: 10 },
+    { id: 'r', tratto: 'sotto', inizio: 0, fine: 10 }]);
+  check('fondo e riga restano tutti e due al posto zero', [0, 0], [misto.f.livello, misto.r.livello]);
+  check('e ognuno si crede solo, perché nella sua pila lo è', [1, 1], [misto.f.pila, misto.r.pila]);
+
+  /* Chi non si tocca non fa pila: resta com'è sempre stato. */
+  const lontani = L([{ id: 'x', tratto: 'sotto', inizio: 0, fine: 10 },
+    { id: 'y', tratto: 'sotto', inizio: 20, fine: 30 }]);
+  check('segni lontani sono tutti primi', [0, 0], [lontani.x.livello, lontani.y.livello]);
+  check('e soli', [1, 1], [lontani.x.pila, lontani.y.pila]);
+  /* Confinanti ma non sovrapposti: 0-10 e 10-20 non si toccano. */
+  const attaccati = L([{ id: 'p', tratto: 'sotto', inizio: 0, fine: 10 },
+    { id: 'q', tratto: 'sotto', inizio: 10, fine: 20 }]);
+  check('nemmeno due che si sfiorano fanno pila', [1, 1], [attaccati.p.pila, attaccati.q.pila]);
+}
+
+sezione('⚠️ Il tetto: oltre il quarto non si distingue, e si dice');
+{
+  const cinque = [];
+  for (let i = 0; i < 5; i++) cinque.push({ id: 's' + i, tratto: 'sotto', inizio: i, fine: 20 });
+  const r = S.livelli(cinque);
+  check('i primi quattro hanno il loro posto', [0, 1, 2, 3], [0, 1, 2, 3].map((i) => r.per['s' + i].livello));
+  check('il quinto si ferma al quarto posto', 3, r.per.s4.livello);
+  check('e si dichiara tagliato', true, r.per.s4.tagliato);
+  check('il conto di quelli che non si distinguono torna a chi chiama', 1, r.oltre);
+  check('mentre i primi quattro non sono tagliati', [false, false, false, false],
+    [0, 1, 2, 3].map((i) => r.per['s' + i].tagliato));
+  check('il tetto è dichiarato, non nascosto in un numero', 4, S.TETTO);
+}
+
+sezione('Ingressi storti non fanno saltare la pila');
+{
+  check('un elenco che non è un elenco', { per: {}, oltre: 0 }, S.livelli(null));
+  check('voci senza id si scartano', {}, S.livelli([{ tratto: 'sotto', inizio: 0, fine: 5 }]).per);
+  const strano = S.livelli([{ id: 'z', tratto: 'boh', inizio: '3', fine: '9' }]).per;
+  check('un tratto sconosciuto diventa una riga', { livello: 0, pila: 1, tagliato: false }, strano.z);
+}
+
 sezione('Il confine: qui dentro non entra il DOM');
 {
   const sorgente = require('fs').readFileSync(

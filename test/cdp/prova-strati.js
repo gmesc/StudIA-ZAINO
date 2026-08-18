@@ -214,20 +214,18 @@ const ACCESI = `(()=>{ let n=0;
   ok('con id diversi', 2, new Set(due.map((x) => x.id)).size);
   ok('e ognuna col suo colore', [colori[0], colori[2]].sort(), due.map((x) => x.colore).sort());
 
-  sezione('⚠️ Sulle STESSE parole si dipinge un segno solo — e le letture sono l\'interruttore');
-  /* Questo non è un difetto degli strati: è come funziona l'ancoraggio, ed è
-     scritto nella sua testata. Due evidenze che insistono sugli stessi caratteri
-     sono tutte e due legittime, ma nessuna marcatura del DOM può avvolgerle
-     entrambe senza spezzarne una: vince quella che comincia prima, l'altra
-     finisce in `sovrapposte`. Con le letture questo smette di essere un limite e
-     diventa il gesto: si guarda l'analisi che si sta facendo, e si spegne
-     l'altra. La prova misura proprio quello. */
+  sezione('Le letture si accendono e si spengono una per una');
+  /* ⚠️ Fino al 18 agosto qui ne veniva dipinta UNA sola: `risolvi` eleggeva un
+     vincitore fra i segni che si accavallano — regola giusta quando i segni si
+     facevano marcando il DOM, dove due `<span>` sugli stessi caratteri non si
+     annidano. Dal 19 si accendono tutti (vedi in fondo a questa prova); qui si
+     misura l'altra metà: che ogni lettura si spenga per conto suo. */
   const accesiDue = await finoA(ACCESI, 8000);
   console.log('   accesi con tutt\'e due le letture: ' + accesiDue);
-  ok('sulle stesse parole se ne dipinge una', 1, accesiDue);
+  ok('con due letture accese si dipingono due segni', 2, accesiDue);
   await val(`stratoCommuta(${JSON.stringify(met)}), 1`);
   await pausa(600);
-  ok('spegnendo la metrica, il segno resta: è quello della retorica', 1, await val(ACCESI));
+  ok('spegnendo la metrica resta quello della retorica', 1, await val(ACCESI));
   await val(`stratoCommuta(${JSON.stringify(ret)}), 1`);
   await pausa(600);
   ok('spegnendo anche la retorica non resta acceso niente', 0, await val(ACCESI));
@@ -286,6 +284,66 @@ const ACCESI = `(()=>{ let n=0;
     EVIDENZE.elenco=l.evidenze||[]; EVIDENZE.strati=l.strati||[]; evidenzeDisegna(); return 1; })()`);
   await pausa(500);
   ok('le evidenze sono ancora due', prima, await val('(EVIDENZE.elenco||[]).length'));
+
+  sezione('⚠️ PIÙ LETTURE SULLA STESSA PAROLA: si vedono tutte');
+  /* La misura che vale: quanti intervalli il browser sta dipingendo davvero.
+     Prima del 19 agosto valeva 1 comunque — `risolvi` eleggeva un vincitore e
+     il resto spariva dallo schermo pur restando contato nel pannellino. */
+  await val(`(function(){ try{ Object.keys(localStorage)
+    .filter(function(k){ return k.indexOf('studia.evidenze.viste.')===0; })
+    .forEach(function(k){ localStorage.removeItem(k); }); }catch(e){}
+    EVIDENZE.viste=null; EVIDENZE.visteCorso='';
+    window.vault.evidenze.salva(corsoAttivo(), []);
+    var l=window.vault.evidenze.leggi(corsoAttivo());
+    (l.strati||[]).forEach(function(x){ window.vault.evidenze.rimuoviStrato(corsoAttivo(), x.id, 'via'); });
+    var d=window.vault.evidenze.leggi(corsoAttivo());
+    EVIDENZE.elenco=d.evidenze||[]; EVIDENZE.strati=d.strati||[]; evidenzeDisegna(); return 1; })()`);
+  await pausa(400);
+
+  /* Quattro letture sullo STESSO intervallo: due col fondo, due con la riga.
+     ⚠️ Quattro letture DIVERSE, e non quattro segni nella stessa: dentro una
+     lettura ri-segnare lo stesso punto è il gesto «cambia colore», e il tratto
+     si eredita da quello che c'è già. */
+  const conf = [['Fondo A', 'overlay', 0], ['Riga A', 'sotto', 2],
+                ['Riga B', 'sotto', 3], ['Fondo B', 'overlay', 4]];
+  const fatte = [];
+  for (const [nome, tratto, ci] of conf) {
+    const id = await val(`(function(){ var r=window.vault.evidenze.creaStrato(corsoAttivo(), ${JSON.stringify(nome)});
+      EVIDENZE.strati=r.strati||[]; return r.strato ? r.strato.id : ''; })()`);
+    fatte.push(id);
+    await val(`evStratoAttivoScegli(${JSON.stringify(id)}), 1`);
+    await val(`evidenzeTrattoScegli(${JSON.stringify(tratto)}), 1`);
+    await val(SEGNA(colori[ci]));
+    await pausa(450);
+  }
+  await pausa(500);
+  ok('sul disco ce ne sono quattro', 4, await val('(EVIDENZE.elenco||[]).length'));
+  /* ⚠️ IL CONTROLLO DI QUESTO LAVORO: quattro segni sulla stessa parola,
+     quattro accesi. Ieri sarebbe stato 1. */
+  ok('e sul testo si accendono tutti e quattro', 4, await val(ACCESI));
+
+  const css = await val(`(document.getElementById('evStile')||{}).textContent||''`);
+  console.log('   ' + css.split('\n').filter(function (r) {
+    return /highlight\(ev-/.test(r) && !/#content/.test(r); }).join('\n   '));
+  ok('la seconda riga è tratteggiata sopra la prima', true, /underline dashed/.test(css));
+  /* ⚠️ I due fondi diventano semitrasparenti e il browser li MESCOLA: le bande
+     orizzontali vorrebbero un `background-image`, che `::highlight()` non
+     applica — misurato sull'app viva, con un gradiente semplicemente ignorato. */
+  ok('i due fondi si mescolano', 2, (css.match(/color-mix\(in srgb/g) || []).length);
+  ok('e nessuno dei due resta pieno a coprire l\'altro', false,
+    /background-color: #[0-9a-f]{6};/i.test(css));
+
+  sezione('Spegnendone una, chi resta torna com\'era da solo');
+  await val(`stratoCommuta(${JSON.stringify(fatte[0])}), 1`);
+  await pausa(600);
+  ok('gli accesi scendono a tre', 3, await val(ACCESI));
+  const css2 = await val(`(document.getElementById('evStile')||{}).textContent||''`);
+  /* Rimasto un fondo solo, torna PIENO: non si cambia l'aspetto di ciò che è
+     solo, ed è la regola che lascia identico tutto quello che c'era prima. */
+  ok('il fondo rimasto torna pieno', 1, (css2.match(/background-color: #[0-9a-f]{6};/gi) || []).length);
+  ok('e nessuna mescolanza resta accesa per sbaglio', 0, (css2.match(/color-mix\(in srgb/g) || []).length);
+  await val(`stratoCommuta(${JSON.stringify(fatte[0])}), 1`);
+  await pausa(300);
 
   sezione('E si rimette com\'era');
   await val(`(function(){ var l=window.vault.evidenze.leggi(corsoAttivo());
