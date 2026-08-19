@@ -2218,8 +2218,33 @@
   .mat-voce .mat-nome{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .mat-voce .mat-tipo{ font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); white-space:nowrap; }
   /* ===== Guida alla formattazione (dal «?» della barra dell'editor) ===== */
-  #guidaModal,#creditsModal{ position:fixed; inset:0; z-index:230; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.4); padding:1.5rem; }
-  #guidaModal[hidden],#creditsModal[hidden]{ display:none!important; }
+  #guidaModal,#creditsModal,#riquadriModal{ position:fixed; inset:0; z-index:230; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.4); padding:1.5rem; }
+  #guidaModal[hidden],#creditsModal[hidden],#riquadriModal[hidden]{ display:none!important; }
+  /* ---- Il pannello degli stili dei riquadri ----
+     ⚠️ Qui NON ci sono misure di bottoni: i comandi sono `.tbtn`, cioè il token
+     delle barre (invariante 8). Restano la griglia della riga e quanto è largo
+     il campione, che sono le sole cose che riguardano questo pannello. */
+  #riquadriBody{ padding:.4rem 1.1rem 1.1rem; }
+  .riq-riga{ display:grid; grid-template-columns:minmax(220px,1fr) auto; gap:1rem;
+    align-items:center; padding:.7rem 0; border-bottom:1px solid var(--line); }
+  .riq-riga:last-child{ border-bottom:0; }
+  .riq-campione{ margin:0; }
+  .riq-campione .uc-body{ font-size:13px; color:var(--muted); }
+  .riq-campi{ display:flex; align-items:center; gap:.4rem; }
+  .riq-et{ width:9rem; height:var(--tb-h); box-sizing:border-box; border:1px solid var(--line);
+    background:var(--bg); color:var(--ink); padding:0 .5rem; font-size:13px;
+    font-family:var(--font-text),var(--emoji-font),sans-serif; }
+  /* Il quadratino di colore: la stessa misura dei bottoni della barra, senza la
+     cornice di sistema che il browser gli mette attorno. */
+  .riq-col{ display:inline-flex; }
+  .riq-col input[type=color]{ width:var(--tb-h); height:var(--tb-h); padding:0; border:1px solid var(--line);
+    background:var(--panel); cursor:pointer; }
+  #riquadriBody .riq-reset{ font-size:11px; text-transform:none; letter-spacing:0; }
+  #riquadriBody .riq-reset[aria-disabled="true"]{ opacity:.4; }
+  /* La voce che apre il pannello sta in fondo al menu, staccata da un filo: apre
+     una finestra invece di scrivere un riquadro, e le due cose si distinguono. */
+  #calloutMenu .cal-stili{ border-top:1px solid var(--line); color:var(--muted); font-size:12px; }
+  @media (max-width:560px){ .riq-riga{ grid-template-columns:1fr; } }
   /* emoji dentro un .iconbtn: stessa scatola del «✕», glifo OpenMoji */
   .btn-emoji{ font-family:var(--emoji-font),sans-serif; font-size:19px; line-height:1; }
   /* ⚠️ Qui c'era una larghezza scritta a mano per pareggiare il «✕» accanto:
@@ -4168,6 +4193,16 @@ function tastiNelDom(radice){
 function etichetteIniziali(){ tastiNelDom(); try{ ricercaEtichette(); }catch(e){} }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', etichetteIniziali);
 else etichetteIniziali();
+/* I colori dei riquadri scelti nel vault: si accendono all'avvio, prima che si
+   veda un appunto. ⚠️ Dentro un `try`: al primo avvio il vault non c'è ancora e
+   `prefs.read()` non risponde — un errore qui fermerebbe il resto dello script,
+   cioè l'app, per una preferenza estetica. */
+(function(){
+  function accendi(){ try{ calloutStiliApplica(); }catch(e){} }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', accendi);
+  else accendi();
+})();
+
 
 /* ---- Impostazioni ---- */
 const root=document.documentElement;
@@ -8191,15 +8226,177 @@ var CALLOUTS=[
   { k:'attenzione', label:'Attenzione', emoji:'⚠️' },
   { k:'dafare', label:'Da fare', emoji:'✅' }
 ];
-function calloutDef(k){ k=String(k||'').toLowerCase().replace(/[^a-z]/g,''); return CALLOUTS.filter(function(c){ return c.k===k; })[0]||CALLOUTS[0]; }
+/* ===== I RIQUADRI SI POSSONO VESTIRE =======================================
+ *
+ * I sette tipi restano sette e i loro difetti stanno nel codice qui sopra: si
+ * possono cambiare **etichetta, emoji e i due colori**, e ciò che si cambia
+ * finisce in `<vault>/.studia/prefs.json` sotto `riquadri`.
+ *
+ * ⚠️ NEL VAULT, NON NEL `localStorage`. L'aspetto di un riquadro appartiene ai
+ * contenuti — viaggia con l'esportazione, vale su tutte le macchine, e chi apre
+ * lo stesso vault altrove vede i suoi appunti come li ha lasciati. Nel
+ * `localStorage` stanno le preferenze di LETTURA (quali segni si vedono), che
+ * sono della macchina e non del materiale.
+ *
+ * ⚠️ SI SALVANO SOLO LE DIFFERENZE. Un vault che non ha mai aperto questo
+ * pannello non ha nemmeno la chiave `riquadri`, e il giorno che si ritoccasse
+ * una tinta di fabbrica la cambierebbe per tutti — mentre una copia integrale
+ * dei sette tipi la terrebbe ferma a com'era in silenzio (è la trappola ④).
+ *
+ * ⚠️ E `calloutDef` resta la PORTA UNICA: la usano il menu, la bolla, chi
+ * inserisce, chi appunta e chi rende il markdown. Le sovrascritture entrano lì
+ * dentro, non accanto — altrimenti il menu direbbe una cosa e la pagina
+ * un'altra.
+ */
+var RIQ={ mem:null };
+function riquadriOvr(){
+  if(RIQ.mem) return RIQ.mem;
+  var o={};
+  try{ o=((window.vault && window.vault.prefs && window.vault.prefs.read()) || {}).riquadri || {}; }catch(e){}
+  RIQ.mem=(o && typeof o==='object') ? o : {};
+  return RIQ.mem;
+}
+/** Scrive (o toglie) le differenze di UN tipo, poi riapplica e ridisegna. */
+function riquadriScrivi(k, campi){
+  var ovr=riquadriOvr();
+  if(campi===null) delete ovr[k];
+  else {
+    var v=Object.assign({}, ovr[k]||{}, campi);
+    /* Un campo rimesso al valore di fabbrica non è una differenza: si toglie,
+       o il file crescerebbe di roba che non dice niente. */
+    var base=CALLOUTS.filter(function(c){ return c.k===k; })[0]||{};
+    ['etichetta','emoji','col','ink'].forEach(function(c){
+      var difetto=(c==='etichetta')?base.label:(c==='emoji'?base.emoji:null);
+      if(v[c]===undefined || v[c]==='' || (difetto!==null && v[c]===difetto)) delete v[c];
+    });
+    if(Object.keys(v).length) ovr[k]=v; else delete ovr[k];
+  }
+  try{
+    var PR=window.vault && window.vault.prefs;
+    if(PR){ var pr=PR.read()||{}; pr.riquadri=ovr; PR.save(pr); }
+  }catch(e){ toast('Non sono riuscito a salvare lo stile: '+((e&&e.message)||e), false); }
+  calloutStiliApplica(); riquadriRidisegna();
+}
+function calloutDef(k){
+  k=String(k||'').toLowerCase().replace(/[^a-z]/g,'');
+  var base=CALLOUTS.filter(function(c){ return c.k===k; })[0]||CALLOUTS[0];
+  var o=riquadriOvr()[base.k];
+  if(!o) return base;
+  return { k:base.k, label:o.etichetta||base.label, emoji:o.emoji||base.emoji, col:o.col, ink:o.ink };
+}
+/**
+ * I colori scelti, in UN foglio di stile generato.
+ *
+ * ⚠️ Le regole `.uc-<k>` restano dove sono (invariante 8: il vestito è nel
+ * foglio di stile, non nel markup): qui si riscrivono solo le due variabili che
+ * quelle regole già leggono. Scrivere i colori negli elementi vorrebbe dire
+ * ridisegnare ogni appunto a ogni ritocco — e stamparne uno col colore vecchio
+ * il giorno che qualcuno se ne dimentica.
+ * ⚠️ Va nell'`<head>`, quindi sopravvive a `documentoStampabile()` che clona il
+ * documento: i PDF escono coi colori scelti.
+ */
+function calloutStiliApplica(){
+  var st=document.getElementById('calloutStile');
+  if(!st){ st=document.createElement('style'); st.id='calloutStile'; document.head.appendChild(st); }
+  var ovr=riquadriOvr(), righe=[];
+  Object.keys(ovr).forEach(function(k){
+    var v=ovr[k]||{}, dichiara=[];
+    if(v.col) dichiara.push('--uc-col:'+v.col);
+    if(v.ink) dichiara.push('--uc-ink:'+v.ink);
+    if(dichiara.length) righe.push('.uc-'+k+'{ '+dichiara.join('; ')+'; }');
+  });
+  st.textContent=righe.join('\n');
+}
+/* ---- Il pannello: una riga per tipo ---- */
+/**
+ * ⚠️ È un DIALOGO e non un pannellino, e la ragione è meccanica: `popAt`
+ * comincia con `closePops()`, quindi un pannellino che ne apre un altro — qui
+ * serve il selettore di emoji — si chiude da sé nell'istante in cui lo apre.
+ * Il vestito è quello della guida (`.guida-card`), che è già il modo in cui
+ * questa app fa una finestra con una testata e un corpo che scorre.
+ */
+function riquadriApri(){
+  var m=document.getElementById('riquadriModal'); if(!m) return;
+  riquadriRighe();
+  m.hidden=false;
+}
+function riquadriChiudi(){ var m=document.getElementById('riquadriModal'); if(m) m.hidden=true; }
+/** Disegna (o ridisegna) le righe. Una funzione sola: dopo ogni ritocco si
+ *  riscrive tutto, che a sette righe costa niente e non lascia mai un campo
+ *  d'accordo con il disco e un altro no. */
+function riquadriRighe(){
+  var corpo=document.getElementById('riquadriBody'); if(!corpo) return;
+  var ovr=riquadriOvr();
+  corpo.innerHTML=CALLOUTS.map(function(base){
+    var d=calloutDef(base.k), o=ovr[base.k]||{};
+    var col=o.col||'', ink=o.ink||'';
+    /* ⚠️ Il campione è un riquadro VERO — le stesse classi `.ucallout`/`.uc-<k>`
+       che rendono un appunto — non un rettangolo colorato che gli somiglia
+       (invariante 8). Così il colore che si sceglie è esattamente quello che si
+       leggerà, bordo e fondo mescolato compresi. */
+    return '<div class="riq-riga" data-k="'+base.k+'">'+
+      '<div class="ucallout uc-'+base.k+' riq-campione"'+
+        (col?' style="--uc-col:'+escHtml(col)+(ink?';--uc-ink:'+escHtml(ink):'')+'"':'')+'>'+
+        '<div class="uc-head"><span>'+d.emoji+'</span>'+escHtml(d.label)+'</div>'+
+        '<div class="uc-body">Come si vedrà nell’appunto.</div></div>'+
+      '<div class="riq-campi">'+
+        '<button type="button" class="tbtn riq-emoji" title="Cambia l’emoji" aria-label="Cambia l’emoji di '+escHtml(d.label)+'">'+d.emoji+'</button>'+
+        '<input class="riq-et" type="text" value="'+escHtml(d.label)+'" aria-label="Nome del riquadro '+escHtml(base.label)+'" maxlength="24">'+
+        '<label class="riq-col" title="Il colore del bordo e del fondo">'+
+          '<input type="color" class="riq-c" value="'+escHtml(col||riquadriTinta(base.k,'--uc-col'))+'" aria-label="Colore di '+escHtml(d.label)+'"></label>'+
+        '<label class="riq-col" title="Il colore del titolo">'+
+          '<input type="color" class="riq-i" value="'+escHtml(ink||riquadriTinta(base.k,'--uc-ink'))+'" aria-label="Colore del titolo di '+escHtml(d.label)+'"></label>'+
+        '<button type="button" class="tbtn riq-reset"'+(Object.keys(o).length?'':' aria-disabled="true"')+
+          ' title="Rimetti questo riquadro com’era">com’era</button>'+
+      '</div></div>';
+  }).join('');
+}
+/**
+ * La tinta di fabbrica di un tipo, chiesta al foglio di stile.
+ *
+ * ⚠️ Non si riscrive qui: i colori dei sette riquadri stanno nel CSS
+ * (`.uc-nota{ --uc-col:var(--teal) }` e compagni) e ricopiarli in JavaScript
+ * sarebbe la seconda copia che diverge al primo ritocco del tema. Si misura
+ * quello che il browser ha davvero calcolato — che è anche l'unico modo di
+ * risolvere `var(--teal)` in un colore che un `<input type="color">` accetta.
+ * ⚠️ E l'input vuole `#rrggbb`: `color-mix()` e `rgb()` li rifiuta in silenzio,
+ * mostrando nero. La conversione sta qui, in un posto solo.
+ */
+function riquadriTinta(k, quale){
+  var d=document.createElement('div'); d.className='ucallout uc-'+k;
+  d.style.position='absolute'; d.style.visibility='hidden';
+  document.body.appendChild(d);
+  var v=getComputedStyle(d).getPropertyValue(quale).trim();
+  /* Il valore è una variabile: si fa risolvere assegnandola a una proprietà
+     vera e rileggendola come colore calcolato. */
+  d.style.color=v || '#000';
+  var c=getComputedStyle(d).color;
+  d.remove();
+  var m=/rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(c);
+  if(!m) return '#000000';
+  return '#'+[m[1],m[2],m[3]].map(function(n){ return ('0'+parseInt(n,10).toString(16)).slice(-2); }).join('');
+}
+/** Dove un riquadro si vede: l'anteprima dell'editor e «I miei appunti». */
+function riquadriRidisegna(){
+  try{ noteAnteprimaRidisegna(); }catch(e){}
+  var box=document.getElementById('myNotesBox');
+  if(box){ try{ box.innerHTML=myNotesInner(); }catch(e){} }
+}
 /** Le righe del menu dei riquadri: una funzione sola per le due porte — il 📜
  *  della barra e la bolla che compare battendo «> ». Due costruzioni vorrebbero
  *  dire due elenchi che un giorno divergono. */
 function calloutMenuHTML(){
+  /* ⚠️ «Personalizza» NON porta `data-cal`, ed è ciò che la tiene fuori dalle
+     frecce della bolla: la navigazione scorre `button[data-cal]`, cioè le cose
+     che si possono INSERIRE. Una voce che apre una finestra in mezzo a sette
+     che scrivono un riquadro sarebbe un Invio che apre un dialogo mentre stai
+     scrivendo. Col mouse si preme da tutte e due le porte. */
   return CALLOUTS.map(function(c, i){
+    var d=calloutDef(c.k);
     return '<button type="button" role="menuitem" data-cal="'+c.k+'" data-i="'+i+'">'+
-           '<span>'+c.emoji+'</span>'+escHtml(c.label)+'</button>';
-  }).join('');
+           '<span>'+d.emoji+'</span>'+escHtml(d.label)+'</button>';
+  }).join('') +
+  '<button type="button" class="cal-stili">✎ Personalizza i riquadri…</button>';
 }
 function openCalloutMenu(anchorEl){
   var menu=$('#calloutMenu'); if(!menu) return;
@@ -8410,12 +8607,32 @@ function emojiRender(q){
   });
   grid.innerHTML=html;
 }
-function openEmojiPop(anchorEl){
+/**
+ * Il selettore di emoji, con il suo DESTINATARIO.
+ *
+ * ⚠️ Fino a ieri l'emoji finiva sempre nell'editor, perché l'editor era l'unico
+ * a chiederla. Adesso la chiede anche il pannello dei riquadri, e la differenza
+ * non è «due selettori» ma «una domanda, due risposte»: chi apre dice a chi va
+ * quello che si sceglie, e il selettore resta uno solo — stessa tavolozza,
+ * stessa ricerca, stesse parole italiane.
+ */
+var EMOJI_A=null;
+function openEmojiPop(anchorEl, dove){
   var pop=$('#emojiPop'); if(!pop) return;
   var s=$('#emojiSearch'); if(s) s.value='';
   emojiRender('');
+  EMOJI_A=(typeof dove==='function') ? dove : null;
   popAt(pop, anchorEl);
   setTimeout(function(){ if(s) s.focus(); },20);
+}
+/** L'emoji scelta va dove ha detto chi ha aperto: nell'appunto, se nessuno lo
+ *  ha detto. ⚠️ Il destinatario si consuma: la volta dopo, senza dirlo, si
+ *  torna all'editor — un bersaglio che resta appiccicato è un'emoji che finisce
+ *  dove non si guarda. */
+function emojiScelta(ch){
+  var dove=EMOJI_A; EMOJI_A=null;
+  if(dove){ dove(ch); return; }
+  insertEmoji(ch);
 }
 function insertEmoji(ch){
   if(!NOTES.mde) return;
@@ -8541,6 +8758,14 @@ function closePops(){
      tasto destro, che un click sinistro non lo genera. */
   if(typeof selMenuChiudi==='function') selMenuChiudi();
   if(typeof selBarraChiudi==='function') selBarraChiudi();
+  /* ⚠️ E la BOLLA dei riquadri, che non è solo un pannellino aperto: è anche uno
+     STATO (le frecce dirottate, il «> » da cancellare quando si sceglie).
+     Togliere `open` al menu senza spegnere lo stato lascia una bolla invisibile
+     e attiva: il 📜 premuto dopo apre lo stesso menu, e il primo click cancella
+     l'inizio della riga su cui sta il cursore. Misurato dalla suite intera —
+     la prova da sola passava, perché lì l'Esc arrivava sempre a destinazione.
+     Chiudere è UN gesto: lo stato e ciò che si vede si spengono insieme. */
+  if(typeof calloutBollaChiudi==='function') calloutBollaChiudi();
   /* Chi apre un pannellino lo dichiara con `aria-expanded`: chiuderlo senza
      rimetterlo a posto lascerebbe il bottone a promettere un riquadro aperto. */
   /* Il «?» delle spiegazioni è un rimando a una nota, non un pannellino con
@@ -8795,7 +9020,7 @@ var GUIDA=[
   { nome:'Elenco numerato', sintassi:'1. primo passaggio\n2. secondo passaggio', nota:'Va bene anche «1)». Se parti da un numero diverso, la numerazione riparte da lì.' },
   { nome:'Testo ed elenco insieme', sintassi:'Introduzione all\'elenco:\n- prima voce\n- seconda voce\nChiusura dopo l\'elenco.' },
   { sezione:'Riquadri (callout)' },
-  { nome:'Riquadro', sintassi:'> [!nota] Titolo del riquadro\n> Il testo del riquadro.', nota:'Tipi: nota, importante, definizione, esempio, dubbio, attenzione, dafare. Non serve scriverlo: batti «> » a inizio riga e scegli con le frecce, oppure premi 📜 nella barra.' },
+  { nome:'Riquadro', sintassi:'> [!nota] Titolo del riquadro\n> Il testo del riquadro.', nota:'Tipi: nota, importante, definizione, esempio, dubbio, attenzione, dafare. Non serve scriverlo: batti «> » a inizio riga e scegli con le frecce, oppure premi 📜 nella barra. Nome, emoji e colori si cambiano da «Personalizza i riquadri…», in fondo a quel menu: valgono per questo vault.' },
   { nome:'Attenzione', sintassi:'> [!attenzione] Da non confondere\n> La diagnosi non descrive la persona.' },
   { nome:'Paragrafo dentro il riquadro', sintassi:'> [!definizione] Decodifica\n> Trasformare i segni in suoni.\n>\n> È diverso dal capire il testo.', nota:'Una riga con il solo «>».' },
   { nome:'Riga vuota dentro il riquadro', sintassi:'> [!nota] Con lo stacco\n> Prima frase.\n>\n>\n> Seconda frase.',
@@ -11509,8 +11734,10 @@ function refreshMyNotes(){ var b=$('#myNotesBox'); if(b) b.innerHTML=myNotesInne
 document.addEventListener('click',function(e){
   var cal=e.target.closest && e.target.closest('#calloutMenu button[data-cal]');
   if(cal){ calloutInserisci(cal.getAttribute('data-cal')); closePops(); return; }
+  var pers=e.target.closest && e.target.closest('#calloutMenu .cal-stili');
+  if(pers){ closePops(); calloutBollaChiudi(); riquadriApri(); return; }
   var emo=e.target.closest && e.target.closest('#emojiGrid button[data-emo]');
-  if(emo){ insertEmoji(emo.getAttribute('data-emo')); closePops(); return; }
+  if(emo){ emojiScelta(emo.getAttribute('data-emo')); closePops(); return; }
   /* ⚠️ `#mappaSvg .mfonte` sta in questo elenco per la stessa ragione di
      `#mVista` e `#bancoBtn`, ed è il guasto 10.3.3 già pagato: la bolla delle
      fonti si apre al RILASCIO del puntatore, poi il browser manda il `click` —
@@ -11904,6 +12131,44 @@ document.addEventListener('click', function(e){
      chiave vale qui come nella voce «Appunta», o dipenderebbe da quale dei due
      bottoni si è premuto. */
   appuntaSelezione(testo, range, k);
+});
+/* ---- I gesti del pannello degli stili ----
+   ⚠️ Delegati sul documento e non attaccati alle righe: le righe si riscrivono
+   a ogni ritocco (`riquadriRighe`), e dei gestori appesi a elementi che
+   spariscono restano attaccati a niente. */
+document.addEventListener('click', function(e){
+  if(!e.target.closest) return;
+  if(e.target.closest('#riquadriClose') || e.target.id==='riquadriModal'){ riquadriChiudi(); return; }
+  var riga=e.target.closest('#riquadriBody .riq-riga'); if(!riga) return;
+  var k=riga.getAttribute('data-k');
+  if(e.target.closest('.riq-emoji')){
+    /* Il selettore di sempre, con il destinatario di questa riga. */
+    openEmojiPop(e.target.closest('.riq-emoji'), function(ch){ riquadriScrivi(k, { emoji:ch }); riquadriRighe(); });
+    return;
+  }
+  var reset=e.target.closest('.riq-reset');
+  if(reset){
+    if(reset.getAttribute('aria-disabled')==='true'){ toast('Questo riquadro è già com’era', false); return; }
+    riquadriScrivi(k, null); riquadriRighe(); return;
+  }
+});
+/* I campi si prendono al `change`, non a ogni tasto: un salvataggio per lettera
+   riscriverebbe il file del vault trenta volte per un nome di otto caratteri.
+   ⚠️ `input[type=color]` emette `change` quando si chiude la tavolozza, che è
+   esattamente «ho scelto». */
+document.addEventListener('change', function(e){
+  if(!e.target.closest) return;
+  var riga=e.target.closest('#riquadriBody .riq-riga'); if(!riga) return;
+  var k=riga.getAttribute('data-k');
+  if(e.target.classList.contains('riq-et')) riquadriScrivi(k, { etichetta:e.target.value.trim() });
+  else if(e.target.classList.contains('riq-c')) riquadriScrivi(k, { col:e.target.value });
+  else if(e.target.classList.contains('riq-i')) riquadriScrivi(k, { ink:e.target.value });
+  else return;
+  riquadriRighe();
+});
+document.addEventListener('keydown', function(e){
+  var m=document.getElementById('riquadriModal');
+  if(e.key==='Escape' && m && !m.hidden){ e.preventDefault(); riquadriChiudi(); }
 });
 /* Il 🔗 della riga: dice se il frammento si porta dietro da dove viene. È
    l'unico bottone di queste barre che NON fa il gesto — cambia come sarà fatto
@@ -19243,6 +19508,18 @@ window.addEventListener('keydown', function(e){
 </div>
 
 <!-- guida alla formattazione: si apre dal «?» della barra dell'editor -->
+<!-- gli stili dei riquadri: si apre da «Personalizza» in fondo al menu 📜 -->
+<div id="riquadriModal" hidden role="dialog" aria-modal="true" aria-labelledby="riquadriTitolo">
+  <div class="guida-card">
+    <div class="guida-head">
+      <b id="riquadriTitolo">I tuoi riquadri</b>
+      <span class="mh-sub">Nome, emoji e colori — valgono per questo vault</span>
+      <span class="tbspazio"></span>
+      <button class="tbtn" id="riquadriClose" type="button" aria-label="Chiudi">&#10005;</button>
+    </div>
+    <div class="guida-body" id="riquadriBody"></div>
+  </div>
+</div>
 <div id="guidaModal" hidden role="dialog" aria-modal="true" aria-labelledby="guidaTitolo">
   <div class="guida-card">
     <div class="guida-head">

@@ -104,10 +104,16 @@ async function daCapo(iniziale) {
   await daCapo('');
   await scrivi('> ');
   ok('la bolla c\'è', true, await aperta());
-  await scrivi('Le parole di qualcun altro.');
+  /* ⚠️ POCHE PAROLE, E NON È UN CASO. Senza un appunto aperto, alla QUINTA
+     parola scatta la finestra di battesimo (`noteInvito`) — che si prende il
+     fuoco e mangia l'Esc della sezione dopo. Da sola la prova passava lo
+     stesso: nella suite il vault arriva con gli appunti delle prove precedenti
+     e lo stato è un altro. Lo stato lasciato da chi viene prima fa parte
+     dell'ingresso, ed è la stessa trappola già pagata con l'evidenziatore. */
+  await scrivi('Le parole');
   ok('continuando a scrivere se ne va', false, await aperta());
   ok('e resta la citazione che si stava scrivendo',
-    '> Le parole di qualcun altro.', await testo());
+    '> Le parole', await testo());
   await daCapo('');
   await scrivi('> ');
   await tasto('Escape', 'Escape', 27);
@@ -120,6 +126,10 @@ async function daCapo(iniziale) {
   await val(`(()=>{ openCalloutMenu(document.querySelector('#noteHost .ncb-callout')); return 1; })()`);
   await pausa(200);
   ok('il menu è aperto', true, await aperta());
+  /* ⚠️ Il menu è lo stesso, la bolla no: `openCalloutMenu` passa da `popAt`,
+     che comincia con `closePops()`, e quello spegne ANCHE lo stato della bolla.
+     Senza, resterebbe una bolla invisibile e attiva, e il primo click
+     cancellerebbe l'inizio della riga dov'è il cursore. */
   ok('ma la bolla non è attiva', false, await val(`CALBOLLA.attiva`));
   await val(`(()=>{ document.querySelector('#calloutMenu button[data-cal="dubbio"]').click(); return 1; })()`);
   await pausa(200);

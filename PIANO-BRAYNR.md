@@ -396,6 +396,48 @@ tastiera. ⚠️ È un elenco scritto accanto a quei suggerimenti, cioè una sec
 `prova-appunti-barra.js`, che confronta i due elenchi tasto per tasto. **Ha già trovato la prima
 divergenza**: ⌘⇧C esisteva fra gli `extraKeys` e il suo bottone non lo nominava.
 
+**P1.1-septies — La bolla dei riquadri, e i riquadri che si vestono.**
+✅ *fatto il 19 agosto 2026*
+
+**La bolla.** Si batte «> » a inizio riga e il menu dei riquadri compare al cursore: frecce, Invio,
+Esc. È il gesto delle app di scrittura moderne, con una differenza: **è un suggerimento, non un
+dirottamento** — chi continua a battere ottiene una citazione, che dal 18 agosto è una forma buona.
+
+- ⚠️ **Si aggancia a ciò che è stato BATTUTO** (`inputRead`), non alla forma della riga. Dentro un
+  riquadro l'Invio inserisce «> » da solo (l'addon `continuelist`, regex `>[> ]*`) e ⌘' fa lo stesso
+  a comando: una bolla appesa alla riga sbucherebbe a ogni Invio dentro ogni riquadro. È il primo
+  controllo di `prova-callout-bolla.js`, ed è quello che vale il file.
+- ⚠️ I tasti si intercettano **solo finché la bolla è aperta**, in cattura sul guscio dell'editor:
+  toccare il keymap di CodeMirror vorrebbe dire litigare con le sedici scorciatoie di EasyMDE.
+- ⚠️ La chiusura non si fida del `keydown`: incollare e dettare non ne emettono uno per carattere.
+  Qualunque cosa entri nel testo manda via la bolla.
+- ⚠️ Il «> » battuto si cancella **prima** di inserire (`calloutInserisci`, la porta unica delle due
+  strade), o uscirebbe `> > [!nota]`. E `popAt` adesso accetta anche un **punto**, perché il cursore
+  di scrittura non è un elemento ma un rettangolo ce l'ha.
+
+**Gli stili.** Nome, emoji e i due colori dei sette tipi si cambiano da «Personalizza i riquadri…»,
+in fondo al menu 📜.
+
+- ⚠️ **Nel vault** (`.studia/prefs.json`, chiave `riquadri`), non nel `localStorage`: l'aspetto di un
+  riquadro appartiene ai contenuti — viaggia con l'esportazione e vale su ogni macchina. Nel
+  `localStorage` stanno le preferenze di *lettura*.
+- ⚠️ **Solo le differenze.** Un vault che non ha mai aperto il pannello non ha la chiave, e «com'era»
+  la **toglie** invece di riscrivere il valore di fabbrica: così un tema che cambia cambia anche i
+  riquadri di chi non li ha mai toccati.
+- ⚠️ `calloutDef` resta la **porta unica** (menu, bolla, `frammentoAppuntato`, `renderNoteMd`): le
+  sovrascritture entrano lì dentro, non accanto.
+- ⚠️ I colori passano da **un foglio di stile generato** nell'`<head>` che riscrive `--uc-col` e
+  `--uc-ink`: le regole `.uc-<k>` restano nel CSS (invariante 8), e il foglio sopravvive a
+  `documentoStampabile()` — i PDF escono coi colori scelti.
+- ⚠️ Il pannello è un **dialogo**, non un pannellino: `popAt` comincia con `closePops()`, quindi un
+  pannellino che ne apre un altro (qui serve il selettore di emoji) si chiude da sé. E il selettore
+  di emoji ha imparato un **destinatario**, invece di essere copiato.
+- ⚠️ La tinta di fabbrica proposta dai campi si **chiede al foglio di stile**, non si riscrive in
+  JavaScript: `var(--teal)` va risolto in `#rrggbb` o un `input[type=color]` mostra nero.
+- ⚠️ Difetto pagato scrivendolo: il blocco d'avvio infilato **fra un `if` e il suo `else`** ha ucciso
+  l'intero script del monolite. Il rosso diceva «`ensureMde` non è definita», che è tre schermate
+  più in là del guasto.
+
 **P1.2 — Tag negli appunti.**
 Aggiungere `tags` alle `CHIAVI` del frontmatter (`lib/appunti.js` le enumera: è un punto solo).
 Nell'editor: campo tag sotto il titolo (chip, come i filtri già disegnati altrove nell'app).
