@@ -100,6 +100,14 @@ ok('e il fondo pieno resta il fondo pieno', true,
   /mark\.evid\[data-tratto="overlay"\] \{[^}]*background:var\(--ev/.test(testo));
 ok('una parola chiave tolta si stampa scolorita, non sparisce', true,
   /mark\.evid\.evorfana \{[^}]*text-decoration-color:#c9c6c2/.test(testo));
+/* ⚠️ I link sul foglio sono BLU e sottolineati, e non è vezzo: in un PDF
+   un'annotazione non si vede finché non ci passi sopra col puntatore, quindi un
+   indirizzo scritto in nero come il resto del testo è cliccabile e non lo dice.
+   E la regola dice il vero da quando i rimandi dell'app (`pdf:`, `cap:`)
+   diventano testo prima della stampa: quello che resta un `<a>` è un indirizzo
+   vero, cioè l'unica cosa che in un PDF porta davvero da qualche parte. */
+ok('i link si vedono che sono link', true,
+  /\.st-corpo a \{ color:#1d4ed8; text-decoration:underline; \}/.test(testo));
 
 sezione('La testata');
 const t = F.testata({ titolo: 'Il <DSA>', dove: 'Lezione 3', data: new Date('2026-08-14T10:00:00Z') });
