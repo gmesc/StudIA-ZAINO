@@ -8803,6 +8803,44 @@ function closePops(){
  * verifica il PDF) può riempire il foglio, stamparlo dal main e misurarlo,
  * passando dallo STESSO codice che usa il gesto. Torna il tipo di foglio.
  */
+/**
+ * I rimandi dell'app, sul foglio, diventano testo.
+ *
+ * ⚠️ `pdf:03#p=7`, `cap:…`, `[[lezione]]` e `ev:…` nel DOM sono `<a href="#">`
+ * con i dati negli attributi: il click lo gestisce l'app. Su carta non c'è
+ * nessuna app, e in un PDF quell'ancora diventa un'ANNOTAZIONE CLICCABILE CHE
+ * NON PORTA DA NESSUNA PARTE — misurato: due `/Link` in un foglio che di link
+ * veri ne aveva uno. Un rimando che si può premere e non fa niente è peggio di
+ * un testo: promette.
+ *
+ * ⚠️ Si toglie l'ancora e si tiene tutto il resto — il testo, le classi, i
+ * `<mark>` colorati dentro — perché è quello che il foglio di stile della
+ * stampa colora. E si toglie SOLO ciò che punta a `#`: i link esterni sono
+ * indirizzi veri, e nel PDF devono restare cliccabili (è il motivo per cui uno
+ * scrive una fonte in un appunto).
+ */
+/** Il nome del file che si propone nel dialogo, da come la cosa si chiama.
+ *  Una funzione sua perché è una REGOLA — che cosa il disco non accetta, quanto
+ *  può essere lungo — e una regola si prova senza aprire un dialogo. */
+function stampaNomeFile(titolo){
+  /* ⚠️ Via l'estensione dell'originale: quando il titolo manca si ripiega sul
+     nome del file (`decodifica.md`, `mia-mappa.json`), e al dialogo arriverebbe
+     «decodifica.md.pdf». Il nome che si propone è quello della COSA, e
+     l'estensione la mette chi salva. */
+  return String(titolo||'').replace(/\.(md|json)$/i,'')
+    .replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim().slice(0,80) || 'StudIA';
+}
+function stampaSenzaRimandiMorti(html){
+  var box=document.createElement('div');
+  box.innerHTML=String(html==null?'':html);
+  box.querySelectorAll('a[href="#"], a[href^="#"]').forEach(function(a){
+    var sp=document.createElement('span');
+    if(a.className) sp.className=a.className;
+    sp.innerHTML=a.innerHTML;
+    a.parentNode.replaceChild(sp, a);
+  });
+  return box.innerHTML;
+}
 function stampaPrepara(opt){
   opt=opt||{};
   var f=$('#stampaFoglio'); if(!f) return '';
@@ -8824,10 +8862,16 @@ function stampaPrepara(opt){
     });
   }
   f.className=opt.classe||'';
-  var testa = (typeof StampaFoglio!=='undefined')
-    ? StampaFoglio.testata({ titolo:opt.titolo||'', dove:opt.dove||'' })
-    : '<div class="st-testa"><div class="st-titolo">'+escHtml(opt.titolo||'')+'</div></div>';
-  f.innerHTML=testa+'<div class="st-corpo">'+(opt.html||'')+'</div>';
+  /* ⚠️ NIENTE TESTATA, per nessuno dei due fogli (19 agosto 2026). L'app
+     scriveva in cima titolo e data, e sopra il contenuto di chi stampa: un
+     appunto il suo titolo ce l'ha già dentro — è la prima riga che si scrive —
+     e una mappa lo porta nel nome del file. Due titoli su un foglio solo, il
+     secondo messo lì da noi. Chi stampa impagina la sua pagina, non la nostra.
+     ⚠️ Il PIÈ resta, ed è una cosa diversa: dice da dove viene il foglio e a
+     che pagina si è — informazioni che il contenuto non può portarsi dietro.
+     ⚠️ `StampaFoglio.testata()` resta nel modulo, senza chiamanti: è una
+     libreria, e la riga che la costruiva era qui, non là. */
+  f.innerHTML='<div class="st-corpo">'+stampaSenzaRimandiMorti(opt.html||'')+'</div>';
   return tipo;
 }
 
@@ -8950,11 +8994,18 @@ async function salvaPdf(che, opzioni){
   if(!foglio) return null;                    // il perché l'ha già detto chi costruisce il foglio
   var tipo=stampaPrepara(foglio);
   var doc=documentoStampabile();
-  /* Il nome del file: il titolo del documento e la data, che è come lo si
-     cerca in una cartella fra un mese. I caratteri che il disco non ama si
-     tolgono qui, non nel main: chi propone il nome sa che cosa sta nominando. */
-  var nome=String(foglio.titolo||'StudIA').replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim().slice(0,80) +
-           ' — ' + StampaFoglio.data();
+  /* Il nome che si propone è QUELLO CON CUI LA COSA È SALVATA: il titolo
+     dell'appunto, il nome della mappa. Chi salva in PDF un appunto che si
+     chiama «Decodifica» si aspetta di trovare «Decodifica.pdf», e ritrovarlo
+     accanto all'originale con lo stesso nome è il modo in cui i due si
+     riconoscono come la stessa cosa.
+     ⚠️ Prima si aggiungeva « — 19 ago 2026», per «cercarlo fra un mese»: ma un
+     appunto non è una versione, è un documento, e la data la porta già il
+     disco. Chi vuole datare il file lo fa nel dialogo, che quel nome lo
+     propone e non lo impone.
+     I caratteri che il disco non ama si tolgono qui e non nel main: chi propone
+     il nome sa che cosa sta nominando. */
+  var nome=stampaNomeFile(foglio.titolo);
   var r=null;
   try{
     r=await api.pdf({ html:doc, nome:nome, landscape:(tipo==='mappa'), percorso:opzioni.percorso||'' });
@@ -9030,7 +9081,8 @@ var GUIDA=[
   { nome:'Vai alla pagina del PDF', sintassi:'Vedi la [p. 7](pdf:03#p=7) della dispensa.', nota:'Le frecce ‹ › nella barra dell\'anteprima cambiano pagina; 🔖 cita quella corrente.' },
   { nome:'Rimando a un\'altra lezione', sintassi:'Il tema prosegue in [[02-comorbidita]].', nota:'Il nome della cartella della lezione. Con «|» si cambia l\'etichetta: [[02-comorbidita|le comorbilità]].' },
   { nome:'Rimando a un capitolo preciso', sintassi:'Ne parla [il capitolo sulla decodifica](cap:05-dislessia-decodifica-c02).', nota:'Il wiki-link porta all\'inizio della lezione; questo al capitolo esatto. Non serve scriverlo a mano: lo mette «Appunta» quando estrai un frammento dal testo. La fila di quadratini sotto «Appunta» decide come arriva: ¶ nudo, un\'emoji dentro il riquadro di quel tipo, e il 🔗 (staccato, in fondo) se portarsi dietro la fonte o no.' },
-  { nome:'Link esterno', sintassi:'Fonte: [Consensus Conference](https://www.iss.it).', nota:'Si apre nel browser di sistema.' },
+  { nome:'Link esterno', sintassi:'Fonte: [Consensus Conference](https://www.iss.it).', nota:'Si apre nel browser di sistema, e nel PDF resta cliccabile.' },
+  { nome:'Indirizzo scritto e basta', sintassi:'Vedi https://www.iss.it per il resto.', nota:'Un indirizzo incollato diventa un link da sé: non serve scriverlo fra parentesi.' },
   { nome:'Nota a piè di pagina', sintassi:'Affermazione da documentare.[^1]', nota:'Nei capitoli generati il numero rimanda al testo della nota in fondo.' },
   { sezione:'Emoji' },
   { nome:'Emoji', sintassi:'Da ripassare 🧠 prima dell\'esame 📖', nota:'Il pulsante 😀 della barra apre il selettore con la ricerca per parola. Sono disegnate in stile OpenMoji.' }
@@ -9845,6 +9897,16 @@ async function cambiaModo(m){
     try{ if(typeof aggiornaVarianti==='function') aggiornaVarianti(); }catch(e){}
     try{ if(typeof render==='function') render(); }catch(e){}
   }
+  /* ⚠️ E il registro della mappa, che `contenitoreMolla` ha appena riportato a
+     «Generata» perché la mappa aperta era di un altro contenitore: nello zaino
+     quel registro non esiste. Qui e non là dentro, perché `contenitoreMolla`
+     gira PRIMA che il modo cambi — a quel punto `modoAttivo()` risponde ancora
+     con la metà che si sta lasciando. */
+  /* ⚠️ E i comandi si risincronizzano SEMPRE, non solo quando il registro
+     cambia: tornando ai corsi il registro è già quello giusto, ma il segmento
+     Generata/Mie è rimasto nascosto dallo zaino — un comando che esiste e non
+     si vede è la stessa bugia di uno che si vede e non esiste. */
+  try{ mappaRegistroCoerente(); mappaSincronizzaComandi(); }catch(e){}
   /* E il contenuto torna con la disposizione: la fonte e il media che erano
      aperti in QUESTA metà dell'app. */
   apertoRipristina();
@@ -16334,6 +16396,36 @@ function mappaPronta(){
 }
 function mappeApi(){ try{ return (window.vault && window.vault.mappe) || null; }catch(e){ return null; } }
 function mappaMie(){ return MAPPA.registro==='mie'; }
+/**
+ * In questo contenitore le mappe GENERATE esistono?
+ *
+ * ⚠️ Nello zaino no, e non è una preferenza: una mappa generata è la proiezione
+ * di un capitolo o di una lezione, e uno zaino non ne ha — si studia
+ * direttamente sui documenti. Il registro però tornava a «Generata» a ogni
+ * cambio di contenitore (una mappa TUA appartiene al contenitore che lasci), e
+ * là dentro il generatore trovava ancora la lezione del corso di prima:
+ * aprendo lo zaino compariva la mappa di un corso che non c'entra niente.
+ *
+ * ⚠️ È una domanda sul CONTENITORE, non una condizione sparsa: chi deve
+ * decidere qualcosa sul registro la fa a lei, e il giorno che un altro
+ * contenitore senza lezioni comparirà, cambia una riga sola.
+ */
+function mappaGenerateQui(){ return modoAttivo()!=='zaino'; }
+/**
+ * Porta il registro dove ha senso stare adesso. La chiamano le due porte da cui
+ * la cosa può cambiare: aprire la mappa, e cambiare metà dell'app.
+ */
+function mappaRegistroCoerente(){
+  if(typeof MAPPA==='undefined' || !MAPPA) return false;
+  if(mappaGenerateQui() || mappaMie()) return false;
+  /* A mappa aperta si passa dalla porta vera — che salva quello che c'è in
+     canna, ricarica l'elenco e riapre un file — invece di scrivere lo stato a
+     mano: sono le stesse due righe che servirebbero qui, più tutto ciò che si
+     dimenticherebbero. */
+  if(mappaAperta()){ try{ mappaRegistro('mie'); }catch(e){} }
+  else { MAPPA.registro='mie'; MAPPA.identita=null; }
+  return true;
+}
 
 /* Le leve della vista vivono per CORSO, non dentro la mappa: la mappa non
    esiste su disco, e due corsi diversi vogliono spesso tarature diverse. */
@@ -16390,7 +16482,7 @@ function mappaSegna(){ try{ apertoScrivi('mappa', mappaSegnoOra()); }catch(e){} 
 function mappaRipristinaSegno(segno){
   if(typeof MAPPA==='undefined' || !MAPPA) return;
   var pezzi=String(segno||'').split(':');
-  var reg = pezzi[0]==='mie' ? 'mie' : 'generata';
+  var reg = (pezzi[0]==='mie' || !mappaGenerateQui()) ? 'mie' : 'generata';
   var resto = pezzi.slice(1).join(':');
   if(reg==='mie'){ if(resto) MAPPA.mia.file=resto; }
   else if(resto) MAPPA.ambito=resto;
@@ -16831,6 +16923,11 @@ function mappaFlush(){
 /** Cambia registro. Prima si mette al sicuro quello che c'è. */
 function mappaRegistro(reg){
   if(reg!=='generata' && reg!=='mie') return;
+  /* ⚠️ La guardia sta QUI e non solo sul bottone: il bottone in uno zaino non
+     si vede, ma questa funzione la chiamano anche il ripristino della
+     disposizione e le prove. Un comando che non ha senso in un posto si nega
+     dove si esegue, non dove si disegna. */
+  if(reg==='generata' && !mappaGenerateQui()) return;
   if(reg===MAPPA.registro) return;
   if(MAPPA.rinomina) mappaRinominaChiudi(true);
   mappaCollegaAnnulla(); mapMenuChiudi();
@@ -17073,6 +17170,10 @@ function mappaAperta(){ try{ return bancoVisibile('mappa'); }catch(e){ return fa
  */
 function mappaApri(){
   if(!mappaPronta()){ toast('Moduli della mappa non caricati',false); return; }
+  /* Prima di tutto: in uno zaino le generate non esistono, e chi apre lo
+     strumento deve trovarsi davanti le SUE mappe, non la proiezione di una
+     lezione che qui non c'è. */
+  mappaRegistroCoerente();
   MAPPA.aperto=true;
   var b=$('#mappaBtn'); if(b) b.setAttribute('aria-pressed','true');
   if(mappaMie()){
@@ -17143,6 +17244,11 @@ function mappaSincronizzaComandi(){
     });
   }
   premi('#mRegistro','data-reg',MAPPA.registro);
+  /* ⚠️ In uno zaino il segmento Generata/Mie non si spegne: SPARISCE. Un
+     interruttore a due posizioni di cui una non esiste è un comando che mente,
+     e spento occuperebbe comunque il posto suggerendo che da qualche parte si
+     possa accendere. */
+  var seg=$('#mRegistro'); if(seg) seg.hidden=!mappaGenerateQui();
   premi('#mMotore','data-motore',v.motore);
   premi('#mOrient','data-orient',v.orient);
   /* «Modifica una copia» e «+» sono la stessa domanda — da dove parte questa

@@ -104,7 +104,14 @@
     tenue: '#555',
     filo: '#999',
     riquadro: '#f4f4f4',
-    pie: '#666'
+    pie: '#666',
+    /* Il blu dei link, che sul foglio ha un mestiere in più che a schermo: dice
+       CHE COSA SI PUÒ PREMERE. In un PDF le annotazioni non si vedono finché non
+       ci passi sopra — un indirizzo scritto in nero come il resto del testo è
+       cliccabile e non lo dichiara. È `--blue-strong` del tema chiaro, copiato
+       qui dichiaratamente come `EV` qui sotto: il foglio è un documento suo,
+       aperto in un'altra finestra, dove le variabili dell'app non arrivano. */
+    link: '#1d4ed8'
   };
 
   /* Come si vede un'evidenza sul FOGLIO. Sta qui, e non si legge da `:root`,
@@ -238,7 +245,11 @@
          il PDF lo scrive l'app, che accende `printBackground`. Il filo a
          sinistra invece è un BORDO e si stampa sempre: è lui a tenere in piedi
          il riquadro quando il fondo non c'è. */
-      '  ' + S + ' .st-corpo a { color:' + COL.inchiostro + '; text-decoration:underline; }',
+      /* ⚠️ Blu e sottolineato = SI PUÒ PREMERE, e sul foglio la regola dice il
+         vero da quando i rimandi dell'app diventano testo prima di stamparli
+         (`stampaSenzaRimandiMorti`): quello che resta un `<a>` è un indirizzo
+         vero, cioè l'unica cosa che in un PDF porta davvero da qualche parte. */
+      '  ' + S + ' .st-corpo a { color:' + COL.link + '; text-decoration:underline; }',
       '  ' + S + ' .st-corpo img { max-width:100%; height:auto; break-inside:avoid; }',
       /* ⚠️ La misura data a un'immagine nell'appunto vale anche sulla carta. Non
          è vestito che si ricopia: è CONTENUTO — sta scritta nel markdown
@@ -293,6 +304,18 @@
   }
 
   /* ── LA TESTATA ───────────────────────────────────────────────────────────
+     ⚠️ OGGI NON LA CHIAMA NESSUNO (dal 19 agosto 2026). `stampaPrepara()` in
+     `App/StudIA.html` non la costruisce più per nessuno dei due fogli: un
+     appunto il suo titolo ce l'ha già dentro — è la prima riga che si scrive —
+     e una mappa lo porta nel nome del file; due titoli su un foglio solo, il
+     secondo messo lì da noi. Resta qui perché questo è un MODULO, non una
+     pagina: la riga che la costruiva stava là, e un foglio futuro (una scheda,
+     un riassunto generato) potrebbe volerla. Con lei restano vive le sue tre
+     regole in `regole()` (`.st-testa`, `.st-titolo`, `.st-dove`) e la sua
+     sezione in `test/stampa-foglio.js`: si tolgono tutte e tre insieme, o non
+     si toglie niente. ⚠️ `test/cdp/prova-stampa.js` controlla che sul foglio
+     VERO quelle classi non ci siano: è il guardiano della scelta di sopra.
+
      d: { titolo, dove?, data? (Date|stringa|false) } → l'HTML della testata.
      È qui e non nel renderer perché il foglio è UNO: chi lo riempie non deve
      ricordarsi come si scrive la riga sotto il titolo. */

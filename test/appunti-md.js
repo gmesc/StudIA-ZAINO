@@ -117,5 +117,34 @@ check('lo spazio insecabile resta un paragrafo',
 check('un riquadro non è una citazione',
   true, appunto('> [!nota] Titolo').indexOf('<blockquote>') < 0);
 
+console.log('— indirizzi scritti nudi —');
+/* ⚠️ `[ISS](https://…)` era già un'ancora — e nel PDF un'annotazione cliccabile,
+   misurato nel file — mentre l'indirizzo scritto e basta restava testo morto. Chi
+   incolla un link in un appunto lo incolla nudo: è il modo normale di scriverlo. */
+contiene('un indirizzo nudo diventa link', '<a href="https://www.iss.it"', appunto('Fonte: https://www.iss.it e basta.'));
+contiene('anche senza schema', '<a href="https://www.iss.it"', appunto('Vedi www.iss.it oggi.'));
+check('la punteggiatura della frase resta fuori',
+  '<p>Vedi <a href="https://www.iss.it" target="_blank" rel="noopener">https://www.iss.it</a>.</p>',
+  appunto('Vedi https://www.iss.it.'));
+check('e la parentesi pure',
+  '<p>(vedi <a href="https://www.iss.it" target="_blank" rel="noopener">https://www.iss.it</a>)</p>',
+  appunto('(vedi https://www.iss.it)'));
+/* ⚠️ IL CONTROLLO CHE VALE LA FUNZIONE: un `replace` sull'HTML già fatto
+   riscriverebbe anche gli indirizzi dentro gli `href`, cioè un'ancora dentro
+   un'altra ancora. Qui l'autolink passa FRA i tag e non li guarda. */
+check('un link markdown non si annida in un altro', 1,
+  (appunto('[ISS](https://www.iss.it)').match(/<a /g) || []).length);
+check('nemmeno quando l\'etichetta È l\'indirizzo', 1,
+  (appunto('[https://www.iss.it](https://www.iss.it)').match(/<a /g) || []).length);
+/* Dentro il codice l'indirizzo resta scritto: è il motivo per cui uno scrive in
+   un recinto. */
+check('nel codice in linea non si tocca', 0,
+  (appunto('Scrivi `https://www.iss.it` nel campo.').match(/<a /g) || []).length);
+check('e nel recinto nemmeno', 0,
+  (appunto('```\nhttps://www.iss.it\n```').match(/<a /g) || []).length);
+/* ⚠️ Nei capitoli generati vale la stessa regola: là un indirizzo nudo capita —
+   lo scrive il modello — e restava morto pure lì. */
+contiene('e vale anche nei capitoli', '<a href="https://www.iss.it"', capitolo('Fonte: https://www.iss.it'));
+
 console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutto a posto') + ' (' + (ok + ko) + ' controlli)');
 process.exit(ko ? 1 : 0);
