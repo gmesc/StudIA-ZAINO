@@ -8819,6 +8819,17 @@ function closePops(){
  * indirizzi veri, e nel PDF devono restare cliccabili (è il motivo per cui uno
  * scrive una fonte in un appunto).
  */
+/** Il nome del file che si propone nel dialogo, da come la cosa si chiama.
+ *  Una funzione sua perché è una REGOLA — che cosa il disco non accetta, quanto
+ *  può essere lungo — e una regola si prova senza aprire un dialogo. */
+function stampaNomeFile(titolo){
+  /* ⚠️ Via l'estensione dell'originale: quando il titolo manca si ripiega sul
+     nome del file (`decodifica.md`, `mia-mappa.json`), e al dialogo arriverebbe
+     «decodifica.md.pdf». Il nome che si propone è quello della COSA, e
+     l'estensione la mette chi salva. */
+  return String(titolo||'').replace(/\.(md|json)$/i,'')
+    .replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim().slice(0,80) || 'StudIA';
+}
 function stampaSenzaRimandiMorti(html){
   var box=document.createElement('div');
   box.innerHTML=String(html==null?'':html);
@@ -8851,19 +8862,16 @@ function stampaPrepara(opt){
     });
   }
   f.className=opt.classe||'';
-  /* ⚠️ La TESTATA si chiede, e un appunto non la chiede (19 agosto 2026). Un
-     appunto porta il suo titolo dentro di sé — è la prima riga che si scrive —
-     e ripeterlo in cima al foglio insieme alla data voleva dire due titoli su
-     un foglio solo, il secondo scritto dall'app. Il nome del file lo dice
-     comunque («Titolo — 19 ago 2026»), e il piè continua a dire da dove viene.
-     La mappa invece la tiene: là il titolo NON sta dentro il disegno. */
-  var testa='';
-  if(opt.testata!==false){
-    testa = (typeof StampaFoglio!=='undefined')
-      ? StampaFoglio.testata({ titolo:opt.titolo||'', dove:opt.dove||'' })
-      : '<div class="st-testa"><div class="st-titolo">'+escHtml(opt.titolo||'')+'</div></div>';
-  }
-  f.innerHTML=testa+'<div class="st-corpo">'+stampaSenzaRimandiMorti(opt.html||'')+'</div>';
+  /* ⚠️ NIENTE TESTATA, per nessuno dei due fogli (19 agosto 2026). L'app
+     scriveva in cima titolo e data, e sopra il contenuto di chi stampa: un
+     appunto il suo titolo ce l'ha già dentro — è la prima riga che si scrive —
+     e una mappa lo porta nel nome del file. Due titoli su un foglio solo, il
+     secondo messo lì da noi. Chi stampa impagina la sua pagina, non la nostra.
+     ⚠️ Il PIÈ resta, ed è una cosa diversa: dice da dove viene il foglio e a
+     che pagina si è — informazioni che il contenuto non può portarsi dietro.
+     ⚠️ `StampaFoglio.testata()` resta nel modulo, senza chiamanti: è una
+     libreria, e la riga che la costruiva era qui, non là. */
+  f.innerHTML='<div class="st-corpo">'+stampaSenzaRimandiMorti(opt.html||'')+'</div>';
   return tipo;
 }
 
@@ -8897,7 +8905,7 @@ function foglioAppunto(){
   var corpo=NOTES.mde.value()||'';
   var html=''; try{ html=renderNoteMd(corpo); }catch(e){ html='<pre>'+escHtml(corpo)+'</pre>'; }
   return { titolo:NOTES.cur.title||NOTES.cur.file||'Appunto',
-           dove:noteDove(NOTES.cur)||'', html:html, testata:false };
+           dove:noteDove(NOTES.cur)||'', html:html };
 }
 function stampaAppunto(){ var f=foglioAppunto(); if(f) stampaFoglio(f); }
 
@@ -8986,11 +8994,18 @@ async function salvaPdf(che, opzioni){
   if(!foglio) return null;                    // il perché l'ha già detto chi costruisce il foglio
   var tipo=stampaPrepara(foglio);
   var doc=documentoStampabile();
-  /* Il nome del file: il titolo del documento e la data, che è come lo si
-     cerca in una cartella fra un mese. I caratteri che il disco non ama si
-     tolgono qui, non nel main: chi propone il nome sa che cosa sta nominando. */
-  var nome=String(foglio.titolo||'StudIA').replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim().slice(0,80) +
-           ' — ' + StampaFoglio.data();
+  /* Il nome che si propone è QUELLO CON CUI LA COSA È SALVATA: il titolo
+     dell'appunto, il nome della mappa. Chi salva in PDF un appunto che si
+     chiama «Decodifica» si aspetta di trovare «Decodifica.pdf», e ritrovarlo
+     accanto all'originale con lo stesso nome è il modo in cui i due si
+     riconoscono come la stessa cosa.
+     ⚠️ Prima si aggiungeva « — 19 ago 2026», per «cercarlo fra un mese»: ma un
+     appunto non è una versione, è un documento, e la data la porta già il
+     disco. Chi vuole datare il file lo fa nel dialogo, che quel nome lo
+     propone e non lo impone.
+     I caratteri che il disco non ama si tolgono qui e non nel main: chi propone
+     il nome sa che cosa sta nominando. */
+  var nome=stampaNomeFile(foglio.titolo);
   var r=null;
   try{
     r=await api.pdf({ html:doc, nome:nome, landscape:(tipo==='mappa'), percorso:opzioni.percorso||'' });

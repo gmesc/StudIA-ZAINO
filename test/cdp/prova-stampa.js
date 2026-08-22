@@ -51,8 +51,14 @@ function sezione(t) { console.log('\n== ' + t); }
   ok('margini 20/20/25/20', true, testo.margini);
   ok('il piè conta le pagine', true, testo.numeri);
   ok('e a sinistra dice dove si sta lavorando', true, testo.marchio);
-  ok('la testata porta titolo e contesto', ['Prova di stampa', true],
-    [testo.titolo, /Lezione 3 · \d\d\/\d\d\/\d{4}/.test(testo.dove || '')]);
+  /* ⚠️ Questo controllo diceva il contrario fino al 19 agosto 2026 («la testata
+     porta titolo e contesto»), ed è cambiato con la promessa: l'app non scrive
+     più niente SOPRA il contenuto di chi stampa. Il titolo di un appunto sta
+     nella sua prima riga, quello di una mappa nel nome del file; il piè, che
+     dice da dove viene il foglio, resta — ed è misurato due righe più su.
+     Una prova che descrive una promessa va riscritta insieme alla promessa. */
+  ok('niente testata sopra il contenuto', [undefined, undefined],
+    [testo.titolo, testo.dove]);
   ok('e il corpo è dentro il foglio', true, testo.corpo);
 
   sezione('Una mappa: foglio coricato, e il disegno capato in millimetri');
@@ -128,29 +134,56 @@ function sezione(t) { console.log('\n== ' + t); }
   const MD = 'Fonte: [Consensus](https://www.iss.it).\n\nOppure https://www.iss.it/dsa nudo.\n\n'
            + 'Vedi la [p. 7](pdf:03#p=7) e il [capitolo](cap:01-x-c02).';
   const foglio = await val(`(()=>{
-    stampaPrepara({ titolo:'Prova', dove:'Prove', testata:false, html:renderNoteMd(${JSON.stringify(MD)}) });
+    stampaPrepara({ titolo:'Prova', dove:'Prove', html:renderNoteMd(${JSON.stringify(MD)}) });
     const f=document.getElementById('stampaFoglio');
     return { testata:!!f.querySelector('.st-testa'),
              vivi:[...f.querySelectorAll('.st-corpo a[href]')].map(a=>a.getAttribute('href')),
              morti:f.querySelectorAll('.st-corpo a[href="#"]').length,
              spenti:f.querySelectorAll('.st-corpo span.plink, .st-corpo span.clink').length,
              testo:f.querySelector('.st-corpo').textContent.indexOf('p. 7')>=0 }; })()`);
-  ok('l’appunto non porta la testata', false, foglio.testata);
+  ok('il foglio non porta la testata', false, foglio.testata);
   ok('i due indirizzi veri restano cliccabili',
     ['https://www.iss.it', 'https://www.iss.it/dsa'], foglio.vivi);
   ok('nessun rimando morto è rimasto un’ancora', 0, foglio.morti);
   ok('…sono diventati testo, con le loro classi', 2, foglio.spenti);
   ok('e il testo del rimando non si è perso', true, foglio.testo);
-  /* La mappa la testata la tiene: là il titolo non sta dentro il disegno. */
+  /* ⚠️ Nemmeno la mappa: l'app non scrive più niente sopra il contenuto di chi
+     stampa. Il titolo di una mappa sta nel nome del file, quello di un appunto
+     nella sua prima riga. */
   const conTesta = await val(`(()=>{
     stampaPrepara({ titolo:'Una mappa', dove:'Prove', classe:'foglio-mappa', tipo:'mappa', html:'<svg></svg>' });
     return !!document.querySelector('#stampaFoglio .st-testa'); })()`);
-  ok('la mappa invece ce l’ha', true, conTesta);
+  ok('e nemmeno la mappa', false, conTesta);
+  /* Il piè invece resta: dice da dove viene il foglio e a che pagina si è,
+     cioè le due cose che il contenuto non può portarsi dietro. */
+  ok('il piè è ancora nelle regole', true,
+    await val(`(document.getElementById('stampaRegole').textContent||'').indexOf('@bottom')>=0`));
+
+  sezione('Il nome proposto è quello con cui la cosa è salvata');
+  /* ⚠️ Si misura la REGOLA, non il dialogo: con `percorso` il dialogo non si
+     apre (una prova non può premerlo) e il nome proposto non lo vedrebbe
+     nessuno. La regola sta in una funzione sua, ed è la stessa che `salvaPdf`
+     chiama — una porta sola, come per tutto il resto. */
+  const nomi = await val(`[ stampaNomeFile('Decodifica'),
+    stampaNomeFile('Mappa: la lettura/decodifica'),
+    stampaNomeFile('   '), stampaNomeFile(''),
+    stampaNomeFile('decodifica.md'), stampaNomeFile('mia-mappa.json') ]`);
+  ok('il nome è quello con cui la cosa è salvata', 'Decodifica', nomi[0]);
+  ok('i caratteri che il disco non ama diventano spazi', 'Mappa la lettura decodifica', nomi[1]);
+  ok('e senza titolo non si resta senza nome', ['StudIA', 'StudIA'], [nomi[2], nomi[3]]);
+  /* ⚠️ Nessuna data appiccicata: fino al 19 agosto si aggiungeva « — 19 ago
+     2026» per «ritrovarlo fra un mese», e il PDF non si riconosceva più come la
+     copia dell'appunto che porta lo stesso nome. La data la porta il disco. */
+  ok('nessuna data nel nome', false, /\d{4}|ago|gen|feb/.test(nomi[0]));
+  /* Senza titolo si ripiega sul nome del file, e allora l'estensione va tolta:
+     al dialogo arriverebbe «decodifica.md.pdf». */
+  ok('l’estensione dell’originale non si porta dietro',
+    ['decodifica', 'mia-mappa'], [nomi[4], nomi[5]]);
 
   sezione('Nel PDF i link veri restano, quelli morti no');
   const dovePdf = path.join(os.tmpdir(), 'studia-prova-link-' + process.pid + '.pdf');
   await val('salvaPdf(\'appunto\', { percorso:' + JSON.stringify(dovePdf) + ', foglio:{ titolo:\'Prova link\', dove:\'Prove\','
-    + ' testata:false, html:renderNoteMd(' + JSON.stringify(MD) + ') } })');
+    + ' html:renderNoteMd(' + JSON.stringify(MD) + ') } })');
   const pdf = fs.existsSync(dovePdf) ? fs.readFileSync(dovePdf).toString('latin1') : '';
   /* ⚠️ Si contano le ANNOTAZIONI, non le parole: un indirizzo scritto nel testo
      compare nel PDF comunque: è il `/Link` che dice se si può premere. */
