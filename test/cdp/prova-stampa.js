@@ -119,6 +119,45 @@ function sezione(t) { console.log('\n== ' + t); }
   console.log('   ' + Math.round(grande / 1024) + ' KB');
   try { fs.unlinkSync(dove); } catch (e) { /* la prova non lascia file in giro */ }
 
+  sezione('Sul foglio: niente testata per un appunto, e nessun rimando morto');
+  /* ⚠️ Il markdown è quello vero di un appunto: un link esterno scritto, un
+     indirizzo NUDO, e due rimandi dell'app. I primi due devono restare
+     cliccabili anche su carta — è il motivo per cui uno scrive una fonte — e i
+     secondi no: fuori dall'app non portano da nessuna parte, e un'ancora che
+     non porta niente in un PDF è un'annotazione che promette. */
+  const MD = 'Fonte: [Consensus](https://www.iss.it).\n\nOppure https://www.iss.it/dsa nudo.\n\n'
+           + 'Vedi la [p. 7](pdf:03#p=7) e il [capitolo](cap:01-x-c02).';
+  const foglio = await val(`(()=>{
+    stampaPrepara({ titolo:'Prova', dove:'Prove', testata:false, html:renderNoteMd(${JSON.stringify(MD)}) });
+    const f=document.getElementById('stampaFoglio');
+    return { testata:!!f.querySelector('.st-testa'),
+             vivi:[...f.querySelectorAll('.st-corpo a[href]')].map(a=>a.getAttribute('href')),
+             morti:f.querySelectorAll('.st-corpo a[href="#"]').length,
+             spenti:f.querySelectorAll('.st-corpo span.plink, .st-corpo span.clink').length,
+             testo:f.querySelector('.st-corpo').textContent.indexOf('p. 7')>=0 }; })()`);
+  ok('l’appunto non porta la testata', false, foglio.testata);
+  ok('i due indirizzi veri restano cliccabili',
+    ['https://www.iss.it', 'https://www.iss.it/dsa'], foglio.vivi);
+  ok('nessun rimando morto è rimasto un’ancora', 0, foglio.morti);
+  ok('…sono diventati testo, con le loro classi', 2, foglio.spenti);
+  ok('e il testo del rimando non si è perso', true, foglio.testo);
+  /* La mappa la testata la tiene: là il titolo non sta dentro il disegno. */
+  const conTesta = await val(`(()=>{
+    stampaPrepara({ titolo:'Una mappa', dove:'Prove', classe:'foglio-mappa', tipo:'mappa', html:'<svg></svg>' });
+    return !!document.querySelector('#stampaFoglio .st-testa'); })()`);
+  ok('la mappa invece ce l’ha', true, conTesta);
+
+  sezione('Nel PDF i link veri restano, quelli morti no');
+  const dovePdf = path.join(os.tmpdir(), 'studia-prova-link-' + process.pid + '.pdf');
+  await val('salvaPdf(\'appunto\', { percorso:' + JSON.stringify(dovePdf) + ', foglio:{ titolo:\'Prova link\', dove:\'Prove\','
+    + ' testata:false, html:renderNoteMd(' + JSON.stringify(MD) + ') } })');
+  const pdf = fs.existsSync(dovePdf) ? fs.readFileSync(dovePdf).toString('latin1') : '';
+  /* ⚠️ Si contano le ANNOTAZIONI, non le parole: un indirizzo scritto nel testo
+     compare nel PDF comunque: è il `/Link` che dice se si può premere. */
+  ok('due annotazioni, quante sono le fonti vere', 2, (pdf.match(/\/Link/g) || []).length);
+  ok('e l’indirizzo è finito dentro il file', true, pdf.indexOf('iss.it') >= 0);
+  try { fs.unlinkSync(dovePdf); } catch (e) {}
+
   /* Si lascia il foglio vuoto, come lo trova chi non ha stampato. */
   await val(`(()=>{ const f=document.getElementById('stampaFoglio');
     f.innerHTML=''; f.className=''; return 1; })()`);

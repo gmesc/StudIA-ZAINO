@@ -8803,6 +8803,33 @@ function closePops(){
  * verifica il PDF) può riempire il foglio, stamparlo dal main e misurarlo,
  * passando dallo STESSO codice che usa il gesto. Torna il tipo di foglio.
  */
+/**
+ * I rimandi dell'app, sul foglio, diventano testo.
+ *
+ * ⚠️ `pdf:03#p=7`, `cap:…`, `[[lezione]]` e `ev:…` nel DOM sono `<a href="#">`
+ * con i dati negli attributi: il click lo gestisce l'app. Su carta non c'è
+ * nessuna app, e in un PDF quell'ancora diventa un'ANNOTAZIONE CLICCABILE CHE
+ * NON PORTA DA NESSUNA PARTE — misurato: due `/Link` in un foglio che di link
+ * veri ne aveva uno. Un rimando che si può premere e non fa niente è peggio di
+ * un testo: promette.
+ *
+ * ⚠️ Si toglie l'ancora e si tiene tutto il resto — il testo, le classi, i
+ * `<mark>` colorati dentro — perché è quello che il foglio di stile della
+ * stampa colora. E si toglie SOLO ciò che punta a `#`: i link esterni sono
+ * indirizzi veri, e nel PDF devono restare cliccabili (è il motivo per cui uno
+ * scrive una fonte in un appunto).
+ */
+function stampaSenzaRimandiMorti(html){
+  var box=document.createElement('div');
+  box.innerHTML=String(html==null?'':html);
+  box.querySelectorAll('a[href="#"], a[href^="#"]').forEach(function(a){
+    var sp=document.createElement('span');
+    if(a.className) sp.className=a.className;
+    sp.innerHTML=a.innerHTML;
+    a.parentNode.replaceChild(sp, a);
+  });
+  return box.innerHTML;
+}
 function stampaPrepara(opt){
   opt=opt||{};
   var f=$('#stampaFoglio'); if(!f) return '';
@@ -8824,10 +8851,19 @@ function stampaPrepara(opt){
     });
   }
   f.className=opt.classe||'';
-  var testa = (typeof StampaFoglio!=='undefined')
-    ? StampaFoglio.testata({ titolo:opt.titolo||'', dove:opt.dove||'' })
-    : '<div class="st-testa"><div class="st-titolo">'+escHtml(opt.titolo||'')+'</div></div>';
-  f.innerHTML=testa+'<div class="st-corpo">'+(opt.html||'')+'</div>';
+  /* ⚠️ La TESTATA si chiede, e un appunto non la chiede (19 agosto 2026). Un
+     appunto porta il suo titolo dentro di sé — è la prima riga che si scrive —
+     e ripeterlo in cima al foglio insieme alla data voleva dire due titoli su
+     un foglio solo, il secondo scritto dall'app. Il nome del file lo dice
+     comunque («Titolo — 19 ago 2026»), e il piè continua a dire da dove viene.
+     La mappa invece la tiene: là il titolo NON sta dentro il disegno. */
+  var testa='';
+  if(opt.testata!==false){
+    testa = (typeof StampaFoglio!=='undefined')
+      ? StampaFoglio.testata({ titolo:opt.titolo||'', dove:opt.dove||'' })
+      : '<div class="st-testa"><div class="st-titolo">'+escHtml(opt.titolo||'')+'</div></div>';
+  }
+  f.innerHTML=testa+'<div class="st-corpo">'+stampaSenzaRimandiMorti(opt.html||'')+'</div>';
   return tipo;
 }
 
@@ -8861,7 +8897,7 @@ function foglioAppunto(){
   var corpo=NOTES.mde.value()||'';
   var html=''; try{ html=renderNoteMd(corpo); }catch(e){ html='<pre>'+escHtml(corpo)+'</pre>'; }
   return { titolo:NOTES.cur.title||NOTES.cur.file||'Appunto',
-           dove:noteDove(NOTES.cur)||'', html:html };
+           dove:noteDove(NOTES.cur)||'', html:html, testata:false };
 }
 function stampaAppunto(){ var f=foglioAppunto(); if(f) stampaFoglio(f); }
 
@@ -9030,7 +9066,8 @@ var GUIDA=[
   { nome:'Vai alla pagina del PDF', sintassi:'Vedi la [p. 7](pdf:03#p=7) della dispensa.', nota:'Le frecce ‹ › nella barra dell\'anteprima cambiano pagina; 🔖 cita quella corrente.' },
   { nome:'Rimando a un\'altra lezione', sintassi:'Il tema prosegue in [[02-comorbidita]].', nota:'Il nome della cartella della lezione. Con «|» si cambia l\'etichetta: [[02-comorbidita|le comorbilità]].' },
   { nome:'Rimando a un capitolo preciso', sintassi:'Ne parla [il capitolo sulla decodifica](cap:05-dislessia-decodifica-c02).', nota:'Il wiki-link porta all\'inizio della lezione; questo al capitolo esatto. Non serve scriverlo a mano: lo mette «Appunta» quando estrai un frammento dal testo. La fila di quadratini sotto «Appunta» decide come arriva: ¶ nudo, un\'emoji dentro il riquadro di quel tipo, e il 🔗 (staccato, in fondo) se portarsi dietro la fonte o no.' },
-  { nome:'Link esterno', sintassi:'Fonte: [Consensus Conference](https://www.iss.it).', nota:'Si apre nel browser di sistema.' },
+  { nome:'Link esterno', sintassi:'Fonte: [Consensus Conference](https://www.iss.it).', nota:'Si apre nel browser di sistema, e nel PDF resta cliccabile.' },
+  { nome:'Indirizzo scritto e basta', sintassi:'Vedi https://www.iss.it per il resto.', nota:'Un indirizzo incollato diventa un link da sé: non serve scriverlo fra parentesi.' },
   { nome:'Nota a piè di pagina', sintassi:'Affermazione da documentare.[^1]', nota:'Nei capitoli generati il numero rimanda al testo della nota in fondo.' },
   { sezione:'Emoji' },
   { nome:'Emoji', sintassi:'Da ripassare 🧠 prima dell\'esame 📖', nota:'Il pulsante 😀 della barra apre il selettore con la ricerca per parola. Sono disegnate in stile OpenMoji.' }

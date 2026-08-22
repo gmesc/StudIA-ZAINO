@@ -390,7 +390,49 @@
     s=s.replace(/(^|[^*])\*([^*\s][^*]*)\*/g,'$1<em>$2</em>');
     s=s.replace(/`([^`]+)`/g,'<code>$1</code>');
     s=s.replace(/\[\^([0-9A-Za-z]+)\]/g, function(m,n){ return notaRifHtml(n, nota); });
-    return s; }
+    return _autolink(s); }
+  /**
+   * Un indirizzo scritto NUDO diventa un link.
+   *
+   * ⚠️ Perché serve: `[ISS](https://www.iss.it)` era già un'ancora vera — e nel
+   * PDF un'annotazione cliccabile, misurato — mentre `https://www.iss.it`
+   * scritto e basta restava testo morto. Chi incolla un indirizzo in un appunto
+   * lo incolla nudo: è il modo NORMALE di scrivere un link, e non funzionava.
+   *
+   * ⚠️ SI PASSA FRA I TAG, non sopra. Un `replace` sull'HTML già fatto
+   * riscriverebbe anche gli indirizzi dentro gli `href` — un'ancora dentro
+   * un'altra ancora — ed è il guasto classico dell'autolink. Qui la stringa si
+   * spezza sui tag e si tocca solo il testo: i pezzi dispari dello `split` sono
+   * i tag, e non si guardano nemmeno.
+   *
+   * ⚠️ E NON dentro `<a>`, `<code>` e `<pre>`: nel primo l'indirizzo è già un
+   * link (o è l'etichetta di un altro), negli altri due è testo che deve restare
+   * com'è scritto — è il motivo per cui uno scrive in un recinto.
+   *
+   * ⚠️ La coda della punteggiatura resta fuori: «vedi https://iss.it.» finisce
+   * con un punto che appartiene alla frase, non all'indirizzo, e un link che si
+   * porta via il punto porta a una pagina che non esiste.
+   */
+  var _URL_NUDO=/((?:https?:\/\/|www\.)[^\s<>"']*[^\s<>"'.,;:!?)\]])/g;
+  function _autolink(html){
+    if(!/(?:https?:\/\/|www\.)/.test(html)) return html;
+    var pezzi=String(html).split(/(<[^>]+>)/), dentro=0, out='';
+    for(var i=0;i<pezzi.length;i++){
+      var pz=pezzi[i];
+      if(i % 2){                                   // è un tag
+        if(/^<(a|code|pre)\b/i.test(pz)) dentro++;
+        else if(/^<\/(a|code|pre)\s*>/i.test(pz)) dentro=Math.max(0, dentro-1);
+        out+=pz; continue;
+      }
+      out += dentro ? pz : pz.replace(_URL_NUDO, function(u){
+        /* `www.iss.it` non è un indirizzo completo: senza schema il browser lo
+           leggerebbe come un percorso relativo dentro l'app. */
+        var href=(u.indexOf('www.')===0) ? ('https://'+u) : u;
+        return '<a href="'+href+'" target="_blank" rel="noopener">'+u+'</a>';
+      });
+    }
+    return out;
+  }
   /**
    * Spezza un markdown in pezzi di CODICE (dentro ``` … ```) e pezzi di testo,
    * nell'ordine in cui stanno scritti.
