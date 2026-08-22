@@ -9882,6 +9882,16 @@ async function cambiaModo(m){
     try{ if(typeof aggiornaVarianti==='function') aggiornaVarianti(); }catch(e){}
     try{ if(typeof render==='function') render(); }catch(e){}
   }
+  /* ⚠️ E il registro della mappa, che `contenitoreMolla` ha appena riportato a
+     «Generata» perché la mappa aperta era di un altro contenitore: nello zaino
+     quel registro non esiste. Qui e non là dentro, perché `contenitoreMolla`
+     gira PRIMA che il modo cambi — a quel punto `modoAttivo()` risponde ancora
+     con la metà che si sta lasciando. */
+  /* ⚠️ E i comandi si risincronizzano SEMPRE, non solo quando il registro
+     cambia: tornando ai corsi il registro è già quello giusto, ma il segmento
+     Generata/Mie è rimasto nascosto dallo zaino — un comando che esiste e non
+     si vede è la stessa bugia di uno che si vede e non esiste. */
+  try{ mappaRegistroCoerente(); mappaSincronizzaComandi(); }catch(e){}
   /* E il contenuto torna con la disposizione: la fonte e il media che erano
      aperti in QUESTA metà dell'app. */
   apertoRipristina();
@@ -16371,6 +16381,36 @@ function mappaPronta(){
 }
 function mappeApi(){ try{ return (window.vault && window.vault.mappe) || null; }catch(e){ return null; } }
 function mappaMie(){ return MAPPA.registro==='mie'; }
+/**
+ * In questo contenitore le mappe GENERATE esistono?
+ *
+ * ⚠️ Nello zaino no, e non è una preferenza: una mappa generata è la proiezione
+ * di un capitolo o di una lezione, e uno zaino non ne ha — si studia
+ * direttamente sui documenti. Il registro però tornava a «Generata» a ogni
+ * cambio di contenitore (una mappa TUA appartiene al contenitore che lasci), e
+ * là dentro il generatore trovava ancora la lezione del corso di prima:
+ * aprendo lo zaino compariva la mappa di un corso che non c'entra niente.
+ *
+ * ⚠️ È una domanda sul CONTENITORE, non una condizione sparsa: chi deve
+ * decidere qualcosa sul registro la fa a lei, e il giorno che un altro
+ * contenitore senza lezioni comparirà, cambia una riga sola.
+ */
+function mappaGenerateQui(){ return modoAttivo()!=='zaino'; }
+/**
+ * Porta il registro dove ha senso stare adesso. La chiamano le due porte da cui
+ * la cosa può cambiare: aprire la mappa, e cambiare metà dell'app.
+ */
+function mappaRegistroCoerente(){
+  if(typeof MAPPA==='undefined' || !MAPPA) return false;
+  if(mappaGenerateQui() || mappaMie()) return false;
+  /* A mappa aperta si passa dalla porta vera — che salva quello che c'è in
+     canna, ricarica l'elenco e riapre un file — invece di scrivere lo stato a
+     mano: sono le stesse due righe che servirebbero qui, più tutto ciò che si
+     dimenticherebbero. */
+  if(mappaAperta()){ try{ mappaRegistro('mie'); }catch(e){} }
+  else { MAPPA.registro='mie'; MAPPA.identita=null; }
+  return true;
+}
 
 /* Le leve della vista vivono per CORSO, non dentro la mappa: la mappa non
    esiste su disco, e due corsi diversi vogliono spesso tarature diverse. */
@@ -16427,7 +16467,7 @@ function mappaSegna(){ try{ apertoScrivi('mappa', mappaSegnoOra()); }catch(e){} 
 function mappaRipristinaSegno(segno){
   if(typeof MAPPA==='undefined' || !MAPPA) return;
   var pezzi=String(segno||'').split(':');
-  var reg = pezzi[0]==='mie' ? 'mie' : 'generata';
+  var reg = (pezzi[0]==='mie' || !mappaGenerateQui()) ? 'mie' : 'generata';
   var resto = pezzi.slice(1).join(':');
   if(reg==='mie'){ if(resto) MAPPA.mia.file=resto; }
   else if(resto) MAPPA.ambito=resto;
@@ -16868,6 +16908,11 @@ function mappaFlush(){
 /** Cambia registro. Prima si mette al sicuro quello che c'è. */
 function mappaRegistro(reg){
   if(reg!=='generata' && reg!=='mie') return;
+  /* ⚠️ La guardia sta QUI e non solo sul bottone: il bottone in uno zaino non
+     si vede, ma questa funzione la chiamano anche il ripristino della
+     disposizione e le prove. Un comando che non ha senso in un posto si nega
+     dove si esegue, non dove si disegna. */
+  if(reg==='generata' && !mappaGenerateQui()) return;
   if(reg===MAPPA.registro) return;
   if(MAPPA.rinomina) mappaRinominaChiudi(true);
   mappaCollegaAnnulla(); mapMenuChiudi();
@@ -17110,6 +17155,10 @@ function mappaAperta(){ try{ return bancoVisibile('mappa'); }catch(e){ return fa
  */
 function mappaApri(){
   if(!mappaPronta()){ toast('Moduli della mappa non caricati',false); return; }
+  /* Prima di tutto: in uno zaino le generate non esistono, e chi apre lo
+     strumento deve trovarsi davanti le SUE mappe, non la proiezione di una
+     lezione che qui non c'è. */
+  mappaRegistroCoerente();
   MAPPA.aperto=true;
   var b=$('#mappaBtn'); if(b) b.setAttribute('aria-pressed','true');
   if(mappaMie()){
@@ -17180,6 +17229,11 @@ function mappaSincronizzaComandi(){
     });
   }
   premi('#mRegistro','data-reg',MAPPA.registro);
+  /* ⚠️ In uno zaino il segmento Generata/Mie non si spegne: SPARISCE. Un
+     interruttore a due posizioni di cui una non esiste è un comando che mente,
+     e spento occuperebbe comunque il posto suggerendo che da qualche parte si
+     possa accendere. */
+  var seg=$('#mRegistro'); if(seg) seg.hidden=!mappaGenerateQui();
   premi('#mMotore','data-motore',v.motore);
   premi('#mOrient','data-orient',v.orient);
   /* «Modifica una copia» e «+» sono la stessa domanda — da dove parte questa

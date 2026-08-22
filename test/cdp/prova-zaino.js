@@ -274,6 +274,27 @@ const ZAINO = 'zaino-di-prova';
   ok('la guida è sul disco, accanto all\'app', true,
     fs.existsSync(path.join(__dirname, '..', '..', 'App', 'guida-zaino', 'index.html')));
 
+  sezione('MAPPE: in uno zaino esistono solo le TUE');
+  /* ⚠️ Il difetto da cui nasce questa sezione (19 agosto 2026): aprendo lo
+     strumento Mappe dentro uno zaino compariva una mappa GENERATA — la
+     proiezione di una lezione di un corso, cioè di un contenitore che qui non
+     c'entra niente. Il registro torna a «Generata» a ogni cambio di
+     contenitore (una mappa TUA appartiene a quello che lasci) e il generatore
+     trovava ancora la lezione di prima. In uno zaino le mappe generate non
+     esistono: non ci sono capitoli da proiettare. */
+  await apriStrumento('mappa'); await pausa(700);
+  ok('il registro è «Mie»', 'mie', await val(`MAPPA.registro`));
+  ok('e il segmento Generata/Mie non c\'è', true,
+    await val(`(()=>{ const s=document.getElementById('mRegistro');
+      return !s || s.hidden || s.getBoundingClientRect().height===0; })()`));
+  /* La porta si nega anche a chi la chiama per nome: il bottone qui non c'è, ma
+     il ripristino della disposizione e le prove passano di lì. */
+  await val(`(()=>{ mappaRegistro('generata'); return 1; })()`); await pausa(300);
+  ok('e chiamarla per nome non serve', 'mie', await val(`MAPPA.registro`));
+  ok('nessun nodo di una mappa generata a schermo', true,
+    await val(`(()=>{ const s=document.getElementById('mappaSvg');
+      if(!s) return true; return !MAPPA.res || mappaMie(); })()`));
+
   sezione('Tornando ai corsi la sidebar torna quella dei capitoli');
   await val(`(async()=>{ await cambiaModo('corso'); return 1; })()`);
   await pausa(700);
@@ -284,6 +305,10 @@ const ZAINO = 'zaino-di-prova';
     await val(`document.getElementById('sidebarTitolo').textContent`));
   ok('e la lente torna a parlare del corso', true,
     /nel corso/.test(await val(`document.getElementById('searchInput').placeholder`)));
+  /* E il registro torna a essere una scelta: nei corsi le due mappe esistono
+     tutte e due, e il segmento deve tornare a dirlo. */
+  ok('il segmento Generata/Mie torna', false,
+    await val(`(()=>{ const s=document.getElementById('mRegistro'); return !s || s.hidden; })()`));
 
   console.log('');
   console.log(ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati');
