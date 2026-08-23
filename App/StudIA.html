@@ -1282,10 +1282,39 @@
      a una barra che non ha niente sotto è una riga che non separa nulla. */
   #pdfFindPop{ padding:0; width:min(300px,92vw); }
   .popmenu .tbar{ border-bottom:0; background:transparent; min-height:0; }
-  #pdfFindPop .tbar{ padding:.15rem .2rem; }
-  /* Il conto: non va a capo, e quando è vuoto non occupa la sua fessura. */
-  #pdfFindCount{ padding:0 .3rem; }
-  #pdfFindCount:empty{ display:none; }
+  /* ⚠️ `flex-wrap:nowrap`, e solo qui. Le altre barre vanno a capo APPOSTA: sono
+     larghe quanto lo split, e i comandi che avanzano si accomodano sotto. Questa
+     no — sta dentro un pannellino di 300px fissi, e lì il capo non era il
+     ripiego di un caso estremo ma il modo NORMALE di finire. Il motivo è che il
+     taglio in righe guarda la misura IDEALE degli elementi, non quella a cui
+     potrebbero ridursi: il campo si sarebbe stretto volentieri, ma la riga si
+     spezzava prima che glielo si chiedesse. Misurato: con «128 di 340» nel conto
+     la ✕ finiva da sola sotto — il comando di chiusura sparito di sotto proprio
+     nell'istante in cui uno lo cerca. */
+  #pdfFindPop .tbar{ padding:.15rem .2rem; flex-wrap:nowrap; }
+  /* ---- Il conto ha una fessura SUA, sempre della stessa misura ---------------
+     Il campo di ricerca è `flex:1 1 auto`: si prende quello che avanza. Quindi
+     la sua larghezza era il pannellino meno tutto il resto, e «tutto il resto»
+     cambiava a ogni battuta. Misurato a 300px: 232px col conto a capo, 188 senza
+     conto, 156 con «128 di 340», 148 con «1 di 2 ↻ · intera». Il campo si
+     allargava e si stringeva sotto le dita di chi ci stava scrivendo dentro.
+     Il rimedio è quello del contatore delle pagine (`#pdfPagN`, poco più sotto):
+     non si allarga il contenitore, si FISSA CIÒ CHE VARIA. Una fessura di
+     larghezza sola — `flex:0 0`, così non cresce e non si ritira — le cifre a
+     passo fisso perché «9 di 10» e «10 di 10» non spostino niente, e il testo
+     centrato perché un conto corto non si appiccichi a un lato. Il campo resta
+     costante da sé, senza che gli si scriva addosso nessuna misura.
+     96px è misurato, non scelto a occhio: ci sta «nessun risultato» (87px con la
+     spaziatura) con un dito di margine per il giorno in cui il sistema
+     sostituisce l'Helvetica. Le code lunghe («nessun risultato · intera») si
+     tagliano coi puntini, e non è una perdita: che cosa vuol dire «intera» lo
+     dice comunque il suggerimento che `pdfFindConto` appende al titolo.
+     ⚠️ E il conto vuoto NON sparisce più. `display:none` gli toglieva la
+     fessura, cioè allungava il campo di 96px nell'istante fra due ricerche: una
+     casella vuota che tiene il posto si nota molto meno di un campo che si
+     muove da solo. */
+  #pdfFindCount{ flex:0 0 96px; padding:0 .3rem; text-align:center;
+    font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; }
   #pdfFindCount.vuoto{ color:var(--red-strong,#b91c1c); }
   :is(#pdfPane,#pdfPane2) .pdfzoom{ display:flex; align-items:center; gap:0; }
   :is(#pdfPane,#pdfPane2) .pdfpag{ display:flex; align-items:center; gap:0; }
