@@ -102,12 +102,21 @@ const PDF = 'Piano-di-studio-della-Scuola-dell-obbligo-ticinese.pdf';
     return { token:parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tb-h'),10),
              zoom:h('#pdf2ZoomIn'), livello:h('#pdf2ZoomLvl'), pagina:h('#pdf2Prev'), chiudi:h('#pdf2Close'),
              titolo:Math.round(parseFloat(getComputedStyle(document.getElementById('pdf2Title')).fontSize)),
-             titoloFonte:Math.round(parseFloat(getComputedStyle(document.getElementById('pdfTitle')).fontSize)) }; })()`);
+             corpo:Math.round(parseFloat(getComputedStyle(document.body).fontSize)) }; })()`);
   console.log('   ' + JSON.stringify(misure));
   ok('i comandi stanno tutti dentro il token',
     [misure.token, misure.token, misure.token, misure.token],
     [misure.zoom, misure.livello, misure.pagina, misure.chiudi]);
-  ok('e il titolo ha lo stesso corpo di quello della Fonte', misure.titoloFonte, misure.titolo);
+  /* Il corpo del titolo si misurava contro quello della Fonte, che aveva il
+     gemello «#pdfTitle» nella sua barra. Dal 23 agosto 2026 la Fonte non ha più
+     titolo — in barra ripeteva il nome del documento e la pagina, già detti dal
+     selettore e dal chip, e su un nome lungo mandava i comandi a capo — quindi
+     il paragone non ha più il suo termine. Resta però la domanda vera di questa
+     sezione: la regola della barra arriva fin qui, o il titolo è coi caratteri
+     di fabbrica? Lo si chiede al testo della pagina, che il carattere di
+     fabbrica lo È: se la regola della barra arriva, il titolo è più piccolo di
+     lui; se non arriva, sono la stessa misura. Nessun numero scritto a mano. */
+  ok('e il titolo non è rimasto coi caratteri di fabbrica', true, misure.titolo < misure.corpo);
 
   sezione('La ✕ chiude solo il confronto');
   await val('fonte2Chiudi(), 1'); await pausa(400);

@@ -638,12 +638,22 @@ async function finoA(expr, quanto) {
   sezione('Chiudere l\'anteprima spegne i comandi, e smette di citare');
   await val('closePdf(), 1'); await pausa(400);
   const chiusa = await val(`({ doc:!!PDFJS.doc, tipo:ANTEPRIMA.tipo, zoom:document.getElementById('pdfZoom').hidden,
-    find:document.getElementById('pdfFindBtn').hidden, titolo:document.getElementById('pdfTitle').textContent })`);
+    find:document.getElementById('pdfFindBtn').hidden,
+    sel:document.getElementById('pdfDoc').textContent,
+    selVoce:document.getElementById('pdfDoc').getAttribute('aria-label') })`);
   ok('il documento è stato liberato', false, chiusa.doc);
   ok('l\'anteprima non indica più niente', null, chiusa.tipo);
   ok('i comandi dello zoom spariscono', true, chiusa.zoom);
   ok('e quello della ricerca pure', true, chiusa.find);
-  ok('il titolo torna neutro', 'Fonte', chiusa.titolo);
+  /* Qui, fino al 23 agosto 2026, si controllava che «#pdfTitle» tornasse a dire
+     «Fonte». Quel titolo non esiste più: in barra ripeteva il nome del documento
+     e la pagina — già detti dal selettore e dal chip — e su un nome lungo si
+     prendeva tutta la riga mandando i comandi a capo. La promessa non è sparita,
+     ha cambiato posto: adesso è il SELETTORE l'unico che nomina il documento, e
+     quindi è lui che, chiusa l'anteprima, non deve più nominarne uno. */
+  ok('il selettore non nomina più il documento chiuso', 'Documenti ▾', chiusa.sel);
+  // …e non lo nomina nemmeno a voce: il nome accessibile è vivo come l'etichetta
+  ok('e nemmeno a chi ascolta lo schermo', 'Scegli il documento', chiusa.selVoce);
 
   console.log('');
   console.log(ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati');
