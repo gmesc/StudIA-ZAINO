@@ -112,6 +112,64 @@
   }
 
   /**
+   * DOVE comincia e dove finisce la prima occorrenza, **nel testo grezzo**.
+   *
+   * `occorrenze` risponde nel testo NORMALIZZATO, che è la forma su cui si
+   * cerca; questa risponde in quello vero, che è la forma in cui si scrive. È
+   * ciò che serve a chi deve mettere il cursore da qualche parte — l'editor
+   * degli appunti — invece di limitarsi a sapere che la parola c'è.
+   *
+   * → `{ da, a }` con gli indici del testo grezzo, oppure **`null`**.
+   *
+   * ⚠️ `null` NON È 0. «Non ho trovato niente» e «l'occorrenza comincia al primo
+   * carattere» sono due cose diverse, e confonderle vuol dire aprire un appunto
+   * in cima facendo credere a chi cerca di essere arrivato. È lo stesso difetto
+   * chiuso due volte nel pacchetto «Leggere» (`aspetto/stanza.js` e
+   * `fonti/pagina.js`), e la prova lo inchioda qui una terza.
+   *
+   * ⚠️ E LE POSIZIONI NON SI SUPPONGONO, SI MAPPANO. `sNorm` sembra conservare
+   * la lunghezza — ogni accento diventa una lettera, ogni virgoletta curva una
+   * dritta — ma `toLowerCase()` no: la «İ» turca (U+0130) diventa DUE caratteri,
+   * e da lì in poi ogni indice sarebbe spostato di uno. Un appunto con quella
+   * lettera dentro farebbe cadere il cursore a mezza parola, e nessuno saprebbe
+   * perché. Qui si normalizza un carattere alla volta tenendo il conto di dove
+   * ciascuno è finito: costa un giro sul testo e toglie di mezzo la classe
+   * intera di quei difetti.
+   *
+   * ⚠️ Il termine si normalizza INTERO e non per carattere: è quello il testo su
+   * cui `occorrenze` confronta, e normalizzarlo diversamente dal testo vorrebbe
+   * dire cercare una cosa in una lingua e leggerla in un'altra.
+   */
+  function punto(grezzo, chiesto) {
+    var t = String(grezzo == null ? '' : grezzo);
+    var c = chiesto || {};
+    var termine = sNorm(String(c.testo == null ? '' : c.testo).trim());
+    if (!t || !termine) return null;
+
+    /* La mappa: per ogni carattere del testo normalizzato, da quale carattere
+       del testo grezzo viene. */
+    var norm = '', mappa = [];
+    for (var i = 0; i < t.length; i++) {
+      var n = sNorm(t.charAt(i));
+      for (var k = 0; k < n.length; k++) mappa.push(i);
+      norm += n;
+    }
+
+    var o = occorrenze(norm, termine, !!c.esatta);
+    if (!o || o.pos < 0) return null;
+    var da = mappa[o.pos];
+    var fine = o.pos + termine.length;
+    /* La fine può cadere oltre l'ultimo carattere mappato: allora è la fine del
+       testo. `a` è esclusivo, come vuole chi seleziona. */
+    var a = (fine < mappa.length) ? mappa[fine] : t.length;
+    if (typeof da !== 'number') return null;
+    /* Un intervallo vuoto o rovesciato non è una posizione: meglio dire di no
+       che consegnare una selezione che non seleziona. */
+    if (!(a > da)) return null;
+    return { da: da, a: a };
+  }
+
+  /**
    * Una voce dell'indice a partire da un CAPITOLO.
    *
    * ⚠️ Nel testo cercabile entrano titolo, sommario, corpo, punti chiave e
@@ -307,7 +365,7 @@
     return h;
   }
 
-  return { sNorm: sNorm, interpreta: interpreta,
+  return { sNorm: sNorm, interpreta: interpreta, punto: punto,
     docCapitolo: docCapitolo, docPagina: docPagina, docAppunto: docAppunto,
     cerca: cerca, frammento: frammento };
 }));

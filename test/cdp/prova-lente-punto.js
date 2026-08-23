@@ -139,6 +139,54 @@ const DOVE = `(()=>{
     !!pezzo && PAROLA.indexOf(pezzo) === 0);
   console.log('   acceso: ' + JSON.stringify(d.testo));
 
+  sezione('⭐ E nell\'EDITOR, che è l\'altra metà del banco');
+  /* ⚠️ Fino al 24 agosto 2026 la lente atterrava sull'appunto e basta: il
+     cursore restava a zero, e su un appunto di un semestre la parola stava
+     quaranta schermate più giù. Cioè bisognava cercarla una seconda volta,
+     dentro il risultato di una ricerca.
+     Qui si scrive un appunto lungo con la parola SEPOLTA in fondo, si cerca
+     dalla lente e si clicca il risultato. Il controllo che vale non è «si è
+     aperto l'appunto» — quello era verde anche prima — ma che il cursore stia
+     SULLA PAROLA e che la riga sia a schermo. */
+  const PAROLA_NOTA = 'perielio';
+  const corpo = ['# Appunto lungo', ''].concat(
+    new Array(120).fill('Una riga di riempimento, per seppellire la parola in fondo.'),
+    ['', 'Qui sotto: il ' + PAROLA_NOTA + ' è il punto piu vicino al Sole.', ''],
+    new Array(40).fill('Altre righe dopo, cosi la parola non e nemmeno in coda.')).join('\n');
+  /* `notes.save` vuole quattro argomenti: contenitore, file, frontmatter, corpo. */
+  await val(`(()=>{ const r=window.vault.notes.save(corsoAttivo(), 'Appunto lungo.md',
+    { title:'Appunto lungo' }, ${JSON.stringify(corpo)}); return r && r.error ? r.error : ''; })()`);
+  await val('notesReload(), 1'); await pausa(600);
+  /* L'indice della lente si ricostruisce da `searchBuild`, che è la porta da cui
+     passa anche il campo della topbar quando si apre. */
+  await val('searchBuild(), 1'); await pausa(400);
+  const rn = await val(`(()=>{ const r=searchRun(${JSON.stringify(PAROLA_NOTA)});
+    const a=r.filter(function(x){ return x.d.appunto; })[0];
+    return a ? { appunto:a.d.appunto, i:r.indexOf(a) } : null; })()`);
+  ok('la lente trova la parola nell\'appunto', 'Appunto lungo.md', rn && rn.appunto);
+  await val(`(()=>{ const r=searchRun(${JSON.stringify(PAROLA_NOTA)});
+    const a=r.filter(function(x){ return x.d.appunto; })[0];
+    searchGoto(a, ${JSON.stringify(PAROLA_NOTA)}); return 1; })()`);
+  const sel = await finoA(`(()=>{ if(!NOTES.mde) return null; const cm=NOTES.mde.codemirror;
+    const s=cm.getSelection(); if(!s) return null;
+    const da=cm.getCursor('from');
+    const info=cm.getScrollInfo();
+    const c=cm.charCoords(da,'local');
+    return { testo:s, riga:da.line, righeTotali:cm.lineCount(),
+             aSchermo: c.top >= info.top - 4 && c.bottom <= info.top + info.clientHeight + 4 }; })()`, 12000);
+  console.log('   ' + JSON.stringify(sel));
+  ok('il cursore è sulla parola, selezionata', PAROLA_NOTA, sel && sel.testo);
+  /* ⚠️ IL CONTROLLO CHE VALE: non basta che la selezione ci sia — deve essere a
+     SCHERMO. Una selezione fuori dalla vista è come non averla fatta. */
+  ok('e la riga è dentro la finestra dell\'editor', true, !!sel && sel.aSchermo === true);
+  ok('la parola era davvero sepolta', true, !!sel && sel.riga > 100);
+  /* Una parola che nell'appunto non c'è non deve spostare niente: si resta dove
+     si è, invece di andare in cima facendo credere di essere arrivati. */
+  await val(`(()=>{ NOTES.mde.codemirror.setCursor({line:0,ch:0}); return 1; })()`);
+  await val(`noteVaiAlPunto('zzzznontrovabile'), 1`); await pausa(500);
+  ok('una parola che non c\'è lascia tutto dov\'è', '',
+    await val(`NOTES.mde ? NOTES.mde.codemirror.getSelection() : 'niente editor'`));
+
   sezione('Su una macchina veloce non si aspetta per niente');
   /* ⚠️ Il difetto opposto a quello che si è tolto: sostituire un ritardo fisso
      con un'attesa che si prende comunque il suo tempo. */
