@@ -1474,6 +1474,10 @@
      Le pseudo di evidenziatura accettano poche proprietà — fra queste non c'è
      lo sfondo in forma abbreviata, quindi `background-color`. */
   ::highlight(ricerca){ background-color:color-mix(in srgb, var(--yellow) 55%, var(--panel)); color:var(--ink); }
+  /* La frase che la voce sta leggendo, sul documento. Stesso giallo tenue del
+     `.tts-on` dei capitoli — è lo stesso gesto su un'altra superficie, e due
+     colori direbbero due cose. */
+  ::highlight(voce){ background-color:color-mix(in srgb, var(--yellow) 42%, var(--panel)); color:var(--ink); }
   /* ===== Callout negli appunti ===== */
   .ucallout{ margin:.9rem 0; border-left:4px solid var(--uc-col,var(--teal)); padding:.6rem .8rem;
     background:color-mix(in srgb, var(--uc-col,var(--teal)) 9%, var(--panel)); }
@@ -3996,7 +4000,40 @@ function ttsInVista(el){
   if(r.top<alto+8 || r.bottom>window.innerHeight-8)
     el.scrollIntoView({ block:'center', behavior: document.documentElement.dataset.reduce==='1'?'auto':'smooth' });
 }
+/* ⚠️ Sul PDF non ci sono paragrafi da accendere: c'è il layer di testo, che è
+   una nuvola di `<span>` senza struttura. La frase in lettura si dipinge con la
+   CSS Custom Highlight API — la stessa con cui l'app accende le evidenze e i
+   risultati della ricerca — e il registro dei nomi è CONDIVISO: «voce» va
+   dichiarato qui, o si prenderebbe il posto di un altro segno. */
+function ttsVocePorzione(range){
+  if(!window.CSS || !CSS.highlights || typeof Highlight!=='function') return;
+  try{
+    if(range) CSS.highlights.set('voce', new Highlight(range));
+    else CSS.highlights.delete('voce');
+  }catch(e){}
+}
+/** Una porzione a vista, come `ttsInVista` fa con un elemento. */
+function ttsPorzioneInVista(range){
+  try{
+    var r=range.getBoundingClientRect();
+    if(!r.height) return;
+    var host=$('#pdfHost'); if(!host) return;
+    var h=host.getBoundingClientRect();
+    if(r.top<h.top+8 || r.bottom>h.bottom-8){
+      host.scrollTop += Math.round(r.top-h.top-h.height/3);
+    }
+  }catch(e){}
+}
 function ttsEvidenzia(s){
+  /* La voce sulla PAGINA: niente elemento, una porzione di testo. */
+  if(s && s.range){
+    if(TTS.ultimoEl){ TTS.ultimoEl.classList.remove('tts-on'); TTS.ultimoEl=null; }
+    ttsVocePorzione(s.range);
+    ttsPorzioneInVista(s.range);
+    ttsStato();
+    return;
+  }
+  ttsVocePorzione(null);
   var el=s&&s.el||null;
   /* Un blocco dentro un riquadro chiuso non ha geometria: la voce leggerebbe
      testo invisibile e i comandi non saprebbero dove mettersi. Si riapre. */
@@ -9972,6 +10009,7 @@ function aggiornaBarraPagina(){
   if(!mostra){ try{ pagCampoChiudi(); }catch(e){} }
   try{ tintaAggiorna(); }catch(e){}
   try{ righelloAggiorna(); if(!mostra) righelloAccendi(false); }catch(e){}
+  try{ voceAggiorna(); if(!mostra && voceInCorso()) voceFerma(); }catch(e){}
   pdfZoomAggiorna();
 }
 
@@ -10065,6 +10103,163 @@ function pagSommarioVai(idx){
     toast('Questa voce del sommario non porta a nessuna pagina', false);
   });
 }
+
+/* ===== LA VOCE SULLA PAGINA ===============================================
+   Il lettore vocale che esisteva solo nei capitoli generati, portato dove serve
+   davvero: sul documento che si sta leggendo.
+
+   ⚠️ PERCHÉ CONTA. La dislessia non toglie la comprensione, toglie la
+   decodifica: dopo venti minuti sul PDF si rilegge tre volte la stessa riga.
+   Ascoltare seguendo con l'occhio è la compensazione principale della legge
+   170, e finora nello zaino non c'era — la voce leggeva solo quello che la
+   pipeline aveva generato, cioè l'unica cosa che uno zaino non ha.
+
+   ⚠️ NESSUN MOTORE NUOVO. Il testo passa per `TtsSegmenta`, che è lo stesso
+   segmentatore dei capitoli; la sintesi è `window.vault.voce.rendi`, che è la
+   stessa; la frase si accende con la CSS Custom Highlight API, che è quella
+   delle evidenze e della ricerca. Qui c'è solo il pezzo che mancava: **da dove
+   viene il testo, e come si ritrova nel DOM**.
+
+   ⚠️ IL TESTO VIENE DAL LAYER DI TESTO, non dall'indice su disco. L'indice
+   (`MATERIALI/Indici-PDF/NN.json`) ha lo stesso testo, ma è una stringa: per
+   accendere la frase bisognerebbe RITROVARLA nel DOM, e ritrovare non è
+   trovare. Prendendola dal layer si sa già dove sta — la porzione si costruisce
+   mentre si legge il testo, ed è esatta per costruzione invece che per
+   fortuna.
+
+   ⚠️ E le frasi si tagliano sul testo GREZZO. `ttsSegmenti` normalizza prima di
+   spezzare (scioglie «p. es.» in «per esempio»), e su un testo riscritto le
+   posizioni non tornano più. Misurato che `ttsFrasi` regge le abbreviazioni
+   anche sul grezzo — «p. es. quello» non si spezza, perché dopo il punto non
+   comincia una frase nuova — quindi i confini sono gli stessi e le porzioni
+   restano esatte. Ogni frase grezza passa poi da `ttsSegmenti` per essere
+   DETTA: la normalizzazione avviene dove serve, dentro la frase.
+
+   ⚠️ SI FERMA A FINE PAGINA, ed è una scelta. Girare pagina da sola vorrebbe
+   dire sopravvivere alla ricostruzione del layer di testo a ogni cambio — la
+   trappola nominata in PIANO-ZAINO Z6b — e raddoppiare il rischio del pezzo più
+   grosso del pacchetto. Chi vuole continuare preme ▶ sulla pagina dopo.
+
+   ⚠️ SOLO SU macOS. `lib/voce.js` è `/usr/bin/say`, e `ttsSistema()` risponde
+   già alla domanda: dove la voce non c'è, il comando non compare. Non è una
+   regressione — la voce dei capitoli è macOS-only dal primo giorno — ma va
+   detto. */
+
+/** Il testo della pagina a schermo, con la mappa per tornare al DOM.
+ *  → `{ testo, nodi:[{nodo, da, a}] }`, dove `da/a` sono posizioni nel testo. */
+function vocePaginaTesto(){
+  var pag=document.querySelector('#pdfFrame .page[data-page-number="'+(ANTEPRIMA.page||1)+'"]');
+  var layer=pag && pag.querySelector('.textLayer');
+  if(!layer) return null;
+  var testo='', nodi=[];
+  var it=document.createNodeIterator(layer, NodeFilter.SHOW_TEXT, null);
+  var n;
+  while((n=it.nextNode())){
+    var t=n.nodeValue||'';
+    if(!t) continue;
+    nodi.push({ nodo:n, da:testo.length, a:testo.length+t.length });
+    testo+=t;
+    /* ⚠️ Uno spazio fra un pezzo e l'altro, e va CONTATO nella mappa come parte
+       del pezzo appena messo: pdf.js separa le parole in `<span>` diversi senza
+       spazi dentro, e senza questo il testo direbbe «pianodistudio». */
+    testo+=' '; nodi[nodi.length-1].a+=1;
+  }
+  return testo.trim() ? { testo:testo, nodi:nodi } : null;
+}
+/** Una porzione di DOM da due posizioni nel testo della pagina. */
+function vocePorzione(mappa, da, a){
+  var r=document.createRange(), messoDa=false;
+  for(var i=0;i<mappa.nodi.length;i++){
+    var v=mappa.nodi[i];
+    if(!messoDa && da>=v.da && da<v.a){ r.setStart(v.nodo, Math.min(da-v.da, (v.nodo.nodeValue||'').length)); messoDa=true; }
+    if(messoDa && a>v.da && a<=v.a){ r.setEnd(v.nodo, Math.min(a-v.da, (v.nodo.nodeValue||'').length)); return r; }
+  }
+  if(messoDa){
+    var u=mappa.nodi[mappa.nodi.length-1];
+    try{ r.setEnd(u.nodo, (u.nodo.nodeValue||'').length); return r; }catch(e){}
+  }
+  return null;
+}
+/** Costruisce i segmenti da leggere per la PAGINA a schermo. */
+function voceCostruisciPagina(){
+  TTS.seg=[]; TTS.tot=1; TTS.idx=0; TTS.pos=0; TTS.ancora=[]; TTS.ultimoEl=null;
+  var m=vocePaginaTesto(); if(!m) return false;
+  var frasi=TtsSegmenta.ttsFrasi(m.testo);
+  var cursore=0;
+  frasi.forEach(function(f){
+    var da=m.testo.indexOf(f, cursore);
+    if(da<0) da=cursore;
+    var a=da+f.length;
+    cursore=a;
+    var range=vocePorzione(m, da, a);
+    /* Una frase che non si ritrova nel DOM si legge lo stesso, senza accendersi:
+       la voce è la cosa che serve, l'evidenza è l'aiuto. Meglio leggere senza
+       colore che non leggere. */
+    TtsSegmenta.ttsSegmenti(f, 'frase').forEach(function(sg){ sg.range=range; TTS.seg.push(sg); });
+  });
+  if(!TTS.seg.length) return false;
+  var off=0;
+  TTS.seg.forEach(function(sg){ sg.off=off; off+=sg.t.length+1; });
+  TTS.tot=Math.max(1,off);
+  ttsProg();
+  if(ttsSistema()){
+    ttsPronti={};
+    try{ window.vault.voce.scarta(); }catch(e){}
+    Promise.resolve(TTS.pronto).then(function(){ if(TTS.motore==='sistema') ttsRendi(0); });
+  }
+  return true;
+}
+function voceInCorso(){ return !!(TTS.playing && TTS.seg.length && TTS.seg[0] && TTS.seg[0].range); }
+/** Il testo di questo documento l'ha scritto il riconoscimento? Lo dice
+ *  l'indice, nel campo `ocr` — che c'è solo se qualcuno ha premuto Aa↗. È lo
+ *  stesso posto da cui `ocrDocOfferta` decide se mostrare quel bottone. */
+function voceDaOcr(nome){
+  if(!nome || !FONTI.indici) return false;
+  var d=FONTI.indici.filter(function(x){ return x.pdf===nome; })[0];
+  return !!(d && d.ocr);
+}
+function voceAggiorna(){
+  var b=$('#pdfVoce'); if(!b) return;
+  /* Dove la sintesi di sistema non c'è, il comando non c'è: un bottone che non
+     può fare quello che promette è peggio di un bottone che manca. */
+  b.hidden = !(ANTEPRIMA && ANTEPRIMA.tipo==='pdf' && ttsSistema());
+  var va=voceInCorso();
+  b.textContent = va ? '\u25A0' : '\u25B6';
+  b.title = va ? 'Ferma la lettura' : 'Leggi ad alta voce questa pagina';
+  b.setAttribute('aria-label', b.title);
+  b.classList.toggle('acceso', va);
+}
+function voceFerma(){
+  /* `stopTTS` è la porta unica per fermare la voce, la stessa che premono la ✕
+     della barra dei capitoli e il cambio di capitolo: non una seconda strada. */
+  try{ stopTTS(); }catch(e){ TTS.playing=false; }
+  ttsVocePorzione(null);
+  voceAggiorna();
+}
+function voceAvvia(){
+  if(!ttsSistema()) return;
+  if(voceInCorso()){ voceFerma(); return; }
+  TTS.motore='sistema';
+  if(!voceCostruisciPagina()){
+    toast('Su questa pagina non c\u2019\u00e8 testo da leggere', false);
+    return;
+  }
+  /* ⚠️ Su un documento riconosciuto con Aa↗ la voce legge anche gli errori
+     dell'OCR. La guida lo dichiara già per il testo riconosciuto («testo brutto
+     è meglio di testo spostato: le parole vengono scritte tutte, anche quelle
+     lette male»): qui si dice una volta, la prima, invece di lasciare che uno lo
+     scopra sentendo — e senza capire se il difetto è della voce o del testo.
+     ⚠️ Lo si chiede all'INDICE, che ricorda chi ha letto il documento
+     (`motore`), non al nome del file: è lo stesso posto da cui `ocrDocOfferta`
+     decide se mostrare Aa↗. */
+  if(!VOCE_AVVISATA && voceDaOcr(ANTEPRIMA.file)){
+    VOCE_AVVISATA=true;
+    toast('Questo documento è stato riconosciuto: la voce legge anche gli errori di lettura', false);
+  }
+  ttsDa(0);
+  voceAggiorna();
+}
+var VOCE_AVVISATA=false;
 
 /* ===== LA FINESTRA SULLA RIGA ==============================================
    Una fascia chiara che scorre sul documento e lascia in ombra il resto.
@@ -10173,6 +10368,7 @@ function righelloPasso(giu){
   });
   document.addEventListener('click', function(e){
     if(e.target.closest && e.target.closest('#pdfRighelloBtn')) righelloAccendi(!RIGHELLO.acceso);
+    if(e.target.closest && e.target.closest('#pdfVoce')) voceAvvia();
   });
   /* ⚠️ Il layer di testo si RIDISEGNA a ogni cambio di zoom e di pagina: le
      bande misurate prima indicano posti che non esistono più. È la trappola
@@ -19707,6 +19903,10 @@ window.addEventListener('keydown', function(e){
          la spostano di riga. Si spegne con Esc, che qui è un gradino che non
          costa niente. -->
     <button class="tbtn" id="pdfRighelloBtn" type="button" hidden>&#9647;</button>
+    <!-- La voce sulla pagina. Compare solo dove la sintesi di sistema c'è
+         (macOS): un bottone che non può fare quello che promette è peggio di un
+         bottone che manca. -->
+    <button class="tbtn" id="pdfVoce" type="button" hidden>&#9654;</button>
     <span class="pdfzoom" id="pdfZoom" hidden>
       <button class="tbtn" id="pdfZoomOut" type="button" title="Riduci" aria-label="Riduci">&#8722;</button>
       <!-- ⚠️ Niente `aria-label` qui: coprirebbe il testo visibile, cioè la
