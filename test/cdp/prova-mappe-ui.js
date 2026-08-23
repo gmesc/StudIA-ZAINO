@@ -115,6 +115,26 @@ const visibile = (sel) => val(`(()=>{const e=document.querySelector(${JSON.strin
   ok('Esc esce dal focus e non chiude la mappa', [null, true], [await val('MAPPA.focus'), await val('mappaAperta()')]);
   ok('e la mappa torna intera', nTutta, await conta('#mappaSvg .mnodo'));
 
+  /* ⚠️ ESC A VUOTO NON TOGLIE LA MAPPA DAL BLOCCO (23 agosto 2026). L'ultimo
+     gradino della catena chiamava `bancoTogli('mappa')`, e non «chiudeva» —
+     SVUOTAVA il blocco: tendina a «—» e «Scegli uno strumento qui sopra», col
+     banco da ricomporre a mano. Trovato provando a mano con gli split aperti,
+     dove era l'unica cosa che quel tasto facesse.
+     Qui si preme TRE volte con niente aperto dentro la mappa: una sola sarebbe
+     potuta passare per il motivo sbagliato — uno strato interno ancora acceso a
+     fare da parafulmine. E la ✕ deve continuare a togliere la mappa: si toglie
+     un gradino alla catena, non il gesto. */
+  for (let i = 0; i < 3; i++) {
+    await val("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true})); 1");
+    await pausa(200);
+  }
+  ok('tre Esc a vuoto NON tolgono la mappa dal blocco', true, await val('mappaAperta()'));
+  await clicca('#mChiudi'); await pausa(400);
+  ok('ma la ✕ sì', false, await val('mappaAperta()'));
+  /* Si rimette com'era: lo stato che una prova lascia è l'ingresso di quella dopo. */
+  await apriStrumento('mappa'); await pausa(600);
+  ok('e la mappa si riapre per le prove che seguono', true, await val('mappaAperta()'));
+
   // ------------------------------------------------- zoom, collasso, parentela
   sezione('Lo zoom arriva dove serve, e i rami si chiudono in un gesto');
   await val("MAPPA.ambito='corso'; mappaAdatta(); mappaRidisegna(); 1"); await pausa(1200);

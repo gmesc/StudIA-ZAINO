@@ -133,6 +133,45 @@ async function finoA(expr, quanto) {
   ok('il layer degli editor di annotazioni non c\'è', 0,
     await val("document.querySelectorAll('#pdfFrame .annotationEditorLayer').length"));
 
+  sezione('Il foglio colorato: la tinta arriva alla pagina, non al testo');
+  /* ⚠️ La REGOLA (quali tinte esistono, che cosa vuol dire un nome storto) sta
+     in `aspetto/stanza.js` e si prova con `node test/stanza.js`. Qui resta il
+     cablaggio: che il nome su `<html>` arrivi davvero alla pagina, e che sia la
+     TELA a moltiplicarsi — è quello il meccanismo, e senza di esso un fondo
+     colorato dietro un canvas opaco non si vedrebbe affatto. */
+  const tinte = {};
+  for (const t of ['nessuna', 'crema', 'azzurro', 'grigio']) {
+    await val(`document.documentElement.dataset.tinta=${JSON.stringify(t)}, 1`);
+    await pausa(120);
+    tinte[t] = await val(`(()=>{ const p=document.querySelector('#pdfFrame .page');
+      if(!p) return null; const c=p.querySelector('canvas');
+      return { fondo:getComputedStyle(p).backgroundColor,
+               blend:c?getComputedStyle(c).mixBlendMode:null }; })()`);
+  }
+  console.log('   ' + JSON.stringify(tinte));
+  ok('di fabbrica la pagina è bianca e la tela non si compone',
+    ['rgb(255, 255, 255)', 'normal'], [tinte.nessuna.fondo, tinte.nessuna.blend]);
+  /* ⚠️ Il `multiply` si accende SOLO con una tinta scelta: una proprietà di
+     composizione accesa per tutti sarebbe un cambio di resa a carico anche di
+     chi non ha chiesto niente. */
+  ok('con una tinta la tela si moltiplica', ['multiply', 'multiply', 'multiply'],
+    [tinte.crema.blend, tinte.azzurro.blend, tinte.grigio.blend]);
+  ok('e le tre tinte sono tre fondi diversi, nessuno bianco', 3,
+    new Set(['crema', 'azzurro', 'grigio'].map((t) => tinte[t].fondo)).size);
+  ok('nessuna delle tre è il bianco', false,
+    ['crema', 'azzurro', 'grigio'].some((t) => tinte[t].fondo === 'rgb(255, 255, 255)'));
+  /* Il comando cicla e dice dove va: un bottone che gira senza dirlo obbliga a
+     premerlo quattro volte per capire che cosa fa. */
+  await val("document.documentElement.dataset.tinta='nessuna', tintaAggiorna(), 1");
+  ok('il comando dice a che tinta si passa', true,
+    await val("/passare a «crema»/.test(document.getElementById('pdfTinta').title)"));
+  await clicca('#pdfTinta'); await pausa(200);
+  ok('e premendolo ci si passa davvero', 'crema',
+    await val('document.documentElement.dataset.tinta'));
+  ok('la scelta è scritta dove si ricorda', 'crema',
+    await val("localStorage.getItem('studia.pdf.tinta')"));
+  await val("document.documentElement.dataset.tinta='nessuna', localStorage.removeItem('studia.pdf.tinta'), tintaAggiorna(), 1");
+
   sezione('Il CSS di pdf.js resta nel suo riquadro');
   /* Il foglio del viewer ha una sua `.sidebar` e 46 variabili in `:root`:
      incapsulato male, riscriverebbe l'indice dei capitoli dell'app. */
@@ -497,6 +536,35 @@ async function finoA(expr, quanto) {
   await pausa(400);
   ok('Esc chiude la ricerca…', false, await val("document.getElementById('pdfFindPop').hasAttribute('open')"));
   ok('…e lascia il documento aperto', true, await val("!!PDFJS.doc && document.documentElement.dataset.pdf==='1'"));
+
+  /* ⚠️ ESC A VUOTO NON CHIUDE IL LIBRO (23 agosto 2026). Fino a ieri l'ultimo
+     anello della catena era `closePdf()`: chi premeva Esc una volta di troppo —
+     e Esc si preme d'istinto, e si preme due volte — perdeva il punto in cui
+     stava leggendo. Adesso la scala finisce alla ricerca; il documento si chiude
+     con la ✕, che è un gesto esplicito.
+     Qui si preme TRE volte con niente davanti: una sarebbe passata anche prima,
+     se per caso c'era ancora un pannellino aperto a fare da parafulmine. E il
+     fuoco si toglie da ogni campo, o la guardia dell'editor risponderebbe al
+     posto della regola che si vuole misurare — cioè la prova direbbe verde per
+     la ragione sbagliata.
+     ⚠️ Questa è la parte CDP del lavoro, ed è tutta qui: il cablaggio. Che la
+     priorità fra i tasti sia giusta lo dice `node test/tasti-lettura.js` in
+     quaranta millisecondi. */
+  await val("document.activeElement && document.activeElement.blur && document.activeElement.blur(), closePops(), 1");
+  await pausa(200);
+  for (let i = 0; i < 3; i++) {
+    await invia('Input.dispatchKeyEvent', { type:'keyDown', key:'Escape', code:'Escape', windowsVirtualKeyCode:27 });
+    await invia('Input.dispatchKeyEvent', { type:'keyUp', key:'Escape', code:'Escape', windowsVirtualKeyCode:27 });
+    await pausa(150);
+  }
+  ok('tre Esc a vuoto NON chiudono il documento', true,
+    await val("!!PDFJS.doc && document.documentElement.dataset.pdf==='1'"));
+  /* E la ✕ lo chiude ancora: si toglie un anello alla catena, non il gesto. */
+  await clicca('#pdfClose'); await pausa(400);
+  ok('ma la ✕ sì', false, await val("document.documentElement.dataset.pdf==='1'"));
+  /* Si rimette com'era: lo stato che una prova lascia è l'ingresso di quella dopo. */
+  await val(`openPdf(${JSON.stringify(PDF)}, 3, 'Piano di studio'), 1`);
+  await finoA('!!PDFJS.doc', 15000);
 
   sezione('I guasti che la verifica ostile ha trovato, e che non devono tornare');
 

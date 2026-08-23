@@ -89,6 +89,36 @@
      guardie sono `metaKey || ctrlKey`): erano i suggerimenti a nominare un
      tasto che su Windows non esiste. Puro, provato in Node. -->
 <script src="assets/tasti/nomi.js"></script>
+<!-- Chi vince fra i tasti che si premono leggendo. Una tabella sola, in un
+     posto solo: nel monolite ci sono 24 ascoltatori globali di `keydown` e a
+     parità di nodo e di fase decide l'ordine di registrazione, cioè la
+     posizione del codice nel file — una priorità che non si legge, si scopre
+     premendo. Qui la domanda ha UNA risposta. Puro, provato in Node. -->
+<script src="assets/tasti/lettura.js"></script>
+<!-- La luce e la misura del testo: che cosa è lecito, che cosa fa il passo ai
+     capi della scala, e che cosa vuol dire «di fabbrica» (l'ASSENZA di uno
+     stile in linea, non un numero che gli somiglia). Puro, provato in Node. -->
+<script src="assets/aspetto/stanza.js"></script>
+<!-- ⚠️ E qui si RIMETTE la stanza com'era, PRIMA DEL PRIMO DISEGNO. Non in
+     fondo al file con tutto il resto: là il chiaro farebbe in tempo a
+     lampeggiare, e un lampo bianco in faccia a chi ha scelto lo scuro è
+     esattamente il contrario di quello che ha chiesto.
+     ⚠️ Il corpo si applica solo se una misura c'è: `stile()` risponde `null`
+     per chi non ha mai scelto, e a quel punto NON si scrive niente — comanda il
+     `--fs` del foglio di stile. Scrivere «il valore di fabbrica» in linea
+     inchioderebbe un numero che smetterebbe di somigliare a quello vero il
+     giorno che qualcuno ritocca il CSS. -->
+<script>
+(function(){
+  var r=document.documentElement;
+  try{
+    r.dataset.theme = AspettoStanza.tema(localStorage.getItem('studia.tema'));
+    r.dataset.tinta = AspettoStanza.tinta(localStorage.getItem('studia.pdf.tinta'));
+    var fs = AspettoStanza.stile(localStorage.getItem('studia.fs'));
+    if(fs) r.style.setProperty('--fs', fs);
+  }catch(e){ /* niente localStorage (o niente modulo): si resta di fabbrica */ }
+})();
+</script>
 <!-- La carta: formato del foglio, margini, scala tipografica e il piè coi
      numeri di pagina. Sta qui — prima dell'inline — perché `stampaFoglio()` gli
      chiede le regole al momento di stampare, e perché il suo `@page` deve
@@ -98,6 +128,15 @@
      bottone e il punto che resta sotto il puntatore. Nessuna dipendenza: qui
      dentro non c'è né DOM né viewer, solo aritmetica e stringhe. -->
 <script src="assets/fonti/zoom.js"></script>
+<!-- «Aprite a pagina 142»: che cosa vuol dire quello che si scrive nel
+     contatore, che cosa ci scrive sopra, e come si appiattisce il sommario che
+     il PDF si porta dentro. Il caso che conta è la differenza fra «non ho
+     capito» e «vai a pagina 1». Puro, provato in Node. -->
+<script src="assets/fonti/pagina.js"></script>
+<!-- Dove passano le righe di una pagina: raggruppare i pezzi di testo in bande
+     sbaglia in silenzio (gli apici, i corpi diversi, le due colonne, i due
+     decimi di pixel) e a occhio si proverebbe un caso alla volta. Puro. -->
+<script src="assets/fonti/righello.js"></script>
 <!-- Che cosa entra nell'album delle foto e in che misura: formati letti dai
      byte, tetto delle dimensioni, motivi degli scarti. Puro, provato in Node. -->
 <script src="assets/album/foto.js"></script>
@@ -1068,6 +1107,34 @@
      pretende. Lo scroll è nostro: `pdf_viewer.css` stila le pagine, non il
      contenitore — quella regola sta in `viewer.css`, che non è vendorizzato. */
   #pdfHost{ flex:1; position:relative; min-height:0; background:var(--hover); }
+  /* ---- LA FINESTRA SULLA RIGA --------------------------------------------
+     La mascherina di cartoncino che ogni tutor DSA mette in mano per primo:
+     isola la riga, toglie il salto di rigo, dà all'occhio un posto solo.
+
+     ⚠️ UN ELEMENTO SOLO, e l'ombra fa il buco. `box-shadow` con uno spread
+     enorme scurisce TUTTO CIÒ CHE STA FUORI dall'elemento: la fascia resta
+     trasparente — sotto c'è la pagina vera, coi suoi colori — e il resto va in
+     ombra. Due `<div>` sopra e sotto avrebbero voluto dire due misure da tenere
+     d'accordo a ogni scorrimento, e il giorno che divergono si vede una fessura.
+
+     ⚠️ `pointer-events:none` non è una rifinitura: senza, la fascia
+     intercetterebbe il mouse e il documento non si potrebbe più SELEZIONARE —
+     cioè il righello spegnerebbe «Appunta», l'evidenziatore e le forbici. È il
+     controllo che vale la prova sull'app viva.
+
+     ⚠️ L'ombra è ritagliata da `#pdfHost`, che ha `overflow` suo: si ferma al
+     riquadro della fonte invece di annerire il banco. */
+  #pdfRighello{ position:absolute; left:0; right:0; pointer-events:none; z-index:3;
+    box-shadow:0 0 0 100vmax var(--righello-ombra, rgba(20,18,14,.30));
+    border-top:1px solid rgba(20,18,14,.10); border-bottom:1px solid rgba(20,18,14,.10);
+    transition:top var(--speed) ease, height var(--speed) ease; }
+  #pdfRighello[hidden]{ display:none; }
+  /* Col tema scuro la cornice è già scura: l'ombra dev'essere più leggera, o la
+     fascia diventa l'unica cosa visibile di una pagina già poco luminosa. */
+  html[data-theme="scuro"] #pdfRighello{ --righello-ombra:rgba(0,0,0,.42); }
+  /* ⚠️ Chi ha chiesto meno animazioni non vuole una fascia che insegue: lì il
+     salto da una riga all'altra è netto. */
+  html[data-reduce="1"] #pdfRighello{ transition:none; }
   /* Il Confronto: lo stesso vestito della fonte, un motore suo. */
   #pdfPane2{ display:none; flex-direction:column; height:100%; min-height:0; background:var(--panel); }
   .bcorpo > #pdfPane2{ display:flex!important; height:100%; }
@@ -1343,8 +1410,8 @@
   /* ⚠️ Un solo vestito per i due pannellini che scelgono un materiale — i
      documenti e i media. Sono la stessa cosa vista da due strumenti, e due
      fogli di stile per la stessa lista divergono al primo ritocco. */
-  #pdfDocPop, #plMediaPop{ padding:.3rem; width:min(360px,92vw); max-height:60vh; overflow:auto; }
-  #pdfDocPop .pd-voce, #plMediaPop .pd-voce{ display:block; width:100%; text-align:left; border:0; background:transparent;
+  #pdfDocPop, #plMediaPop, #pdfSommarioPop{ padding:.3rem; width:min(360px,92vw); max-height:60vh; overflow:auto; }
+  #pdfDocPop .pd-voce, #plMediaPop .pd-voce, #pdfSommarioPop .pd-voce{ display:block; width:100%; text-align:left; border:0; background:transparent;
     color:var(--ink); cursor:pointer; padding:.5rem .6rem; font-size:13px; font-family:inherit;
     border-bottom:1px solid var(--line-weak); overflow-wrap:anywhere; }
   #pdfDocPop .pd-voce:last-child, #plMediaPop .pd-voce:last-child{ border-bottom:0; }
@@ -1407,6 +1474,10 @@
      Le pseudo di evidenziatura accettano poche proprietà — fra queste non c'è
      lo sfondo in forma abbreviata, quindi `background-color`. */
   ::highlight(ricerca){ background-color:color-mix(in srgb, var(--yellow) 55%, var(--panel)); color:var(--ink); }
+  /* La frase che la voce sta leggendo, sul documento. Stesso giallo tenue del
+     `.tts-on` dei capitoli — è lo stesso gesto su un'altra superficie, e due
+     colori direbbero due cose. */
+  ::highlight(voce){ background-color:color-mix(in srgb, var(--yellow) 42%, var(--panel)); color:var(--ink); }
   /* ===== Callout negli appunti ===== */
   .ucallout{ margin:.9rem 0; border-left:4px solid var(--uc-col,var(--teal)); padding:.6rem .8rem;
     background:color-mix(in srgb, var(--uc-col,var(--teal)) 9%, var(--panel)); }
@@ -1644,6 +1715,36 @@
      vero. Vale per il layer intero, quindi anche la selezione e i risultati
      della ricerca smettono di coprire il testo. */
   #pdfFrame .textLayer, #pdfFrame2 .textLayer{ mix-blend-mode:multiply; }
+  /* ---- IL FOGLIO COLORATO -------------------------------------------------
+     Per molti dislessici, e per chi ha stress visivo, il bianco pieno «vibra» e
+     le lettere si muovono. Quattro tinte tenui, e il bianco vero come quarta.
+
+     ⚠️ SI TINGE LA PAGINA E SI MOLTIPLICA LA TELA, non si mette un velo sopra.
+     Il canvas di pdf.js è OPACO: un fondo colorato dietro non si vedrebbe.
+     Colorando `.page` e dando alla tela `mix-blend-mode:multiply`, il bianco
+     della tela lascia passare la tinta e l'inchiostro resta inchiostro — il
+     nero moltiplicato per qualunque cosa resta nero. Un velo sopra, invece,
+     avrebbe tinto anche le evidenze e il testo.
+
+     ⚠️ Il `multiply` si accende SOLO con una tinta scelta. Di fabbrica la tela
+     si disegna come sempre: una proprietà di composizione accesa per tutti
+     sarebbe un cambio di resa a carico anche di chi non ha chiesto niente.
+
+     ⚠️ QUESTA REGOLA STA QUI e non in `assets/pdfjs/pdf_viewer.scoped.css`:
+     quel file è GENERATO da `bin/pdfjs-css.js` e si rigenera ricopiandolo da
+     pdf.js. Una modifica a mano là dentro sparirebbe al primo aggiornamento —
+     è la trappola «quello che si genera si genera».
+
+     ⚠️ Niente inversione del PDF nel tema scuro: il layer di testo è in
+     `multiply`, e su un fondo scuro il moltiplicato dà nero — le evidenze
+     sparirebbero. È una misura da fare, non una promessa da scrivere. */
+  html[data-tinta="crema"]{ --pdf-tinta:#f6efdd; }
+  html[data-tinta="azzurro"]{ --pdf-tinta:#e6f0f7; }
+  html[data-tinta="grigio"]{ --pdf-tinta:#f1eee9; }
+  html[data-tinta]:not([data-tinta="nessuna"]) :is(#pdfFrame,#pdfFrame2) .page{
+    background-color:var(--pdf-tinta); }
+  html[data-tinta]:not([data-tinta="nessuna"]) :is(#pdfFrame,#pdfFrame2) .page canvas{
+    mix-blend-mode:multiply; }
   #albRett{ position:fixed; z-index:305; border:2px dashed var(--teal-strong,#0d9488);
     background:color-mix(in srgb, var(--teal-strong,#0d9488) 14%, transparent); pointer-events:none; }
   #pdfPane .pdfbar #pdfRitaglia[aria-pressed="true"]{ background:var(--teal-strong,#0d9488); color:#fff; }
@@ -2253,6 +2354,16 @@
   /* la classe con display batte lo stile predefinito di [hidden]: va riaffermato */
   .pdfpag[hidden]{ display:none!important; }
   .pdfpag #pdfPagN{ font-size:11px; font-weight:700; color:var(--muted); min-width:44px; text-align:center; }
+  /* ⚠️ Il campo è largo QUANTO il contatore che sostituisce. Senza, premere il
+     contatore farebbe saltare tutta la barra di qualche pixel — e su una barra
+     che va a capo può voler dire un comando che scende di riga nell'istante in
+     cui uno sta per premerlo. La stessa lezione del conto della ricerca, che
+     tiene la sua fessura anche da vuoto. */
+  .pdfpag #pdfPagIn{ width:var(--tb-min); min-width:44px; height:var(--tb-h); box-sizing:border-box;
+    font-size:11px; font-weight:700; text-align:center; font-variant-numeric:tabular-nums;
+    background:var(--bg); border:1px solid var(--line); color:var(--ink);
+    font-family:inherit; padding:0 .2rem; }
+  .pdfpag #pdfPagIn[hidden]{ display:none; }
   /* selettore dei materiali da citare */
   #matPop{ width:min(460px,94vw); padding:.5rem; }
   #matPop input{ width:100%; border:1px solid var(--line); background:var(--bg); color:var(--ink); padding:.4rem .5rem; font-size:13px; margin-bottom:.4rem; }
@@ -3889,7 +4000,40 @@ function ttsInVista(el){
   if(r.top<alto+8 || r.bottom>window.innerHeight-8)
     el.scrollIntoView({ block:'center', behavior: document.documentElement.dataset.reduce==='1'?'auto':'smooth' });
 }
+/* ⚠️ Sul PDF non ci sono paragrafi da accendere: c'è il layer di testo, che è
+   una nuvola di `<span>` senza struttura. La frase in lettura si dipinge con la
+   CSS Custom Highlight API — la stessa con cui l'app accende le evidenze e i
+   risultati della ricerca — e il registro dei nomi è CONDIVISO: «voce» va
+   dichiarato qui, o si prenderebbe il posto di un altro segno. */
+function ttsVocePorzione(range){
+  if(!window.CSS || !CSS.highlights || typeof Highlight!=='function') return;
+  try{
+    if(range) CSS.highlights.set('voce', new Highlight(range));
+    else CSS.highlights.delete('voce');
+  }catch(e){}
+}
+/** Una porzione a vista, come `ttsInVista` fa con un elemento. */
+function ttsPorzioneInVista(range){
+  try{
+    var r=range.getBoundingClientRect();
+    if(!r.height) return;
+    var host=$('#pdfHost'); if(!host) return;
+    var h=host.getBoundingClientRect();
+    if(r.top<h.top+8 || r.bottom>h.bottom-8){
+      host.scrollTop += Math.round(r.top-h.top-h.height/3);
+    }
+  }catch(e){}
+}
 function ttsEvidenzia(s){
+  /* La voce sulla PAGINA: niente elemento, una porzione di testo. */
+  if(s && s.range){
+    if(TTS.ultimoEl){ TTS.ultimoEl.classList.remove('tts-on'); TTS.ultimoEl=null; }
+    ttsVocePorzione(s.range);
+    ttsPorzioneInVista(s.range);
+    ttsStato();
+    return;
+  }
+  ttsVocePorzione(null);
   var el=s&&s.el||null;
   /* Un blocco dentro un riquadro chiuso non ha geometria: la voce leggerebbe
      testo invisibile e i comandi non saprebbero dove mettersi. Si riapre. */
@@ -4252,10 +4396,38 @@ else etichetteIniziali();
 
 /* ---- Impostazioni ---- */
 const root=document.documentElement;
-$('#themeToggle').addEventListener('click',()=>{ root.dataset.theme = root.dataset.theme==='scuro' ? 'chiaro' : 'scuro'; });
-let fs=1.06;
-$('#fsPlus').addEventListener('click',()=>{ fs=Math.min(1.5,fs+0.08); root.style.setProperty('--fs',fs+'rem'); });
-$('#fsMinus').addEventListener('click',()=>{ fs=Math.max(0.9,fs-0.08); root.style.setProperty('--fs',fs+'rem'); });
+/* ⚠️ LA SCELTA SI RICORDA (23 agosto 2026). Prima no: chi legge meglio a
+   diciannove pixel, o chi lavora di sera col tema scuro, rimetteva a posto la
+   stanza a ogni avvio. Una preferenza che non si ricorda non è una preferenza:
+   è una domanda posta ogni mattina, e la si pone proprio a chi ha meno energia
+   da spenderci. A rileggerla è lo scriptino in testa al file, che gira prima
+   del primo disegno; qui si scrive soltanto.
+   ⚠️ Sta nel `localStorage` e non nel vault, ed è la linea fissata il 19 agosto
+   coi riquadri: nel vault sta l'aspetto dei CONTENUTI, che viaggia con
+   l'esportazione; qui sta come si vede lo schermo di QUESTA macchina. Uno zaino
+   copiato altrove non si porta dietro la lampada di casa.
+   ⚠️ Il valore corrente non si tiene più in una variabile a parte: era una
+   seconda idea di «a che misura siamo», e la prima che diverge è quella che si
+   vede. Lo si chiede allo stile in linea, che è dove vive davvero. */
+function stanzaScrivi(chiave, valore){
+  try{ if(valore==null) localStorage.removeItem(chiave); else localStorage.setItem(chiave, String(valore)); }catch(e){}
+}
+$('#themeToggle').addEventListener('click',()=>{
+  var t=AspettoStanza.altroTema(root.dataset.theme);
+  root.dataset.theme=t; stanzaScrivi('studia.tema', t);
+});
+function corpoPasso(su){
+  var ora=root.style.getPropertyValue('--fs');
+  var n=AspettoStanza.passo(ora ? parseFloat(ora) : null, su);
+  /* `null` vuol dire «si è già al capo»: non si scrive niente, invece di
+     riscrivere lo stesso valore. È la lezione di `fonti/zoom.js`, dove un clamp
+     cieco faceva RIMPICCIOLIRE premendo «+». */
+  if(n===null) return;
+  root.style.setProperty('--fs', AspettoStanza.stile(n));
+  stanzaScrivi('studia.fs', n);
+}
+$('#fsPlus').addEventListener('click',()=>corpoPasso(true));
+$('#fsMinus').addEventListener('click',()=>corpoPasso(false));
 /* opzioni 'alta leggibilita' e 'meno animazioni' rimosse dalla UI */
 
 /* ---- Navigazione mobile ---- */
@@ -4325,21 +4497,84 @@ $('#backdrop').addEventListener('click',closeNav);
 /* ---- Pulsanti prev/next + tastiera ---- */
 $('#prev').addEventListener('click',()=>go(state.current-1));
 $('#next').addEventListener('click',()=>go(state.current+1));
+/**
+ * DOVE si sta premendo un tasto: la fotografia che `TastiLettura.decidi` chiede
+ * per rispondere. Qui si LEGGE il DOM e basta — nessuna decisione.
+ *
+ * ⚠️ È questa divisione a rendere provabile la priorità dei tasti. La tabella
+ * (`App/assets/tasti/lettura.js`) non tocca il DOM, quindi si prova con
+ * `node test/tasti-lettura.js` in quaranta millisecondi invece che in quaranta
+ * secondi di Electron: alla prova sull'app viva resta il CABLAGGIO — che il
+ * gestore sia attaccato e che `preventDefault` fermi davvero lo scorrimento.
+ * È la stessa scelta di `suMac(nav)` in `tasti/nomi.js`, che si fa passare il
+ * navigatore invece di leggerlo da sé.
+ *
+ * ⚠️ `fuoco` non è `event.target`: è dove sta il CURSORE. Chi ascolta un video
+ * e batte «l» in un appunto sta scrivendo una lettera, e il bersaglio dell'evento
+ * lo direbbe soltanto se il fuoco fosse davvero lì dentro.
+ */
+function tastiDove(e){
+  var a=document.activeElement;
+  var dentro=function(sel){ return !!(a && a.closest && a.closest(sel)); };
+  var fuoco='altro';
+  /* L'ordine conta: chi scrive scrive, prima di ogni altra cosa.
+     ⚠️ `scriveraDaTastiera` è più larga di «il bersaglio è un campo»: comprende
+     `contenteditable` e CodeMirror, che per `tagName` non sono campi di testo —
+     ed è il motivo per cui il vecchio controllo su INPUT/SELECT/TEXTAREA non
+     bastava. */
+  if(typeof scriveraDaTastiera==='function' && scriveraDaTastiera(a)) fuoco='scrittura';
+  else if(dentro('#playerPane')) fuoco='player';
+  /* ⚠️ La mappa si riconosce dal FUOCO, non dall'essere a schermo. Dentro un SVG
+     il bersaglio di un evento è un `<g>`, e un controllo sul `tagName` non lo
+     vede: sfiorare una freccia sulla tela cambiava la pagina sotto. Il vecchio
+     rimedio era grosso — bastava che una mappa fosse APERTA perché le frecce
+     morissero ovunque — e nel banco, che tiene documento e mappa affiancati, era
+     proprio il caso normale. */
+  else if(dentro('#mappaView, #mappaSvg')) fuoco='mappa';
+  else if(dentro('#pdfPane')) fuoco='documento';
+  /* La barra della voce ha le sue frecce (spostano la frase letta): resta fuori
+     come prima, e da qui esce come «scrittura», cioè «non è di nessun altro». */
+  if(dentro('#ttsBar')) fuoco='scrittura';
+  return {
+    fuoco: fuoco,
+    modo: (typeof modoAttivo==='function') ? modoAttivo() : 'corso',
+    pdf: !!(typeof ANTEPRIMA!=='undefined' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file),
+    player: (typeof playerAperto==='function') ? !!playerAperto() : false,
+    righello: (typeof RIGHELLO!=='undefined' && RIGHELLO) ? !!RIGHELLO.acceso : false,
+    giaGestito: !!(e && e.defaultPrevented)
+  };
+}
+/**
+ * Un tasto, un'azione. La scelta la fa la tabella; qui si esegue e basta.
+ *
+ * ⚠️ Chi consuma chiama `preventDefault()`, ed è il patto che tiene ferma tutta
+ * la catena: il gestore del Player guarda `defaultPrevented`, e senza quella
+ * riga la stessa freccia farebbe due cose — cambiare capitolo E saltare cinque
+ * secondi. È il difetto misurato il 23 agosto 2026.
+ */
 document.addEventListener('keydown',e=>{
-  const t=e.target.tagName;
-  if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA') return;
-  // le frecce sul cursore di lettura spostano la frase: non devono anche
-  // cambiare capitolo, o la lettura verrebbe uccisa dallo stesso tasto
-  if(e.defaultPrevented) return;
-  if(e.target.closest && e.target.closest('#ttsBar')) return;
-  /* ⚠️ Con la mappa aperta le frecce non cambiano capitolo. La guardia sopra
-     esclude i campi di testo per `tagName`, ma il bersaglio dentro un SVG è un
-     `<g>`: lavorando sulla tela bastava sfiorare una freccia per cambiare
-     pagina sotto — e su una mappa TUA vorrebbe dire cambiare capitolo mentre si
-     sta scrivendo, con un salvataggio in canna. */
-  if(typeof mappaAperta==='function' && mappaAperta()) return;
-  if(e.key==='ArrowRight') go(state.current+1);
-  if(e.key==='ArrowLeft') go(state.current-1);
+  if(typeof TastiLettura==='undefined') return;
+  var azione=TastiLettura.decidi(
+    { key:e.key, meta:e.metaKey, ctrl:e.ctrlKey, alt:e.altKey, shift:e.shiftKey },
+    tastiDove(e));
+  if(!azione) return;
+  switch(azione){
+    /* Le stesse funzioni dei bottoni ‹ ›, non una seconda strada: `vaiAPagina`
+       stringe già la pagina all'ultima vera e passa dal viewer. */
+    case 'pagina:avanti':    e.preventDefault(); vaiAPagina(ANTEPRIMA.page+1); return;
+    case 'pagina:indietro':  e.preventDefault(); vaiAPagina(ANTEPRIMA.page-1); return;
+    case 'capitolo:avanti':  e.preventDefault(); go(state.current+1); return;
+    case 'capitolo:indietro': e.preventDefault(); go(state.current-1); return;
+    /* ⚠️ `preventDefault` qui è metà della funzione: da spente, ↑ ↓ scorrono la
+       pagina, ed è giusto. Da accesa la fascia le prende, e senza fermarne
+       l'azione di fabbrica il documento scorrerebbe SOTTO la fascia — due
+       movimenti per una freccia. */
+    case 'righello:su':      e.preventDefault(); righelloPasso(false); return;
+    case 'righello:giu':     e.preventDefault(); righelloPasso(true); return;
+    /* Il Player ha già il suo gestore, registrato dopo questo: le sue azioni si
+       lasciano a lui — qui la tabella le nomina solo per dire «non è mia». */
+    default: return;
+  }
 });
 
 /**
@@ -8115,6 +8350,20 @@ function closePdf(){ document.documentElement.dataset.pdf='';
 (function(){
   document.addEventListener('click',function(e){ if(e.target.closest && e.target.closest('#pdfClose')) closePdf(); });
   document.addEventListener('click',function(e){ if(e.target.closest && e.target.closest('#pdfElimina')) fonteElimina(); });
+  /* ⚠️ ESC NON CHIUDE IL DOCUMENTO, e dal 23 agosto 2026 non lo chiude più
+     nessun tasto: il documento si chiude con la ✕, che è un gesto esplicito.
+     Qui resta un anello solo, la RICERCA.
+
+     Il perché è la natura di Esc: è il tasto del «torna indietro di un passo»,
+     si preme d'istinto e si preme due volte. Ogni gradino della scala deve
+     costare niente — e chiudere il documento era l'unico che costasse
+     qualcosa: si perdeva il punto in cui si stava leggendo per aver premuto un
+     tasto una volta di troppo. Un tasto che si preme senza guardare non può
+     avere un ultimo gradino a strapiombo.
+
+     ⚠️ `closePdf` NON è rimasta senza chiamanti: la premono la ✕ (qui sopra),
+     `apertoMolla` e il cambio di documento. È l'anello che se ne va, non la
+     funzione. */
   document.addEventListener('keydown',function(e){
     if(e.key!=='Escape') return;
     var a=document.activeElement; if(a && a.closest && a.closest('#notePane')) return; // non chiudere mentre si scrive
@@ -8127,19 +8376,17 @@ function closePdf(){ document.documentElement.dataset.pdf='';
        documento sotto, con un colpo solo — misurato il 17 agosto. */
     var lente=$('#searchPop');
     if((lente && lente.hasAttribute('open')) || (a && a.id==='searchInput')) return;
-    /* ⚠️ Esc chiude UNA cosa per volta, la più interna: con la ricerca aperta
-       chiude quella e lascia il documento dov'è. Chiudere tutto insieme fa
-       perdere il punto in cui si stava leggendo per aver chiuso un pannellino.
-       È la stessa regola dell'Esc sulle mappe, che esce dal focus prima di
-       chiudere la mappa. */
-    /* Stessa regola di `closePops`: lo strato più interno è la RICERCA, e la
-       ricerca c'è se c'è del colore acceso — anche quando la barra non è a
-       schermo (è il caso di chi arriva dalla lente). Senza `pdfFindAccesa()`
-       questo Esc chiudeva il DOCUMENTO per spegnere un'evidenziatura, cioè
-       faceva perdere il punto in cui si stava leggendo. */
+    /* Stessa regola di `closePops`: la ricerca c'è se c'è del COLORE acceso —
+       anche quando la barra non è a schermo (è il caso di chi arriva dalla
+       lente). Senza `pdfFindAccesa()` un Esc dato per spegnere un'evidenziatura
+       non spegneva niente, e prima del 23 agosto chiudeva addirittura il
+       documento sotto. */
     var pop=$('#pdfFindPop');
     if((pop && pop.hasAttribute('open')) || pdfFindAccesa()){ pdfFindChiudi(); return; }
-    closePdf(); });
+    /* E qui finisce. Un Esc «a vuoto», con un documento aperto e nient'altro
+       davanti, non fa niente: è la risposta giusta a un tasto premuto una volta
+       di troppo. */
+  });
 })();
 /* ---- Ridimensionamento anteprima (drag sul bordo sinistro) ---- */
 (function(){
@@ -8795,7 +9042,7 @@ function closePops(){
      vista da un altro lato: togliergli `open` lo farebbe sparire lasciando il
      colore acceso sulla pagina — cioè ricreerebbe esattamente lo stato invisibile
      che si è appena finito di togliere, per un click sul «+» dello zoom. */
-  ['#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#zainoPop','#pdfDocPop','#plMediaPop','#pittorePop','#stratiPop']
+  ['#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#zainoPop','#pdfDocPop','#pdfSommarioPop','#plMediaPop','#pittorePop','#stratiPop']
     .forEach(function(s){ var e=$(s); if(e) e.removeAttribute('open'); });
   /* ⚠️ Il menu della selezione e la sua barra non si chiudono togliendo un
      attributo: hanno uno stato in una CLASSE (`open`, `aperta`) e due funzioni
@@ -9746,9 +9993,444 @@ function aggiornaBarraPagina(){
   // «p. 7 di 80»: quante siano lo sa solo il documento aperto, e saperlo cambia
   // che cosa vuol dire premere «pagina successiva»
   var tot=(PDFJS.doc && PDFJS.doc.numPages) ? PDFJS.doc.numPages : 0;
-  if(mostra && et) et.textContent='p. '+ANTEPRIMA.page+(tot?(' di '+tot):'');
+  if(mostra && et){
+    /* ⚠️ `PDFPAG` è dichiarato più in basso in questo stesso script: al primo
+       giro può non essere ancora assegnato, e leggerlo solleverebbe. La barra si
+       ridisegna decine di volte, quindi il primo giro senza etichette non costa
+       niente — le avrà il secondo. */
+    var info=(typeof PDFPAG!=='undefined' && PDFPAG) ? PDFPAG : { etichette:null };
+    try{ pagDocInfo(); }catch(e){}
+    et.textContent=FontiPagina.etichetta(ANTEPRIMA.page, { numPages:tot });
+    /* Il suggerimento dice che si può scrivere — ed è l'unico posto in cui lo si
+       può leggere, perché nel contatore ci sta il numero e nient'altro. */
+    et.title=FontiPagina.suggerimento(ANTEPRIMA.page, { etichette:info.etichette });
+    et.setAttribute('aria-label', et.title);
+  }
+  if(!mostra){ try{ pagCampoChiudi(); }catch(e){} }
+  try{ tintaAggiorna(); }catch(e){}
+  try{ righelloAggiorna(); if(!mostra) righelloAccendi(false); }catch(e){}
+  try{ voceAggiorna(); if(!mostra && voceInCorso()) voceFerma(); }catch(e){}
   pdfZoomAggiorna();
 }
+
+/* ===== «Aprite a pagina 142» ==============================================
+   Il contatore delle pagine è un comando: si preme, diventa un campo, si scrive
+   il numero. E se il documento si porta dentro il suo sommario, sotto il campo
+   compare — non l'abbiamo costruito noi, l'ha scritto chi ha fatto il PDF.
+
+   ⚠️ La REGOLA di che cosa vuol dire quello che si scrive sta in
+   `assets/fonti/pagina.js` e si prova con `node test/pagina-fonte.js`. Qui c'è
+   solo il DOM: aprire, chiudere, chiedere al documento. La divisione è la stessa
+   di `fonti/zoom.js`, e serve alla stessa cosa. */
+var PDFPAG={ etichette:null, sommario:null, per:'' };
+
+/** Le due cose che il documento sa di sé e che l'app non può indovinare: come
+ *  chiama le sue pagine, e che sommario ha dentro. Si chiedono UNA VOLTA per
+ *  documento — `per` è il nome di quello per cui valgono. */
+function pagDocInfo(){
+  var f=(ANTEPRIMA && ANTEPRIMA.file)||'';
+  if(!PDFJS.doc || PDFPAG.per===f) return;
+  PDFPAG.per=f; PDFPAG.etichette=null; PDFPAG.sommario=null;
+  var doc=PDFJS.doc;
+  /* ⚠️ Tutte e due possono mancare, e la maggior parte dei PDF non le ha: chi
+     chiama non deve accorgersene. Un `catch` che tace è giusto qui — non c'è
+     niente da dire all'utente, semplicemente quel documento non ha un sommario. */
+  try{ doc.getPageLabels().then(function(v){ if(PDFPAG.per===f) PDFPAG.etichette=v||null; }).catch(function(){}); }catch(e){}
+  try{ doc.getOutline().then(function(v){ if(PDFPAG.per===f) PDFPAG.sommario=FontiPagina.appiattisci(v); }).catch(function(){}); }catch(e){}
+}
+
+function pagCampoAperto(){ var i=$('#pdfPagIn'); return !!i && !i.hidden; }
+/** Il campo prende il posto del contatore. Due stati, un token. */
+function pagCampoApri(){
+  var et=$('#pdfPagN'), i=$('#pdfPagIn');
+  if(!et || !i || ANTEPRIMA.tipo!=='pdf') return;
+  pagDocInfo();
+  et.hidden=true; i.hidden=false;
+  et.setAttribute('aria-expanded','true');
+  i.value=String(ANTEPRIMA.page||1);
+  i.focus(); i.select();
+  pagSommarioApri();
+}
+function pagCampoChiudi(){
+  var et=$('#pdfPagN'), i=$('#pdfPagIn');
+  if(!et || !i) return;
+  i.hidden=true; et.hidden=false;
+  et.setAttribute('aria-expanded','false');
+  var pop=$('#pdfSommarioPop'); if(pop) pop.removeAttribute('open');
+}
+/** Invio: si va dove dice il modulo. `null` vuol dire «non ho capito», e allora
+ *  non si muove niente — il campo resta aperto, così si può correggere. */
+function pagCampoVai(){
+  var i=$('#pdfPagIn'); if(!i) return;
+  var tot=(PDFJS.doc && PDFJS.doc.numPages) ? PDFJS.doc.numPages : 0;
+  var n=FontiPagina.leggi(i.value, { numPages:tot, etichette:PDFPAG.etichette });
+  if(n===null){ i.select(); return; }
+  pagCampoChiudi();
+  vaiAPagina(n);
+}
+
+/* Il sommario, se il documento ce l'ha. Le voci si costruiscono alla prima
+   apertura e restano: risolvere una destinazione costa una chiamata al
+   documento, e un sommario di ottanta voci sono ottanta chiamate. */
+function pagSommarioApri(){
+  var pop=$('#pdfSommarioPop'), et=$('#pdfPagN');
+  if(!pop || !et) return;
+  var voci=PDFPAG.sommario;
+  if(!voci || !voci.length) return;              // niente sommario: niente pannellino
+  pop.innerHTML=voci.map(function(v,idx){
+    return '<button type="button" class="pd-voce so-voce" data-i="'+idx+'" '+
+      'style="padding-left:'+(0.6+v.livello*0.8)+'rem" title="'+escHtml(v.titolo)+'">'+
+      escHtml(v.titolo)+'</button>';
+  }).join('');
+  popAt(pop, et);
+}
+/* ⚠️ La destinazione si risolve QUI e non nel modulo: `getPageIndex` è
+   asincrono e vuole il documento. Il modulo porta avanti `dest` così com'è. */
+function pagSommarioVai(idx){
+  var v=(PDFPAG.sommario||[])[idx]; if(!v || !PDFJS.doc) return;
+  var d=v.dest;
+  var risolvi=(typeof d==='string') ? PDFJS.doc.getDestination(d) : Promise.resolve(d);
+  Promise.resolve(risolvi).then(function(arr){
+    if(!arr || !arr.length) return null;
+    return PDFJS.doc.getPageIndex(arr[0]);
+  }).then(function(i){
+    if(i===null || i===undefined) return;
+    pagCampoChiudi();
+    vaiAPagina(i+1);
+  }).catch(function(){
+    /* Una destinazione che non si risolve è un sommario rotto dentro il file:
+       si dice, invece di lasciare un click che non fa niente. */
+    toast('Questa voce del sommario non porta a nessuna pagina', false);
+  });
+}
+
+/* ===== LA VOCE SULLA PAGINA ===============================================
+   Il lettore vocale che esisteva solo nei capitoli generati, portato dove serve
+   davvero: sul documento che si sta leggendo.
+
+   ⚠️ PERCHÉ CONTA. La dislessia non toglie la comprensione, toglie la
+   decodifica: dopo venti minuti sul PDF si rilegge tre volte la stessa riga.
+   Ascoltare seguendo con l'occhio è la compensazione principale della legge
+   170, e finora nello zaino non c'era — la voce leggeva solo quello che la
+   pipeline aveva generato, cioè l'unica cosa che uno zaino non ha.
+
+   ⚠️ NESSUN MOTORE NUOVO. Il testo passa per `TtsSegmenta`, che è lo stesso
+   segmentatore dei capitoli; la sintesi è `window.vault.voce.rendi`, che è la
+   stessa; la frase si accende con la CSS Custom Highlight API, che è quella
+   delle evidenze e della ricerca. Qui c'è solo il pezzo che mancava: **da dove
+   viene il testo, e come si ritrova nel DOM**.
+
+   ⚠️ IL TESTO VIENE DAL LAYER DI TESTO, non dall'indice su disco. L'indice
+   (`MATERIALI/Indici-PDF/NN.json`) ha lo stesso testo, ma è una stringa: per
+   accendere la frase bisognerebbe RITROVARLA nel DOM, e ritrovare non è
+   trovare. Prendendola dal layer si sa già dove sta — la porzione si costruisce
+   mentre si legge il testo, ed è esatta per costruzione invece che per
+   fortuna.
+
+   ⚠️ E le frasi si tagliano sul testo GREZZO. `ttsSegmenti` normalizza prima di
+   spezzare (scioglie «p. es.» in «per esempio»), e su un testo riscritto le
+   posizioni non tornano più. Misurato che `ttsFrasi` regge le abbreviazioni
+   anche sul grezzo — «p. es. quello» non si spezza, perché dopo il punto non
+   comincia una frase nuova — quindi i confini sono gli stessi e le porzioni
+   restano esatte. Ogni frase grezza passa poi da `ttsSegmenti` per essere
+   DETTA: la normalizzazione avviene dove serve, dentro la frase.
+
+   ⚠️ SI FERMA A FINE PAGINA, ed è una scelta. Girare pagina da sola vorrebbe
+   dire sopravvivere alla ricostruzione del layer di testo a ogni cambio — la
+   trappola nominata in PIANO-ZAINO Z6b — e raddoppiare il rischio del pezzo più
+   grosso del pacchetto. Chi vuole continuare preme ▶ sulla pagina dopo.
+
+   ⚠️ SOLO SU macOS. `lib/voce.js` è `/usr/bin/say`, e `ttsSistema()` risponde
+   già alla domanda: dove la voce non c'è, il comando non compare. Non è una
+   regressione — la voce dei capitoli è macOS-only dal primo giorno — ma va
+   detto. */
+
+/** Il testo della pagina a schermo, con la mappa per tornare al DOM.
+ *  → `{ testo, nodi:[{nodo, da, a}] }`, dove `da/a` sono posizioni nel testo. */
+function vocePaginaTesto(){
+  var pag=document.querySelector('#pdfFrame .page[data-page-number="'+(ANTEPRIMA.page||1)+'"]');
+  var layer=pag && pag.querySelector('.textLayer');
+  if(!layer) return null;
+  var testo='', nodi=[];
+  var it=document.createNodeIterator(layer, NodeFilter.SHOW_TEXT, null);
+  var n;
+  while((n=it.nextNode())){
+    var t=n.nodeValue||'';
+    if(!t) continue;
+    nodi.push({ nodo:n, da:testo.length, a:testo.length+t.length });
+    testo+=t;
+    /* ⚠️ Uno spazio fra un pezzo e l'altro, e va CONTATO nella mappa come parte
+       del pezzo appena messo: pdf.js separa le parole in `<span>` diversi senza
+       spazi dentro, e senza questo il testo direbbe «pianodistudio». */
+    testo+=' '; nodi[nodi.length-1].a+=1;
+  }
+  return testo.trim() ? { testo:testo, nodi:nodi } : null;
+}
+/** Una porzione di DOM da due posizioni nel testo della pagina. */
+function vocePorzione(mappa, da, a){
+  var r=document.createRange(), messoDa=false;
+  for(var i=0;i<mappa.nodi.length;i++){
+    var v=mappa.nodi[i];
+    if(!messoDa && da>=v.da && da<v.a){ r.setStart(v.nodo, Math.min(da-v.da, (v.nodo.nodeValue||'').length)); messoDa=true; }
+    if(messoDa && a>v.da && a<=v.a){ r.setEnd(v.nodo, Math.min(a-v.da, (v.nodo.nodeValue||'').length)); return r; }
+  }
+  if(messoDa){
+    var u=mappa.nodi[mappa.nodi.length-1];
+    try{ r.setEnd(u.nodo, (u.nodo.nodeValue||'').length); return r; }catch(e){}
+  }
+  return null;
+}
+/** Costruisce i segmenti da leggere per la PAGINA a schermo. */
+function voceCostruisciPagina(){
+  TTS.seg=[]; TTS.tot=1; TTS.idx=0; TTS.pos=0; TTS.ancora=[]; TTS.ultimoEl=null;
+  var m=vocePaginaTesto(); if(!m) return false;
+  var frasi=TtsSegmenta.ttsFrasi(m.testo);
+  var cursore=0;
+  frasi.forEach(function(f){
+    var da=m.testo.indexOf(f, cursore);
+    if(da<0) da=cursore;
+    var a=da+f.length;
+    cursore=a;
+    var range=vocePorzione(m, da, a);
+    /* Una frase che non si ritrova nel DOM si legge lo stesso, senza accendersi:
+       la voce è la cosa che serve, l'evidenza è l'aiuto. Meglio leggere senza
+       colore che non leggere. */
+    TtsSegmenta.ttsSegmenti(f, 'frase').forEach(function(sg){ sg.range=range; TTS.seg.push(sg); });
+  });
+  if(!TTS.seg.length) return false;
+  var off=0;
+  TTS.seg.forEach(function(sg){ sg.off=off; off+=sg.t.length+1; });
+  TTS.tot=Math.max(1,off);
+  ttsProg();
+  if(ttsSistema()){
+    ttsPronti={};
+    try{ window.vault.voce.scarta(); }catch(e){}
+    Promise.resolve(TTS.pronto).then(function(){ if(TTS.motore==='sistema') ttsRendi(0); });
+  }
+  return true;
+}
+function voceInCorso(){ return !!(TTS.playing && TTS.seg.length && TTS.seg[0] && TTS.seg[0].range); }
+/** Il testo di questo documento l'ha scritto il riconoscimento? Lo dice
+ *  l'indice, nel campo `ocr` — che c'è solo se qualcuno ha premuto Aa↗. È lo
+ *  stesso posto da cui `ocrDocOfferta` decide se mostrare quel bottone. */
+function voceDaOcr(nome){
+  if(!nome || !FONTI.indici) return false;
+  var d=FONTI.indici.filter(function(x){ return x.pdf===nome; })[0];
+  return !!(d && d.ocr);
+}
+function voceAggiorna(){
+  var b=$('#pdfVoce'); if(!b) return;
+  /* Dove la sintesi di sistema non c'è, il comando non c'è: un bottone che non
+     può fare quello che promette è peggio di un bottone che manca. */
+  b.hidden = !(ANTEPRIMA && ANTEPRIMA.tipo==='pdf' && ttsSistema());
+  var va=voceInCorso();
+  b.textContent = va ? '\u25A0' : '\u25B6';
+  b.title = va ? 'Ferma la lettura' : 'Leggi ad alta voce questa pagina';
+  b.setAttribute('aria-label', b.title);
+  b.classList.toggle('acceso', va);
+}
+function voceFerma(){
+  /* `stopTTS` è la porta unica per fermare la voce, la stessa che premono la ✕
+     della barra dei capitoli e il cambio di capitolo: non una seconda strada. */
+  try{ stopTTS(); }catch(e){ TTS.playing=false; }
+  ttsVocePorzione(null);
+  voceAggiorna();
+}
+function voceAvvia(){
+  if(!ttsSistema()) return;
+  if(voceInCorso()){ voceFerma(); return; }
+  TTS.motore='sistema';
+  if(!voceCostruisciPagina()){
+    toast('Su questa pagina non c\u2019\u00e8 testo da leggere', false);
+    return;
+  }
+  /* ⚠️ Su un documento riconosciuto con Aa↗ la voce legge anche gli errori
+     dell'OCR. La guida lo dichiara già per il testo riconosciuto («testo brutto
+     è meglio di testo spostato: le parole vengono scritte tutte, anche quelle
+     lette male»): qui si dice una volta, la prima, invece di lasciare che uno lo
+     scopra sentendo — e senza capire se il difetto è della voce o del testo.
+     ⚠️ Lo si chiede all'INDICE, che ricorda chi ha letto il documento
+     (`motore`), non al nome del file: è lo stesso posto da cui `ocrDocOfferta`
+     decide se mostrare Aa↗. */
+  if(!VOCE_AVVISATA && voceDaOcr(ANTEPRIMA.file)){
+    VOCE_AVVISATA=true;
+    toast('Questo documento è stato riconosciuto: la voce legge anche gli errori di lettura', false);
+  }
+  ttsDa(0);
+  voceAggiorna();
+}
+var VOCE_AVVISATA=false;
+
+/* ===== LA FINESTRA SULLA RIGA ==============================================
+   Una fascia chiara che scorre sul documento e lascia in ombra il resto.
+
+   ⚠️ DOVE PASSANO LE RIGHE lo dice `assets/fonti/righello.js`, e si prova con
+   `node test/righello.js`: raggruppare i pezzi di testo in bande sbaglia in
+   silenzio (gli apici, i corpi diversi, le due colonne, i due decimi di pixel).
+   Qui c'è solo il DOM — misurare i rettangoli, muovere un elemento. */
+var RIGHELLO={ acceso:false, bande:[], i:-1 };
+
+/** I rettangoli dei pezzi di testo delle pagine A SCHERMO, in coordinate della
+ *  finestra. ⚠️ Solo quelle a schermo: pdf.js monta anche le pagine vicine, e
+ *  le loro righe sono bande che non si vedono — la fascia ci si fermerebbe
+ *  sopra facendo sparire il documento. */
+function righelloMisura(){
+  var host=$('#pdfHost'); if(!host){ RIGHELLO.bande=[]; return; }
+  var hr=host.getBoundingClientRect();
+  var caselle=[];
+  document.querySelectorAll('#pdfFrame .textLayer span').forEach(function(sp){
+    var r=sp.getBoundingClientRect();
+    if(r.height<=0 || r.bottom<hr.top || r.top>hr.bottom) return;
+    caselle.push({ top:r.top, bottom:r.bottom });
+  });
+  RIGHELLO.bande=FontiRighello.righe(caselle);
+}
+/** Porta la fascia sulla banda `i`. `-1` la lascia dov'è. */
+function righelloVai(i){
+  var el=$('#pdfRighello'), host=$('#pdfHost');
+  if(!el || !host) return;
+  var b=RIGHELLO.bande[i];
+  if(!b) return;
+  RIGHELLO.i=i;
+  /* Da coordinate della finestra a coordinate del contenitore: la fascia è
+     `absolute` dentro `#pdfHost`, che scorre. */
+  var hr=host.getBoundingClientRect();
+  var margine=Math.max(2, (b.basso-b.alto)*0.35);   // un filo d'aria sopra e sotto
+  el.style.top=Math.round(b.alto-hr.top+host.scrollTop-margine)+'px';
+  el.style.height=Math.round((b.basso-b.alto)+margine*2)+'px';
+  el.hidden=false;
+}
+function righelloAggiorna(){
+  var b=$('#pdfRighelloBtn'); if(!b) return;
+  b.hidden = !(ANTEPRIMA && ANTEPRIMA.tipo==='pdf');
+  b.classList.toggle('acceso', RIGHELLO.acceso);
+  b.title = RIGHELLO.acceso
+    ? 'Finestra sulla riga accesa — le frecce ↑ ↓ la spostano, Esc la spegne'
+    : 'Finestra sulla riga: isola la riga che stai leggendo';
+  b.setAttribute('aria-label', b.title);
+  b.setAttribute('aria-pressed', String(!!RIGHELLO.acceso));
+}
+function righelloAccendi(acceso){
+  var el=$('#pdfRighello');
+  RIGHELLO.acceso=!!acceso;
+  if(!RIGHELLO.acceso){ if(el) el.hidden=true; RIGHELLO.i=-1; }
+  else {
+    righelloMisura();
+    /* Appena accesa la fascia si mette sulla prima riga a schermo, non «da
+       nessuna parte»: un comando che si accende senza che si veda niente
+       sembra rotto.
+       ⚠️ E se righe non ce ne sono ancora, si RIPROVA una volta. Il layer di
+       testo di pdf.js arriva DOPO il disegno della pagina — su un documento
+       grosso anche di parecchio (misurato: 12,4 secondi su un Mac Intel per un
+       PDF da 266 pagine). Accendere il righello nell'istante sbagliato dava una
+       fascia che non compariva, e il comando sembrava rotto quando era solo in
+       anticipo. Un tentativo solo, e dichiarato: se dopo mezzo secondo il testo
+       non c'è, non c'è — e la fascia si poserà al primo movimento del mouse. */
+    righelloVai(RIGHELLO.i>=0 ? RIGHELLO.i : 0);
+    if(!RIGHELLO.bande.length){
+      setTimeout(function(){
+        if(!RIGHELLO.acceso) return;
+        righelloMisura();
+        if(RIGHELLO.bande.length) righelloVai(0);
+      }, 500);
+    }
+  }
+  righelloAggiorna();
+}
+/** Le frecce: una banda per volta, e al capo non fa niente. */
+function righelloPasso(giu){
+  if(!RIGHELLO.acceso) return;
+  righelloMisura();
+  var i=FontiRighello.passo(RIGHELLO.bande, RIGHELLO.i, giu);
+  if(i===null) return;
+  righelloVai(i);
+  /* Se la banda nuova è fuori dal riquadro, si porta a vista: seguire con le
+     frecce senza che il documento scorra vorrebbe dire perdere la fascia. */
+  var el=$('#pdfRighello'), host=$('#pdfHost');
+  if(el && host){
+    var t=parseInt(el.style.top,10)||0, h=parseInt(el.style.height,10)||0;
+    if(t<host.scrollTop) host.scrollTop=Math.max(0, t-40);
+    else if(t+h>host.scrollTop+host.clientHeight) host.scrollTop=t+h-host.clientHeight+40;
+  }
+}
+
+(function(){
+  /* Il puntatore: la fascia segue la riga più VICINA, non solo quella sotto —
+     passando nell'interlinea non deve sparire e riapparire a ogni pixel. */
+  document.addEventListener('mousemove', function(e){
+    if(!RIGHELLO.acceso) return;
+    var host=$('#pdfHost'); if(!host) return;
+    var hr=host.getBoundingClientRect();
+    if(e.clientX<hr.left || e.clientX>hr.right || e.clientY<hr.top || e.clientY>hr.bottom) return;
+    if(!RIGHELLO.bande.length) righelloMisura();
+    var i=FontiRighello.vicina(RIGHELLO.bande, e.clientY);
+    if(i>=0 && i!==RIGHELLO.i) righelloVai(i);
+  });
+  document.addEventListener('click', function(e){
+    if(e.target.closest && e.target.closest('#pdfRighelloBtn')) righelloAccendi(!RIGHELLO.acceso);
+    if(e.target.closest && e.target.closest('#pdfVoce')) voceAvvia();
+  });
+  /* ⚠️ Il layer di testo si RIDISEGNA a ogni cambio di zoom e di pagina: le
+     bande misurate prima indicano posti che non esistono più. È la trappola
+     nominata in PIANO-ZAINO Z6b per le evidenze, e vale identica qui. */
+  document.addEventListener('scroll', function(){
+    if(RIGHELLO.acceso) RIGHELLO.bande=[];
+  }, true);
+  /* Esc la spegne, ed è un gradino che non costa niente: si accende con un
+     click e si spegne con un tasto, come deve essere per un aiuto alla lettura. */
+  window.addEventListener('keydown', function(e){
+    if(e.key!=='Escape' || !RIGHELLO.acceso) return;
+    e.stopPropagation(); righelloAccendi(false);
+  }, true);
+})();
+
+/* ---- Il foglio colorato: quattro stati di un bottone solo ----------------
+   ⚠️ Cicla invece di aprire un pannellino, ed è la forma del bottone dello zoom
+   qui accanto: una scelta che si fa una volta e non si tocca più non merita una
+   superficie sua. Il nome della tinta sta su `<html>` come il tema — il CSS
+   fa il resto, e i colori vivono solo là (invariante 8). */
+function tintaNome(t){
+  return { nessuna:'nessuna', crema:'crema', azzurro:'azzurra', grigio:'grigia' }[t] || 'nessuna';
+}
+function tintaAggiorna(){
+  var b=$('#pdfTinta'); if(!b) return;
+  b.hidden = !(ANTEPRIMA && ANTEPRIMA.tipo==='pdf');
+  var ora=AspettoStanza.tinta(document.documentElement.dataset.tinta);
+  var poi=AspettoStanza.tintaDopo(ora);
+  /* Il suggerimento dice DOVE si è e DOVE si va: un comando che cicla senza
+     dirlo obbliga a premere quattro volte per capire che cosa fa. */
+  b.title='Tinta del foglio: '+tintaNome(ora)+' — clicca per passare a «'+tintaNome(poi)+'»';
+  b.setAttribute('aria-label', b.title);
+  b.classList.toggle('acceso', ora!=='nessuna');
+}
+function tintaCicla(){
+  var t=AspettoStanza.tintaDopo(document.documentElement.dataset.tinta);
+  document.documentElement.dataset.tinta=t;
+  stanzaScrivi('studia.pdf.tinta', t);
+  tintaAggiorna();
+}
+
+(function(){
+  document.addEventListener('click', function(e){
+    if(!e.target.closest) return;
+    if(e.target.closest('#pdfTinta')){ tintaCicla(); return; }
+    if(e.target.closest('#pdfPagN')){ pagCampoApri(); return; }
+    var v=e.target.closest('#pdfSommarioPop .so-voce');
+    if(v){ pagSommarioVai(+v.getAttribute('data-i')); return; }
+    /* Un click fuori chiude il campo, come ogni pannellino. Non dentro il
+       pannellino del sommario, che È il campo aperto. */
+    if(pagCampoAperto() && !e.target.closest('#pdfPag') && !e.target.closest('#pdfSommarioPop')) pagCampoChiudi();
+  });
+  document.addEventListener('keydown', function(e){
+    if(!pagCampoAperto()) return;
+    if(e.target && e.target.id!=='pdfPagIn') return;
+    if(e.key==='Enter'){ e.preventDefault(); pagCampoVai(); return; }
+    /* ⚠️ Esc chiude IL CAMPO e si ferma lì: `stopPropagation` perché più in giù
+       nella catena ci sono la ricerca e i pannellini, e un Esc dato per
+       rinunciare a scrivere un numero non deve spegnere altro. */
+    if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); pagCampoChiudi(); $('#pdfFrame') && $('#pdfFrame').focus(); return; }
+  }, true);
+})();
 
 /* ---- 📎 selettore dei materiali ---- */
 var MATERIALI={ lista:null, filtro:'' };
@@ -11112,9 +11794,13 @@ function figRidimensiona(verso){
     figRidimensiona(az);
   });
   /* Esc chiude, e in CATTURA su `window` per la stessa ragione del menu della
-     selezione: sul documento ci sono già `closePops()` e `closePdf()` registrati
-     prima, e chiudere questo menu non deve chiudere anche l'anteprima della
-     fonte. */
+     selezione: sul documento ci sono già `closePops()` e la catena della
+     ricerca, registrati prima, e chiudere questo menu non deve spegnere anche
+     quelli.
+     ⚠️ Fino al 23 agosto 2026 il motivo era più grosso — su quel nodo c'era
+     anche `closePdf()`, e un Esc dato qui chiudeva l'anteprima della fonte.
+     Adesso il documento non è più nella catena, ma la ragione della cattura
+     resta: i gestori su `document` restano, e `stopPropagation` non li ferma. */
   window.addEventListener('keydown', function(e){
     if(e.key!=='Escape' || !figMenuAperto()) return;
     e.stopPropagation(); figMenuChiudi();
@@ -12342,9 +13028,14 @@ document.addEventListener('change', function(e){
   selMenuChiudi(); selBarraChiudi(); evidenzeColoreScegli(c); evidenzia(range, c);
 });
 /* ⚠️ In cattura su `window`, come la pila della mappa e per la stessa ragione:
-   in cattura sul DOCUMENTO ci sono già `closePops()` e `closePdf()`, registrati
-   prima, e `stopPropagation` non ferma i gestori che stanno sullo STESSO nodo.
-   Un Esc per chiudere questo menu chiuderebbe anche l'anteprima della fonte. */
+   sul DOCUMENTO ci sono già `closePops()` e la catena della ricerca, registrati
+   prima, e `stopPropagation` non ferma i gestori che stanno sullo STESSO nodo —
+   a quelli servirebbe `stopImmediatePropagation`, che qui dentro non compare
+   mai. Comanda l'ordine di registrazione, e chi arriva in cattura su `window`
+   arriva prima di tutti.
+   ⚠️ Fino al 23 agosto 2026 su quel nodo c'era anche `closePdf()`: un Esc dato
+   per chiudere questo menu chiudeva l'anteprima della fonte sotto. Il documento
+   non è più nella catena, ma la cattura resta necessaria per gli altri. */
 window.addEventListener('keydown', function(e){
   if(e.key!=='Escape') return;
   // uno strato per volta, dal più interno: il menu sta SOPRA la barra
@@ -19117,22 +19808,51 @@ window.addEventListener('keydown', function(e){
   var cr=document.getElementById('creditsModal'), gu=document.getElementById('guidaModal');
   var atl=document.getElementById('atlante');
   if((cr && !cr.hidden) || (gu && !gu.hidden) || (atl && !atl.hidden)) return;
-  e.stopPropagation();
   /* Gli strati si chiudono dal più interno: la casella aperta su una card o su
-     un arco, poi il menu, poi la modalità «collega», poi il pannellino della
-     vista, e solo alla fine la mappa. Una pila, non cinque gestori che si
-     contendono lo stesso tasto. */
-  if(MAPPA.rinomina){ mappaRinominaChiudi(false); return; }
-  if(mapMenuAperto()){ mapMenuChiudi(); return; }
-  if(MAPPA.collega){ mappaCollegaAnnulla(); toast('Collegamento annullato', false); return; }
-  // il focus è uno strato: si esce da lui prima di chiudere la mappa, altrimenti
-  // la mappa si chiuderebbe e riaprirebbe ancora ristretta, senza spiegazione
-  if(MAPPA.focus){ mappaFocusVia(); return; }
-  var pop=$('#mappaPop');
-  if(pop && pop.hasAttribute('open')){ closePops(); return; }
-  // ultimo strato: la mappa lascia il suo blocco. Da B2 anche Esc passa dal
-  // banco, come la ✕ e il tasto in topbar — tre gesti, una strada sola.
-  bancoTogli('mappa');
+     un arco, poi il menu, poi la modalità «collega», poi il fuoco, e infine il
+     pannellino della vista. Una pila, non cinque gestori che si contendono lo
+     stesso tasto.
+
+     ⚠️ SI FERMA LA PROPAGAZIONE SOLO SE SI È FATTO QUALCOSA, e il perché è un
+     rosso pagato il 23 agosto 2026, un'ora dopo aver tolto l'ultimo gradino.
+     `stopPropagation()` stava PRIMA della pila, quando la pila finiva sempre
+     con qualcosa da fare (`bancoTogli('mappa')`): tolto quel gradino, questo
+     gestore si metteva a INGOIARE l'Esc senza fare niente. E lui corre in
+     cattura su `window`, cioè prima di tutti: con una mappa a schermo in un
+     blocco qualunque del banco, Esc smetteva di chiudere la bolla dei riquadri
+     e i risultati della lente. Due prove lo hanno detto, e solo nella suite
+     INTERA — da sole erano verdi, perché da sole nessuna mappa era rimasta
+     aperta da prima.
+     La regola generale: chi si mette davanti a tutti deve farsi da parte quando
+     non è di sua competenza. Fermare la propagazione è un ATTO, e si paga solo
+     se si è consumato il tasto. */
+  var fatto = null;
+  if(MAPPA.rinomina) fatto = function(){ mappaRinominaChiudi(false); };
+  else if(mapMenuAperto()) fatto = function(){ mapMenuChiudi(); };
+  else if(MAPPA.collega) fatto = function(){ mappaCollegaAnnulla(); toast('Collegamento annullato', false); };
+  // il focus è uno strato: si esce da lui prima del pannellino, altrimenti la
+  // mappa si ridisegnerebbe ancora ristretta, senza spiegazione
+  else if(MAPPA.focus) fatto = function(){ mappaFocusVia(); };
+  else { var pop=$('#mappaPop'); if(pop && pop.hasAttribute('open')) fatto = function(){ closePops(); }; }
+  if(!fatto) return;                 // niente da chiudere: l'Esc è di qualcun altro
+  e.stopPropagation();
+  fatto();
+  return;
+  /* ⚠️ E QUI FINISCE: LA MAPPA NON LASCIA IL SUO BLOCCO (23 agosto 2026).
+     L'ultimo gradino chiamava `bancoTogli('mappa')`, e costava più di quanto
+     costasse chiudere un documento: il blocco non tornava «pronto per un'altra
+     mappa», si SVUOTAVA — tendina a «—» e la scritta «Scegli uno strumento qui
+     sopra». Chi premeva Esc una volta di troppo doveva ricomporre il banco.
+     Misurato a mano con gli split aperti: era l'unica cosa che quel tasto
+     faceva, ed era una perdita secca.
+     È la stessa regola tolta lo stesso giorno all'Esc del documento: Esc è il
+     «torna indietro di un passo», si preme d'istinto e si preme due volte, e
+     nessuno dei suoi gradini può costare qualcosa. Gli strati interni —
+     casella, menu, «collega», focus, pannellino ⚙ — restano tutti: quelli
+     tornano indietro davvero.
+     ⚠️ `bancoTogli('mappa')` non resta senza chiamanti: la premono la ✕ del
+     riquadro e il bottone in topbar. Da tre gesti si passa a due, e la strada
+     è sempre una sola. */
 }, true);
 </script>
 <aside id="dock" aria-label="Colonna di lavoro: anteprima e appunti">
@@ -19157,13 +19877,36 @@ window.addEventListener('keydown', function(e){
     <i class="tbsep" aria-hidden="true"></i>
     <span class="pdfpag" id="pdfPag" hidden>
       <button class="tbtn" id="pdfPrev" type="button" title="Pagina precedente" aria-label="Pagina precedente">&#8249;</button>
-      <span id="pdfPagN">p. 1</span>
+      <!-- ⚠️ Il contatore È un comando dal 23 agosto 2026, non più un'insegna:
+           si preme e diventa un campo in cui si scrive il numero. Due stati
+           dello stesso token `.tbtn`, non un bottone in più — «aprite a pagina
+           142» è la frase più detta in un'aula, e finora l'unico modo di
+           arrivarci era la rotella. -->
+      <button class="tbtn" id="pdfPagN" type="button" aria-haspopup="dialog" aria-expanded="false">p. 1</button>
+      <!-- Il campo vive accanto e prende il posto del contatore: `inputmode`
+           numerico perché quasi sempre si batte un numero, ma non `type=number`
+           — le etichette di pagina («iii», «A-4») sono testo, e una rotellina
+           che incrementa un numero romano non vuol dire niente. -->
+      <input type="text" id="pdfPagIn" hidden inputmode="numeric" autocomplete="off"
+             aria-label="Vai a una pagina">
       <button class="tbtn" id="pdfNext" type="button" title="Pagina successiva" aria-label="Pagina successiva">&#8250;</button>
     </span>
     <!-- Zoom e ricerca vivono qui e non nella topbar: sono leve del DOCUMENTO,
          e la topbar dice già la funzione della lezione. Restano nascoste quando
          l'anteprima mostra un video, dove non vogliono dire niente. -->
     <i class="tbsep" aria-hidden="true"></i>
+    <!-- La tinta del foglio: un bottone che CICLA, come quello dello zoom qui
+         accanto — quattro stati di un comando solo, non un pannellino per una
+         scelta che si fa una volta e non si tocca più. -->
+    <button class="tbtn" id="pdfTinta" type="button" hidden>&#9673;</button>
+    <!-- La finestra sulla riga: si accende, segue il mouse, e le frecce su/giù
+         la spostano di riga. Si spegne con Esc, che qui è un gradino che non
+         costa niente. -->
+    <button class="tbtn" id="pdfRighelloBtn" type="button" hidden>&#9647;</button>
+    <!-- La voce sulla pagina. Compare solo dove la sintesi di sistema c'è
+         (macOS): un bottone che non può fare quello che promette è peggio di un
+         bottone che manca. -->
+    <button class="tbtn" id="pdfVoce" type="button" hidden>&#9654;</button>
     <span class="pdfzoom" id="pdfZoom" hidden>
       <button class="tbtn" id="pdfZoomOut" type="button" title="Riduci" aria-label="Riduci">&#8722;</button>
       <!-- ⚠️ Niente `aria-label` qui: coprirebbe il testo visibile, cioè la
@@ -19214,7 +19957,12 @@ window.addEventListener('keydown', function(e){
          nei corsi i materiali li governa la pipeline. -->
     <button class="tbtn" id="pdfElimina" type="button" hidden
             title="Togli questo documento dallo zaino" aria-label="Togli questo documento dallo zaino">&#128465;</button>
-    <button class="tbtn" id="pdfClose" type="button" aria-label="Chiudi anteprima">&#10005;</button>
+    <!-- ⚠️ Il `title` è nato il 23 agosto insieme alla scomparsa dell'Esc: da
+         quando il documento si chiude SOLO da qui, il gesto deve dirsi. Un
+         comando che era anche un tasto e resta solo un bottone, senza
+         suggerimento, è un comando diventato più difficile in silenzio. -->
+    <button class="tbtn" id="pdfClose" type="button"
+            title="Chiudi il documento" aria-label="Chiudi il documento">&#10005;</button>
   </div>
 
   <!-- Il visualizzatore. ⚠️ Due `<div>`, e non è una preferenza: `PDFViewer`
@@ -19225,6 +19973,7 @@ window.addEventListener('keydown', function(e){
        non si poteva né sapere che pagina si stava guardando né disegnarci sopra
        un rettangolo, che sono le due cose per cui questo lavoro esiste. -->
   <div id="pdfHost">
+    <div id="pdfRighello" hidden aria-hidden="true"></div>
     <div id="pdfFrame" tabindex="0" aria-label="Documento"><div class="pdfViewer"></div></div>
   </div>
   <!-- Nessuna fonte aperta: il riquadro lo dice e dice DOVE si apre, come fa
@@ -19521,7 +20270,7 @@ window.addEventListener('keydown', function(e){
          col formato che dice il nostro `@page`. -->
     <button class="mbtn" id="mPdf" type="button" title="Salva la mappa come PDF" aria-label="Salva la mappa come PDF">PDF</button>
     <button class="mbtn mlungo" id="mAdatta" type="button" title="Adatta la mappa alla finestra">&#10530;</button>
-    <button class="mbtn" id="mChiudi" type="button" title="Chiudi la mappa (Esc)" aria-label="Chiudi la mappa">&#10005;</button>
+    <button class="mbtn" id="mChiudi" type="button" title="Chiudi la mappa" aria-label="Chiudi la mappa">&#10005;</button>
   </div>
   <div class="mtela">
     <svg id="mappaSvg" role="list" aria-label="Diagramma"></svg>
@@ -19572,6 +20321,10 @@ window.addEventListener('keydown', function(e){
 <!-- Creare uno zaino: un campo e un bottone, aperti dal «+» accanto alla
      tendina che li elenca. -->
 <div id="pdfDocPop" class="popmenu" role="menu" aria-label="Documenti dello zaino"></div>
+<!-- Il sommario che il PDF si porta dentro: compare sotto il campo della pagina,
+     e solo se il documento ce l'ha. Non lo costruisce l'app — l'ha scritto chi
+     ha fatto il file, ed è la ragione per cui costa poco e vale molto. -->
+<div id="pdfSommarioPop" class="popmenu" role="menu" aria-label="Sommario del documento"></div>
 <div id="plMediaPop" class="popmenu" role="menu" aria-label="Video e audio del contenitore"></div>
 <div id="zainoPop" class="popmenu" role="dialog" aria-label="Crea uno zaino">
   <label class="zp-lab" for="zainoNome">Nome della materia</label>
