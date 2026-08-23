@@ -89,6 +89,12 @@
      guardie sono `metaKey || ctrlKey`): erano i suggerimenti a nominare un
      tasto che su Windows non esiste. Puro, provato in Node. -->
 <script src="assets/tasti/nomi.js"></script>
+<!-- Chi vince fra i tasti che si premono leggendo. Una tabella sola, in un
+     posto solo: nel monolite ci sono 24 ascoltatori globali di `keydown` e a
+     parità di nodo e di fase decide l'ordine di registrazione, cioè la
+     posizione del codice nel file — una priorità che non si legge, si scopre
+     premendo. Qui la domanda ha UNA risposta. Puro, provato in Node. -->
+<script src="assets/tasti/lettura.js"></script>
 <!-- La carta: formato del foglio, margini, scala tipografica e il piè coi
      numeri di pagina. Sta qui — prima dell'inline — perché `stampaFoglio()` gli
      chiede le regole al momento di stampare, e perché il suo `@page` deve
@@ -4279,21 +4285,78 @@ $('#backdrop').addEventListener('click',closeNav);
 /* ---- Pulsanti prev/next + tastiera ---- */
 $('#prev').addEventListener('click',()=>go(state.current-1));
 $('#next').addEventListener('click',()=>go(state.current+1));
+/**
+ * DOVE si sta premendo un tasto: la fotografia che `TastiLettura.decidi` chiede
+ * per rispondere. Qui si LEGGE il DOM e basta — nessuna decisione.
+ *
+ * ⚠️ È questa divisione a rendere provabile la priorità dei tasti. La tabella
+ * (`App/assets/tasti/lettura.js`) non tocca il DOM, quindi si prova con
+ * `node test/tasti-lettura.js` in quaranta millisecondi invece che in quaranta
+ * secondi di Electron: alla prova sull'app viva resta il CABLAGGIO — che il
+ * gestore sia attaccato e che `preventDefault` fermi davvero lo scorrimento.
+ * È la stessa scelta di `suMac(nav)` in `tasti/nomi.js`, che si fa passare il
+ * navigatore invece di leggerlo da sé.
+ *
+ * ⚠️ `fuoco` non è `event.target`: è dove sta il CURSORE. Chi ascolta un video
+ * e batte «l» in un appunto sta scrivendo una lettera, e il bersaglio dell'evento
+ * lo direbbe soltanto se il fuoco fosse davvero lì dentro.
+ */
+function tastiDove(e){
+  var a=document.activeElement;
+  var dentro=function(sel){ return !!(a && a.closest && a.closest(sel)); };
+  var fuoco='altro';
+  /* L'ordine conta: chi scrive scrive, prima di ogni altra cosa.
+     ⚠️ `scriveraDaTastiera` è più larga di «il bersaglio è un campo»: comprende
+     `contenteditable` e CodeMirror, che per `tagName` non sono campi di testo —
+     ed è il motivo per cui il vecchio controllo su INPUT/SELECT/TEXTAREA non
+     bastava. */
+  if(typeof scriveraDaTastiera==='function' && scriveraDaTastiera(a)) fuoco='scrittura';
+  else if(dentro('#playerPane')) fuoco='player';
+  /* ⚠️ La mappa si riconosce dal FUOCO, non dall'essere a schermo. Dentro un SVG
+     il bersaglio di un evento è un `<g>`, e un controllo sul `tagName` non lo
+     vede: sfiorare una freccia sulla tela cambiava la pagina sotto. Il vecchio
+     rimedio era grosso — bastava che una mappa fosse APERTA perché le frecce
+     morissero ovunque — e nel banco, che tiene documento e mappa affiancati, era
+     proprio il caso normale. */
+  else if(dentro('#mappaView, #mappaSvg')) fuoco='mappa';
+  else if(dentro('#pdfPane')) fuoco='documento';
+  /* La barra della voce ha le sue frecce (spostano la frase letta): resta fuori
+     come prima, e da qui esce come «scrittura», cioè «non è di nessun altro». */
+  if(dentro('#ttsBar')) fuoco='scrittura';
+  return {
+    fuoco: fuoco,
+    modo: (typeof modoAttivo==='function') ? modoAttivo() : 'corso',
+    pdf: !!(typeof ANTEPRIMA!=='undefined' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file),
+    player: (typeof playerAperto==='function') ? !!playerAperto() : false,
+    righello: false,                       // acceso da L6, la finestra sulla riga
+    giaGestito: !!(e && e.defaultPrevented)
+  };
+}
+/**
+ * Un tasto, un'azione. La scelta la fa la tabella; qui si esegue e basta.
+ *
+ * ⚠️ Chi consuma chiama `preventDefault()`, ed è il patto che tiene ferma tutta
+ * la catena: il gestore del Player guarda `defaultPrevented`, e senza quella
+ * riga la stessa freccia farebbe due cose — cambiare capitolo E saltare cinque
+ * secondi. È il difetto misurato il 23 agosto 2026.
+ */
 document.addEventListener('keydown',e=>{
-  const t=e.target.tagName;
-  if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA') return;
-  // le frecce sul cursore di lettura spostano la frase: non devono anche
-  // cambiare capitolo, o la lettura verrebbe uccisa dallo stesso tasto
-  if(e.defaultPrevented) return;
-  if(e.target.closest && e.target.closest('#ttsBar')) return;
-  /* ⚠️ Con la mappa aperta le frecce non cambiano capitolo. La guardia sopra
-     esclude i campi di testo per `tagName`, ma il bersaglio dentro un SVG è un
-     `<g>`: lavorando sulla tela bastava sfiorare una freccia per cambiare
-     pagina sotto — e su una mappa TUA vorrebbe dire cambiare capitolo mentre si
-     sta scrivendo, con un salvataggio in canna. */
-  if(typeof mappaAperta==='function' && mappaAperta()) return;
-  if(e.key==='ArrowRight') go(state.current+1);
-  if(e.key==='ArrowLeft') go(state.current-1);
+  if(typeof TastiLettura==='undefined') return;
+  var azione=TastiLettura.decidi(
+    { key:e.key, meta:e.metaKey, ctrl:e.ctrlKey, alt:e.altKey, shift:e.shiftKey },
+    tastiDove(e));
+  if(!azione) return;
+  switch(azione){
+    /* Le stesse funzioni dei bottoni ‹ ›, non una seconda strada: `vaiAPagina`
+       stringe già la pagina all'ultima vera e passa dal viewer. */
+    case 'pagina:avanti':    e.preventDefault(); vaiAPagina(ANTEPRIMA.page+1); return;
+    case 'pagina:indietro':  e.preventDefault(); vaiAPagina(ANTEPRIMA.page-1); return;
+    case 'capitolo:avanti':  e.preventDefault(); go(state.current+1); return;
+    case 'capitolo:indietro': e.preventDefault(); go(state.current-1); return;
+    /* Il Player ha già il suo gestore, registrato dopo questo: le sue azioni si
+       lasciano a lui — qui la tabella le nomina solo per dire «non è mia». */
+    default: return;
+  }
 });
 
 /**
