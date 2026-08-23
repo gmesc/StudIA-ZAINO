@@ -1057,9 +1057,9 @@
   :is(#pdfPane,#pdfPane2) .pdfbar strong{ font-size:12px; font-weight:700; overflow:hidden; text-overflow:ellipsis;
     white-space:nowrap; flex:0 1 auto; min-width:0; }
   /* L'etichetta del selettore è VIVA: dice quale documento è aperto, perché
-     nello zaino è l'unico posto in cui lo si legge — il titolo accanto si
-     accorcia fino a sparire quando il riquadro è stretto. Stessa regola delle
-     tendine del banco, e per lo stesso motivo. */
+     nello zaino è l'unico posto in cui lo si legge — dal 23 agosto 2026 alla
+     lettera, visto che il titolo che le stava accanto non c'è più. Stessa regola
+     delle tendine del banco, e per lo stesso motivo. */
   :is(#pdfPane,#pdfPane2) .pdfbar :is(#pdfDoc,#pdf2Doc){ white-space:nowrap; max-width:min(38cqw,260px); overflow:hidden;
     text-overflow:ellipsis; display:inline-block; line-height:calc(var(--tb-h) - 2px);
     text-transform:none; letter-spacing:0; font-weight:600; }
@@ -8024,7 +8024,9 @@ function openPdf(pdf,page,label){
   }catch(e){ return ''; } })();
   if(verOcr) url+=(url.indexOf('?')<0?'?v=':'&v=')+encodeURIComponent(verOcr);
   var host=$('#pdfHost'); if(host) host.hidden=false;
-  var t=$('#pdfTitle'); if(t) t.textContent=(label||pdf)+(pg?(' \u2014 p.'+pg):'');
+  /* Qui si scriveva il titolo per esteso in barra. Adesso il nome del documento
+     lo dice solo il selettore, che lo prende da `pdfDocEtichetta` giù in
+     `aggiornaBarraPagina`: un posto solo, non due che possono discordare. */
   // il collegamento "apri in una scheda" resta al visualizzatore di sistema, e
   // la' la pagina si dice ancora col frammento #page=
   var nt=$('#pdfNewtab'); if(nt) nt.href=url+(pg?('#page='+pg):'');
@@ -8071,7 +8073,8 @@ function openPdf(pdf,page,label){
     var vera=Math.max(1, Math.min(tot, ANTEPRIMA.page||1));
     if(vera!==ANTEPRIMA.page){
       ANTEPRIMA.page=vera;
-      var t2=$('#pdfTitle'); if(t2) t2.textContent=(ANTEPRIMA.label||ANTEPRIMA.file)+' \u2014 p.'+vera;
+      // (la pagina corretta finiva anche nel titolo in barra: quel titolo non
+      // c'è più, e la pagina la ridice il chip via `aggiornaBarraPagina`)
       var n2=$('#pdfNewtab'); if(n2 && n2.href) n2.href=n2.href.replace(/#page=\d+$/,'')+'#page='+vera;
     }
     PDFJS.viewer.setDocument(doc);
@@ -8096,7 +8099,10 @@ function closePdf(){ document.documentElement.dataset.pdf='';
      continuava a scrivere negli appunti un rimando al documento appena chiuso. */
   ANTEPRIMA={ tipo:null, file:'', num:null, label:'', page:1 };
   PDFFIND.scalaPronta=false;
-  var tt=$('#pdfTitle'); if(tt) tt.textContent='Fonte';
+  /* Il titolo in barra («Fonte» a riposo, il nome del documento a documento
+     aperto) qui tornava neutro. Non c'è più — vedi il perché nella `.pdfbar` —
+     e a rimettere il selettore su «Documenti ▾» ci pensa `aggiornaBarraPagina`
+     qui sotto, che legge l'`ANTEPRIMA` appena azzerata. */
   var hh=$('#pdfHost'); if(hh) hh.hidden=true;
   aggiornaBarraPagina();
   // chiuso il documento, nello zaino il posto degli appunti torna a essere il
@@ -9712,7 +9718,16 @@ function pdfDocEtichetta(){
   var f=(typeof ANTEPRIMA!=='undefined' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf') ? ANTEPRIMA.file : '';
   var nome=f ? (titoloMateriale(f)||f) : '';
   b.textContent=(nome || 'Documenti')+' \u25BE';
-  b.title=nome ? ('Documento aperto: '+nome+' — premi per cambiarlo') : 'Scegli il documento';
+  var dice=nome ? ('Documento aperto: '+nome+' — premi per cambiarlo') : 'Scegli il documento';
+  b.title=dice;
+  /* ⚠️ Anche il nome accessibile è vivo, e viene da qui: l'`aria-label` scritto
+     nel markup COPRE il testo visibile, quindi chi ascolta lo schermo sentiva
+     «scegli il documento» e mai QUALE documento fosse. Finché in barra c'era il
+     titolo per esteso il nome si leggeva lì; adesso che il titolo non c'è più
+     questo bottone è l'unico posto che lo dice, e deve dirlo anche a voce.
+     ⚠️ Non basta togliere l'`aria-label`: il nome accessibile cadrebbe sul testo
+     visibile, che porta in coda il triangolino ▾ della tendina. */
+  b.setAttribute('aria-label', dice);
 }
 function aggiornaBarraPagina(){
   pdfDocEtichetta();
@@ -19124,7 +19139,13 @@ window.addEventListener('keydown', function(e){
 <div id="pdfResizer" role="separator" aria-orientation="vertical" aria-label="Ridimensiona la colonna" title="Trascina per ridimensionare"></div>
 <section id="pdfPane" aria-label="Anteprima della fonte">
   <div class="tbar pdfbar">
-    <strong id="pdfTitle">Fonte</strong>
+    <!-- ⚠️ Qui, fino al 23 agosto 2026, c'era «&lt;strong id="pdfTitle"&gt;»: il titolo
+         del documento per esteso più la pagina. Non c'è più perché era la TERZA
+         copia di due cose già dette meglio due centimetri più in là — il nome sta
+         nel selettore qui sotto, che lo accorcia coi puntini apposta perché è un
+         comando e non un'insegna, e la pagina sta nel chip «p. 1 di 13». Ed era
+         quella copia a rompere la barra: su un nome lungo si prendeva tutta la
+         riga e i comandi finivano a capo, su un piano tutto loro. -->
     <!-- Il selettore del documento: nello ZAINO è la porta per passare da una
          fonte all'altra senza tornare alla sidebar, e sta nella barra dello
          strumento perché è una leva del DOCUMENTO, come lo zoom. -->

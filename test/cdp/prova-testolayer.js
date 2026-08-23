@@ -108,10 +108,21 @@ async function clickXY(x, y, quanti) {
     Math.abs(copertura.pagina[1] - copertura.layer[1]) <= 2);
 
   sezione('L\'ALLINEAMENTO: doppio click sul glifo, esce la parola che sta lì');
-  /* Si prendono tre pezzi di testo sparsi per la pagina, si punta il MOUSE al
-     centro di ciascuno e si fa doppio click. Il browser seleziona la parola che
+  /* Si prendono tre pezzi di testo sparsi per la pagina, si punta il MOUSE su un
+     glifo di ciascuno e si fa doppio click. Il browser seleziona la parola che
      sta sotto il puntatore: se il layer fosse spostato rispetto ai glifi, la
-     parola selezionata non sarebbe quella scritta nel pezzo. */
+     parola selezionata non sarebbe quella scritta nel pezzo.
+
+     ⚠️ SOLO PEZZI DI UNA PAROLA SOLA, e il perché è un rosso pagato il 23 agosto
+     2026. Il filtro accettava qualunque pezzo con quattro lettere di fila, e il
+     punto in cui puntare era il CENTRO del rettangolo: su un pezzo come
+     «situazione problema» il centro cade nello SPAZIO fra le due parole, e un
+     doppio click sullo spazio non seleziona niente. La prova diceva KO con la
+     selezione vuota — accusando l'allineamento del layer per una scelta sbagliata
+     del bersaglio. Restava verde per fortuna, finché la fortuna teneva: bastava
+     che il documento scorresse di trenta pixel perché il pezzo con lo spazio
+     entrasse nella terna. Una parola sola non ha spazi in mezzo, e il centro del
+     suo rettangolo è per forza un glifo. */
   const bersagli = await val(`(()=>{ const p=document.querySelector(${JSON.stringify(SEL_PAG)});
     const t=p.querySelector('.textLayer');
     const sp=[...t.querySelectorAll('span')].filter(s=>{
@@ -120,7 +131,7 @@ async function clickXY(x, y, quanti) {
          parola: puntare a un pezzo fuori dal riquadro manderebbe il click sul
          bordo del pannello, e il rosso accuserebbe il layer per colpa nostra. */
       return r.width>20 && r.height>4 && r.top>0 && r.bottom<innerHeight &&
-             r.left>0 && r.right<innerWidth && /[A-Za-zÀ-ÿ]{4,}/.test(s.textContent); });
+             r.left>0 && r.right<innerWidth && /^[A-Za-zÀ-ÿ]{4,}$/.test(s.textContent.trim()); });
     const passo=Math.max(1, Math.floor(sp.length/4));
     return sp.filter((_,i)=>i%passo===0).slice(0,3).map(s=>{ const r=s.getBoundingClientRect();
       return { testo:s.textContent, x:Math.round(r.left+r.width/2), y:Math.round(r.top+r.height/2) }; }); })()`);
@@ -185,6 +196,19 @@ async function clickXY(x, y, quanti) {
              fermo: !!(pag && pag.getAttribute('data-page-number')==='${PAGINA}'),
              sopra: pag ? pag.getAttribute('data-page-number') : null,
              chiCopre: sotto ? (sotto.tagName.toLowerCase()+'.'+String(sotto.className||'')) : 'niente' }; })()`;
+  /* ⚠️ PRIMA SI PORTA LA PAGINA DAVANTI AGLI OCCHI, e non si spera che ci sia.
+     Il filtro qui sopra vuole una riga lunga INTERAMENTE dentro la finestra:
+     quali righe lo siano dipende da dove si è fermato lo scorrimento, cioè da
+     quanto è alta la barra dei comandi e da che cosa hanno lasciato le prove di
+     prima. Il 23 agosto 2026, tolto il titolo dalla barra, il documento è salito
+     di una riga (~35 px) e su questa pagina NESSUNA riga lunga restava dentro:
+     `misuraRiga` tornava `null` e il rosso diceva «c'è una riga lunga da
+     trascinare — no», accusando il layer di testo per una questione di
+     scorrimento. Portare la pagina al centro rende la misura una MISURA e non
+     una fortuna: se dopo questo non c'è una riga lunga, allora è un fatto. */
+  await val(`(()=>{ const p=document.querySelector(${JSON.stringify(SEL_PAG)});
+    if(p) p.scrollIntoView({block:'center', behavior:'instant'}); return 1; })()`);
+  await pausa(400);
   let riga = await finoA(`(()=>{ const m=${misuraRiga}; return m && m.fermo ? m : null; })()`, 5000);
   if (!riga) {                      // non si è fermato: si dice quello che si è visto
     const ultima = await val(misuraRiga);
