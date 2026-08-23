@@ -133,6 +133,10 @@
      il PDF si porta dentro. Il caso che conta è la differenza fra «non ho
      capito» e «vai a pagina 1». Puro, provato in Node. -->
 <script src="assets/fonti/pagina.js"></script>
+<!-- Dove passano le righe di una pagina: raggruppare i pezzi di testo in bande
+     sbaglia in silenzio (gli apici, i corpi diversi, le due colonne, i due
+     decimi di pixel) e a occhio si proverebbe un caso alla volta. Puro. -->
+<script src="assets/fonti/righello.js"></script>
 <!-- Che cosa entra nell'album delle foto e in che misura: formati letti dai
      byte, tetto delle dimensioni, motivi degli scarti. Puro, provato in Node. -->
 <script src="assets/album/foto.js"></script>
@@ -1103,6 +1107,34 @@
      pretende. Lo scroll è nostro: `pdf_viewer.css` stila le pagine, non il
      contenitore — quella regola sta in `viewer.css`, che non è vendorizzato. */
   #pdfHost{ flex:1; position:relative; min-height:0; background:var(--hover); }
+  /* ---- LA FINESTRA SULLA RIGA --------------------------------------------
+     La mascherina di cartoncino che ogni tutor DSA mette in mano per primo:
+     isola la riga, toglie il salto di rigo, dà all'occhio un posto solo.
+
+     ⚠️ UN ELEMENTO SOLO, e l'ombra fa il buco. `box-shadow` con uno spread
+     enorme scurisce TUTTO CIÒ CHE STA FUORI dall'elemento: la fascia resta
+     trasparente — sotto c'è la pagina vera, coi suoi colori — e il resto va in
+     ombra. Due `<div>` sopra e sotto avrebbero voluto dire due misure da tenere
+     d'accordo a ogni scorrimento, e il giorno che divergono si vede una fessura.
+
+     ⚠️ `pointer-events:none` non è una rifinitura: senza, la fascia
+     intercetterebbe il mouse e il documento non si potrebbe più SELEZIONARE —
+     cioè il righello spegnerebbe «Appunta», l'evidenziatore e le forbici. È il
+     controllo che vale la prova sull'app viva.
+
+     ⚠️ L'ombra è ritagliata da `#pdfHost`, che ha `overflow` suo: si ferma al
+     riquadro della fonte invece di annerire il banco. */
+  #pdfRighello{ position:absolute; left:0; right:0; pointer-events:none; z-index:3;
+    box-shadow:0 0 0 100vmax var(--righello-ombra, rgba(20,18,14,.30));
+    border-top:1px solid rgba(20,18,14,.10); border-bottom:1px solid rgba(20,18,14,.10);
+    transition:top var(--speed) ease, height var(--speed) ease; }
+  #pdfRighello[hidden]{ display:none; }
+  /* Col tema scuro la cornice è già scura: l'ombra dev'essere più leggera, o la
+     fascia diventa l'unica cosa visibile di una pagina già poco luminosa. */
+  html[data-theme="scuro"] #pdfRighello{ --righello-ombra:rgba(0,0,0,.42); }
+  /* ⚠️ Chi ha chiesto meno animazioni non vuole una fascia che insegue: lì il
+     salto da una riga all'altra è netto. */
+  html[data-reduce="1"] #pdfRighello{ transition:none; }
   /* Il Confronto: lo stesso vestito della fonte, un motore suo. */
   #pdfPane2{ display:none; flex-direction:column; height:100%; min-height:0; background:var(--panel); }
   .bcorpo > #pdfPane2{ display:flex!important; height:100%; }
@@ -4471,7 +4503,7 @@ function tastiDove(e){
     modo: (typeof modoAttivo==='function') ? modoAttivo() : 'corso',
     pdf: !!(typeof ANTEPRIMA!=='undefined' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file),
     player: (typeof playerAperto==='function') ? !!playerAperto() : false,
-    righello: false,                       // acceso da L6, la finestra sulla riga
+    righello: (typeof RIGHELLO!=='undefined' && RIGHELLO) ? !!RIGHELLO.acceso : false,
     giaGestito: !!(e && e.defaultPrevented)
   };
 }
@@ -4496,6 +4528,12 @@ document.addEventListener('keydown',e=>{
     case 'pagina:indietro':  e.preventDefault(); vaiAPagina(ANTEPRIMA.page-1); return;
     case 'capitolo:avanti':  e.preventDefault(); go(state.current+1); return;
     case 'capitolo:indietro': e.preventDefault(); go(state.current-1); return;
+    /* ⚠️ `preventDefault` qui è metà della funzione: da spente, ↑ ↓ scorrono la
+       pagina, ed è giusto. Da accesa la fascia le prende, e senza fermarne
+       l'azione di fabbrica il documento scorrerebbe SOTTO la fascia — due
+       movimenti per una freccia. */
+    case 'righello:su':      e.preventDefault(); righelloPasso(false); return;
+    case 'righello:giu':     e.preventDefault(); righelloPasso(true); return;
     /* Il Player ha già il suo gestore, registrato dopo questo: le sue azioni si
        lasciano a lui — qui la tabella le nomina solo per dire «non è mia». */
     default: return;
@@ -9933,6 +9971,7 @@ function aggiornaBarraPagina(){
   }
   if(!mostra){ try{ pagCampoChiudi(); }catch(e){} }
   try{ tintaAggiorna(); }catch(e){}
+  try{ righelloAggiorna(); if(!mostra) righelloAccendi(false); }catch(e){}
   pdfZoomAggiorna();
 }
 
@@ -10026,6 +10065,128 @@ function pagSommarioVai(idx){
     toast('Questa voce del sommario non porta a nessuna pagina', false);
   });
 }
+
+/* ===== LA FINESTRA SULLA RIGA ==============================================
+   Una fascia chiara che scorre sul documento e lascia in ombra il resto.
+
+   ⚠️ DOVE PASSANO LE RIGHE lo dice `assets/fonti/righello.js`, e si prova con
+   `node test/righello.js`: raggruppare i pezzi di testo in bande sbaglia in
+   silenzio (gli apici, i corpi diversi, le due colonne, i due decimi di pixel).
+   Qui c'è solo il DOM — misurare i rettangoli, muovere un elemento. */
+var RIGHELLO={ acceso:false, bande:[], i:-1 };
+
+/** I rettangoli dei pezzi di testo delle pagine A SCHERMO, in coordinate della
+ *  finestra. ⚠️ Solo quelle a schermo: pdf.js monta anche le pagine vicine, e
+ *  le loro righe sono bande che non si vedono — la fascia ci si fermerebbe
+ *  sopra facendo sparire il documento. */
+function righelloMisura(){
+  var host=$('#pdfHost'); if(!host){ RIGHELLO.bande=[]; return; }
+  var hr=host.getBoundingClientRect();
+  var caselle=[];
+  document.querySelectorAll('#pdfFrame .textLayer span').forEach(function(sp){
+    var r=sp.getBoundingClientRect();
+    if(r.height<=0 || r.bottom<hr.top || r.top>hr.bottom) return;
+    caselle.push({ top:r.top, bottom:r.bottom });
+  });
+  RIGHELLO.bande=FontiRighello.righe(caselle);
+}
+/** Porta la fascia sulla banda `i`. `-1` la lascia dov'è. */
+function righelloVai(i){
+  var el=$('#pdfRighello'), host=$('#pdfHost');
+  if(!el || !host) return;
+  var b=RIGHELLO.bande[i];
+  if(!b) return;
+  RIGHELLO.i=i;
+  /* Da coordinate della finestra a coordinate del contenitore: la fascia è
+     `absolute` dentro `#pdfHost`, che scorre. */
+  var hr=host.getBoundingClientRect();
+  var margine=Math.max(2, (b.basso-b.alto)*0.35);   // un filo d'aria sopra e sotto
+  el.style.top=Math.round(b.alto-hr.top+host.scrollTop-margine)+'px';
+  el.style.height=Math.round((b.basso-b.alto)+margine*2)+'px';
+  el.hidden=false;
+}
+function righelloAggiorna(){
+  var b=$('#pdfRighelloBtn'); if(!b) return;
+  b.hidden = !(ANTEPRIMA && ANTEPRIMA.tipo==='pdf');
+  b.classList.toggle('acceso', RIGHELLO.acceso);
+  b.title = RIGHELLO.acceso
+    ? 'Finestra sulla riga accesa — le frecce ↑ ↓ la spostano, Esc la spegne'
+    : 'Finestra sulla riga: isola la riga che stai leggendo';
+  b.setAttribute('aria-label', b.title);
+  b.setAttribute('aria-pressed', String(!!RIGHELLO.acceso));
+}
+function righelloAccendi(acceso){
+  var el=$('#pdfRighello');
+  RIGHELLO.acceso=!!acceso;
+  if(!RIGHELLO.acceso){ if(el) el.hidden=true; RIGHELLO.i=-1; }
+  else {
+    righelloMisura();
+    /* Appena accesa la fascia si mette sulla prima riga a schermo, non «da
+       nessuna parte»: un comando che si accende senza che si veda niente
+       sembra rotto.
+       ⚠️ E se righe non ce ne sono ancora, si RIPROVA una volta. Il layer di
+       testo di pdf.js arriva DOPO il disegno della pagina — su un documento
+       grosso anche di parecchio (misurato: 12,4 secondi su un Mac Intel per un
+       PDF da 266 pagine). Accendere il righello nell'istante sbagliato dava una
+       fascia che non compariva, e il comando sembrava rotto quando era solo in
+       anticipo. Un tentativo solo, e dichiarato: se dopo mezzo secondo il testo
+       non c'è, non c'è — e la fascia si poserà al primo movimento del mouse. */
+    righelloVai(RIGHELLO.i>=0 ? RIGHELLO.i : 0);
+    if(!RIGHELLO.bande.length){
+      setTimeout(function(){
+        if(!RIGHELLO.acceso) return;
+        righelloMisura();
+        if(RIGHELLO.bande.length) righelloVai(0);
+      }, 500);
+    }
+  }
+  righelloAggiorna();
+}
+/** Le frecce: una banda per volta, e al capo non fa niente. */
+function righelloPasso(giu){
+  if(!RIGHELLO.acceso) return;
+  righelloMisura();
+  var i=FontiRighello.passo(RIGHELLO.bande, RIGHELLO.i, giu);
+  if(i===null) return;
+  righelloVai(i);
+  /* Se la banda nuova è fuori dal riquadro, si porta a vista: seguire con le
+     frecce senza che il documento scorra vorrebbe dire perdere la fascia. */
+  var el=$('#pdfRighello'), host=$('#pdfHost');
+  if(el && host){
+    var t=parseInt(el.style.top,10)||0, h=parseInt(el.style.height,10)||0;
+    if(t<host.scrollTop) host.scrollTop=Math.max(0, t-40);
+    else if(t+h>host.scrollTop+host.clientHeight) host.scrollTop=t+h-host.clientHeight+40;
+  }
+}
+
+(function(){
+  /* Il puntatore: la fascia segue la riga più VICINA, non solo quella sotto —
+     passando nell'interlinea non deve sparire e riapparire a ogni pixel. */
+  document.addEventListener('mousemove', function(e){
+    if(!RIGHELLO.acceso) return;
+    var host=$('#pdfHost'); if(!host) return;
+    var hr=host.getBoundingClientRect();
+    if(e.clientX<hr.left || e.clientX>hr.right || e.clientY<hr.top || e.clientY>hr.bottom) return;
+    if(!RIGHELLO.bande.length) righelloMisura();
+    var i=FontiRighello.vicina(RIGHELLO.bande, e.clientY);
+    if(i>=0 && i!==RIGHELLO.i) righelloVai(i);
+  });
+  document.addEventListener('click', function(e){
+    if(e.target.closest && e.target.closest('#pdfRighelloBtn')) righelloAccendi(!RIGHELLO.acceso);
+  });
+  /* ⚠️ Il layer di testo si RIDISEGNA a ogni cambio di zoom e di pagina: le
+     bande misurate prima indicano posti che non esistono più. È la trappola
+     nominata in PIANO-ZAINO Z6b per le evidenze, e vale identica qui. */
+  document.addEventListener('scroll', function(){
+    if(RIGHELLO.acceso) RIGHELLO.bande=[];
+  }, true);
+  /* Esc la spegne, ed è un gradino che non costa niente: si accende con un
+     click e si spegne con un tasto, come deve essere per un aiuto alla lettura. */
+  window.addEventListener('keydown', function(e){
+    if(e.key!=='Escape' || !RIGHELLO.acceso) return;
+    e.stopPropagation(); righelloAccendi(false);
+  }, true);
+})();
 
 /* ---- Il foglio colorato: quattro stati di un bottone solo ----------------
    ⚠️ Cicla invece di aprire un pannellino, ed è la forma del bottone dello zoom
@@ -19542,6 +19703,10 @@ window.addEventListener('keydown', function(e){
          accanto — quattro stati di un comando solo, non un pannellino per una
          scelta che si fa una volta e non si tocca più. -->
     <button class="tbtn" id="pdfTinta" type="button" hidden>&#9673;</button>
+    <!-- La finestra sulla riga: si accende, segue il mouse, e le frecce su/giù
+         la spostano di riga. Si spegne con Esc, che qui è un gradino che non
+         costa niente. -->
+    <button class="tbtn" id="pdfRighelloBtn" type="button" hidden>&#9647;</button>
     <span class="pdfzoom" id="pdfZoom" hidden>
       <button class="tbtn" id="pdfZoomOut" type="button" title="Riduci" aria-label="Riduci">&#8722;</button>
       <!-- ⚠️ Niente `aria-label` qui: coprirebbe il testo visibile, cioè la
@@ -19608,6 +19773,7 @@ window.addEventListener('keydown', function(e){
        non si poteva né sapere che pagina si stava guardando né disegnarci sopra
        un rettangolo, che sono le due cose per cui questo lavoro esiste. -->
   <div id="pdfHost">
+    <div id="pdfRighello" hidden aria-hidden="true"></div>
     <div id="pdfFrame" tabindex="0" aria-label="Documento"><div class="pdfViewer"></div></div>
   </div>
   <!-- Nessuna fonte aperta: il riquadro lo dice e dice DOVE si apre, come fa
