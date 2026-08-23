@@ -19090,9 +19090,21 @@ window.addEventListener('keydown', function(e){
   if(MAPPA.focus){ mappaFocusVia(); return; }
   var pop=$('#mappaPop');
   if(pop && pop.hasAttribute('open')){ closePops(); return; }
-  // ultimo strato: la mappa lascia il suo blocco. Da B2 anche Esc passa dal
-  // banco, come la ✕ e il tasto in topbar — tre gesti, una strada sola.
-  bancoTogli('mappa');
+  /* ⚠️ E QUI FINISCE: LA MAPPA NON LASCIA IL SUO BLOCCO (23 agosto 2026).
+     L'ultimo gradino chiamava `bancoTogli('mappa')`, e costava più di quanto
+     costasse chiudere un documento: il blocco non tornava «pronto per un'altra
+     mappa», si SVUOTAVA — tendina a «—» e la scritta «Scegli uno strumento qui
+     sopra». Chi premeva Esc una volta di troppo doveva ricomporre il banco.
+     Misurato a mano con gli split aperti: era l'unica cosa che quel tasto
+     faceva, ed era una perdita secca.
+     È la stessa regola tolta lo stesso giorno all'Esc del documento: Esc è il
+     «torna indietro di un passo», si preme d'istinto e si preme due volte, e
+     nessuno dei suoi gradini può costare qualcosa. Gli strati interni —
+     casella, menu, «collega», focus, pannellino ⚙ — restano tutti: quelli
+     tornano indietro davvero.
+     ⚠️ `bancoTogli('mappa')` non resta senza chiamanti: la premono la ✕ del
+     riquadro e il bottone in topbar. Da tre gesti si passa a due, e la strada
+     è sempre una sola. */
 }, true);
 </script>
 <aside id="dock" aria-label="Colonna di lavoro: anteprima e appunti">
@@ -19480,7 +19492,7 @@ window.addEventListener('keydown', function(e){
          col formato che dice il nostro `@page`. -->
     <button class="mbtn" id="mPdf" type="button" title="Salva la mappa come PDF" aria-label="Salva la mappa come PDF">PDF</button>
     <button class="mbtn mlungo" id="mAdatta" type="button" title="Adatta la mappa alla finestra">&#10530;</button>
-    <button class="mbtn" id="mChiudi" type="button" title="Chiudi la mappa (Esc)" aria-label="Chiudi la mappa">&#10005;</button>
+    <button class="mbtn" id="mChiudi" type="button" title="Chiudi la mappa" aria-label="Chiudi la mappa">&#10005;</button>
   </div>
   <div class="mtela">
     <svg id="mappaSvg" role="list" aria-label="Diagramma"></svg>

@@ -271,7 +271,7 @@
         </figure>
         <ul>
           <li><strong>Uno strumento sta in un blocco solo.</strong> Se scegli «Mappa» in un blocco dove c'era «Appunti», e la mappa stava già in un altro blocco, i due blocchi si <em>scambiano</em> il contenuto. Non si trascina niente: si sceglie dalla tendina del blocco di destinazione.</li>
-          <li>Per <strong>svuotare</strong> un blocco si chiude la mappa con la sua ✕ (o con <kbd>Esc</kbd>): il blocco resta lì, vuoto, con la scritta «Scegli uno strumento qui sopra.» e la tendina che mostra «—». La ✕ delle Fonti e del Player invece chiude solo il documento o il media: il blocco resta «Fonti» (o «Player»), pronto per un'altra fonte.</li>
+          <li>Per <strong>svuotare</strong> un blocco si chiude la mappa con la sua ✕ (<kbd>Esc</kbd> non la toglie: chiude gli strati dentro la mappa e si ferma lì): il blocco resta lì, vuoto, con la scritta «Scegli uno strumento qui sopra.» e la tendina che mostra «—». La ✕ delle Fonti e del Player invece chiude solo il documento o il media: il blocco resta «Fonti» (o «Player»), pronto per un'altra fonte.</li>
           <li>Se passi a una forma con <em>meno</em> blocchi, gli strumenti che escono non spariscono: aspettano da parte. Un avviso lo dice: <em>«Fuori dal banco: Ritagli · Mappa — tornano cambiando forma»</em>.</li>
           <li>La riga colorata in cima a un blocco dice la famiglia: <span class="dove">blu = fonti</span> (documento, player, confronto), <span class="dove t">verde-acqua = quaderno</span> (appunti, mappa, parole chiave, ritagli, foto).</li>
         </ul>
@@ -492,7 +492,7 @@
           <li data-n="9"><strong>🖨</strong> Stampa la mappa (<kbd>⌘P</kbd>).</li>
           <li data-n="10"><strong>PDF</strong> Salva la mappa come PDF (foglio coricato).</li>
           <li data-n="11"><strong>⤢</strong> Adatta la mappa alla finestra.</li>
-          <li data-n="12"><strong>✕</strong> Chiudi la mappa (<kbd>Esc</kbd>).</li>
+          <li data-n="12"><strong>✕</strong> Chiudi la mappa. È l'unico modo: <kbd>Esc</kbd> chiude quello che è aperto <em>dentro</em> la mappa (la casella, il menu, «collega», il fuoco, il pannellino ⚙) e non la toglie dal blocco.</li>
         </ol>
         <p>Il motore di disposizione (Albero, DAG, Percorso, Anelli) si cambia col <strong>tasto destro sul vuoto</strong> della tela. Non c'è un bottone «Salva»: la mappa si salva da sola poco dopo ogni modifica (un pallino giallo ● in barra dice «modifiche non salvate» finché non è scritta). Non c'è esportazione in PNG/SVG: solo stampa e PDF.</p>
 
@@ -941,7 +941,7 @@
             <tr><td>Zoom del PDF / del Confronto / della foto</td><td><kbd>⇧</kbd> + rotella</td><td><kbd>Shift</kbd> + rotella</td><td>sopra la pagina</td></tr>
             <tr><td>Zoom della mappa</td><td>rotella</td><td>rotella</td><td>sopra la tela</td></tr>
             <tr><td>Zoom di <em>tutta</em> l'app</td><td><kbd>⌘</kbd><kbd>+</kbd> <kbd>⌘</kbd><kbd>−</kbd> <kbd>⌘</kbd><kbd>0</kbd></td><td><kbd>Ctrl</kbd><kbd>+</kbd> <kbd>Ctrl</kbd><kbd>−</kbd> <kbd>Ctrl</kbd><kbd>0</kbd></td><td>menu View del sistema (non è lo zoom del PDF)</td></tr>
-            <tr><td>Chiudi uno strato alla volta: forbici → menu della selezione → barra della selezione → ricerca nel documento → mappa (e il suo pannellino ⚙) → pannellini e finestre</td><td><kbd>Esc</kbd></td><td><kbd>Esc</kbd></td><td>✅ un Esc «a vuoto» non fa niente: il documento resta aperto e si chiude con la <strong>✕</strong></td></tr>
+            <tr><td>Chiudi uno strato alla volta: forbici → menu della selezione → barra della selezione → ricerca nel documento → dentro la mappa (casella, menu, «collega», fuoco, pannellino ⚙) → pannellini e finestre</td><td><kbd>Esc</kbd></td><td><kbd>Esc</kbd></td><td>✅ un Esc «a vuoto» non fa niente: <strong>non chiude il documento e non toglie la mappa dal suo blocco</strong>. Per quelli c'è la <strong>✕</strong></td></tr>
             <tr><td>Crea lo zaino / conferma una finestrella / annulla</td><td><kbd>Invio</kbd> / <kbd>Esc</kbd></td><td><kbd>Invio</kbd> / <kbd>Esc</kbd></td><td>nel campo del nome; nelle finestre «Titolo…»</td></tr>
             <tr><td>Schermo intero · chiudi finestra · ricarica l'app</td><td><kbd>⌃</kbd><kbd>⌘</kbd><kbd>F</kbd> · <kbd>⌘</kbd><kbd>W</kbd> · <kbd>⌘</kbd><kbd>R</kbd></td><td><kbd>F11</kbd> · <kbd>Ctrl</kbd><kbd>W</kbd> · <kbd>Ctrl</kbd><kbd>R</kbd></td><td>menu del sistema (su Windows la barra dei menu è visibile, in inglese)</td></tr>
           </tbody>
