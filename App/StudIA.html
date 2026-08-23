@@ -113,6 +113,7 @@
   var r=document.documentElement;
   try{
     r.dataset.theme = AspettoStanza.tema(localStorage.getItem('studia.tema'));
+    r.dataset.tinta = AspettoStanza.tinta(localStorage.getItem('studia.pdf.tinta'));
     var fs = AspettoStanza.stile(localStorage.getItem('studia.fs'));
     if(fs) r.style.setProperty('--fs', fs);
   }catch(e){ /* niente localStorage (o niente modulo): si resta di fabbrica */ }
@@ -1678,6 +1679,36 @@
      vero. Vale per il layer intero, quindi anche la selezione e i risultati
      della ricerca smettono di coprire il testo. */
   #pdfFrame .textLayer, #pdfFrame2 .textLayer{ mix-blend-mode:multiply; }
+  /* ---- IL FOGLIO COLORATO -------------------------------------------------
+     Per molti dislessici, e per chi ha stress visivo, il bianco pieno «vibra» e
+     le lettere si muovono. Quattro tinte tenui, e il bianco vero come quarta.
+
+     ⚠️ SI TINGE LA PAGINA E SI MOLTIPLICA LA TELA, non si mette un velo sopra.
+     Il canvas di pdf.js è OPACO: un fondo colorato dietro non si vedrebbe.
+     Colorando `.page` e dando alla tela `mix-blend-mode:multiply`, il bianco
+     della tela lascia passare la tinta e l'inchiostro resta inchiostro — il
+     nero moltiplicato per qualunque cosa resta nero. Un velo sopra, invece,
+     avrebbe tinto anche le evidenze e il testo.
+
+     ⚠️ Il `multiply` si accende SOLO con una tinta scelta. Di fabbrica la tela
+     si disegna come sempre: una proprietà di composizione accesa per tutti
+     sarebbe un cambio di resa a carico anche di chi non ha chiesto niente.
+
+     ⚠️ QUESTA REGOLA STA QUI e non in `assets/pdfjs/pdf_viewer.scoped.css`:
+     quel file è GENERATO da `bin/pdfjs-css.js` e si rigenera ricopiandolo da
+     pdf.js. Una modifica a mano là dentro sparirebbe al primo aggiornamento —
+     è la trappola «quello che si genera si genera».
+
+     ⚠️ Niente inversione del PDF nel tema scuro: il layer di testo è in
+     `multiply`, e su un fondo scuro il moltiplicato dà nero — le evidenze
+     sparirebbero. È una misura da fare, non una promessa da scrivere. */
+  html[data-tinta="crema"]{ --pdf-tinta:#f6efdd; }
+  html[data-tinta="azzurro"]{ --pdf-tinta:#e6f0f7; }
+  html[data-tinta="grigio"]{ --pdf-tinta:#f1eee9; }
+  html[data-tinta]:not([data-tinta="nessuna"]) :is(#pdfFrame,#pdfFrame2) .page{
+    background-color:var(--pdf-tinta); }
+  html[data-tinta]:not([data-tinta="nessuna"]) :is(#pdfFrame,#pdfFrame2) .page canvas{
+    mix-blend-mode:multiply; }
   #albRett{ position:fixed; z-index:305; border:2px dashed var(--teal-strong,#0d9488);
     background:color-mix(in srgb, var(--teal-strong,#0d9488) 14%, transparent); pointer-events:none; }
   #pdfPane .pdfbar #pdfRitaglia[aria-pressed="true"]{ background:var(--teal-strong,#0d9488); color:#fff; }
@@ -9901,6 +9932,7 @@ function aggiornaBarraPagina(){
     et.setAttribute('aria-label', et.title);
   }
   if(!mostra){ try{ pagCampoChiudi(); }catch(e){} }
+  try{ tintaAggiorna(); }catch(e){}
   pdfZoomAggiorna();
 }
 
@@ -9995,9 +10027,36 @@ function pagSommarioVai(idx){
   });
 }
 
+/* ---- Il foglio colorato: quattro stati di un bottone solo ----------------
+   ⚠️ Cicla invece di aprire un pannellino, ed è la forma del bottone dello zoom
+   qui accanto: una scelta che si fa una volta e non si tocca più non merita una
+   superficie sua. Il nome della tinta sta su `<html>` come il tema — il CSS
+   fa il resto, e i colori vivono solo là (invariante 8). */
+function tintaNome(t){
+  return { nessuna:'nessuna', crema:'crema', azzurro:'azzurra', grigio:'grigia' }[t] || 'nessuna';
+}
+function tintaAggiorna(){
+  var b=$('#pdfTinta'); if(!b) return;
+  b.hidden = !(ANTEPRIMA && ANTEPRIMA.tipo==='pdf');
+  var ora=AspettoStanza.tinta(document.documentElement.dataset.tinta);
+  var poi=AspettoStanza.tintaDopo(ora);
+  /* Il suggerimento dice DOVE si è e DOVE si va: un comando che cicla senza
+     dirlo obbliga a premere quattro volte per capire che cosa fa. */
+  b.title='Tinta del foglio: '+tintaNome(ora)+' — clicca per passare a «'+tintaNome(poi)+'»';
+  b.setAttribute('aria-label', b.title);
+  b.classList.toggle('acceso', ora!=='nessuna');
+}
+function tintaCicla(){
+  var t=AspettoStanza.tintaDopo(document.documentElement.dataset.tinta);
+  document.documentElement.dataset.tinta=t;
+  stanzaScrivi('studia.pdf.tinta', t);
+  tintaAggiorna();
+}
+
 (function(){
   document.addEventListener('click', function(e){
     if(!e.target.closest) return;
+    if(e.target.closest('#pdfTinta')){ tintaCicla(); return; }
     if(e.target.closest('#pdfPagN')){ pagCampoApri(); return; }
     var v=e.target.closest('#pdfSommarioPop .so-voce');
     if(v){ pagSommarioVai(+v.getAttribute('data-i')); return; }
@@ -19479,6 +19538,10 @@ window.addEventListener('keydown', function(e){
          e la topbar dice già la funzione della lezione. Restano nascoste quando
          l'anteprima mostra un video, dove non vogliono dire niente. -->
     <i class="tbsep" aria-hidden="true"></i>
+    <!-- La tinta del foglio: un bottone che CICLA, come quello dello zoom qui
+         accanto — quattro stati di un comando solo, non un pannellino per una
+         scelta che si fa una volta e non si tocca più. -->
+    <button class="tbtn" id="pdfTinta" type="button" hidden>&#9673;</button>
     <span class="pdfzoom" id="pdfZoom" hidden>
       <button class="tbtn" id="pdfZoomOut" type="button" title="Riduci" aria-label="Riduci">&#8722;</button>
       <!-- ⚠️ Niente `aria-label` qui: coprirebbe il testo visibile, cioè la

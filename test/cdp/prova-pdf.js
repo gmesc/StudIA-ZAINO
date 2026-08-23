@@ -133,6 +133,45 @@ async function finoA(expr, quanto) {
   ok('il layer degli editor di annotazioni non c\'è', 0,
     await val("document.querySelectorAll('#pdfFrame .annotationEditorLayer').length"));
 
+  sezione('Il foglio colorato: la tinta arriva alla pagina, non al testo');
+  /* ⚠️ La REGOLA (quali tinte esistono, che cosa vuol dire un nome storto) sta
+     in `aspetto/stanza.js` e si prova con `node test/stanza.js`. Qui resta il
+     cablaggio: che il nome su `<html>` arrivi davvero alla pagina, e che sia la
+     TELA a moltiplicarsi — è quello il meccanismo, e senza di esso un fondo
+     colorato dietro un canvas opaco non si vedrebbe affatto. */
+  const tinte = {};
+  for (const t of ['nessuna', 'crema', 'azzurro', 'grigio']) {
+    await val(`document.documentElement.dataset.tinta=${JSON.stringify(t)}, 1`);
+    await pausa(120);
+    tinte[t] = await val(`(()=>{ const p=document.querySelector('#pdfFrame .page');
+      if(!p) return null; const c=p.querySelector('canvas');
+      return { fondo:getComputedStyle(p).backgroundColor,
+               blend:c?getComputedStyle(c).mixBlendMode:null }; })()`);
+  }
+  console.log('   ' + JSON.stringify(tinte));
+  ok('di fabbrica la pagina è bianca e la tela non si compone',
+    ['rgb(255, 255, 255)', 'normal'], [tinte.nessuna.fondo, tinte.nessuna.blend]);
+  /* ⚠️ Il `multiply` si accende SOLO con una tinta scelta: una proprietà di
+     composizione accesa per tutti sarebbe un cambio di resa a carico anche di
+     chi non ha chiesto niente. */
+  ok('con una tinta la tela si moltiplica', ['multiply', 'multiply', 'multiply'],
+    [tinte.crema.blend, tinte.azzurro.blend, tinte.grigio.blend]);
+  ok('e le tre tinte sono tre fondi diversi, nessuno bianco', 3,
+    new Set(['crema', 'azzurro', 'grigio'].map((t) => tinte[t].fondo)).size);
+  ok('nessuna delle tre è il bianco', false,
+    ['crema', 'azzurro', 'grigio'].some((t) => tinte[t].fondo === 'rgb(255, 255, 255)'));
+  /* Il comando cicla e dice dove va: un bottone che gira senza dirlo obbliga a
+     premerlo quattro volte per capire che cosa fa. */
+  await val("document.documentElement.dataset.tinta='nessuna', tintaAggiorna(), 1");
+  ok('il comando dice a che tinta si passa', true,
+    await val("/passare a «crema»/.test(document.getElementById('pdfTinta').title)"));
+  await clicca('#pdfTinta'); await pausa(200);
+  ok('e premendolo ci si passa davvero', 'crema',
+    await val('document.documentElement.dataset.tinta'));
+  ok('la scelta è scritta dove si ricorda', 'crema',
+    await val("localStorage.getItem('studia.pdf.tinta')"));
+  await val("document.documentElement.dataset.tinta='nessuna', localStorage.removeItem('studia.pdf.tinta'), tintaAggiorna(), 1");
+
   sezione('Il CSS di pdf.js resta nel suo riquadro');
   /* Il foglio del viewer ha una sua `.sidebar` e 46 variabili in `:root`:
      incapsulato male, riscriverebbe l'indice dei capitoli dell'app. */

@@ -100,5 +100,21 @@ ok('e si scende fino al minimo', S.MIN, v);
 ok('anche lì in un numero finito', true, scesi > 0 && scesi < 20);
 ok('ogni valore toccato è valido', true, S.corpo(v) === S.MIN);
 
+sezione('La tinta del foglio: i nomi qui, i colori nel foglio di stile');
+/* ⚠️ Invariante 8: il modulo tiene la REGOLA, non l'aspetto. Se i colori
+   stessero qui ci sarebbero due verità, e la prima che diverge è quella che si
+   vede. */
+ok('le tinte sono quattro, «nessuna» compresa', 4, S.TINTE.length);
+ok('e nessuna di loro è un colore', true, S.TINTE.every((t) => !/#|rgb/.test(t)));
+ok('«crema» si riconosce', 'crema', S.tinta('crema'));
+ok('gli spazi e le maiuscole non contano', 'azzurro', S.tinta(' Azzurro '));
+/* ⚠️ Il ripiego è il bianco che il PDF ha davvero: un documento che si riapre
+   colorato senza che nessuno l'abbia chiesto è peggio di uno bianco. */
+ok('un nome che non esiste diventa «nessuna»', 'nessuna', S.tinta('fucsia'));
+ok('e il vuoto anche', 'nessuna', S.tinta(null));
+ok('si cicla in tondo', ['crema', 'azzurro', 'grigio', 'nessuna'],
+  ['nessuna', 'crema', 'azzurro', 'grigio'].map(S.tintaDopo));
+ok('e da un nome storto si riparte dalla prima', 'crema', S.tintaDopo('fucsia'));
+
 console.log(ko ? `\n✗ ${ko} controlli falliti` : `\n✓ tutti i controlli passati`);
 process.exit(ko ? 1 : 0);

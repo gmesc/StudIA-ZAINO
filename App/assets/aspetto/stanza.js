@@ -51,6 +51,15 @@
      l'app com'era il giorno prima. */
   var TEMI = ['chiaro', 'scuro'];
 
+  /* Le tinte del foglio, per chi legge male sul bianco pieno. Solo i NOMI: i
+     colori stanno nel foglio di stile, come tutti gli altri.
+     ⚠️ È l'invariante 8 alla lettera — «il vestito non si ricopia». Se i valori
+     stessero qui, il giorno che si ritocca una tinta ci sarebbero due verità e
+     la prima che diverge è quella che si vede. Qui c'è la REGOLA (quali tinte
+     esistono, che cosa vuol dire un nome che non conosciamo); l'aspetto lo dice
+     `html[data-tinta="…"]`. */
+  var TINTE = ['nessuna', 'crema', 'azzurro', 'grigio'];
+
   /* Le misure del corpo, in `rem`. Non sono scelte a caso:
      · FABBRICA è il valore che i bottoni avevano già in memoria (1,06rem, cioè
        i 17px del foglio di stile su una radice da 16);
@@ -81,6 +90,26 @@
 
   /** L'altro dei due: è tutto ciò che serve all'interruttore in testata. */
   function altroTema(v) { return tema(v) === 'scuro' ? 'chiaro' : 'scuro'; }
+
+  /**
+   * La tinta del foglio, dato quello che c'era scritto.
+   *
+   * ⚠️ Il ripiego è «nessuna», cioè il bianco che il PDF ha davvero. Ripiegare
+   * su una tinta per un nome storto vorrebbe dire un documento che si riapre
+   * colorato senza che nessuno l'abbia chiesto — e su un documento a colori
+   * quella tinta si sommerebbe alle figure.
+   */
+  function tinta(v) {
+    var s = (v == null) ? '' : String(v).trim().toLowerCase();
+    return TINTE.indexOf(s) >= 0 ? s : 'nessuna';
+  }
+
+  /** La tinta dopo aver scelto quella dopo: serve a un comando che cicla senza
+   *  aprire un pannellino. Gira in tondo, e «nessuna» è una delle quattro. */
+  function tintaDopo(v) {
+    var i = TINTE.indexOf(tinta(v));
+    return TINTE[(i + 1) % TINTE.length];
+  }
 
   /**
    * Il corpo del testo che si deve applicare, dato quello che c'era scritto.
@@ -141,7 +170,8 @@
   }
 
   return {
-    TEMI: TEMI, FABBRICA: FABBRICA, PASSO: PASSO, MIN: MIN, MAX: MAX,
-    tema: tema, altroTema: altroTema, corpo: corpo, passo: passo, stile: stile
+    TEMI: TEMI, TINTE: TINTE, FABBRICA: FABBRICA, PASSO: PASSO, MIN: MIN, MAX: MAX,
+    tema: tema, altroTema: altroTema, tinta: tinta, tintaDopo: tintaDopo,
+    corpo: corpo, passo: passo, stile: stile
   };
 }));
