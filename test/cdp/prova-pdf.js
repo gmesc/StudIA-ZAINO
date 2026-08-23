@@ -498,6 +498,35 @@ async function finoA(expr, quanto) {
   ok('Esc chiude la ricerca…', false, await val("document.getElementById('pdfFindPop').hasAttribute('open')"));
   ok('…e lascia il documento aperto', true, await val("!!PDFJS.doc && document.documentElement.dataset.pdf==='1'"));
 
+  /* ⚠️ ESC A VUOTO NON CHIUDE IL LIBRO (23 agosto 2026). Fino a ieri l'ultimo
+     anello della catena era `closePdf()`: chi premeva Esc una volta di troppo —
+     e Esc si preme d'istinto, e si preme due volte — perdeva il punto in cui
+     stava leggendo. Adesso la scala finisce alla ricerca; il documento si chiude
+     con la ✕, che è un gesto esplicito.
+     Qui si preme TRE volte con niente davanti: una sarebbe passata anche prima,
+     se per caso c'era ancora un pannellino aperto a fare da parafulmine. E il
+     fuoco si toglie da ogni campo, o la guardia dell'editor risponderebbe al
+     posto della regola che si vuole misurare — cioè la prova direbbe verde per
+     la ragione sbagliata.
+     ⚠️ Questa è la parte CDP del lavoro, ed è tutta qui: il cablaggio. Che la
+     priorità fra i tasti sia giusta lo dice `node test/tasti-lettura.js` in
+     quaranta millisecondi. */
+  await val("document.activeElement && document.activeElement.blur && document.activeElement.blur(), closePops(), 1");
+  await pausa(200);
+  for (let i = 0; i < 3; i++) {
+    await invia('Input.dispatchKeyEvent', { type:'keyDown', key:'Escape', code:'Escape', windowsVirtualKeyCode:27 });
+    await invia('Input.dispatchKeyEvent', { type:'keyUp', key:'Escape', code:'Escape', windowsVirtualKeyCode:27 });
+    await pausa(150);
+  }
+  ok('tre Esc a vuoto NON chiudono il documento', true,
+    await val("!!PDFJS.doc && document.documentElement.dataset.pdf==='1'"));
+  /* E la ✕ lo chiude ancora: si toglie un anello alla catena, non il gesto. */
+  await clicca('#pdfClose'); await pausa(400);
+  ok('ma la ✕ sì', false, await val("document.documentElement.dataset.pdf==='1'"));
+  /* Si rimette com'era: lo stato che una prova lascia è l'ingresso di quella dopo. */
+  await val(`openPdf(${JSON.stringify(PDF)}, 3, 'Piano di studio'), 1`);
+  await finoA('!!PDFJS.doc', 15000);
+
   sezione('I guasti che la verifica ostile ha trovato, e che non devono tornare');
 
   /* ⚠️ LA REGOLA SI È ROVESCIATA IL 17 AGOSTO, e questa prova con lei. Prima un
