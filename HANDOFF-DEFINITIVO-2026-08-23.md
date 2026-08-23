@@ -5,22 +5,25 @@
 > non ripete. Il *come si costruisce qui* sta in `GUIDA-ARCHITETTO.md` e non cambia; il dettaglio
 > di ogni area sta nei `PIANO-*`.
 >
-> ⚠️ **Il pacchetto «Leggere» è cominciato**: L0 e L1 sono su un ramo, non su `main` (§0). La
-> sessione ha anche chiuso una valutazione di codice morto (§2) e **registrato il lavoro del 19 e
-> del 22 agosto che nessun handoff aveva mai raccolto** (§3).
+> ⚠️ **Il pacchetto «Leggere» è FINITO**, tutti e sette, sul ramo `leggere` — non su `main` (§0).
+> La sessione ha anche unito due lavori laterali (il pannellino della ricerca e il titolo tolto
+> dalla barra delle Fonti), chiuso una valutazione di codice morto (§2) e **registrato il lavoro
+> del 19 e del 22 agosto che nessun handoff aveva mai raccolto** (§3).
 
 ---
 
 ## 0. Da dove ripartire, in tre righe
 
-**Si è sul ramo `leggere`**, quattro commit avanti a `main` (che è ferma a `2e7511e`). Albero
-pulito. Il ramo **non è ancora unito e non è stato spinto**: le condizioni del merge sono le
-quattro di GUIDA-ARCHITETTO §7.2, e la (b) — i gesti provati a mano dall'utente — non è ancora
-soddisfatta.
+**Si è sul ramo `leggere`**, quindici commit avanti a `main` (che è ferma a `2e7511e`, col
+pannellino e il titolo già dentro). Albero pulito. Il ramo **non è ancora unito e non è stato
+spinto**.
 
-Del pacchetto «Leggere» (§5) sono **fatti L0 e L1**; il prossimo è **L2, le frecce**. Le due
-decisioni revocabili di §5.6 (la voce che si ferma a fine pagina, il ramo unico) **non sono state
-riaperte**: valgono come scritte.
+Il pacchetto «Leggere» (§5) è **finito: L0-L7**. Le due decisioni revocabili di §5.6 — la voce che
+si ferma a fine pagina, il ramo unico — non sono state riaperte e valgono come scritte.
+
+**Il ramo è pronto per il merge su tre condizioni di quattro**: suite intera verde (56 prove),
+`npm test` verde (45 file, nessuno fuori catena), `main` dentro il ramo e nessun conflitto aperto. Manca la **(b)**: i
+gesti provati a mano. Il comando è in §5.8.
 
 ⚠️ I cinque rami locali già fusi — `evidenze-appunti`, `installer-windows`, `pacchetto`,
 `selmenu-closepops`, `zaino-ricerca-rinomina` — sono stati cancellati oggi; le loro punte sono in
@@ -37,16 +40,16 @@ sbagliata.
 | | |
 |---|---|
 | `main` | **`2e7511e`** — «merge: il PDF degli appunti — link veri, niente testata, il nome della cosa». **Non si è mossa** |
-| ramo di lavoro | **`leggere`**, 4 commit: `937c630` (L0) · `c80f4ef` (questo handoff) · `7b054ea` (L1) · `6801ec8`. **Non spinto** |
+| ramo di lavoro | **`leggere`**, il pacchetto intero più i due laterali uniti. **Non spinto** |
 | remoto | `git@github.com:gmesc/StudIA.git` — `origin/main` allineata a `main` |
-| unità | ✅ **42 file** (`tasti-lettura.js` è il nuovo), tutti dentro la catena di `npm test`, **exit 0 verificato oggi** |
-| CDP | **51 prove** nell'elenco del runner · **54 file** `prova-*.js` sul disco. ⚠️ **Non rieseguite in questa sessione**: l'ultimo verde dichiarato è del 18 agosto, e i lavori del 19 e 22 dichiarano ciascuno le proprie |
+| unità | ✅ **45 file** — nuovi: `tasti-lettura`, `stanza`, `pagina-fonte`, `righello`. Tutti in catena, exit 0 |
+| CDP | ✅ **56 prove**, suite INTERA verde sul ramo. Nuove: `prova-tasti-frecce`, `prova-pagina-campo`, `prova-righello`, `prova-voce-pagina`, `prova-ricerca-pannellino` |
 | pacchetti | i tre in `dist/` sono del **17 agosto**: non contengono il lavoro del 18, del 19 né del 22 |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
-npm test                                                   # 42 file, exit 0
-STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 51 prove sull'app viva
+npm test                                                   # 45 file, exit 0
+STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 56 prove sull'app viva
 STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh prova-stampa.js   # una sola
 ```
 
@@ -56,14 +59,22 @@ da lì `./test/cdp/…` non esiste.
 ⚠️ **Tre file di prova sono ancora fuori dall'elenco**: `prova-l1.js`, `prova-l2.js`,
 `prova-l3l4.js` chiedono un `cdp.js` dentro uno scratchpad di luglio che non esiste più — non
 partirebbero comunque. Restano il punto 6 della coda (§6): si riportano a casa o si tolgono.
-Il conto si fa, non si ricorda: 54 file, 51 in elenco, 3 fuori.
+Il conto si fa, non si ricorda: 59 file, 56 in elenco, 3 fuori.
 
 ---
 
-## 2. Che cosa è entrato oggi
+## 2. Le due decisioni di forma prese oggi
 
-**Niente, nel codice — tranne un commento.** Una sola riga di lavoro reale, ed è una scelta
-dichiarata invece di un'esecuzione.
+Oltre al pacchetto (§5) e ai due lavori laterali uniti su `main`, due scelte che non sono codice
+ma governano il codice.
+
+### La regola dichiarata dall'utente: si scrive per la prova in NODE, non per quella CDP
+
+Non «aggiungere una prova dopo»: scegliere la forma del codice *prima*, così che la parte che si
+sbaglia stia in una funzione pura richiamabile da `node test/<file>.js`. Il perché è misurato in
+`PIANO-MODULI.md` §1 — 40 millisecondi contro 40 secondi più un'istanza di Electron. Ha
+trasformato L0 da prova CDP in modulo, e ha dato la forma a tutti e quattro i moduli nuovi. Alla
+prova CDP resta il **cablaggio**, mai la logica.
 
 ### `StampaFoglio.testata()` resta, con la sua bandierina
 
@@ -208,14 +219,18 @@ Lo zaino oggi è un ottimo posto per **segnare** e un posto povero per **leggere
 
 | | | costo | dov'è il perno |
 |---|---|---|---|
-| **L0** ✅ | **fatto** (`937c630`): il ramo `leggere` + `App/assets/tasti/lettura.js`, la priorità come tabella pura | — | `test/tasti-lettura.js`, 47 controlli, in catena |
-| **L1** ✅ | **fatto** (`7b054ea`): **Esc non chiude il libro** | S | tolto il `closePdf()` finale; ✕ col suo `title`; due controlli in `prova-pdf.js`, verificati al contrario |
-| **L2** | **Le frecce tornano a casa** — e il doppio effetto nel Player, che vale anche nei corsi | S | una clausola nel listener che ha già tutte le guardie, `App/StudIA.html:4282` |
-| **L3** | **La lampada resta accesa** | S | `studia.tema` · `studia.fs`, lette prima del primo disegno |
-| **L4** | **Dimmi la pagina** | S | modulo puro `App/assets/fonti/pagina.js` + il chip in due stati |
-| **L5** | **Il foglio colorato** | S | quattro tinte sul canvas + `studia.pdf.tinta` |
-| **L6** | **La finestra sulla riga** | S | modulo puro `App/assets/fonti/righello.js` + un overlay |
-| **L7** | **La voce sulla pagina** | **M** | l'unico grosso, e l'unico macOS-only |
+| **L0** ✅ | il ramo `leggere` + `App/assets/tasti/lettura.js`, la priorità come tabella pura | — | `937c630` · `test/tasti-lettura.js`, 47 controlli |
+| **L1** ✅ | **Esc non chiude il libro** | S | `7b054ea` · tolto il `closePdf()` finale; ✕ col suo `title` |
+| **L2** ✅ | **Le frecce tornano a casa** — e il doppio effetto nel Player | S | `b8807b3` · `prova-tasti-frecce.js`; controprova a 5 rossi |
+| **L3** ✅ | **La lampada resta accesa** | S | `58266f1` · `aspetto/stanza.js` + `test/stanza.js` |
+| **L4** ✅ | **«Aprite a pagina 142»** — il contatore diventa un comando, col sommario del PDF | S | `63bf479` · `fonti/pagina.js` + `prova-pagina-campo.js` |
+| **L5** ✅ | **Il foglio colorato** | S | `ea5a4b0` · quattro tinte, la tela si moltiplica |
+| **L6** ✅ | **La finestra sulla riga** | S | `1de49ff` · `fonti/righello.js` + `prova-righello.js` |
+| **L7** ✅ | **La voce sulla pagina** | **M** | `2d05e5f` · macOS-only; ogni frase sa dove sta nel DOM |
+
+**Fuori dal piano, entrati strada facendo**: l'Esc della mappa che svuotava il blocco
+(`467130b`), e il difetto che quella correzione ha introdotto — il gestore che ingoiava l'Esc senza
+usarlo (`0104171`), trovato dalla suite INTERA e da nessuna prova singola.
 
 ### 5.3 La spina dorsale, e perché non è un router
 
@@ -326,11 +341,36 @@ tinta vale per tutti i documenti come lo zoom.
 
 ### 5.7 A lavoro finito
 
-`PIANO-ZAINO.md` prende una sezione **Z12 — leggere**. `GUIDA-ARCHITETTO.md` **non** si tocca:
-nessun invariante cambia. Le prove nuove entrano nei **due** registri (`PROVE=(` e la catena di
-`package.json`) e il conto si conta.
+`PIANO-ZAINO.md` prende una sezione **Z12 — leggere** (da scrivere).
+`GUIDA-ARCHITETTO.md` **non** è stata toccata: nessun invariante è cambiato. La guida illustrata
+dello ZAINO è aggiornata (`6f584fc`) — ⚠️ **tranne la schermata `img/20-pdfbar-numerata.png`, che
+mostra la barra di prima**: col titolo e senza i tre comandi nuovi. Si rigenera con la campagna CDP
+del laboratorio, ed è un lavoro a sé.
 
----
+### 5.8 I gesti da provare a mano — la condizione (b) del merge
+
+```bash
+cd "/Users/giacomomeschini/Claude/StudIA/StudIA" && git checkout leggere && npm start
+```
+
+1. **Esc** tre volte con un documento aperto → il documento resta. La **✕** lo chiude.
+2. Mappa in uno split, **Esc** tre volte → il blocco resta suo. La **✕** lo svuota.
+3. **← →** col fuoco sul documento → voltano pagina. Torna ai corsi: il capitolo non si è mosso.
+4. **⌘←** → non fa niente.
+5. Click su **«p. 3 di 24»**, scrivi `18`, Invio. Poi riaprilo e premi **Esc**: il campo si chiude,
+   il documento resta. Su un PDF che ha il sommario, aprilo dal campo.
+6. **◉** cicla le tinte; scegli crema, chiudi e riapri l'app: c'è ancora.
+7. **▯** accendi il righello, leggi mezza pagina col mouse e mezza con ↑ ↓. **Poi seleziona una
+   frase**: la barra della selezione si apre e «Appunta» funziona.
+8. **▶** la voce legge e la frase si accende. Fermala a metà. Provala anche su un PDF riconosciuto
+   con **Aa↗** e senti quanto è brutto — è il caso che decide se l'avviso basta.
+9. Tema scuro + **A+** due volte, chiudi e riapri: la stanza è come l'avevi lasciata, **senza
+   lampeggiare bianco** all'avvio.
+10. In un **corso**: ← → cambiano ancora capitolo, ed Esc si comporta come prima.
+
+⚠️ Il punto 8 è l'unico che questa sessione **non ha potuto verificare**: che la voce esca dagli
+altoparlanti e dica le parole giuste si sente con le orecchie. Tutto quello che sta prima del suono
+è misurato.
 
 ## 6. Che cosa viene dopo, in ordine di maturità
 
