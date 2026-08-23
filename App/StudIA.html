@@ -19252,19 +19252,36 @@ window.addEventListener('keydown', function(e){
   var cr=document.getElementById('creditsModal'), gu=document.getElementById('guidaModal');
   var atl=document.getElementById('atlante');
   if((cr && !cr.hidden) || (gu && !gu.hidden) || (atl && !atl.hidden)) return;
-  e.stopPropagation();
   /* Gli strati si chiudono dal più interno: la casella aperta su una card o su
-     un arco, poi il menu, poi la modalità «collega», poi il pannellino della
-     vista, e solo alla fine la mappa. Una pila, non cinque gestori che si
-     contendono lo stesso tasto. */
-  if(MAPPA.rinomina){ mappaRinominaChiudi(false); return; }
-  if(mapMenuAperto()){ mapMenuChiudi(); return; }
-  if(MAPPA.collega){ mappaCollegaAnnulla(); toast('Collegamento annullato', false); return; }
-  // il focus è uno strato: si esce da lui prima di chiudere la mappa, altrimenti
-  // la mappa si chiuderebbe e riaprirebbe ancora ristretta, senza spiegazione
-  if(MAPPA.focus){ mappaFocusVia(); return; }
-  var pop=$('#mappaPop');
-  if(pop && pop.hasAttribute('open')){ closePops(); return; }
+     un arco, poi il menu, poi la modalità «collega», poi il fuoco, e infine il
+     pannellino della vista. Una pila, non cinque gestori che si contendono lo
+     stesso tasto.
+
+     ⚠️ SI FERMA LA PROPAGAZIONE SOLO SE SI È FATTO QUALCOSA, e il perché è un
+     rosso pagato il 23 agosto 2026, un'ora dopo aver tolto l'ultimo gradino.
+     `stopPropagation()` stava PRIMA della pila, quando la pila finiva sempre
+     con qualcosa da fare (`bancoTogli('mappa')`): tolto quel gradino, questo
+     gestore si metteva a INGOIARE l'Esc senza fare niente. E lui corre in
+     cattura su `window`, cioè prima di tutti: con una mappa a schermo in un
+     blocco qualunque del banco, Esc smetteva di chiudere la bolla dei riquadri
+     e i risultati della lente. Due prove lo hanno detto, e solo nella suite
+     INTERA — da sole erano verdi, perché da sole nessuna mappa era rimasta
+     aperta da prima.
+     La regola generale: chi si mette davanti a tutti deve farsi da parte quando
+     non è di sua competenza. Fermare la propagazione è un ATTO, e si paga solo
+     se si è consumato il tasto. */
+  var fatto = null;
+  if(MAPPA.rinomina) fatto = function(){ mappaRinominaChiudi(false); };
+  else if(mapMenuAperto()) fatto = function(){ mapMenuChiudi(); };
+  else if(MAPPA.collega) fatto = function(){ mappaCollegaAnnulla(); toast('Collegamento annullato', false); };
+  // il focus è uno strato: si esce da lui prima del pannellino, altrimenti la
+  // mappa si ridisegnerebbe ancora ristretta, senza spiegazione
+  else if(MAPPA.focus) fatto = function(){ mappaFocusVia(); };
+  else { var pop=$('#mappaPop'); if(pop && pop.hasAttribute('open')) fatto = function(){ closePops(); }; }
+  if(!fatto) return;                 // niente da chiudere: l'Esc è di qualcun altro
+  e.stopPropagation();
+  fatto();
+  return;
   /* ⚠️ E QUI FINISCE: LA MAPPA NON LASCIA IL SUO BLOCCO (23 agosto 2026).
      L'ultimo gradino chiamava `bancoTogli('mappa')`, e costava più di quanto
      costasse chiudere un documento: il blocco non tornava «pronto per un'altra
