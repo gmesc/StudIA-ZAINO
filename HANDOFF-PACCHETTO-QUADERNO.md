@@ -54,7 +54,7 @@ per questo stanno insieme: toccano `_evidenze.json`, la barra della selezione, l
 | | | costo | famiglia |
 |---|---|---|---|
 | Q1 | **Il quaderno si riapre alla riga** | S | ritrovare |
-| Q2 | **La lente accende anche il quaderno** | S | ritrovare |
+| Q2 | **La lente porta al punto esatto** (editor **e** PDF) | S | ritrovare |
 | Q3 | **Il pallino che mantiene la promessa** | S | lavorare |
 | Q4 | **Sbirciare senza saltare** | M | ritrovare |
 | Q5 | **La lente legge anche le mappe e le didascalie** | S | ritrovare |
@@ -105,7 +105,7 @@ mostrare. Con i casi limite: file accorciato, riga 0, riga oltre la fine, valore
 
 ---
 
-## Q2 — La lente accende anche il quaderno · S
+## Q2 — La lente porta al punto esatto: nell'editor E nel PDF · S
 
 **Il gesto.** Dalla lente clicchi un risultato sotto APPUNTI: l'appunto si apre **e l'editor scorre
 alla prima occorrenza, selezionata**. Oggi si apre in cima.
@@ -133,6 +133,34 @@ Una convenzione con due significati non è una convenzione.
 
 **La parte pura**: dato il testo dell'appunto e la richiesta interpretata, l'**indice del primo
 carattere** dell'occorrenza (o `null`). Provabile in Node su stringhe, senza CodeMirror.
+
+⚠️ **`null` NON È 0.** «Apri in cima perché non ho trovato niente» e «apri al carattere zero perché
+l'occorrenza è lì» sono due cose diverse, e trattarle uguale è lo stesso difetto che il pacchetto
+«Leggere» ha già dovuto chiudere due volte (`aspetto/stanza.js`, `fonti/pagina.js`).
+
+### E il lato PDF, che è metà del lavoro
+
+⚠️ **La richiesta dell'utente è esplicita: «la lente deve portarmi al posto esatto nell'editor E nel
+PDF».** Il ramo `if(r.d.materiale)` di `searchGoto` fa già tre cose giuste — apre il documento alla
+pagina, riempie il campo della ricerca, e `pdfFindApri({fuoco:false})` lancia un `findagain` di
+pdf.js, che seleziona un'occorrenza **e ci scorre sopra**. Sulla carta il punto esatto ci sarebbe.
+
+⚠️ **MA NON È STATO VERIFICATO A SCHERMO**, ed è dichiarato: nel vault di prova la lente non
+restituisce risultati di tipo «pagina» (33 documenti indicizzati, tutti capitoli; `SEARCH.last` a 0
+cercando una parola che nei PDF c'è). **Serve un vault con gli indici PDF, o costruirne uno.** È il
+primo passo di Q2, prima di toccare qualunque cosa.
+
+⚠️ **E c'è un difetto latente da guardare, leggibile senza aprire niente**: quella catena aspetta il
+documento con un **`setTimeout` di 600 ms fissi**. È l'anti-pattern che le prove di questo progetto
+dichiarano nero su bianco — *«un `sleep` fisso o mente sulle macchine lente o spreca tempo su quelle
+veloci»* — e qui non è teoria: `GUIDA-ARCHITETTO.md` §6 registra che **il layer di testo di un PDF
+da 266 pagine arriva dopo 12,4 secondi su un Mac Intel**, invece di 1-2. Con il documento non ancora
+pronto, `findagain` parte da dove il visualizzatore si trova e **l'occorrenza giusta la si manca**:
+si atterra sulla pagina ma non sul punto, oppure su un'altra pagina del tutto. Il rimedio è quello
+che l'app usa già altrove: **aspettare una condizione, non un numero**.
+
+Cioè Q2 è **un lavoro solo su due superfici**, con la stessa promessa: *ti porto dove l'ho trovato*.
+Oggi l'editor non la mantiene affatto, e il PDF la mantiene **quando fa in tempo**.
 
 ---
 
