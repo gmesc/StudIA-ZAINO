@@ -114,9 +114,18 @@ async function esc() {
       return !!b && b.classList.contains('aperta');})()`));
 
   console.log('\n== Esc chiude il menu e SOLO il menu');
+  /* ⚠️ «SOLO il menu» si misura CONFRONTANDO, non affermando uno stato. Fino al
+     23 agosto 2026 questa riga chiedeva `mappaAperta()===false`, cioè che la
+     mappa fosse CHIUSA — l'opposto di quello che il suo nome promette — e
+     passava per il difetto che si è appena tolto: l'ultimo gradino della catena
+     degli Esc svuotava il blocco della mappa, quindi dopo un Esc la mappa non
+     c'era mai. Il nome diceva la cosa giusta e l'asserzione la tradiva.
+     Adesso si fotografa prima e si confronta dopo: qualunque sia lo stato
+     lasciato dalle prove di prima, quell'Esc non deve averlo cambiato. */
+  const mappaPrima = await val('mappaAperta()');
   await esc();
   ok('il menu si è chiuso', false, await aperto());
-  ok('e la mappa non è stata trascinata via con lui', false, await val('mappaAperta()'));
+  ok('e la mappa è rimasta com\'era', mappaPrima, await val('mappaAperta()'));
 
   console.log('\n== fuori dalla selezione non si apre');
   await selezionaNelCapitolo();

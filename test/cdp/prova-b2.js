@@ -94,14 +94,25 @@ const alto = (sel) => val(`(()=>{const e=document.querySelector(${JSON.stringify
     await val(`!!document.querySelector('.bcorpo[data-corpo="${bloccoLibero}"] > #mappaView')`));
   ok('e anche per questa strada il banco la registra', true, await val('bancoVisibile("mappa")'));
 
-  console.log('\n== Esc chiude uno strato per volta');
+  /* ⚠️ QUESTA SEZIONE DICEVA IL CONTRARIO fino al 23 agosto 2026: «Esc toglie la
+     mappa dal banco», e lo strumento tornava in magazzino. Non è stata aggirata,
+     è cambiata la promessa. L'ultimo gradino della catena degli Esc chiamava
+     `bancoTogli('mappa')`, e non «chiudeva» la mappa — SVUOTAVA il blocco:
+     tendina a «—», «Scegli uno strumento qui sopra», e il banco da ricomporre a
+     mano. Esc è il tasto che si preme d'istinto e si preme due volte: nessuno
+     dei suoi gradini può costare qualcosa. Il gesto per togliere la mappa resta
+     la ✕, che questa stessa prova misura venti righe più su. */
+  console.log('\n== Esc chiude uno strato per volta, e nessuno costa niente');
   await invia('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
   await invia('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
   await pausa(500);
-  ok('Esc toglie la mappa dal banco', false, await val('mappaAperta()'));
-  ok('e lo strumento torna in magazzino', 'bancoMagazzino', await dove());
+  ok('Esc NON toglie la mappa dal banco', true, await val('mappaAperta()'));
+  ok('e lo strumento resta nel suo blocco', 'bcorpo', await dove());
   ok('il capitolo non si è mosso', true,
     await val(`!!document.querySelector('.bcorpo[data-corpo="A"] > main')`));
+  /* E la ✕ la toglie ancora: si è tolto un gradino alla catena, non il gesto. */
+  await clicca('#mChiudi'); await pausa(500);
+  ok('ma la ✕ sì', 'bancoMagazzino', await dove());
 
   console.log('\n== la barra di avanzamento segue il CAPITOLO, non la mappa');
   await apriStrumento('mappa');

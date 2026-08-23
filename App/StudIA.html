@@ -95,6 +95,29 @@
      posizione del codice nel file — una priorità che non si legge, si scopre
      premendo. Qui la domanda ha UNA risposta. Puro, provato in Node. -->
 <script src="assets/tasti/lettura.js"></script>
+<!-- La luce e la misura del testo: che cosa è lecito, che cosa fa il passo ai
+     capi della scala, e che cosa vuol dire «di fabbrica» (l'ASSENZA di uno
+     stile in linea, non un numero che gli somiglia). Puro, provato in Node. -->
+<script src="assets/aspetto/stanza.js"></script>
+<!-- ⚠️ E qui si RIMETTE la stanza com'era, PRIMA DEL PRIMO DISEGNO. Non in
+     fondo al file con tutto il resto: là il chiaro farebbe in tempo a
+     lampeggiare, e un lampo bianco in faccia a chi ha scelto lo scuro è
+     esattamente il contrario di quello che ha chiesto.
+     ⚠️ Il corpo si applica solo se una misura c'è: `stile()` risponde `null`
+     per chi non ha mai scelto, e a quel punto NON si scrive niente — comanda il
+     `--fs` del foglio di stile. Scrivere «il valore di fabbrica» in linea
+     inchioderebbe un numero che smetterebbe di somigliare a quello vero il
+     giorno che qualcuno ritocca il CSS. -->
+<script>
+(function(){
+  var r=document.documentElement;
+  try{
+    r.dataset.theme = AspettoStanza.tema(localStorage.getItem('studia.tema'));
+    var fs = AspettoStanza.stile(localStorage.getItem('studia.fs'));
+    if(fs) r.style.setProperty('--fs', fs);
+  }catch(e){ /* niente localStorage (o niente modulo): si resta di fabbrica */ }
+})();
+</script>
 <!-- La carta: formato del foglio, margini, scala tipografica e il piè coi
      numeri di pagina. Sta qui — prima dell'inline — perché `stampaFoglio()` gli
      chiede le regole al momento di stampare, e perché il suo `@page` deve
@@ -4258,10 +4281,38 @@ else etichetteIniziali();
 
 /* ---- Impostazioni ---- */
 const root=document.documentElement;
-$('#themeToggle').addEventListener('click',()=>{ root.dataset.theme = root.dataset.theme==='scuro' ? 'chiaro' : 'scuro'; });
-let fs=1.06;
-$('#fsPlus').addEventListener('click',()=>{ fs=Math.min(1.5,fs+0.08); root.style.setProperty('--fs',fs+'rem'); });
-$('#fsMinus').addEventListener('click',()=>{ fs=Math.max(0.9,fs-0.08); root.style.setProperty('--fs',fs+'rem'); });
+/* ⚠️ LA SCELTA SI RICORDA (23 agosto 2026). Prima no: chi legge meglio a
+   diciannove pixel, o chi lavora di sera col tema scuro, rimetteva a posto la
+   stanza a ogni avvio. Una preferenza che non si ricorda non è una preferenza:
+   è una domanda posta ogni mattina, e la si pone proprio a chi ha meno energia
+   da spenderci. A rileggerla è lo scriptino in testa al file, che gira prima
+   del primo disegno; qui si scrive soltanto.
+   ⚠️ Sta nel `localStorage` e non nel vault, ed è la linea fissata il 19 agosto
+   coi riquadri: nel vault sta l'aspetto dei CONTENUTI, che viaggia con
+   l'esportazione; qui sta come si vede lo schermo di QUESTA macchina. Uno zaino
+   copiato altrove non si porta dietro la lampada di casa.
+   ⚠️ Il valore corrente non si tiene più in una variabile a parte: era una
+   seconda idea di «a che misura siamo», e la prima che diverge è quella che si
+   vede. Lo si chiede allo stile in linea, che è dove vive davvero. */
+function stanzaScrivi(chiave, valore){
+  try{ if(valore==null) localStorage.removeItem(chiave); else localStorage.setItem(chiave, String(valore)); }catch(e){}
+}
+$('#themeToggle').addEventListener('click',()=>{
+  var t=AspettoStanza.altroTema(root.dataset.theme);
+  root.dataset.theme=t; stanzaScrivi('studia.tema', t);
+});
+function corpoPasso(su){
+  var ora=root.style.getPropertyValue('--fs');
+  var n=AspettoStanza.passo(ora ? parseFloat(ora) : null, su);
+  /* `null` vuol dire «si è già al capo»: non si scrive niente, invece di
+     riscrivere lo stesso valore. È la lezione di `fonti/zoom.js`, dove un clamp
+     cieco faceva RIMPICCIOLIRE premendo «+». */
+  if(n===null) return;
+  root.style.setProperty('--fs', AspettoStanza.stile(n));
+  stanzaScrivi('studia.fs', n);
+}
+$('#fsPlus').addEventListener('click',()=>corpoPasso(true));
+$('#fsMinus').addEventListener('click',()=>corpoPasso(false));
 /* opzioni 'alta leggibilita' e 'meno animazioni' rimosse dalla UI */
 
 /* ---- Navigazione mobile ---- */
