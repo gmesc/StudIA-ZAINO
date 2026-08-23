@@ -133,6 +133,11 @@
      il PDF si porta dentro. Il caso che conta è la differenza fra «non ho
      capito» e «vai a pagina 1». Puro, provato in Node. -->
 <script src="assets/fonti/pagina.js"></script>
+<!-- Aspettare una CONDIZIONE, non un numero. Nasce da un difetto misurato: la
+     lente aspettava il documento con 600 ms fissi, e su un Mac Intel il layer di
+     testo di un PDF da 266 pagine arriva dopo 12,4 secondi. Orologio e timer si
+     fanno passare, così l'attesa si prova in Node col tempo finto. -->
+<script src="assets/fonti/attesa.js"></script>
 <!-- Dove passano le righe di una pagina: raggruppare i pezzi di testo in bande
      sbaglia in silenzio (gli apici, i corpi diversi, le due colonne, i due
      decimi di pixel) e a occhio si proverebbe un caso alla volta. Puro. -->
@@ -11889,6 +11894,44 @@ function noteOpen(file){
   setTimeout(function(){ mde.codemirror.refresh(); mde.codemirror.focus(); },60);
 }
 /**
+ * Porta il cursore dell'editor sulla prima occorrenza di quello che si è
+ * cercato, e la seleziona. Senza occorrenza non fa niente: l'appunto resta
+ * aperto dov'è, che è quello che succedeva sempre prima.
+ *
+ * ⚠️ `null` NON È 0. `RicercaIndice.punto` distingue «non ho trovato niente» da
+ * «l'occorrenza comincia al primo carattere», e la distinzione va rispettata
+ * qui: trattarle uguale vorrebbe dire mettere il cursore in cima facendo credere
+ * a chi cerca di essere arrivato.
+ *
+ * ⚠️ E SI ASPETTA CHE L'EDITOR CI SIA. `noteOpen` finisce con un `setTimeout`
+ * che dà il fuoco a CodeMirror: scrivere la selezione prima vorrebbe dire
+ * scriverla su un editor che sta ancora montando, e vederla sparire. Si guarda
+ * una CONDIZIONE — il documento dell'editor porta già il testo dell'appunto —
+ * invece di indovinare un numero di millisecondi. È la stessa lezione della
+ * lente sul PDF (Q2.1), sull'altra metà del banco.
+ */
+function noteVaiAlPunto(q){
+  if(typeof RicercaIndice==='undefined' || typeof FontiAttesa==='undefined') return;
+  var chiesto=RicercaIndice.interpreta(q||'');
+  if(!chiesto || !chiesto.testo) return;
+  FontiAttesa.attendi(function(){
+    return !!(NOTES.mde && NOTES.mde.codemirror && NOTES.mde.codemirror.getValue());
+  }, { tetto:6000 }).then(function(esito){
+    if(!esito.pronto) return;
+    try{
+      var cm=NOTES.mde.codemirror;
+      var p=RicercaIndice.punto(cm.getValue(), chiesto);
+      if(!p) return;                 // niente occorrenza: si resta dov'è
+      var da=cm.posFromIndex(p.da), a=cm.posFromIndex(p.a);
+      cm.setSelection(da, a);
+      /* Non appiccicata al bordo ma con un po' di testo sopra: una riga sul
+         filo del riquadro si legge male, e chi arriva vuole il contesto. */
+      cm.scrollIntoView({ from:da, to:a }, 80);
+      cm.focus();
+    }catch(e){ console.error('lente/appunto:', e); }
+  });
+}
+/**
  * La finestra di battesimo: il NOME e — nello zaino — da quale DOCUMENTO
  * nasce, o personale. È la stessa finestra della matitina (`noteRename`),
  * perché il battesimo è un gesto solo comunque lo si cominci: dal «+», da una
@@ -14648,21 +14691,76 @@ function searchGoto(r,q){
   searchClose();
   /* Un appunto si apre nel suo strumento, dalla porta di sempre (`noteOpen`),
      e il blocco glielo fa `bancoMostra` — le stesse due chiamate della voce in
-     sidebar. ⚠️ La parola trovata NON si riaccende dentro l'editor: CodeMirror
-     ha una selezione sua, e accendere lì dentro vorrebbe dire un secondo motore
-     di evidenziazione che nessuno spegne. Chi cerca arriva sull'appunto giusto;
-     dentro ci sono ⌘F del sistema e gli occhi. */
+     sidebar. Poi si va AL PUNTO: l'editor scorre alla prima occorrenza e la
+     seleziona.
+
+     ⚠️ QUESTO COMMENTO DICEVA IL CONTRARIO fino al 24 agosto 2026 — «la parola
+     trovata NON si riaccende dentro l'editor: CodeMirror ha una selezione sua,
+     e accendere lì dentro vorrebbe dire un secondo motore di evidenziazione che
+     nessuno spegne». L'obiezione era giusta, ed è la stessa famiglia di difetti
+     che ha morso qui davvero: la ricerca del PDF che accendeva il colore su una
+     barra non a schermo, e allora nessuna via d'uscita lo spegneva. Ma
+     riguardava un EVIDENZIATORE, cioè qualcosa che colora N occorrenze e resta
+     acceso finché qualcuno lo spegne. Qui non si accende niente: si MUOVE la
+     selezione che CodeMirror ha già — proprio il motore che il commento diceva
+     di non voler duplicare — e si spegne come si spegne sempre una selezione,
+     cliccando altrove o battendo un tasto.
+     Perché è cambiato: la lente prometteva «ti porto dove l'ho trovato» e lo
+     faceva solo sul PDF. Su un appunto di un semestre si atterrava in cima e la
+     parola stava quaranta schermate più giù — cioè bisognava cercarla una
+     seconda volta, dentro il risultato di una ricerca.
+
+     ⚠️ DOVE andare lo dice `RicercaIndice.punto`, che è la STESSA convenzione
+     con cui la lente ha trovato: virgolette, accenti appiattiti, l'apostrofo
+     come confine. Con un `indexOf` crudo l'editor troverebbe cose diverse da
+     quelle trovate dalla lente — cercando «pero» non porterebbe su «però», e
+     l'appunto si aprirebbe in cima proprio nel caso in cui la lente ha appena
+     detto che la parola c'è. Un risultato che ti porta sull'appunto giusto e poi
+     ti seleziona un'altra parola è peggio di uno che non seleziona niente: la
+     prima volta ti fidi, la seconda no. */
   if(r.d.appunto){
     try{ bancoMostra('appunti'); }catch(e){}
     noteOpen(r.d.appunto);
+    noteVaiAlPunto(q);
     return;
   }
   /* Un risultato dello zaino è un documento a una pagina: ci si va con la porta
      di sempre, e la parola cercata si riaccende con la ricerca del
      visualizzatore — che è l'unica che sa evidenziare dentro un PDF. */
   if(r.d.materiale){
-    openPdf(r.d.materiale, r.d.pagina, titoloMateriale(r.d.materiale)||r.d.materiale);
-    setTimeout(function(){
+    var pag=r.d.pagina;
+    openPdf(r.d.materiale, pag, titoloMateriale(r.d.materiale)||r.d.materiale);
+    /* ⚠️ SI ASPETTA UNA CONDIZIONE, NON UN NUMERO (23 agosto 2026). Qui c'era un
+       `setTimeout` di 600 ms fissi, sperando che il documento fosse pronto: è
+       l'anti-pattern che le prove di questo progetto dichiarano in testa a
+       `prova-pdf.js` («un `sleep` fisso o mente sulle macchine lente o spreca
+       tempo su quelle veloci»), e non era teoria — la guida §6 registra che il
+       layer di testo di un PDF da 266 pagine arriva dopo 12,4 SECONDI su un Mac
+       Intel. Scaduti i 600 ms con il documento non ancora disegnato, la ricerca
+       partiva da dove il visualizzatore si trovava e l'occorrenza giusta la si
+       mancava: si atterrava sulla pagina ma non sul punto, o su un'altra pagina
+       del tutto. Invisibile su una macchina veloce, sistematico su una lenta.
+
+       ⚠️ E LA CONDIZIONE GIUSTA È IL LAYER DI TESTO DI QUELLA PAGINA, non «il
+       documento è aperto»: sono due fatti diversi, ed è la distinzione per cui
+       `prova-pdf.js` esiste. `findagain` cerca dentro il layer — con il
+       documento caricato ma la pagina non ancora disegnata avrebbe di nuovo
+       niente su cui lavorare. Si guarda il DOM, che è l'unico che lo sa. */
+    var prontoPerCercare=function(){
+      if(!PDFJS.pronto || !PDFJS.doc) return false;
+      var sel='#pdfFrame .page[data-page-number="'+(pag||ANTEPRIMA.page||1)+'"] .textLayer';
+      var tl=document.querySelector(sel);
+      return !!(tl && tl.querySelector('span'));
+    };
+    FontiAttesa.attendi(prontoPerCercare).then(function(esito){
+      /* ⚠️ Se non ce l'ha fatta SI DICE, invece di cercare a vuoto. Una ricerca
+         lanciata su una pagina che non c'è ancora non trova niente e non
+         spiega: chi ha cliccato crede che la parola non ci sia, mentre la lente
+         gli aveva appena detto il contrario. */
+      if(!esito.pronto){
+        toast('Il documento ci sta mettendo troppo: la pagina è aperta, la ricerca no', false);
+        return;
+      }
       try{
         var inp=$('#pdfFindInput'); if(inp) inp.value=q;
         /* ⚠️ Si APRE LA BARRA, non si accende soltanto il colore. Fino al 17
@@ -14677,7 +14775,7 @@ function searchGoto(r,q){
            venuto per leggere. */
         pdfFindApri({ fuoco:false });
       }catch(e){}
-    }, 600);
+    });
     return;
   }
   if(LESSON && LESSON.id===r.d.lessonId) go(r.d.idx);

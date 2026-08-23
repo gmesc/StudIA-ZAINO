@@ -27,14 +27,31 @@ function sezione(t) { console.log('\n== ' + t); }
 /* Lo `stripHtml` del renderer, nella sua forma minima: qui non c'è un DOM. */
 const via = (h) => String(h == null ? '' : h).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
-sezione('La normalizzazione preserva la lunghezza');
+sezione('La normalizzazione preserva la lunghezza — per le lettere che usiamo');
 {
-  /* ⚠️ È la condizione che tiene in piedi tutto il resto: le posizioni trovate
-     nel testo normalizzato si usano per ritagliare il frammento dal testo
-     ORIGINALE. Se `sNorm` togliesse anche un solo carattere, il ritaglio
-     partirebbe sfasato e il frammento comincerebbe a mezza parola. */
+  /* ⚠️ È la condizione che tiene in piedi `frammento`: le posizioni trovate nel
+     testo normalizzato si usano per ritagliare il frammento dal testo
+     ORIGINALE. Se `sNorm` togliesse o aggiungesse anche un solo carattere, il
+     ritaglio partirebbe sfasato e il frammento comincerebbe a mezza parola.
+
+     ⚠️ E IL TITOLO DI QUESTA SEZIONE ERA TROPPO FORTE, fino al 24 agosto 2026:
+     diceva «preserva la lunghezza», senza «per le lettere che usiamo».
+     `toLowerCase()` non è sempre uno a uno — la «İ» turca (U+0130) diventa DUE
+     caratteri — e l'ha trovato la prova di `punto()`, scritta per l'editor degli
+     appunti. Il caso è in fondo a questa sezione, dichiarato: su un testo che
+     contiene quella lettera il FRAMMENTO della lente parte sfasato di uno.
+     Piccolo e cosmetico (una riga di anteprima che comincia mezzo carattere
+     prima), ma è un fatto e sta scritto invece che scoperto.
+     ⚠️ `punto()` NON dipende da questa proprietà: mappa le posizioni una per
+     una, apposta. Chi userà quelle posizioni per mettere un cursore non deve
+     ereditare un limite che si può togliere. */
   const casi = ['perché', 'città', 'è così', 'l’altro', '“virgolette”', 'ñandù', 'ÀÈÌÒÙ'];
   for (const s of casi) check('«' + s + '» resta lunga uguale', s.length, R.sNorm(s).length);
+  /* Il confine misurato, non supposto. */
+  check('⚠️ ma la «İ» (U+0130) si allunga: il limite è questo', 2, R.sNorm('İ').length);
+  check('e `punto` non ci casca lo stesso', 'perielio',
+    (() => { const t = 'İstanbul e il perielio'; const p = R.punto(t, R.interpreta('perielio'));
+      return p ? t.slice(p.da, p.a) : null; })());
   check('gli accenti si appiattiscono', 'perche cosi citta', R.sNorm('Perché Così Città'));
   check('e le virgolette curve diventano dritte', '"l\'altro"', R.sNorm('“l’altro”'));
 }
@@ -353,6 +370,70 @@ sezione('Gli appunti sono la PRIMA sezione dell\'elenco');
   check('l\'appunto c\'è anche quando i capitoli riempiono l\'elenco', 'Ultimo.md', tagliata[0].d.appunto);
   check('e il tetto resta quello', 40, tagliata.length);
 }
+
+sezione('⭐ DOVE sta la parola: la posizione nel testo GREZZO');
+/* Serve all'editor degli appunti: la lente promette «ti porto dove l'ho
+   trovato», e finché non sa dire il PUNTO mantiene quella promessa solo sul
+   PDF. `occorrenze` risponde nel testo normalizzato, che è la forma su cui si
+   cerca; `punto` risponde in quello vero, che è la forma in cui si scrive. */
+check('trova la parola in mezzo al testo', { da: 3, a: 11 },
+  R.punto('il perielio è vicino', R.interpreta('perielio')));
+check('e anche quando comincia al primo carattere', { da: 0, a: 8 },
+  R.punto('perielio, subito', R.interpreta('perielio')));
+/* ⚠️ IL VALORE D'ORO, e la terza volta che questo progetto lo scrive (dopo
+   `aspetto/stanza.js` e `fonti/pagina.js`): `null` NON È 0. «Non ho trovato
+   niente» e «l'occorrenza comincia al primo carattere» sono due cose diverse, e
+   confonderle vuol dire aprire un appunto in cima facendo credere a chi cerca
+   di essere arrivato. */
+check('quello che non c\'è dà «niente», non zero', null,
+  R.punto('niente di simile qui', R.interpreta('perielio')));
+check('e «niente» si distingue da «al primo carattere»', true,
+  R.punto('niente', R.interpreta('zzz')) === null && R.punto('zzz', R.interpreta('zzz')).da === 0);
+
+sezione('Il punto segue le stesse convenzioni della lente');
+/* ⚠️ Se qui si usasse un `indexOf` crudo, l'editor troverebbe cose DIVERSE da
+   quelle che ha trovato la lente: cercando `pero` non porterebbe su «però», e
+   l'appunto si aprirebbe in cima proprio nel caso in cui la lente ha appena
+   detto che la parola c'è. Una convenzione con due significati non è una
+   convenzione. */
+check('gli accenti sono appiattiti, come nella ricerca', { da: 4, a: 8 },
+  R.punto('era però vero', R.interpreta('pero')));
+check('e le maiuscole non contano', { da: 0, a: 8 },
+  R.punto('Perielio grande', R.interpreta('perielio')));
+/* Le virgolette chiedono la parola INTERA, qui come dappertutto. */
+check('senza virgolette si trova anche dentro un\'altra parola', { da: 0, a: 3 },
+  R.punto('perché no', R.interpreta('per')));
+check('con le virgolette no', null, R.punto('perché no', R.interpreta('"per"')));
+check('e la parola intera si trova lo stesso', { da: 7, a: 10 },
+  R.punto('perché per primo', R.interpreta('"per"')));
+/* ⚠️ L'apostrofo è un confine: `"acqua"` deve trovarsi in «dell'acqua», che in
+   italiano è la forma più comune in cui una parola compare attaccata. */
+check('l\'apostrofo è un confine', { da: 5, a: 10 },
+  R.punto("dell'acqua fresca", R.interpreta('"acqua"')));
+
+sezione('Le posizioni si mappano, non si suppongono');
+/* ⚠️ `sNorm` SEMBRA conservare la lunghezza — un accento diventa una lettera,
+   una virgoletta curva una dritta — ma `toLowerCase()` no: la «İ» (U+0130)
+   diventa DUE caratteri, e da lì in poi ogni indice sarebbe spostato di uno.
+   Su un testo che la contiene il cursore cadrebbe a mezza parola, e nessuno
+   saprebbe perché. Questo controllo esiste per quella riga di codice. */
+const conI = 'İ poi perielio';
+check('un carattere che si allunga non sposta il punto', 'perielio',
+  (() => { const p = R.punto(conI, R.interpreta('perielio')); return p ? conI.slice(p.da, p.a) : null; })());
+/* E il caso normale resta esatto: la fetta ritagliata è la parola. */
+check('la fetta ritagliata è esattamente la parola', 'perielio',
+  (() => { const t = 'il perielio è vicino'; const p = R.punto(t, R.interpreta('perielio'));
+    return t.slice(p.da, p.a); })());
+check('anche con l\'accento nel mezzo', 'però',
+  (() => { const t = 'era però vero'; const p = R.punto(t, R.interpreta('pero'));
+    return t.slice(p.da, p.a); })());
+
+sezione('E i casi storti non inventano una posizione');
+check('un testo vuoto', null, R.punto('', R.interpreta('x')));
+check('un termine vuoto', null, R.punto('qualcosa', R.interpreta('')));
+check('solo spazi', null, R.punto('qualcosa', R.interpreta('   ')));
+check('niente del tutto', null, R.punto(null, null));
+check('virgolette vuote non sono una richiesta', null, R.punto('qualcosa', R.interpreta('""')));
 
 console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
 process.exit(ko ? 1 : 0);
