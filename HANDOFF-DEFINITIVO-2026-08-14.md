@@ -1,5 +1,11 @@
 # Handoff definitivo — 14 agosto 2026
 
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: la carta e i PDF di appunti e mappe, il trascinamento dei ritagli, e i numeri dello
+> smontaggio del monolite.
+
 > **A chi arriva adesso: questo file basta per ripartire.** Dice dov'è il codice (tutto in `main`,
 > nessun ramo aperto), che cosa è stato chiuso nell'ultimo giro, come stanno i numeri dello
 > smontaggio del monolite **misurati oggi**, e che cosa resta aperto — con il beta a dieci giorni

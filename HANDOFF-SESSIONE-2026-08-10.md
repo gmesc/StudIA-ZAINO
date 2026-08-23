@@ -1,5 +1,11 @@
 # Handoff di sessione — 10 agosto 2026
 
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: le mappe generate a **concetti** (G1–G2), la topbar su una riga, le figure dentro
+> il capitolo, il viewer pdf.js e l'album su disco.
+
 > **A chi arriva adesso.** Questo file racconta **una giornata di lavoro**. Il punto di ripartenza
 > generale del progetto resta [HANDOFF.md](HANDOFF.md), che è più vecchio e più largo; la sessione
 > precedente sta in [HANDOFF-SESSIONE-2026-08-09.md](HANDOFF-SESSIONE-2026-08-09.md) e va letta

@@ -35,6 +35,9 @@ in §4. I commit sono tutti dentro `main`: è andata via l'etichetta, non il lav
 sulla stessa macchina si contendono la porta di debug, e il client CDP finisce a pilotare l'app
 sbagliata.
 
+📍 **Gli altri diciotto handoff sono storici**, e non si risalgono a memoria: il **§9** dice quale
+file tiene quale argomento, e ognuno di loro porta in testa la riga che rimanda qui.
+
 ---
 
 ## 1. Dove sono i lavori
@@ -46,7 +49,7 @@ sbagliata.
 | remoto | `git@github.com:gmesc/StudIA.git` — ✅ `origin/main` **allineata** |
 | unità | ✅ **45 file** — nuovi: `tasti-lettura`, `stanza`, `pagina-fonte`, `righello`. Tutti in catena, exit 0 |
 | CDP | ✅ **56 prove**, suite INTERA verde sul ramo. Nuove: `prova-tasti-frecce`, `prova-pagina-campo`, `prova-righello`, `prova-voce-pagina`, `prova-ricerca-pannellino` |
-| pacchetti | i tre in `dist/` sono del **17 agosto**: non contengono il lavoro del 18, del 19 né del 22 |
+| pacchetti | **nessuno**: `dist/` è stata svuotata il 23 agosto (2,3 GB). I tre installer che c'erano erano del **17 agosto** e saltavano il lavoro del 18, del 19 e del 22 — andavano rifatti comunque. Si rifanno con `npm run pacchetto` (§6.6) |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
@@ -389,8 +392,11 @@ Dopo il pacchetto «Leggere», la coda ereditata dal 18 agosto più quel che è 
    l'app non ha mai avuto: è un lavoro con le sue prove).
 5. **La rinomina di una fonte**: si può tenendo il numero, ma il nome del file è citato per esteso
    in sei posti — l'elenco è quello di `fonti.usi()`.
-6. **Pacchetti nuovi** (quelli in `dist/` sono del 17 agosto e saltano tre giorni di lavoro), poi
-   **notarizzazione** e **installer Windows provato su Windows**: PIANO-ONBOARDING.
+6. **Pacchetti nuovi** — ⚠️ ora **non ce n'è nessuno**: `dist/` è stata svuotata il 23 agosto
+   (2,3 GB, di cui 1,4 di cartelle di lavoro che electron-builder rifà da sé). I tre installer che
+   c'erano erano del 17 agosto e saltavano tre giorni di lavoro. `npm run pacchetto`, `-- x64` e
+   `npm run dist:win` li ricostruiscono; poi **notarizzazione** e **installer Windows provato su
+   Windows**: PIANO-ONBOARDING.
 7. **Le bande orizzontali sui fondi sovrapposti**, se le si vuole davvero: non si ottengono con
    `::highlight()` (misurato). È il lavoro più grosso e più fragile della coda.
 
@@ -448,10 +454,53 @@ Per onestà, e perché è la regola di questo progetto:
 
 | | |
 |---|---|
-| **verificato oggi** | `npm test` exit 0 · albero pulito · `origin/main` allineata · nessun ramo · i conti delle prove (41 · 51 · 54) · le cinque liste delle estensioni audio · le tre cancellazioni con `unlinkSync` |
+| **verificato oggi** | `npm test` exit 0 · albero pulito · `origin/main` allineata · nessun ramo · i conti delle prove — **45** file di unità · **59** `prova-*.js` sul disco · **56** nominati dentro `PROVE=(` (i tre fuori sono `prova-l1`, `prova-l2`, `prova-l3l4`) · le cinque liste delle estensioni audio · le tre cancellazioni con `unlinkSync` |
 | **ereditato, non rieseguito** | la suite CDP (ultimo verde dichiarato: 18 agosto, più le prove che i lavori del 19 e 22 dichiarano ciascuno) |
 | **da misurare prima di dichiarare** | l'inversione scura del PDF col `mix-blend-mode:multiply`; se Chromium decodifica davvero `.aiff`, `.avi`, `.mpg` |
 
 ⚠️ Prima di dichiarare finito il pacchetto «Leggere» la suite CDP va **rieseguita per intera**, non
 per i file toccati: due dei difetti più costosi di agosto — la bolla invisibile del 19 e il
 `closePops()` che non spegneva lo stato — li ha trovati la suite intera, mai la prova da sola.
+
+---
+
+## 9. La catena degli handoff — dove sta che cosa
+
+Gli handoff sono diciannove, e ognuno «sostituisce il precedente ma resta valido per ciò che non
+ripete». Risalire la catena a memoria costa una sessione: questa tabella dice **dove guardare**,
+e ogni file storico porta in testa la stessa riga che rimanda qui.
+
+**La regola**: il punto d'ingresso è sempre l'`HANDOFF-DEFINITIVO-*` con la **data più alta**.
+Tutti gli altri sono storici. In conflitto vince il più recente — e se il conflitto è con
+`GUIDA-ARCHITETTO.md`, vince ugualmente l'handoff, che è più recente per costruzione.
+
+| se cerchi | il file |
+|---|---|
+| la **pipeline**: wizard a sette passi, composer, percorsi, perché i PDF non venivano citati, il riquadro «Note e materiali», Chandra | `HANDOFF.md` (§5-pre · §5 · §7 · §7-bis · §8 · §9) — **è l'unica specifica di quell'area**, nessun `PIANO-*` la copre |
+| mappe personali L0–L4 · ancoraggio delle evidenze · banco B1 · pdf.js **legacy** | `HANDOFF-SESSIONE-2026-08-09.md` |
+| mappe a **concetti** (G1–G2) · topbar su una riga · figure nel capitolo · viewer pdf.js · album su disco | `HANDOFF-SESSIONE-2026-08-10.md` |
+| rimandi fra lezioni (base ↔ variante) · ritentativi negli SDK · registro dei costi · album nell'interfaccia · nodi-immagine | `HANDOFF-SESSIONE-2026-08-10-b.md` e `HANDOFF-DEFINITIVO-2026-08-10.md` |
+| ZAINO Z1–Z6a · le barre come token unico · lapide delle fonti | `HANDOFF-DEFINITIVO-2026-08-11.md` |
+| identità dei capitoli (catena di alias) · P3.1, il ripasso su disco · i moduli UMD | `HANDOFF-DEFINITIVO-2026-08-12.md` |
+| il ripasso come sistema (P3.2 · P3.3 · P3.6) · «un file solo, non due copie confrontate» | `HANDOFF-DEFINITIVO-2026-08-12b.md` |
+| parole chiave: la regola delle tre parole · il tratto | `HANDOFF-DEFINITIVO-2026-08-12c.md` |
+| OCR dello zaino sul documento vero · la cornice della mappa | `HANDOFF-DEFINITIVO-2026-08-13.md` |
+| il banco che non teneva la disposizione · quale mappa si riapre · TD/SX sugli anelli | `HANDOFF-DEFINITIVO-2026-08-13b.md` |
+| la carta e i PDF (appunti e mappe) · trascinare un ritaglio · i numeri dello smontaggio | `HANDOFF-DEFINITIVO-2026-08-14.md` |
+| zoom della fonte a tre stati · forbici con ⌘ · le foto nel vault (F1 · F2) | `HANDOFF-DEFINITIVO-2026-08-14b.md` |
+| banco 3×3 e il pittore · il Confronto · i testi che diventano appunti | `HANDOFF-DEFINITIVO-2026-08-15.md` |
+| i tre pacchetti · icona ed emoji generate · evidenziatore col testo nero · la caccia al flake | `HANDOFF-DEFINITIVO-2026-08-16.md` |
+| lente negli appunti · rinomina di uno zaino · nomi dei tasti · titoli degli appunti | `HANDOFF-DEFINITIVO-2026-08-16b.md` |
+| anteprima scrivibile · la guida dentro l'app · i pacchetti del 17 | `HANDOFF-DEFINITIVO-2026-08-17.md` |
+| evidenze negli appunti · interruttore dei segni · le **letture** · segni sovrapposti · il grafo | `HANDOFF-DEFINITIVO-2026-08-18.md` |
+| il pacchetto «Leggere» · il lavoro del 19 e del 22 agosto · lo stato di oggi | **questo file** |
+
+⚠️ **Due decisioni scritte come vincolanti sono state poi rovesciate**, e stanno in
+`HANDOFF-SESSIONE-2026-08-09.md` §6: la disposizione del banco («una sola, globale» → **una per
+contenitore**, 13 agosto, `PIANO-BANCO.md` §5) e la scala delle mappe generate («il capitolo
+resta» → **del capitolo non si genera più niente**, 10 agosto). Là sono annotate; è la ragione per
+cui un handoff vecchio non si legge mai come se fosse una legge ancora in vigore.
+
+⚠️ **Che cosa NON sta in nessun handoff**: `PIANO-LEGGERE.md` e `IDEE-ZAINO.md` sono stati
+consegnati in chat e **non sono versionati** (§5 e §7). Di `IDEE-ZAINO` — il catalogo di 56 voci da
+cui esce il prossimo lavoro — qui resta solo l'estratto del §7.

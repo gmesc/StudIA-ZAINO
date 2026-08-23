@@ -1,5 +1,11 @@
 # Handoff definitivo — 16 agosto 2026, sera
 
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: la lente che cerca negli appunti, la rinomina di uno zaino, i nomi dei tasti
+> secondo la piattaforma, e i titoli degli appunti.
+
 > **A chi arriva adesso: questo file basta per ripartire.** Sostituisce
 > [HANDOFF-DEFINITIVO-2026-08-16.md](HANDOFF-DEFINITIVO-2026-08-16.md), che resta la lettura di
 > dettaglio su pacchetti, installer Windows e primo avvio.

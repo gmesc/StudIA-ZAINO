@@ -1,5 +1,11 @@
 # Handoff definitivo — 16 agosto 2026
 
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: i tre pacchetti (mac arm64 · mac Intel · Windows), l'icona e le emoji generate,
+> l'evidenziatore col testo nero, e la caccia al rosso «a corse alterne».
+
 > **A chi arriva adesso: questo file basta per ripartire.** Dice dov'è il codice, che cosa è appena
 > entrato, che cosa resta aperto e in che ordine — e le trappole fresche, che sono la parte utile.
 >

@@ -103,6 +103,7 @@ non toccano niente di tuo, e la tua StudIA può restare aperta mentre lavorano.
 |---|---|
 | [GUIDA-ARCHITETTO.md](GUIDA-ARCHITETTO.md) | **come si costruisce qui**: filosofia, invarianti numerati, mappa del codice, processo, trappole permanenti |
 | `HANDOFF-DEFINITIVO-<data>.md` (il più recente) | **a che punto siamo**: che cosa è appena entrato, che cosa resta aperto, le trappole fresche |
+| gli altri `HANDOFF-*.md` | **storici**, e non si risalgono a memoria: il **§9** dell'handoff più recente dice quale file tiene quale argomento. ⚠️ `HANDOFF.md` è vecchio nei numeri ma è l'unica specifica della **pipeline** (wizard, composer, percorsi, figure, Chandra) |
 | `PIANO-*.md` | il dettaglio di ogni area (zaino, banco, mappe, appunti, foto, onboarding, moduli) |
 | `graphify-out/` (non versionato) | il **grafo della conoscenza** del progetto: `graph.html` da aprire nel browser, `GRAPH_REPORT.md`, `graph.json` interrogabile. Si rifà con `/graphify .` e si aggiorna con `/graphify . --update` |
 | `App/guida-zaino/` | la **guida illustrata della modalità ZAINO**, con schermate dell'app vera: viaggia col pacchetto e si apre da Impostazioni › Zaino. La ricetta per rifarne le immagini sta in `_lab/` (fuori dal pacchetto) |

@@ -1,5 +1,11 @@
 # Handoff definitivo — 11 agosto 2026
 
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: lo ZAINO (Z1–Z6a), le barre ridotte a un token unico, l'inizio dello smontaggio del
+> monolite e la lapide delle fonti.
+
 > ⚠️ **Continua in [HANDOFF-DEFINITIVO-2026-08-12.md](HANDOFF-DEFINITIVO-2026-08-12.md)**, che è
 > il punto di partenza per chi arriva adesso. Questo file resta per il dettaglio dello ZAINO e per
 > i guasti misurati quel giorno.

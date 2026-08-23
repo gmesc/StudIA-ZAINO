@@ -1,5 +1,11 @@
 # Handoff definitivo — 13 agosto 2026
 
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: l'OCR dello zaino finito sul documento vero (sette difetti, tutti misurati) e la
+> cornice della mappa, che smette di rimpicciolirsi sotto la mano.
+
 > **A chi arriva adesso, in una chat nuova: questo file basta per ripartire.**
 > Racconta la giornata del 13 agosto — l'OCR dello zaino portato a compimento su un contratto
 > notarile vero, l'unione con la linea banco/zaini di un'altra sessione, e la mappa che smette di

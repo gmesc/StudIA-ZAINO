@@ -1,5 +1,11 @@
 # Handoff definitivo — 12 agosto 2026, sera
 
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: il ripasso che diventa un sistema (P3.2 · P3.3 · P3.6) e la regola «un file solo,
+> non due copie confrontate».
+
 > 🆕 **Dopo questo c'è [HANDOFF-DEFINITIVO-2026-08-12c.md](HANDOFF-DEFINITIVO-2026-08-12c.md)**
 > (notte), che NON lo sostituisce: si occupa solo delle **evidenze e delle parole chiave** e della
 > scorciatoia del player. Quel lavoro è provato e **committato** (`01b608e`, `8a90ff0`, `2ab9b03`).
@@ -39,6 +45,8 @@ STUDIA_PORTA=9334 ./test/cdp/con-vault-di-prova.sh prova-ripasso-vista   # una s
 Tutto verde. `main` pulita, ultimo commit `79b2521`, **un ramo solo** (i sei vecchi sono stati
 esaminati e chiusi, §6). Rete: tag `freezer-2026-08-12b` e `../freezer-2026-08-12b.bundle`,
 verificato riaprendolo.
+⚠️ *Il `.bundle` non c'è più (tolto il 23 agosto): la sua punta era già antenata di `main`, e
+`main` è spinta su `origin`. Il tag resta nel repo.*
 
 ⚠️ **La porta 9333 è a esemplare unico, e una corsa interrotta lascia l'app viva.** La corsa dopo
 si attacca a *quella* — che punta a una cartella temporanea ormai cancellata — e falliscono venti

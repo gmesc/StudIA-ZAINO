@@ -1,5 +1,11 @@
 # Handoff di sessione — 10 agosto 2026, secondo giro
 
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: i rimandi fra lezioni (base ↔ variante), il ritentativo dentro gli SDK, il registro
+> dei costi, l'album nell'interfaccia e i nodi-immagine.
+
 > **A chi arriva adesso.** Stessa giornata del file accanto, sessione diversa: il primo giro sta in
 > [HANDOFF-SESSIONE-2026-08-10.md](HANDOFF-SESSIONE-2026-08-10.md) e va letto prima, perché è lì che
 > nascono le mappe a concetti, la topbar su una riga e il viewer pdf.js. Qui c'è una cosa sola, tirata

@@ -1,5 +1,11 @@
 # Handoff definitivo — 15 agosto 2026, sera
 
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: il banco 3×3 col pittore delle forme, il Confronto (la seconda fonte), e i testi
+> trascinati che diventano appunti.
+
 > **A chi arriva adesso: questo file basta per ripartire.** Dice dov'è il codice, che cosa è appena
 > entrato, che cosa resta aperto e in che ordine — e le trappole fresche, che sono la parte utile.
 >

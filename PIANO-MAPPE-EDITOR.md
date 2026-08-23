@@ -747,9 +747,13 @@ un fatto misurabile, e `cross: true` esiste già nel modello e si disegna tratte
 
 ## 13.4 Le decisioni prese (9 agosto, con l'utente)
 
-1. **Scala della vista generata: corso · lezione · capitolo.** Il capitolo **resta**, ma rifatto
+1. **Scala della vista generata: corso · lezione · capitolo.** ~~Il capitolo **resta**, ma rifatto
    con la stessa grammatica delle altre due — concetti dai paragrafi, non i contenitori dei
-   callout. Resta perché è l'unica gratis e si apre stando dentro il capitolo che si legge.
+   callout. Resta perché è l'unica gratis e si apre stando dentro il capitolo che si legge.~~
+   ⚠️ **Rovesciata il 10 agosto 2026, dall'utente: le scale sono DUE.** Del capitolo non si genera
+   più niente — quella mappa la fa lo studente, scegliendo lui che cosa metterci. `MAPPA.ambito`
+   vale `corso` o `lezione`, e un `capitolo` rimasto in una config vecchia viene *corretto*, non
+   solo mostrato male. Il verbale è in `HANDOFF-SESSIONE-2026-08-10.md` §3.1.
 2. **Prima il giro gratis, poi i verbi.** Nodi dai grassetti + glossario, archi **muti** da
    co-occorrenza e definizione: zero chiamate. Si guarda se la spina regge, e solo dopo l'AI mette
    i verbi sugli archi sopravvissuti al filtro. Se la forma non funziona senza verbi, non

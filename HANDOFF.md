@@ -1,10 +1,29 @@
 # Handoff — StudIA, 3-8 agosto 2026
 
-> ⚠️ **QUESTO FILE È VECCHIO.** Chi arriva adesso parte da
-> **[HANDOFF-DEFINITIVO-2026-08-18.md](HANDOFF-DEFINITIVO-2026-08-18.md)**, che racconta lo stato
-> corrente e dice che cosa fare per primo. Quello che segue resta perché il vocabolario, le scelte
-> di fondo e le trappole del 3-8 agosto valgono ancora — ma i numeri e l'elenco dei lavori aperti
-> qui sotto sono superati.
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: la **pipeline**, di cui è l'unica specifica: il wizard a sette passi (§5-pre), il
+> composer e i percorsi (§5), perché i PDF non venivano citati (§7 e §7-bis), il riquadro «Note
+> e materiali» (§8), Chandra e la regola per scegliere le pagine (§9).
+
+> ⚠️ **QUESTO FILE È VECCHIO.** Chi arriva adesso parte dall'handoff più recente (vedi il
+> riquadro qui sopra). Quello che segue resta perché il vocabolario, le scelte di fondo e le
+> trappole del 3-8 agosto valgono ancora — ma i numeri e l'elenco dei lavori aperti qui sotto
+> sono superati.
+>
+> ⚠️ **«HANDOFF §…» nei commenti del codice non nomina sempre QUESTO file.** Sono sei citazioni,
+> e si dividono fra due documenti che si chiamano tutti e due «handoff»:
+>
+> | citazione | dove | quale file |
+> |---|---|---|
+> | `HANDOFF §7` | `lib/ocr.js:31` | **questo** (§7, il digest amputato) |
+> | `HANDOFF §9` | `lib/mappe.js:24` | **questo** (§9, `motore` su ogni pagina) |
+> | `HANDOFF §5.1` · `§5.2` | `lib/appunti.js:44,119` · `lib/album.js:512` | [HANDOFF-SESSIONE-2026-08-09.md](HANDOFF-SESSIONE-2026-08-09.md) |
+> | «guasto 5.6 dell'HANDOFF» | `test/disegna-fonti.js:19` | [HANDOFF-SESSIONE-2026-08-09.md](HANDOFF-SESSIONE-2026-08-09.md) |
+>
+> Chi tocca uno di quei commenti scriva il nome del file per esteso: il numero di sezione da solo
+> non basta più a dire dove si va.
 
 Stato consegnato: **1260 controlli verdi** (`npm test`), app funzionante, tre corsi nel vault.
 

@@ -1,5 +1,11 @@
 # Handoff — 12 agosto 2026, notte
 
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: le parole chiave (la regola delle tre parole) e il tratto: sottolineatura o fondo
+> pieno.
+
 > 🆕 **Dopo questo c'è [HANDOFF-DEFINITIVO-2026-08-13.md](HANDOFF-DEFINITIVO-2026-08-13.md)**, che
 > è il punto d'ingresso: l'OCR finito sul contratto vero, l'unione con la linea banco/zaini, la
 > mappa che non si rimpicciolisce. Questo file resta valido per evidenze, parole chiave e tratto.

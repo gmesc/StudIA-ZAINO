@@ -1,5 +1,11 @@
 # Handoff definitivo — 12 agosto 2026 (mattina)
 
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: l'identità dei capitoli con la catena di alias, P3.1 (il ripasso su disco) e i nove
+> moduli UMD usciti dal monolite.
+
 > ⚠️ **SUPERATO da [HANDOFF-DEFINITIVO-2026-08-12b.md](HANDOFF-DEFINITIVO-2026-08-12b.md)**, della
 > sera dello stesso giorno: quello è il punto d'ingresso. Questo resta valido per ciò che l'altro
 > non ripete — le barre come token unico, lo smontaggio del monolite, l'identità dei capitoli,
@@ -33,6 +39,8 @@ npm test                                              # 2195 controlli su 23 fil
 
 Tutto verde. `main` pulito, ultimo commit `c8c6acb`. Ramo di sicurezza e archivio dello stato di
 ieri: tag **`freezer-2026-08-11`** e `../freezer-2026-08-11.bundle` (4,2 MB, verificato).
+⚠️ *I `.bundle` non ci sono più (tolti il 23 agosto): servivano quando il repo non aveva un remoto.
+I tre tag `freezer-*` restano, e `origin/main` è la rete di adesso.*
 
 ⚠️ Le prove CDP **non toccano niente di tuo**: copia magra del vault (23 GB → ~2 MB), cartella dati
 tutta loro (`--user-data-dir`). StudIA può restare aperta mentre girano.

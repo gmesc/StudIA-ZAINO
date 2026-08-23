@@ -1,5 +1,11 @@
 # Handoff definitivo — 14 agosto 2026, sera
 
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: lo zoom della fonte a tre stati, le forbici tenendo premuto ⌘, e le foto che
+> entrano nel vault (F1 · F2).
+
 > **A chi arriva adesso: questo file basta per ripartire.** Sostituisce
 > [HANDOFF-DEFINITIVO-2026-08-14.md](HANDOFF-DEFINITIVO-2026-08-14.md), che resta valido per tutto
 > ciò che non ripete: lo stato dello smontaggio, la carta e i PDF, il trascinamento dei ritagli, e

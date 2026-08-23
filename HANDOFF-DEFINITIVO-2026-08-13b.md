@@ -1,5 +1,11 @@
 # Handoff definitivo — 13 agosto 2026, secondo giro
 
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: il banco che «non teneva» la disposizione, quale mappa si riapre, e TD/SX spenti
+> apposta sugli anelli.
+
 > ⚠️ **Non è più il punto d'ingresso**: lo è [HANDOFF-DEFINITIVO-2026-08-14.md](HANDOFF-DEFINITIVO-2026-08-14.md).
 > Questo file resta la lettura di DETTAGLIO sui tre difetti del 13-14 e sulle loro trappole.
 

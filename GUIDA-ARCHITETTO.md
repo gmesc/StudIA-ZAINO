@@ -152,8 +152,8 @@ in silenzio.
 ## 6. Come si verifica
 
 ```bash
-npm test                                   # unità: tutti i file di test/, in catena (40 al 18 ago)
-./test/cdp/con-vault-di-prova.sh           # tutte le prove sull'app viva (48 al 18 ago)
+npm test                                   # unità: tutti i file di test/, in catena (45 al 23 ago)
+./test/cdp/con-vault-di-prova.sh           # tutte le prove sull'app viva (56 al 23 ago)
 ./test/cdp/con-vault-di-prova.sh <nome>    # una sola — è così che si lavora
 STUDIA_APP=dist/mac-arm64/StudIA.app \
   ./test/cdp/con-vault-di-prova.sh         # le stesse prove DENTRO il pacchetto
@@ -170,8 +170,8 @@ finito, prima di un merge, e **dopo un rebase** — dove il codice unito non è 
 runner CDP e la catena di `npm test` in `package.json`. Il 15 agosto `test/atlante.js` è stato
 trovato fuori dalla catena: esisteva e non girava mai. È la stessa forma del guasto di
 `closePops()`, che chiude i pannellini scritti nel suo elenco e non «tutti».
-⚠️ E il conto si fa, non si ricorda: al 17 agosto in `test/cdp/` ci sono **48** file `prova-*.js` e
-l'elenco del runner ne nomina **45**. I tre fuori (`prova-l1`, `prova-l2`, `prova-l3l4`) non sono
+⚠️ E il conto si fa, non si ricorda: al 23 agosto in `test/cdp/` ci sono **59** file `prova-*.js` e
+l'elenco del runner ne nomina **56**. I tre fuori (`prova-l1`, `prova-l2`, `prova-l3l4`) non sono
 dimenticati per caso: chiedono un `cdp.js` dentro uno scratchpad temporaneo di luglio, quindi non
 partirebbero nemmeno. Un file di prove che non gira è la stessa bugia di un verde che non prova
 niente — si riporta a casa o si toglie.
@@ -252,6 +252,11 @@ non è crashata: è stata terminata da fuori, e il colpevole è la regola 1.
    escono venti come modulo (misurato, PIANO-MODULI §3).
 5. A fine sessione: **HANDOFF-DEFINITIVO datato**, che rimpiazza il precedente come punto
    d'ingresso e ne eredita per riferimento ciò che non ripete.
+   ⚠️ E con lui **due righe di manutenzione, o la catena torna illeggibile**: si riporta nel nuovo
+   handoff la **mappa della catena** (§9 di quello del 23 agosto) con una riga in più per il
+   precedente, e in testa a quello che si lascia indietro si mette il riquadro `📍 **Storico.**`
+   che dice che cosa resta valido lì. Diciannove handoff senza quella mappa costano una sessione a chi
+   arriva: è la trappola ④ in forma di documento.
 
 ## 8. Trappole permanenti
 
@@ -355,7 +360,8 @@ Chi riceve un braindump dell'utente e deve produrne un piano:
 
 | documento | che cosa dice |
 |---|---|
-| `HANDOFF-DEFINITIVO-<data>.md` (il più recente: **18 agosto 2026** — `HANDOFF-DEFINITIVO-2026-08-18.md`) | lo stato: che cosa è appena successo, che cosa viene dopo, le trappole fresche |
+| `HANDOFF-DEFINITIVO-<data>.md`, quello con la **data più alta** (oggi: 23 agosto 2026) | lo stato: che cosa è appena successo, che cosa viene dopo, le trappole fresche. Il suo **§9** dice quale handoff storico tiene quale argomento — la catena non si risale a memoria |
+| `HANDOFF.md` | ⚠️ è vecchio nei numeri, ma è l'**unica specifica della pipeline**: wizard, composer, percorsi, figure, Chandra. Finché quell'area non ha un `PIANO-*` suo, si legge lì |
 | `PIANO-BRAYNR.md` | appunti, evidenze, mappe, flashcard/ripasso (aree P1–P3) |
 | `PIANO-MODULI.md` | lo smontaggio del monolite: criterio, albero dei moduli, metriche |
 | `PIANO-ZAINO.md` · `PIANO-BANCO.md` · `PIANO-MAPPE-EDITOR.md` · `PIANO-ONBOARDING.md` | le altre aree |

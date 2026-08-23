@@ -1,5 +1,11 @@
 # Handoff definitivo — 10 agosto 2026
 
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: il riassunto della giornata del 10 agosto: rimandi fra lezioni, ritentativi, costi,
+> viewer pdf.js, album, memorie del banco.
+
 > **A chi arriva adesso.** Questo file basta. Raccoglie tutto il lavoro della giornata, le decisioni
 > che vanno rispettate e **tutto quello che resta aperto**. I due file di sessione
 > ([mattino](HANDOFF-SESSIONE-2026-08-10.md) · [secondo giro](HANDOFF-SESSIONE-2026-08-10-b.md))

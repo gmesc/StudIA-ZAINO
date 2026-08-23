@@ -1,5 +1,12 @@
 # Handoff di sessione — 8-9 agosto 2026
 
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: le mappe personali L0–L4, l'ancoraggio delle evidenze, il banco B1, e la misura che
+> impone la build **legacy** di pdf.js (§10.4). ⚠️ Due decisioni del §6 sono state poi
+> rovesciate: si leggono con le note che stanno lì.
+
 > **A chi arriva adesso.** Questo file racconta **una sessione di lavoro**: le mappe personali
 > (lotti L0–L4) e il primo lotto del banco (B1). Il punto di ripartenza generale del progetto resta
 > [HANDOFF.md](HANDOFF.md), che è più vecchio e più largo: leggi prima quello se non conosci
@@ -170,7 +177,10 @@ preesistenti stanno sotto 5. Ora un test lo tiene scritto.
 
 7. Otto forme su una griglia 2×2 con i blocchi che si uniscono; niente gestore di riquadri libero.
 8. La geometria sta in **due frazioni** (mai pixel) più la forma più le quattro assegnazioni.
-9. **Una disposizione sola, globale**, non una per corso.
+9. ~~**Una disposizione sola, globale**, non una per corso.~~
+   ⚠️ **ROVESCIATA il 13 agosto 2026**: è **una disposizione per contenitore** — ogni corso e ogni
+   zaino ricorda il suo banco, il suo contenuto aperto e la sua memoria di zoom. La misura che ha
+   deciso e le trappole stanno in [PIANO-BANCO.md](PIANO-BANCO.md) §5.
 10. Uno strumento sta in **un blocco solo**: sceglierlo altrove lo **scambia**, non lo duplica.
 11. La fonte andrà **a schede** dentro il suo blocco (B3), non in due riquadri.
 
@@ -179,8 +189,13 @@ preesistenti stanno sotto 5. Ora un test lo tiene scritto.
 12. Le generate sono **la mappa dell'autore**, e l'autore è StudIA: usano le sue **parole
     importanti** (i grassetti). Le mappe dell'utente sono fatte di **parole chiave**, e non si
     generano mai — «il punto non è possederle, è trovarle» (de Concini).
-13. La scala principale diventa il **corso**, con le lezioni annidate; il capitolo resta ma
-    rifatto dai paragrafi, non dai contenitori dei callout.
+13. La scala principale diventa il **corso**, con le lezioni annidate; ~~il capitolo resta ma
+    rifatto dai paragrafi, non dai contenitori dei callout~~.
+    ⚠️ **La seconda metà è stata ROVESCIATA il 10 agosto 2026**: **del capitolo non si genera più
+    nessuna mappa** — quella la fa lo studente, scegliendo lui che cosa metterci. `MAPPA.ambito`
+    vale `corso` o `lezione`, e un `capitolo` rimasto in una config vecchia viene *corretto*. Il
+    verbale è in [HANDOFF-SESSIONE-2026-08-10.md](HANDOFF-SESSIONE-2026-08-10.md) §3.1, e cambia
+    il §13.4 punto 1 di [PIANO-MAPPE-EDITOR.md](PIANO-MAPPE-EDITOR.md).
 14. **Prima il giro gratis** (grassetti + glossario + rimandi → nodi e archi muti, zero chiamate),
     poi l'AI mette i verbi solo dove serve.
 

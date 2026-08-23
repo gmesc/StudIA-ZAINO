@@ -1,5 +1,11 @@
 # Handoff definitivo — 17 agosto 2026
 
+> 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
+> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
+> la catena.
+> Qui resta: l'anteprima scrivibile, la guida illustrata che entra dentro l'app, e i tre
+> pacchetti del 17 agosto.
+
 > ⚠️ **SUPERATO** da [HANDOFF-DEFINITIVO-2026-08-18.md](HANDOFF-DEFINITIVO-2026-08-18.md), che è il
 > punto di ripartenza. Questo resta la lettura di dettaglio sull'anteprima scrivibile, sulla guida
 > dentro l'app e sui tre pacchetti del 17 agosto — e il §5 («committare») è **fatto**: quel lavoro è
