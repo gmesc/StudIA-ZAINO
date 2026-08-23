@@ -5,10 +5,10 @@
 > non ripete. Il *come si costruisce qui* sta in `GUIDA-ARCHITETTO.md` e non cambia; il dettaglio
 > di ogni area sta nei `PIANO-*`.
 >
-> ⚠️ **Il pacchetto «Leggere» è FINITO**, tutti e sette, sul ramo `leggere` — non su `main` (§0).
-> La sessione ha anche unito due lavori laterali (il pannellino della ricerca e il titolo tolto
-> dalla barra delle Fonti), chiuso una valutazione di codice morto (§2) e **registrato il lavoro
-> del 19 e del 22 agosto che nessun handoff aveva mai raccolto** (§3).
+> ⚠️ **Il pacchetto «Leggere» è FINITO E UNITO SU `main`**, tutti e sette, più i due lavori
+> laterali (il pannellino della ricerca, il titolo tolto dalla barra delle Fonti) e due correzioni
+> nate strada facendo. La sessione ha anche chiuso una valutazione di codice morto (§2) e
+> **registrato il lavoro del 19 e del 22 agosto che nessun handoff aveva mai raccolto** (§3).
 
 ---
 
@@ -39,9 +39,9 @@ sbagliata.
 
 | | |
 |---|---|
-| `main` | **`2e7511e`** — «merge: il PDF degli appunti — link veri, niente testata, il nome della cosa». **Non si è mossa** |
-| ramo di lavoro | **`leggere`**, il pacchetto intero più i due laterali uniti. **Non spinto** |
-| remoto | `git@github.com:gmesc/StudIA.git` — `origin/main` allineata a `main` |
+| `main` | **`efb9755`** — «merge: il pacchetto Leggere» |
+| rami | **nessuno**, né locali né worktree |
+| remoto | `git@github.com:gmesc/StudIA.git` — ⚠️ `origin/main` **indietro**: il lavoro del 23 agosto non è spinto |
 | unità | ✅ **45 file** — nuovi: `tasti-lettura`, `stanza`, `pagina-fonte`, `righello`. Tutti in catena, exit 0 |
 | CDP | ✅ **56 prove**, suite INTERA verde sul ramo. Nuove: `prova-tasti-frecce`, `prova-pagina-campo`, `prova-righello`, `prova-voce-pagina`, `prova-ricerca-pannellino` |
 | pacchetti | i tre in `dist/` sono del **17 agosto**: non contengono il lavoro del 18, del 19 né del 22 |
@@ -347,10 +347,10 @@ dello ZAINO è aggiornata (`6f584fc`) — ⚠️ **tranne la schermata `img/20-p
 mostra la barra di prima**: col titolo e senza i tre comandi nuovi. Si rigenera con la campagna CDP
 del laboratorio, ed è un lavoro a sé.
 
-### 5.8 I gesti da provare a mano — la condizione (b) del merge
+### 5.8 I gesti provati a mano (fatti — è la condizione (b), soddisfatta)
 
 ```bash
-cd "/Users/giacomomeschini/Claude/StudIA/StudIA" && git checkout leggere && npm start
+cd "/Users/giacomomeschini/Claude/StudIA/StudIA" && npm start
 ```
 
 1. **Esc** tre volte con un documento aperto → il documento resta. La **✕** lo chiude.
