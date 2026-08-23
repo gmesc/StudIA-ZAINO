@@ -126,7 +126,7 @@ e per questo stanno nella stessa scheda invece che in due.
 
 ---
 
-#### Q2.1 — I 600 ms fissi (PRIMO, prima di ogni altra cosa)
+#### Q2.1 — I 600 ms fissi ✅ *fatto (`0e028f8`)*
 
 **È il primo lavoro del pacchetto e non solo di Q2**, per due ragioni: è un difetto che c'è già e
 morde già, e finché resta lì **non si può misurare niente del resto** — qualunque prova sul punto
@@ -169,15 +169,43 @@ questo.
 
 ---
 
-#### Q2.2 — Un vault di prova con gli indici PDF
+#### Q2.2 — La prova passa dalla lente vera ✅ *fatto (`c774b64`)*
 
-⚠️ **Il lato PDF non è mai stato verificato a schermo**, ed è dichiarato invece che dato per buono:
-nel vault di prova la lente **non restituisce risultati di tipo «pagina»**. Misurato: 33 documenti
-indicizzati, tutti capitoli, e `SEARCH.last` a **0** cercando una parola che nei PDF c'è. La copia
-magra non porta `MATERIALI/Indici-PDF/`.
+⚠️ **La diagnosi che avevo scritto qui era sbagliata, e la misura l'ha corretta
+due volte.** Restava scritto «serve un vault di prova con gli indici PDF».
+Falso, e per due ragioni diverse:
 
-Senza quello, Q2.1 non si può provare e Q2.4 nemmeno. Va costruito **prima**: o si insegna alla
-copia magra a portarsi gli indici, o la prova se li fabbrica.
+1. **In modalità CORSO la lente cerca nei capitoli PER PROGETTO.** C'è un ramo
+   apposta in `ricercaCostruisci`, col suo commento. I «33 documenti, tutti
+   capitoli» che avevo misurato non erano una lacuna: era il ramo giusto,
+   guardato dalla parte sbagliata. Le pagine dei PDF la lente le cerca **solo
+   nello zaino**.
+2. **Nello ZAINO l'indice non va portato nel vault: lo scrive l'app**, con
+   pdf.js, al momento dell'import. E il modo di farlo in una prova esisteva già:
+   `prova-import.js` crea uno zaino, importa il PDF dalla porta vera
+   (`window.vault.fonti.importa`) e chiama `fontiIndicizza`.
+
+Quindi il vault di prova **non si tocca**: sarebbero stati 4,8 MB di indici
+inutili, e i PDF dei corsi (13 GB) resterebbero comunque fuori — cioè cliccando
+un risultato il documento non si aprirebbe lo stesso.
+
+`prova-lente-punto.js` fa ora la strada intera, dal testo battuto al punto sotto
+gli occhi: la lente trova «competenza» a p. 62 di un documento da 266 pagine, ci
+va in 317 ms, e l'occorrenza è **dentro la finestra**.
+
+⚠️ Due trappole pagate scrivendola, e valgono per chiunque scriva una prova che
+tocca uno zaino:
+
+- **Non cancellare lo zaino di prova alla fine.** `zaino:elimina` passa da
+  `shell.trashItem`: metterebbe una cartella nel **Cestino vero** di chi lancia
+  le prove, a ogni corsa. `prova-import.js` il suo zaino lo lascia, ed è la
+  convenzione giusta — il vault di prova è una copia temporanea e sparisce col
+  runner.
+- **Tornare ai corsi alla fine.** `partiPulito()` chiude pannellini e selezioni
+  ma **non riporta la modalità**: una prova che finisce in zaino la consegna a
+  quella dopo. Nella suite intera l'hanno detto `prova-evidenze-pdf` e quella
+  dell'Album Foto (che negli zaini ha una voce e nei corsi no). **Da sole erano
+  verdi.**
 
 ---
 
