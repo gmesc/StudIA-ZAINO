@@ -5,22 +5,26 @@
 > non ripete. Il *come si costruisce qui* sta in `GUIDA-ARCHITETTO.md` e non cambia; il dettaglio
 > di ogni area sta nei `PIANO-*`.
 >
-> ⚠️ **Questa sessione non ha scritto codice.** Ha fatto tre cose: chiuso una valutazione di codice
-> morto (§2), **registrato il lavoro del 19 e del 22 agosto che nessun handoff aveva mai
-> raccolto** (§3), e prodotto il **piano del pacchetto «Leggere»**, che è il prossimo lavoro e non
-> è ancora cominciato (§5). Chi legge cercando codice nuovo non ne troverà.
+> ⚠️ **Il pacchetto «Leggere» è cominciato**: L0 e L1 sono su un ramo, non su `main` (§0). La
+> sessione ha anche chiuso una valutazione di codice morto (§2) e **registrato il lavoro del 19 e
+> del 22 agosto che nessun handoff aveva mai raccolto** (§3).
 
 ---
 
 ## 0. Da dove ripartire, in tre righe
 
-`main` è a **`2e7511e`**, albero pulito, `origin/main` allineata, **nessun ramo aperto** (i cinque
-rami locali già fusi — `evidenze-appunti`, `installer-windows`, `pacchetto`, `selmenu-closepops`,
-`zaino-ricerca-rinomina` — sono stati cancellati oggi; le loro punte sono in §4 per riferimento).
+**Si è sul ramo `leggere`**, quattro commit avanti a `main` (che è ferma a `2e7511e`). Albero
+pulito. Il ramo **non è ancora unito e non è stato spinto**: le condizioni del merge sono le
+quattro di GUIDA-ARCHITETTO §7.2, e la (b) — i gesti provati a mano dall'utente — non è ancora
+soddisfatta.
 
-Il prossimo lavoro è **il pacchetto «Leggere»**: sette aiuti alla lettura sul documento, piano
-completo in §5. Il piano **non è ancora approvato in esecuzione**: il primo gesto di una chat nuova
-è decidere le due voci revocabili di §5.6 e poi partire da L0.
+Del pacchetto «Leggere» (§5) sono **fatti L0 e L1**; il prossimo è **L2, le frecce**. Le due
+decisioni revocabili di §5.6 (la voce che si ferma a fine pagina, il ramo unico) **non sono state
+riaperte**: valgono come scritte.
+
+⚠️ I cinque rami locali già fusi — `evidenze-appunti`, `installer-windows`, `pacchetto`,
+`selmenu-closepops`, `zaino-ricerca-rinomina` — sono stati cancellati oggi; le loro punte sono in
+§4 per riferimento.
 
 ⚠️ **Prima di lanciare qualunque cosa che apra Electron**, leggi GUIDA-ARCHITETTO §6.1: due istanze
 sulla stessa macchina si contendono la porta di debug, e il client CDP finisce a pilotare l'app
@@ -32,16 +36,16 @@ sbagliata.
 
 | | |
 |---|---|
-| `main` | **`2e7511e`** — «merge: il PDF degli appunti — link veri, niente testata, il nome della cosa» |
-| remoto | `git@github.com:gmesc/StudIA.git` — **allineato**, `0 0` |
-| rami | **nessuno**, né locale né remoto |
-| unità | ✅ **41 file**, tutti dentro la catena di `npm test`, **exit 0 verificato oggi** |
+| `main` | **`2e7511e`** — «merge: il PDF degli appunti — link veri, niente testata, il nome della cosa». **Non si è mossa** |
+| ramo di lavoro | **`leggere`**, 4 commit: `937c630` (L0) · `c80f4ef` (questo handoff) · `7b054ea` (L1) · `6801ec8`. **Non spinto** |
+| remoto | `git@github.com:gmesc/StudIA.git` — `origin/main` allineata a `main` |
+| unità | ✅ **42 file** (`tasti-lettura.js` è il nuovo), tutti dentro la catena di `npm test`, **exit 0 verificato oggi** |
 | CDP | **51 prove** nell'elenco del runner · **54 file** `prova-*.js` sul disco. ⚠️ **Non rieseguite in questa sessione**: l'ultimo verde dichiarato è del 18 agosto, e i lavori del 19 e 22 dichiarano ciascuno le proprie |
 | pacchetti | i tre in `dist/` sono del **17 agosto**: non contengono il lavoro del 18, del 19 né del 22 |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
-npm test                                                   # 41 file, exit 0
+npm test                                                   # 42 file, exit 0
 STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 51 prove sull'app viva
 STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh prova-stampa.js   # una sola
 ```
