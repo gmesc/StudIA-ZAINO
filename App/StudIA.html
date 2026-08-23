@@ -1063,9 +1063,9 @@
   :is(#pdfPane,#pdfPane2) .pdfbar strong{ font-size:12px; font-weight:700; overflow:hidden; text-overflow:ellipsis;
     white-space:nowrap; flex:0 1 auto; min-width:0; }
   /* L'etichetta del selettore è VIVA: dice quale documento è aperto, perché
-     nello zaino è l'unico posto in cui lo si legge — il titolo accanto si
-     accorcia fino a sparire quando il riquadro è stretto. Stessa regola delle
-     tendine del banco, e per lo stesso motivo. */
+     nello zaino è l'unico posto in cui lo si legge — dal 23 agosto 2026 alla
+     lettera, visto che il titolo che le stava accanto non c'è più. Stessa regola
+     delle tendine del banco, e per lo stesso motivo. */
   :is(#pdfPane,#pdfPane2) .pdfbar :is(#pdfDoc,#pdf2Doc){ white-space:nowrap; max-width:min(38cqw,260px); overflow:hidden;
     text-overflow:ellipsis; display:inline-block; line-height:calc(var(--tb-h) - 2px);
     text-transform:none; letter-spacing:0; font-weight:600; }
@@ -1286,12 +1286,58 @@
      ⚠️ Dentro un pannellino la barra perde la LINEA DI CHIUSURA e il fondo: il
      `.popmenu` porta già la sua cornice e il suo `--panel`, e la linea in fondo
      a una barra che non ha niente sotto è una riga che non separa nulla. */
-  #pdfFindPop{ padding:0; width:min(300px,92vw); }
+  /* ⚠️ 380 e non 300: il pannellino era troppo stretto DA SEMPRE, e il capo
+     automatico lo nascondeva mandando la ✕ di sotto invece di dirlo. Misurato a
+     schermo con la parola «insegnamento» dentro: a 300px il campo restava 91,8
+     e mostrava «insegnamer», a 380 ne ha 137,8 e la parola ci sta. Allargare non
+     è il rimedio al campo che ballava — quello è la fessura fissa del conto qui
+     sotto — è il rimedio a una scatola che non conteneva il suo contenuto. */
+  #pdfFindPop{ padding:0; width:min(380px,92vw); }
   .popmenu .tbar{ border-bottom:0; background:transparent; min-height:0; }
-  #pdfFindPop .tbar{ padding:.15rem .2rem; }
-  /* Il conto: non va a capo, e quando è vuoto non occupa la sua fessura. */
-  #pdfFindCount{ padding:0 .3rem; }
-  #pdfFindCount:empty{ display:none; }
+  /* ⚠️ `flex-wrap:nowrap`, e solo qui. Le altre barre vanno a capo APPOSTA: sono
+     larghe quanto lo split, e i comandi che avanzano si accomodano sotto. Questa
+     no — sta dentro un pannellino di 300px fissi, e lì il capo non era il
+     ripiego di un caso estremo ma il modo NORMALE di finire. Il motivo è che il
+     taglio in righe guarda la misura IDEALE degli elementi, non quella a cui
+     potrebbero ridursi: il campo si sarebbe stretto volentieri, ma la riga si
+     spezzava prima che glielo si chiedesse. Misurato: con «128 di 340» nel conto
+     la ✕ finiva da sola sotto — il comando di chiusura sparito di sotto proprio
+     nell'istante in cui uno lo cerca. */
+  #pdfFindPop .tbar{ padding:.15rem .2rem; flex-wrap:nowrap; }
+  /* ---- Il conto ha una fessura SUA, sempre della stessa misura ---------------
+     Il campo di ricerca è `flex:1 1 auto`: si prende quello che avanza. Quindi
+     la sua larghezza era il pannellino meno tutto il resto, e «tutto il resto»
+     cambiava a ogni battuta. Misurato a 300px: 232px col conto a capo, 188 senza
+     conto, 156 con «128 di 340», 148 con «1 di 2 ↻ · intera». Il campo si
+     allargava e si stringeva sotto le dita di chi ci stava scrivendo dentro.
+     Il rimedio è quello del contatore delle pagine (`#pdfPagN`, poco più sotto):
+     non si allarga il contenitore, si FISSA CIÒ CHE VARIA. Una fessura di
+     larghezza sola — `flex:0 0`, così non cresce e non si ritira — le cifre a
+     passo fisso perché «9 di 10» e «10 di 10» non spostino niente, e il testo
+     centrato perché un conto corto non si appiccichi a un lato. Il campo resta
+     costante da sé, senza che gli si scriva addosso nessuna misura.
+     132px NON è scelto a occhio: è il testo più lungo che questa casella possa
+     ricevere, più un margine. Misurati nell'app, con il font vero della barra —
+     «1 di 2» 28px · «128 di 340» 52 · «128 di 340 ↻» 62 · «cerco…» 39 · «nessun
+     risultato» 78 · «128 di 340 ↻ · intera» 99 · «nessun risultato · intera»
+     115. Il peggiore chiede 115, la fessura ne offre 122 al netto della sua
+     spaziatura: **nessuno stato si taglia**, nemmeno con i puntini.
+     ⚠️ E i puntini restano dichiarati (`overflow:hidden; text-overflow`) come
+     rete, non come progetto: se un giorno il sistema sostituisce il carattere e
+     un testo cresce, deve accorciarsi lui — non spingere il campo.
+     ⚠️ UNA MISURA PRESA FUORI DALL'APP NON VALE, ed è costata due giri qui: la
+     prima stesura fissava 96px da un banco di prova con le stesse regole, e in
+     pagina «nessun risultato · intera» usciva tagliato. Poi una seconda misura
+     ha detto 120px per «nessun risultato» — sbagliata anche quella, perché lo
+     `<span>` di prova leggeva `getComputedStyle().font`, che per la shorthand
+     torna vuota: misurava a 16px invece che a 11. I numeri qui sopra vengono
+     dalle proprietà dichiarate una per una, sul nodo vero, dentro l'app.
+     ⚠️ E il conto vuoto NON sparisce più. `display:none` gli toglieva la
+     fessura, cioè allungava il campo di 96px nell'istante fra due ricerche: una
+     casella vuota che tiene il posto si nota molto meno di un campo che si
+     muove da solo. */
+  #pdfFindCount{ flex:0 0 132px; padding:0 .3rem; text-align:center;
+    font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; }
   #pdfFindCount.vuoto{ color:var(--red-strong,#b91c1c); }
   :is(#pdfPane,#pdfPane2) .pdfzoom{ display:flex; align-items:center; gap:0; }
   :is(#pdfPane,#pdfPane2) .pdfpag{ display:flex; align-items:center; gap:0; }
@@ -8041,7 +8087,9 @@ function openPdf(pdf,page,label){
   }catch(e){ return ''; } })();
   if(verOcr) url+=(url.indexOf('?')<0?'?v=':'&v=')+encodeURIComponent(verOcr);
   var host=$('#pdfHost'); if(host) host.hidden=false;
-  var t=$('#pdfTitle'); if(t) t.textContent=(label||pdf)+(pg?(' \u2014 p.'+pg):'');
+  /* Qui si scriveva il titolo per esteso in barra. Adesso il nome del documento
+     lo dice solo il selettore, che lo prende da `pdfDocEtichetta` giù in
+     `aggiornaBarraPagina`: un posto solo, non due che possono discordare. */
   // il collegamento "apri in una scheda" resta al visualizzatore di sistema, e
   // la' la pagina si dice ancora col frammento #page=
   var nt=$('#pdfNewtab'); if(nt) nt.href=url+(pg?('#page='+pg):'');
@@ -8088,7 +8136,8 @@ function openPdf(pdf,page,label){
     var vera=Math.max(1, Math.min(tot, ANTEPRIMA.page||1));
     if(vera!==ANTEPRIMA.page){
       ANTEPRIMA.page=vera;
-      var t2=$('#pdfTitle'); if(t2) t2.textContent=(ANTEPRIMA.label||ANTEPRIMA.file)+' \u2014 p.'+vera;
+      // (la pagina corretta finiva anche nel titolo in barra: quel titolo non
+      // c'è più, e la pagina la ridice il chip via `aggiornaBarraPagina`)
       var n2=$('#pdfNewtab'); if(n2 && n2.href) n2.href=n2.href.replace(/#page=\d+$/,'')+'#page='+vera;
     }
     PDFJS.viewer.setDocument(doc);
@@ -8113,7 +8162,10 @@ function closePdf(){ document.documentElement.dataset.pdf='';
      continuava a scrivere negli appunti un rimando al documento appena chiuso. */
   ANTEPRIMA={ tipo:null, file:'', num:null, label:'', page:1 };
   PDFFIND.scalaPronta=false;
-  var tt=$('#pdfTitle'); if(tt) tt.textContent='Fonte';
+  /* Il titolo in barra («Fonte» a riposo, il nome del documento a documento
+     aperto) qui tornava neutro. Non c'è più — vedi il perché nella `.pdfbar` —
+     e a rimettere il selettore su «Documenti ▾» ci pensa `aggiornaBarraPagina`
+     qui sotto, che legge l'`ANTEPRIMA` appena azzerata. */
   var hh=$('#pdfHost'); if(hh) hh.hidden=true;
   aggiornaBarraPagina();
   // chiuso il documento, nello zaino il posto degli appunti torna a essere il
@@ -9741,7 +9793,16 @@ function pdfDocEtichetta(){
   var f=(typeof ANTEPRIMA!=='undefined' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf') ? ANTEPRIMA.file : '';
   var nome=f ? (titoloMateriale(f)||f) : '';
   b.textContent=(nome || 'Documenti')+' \u25BE';
-  b.title=nome ? ('Documento aperto: '+nome+' — premi per cambiarlo') : 'Scegli il documento';
+  var dice=nome ? ('Documento aperto: '+nome+' — premi per cambiarlo') : 'Scegli il documento';
+  b.title=dice;
+  /* ⚠️ Anche il nome accessibile è vivo, e viene da qui: l'`aria-label` scritto
+     nel markup COPRE il testo visibile, quindi chi ascolta lo schermo sentiva
+     «scegli il documento» e mai QUALE documento fosse. Finché in barra c'era il
+     titolo per esteso il nome si leggeva lì; adesso che il titolo non c'è più
+     questo bottone è l'unico posto che lo dice, e deve dirlo anche a voce.
+     ⚠️ Non basta togliere l'`aria-label`: il nome accessibile cadrebbe sul testo
+     visibile, che porta in coda il triangolino ▾ della tendina. */
+  b.setAttribute('aria-label', dice);
 }
 function aggiornaBarraPagina(){
   pdfDocEtichetta();
@@ -19174,7 +19235,13 @@ window.addEventListener('keydown', function(e){
 <div id="pdfResizer" role="separator" aria-orientation="vertical" aria-label="Ridimensiona la colonna" title="Trascina per ridimensionare"></div>
 <section id="pdfPane" aria-label="Anteprima della fonte">
   <div class="tbar pdfbar">
-    <strong id="pdfTitle">Fonte</strong>
+    <!-- ⚠️ Qui, fino al 23 agosto 2026, c'era «&lt;strong id="pdfTitle"&gt;»: il titolo
+         del documento per esteso più la pagina. Non c'è più perché era la TERZA
+         copia di due cose già dette meglio due centimetri più in là — il nome sta
+         nel selettore qui sotto, che lo accorcia coi puntini apposta perché è un
+         comando e non un'insegna, e la pagina sta nel chip «p. 1 di 13». Ed era
+         quella copia a rompere la barra: su un nome lungo si prendeva tutta la
+         riga e i comandi finivano a capo, su un piano tutto loro. -->
     <!-- Il selettore del documento: nello ZAINO è la porta per passare da una
          fonte all'altra senza tornare alla sidebar, e sta nella barra dello
          strumento perché è una leva del DOCUMENTO, come lo zoom. -->
