@@ -54,7 +54,7 @@ per questo stanno insieme: toccano `_evidenze.json`, la barra della selezione, l
 | | | costo | famiglia |
 |---|---|---|---|
 | Q1 | **Il quaderno si riapre alla riga** | S | ritrovare |
-| Q2 | **La lente porta al punto esatto** (editor **e** PDF) | S | ritrovare |
+| Q2 | **La lente porta al punto esatto della parola cercata** (editor **e** PDF) | S | ritrovare |
 | Q3 | **Il pallino che mantiene la promessa** | S | lavorare |
 | Q4 | **Sbirciare senza saltare** | M | ritrovare |
 | Q5 | **La lente legge anche le mappe e le didascalie** | S | ritrovare |
@@ -105,62 +105,142 @@ mostrare. Con i casi limite: file accorciato, riga 0, riga oltre la fine, valore
 
 ---
 
-## Q2 — La lente porta al punto esatto: nell'editor E nel PDF · S
+## Q2 — La lente porta al punto esatto della parola cercata: nell'editor E nel PDF · S
 
-**Il gesto.** Dalla lente clicchi un risultato sotto APPUNTI: l'appunto si apre **e l'editor scorre
-alla prima occorrenza, selezionata**. Oggi si apre in cima.
+### La promessa, per esteso
 
-**Dove.** `searchGoto(r, q)` — il ramo `if(r.d.appunto)`. Ci sono già dentro `bancoMostra('appunti')`
-e `noteOpen`.
+**Cliccando un risultato della lente si deve atterrare sulla PAROLA CERCATA, non sul contenitore
+che la contiene.** Non «l'appunto giusto», non «la pagina giusta»: **quella parola**, portata sotto
+gli occhi e riconoscibile a colpo d'occhio — selezionata nell'editor, accesa e a fuoco sul PDF.
+
+Il metro per dire che il lavoro è finito è uno solo, e si misura: **dopo il click, la parola cercata
+è dentro la finestra e si vede quale è.** Se per trovarla serve ancora scorrere o cercare una
+seconda volta, il lavoro non è finito.
+
+⚠️ Vale su **tutte e due le metà del banco**, ed è una richiesta esplicita dell'utente: *«la lente
+deve portarmi al posto esatto nell'editor e nel PDF»*. Oggi l'editor non la mantiene affatto, e il
+PDF la mantiene **solo quando fa in tempo** (vedi Q2.1). Sono due facce dello stesso mezzo gesto,
+e per questo stanno nella stessa scheda invece che in due.
+
+### I quattro lavori, in ordine
+
+---
+
+#### Q2.1 — I 600 ms fissi (PRIMO, prima di ogni altra cosa)
+
+**È il primo lavoro del pacchetto e non solo di Q2**, per due ragioni: è un difetto che c'è già e
+morde già, e finché resta lì **non si può misurare niente del resto** — qualunque prova sul punto
+d'atterraggio darebbe verde o rosso a seconda di quanto era carico il computer.
+
+Nel ramo `if(r.d.materiale)` di `searchGoto` la catena è:
+
+```js
+openPdf(materiale, pagina, titolo);      // asincrono: il viewer deve ancora disegnare
+setTimeout(function(){
+  inp.value = q;
+  pdfFindApri({ fuoco:false });          // → pdfFindDispatch('again')
+}, 600);                                 // ⚠️ un numero, non una condizione
+```
+
+⚠️ **Seicento millisecondi FISSI**, sperando che il documento sia pronto. È l'anti-pattern che le
+prove di questo progetto dichiarano nero su bianco, in testa a `test/cdp/prova-pdf.js`: *«un
+`sleep` fisso o mente sulle macchine lente o spreca tempo su quelle veloci»*.
+
+⚠️ E **qui non è teoria**: `GUIDA-ARCHITETTO.md` §6 registra la misura del 16 agosto — **il layer di
+testo di un PDF da 266 pagine arriva dopo 12,4 secondi su un Mac Intel**, invece di 1-2.
+
+**Che cosa succede allora.** Dopo 600 ms il documento non è pronto; `findagain` parte da dove il
+visualizzatore si trova in quel momento, e **l'occorrenza giusta la si manca**: si atterra sulla
+pagina ma non sul punto, oppure su un'altra pagina del tutto. Ed è il difetto della specie
+peggiore: **invisibile sulla macchina di chi l'ha scritto, sistematico su una più lenta** — la
+stessa forma delle otto prove rosse dell'Intel del 16 agosto, che erano attese troppo corte e non
+guasti.
+
+**Il rimedio è quello che l'app usa già altrove: si aspetta una CONDIZIONE, non un numero.** Le
+condizioni giuste sono già nominate nel codice — il documento caricato (`PDFJS.doc`), la pagina
+chiesta a schermo, il layer di testo disegnato (l'evento `textlayerrendered`). Un tetto di attesa
+ci vuole, e quando scade **lo si dice** invece di procedere a vuoto: chi cerca deve sapere se ha
+trovato o se l'app ha rinunciato.
+
+⚠️ Attenzione a **quale** condizione: che `PDFJS.doc` esista non basta, perché `findagain` lavora
+sul layer di testo — «il documento è aperto» e «la pagina è a schermo» sono due fatti diversi, e
+il secondo è quello che serve. È già scritto in testa a `prova-pdf.js`, che esiste proprio per
+questo.
+
+---
+
+#### Q2.2 — Un vault di prova con gli indici PDF
+
+⚠️ **Il lato PDF non è mai stato verificato a schermo**, ed è dichiarato invece che dato per buono:
+nel vault di prova la lente **non restituisce risultati di tipo «pagina»**. Misurato: 33 documenti
+indicizzati, tutti capitoli, e `SEARCH.last` a **0** cercando una parola che nei PDF c'è. La copia
+magra non porta `MATERIALI/Indici-PDF/`.
+
+Senza quello, Q2.1 non si può provare e Q2.4 nemmeno. Va costruito **prima**: o si insegna alla
+copia magra a portarsi gli indici, o la prova se li fabbrica.
+
+---
+
+#### Q2.3 — L'editor atterra sulla parola
+
+**Il gesto.** Clicchi un risultato sotto APPUNTI: l'appunto si apre, **l'editor scorre alla prima
+occorrenza e la seleziona**. Oggi si apre in cima e la parola è quaranta schermate più giù.
+
+**Dove.** `searchGoto(r, q)`, il ramo `if(r.d.appunto)`: ci sono già `bancoMostra('appunti')` e
+`noteOpen`. `noteOpen` finisce con `codemirror.focus()` e nient'altro, quindi il cursore resta a
+zero.
 
 ⚠️ **UN COMMENTO NEL CODICE DICE OGGI IL CONTRARIO, e va letto prima di toccarlo.** Sopra quel ramo
 c'è scritto: *«La parola trovata NON si riaccende dentro l'editor: CodeMirror ha una selezione sua,
 e accendere lì dentro vorrebbe dire un secondo motore di evidenziazione che nessuno spegne.»*
 
-L'obiezione è giusta **e questa proposta non la viola**: non si accende niente: si usa **la
-selezione che CodeMirror ha già** (`posFromIndex` + `setSelection` + `scrollIntoView`), che è
-esattamente il motore che il commento dice di non voler duplicare. Nessun addon, nessun secondo
-evidenziatore, nessuno stato da spegnere.
+L'obiezione è **giusta** — è la stessa famiglia di difetti che ha morso davvero qui (la ricerca del
+PDF che accendeva il colore su una barra non a schermo, e allora nessuna via d'uscita lo spegneva)
+— **e questa proposta non la viola**: non si accende niente. Si **muove la selezione** che
+CodeMirror ha già (`posFromIndex` + `setSelection` + `scrollIntoView`), cioè esattamente il motore
+che il commento dice di non voler duplicare. Nessun addon, nessuno stato da spegnere: si spegne
+come si spegne sempre una selezione, cliccando altrove o battendo un tasto.
 
-⚠️ **Il commento va riscritto insieme alla promessa, non aggirato.** È la regola di casa e questo
-progetto l'ha applicata quattro volte in un giorno solo (vedi §3 più sotto). Se resta lì com'è,
-fra sei mesi qualcuno lo legge e disfa il lavoro.
+⚠️ **Il commento va riscritto insieme alla promessa, non aggirato.** È la regola di casa, applicata
+quattro volte in un giorno solo (vedi §3). Se resta lì com'è, fra sei mesi qualcuno lo legge, pensa
+che sia una decisione, e disfa il lavoro.
 
-⚠️ La normalizzazione del testo cercato — virgolette, «tutte le parole» contro «la frase esatta» —
-sta già in `RicercaIndice.interpreta` (`App/assets/ricerca/indice.js`), ed è **una convenzione
-sola in un posto solo**: trovare l'occorrenza nell'editor deve chiedere a lei, non reimplementarla.
-Una convenzione con due significati non è una convenzione.
+⚠️ **La stessa convenzione della lente, chiesta a chi la possiede.** `RicercaIndice.interpreta`
+legge le virgolette e risponde `{testo, esatta}`; `sNorm` appiattisce gli accenti su a-z e tratta
+l'apostrofo come un confine. Un banale `indexOf` farebbe **trovare all'editor cose diverse da
+quelle che ha trovato la lente**: cercando `"per"` selezionerebbe il «per» dentro «perché»;
+cercando `pero` non troverebbe «però», e l'appunto si aprirebbe in cima **proprio nel caso in cui
+la lente ha appena detto che c'è**. Un risultato che ti porta sull'appunto giusto e poi ti
+seleziona un'altra parola è peggio di uno che non seleziona niente: la prima volta ti fidi, la
+seconda no.
 
 **La parte pura**: dato il testo dell'appunto e la richiesta interpretata, l'**indice del primo
-carattere** dell'occorrenza (o `null`). Provabile in Node su stringhe, senza CodeMirror.
+carattere** dell'occorrenza (o `null`). Provabile in Node su stringhe, senza CodeMirror. I casi che
+la prova deve inchiodare: `"per"` fra virgolette non dentro «perché» · `pero` trova «però» ·
+`"acqua"` trova «dell'acqua» · più parole → la prima occorrenza · la parola non c'è → `null`.
 
 ⚠️ **`null` NON È 0.** «Apri in cima perché non ho trovato niente» e «apri al carattere zero perché
-l'occorrenza è lì» sono due cose diverse, e trattarle uguale è lo stesso difetto che il pacchetto
+l'occorrenza è lì» sono due cose diverse, e confonderle è lo stesso difetto che il pacchetto
 «Leggere» ha già dovuto chiudere due volte (`aspetto/stanza.js`, `fonti/pagina.js`).
 
-### E il lato PDF, che è metà del lavoro
+---
 
-⚠️ **La richiesta dell'utente è esplicita: «la lente deve portarmi al posto esatto nell'editor E nel
-PDF».** Il ramo `if(r.d.materiale)` di `searchGoto` fa già tre cose giuste — apre il documento alla
-pagina, riempie il campo della ricerca, e `pdfFindApri({fuoco:false})` lancia un `findagain` di
-pdf.js, che seleziona un'occorrenza **e ci scorre sopra**. Sulla carta il punto esatto ci sarebbe.
+#### Q2.4 — La prova che il punto è quello giusto
 
-⚠️ **MA NON È STATO VERIFICATO A SCHERMO**, ed è dichiarato: nel vault di prova la lente non
-restituisce risultati di tipo «pagina» (33 documenti indicizzati, tutti capitoli; `SEARCH.last` a 0
-cercando una parola che nei PDF c'è). **Serve un vault con gli indici PDF, o costruirne uno.** È il
-primo passo di Q2, prima di toccare qualunque cosa.
+⚠️ **Il controllo che vale il lavoro non è «si è aperto l'appunto» né «si è aperta la pagina»**: una
+prova scritta così sarebbe **verde anche oggi, col difetto dentro**. Va misurato che **la parola
+cercata sia dentro la finestra**:
 
-⚠️ **E c'è un difetto latente da guardare, leggibile senza aprire niente**: quella catena aspetta il
-documento con un **`setTimeout` di 600 ms fissi**. È l'anti-pattern che le prove di questo progetto
-dichiarano nero su bianco — *«un `sleep` fisso o mente sulle macchine lente o spreca tempo su quelle
-veloci»* — e qui non è teoria: `GUIDA-ARCHITETTO.md` §6 registra che **il layer di testo di un PDF
-da 266 pagine arriva dopo 12,4 secondi su un Mac Intel**, invece di 1-2. Con il documento non ancora
-pronto, `findagain` parte da dove il visualizzatore si trova e **l'occorrenza giusta la si manca**:
-si atterra sulla pagina ma non sul punto, oppure su un'altra pagina del tutto. Il rimedio è quello
-che l'app usa già altrove: **aspettare una condizione, non un numero**.
+- nell'editor: la selezione non è vuota, il testo selezionato è quello cercato, e la riga è a
+  schermo (`getBoundingClientRect` dentro il riquadro);
+- nel PDF: l'occorrenza accesa (`.textLayer .highlight`, meglio la `.selected`) sta dentro il
+  rettangolo di `#pdfHost`.
 
-Cioè Q2 è **un lavoro solo su due superfici**, con la stessa promessa: *ti porto dove l'ho trovato*.
-Oggi l'editor non la mantiene affatto, e il PDF la mantiene **quando fa in tempo**.
+⚠️ E la prova va fatta **diventare rossa** sul codice di prima prima di crederle.
+
+⚠️ Questa vive in CDP, ed è una delle poche che se lo merita: misura una posizione a schermo, che
+esiste solo dentro un motore di rendering. La scelta di *dove* atterrare — Q2.3 — sta invece nel
+modulo puro, e si prova in Node.
 
 ---
 
@@ -560,6 +640,9 @@ Non è vincolante, ma segue il criterio del pacchetto precedente: **prima si tog
 minime, poi si aggiunge superficie**. Così, se il lavoro si ferma a metà, ciò che è entrato è già
 utile.
 
+0. **Q2.1** (i 600 ms fissi) — **prima di tutto**: è un difetto che morde già, e finché resta lì
+   nessuna prova sul punto d'atterraggio dice la verità — darebbe verde o rosso a seconda di quanto
+   era carico il computer;
 1. **Q8** (il Cestino) — è una riga copiata da un fratello maggiore, e toglie il rischio più grave;
 2. **Q7** (le liste audio) — salda l'invariante 5 e chiude una perdita silenziosa;
 3. **Q3** (il pallino) — piccolo, di principio, e prepara la mano sulla barra della selezione;
