@@ -14,20 +14,22 @@
 
 ## 0. Da dove ripartire, in tre righe
 
-**Si è sul ramo `leggere`**, quindici commit avanti a `main` (che è ferma a `2e7511e`, col
-pannellino e il titolo già dentro). Albero pulito. Il ramo **non è ancora unito e non è stato
-spinto**.
+`main` è a **`c6b24e3`**, **spinta**: `origin/main` allineata. Albero pulito, **nessun ramo aperto**,
+nessun worktree.
 
-Il pacchetto «Leggere» (§5) è **finito: L0-L7**. Le due decisioni revocabili di §5.6 — la voce che
-si ferma a fine pagina, il ramo unico — non sono state riaperte e valgono come scritte.
+Il pacchetto «Leggere» (§5) è **finito e unito**: L0-L7, più i due lavori laterali (il pannellino
+della ricerca, il titolo tolto dalla barra delle Fonti) e due correzioni nate strada facendo. Le
+quattro condizioni del merge sono tutte soddisfatte — suite intera verde (56 prove), `npm test`
+verde (45 file, nessuno fuori catena), gesti provati a mano, e `main` era già DENTRO il ramo prima
+di unire, quindi il codice unito è esattamente quello provato e non un contenuto mai eseguito.
 
-**Il ramo è pronto per il merge su tre condizioni di quattro**: suite intera verde (56 prove),
-`npm test` verde (45 file, nessuno fuori catena), `main` dentro il ramo e nessun conflitto aperto. Manca la **(b)**: i
-gesti provati a mano. Il comando è in §5.8.
+Il prossimo lavoro è **§6**, e in cima ci sono due debiti piccoli che questo pacchetto ha lasciato:
+la schermata `img/20-pdfbar-numerata.png` della guida, che mostra la barra di prima, e la sezione
+**Z12 — leggere** da scrivere in `PIANO-ZAINO.md`.
 
-⚠️ I cinque rami locali già fusi — `evidenze-appunti`, `installer-windows`, `pacchetto`,
-`selmenu-closepops`, `zaino-ricerca-rinomina` — sono stati cancellati oggi; le loro punte sono in
-§4 per riferimento.
+⚠️ I rami cancellati dopo il merge, con le loro punte: `leggere` (`866d180`),
+`ricerca-pannellino` (`bb740eb`), `fonte-titolo` (`29adfd6`), più i cinque vecchi già fusi elencati
+in §4. I commit sono tutti dentro `main`: è andata via l'etichetta, non il lavoro.
 
 ⚠️ **Prima di lanciare qualunque cosa che apra Electron**, leggi GUIDA-ARCHITETTO §6.1: due istanze
 sulla stessa macchina si contendono la porta di debug, e il client CDP finisce a pilotare l'app
@@ -39,9 +41,9 @@ sbagliata.
 
 | | |
 |---|---|
-| `main` | **`efb9755`** — «merge: il pacchetto Leggere» |
+| `main` | **`c6b24e3`** — il pacchetto «Leggere» unito, e questo handoff |
 | rami | **nessuno**, né locali né worktree |
-| remoto | `git@github.com:gmesc/StudIA.git` — ⚠️ `origin/main` **indietro**: il lavoro del 23 agosto non è spinto |
+| remoto | `git@github.com:gmesc/StudIA.git` — ✅ `origin/main` **allineata** |
 | unità | ✅ **45 file** — nuovi: `tasti-lettura`, `stanza`, `pagina-fonte`, `righello`. Tutti in catena, exit 0 |
 | CDP | ✅ **56 prove**, suite INTERA verde sul ramo. Nuove: `prova-tasti-frecce`, `prova-pagina-campo`, `prova-righello`, `prova-voce-pagina`, `prova-ricerca-pannellino` |
 | pacchetti | i tre in `dist/` sono del **17 agosto**: non contengono il lavoro del 18, del 19 né del 22 |
