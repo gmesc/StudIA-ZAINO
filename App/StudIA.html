@@ -127,6 +127,11 @@
      bottone e il punto che resta sotto il puntatore. Nessuna dipendenza: qui
      dentro non c'è né DOM né viewer, solo aritmetica e stringhe. -->
 <script src="assets/fonti/zoom.js"></script>
+<!-- «Aprite a pagina 142»: che cosa vuol dire quello che si scrive nel
+     contatore, che cosa ci scrive sopra, e come si appiattisce il sommario che
+     il PDF si porta dentro. Il caso che conta è la differenza fra «non ho
+     capito» e «vai a pagina 1». Puro, provato in Node. -->
+<script src="assets/fonti/pagina.js"></script>
 <!-- Che cosa entra nell'album delle foto e in che misura: formati letti dai
      byte, tetto delle dimensioni, motivi degli scarti. Puro, provato in Node. -->
 <script src="assets/album/foto.js"></script>
@@ -1372,8 +1377,8 @@
   /* ⚠️ Un solo vestito per i due pannellini che scelgono un materiale — i
      documenti e i media. Sono la stessa cosa vista da due strumenti, e due
      fogli di stile per la stessa lista divergono al primo ritocco. */
-  #pdfDocPop, #plMediaPop{ padding:.3rem; width:min(360px,92vw); max-height:60vh; overflow:auto; }
-  #pdfDocPop .pd-voce, #plMediaPop .pd-voce{ display:block; width:100%; text-align:left; border:0; background:transparent;
+  #pdfDocPop, #plMediaPop, #pdfSommarioPop{ padding:.3rem; width:min(360px,92vw); max-height:60vh; overflow:auto; }
+  #pdfDocPop .pd-voce, #plMediaPop .pd-voce, #pdfSommarioPop .pd-voce{ display:block; width:100%; text-align:left; border:0; background:transparent;
     color:var(--ink); cursor:pointer; padding:.5rem .6rem; font-size:13px; font-family:inherit;
     border-bottom:1px solid var(--line-weak); overflow-wrap:anywhere; }
   #pdfDocPop .pd-voce:last-child, #plMediaPop .pd-voce:last-child{ border-bottom:0; }
@@ -2282,6 +2287,16 @@
   /* la classe con display batte lo stile predefinito di [hidden]: va riaffermato */
   .pdfpag[hidden]{ display:none!important; }
   .pdfpag #pdfPagN{ font-size:11px; font-weight:700; color:var(--muted); min-width:44px; text-align:center; }
+  /* ⚠️ Il campo è largo QUANTO il contatore che sostituisce. Senza, premere il
+     contatore farebbe saltare tutta la barra di qualche pixel — e su una barra
+     che va a capo può voler dire un comando che scende di riga nell'istante in
+     cui uno sta per premerlo. La stessa lezione del conto della ricerca, che
+     tiene la sua fessura anche da vuoto. */
+  .pdfpag #pdfPagIn{ width:var(--tb-min); min-width:44px; height:var(--tb-h); box-sizing:border-box;
+    font-size:11px; font-weight:700; text-align:center; font-variant-numeric:tabular-nums;
+    background:var(--bg); border:1px solid var(--line); color:var(--ink);
+    font-family:inherit; padding:0 .2rem; }
+  .pdfpag #pdfPagIn[hidden]{ display:none; }
   /* selettore dei materiali da citare */
   #matPop{ width:min(460px,94vw); padding:.5rem; }
   #matPop input{ width:100%; border:1px solid var(--line); background:var(--bg); color:var(--ink); padding:.4rem .5rem; font-size:13px; margin-bottom:.4rem; }
@@ -8921,7 +8936,7 @@ function closePops(){
      vista da un altro lato: togliergli `open` lo farebbe sparire lasciando il
      colore acceso sulla pagina — cioè ricreerebbe esattamente lo stato invisibile
      che si è appena finito di togliere, per un click sul «+» dello zoom. */
-  ['#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#zainoPop','#pdfDocPop','#plMediaPop','#pittorePop','#stratiPop']
+  ['#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#zainoPop','#pdfDocPop','#pdfSommarioPop','#plMediaPop','#pittorePop','#stratiPop']
     .forEach(function(s){ var e=$(s); if(e) e.removeAttribute('open'); });
   /* ⚠️ Il menu della selezione e la sua barra non si chiudono togliendo un
      attributo: hanno uno stato in una CLASSE (`open`, `aperta`) e due funzioni
@@ -9872,9 +9887,134 @@ function aggiornaBarraPagina(){
   // «p. 7 di 80»: quante siano lo sa solo il documento aperto, e saperlo cambia
   // che cosa vuol dire premere «pagina successiva»
   var tot=(PDFJS.doc && PDFJS.doc.numPages) ? PDFJS.doc.numPages : 0;
-  if(mostra && et) et.textContent='p. '+ANTEPRIMA.page+(tot?(' di '+tot):'');
+  if(mostra && et){
+    /* ⚠️ `PDFPAG` è dichiarato più in basso in questo stesso script: al primo
+       giro può non essere ancora assegnato, e leggerlo solleverebbe. La barra si
+       ridisegna decine di volte, quindi il primo giro senza etichette non costa
+       niente — le avrà il secondo. */
+    var info=(typeof PDFPAG!=='undefined' && PDFPAG) ? PDFPAG : { etichette:null };
+    try{ pagDocInfo(); }catch(e){}
+    et.textContent=FontiPagina.etichetta(ANTEPRIMA.page, { numPages:tot });
+    /* Il suggerimento dice che si può scrivere — ed è l'unico posto in cui lo si
+       può leggere, perché nel contatore ci sta il numero e nient'altro. */
+    et.title=FontiPagina.suggerimento(ANTEPRIMA.page, { etichette:info.etichette });
+    et.setAttribute('aria-label', et.title);
+  }
+  if(!mostra){ try{ pagCampoChiudi(); }catch(e){} }
   pdfZoomAggiorna();
 }
+
+/* ===== «Aprite a pagina 142» ==============================================
+   Il contatore delle pagine è un comando: si preme, diventa un campo, si scrive
+   il numero. E se il documento si porta dentro il suo sommario, sotto il campo
+   compare — non l'abbiamo costruito noi, l'ha scritto chi ha fatto il PDF.
+
+   ⚠️ La REGOLA di che cosa vuol dire quello che si scrive sta in
+   `assets/fonti/pagina.js` e si prova con `node test/pagina-fonte.js`. Qui c'è
+   solo il DOM: aprire, chiudere, chiedere al documento. La divisione è la stessa
+   di `fonti/zoom.js`, e serve alla stessa cosa. */
+var PDFPAG={ etichette:null, sommario:null, per:'' };
+
+/** Le due cose che il documento sa di sé e che l'app non può indovinare: come
+ *  chiama le sue pagine, e che sommario ha dentro. Si chiedono UNA VOLTA per
+ *  documento — `per` è il nome di quello per cui valgono. */
+function pagDocInfo(){
+  var f=(ANTEPRIMA && ANTEPRIMA.file)||'';
+  if(!PDFJS.doc || PDFPAG.per===f) return;
+  PDFPAG.per=f; PDFPAG.etichette=null; PDFPAG.sommario=null;
+  var doc=PDFJS.doc;
+  /* ⚠️ Tutte e due possono mancare, e la maggior parte dei PDF non le ha: chi
+     chiama non deve accorgersene. Un `catch` che tace è giusto qui — non c'è
+     niente da dire all'utente, semplicemente quel documento non ha un sommario. */
+  try{ doc.getPageLabels().then(function(v){ if(PDFPAG.per===f) PDFPAG.etichette=v||null; }).catch(function(){}); }catch(e){}
+  try{ doc.getOutline().then(function(v){ if(PDFPAG.per===f) PDFPAG.sommario=FontiPagina.appiattisci(v); }).catch(function(){}); }catch(e){}
+}
+
+function pagCampoAperto(){ var i=$('#pdfPagIn'); return !!i && !i.hidden; }
+/** Il campo prende il posto del contatore. Due stati, un token. */
+function pagCampoApri(){
+  var et=$('#pdfPagN'), i=$('#pdfPagIn');
+  if(!et || !i || ANTEPRIMA.tipo!=='pdf') return;
+  pagDocInfo();
+  et.hidden=true; i.hidden=false;
+  et.setAttribute('aria-expanded','true');
+  i.value=String(ANTEPRIMA.page||1);
+  i.focus(); i.select();
+  pagSommarioApri();
+}
+function pagCampoChiudi(){
+  var et=$('#pdfPagN'), i=$('#pdfPagIn');
+  if(!et || !i) return;
+  i.hidden=true; et.hidden=false;
+  et.setAttribute('aria-expanded','false');
+  var pop=$('#pdfSommarioPop'); if(pop) pop.removeAttribute('open');
+}
+/** Invio: si va dove dice il modulo. `null` vuol dire «non ho capito», e allora
+ *  non si muove niente — il campo resta aperto, così si può correggere. */
+function pagCampoVai(){
+  var i=$('#pdfPagIn'); if(!i) return;
+  var tot=(PDFJS.doc && PDFJS.doc.numPages) ? PDFJS.doc.numPages : 0;
+  var n=FontiPagina.leggi(i.value, { numPages:tot, etichette:PDFPAG.etichette });
+  if(n===null){ i.select(); return; }
+  pagCampoChiudi();
+  vaiAPagina(n);
+}
+
+/* Il sommario, se il documento ce l'ha. Le voci si costruiscono alla prima
+   apertura e restano: risolvere una destinazione costa una chiamata al
+   documento, e un sommario di ottanta voci sono ottanta chiamate. */
+function pagSommarioApri(){
+  var pop=$('#pdfSommarioPop'), et=$('#pdfPagN');
+  if(!pop || !et) return;
+  var voci=PDFPAG.sommario;
+  if(!voci || !voci.length) return;              // niente sommario: niente pannellino
+  pop.innerHTML=voci.map(function(v,idx){
+    return '<button type="button" class="pd-voce so-voce" data-i="'+idx+'" '+
+      'style="padding-left:'+(0.6+v.livello*0.8)+'rem" title="'+escHtml(v.titolo)+'">'+
+      escHtml(v.titolo)+'</button>';
+  }).join('');
+  popAt(pop, et);
+}
+/* ⚠️ La destinazione si risolve QUI e non nel modulo: `getPageIndex` è
+   asincrono e vuole il documento. Il modulo porta avanti `dest` così com'è. */
+function pagSommarioVai(idx){
+  var v=(PDFPAG.sommario||[])[idx]; if(!v || !PDFJS.doc) return;
+  var d=v.dest;
+  var risolvi=(typeof d==='string') ? PDFJS.doc.getDestination(d) : Promise.resolve(d);
+  Promise.resolve(risolvi).then(function(arr){
+    if(!arr || !arr.length) return null;
+    return PDFJS.doc.getPageIndex(arr[0]);
+  }).then(function(i){
+    if(i===null || i===undefined) return;
+    pagCampoChiudi();
+    vaiAPagina(i+1);
+  }).catch(function(){
+    /* Una destinazione che non si risolve è un sommario rotto dentro il file:
+       si dice, invece di lasciare un click che non fa niente. */
+    toast('Questa voce del sommario non porta a nessuna pagina', false);
+  });
+}
+
+(function(){
+  document.addEventListener('click', function(e){
+    if(!e.target.closest) return;
+    if(e.target.closest('#pdfPagN')){ pagCampoApri(); return; }
+    var v=e.target.closest('#pdfSommarioPop .so-voce');
+    if(v){ pagSommarioVai(+v.getAttribute('data-i')); return; }
+    /* Un click fuori chiude il campo, come ogni pannellino. Non dentro il
+       pannellino del sommario, che È il campo aperto. */
+    if(pagCampoAperto() && !e.target.closest('#pdfPag') && !e.target.closest('#pdfSommarioPop')) pagCampoChiudi();
+  });
+  document.addEventListener('keydown', function(e){
+    if(!pagCampoAperto()) return;
+    if(e.target && e.target.id!=='pdfPagIn') return;
+    if(e.key==='Enter'){ e.preventDefault(); pagCampoVai(); return; }
+    /* ⚠️ Esc chiude IL CAMPO e si ferma lì: `stopPropagation` perché più in giù
+       nella catena ci sono la ricerca e i pannellini, e un Esc dato per
+       rinunciare a scrivere un numero non deve spegnere altro. */
+    if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); pagCampoChiudi(); $('#pdfFrame') && $('#pdfFrame').focus(); return; }
+  }, true);
+})();
 
 /* ---- 📎 selettore dei materiali ---- */
 var MATERIALI={ lista:null, filtro:'' };
@@ -19321,7 +19461,18 @@ window.addEventListener('keydown', function(e){
     <i class="tbsep" aria-hidden="true"></i>
     <span class="pdfpag" id="pdfPag" hidden>
       <button class="tbtn" id="pdfPrev" type="button" title="Pagina precedente" aria-label="Pagina precedente">&#8249;</button>
-      <span id="pdfPagN">p. 1</span>
+      <!-- ⚠️ Il contatore È un comando dal 23 agosto 2026, non più un'insegna:
+           si preme e diventa un campo in cui si scrive il numero. Due stati
+           dello stesso token `.tbtn`, non un bottone in più — «aprite a pagina
+           142» è la frase più detta in un'aula, e finora l'unico modo di
+           arrivarci era la rotella. -->
+      <button class="tbtn" id="pdfPagN" type="button" aria-haspopup="dialog" aria-expanded="false">p. 1</button>
+      <!-- Il campo vive accanto e prende il posto del contatore: `inputmode`
+           numerico perché quasi sempre si batte un numero, ma non `type=number`
+           — le etichette di pagina («iii», «A-4») sono testo, e una rotellina
+           che incrementa un numero romano non vuol dire niente. -->
+      <input type="text" id="pdfPagIn" hidden inputmode="numeric" autocomplete="off"
+             aria-label="Vai a una pagina">
       <button class="tbtn" id="pdfNext" type="button" title="Pagina successiva" aria-label="Pagina successiva">&#8250;</button>
     </span>
     <!-- Zoom e ricerca vivono qui e non nella topbar: sono leve del DOCUMENTO,
@@ -19741,6 +19892,10 @@ window.addEventListener('keydown', function(e){
 <!-- Creare uno zaino: un campo e un bottone, aperti dal «+» accanto alla
      tendina che li elenca. -->
 <div id="pdfDocPop" class="popmenu" role="menu" aria-label="Documenti dello zaino"></div>
+<!-- Il sommario che il PDF si porta dentro: compare sotto il campo della pagina,
+     e solo se il documento ce l'ha. Non lo costruisce l'app — l'ha scritto chi
+     ha fatto il file, ed è la ragione per cui costa poco e vale molto. -->
+<div id="pdfSommarioPop" class="popmenu" role="menu" aria-label="Sommario del documento"></div>
 <div id="plMediaPop" class="popmenu" role="menu" aria-label="Video e audio del contenitore"></div>
 <div id="zainoPop" class="popmenu" role="dialog" aria-label="Crea uno zaino">
   <label class="zp-lab" for="zainoNome">Nome della materia</label>
