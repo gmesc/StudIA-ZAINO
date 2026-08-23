@@ -1,0 +1,221 @@
+# Handoff definitivo — 24 agosto 2026
+
+> **A chi arriva adesso: questo file basta per ripartire.** Sostituisce
+> `HANDOFF-DEFINITIVO-2026-08-23.md` come punto d'ingresso e ne eredita per riferimento ciò che non
+> ripete. Il *come si costruisce qui* sta in `GUIDA-ARCHITETTO.md` e non cambia; il dettaglio di
+> ogni area sta nei `PIANO-*`.
+
+---
+
+## 0. Da dove ripartire, in tre righe
+
+`main` è a **`ab74eba`**, **spinta** (`origin/main` allineata), albero pulito, **nessun ramo, nessun
+worktree**.
+
+Il prossimo lavoro è **Q8** del pacchetto «Quaderno»: il file di riferimento è
+**`HANDOFF-PACCHETTO-QUADERNO.md`**, che è autosufficiente — dice che cosa costruire, dove vive ogni
+pezzo, quali fatti sono già misurati e quali trappole già pagate.
+
+⚠️ **Prima di lanciare qualunque cosa che apra Electron**, leggi GUIDA-ARCHITETTO §6.1: la porta di
+debug è a esemplare unico e il client CDP finisce a pilotare l'app sbagliata. E **non si chiude mai
+un processo per nome**.
+
+📍 **Gli altri venti handoff sono storici**, e non si risalgono a memoria: il **§9 di
+`HANDOFF-DEFINITIVO-2026-08-23.md`** tiene la mappa di quale file porta quale argomento, e la regola
+è sempre la stessa — il punto d'ingresso è l'`HANDOFF-DEFINITIVO-*` con la **data più alta**.
+
+---
+
+## 1. Lo stato, in cifre
+
+| | |
+|---|---|
+| `main` | **`ab74eba`** — «merge: la lente porta al punto esatto, su tutte e due le metà del banco (Q2)» |
+| remoto | `git@github.com:gmesc/StudIA.git` — ✅ **allineato** (`0 0`) |
+| rami · worktree | **nessuno** |
+| unità | ✅ **46 file**, tutti dentro la catena di `npm test`, exit 0 |
+| CDP | ✅ **57 prove** in elenco · 60 file `prova-*.js` sul disco |
+| monolite | `App/StudIA.html` **21.075 righe** · moduli in `App/assets/` (pdf.js escluso): **34** |
+| pacchetti | ⚠️ **nessuno**: `dist/` è stata svuotata il 23 agosto (2,3 GB). I tre installer che c'erano erano del **17 agosto** e saltavano il lavoro del 18, 19 e 22 — andavano rifatti comunque. Si rifanno con `npm run pacchetto` |
+
+```bash
+cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
+npm test                                                   # 46 file, exit 0
+STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 57 prove sull'app viva
+STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh prova-lente-punto.js   # una sola
+```
+
+⚠️ Il `cd` fa parte del comando: la cartella di lavoro delle chat è `StudIA/` (quella **di fuori**),
+e da lì `./test/cdp/…` non esiste.
+
+⚠️ **E se il lavoro sta su un ramo, il comando per provarlo a mano si dà SEMPRE**, in un blocco a sé
+— è una regola dichiarata dall'utente il 23 agosto: `git checkout <ramo> && npm start`. È già
+successo che provasse su `main` credendo di essere sul ramo, e che un difetto risultasse «non
+corretto» solo perché guardava un'altra build.
+
+⚠️ **Tre file di prova restano fuori dall'elenco**: `prova-l1.js`, `prova-l2.js`, `prova-l3l4.js`
+chiedono un `cdp.js` dentro uno scratchpad di luglio che non esiste più. Il conto si fa, non si
+ricorda: 60 file, 57 in elenco, 3 fuori.
+
+---
+
+## 2. La regola di forma, dichiarata dall'utente e valida oltre ogni pacchetto
+
+**Si scrive sempre pensando alla prova in NODE, non a quella CDP.** Non è «aggiungere una prova
+dopo»: è **scegliere la forma del codice prima**, così che la parte che si sbaglia stia in una
+funzione pura richiamabile da `node test/<file>.js`.
+
+Il perché è misurato (`PIANO-MODULI.md` §1): una prova CDP costa ~40 secondi e un'istanza di
+Electron, una di unità ~40 millisecondi.
+
+**Come si applica**: la decisione (aritmetica, stringhe, tabelle di priorità, «che cosa si fa di un
+valore che arriva dal disco») diventa un modulo UMD in `App/assets/…`; al renderer resta leggere il
+DOM, chiamare il modulo, fare quello che dice. Alla prova CDP resta **il cablaggio**, mai la logica.
+
+⚠️ **E una prova non si crede finché non la si sa far diventare rossa.** Si rimette il codice di
+prima, si rilancia, si guarda che il controllo nuovo fallisca. In due giorni questo metodo ha
+trovato: una prova che restava verde col difetto dentro, una che difendeva dal numero di ieri invece
+che dalla sua forma, e tre che accusavano l'app per difetti propri.
+
+---
+
+## 3. Che cosa è stato fatto il 23 e il 24 agosto
+
+**35 commit.** Due pacchetti chiusi, più tre lavori laterali.
+
+### Il pacchetto «Leggere» — sette aiuti alla lettura (23 agosto)
+
+Il dettaglio è in `PIANO-ZAINO.md` **§Z12**. In breve: il numero di pagina si scrive (col sommario
+del PDF), la voce legge la pagina (macOS), il righello isola la riga, quattro tinte per il foglio,
+le frecce voltano pagina invece di sfogliare il corso fantasma, tema e corpo del testo si ricordano,
+ed **Esc non costa più niente in nessuno dei suoi gradini**.
+
+Quattro moduli puri: `tasti/lettura.js` · `aspetto/stanza.js` · `fonti/pagina.js` ·
+`fonti/righello.js`.
+
+### Il pacchetto «Quaderno» — Q2, la lente porta al punto (24 agosto)
+
+Il dettaglio è in `PIANO-ZAINO.md` **§Z13** e in `HANDOFF-PACCHETTO-QUADERNO.md`. La lente
+prometteva «ti porto dove l'ho trovato» e la manteneva a metà: sul PDF **solo quando faceva in
+tempo** (un `setTimeout` di 600 ms contro un layer di testo che su un Intel arriva dopo 12,4
+secondi), nell'editor **per niente**.
+
+Due moduli: `fonti/attesa.js` e `RicercaIndice.punto`.
+
+### I tre lavori laterali
+
+- il **pannellino della ricerca** nel documento: una riga sola, campo a larghezza costante;
+- il **titolo del documento** tolto dalla barra delle Fonti — era la terza copia di due cose già
+  dette dal selettore e dal chip, ed era quella che mandava la barra a capo;
+- l'**Esc della mappa** che svuotava il blocco invece di chiudere.
+
+---
+
+## 4. Le trappole pagate in questi due giorni
+
+Ognuna è costata almeno una volta, e nessuna si vedeva guardando.
+
+**⚠️ Fermare la propagazione è un ATTO, e si paga solo se si è consumato il tasto.** Un gestore in
+cattura su `window` che chiamava `stopPropagation()` *prima* di decidere si è messo a ingoiare l'Esc
+senza usarlo — e con lui è sparito l'Esc di mezza app.
+
+**⚠️ La suite INTERA al cancelletto, non solo le prove che tocchi.** Quattro dei difetti peggiori
+erano **verdi lanciati da soli** e rossi solo nella suite: dipendevano da che cosa avevano lasciato
+le prove precedenti.
+
+**⚠️ Una prova che dice il contrario si RISCRIVE con la promessa, non si aggira.** Sei volte in due
+giorni. E in un caso il controllo si **chiamava** «e la mappa non è stata trascinata via con lui» e
+**affermava** che la mappa fosse chiusa: passava proprio grazie al difetto.
+
+**⚠️ Un rosso «a corse alterne» si fa PARLARE, non si rilancia.** Tre volte il rosso era della
+**prova**, non dell'app: un bersaglio a due parole in cui il doppio click cadeva sullo spazio, una
+riga cercata dove lo scorrimento del momento la metteva, e una parola spezzata dalla sillabazione.
+
+**⚠️ Il righello prima del codice.** Tre misure sbagliate hanno quasi fatto correggere il codice
+giusto: contare i `top` dei figli di una barra `align-items:center` (diversi *sulla stessa riga*);
+misurare un testo con `getComputedStyle().font`, che per la shorthand torna vuota; e credere che una
+normalizzazione preservasse la lunghezza.
+
+**⚠️ Le virgolette inverse dentro un comando di shell fra doppi apici vengono ESEGUITE.** Tre volte,
+due delle quali in un messaggio di commit finito corrotto. La forma sicura è l'**heredoc quotato**.
+
+**⚠️ Un `replace` che non trova niente NON fallisce**: riscrive il file identico e dichiara di aver
+funzionato. Ogni sostituzione automatica va col suo `assert`.
+
+**⚠️ `git merge -F -` non legge da stdin**: il merge non avviene e il comando *sembra* riuscito. Si
+scrive il messaggio in un file.
+
+**⚠️ Un agente in worktree isolato non si prende per buono.** Uno aveva misurato una larghezza in un
+banco di prova fuori dall'app, e il numero era sbagliato del 38%.
+
+---
+
+## 5. Che cosa resta da fare
+
+### Il prossimo lavoro: il pacchetto «Quaderno», otto voci su nove
+
+`HANDOFF-PACCHETTO-QUADERNO.md` è autosufficiente. **Q2 è fatto**; restano:
+
+| | | costo |
+|---|---|---|
+| **Q8** | il quaderno va nel Cestino, non nel nulla — **il prossimo** | S |
+| Q7 | `.opus` entra e non compare: cinque copie della lista audio | S |
+| Q3 | il pallino di «Alla mappa» che non apre | S |
+| Q6 | la postilla: il corpo sul bersaglio | S |
+| Q1 | il quaderno si riapre alla riga | S |
+| Q5 | la lente legge anche mappe e didascalie | S |
+| Q4 | sbirciare senza saltare (hover = anteprima) | M |
+| Q9 | le sottolineature del tutor arrivano come lettura | M |
+
+⚠️ **Q9 ha un vincolo dichiarato dall'utente e non negoziabile**: deve **aggiungere** uno strato,
+mai sovrascrivere quelli che lo studente ha già. Il meccanismo esiste (`salva()` conserva il
+registro quando nessuno glielo passa), e lo strato entra nel seme dell'identità — è ciò che permette
+a due persone di segnare le stesse parole senza scavalcarsi.
+
+### I debiti aperti, piccoli e dichiarati
+
+1. **La schermata `App/guida-zaino/img/20-pdfbar-numerata.png`** mostra la barra di prima: col
+   titolo, e senza i tre comandi nuovi di «Leggere». Si rigenera con la campagna CDP del
+   laboratorio (skill `guida-app-screenshot`).
+2. **Nessun pacchetto costruito**: `dist/` è stata svuotata apposta il 23 agosto, e quello che
+   c'era dentro era comunque vecchio di sei giorni. Si rifanno con `npm run pacchetto` (e
+   `npm run pacchetto -- x64`, `npm run dist:win`); poi notarizzazione e installer Windows provato
+   su Windows — `PIANO-ONBOARDING.md`.
+3. **Le tre prove fuori elenco** (`prova-l1`, `prova-l2`, `prova-l3l4`): si riportano al
+   `test/cdp/cdp.js` di casa e si mettono in `PROVE=(`, o si tolgono.
+4. **Il `frammento` della lente parte sfasato di uno** su un testo che contiene «İ» (U+0130). Il
+   confine è misurato e ha il suo controllo in `test/ricerca.js`; chi vuole chiuderlo tocca
+   `frammento`, che oggi suppone che la normalizzazione conservi la lunghezza.
+5. **Le 46 variabili morte di `pdf_viewer.scoped.css`** (⚠️ rianimarle rimette bordi e margini che
+   l'app non ha mai avuto).
+6. **La rinomina di una fonte**: si può tenendo il numero, ma il nome del file è citato per esteso
+   in sei posti — l'elenco è quello di `fonti.usi()`.
+7. **La didascalia di un'immagine dell'album passa due volte dall'escape** (`albumHtml` in
+   `lettura/capitolo.js`): una «e» commerciale esce come `&amp;amp;`. La gemella `figuraHtml` no.
+
+### Le code più vecchie, ereditate
+
+`PIANO-BRAYNR.md` §P1.1-quater e -quinquies (i seguiti delle letture), gli incrementi 2 e 3
+dell'anteprima scrivibile, e le bande orizzontali sui fondi sovrapposti — che restano il lavoro più
+grosso e più fragile della lista.
+
+### Il catalogo, per non ricominciare da capo
+
+La ricognizione del 23 agosto ha prodotto **56 voci** con gesto, bisogno, pezzi esistenti su cui si
+appoggiano, rischio e tre voti ciascuna. Il documento è stato consegnato in chat (`IDEE-ZAINO.md`) e
+**non è versionato**: le nove voci scelte sono in `HANDOFF-PACCHETTO-QUADERNO.md`. Fra quelle
+rimaste fuori, le più votate sono «Il velo», «Lo spoglio», «Con parole tue» e «Le carte le hai già
+scritte».
+
+---
+
+## 6. Stato dichiarato, non ereditato
+
+| | |
+|---|---|
+| **verificato oggi** | `npm test` exit 0 (46 file) · suite CDP intera verde · albero pulito · `origin/main` allineata · nessun ramo né worktree · i conti delle prove (46 · 57 · 60) · le righe del monolite (21.075) |
+| **ereditato** | i debiti al §5, che vengono dagli handoff precedenti e non sono stati rimisurati |
+| **misurato e lasciato aperto** | il `frammento` sfasato sulla «İ» · `dist/` che non esiste |
+
+⚠️ Prima di dichiarare finito un lavoro, la suite CDP va **rieseguita per intera**, non per i file
+toccati. In due giorni è la lezione che è tornata più spesso.

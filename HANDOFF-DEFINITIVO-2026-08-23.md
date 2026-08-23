@@ -1,6 +1,10 @@
 # Handoff definitivo — 23 agosto 2026
 
-> **A chi arriva adesso: questo file basta per ripartire.** Sostituisce
+> ⚠️ **NON È PIÙ IL PUNTO D'INGRESSO**: lo è `HANDOFF-DEFINITIVO-2026-08-24.md`. Questo resta come
+> archivio del 23 agosto — il pacchetto «Leggere», i due lavori laterali, e le trappole di quel
+> giorno.
+>
+> **A chi arrivava allora: questo file bastava per ripartire.** Sostituisce
 > `HANDOFF-DEFINITIVO-2026-08-18.md` come punto d'ingresso e ne eredita per riferimento ciò che
 > non ripete. Il *come si costruisce qui* sta in `GUIDA-ARCHITETTO.md` e non cambia; il dettaglio
 > di ogni area sta nei `PIANO-*`.

@@ -9,8 +9,11 @@
 > 2. `HANDOFF-DEFINITIVO-2026-08-23.md` — lo stato: dove sono i lavori, che cosa è appena successo;
 > 3. `PIANO-BRAYNR.md` (appunti, evidenze, mappe) e `PIANO-ZAINO.md` (§1 le decisioni, §6 i non-obiettivi).
 >
-> **Il punto di partenza**: `main` a `dcb2b6e`, `origin/main` allineata, albero pulito, nessun ramo.
-> Suite intera CDP verde (56 prove) · `npm test` verde (45 file).
+> **Il punto di partenza**: `main` a **`ab74eba`**, `origin/main` allineata, albero pulito, nessun
+> ramo. Suite intera CDP verde (**57 prove**) · `npm test` verde (**46 file**).
+>
+> ✅ **Q2 È FATTO E UNITO** (24 agosto 2026), tutti e quattro i suoi pezzi. **Restano gli altri
+> otto**: Q1, Q3, Q4, Q5, Q6, Q7, Q8, Q9. L'ordine consigliato è al §5, e il prossimo è **Q8**.
 
 ---
 
@@ -54,7 +57,7 @@ per questo stanno insieme: toccano `_evidenze.json`, la barra della selezione, l
 | | | costo | famiglia |
 |---|---|---|---|
 | Q1 | **Il quaderno si riapre alla riga** | S | ritrovare |
-| Q2 | **La lente porta al punto esatto della parola cercata** (editor **e** PDF) | S | ritrovare |
+| Q2 | ✅ **La lente porta al punto esatto della parola cercata** (editor **e** PDF) — *fatto, `ab74eba`* | S | ritrovare |
 | Q3 | **Il pallino che mantiene la promessa** | S | lavorare |
 | Q4 | **Sbirciare senza saltare** | M | ritrovare |
 | Q5 | **La lente legge anche le mappe e le didascalie** | S | ritrovare |
@@ -105,170 +108,45 @@ mostrare. Con i casi limite: file accorciato, riga 0, riga oltre la fine, valore
 
 ---
 
-## Q2 — La lente porta al punto esatto della parola cercata: nell'editor E nel PDF · S
+## Q2 — La lente porta al punto esatto della parola cercata ✅ *FATTO (`ab74eba`, 24 ago 2026)*
 
-### La promessa, per esteso
+Tutti e quattro i pezzi sono in `main`. **Che cosa è entrato**, per chi deve costruirci sopra —
+Q4 in particolare, che riusa gli stessi risolutori:
 
-**Cliccando un risultato della lente si deve atterrare sulla PAROLA CERCATA, non sul contenitore
-che la contiene.** Non «l'appunto giusto», non «la pagina giusta»: **quella parola**, portata sotto
-gli occhi e riconoscibile a colpo d'occhio — selezionata nell'editor, accesa e a fuoco sul PDF.
+| | | dove |
+|---|---|---|
+| **Q2.1** | l'attesa del documento non è più un numero | `App/assets/fonti/attesa.js` |
+| **Q2.2** | la prova passa dalla lente vera | `test/cdp/prova-lente-punto.js` |
+| **Q2.3** | l'editor atterra sulla parola e la seleziona | `RicercaIndice.punto` + `noteVaiAlPunto` |
+| **Q2.4** | la prova che il punto è quello giusto, su tutte e due le metà | idem |
 
-Il metro per dire che il lavoro è finito è uno solo, e si misura: **dopo il click, la parola cercata
-è dentro la finestra e si vede quale è.** Se per trovarla serve ancora scorrere o cercare una
-seconda volta, il lavoro non è finito.
+**Due moduli nuovi, e quello che va saputo prima di riusarli:**
 
-⚠️ Vale su **tutte e due le metà del banco**, ed è una richiesta esplicita dell'utente: *«la lente
-deve portarmi al posto esatto nell'editor e nel PDF»*. Oggi l'editor non la mantiene affatto, e il
-PDF la mantiene **solo quando fa in tempo** (vedi Q2.1). Sono due facce dello stesso mezzo gesto,
-e per questo stanno nella stessa scheda invece che in due.
+- **`App/assets/fonti/attesa.js`** — `attendi(prova, opz)` → `{pronto, ms, sguardi}`. **Orologio e
+  timer si fanno passare** (`ora`, `dopo`), perché un'attesa provata col tempo vero è una prova che
+  a volte passa. Risponde **una volta sola** e **non rifiuta mai**: «non è arrivato in tempo» è una
+  risposta, non un guasto. Tetto di fabbrica **20 s**, misurato sui 12,4 dell'Intel.
+- **`RicercaIndice.punto(grezzo, chiesto)`** → `{da, a}` nel testo **grezzo**, o `null`. Sta dentro
+  `ricerca/indice.js` e non accanto: chi dice *se* una parola c'è dice anche *dove*, con le stesse
+  convenzioni. **Mappa le posizioni una per una** invece di supporre che la normalizzazione
+  conservi la lunghezza.
 
-### I quattro lavori, in ordine
+⚠️ **Tre cose trovate misurando, che valgono per il resto del pacchetto:**
 
----
+1. **La normalizzazione NON preserva sempre la lunghezza.** `toLowerCase()` non è uno a uno: la
+   «İ» (U+0130) diventa **due** caratteri. `punto()` non ci casca; **il `frammento` della lente
+   sì**, e su un testo con quella lettera parte sfasato di uno. Piccolo, cosmetico, **dichiarato**
+   in `test/ricerca.js` con il suo controllo — se qualcuno vuole chiuderlo, il posto è `frammento`.
+2. **La lente cerca dentro i PDF SOLO in modalità zaino**, e nei corsi cerca nei capitoli: è un
+   ramo con il suo commento, non una lacuna. Serve a Q5, che deve decidere dove infilare mappe e
+   ritagli.
+3. **Il vault di prova non va arricchito**: `prova-import.js` mostra la ricetta — uno zaino nuovo,
+   il PDF importato dalla porta vera, `fontiIndicizza` che scrive l'indice con pdf.js.
 
-#### Q2.1 — I 600 ms fissi ✅ *fatto (`0e028f8`)*
-
-**È il primo lavoro del pacchetto e non solo di Q2**, per due ragioni: è un difetto che c'è già e
-morde già, e finché resta lì **non si può misurare niente del resto** — qualunque prova sul punto
-d'atterraggio darebbe verde o rosso a seconda di quanto era carico il computer.
-
-Nel ramo `if(r.d.materiale)` di `searchGoto` la catena è:
-
-```js
-openPdf(materiale, pagina, titolo);      // asincrono: il viewer deve ancora disegnare
-setTimeout(function(){
-  inp.value = q;
-  pdfFindApri({ fuoco:false });          // → pdfFindDispatch('again')
-}, 600);                                 // ⚠️ un numero, non una condizione
-```
-
-⚠️ **Seicento millisecondi FISSI**, sperando che il documento sia pronto. È l'anti-pattern che le
-prove di questo progetto dichiarano nero su bianco, in testa a `test/cdp/prova-pdf.js`: *«un
-`sleep` fisso o mente sulle macchine lente o spreca tempo su quelle veloci»*.
-
-⚠️ E **qui non è teoria**: `GUIDA-ARCHITETTO.md` §6 registra la misura del 16 agosto — **il layer di
-testo di un PDF da 266 pagine arriva dopo 12,4 secondi su un Mac Intel**, invece di 1-2.
-
-**Che cosa succede allora.** Dopo 600 ms il documento non è pronto; `findagain` parte da dove il
-visualizzatore si trova in quel momento, e **l'occorrenza giusta la si manca**: si atterra sulla
-pagina ma non sul punto, oppure su un'altra pagina del tutto. Ed è il difetto della specie
-peggiore: **invisibile sulla macchina di chi l'ha scritto, sistematico su una più lenta** — la
-stessa forma delle otto prove rosse dell'Intel del 16 agosto, che erano attese troppo corte e non
-guasti.
-
-**Il rimedio è quello che l'app usa già altrove: si aspetta una CONDIZIONE, non un numero.** Le
-condizioni giuste sono già nominate nel codice — il documento caricato (`PDFJS.doc`), la pagina
-chiesta a schermo, il layer di testo disegnato (l'evento `textlayerrendered`). Un tetto di attesa
-ci vuole, e quando scade **lo si dice** invece di procedere a vuoto: chi cerca deve sapere se ha
-trovato o se l'app ha rinunciato.
-
-⚠️ Attenzione a **quale** condizione: che `PDFJS.doc` esista non basta, perché `findagain` lavora
-sul layer di testo — «il documento è aperto» e «la pagina è a schermo» sono due fatti diversi, e
-il secondo è quello che serve. È già scritto in testa a `prova-pdf.js`, che esiste proprio per
-questo.
-
----
-
-#### Q2.2 — La prova passa dalla lente vera ✅ *fatto (`c774b64`)*
-
-⚠️ **La diagnosi che avevo scritto qui era sbagliata, e la misura l'ha corretta
-due volte.** Restava scritto «serve un vault di prova con gli indici PDF».
-Falso, e per due ragioni diverse:
-
-1. **In modalità CORSO la lente cerca nei capitoli PER PROGETTO.** C'è un ramo
-   apposta in `ricercaCostruisci`, col suo commento. I «33 documenti, tutti
-   capitoli» che avevo misurato non erano una lacuna: era il ramo giusto,
-   guardato dalla parte sbagliata. Le pagine dei PDF la lente le cerca **solo
-   nello zaino**.
-2. **Nello ZAINO l'indice non va portato nel vault: lo scrive l'app**, con
-   pdf.js, al momento dell'import. E il modo di farlo in una prova esisteva già:
-   `prova-import.js` crea uno zaino, importa il PDF dalla porta vera
-   (`window.vault.fonti.importa`) e chiama `fontiIndicizza`.
-
-Quindi il vault di prova **non si tocca**: sarebbero stati 4,8 MB di indici
-inutili, e i PDF dei corsi (13 GB) resterebbero comunque fuori — cioè cliccando
-un risultato il documento non si aprirebbe lo stesso.
-
-`prova-lente-punto.js` fa ora la strada intera, dal testo battuto al punto sotto
-gli occhi: la lente trova «competenza» a p. 62 di un documento da 266 pagine, ci
-va in 317 ms, e l'occorrenza è **dentro la finestra**.
-
-⚠️ Due trappole pagate scrivendola, e valgono per chiunque scriva una prova che
-tocca uno zaino:
-
-- **Non cancellare lo zaino di prova alla fine.** `zaino:elimina` passa da
-  `shell.trashItem`: metterebbe una cartella nel **Cestino vero** di chi lancia
-  le prove, a ogni corsa. `prova-import.js` il suo zaino lo lascia, ed è la
-  convenzione giusta — il vault di prova è una copia temporanea e sparisce col
-  runner.
-- **Tornare ai corsi alla fine.** `partiPulito()` chiude pannellini e selezioni
-  ma **non riporta la modalità**: una prova che finisce in zaino la consegna a
-  quella dopo. Nella suite intera l'hanno detto `prova-evidenze-pdf` e quella
-  dell'Album Foto (che negli zaini ha una voce e nei corsi no). **Da sole erano
-  verdi.**
-
----
-
-#### Q2.3 — L'editor atterra sulla parola
-
-**Il gesto.** Clicchi un risultato sotto APPUNTI: l'appunto si apre, **l'editor scorre alla prima
-occorrenza e la seleziona**. Oggi si apre in cima e la parola è quaranta schermate più giù.
-
-**Dove.** `searchGoto(r, q)`, il ramo `if(r.d.appunto)`: ci sono già `bancoMostra('appunti')` e
-`noteOpen`. `noteOpen` finisce con `codemirror.focus()` e nient'altro, quindi il cursore resta a
-zero.
-
-⚠️ **UN COMMENTO NEL CODICE DICE OGGI IL CONTRARIO, e va letto prima di toccarlo.** Sopra quel ramo
-c'è scritto: *«La parola trovata NON si riaccende dentro l'editor: CodeMirror ha una selezione sua,
-e accendere lì dentro vorrebbe dire un secondo motore di evidenziazione che nessuno spegne.»*
-
-L'obiezione è **giusta** — è la stessa famiglia di difetti che ha morso davvero qui (la ricerca del
-PDF che accendeva il colore su una barra non a schermo, e allora nessuna via d'uscita lo spegneva)
-— **e questa proposta non la viola**: non si accende niente. Si **muove la selezione** che
-CodeMirror ha già (`posFromIndex` + `setSelection` + `scrollIntoView`), cioè esattamente il motore
-che il commento dice di non voler duplicare. Nessun addon, nessuno stato da spegnere: si spegne
-come si spegne sempre una selezione, cliccando altrove o battendo un tasto.
-
-⚠️ **Il commento va riscritto insieme alla promessa, non aggirato.** È la regola di casa, applicata
-quattro volte in un giorno solo (vedi §3). Se resta lì com'è, fra sei mesi qualcuno lo legge, pensa
-che sia una decisione, e disfa il lavoro.
-
-⚠️ **La stessa convenzione della lente, chiesta a chi la possiede.** `RicercaIndice.interpreta`
-legge le virgolette e risponde `{testo, esatta}`; `sNorm` appiattisce gli accenti su a-z e tratta
-l'apostrofo come un confine. Un banale `indexOf` farebbe **trovare all'editor cose diverse da
-quelle che ha trovato la lente**: cercando `"per"` selezionerebbe il «per» dentro «perché»;
-cercando `pero` non troverebbe «però», e l'appunto si aprirebbe in cima **proprio nel caso in cui
-la lente ha appena detto che c'è**. Un risultato che ti porta sull'appunto giusto e poi ti
-seleziona un'altra parola è peggio di uno che non seleziona niente: la prima volta ti fidi, la
-seconda no.
-
-**La parte pura**: dato il testo dell'appunto e la richiesta interpretata, l'**indice del primo
-carattere** dell'occorrenza (o `null`). Provabile in Node su stringhe, senza CodeMirror. I casi che
-la prova deve inchiodare: `"per"` fra virgolette non dentro «perché» · `pero` trova «però» ·
-`"acqua"` trova «dell'acqua» · più parole → la prima occorrenza · la parola non c'è → `null`.
-
-⚠️ **`null` NON È 0.** «Apri in cima perché non ho trovato niente» e «apri al carattere zero perché
-l'occorrenza è lì» sono due cose diverse, e confonderle è lo stesso difetto che il pacchetto
-«Leggere» ha già dovuto chiudere due volte (`aspetto/stanza.js`, `fonti/pagina.js`).
-
----
-
-#### Q2.4 — La prova che il punto è quello giusto
-
-⚠️ **Il controllo che vale il lavoro non è «si è aperto l'appunto» né «si è aperta la pagina»**: una
-prova scritta così sarebbe **verde anche oggi, col difetto dentro**. Va misurato che **la parola
-cercata sia dentro la finestra**:
-
-- nell'editor: la selezione non è vuota, il testo selezionato è quello cercato, e la riga è a
-  schermo (`getBoundingClientRect` dentro il riquadro);
-- nel PDF: l'occorrenza accesa (`.textLayer .highlight`, meglio la `.selected`) sta dentro il
-  rettangolo di `#pdfHost`.
-
-⚠️ E la prova va fatta **diventare rossa** sul codice di prima prima di crederle.
-
-⚠️ Questa vive in CDP, ed è una delle poche che se lo merita: misura una posizione a schermo, che
-esiste solo dentro un motore di rendering. La scelta di *dove* atterrare — Q2.3 — sta invece nel
-modulo puro, e si prova in Node.
+⚠️ **E due trappole per chiunque scriva una prova che tocca uno zaino:** non cancellare lo zaino di
+prova alla fine (`zaino:elimina` passa da `shell.trashItem`, cioè dal **Cestino vero** di chi lancia
+le prove) e **tornare ai corsi** alla fine, perché `partiPulito()` chiude pannellini e selezioni ma
+**non riporta la modalità**. Da sole erano verdi tutte e due; le ha viste solo la suite intera.
 
 ---
 
@@ -668,10 +546,9 @@ Non è vincolante, ma segue il criterio del pacchetto precedente: **prima si tog
 minime, poi si aggiunge superficie**. Così, se il lavoro si ferma a metà, ciò che è entrato è già
 utile.
 
-0. **Q2.1** (i 600 ms fissi) — **prima di tutto**: è un difetto che morde già, e finché resta lì
-   nessuna prova sul punto d'atterraggio dice la verità — darebbe verde o rosso a seconda di quanto
-   era carico il computer;
-1. **Q8** (il Cestino) — è una riga copiata da un fratello maggiore, e toglie il rischio più grave;
+0. ~~**Q2** (la lente al punto esatto)~~ — ✅ **fatto il 24 agosto**, tutti e quattro i pezzi;
+1. **Q8** (il Cestino) — **il prossimo**: è una riga copiata da un fratello maggiore, e toglie il
+   rischio più grave del pacchetto;
 2. **Q7** (le liste audio) — salda l'invariante 5 e chiude una perdita silenziosa;
 3. **Q3** (il pallino) — piccolo, di principio, e prepara la mano sulla barra della selezione;
 4. **Q6** (la postilla) — il campo `nota`, con la prova che l'identità non cambia;

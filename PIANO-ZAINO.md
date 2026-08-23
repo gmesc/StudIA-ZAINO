@@ -651,6 +651,83 @@ successivo.
 
 ---
 
+### Z12 — leggere: sette aiuti sul documento (23 agosto 2026) ✅
+
+Nati da una ricognizione sulla modalità ZAINO — sei prospettive, 70 idee, 56 voci votate — con una
+diagnosi sola a tenerle insieme: **lo zaino era un ottimo posto per SEGNARE e un posto povero per
+LEGGERE CON FATICA**. Due fatti misurati prima di cominciare: la voce leggeva solo i capitoli
+generati (`.tts-go` vive su `article`), e il profilo di apprendimento nello zaino è muto, perché
+`lib/profilo.js` produce direttive di *generazione*.
+
+| | | dove vive la regola |
+|---|---|---|
+| **Dimmi la pagina** | il contatore diventa un campo, più il sommario del PDF | `fonti/pagina.js` |
+| **La voce sulla pagina** | ▶ legge la pagina, la frase si accende — **solo macOS** | riusa `voce.js` + `tts/segmenta.js` |
+| **La finestra sulla riga** | il righello, ↑ ↓ di banda in banda | `fonti/righello.js` |
+| **Il foglio colorato** | quattro tinte sul canvas | `aspetto/stanza.js` |
+| **Le frecce tornano a casa** | ← → voltano pagina invece di sfogliare il corso fantasma | `tasti/lettura.js` |
+| **La lampada resta accesa** | tema e corpo del testo ricordati | `aspetto/stanza.js` |
+| **Esc non chiude il libro** | l'ultimo gradino della catena se ne va | — |
+
+⚠️ **La priorità dei tasti è una TABELLA, non un ordine di registrazione.** Nel monolite ci sono 24
+ascoltatori globali di `keydown` (14 su `document`, 10 su `window`; 12 in cattura, 12 in bolla) e 18
+guardano `Escape`. A parità di nodo e fase decide **la posizione del codice nel file** — una
+priorità che non si legge, si scopre premendo. `tasti/lettura.js` risponde con **un'azione sola, o
+niente. Mai due**: è la forma che rende impossibile il difetto misurato, cioè la freccia che col
+fuoco nel Player saltava 5 secondi **e** cambiava capitolo.
+
+⚠️ **Esc non costa più niente, in nessuno dei suoi gradini.** Toglierlo dal documento è stata una
+riga; toglierlo dalla mappa ha rivelato che quell'ultimo gradino non «chiudeva» ma **SVUOTAVA il
+blocco** (tendina a «—», banco da ricomporre). E la correzione ha introdotto un difetto suo, che
+solo la suite intera ha visto: `stopPropagation()` stava **prima** della pila degli strati, quindi
+il gestore si è messo a ingoiare l'Esc senza usarlo — e lui corre in cattura su `window`, cioè prima
+di tutti. **Fermare la propagazione è un ATTO, e si paga solo se si è consumato il tasto.**
+
+⚠️ **La tinta si mette sulla PAGINA e si moltiplica la TELA**: il canvas di pdf.js è opaco, un fondo
+colorato dietro non si vedrebbe. E l'inversione del PDF nel tema scuro **non c'è**, per una misura:
+il layer di testo è in `mix-blend-mode:multiply`, e su fondo scuro darebbe nero facendo sparire le
+evidenze.
+
+⚠️ **Il righello ha un tentativo in più, dichiarato**: il layer di testo arriva DOPO il disegno —
+fino a 12,4 secondi su un Mac Intel — e accenderlo nell'istante sbagliato dava un comando che
+sembrava rotto quando era solo in anticipo.
+
+⚠️ **La voce legge il LAYER, non l'indice su disco.** L'indice ha lo stesso testo ma è una stringa:
+per accendere la frase bisognerebbe RITROVARLA nel DOM, e ritrovare non è trovare. E le frasi si
+tagliano sul testo **grezzo**, perché `ttsSegmenti` normalizza prima di spezzare.
+
+**Fuori dal pacchetto ma dello stesso giorno**: il pannellino della ricerca nel documento (una riga
+sola, campo a larghezza costante) e il titolo del documento tolto dalla barra delle Fonti, che era
+la terza copia di due cose già dette dal selettore e dal chip.
+
+### Z13 — la lente porta al punto esatto (24 agosto 2026) ✅
+
+La lente prometteva «ti porto dove l'ho trovato» e la manteneva **a metà**: sul PDF solo quando
+faceva in tempo, nell'editor per niente.
+
+⚠️ **L'attesa del documento era un NUMERO**: 600 ms fissi dopo `openPdf`, che è asincrono. Con la
+pagina non ancora disegnata la ricerca partiva a vuoto — nessuna barra, nessuna occorrenza — e chi
+aveva cliccato credeva che la parola non ci fosse, mentre la lente gli aveva appena detto il
+contrario. **Invisibile su una macchina veloce, sistematico su una lenta.** Adesso si aspetta una
+condizione (`fonti/attesa.js`), e quella giusta: **il layer di testo di QUELLA pagina**, non «il
+documento è aperto» — sono due fatti diversi, ed è la distinzione per cui `prova-pdf.js` esiste.
+
+**Nell'editor** l'appunto si apriva in cima: su un appunto di un semestre la parola stava quaranta
+schermate più giù, cioè andava cercata una seconda volta dentro il risultato di una ricerca. Adesso
+`RicercaIndice.punto` dice **dove**, e il cursore ci va.
+
+⚠️ `punto()` sta **dentro** `ricerca/indice.js` e non accanto: chi dice *se* una parola c'è dice
+anche *dove*, con le stesse convenzioni — virgolette, accenti appiattiti, l'apostrofo come confine.
+Un `indexOf` crudo avrebbe fatto trovare all'editor cose diverse da quelle trovate dalla lente.
+
+⚠️ **E le posizioni si mappano, non si suppongono.** Una sezione di `test/ricerca.js` affermava che
+la normalizzazione «preserva la lunghezza»: è falso, `toLowerCase()` non è sempre uno a uno e la
+«İ» (U+0130) diventa **due** caratteri. `punto()` normalizza un carattere alla volta e non ci casca;
+il **frammento** della lente invece sì, e su un testo con quella lettera parte sfasato di uno.
+Piccolo e cosmetico, ma adesso è **scritto e misurato** invece che scoperto fra sei mesi.
+
+---
+
 ## 6. Che cosa NON si fa
 
 - **Nessun capitolo generato dallo zaino**, e nessuna chiamata al modello. Se un giorno servirà, la
