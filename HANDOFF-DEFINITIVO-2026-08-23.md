@@ -205,7 +205,7 @@ Lo zaino oggi è un ottimo posto per **segnare** e un posto povero per **leggere
 | | | costo | dov'è il perno |
 |---|---|---|---|
 | **L0** ✅ | **fatto** (`937c630`): il ramo `leggere` + `App/assets/tasti/lettura.js`, la priorità come tabella pura | — | `test/tasti-lettura.js`, 47 controlli, in catena |
-| **L1** | **Esc non chiude il libro** | S | **una riga**: il `closePdf()` finale, `App/StudIA.html:8090` |
+| **L1** ✅ | **fatto** (`7b054ea`): **Esc non chiude il libro** | S | tolto il `closePdf()` finale; ✕ col suo `title`; due controlli in `prova-pdf.js`, verificati al contrario |
 | **L2** | **Le frecce tornano a casa** — e il doppio effetto nel Player, che vale anche nei corsi | S | una clausola nel listener che ha già tutte le guardie, `App/StudIA.html:4282` |
 | **L3** | **La lampada resta accesa** | S | `studia.tema` · `studia.fs`, lette prima del primo disegno |
 | **L4** | **Dimmi la pagina** | S | modulo puro `App/assets/fonti/pagina.js` + il chip in due stati |
