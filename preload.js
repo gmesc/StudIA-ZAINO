@@ -43,7 +43,9 @@ function srcUrl(file, corso) {
 }
 
 // mappa "NN" -> nome file (per risolvere gli schemi video:NN / pdf:NN dei capitoli .md)
-const MEDIA_EXT = ['.mp4', '.mov', '.mkv', '.webm', '.avi', '.mpeg', '.mpg', '.m4a', '.mp3', '.wav', '.aac', '.flac'];
+// ⚠️ La lista la dice `lib/materiali.js`: la copia che stava qui non aveva
+// `.ogg .opus .aiff`, e i rimandi `video:NN` a un memo vocale non risolvevano
+const MEDIA_EXT = mat.EXT_MEDIA;
 function listByNum(dirs, exts) {
   const map = {};
   for (const dir of dirs) {

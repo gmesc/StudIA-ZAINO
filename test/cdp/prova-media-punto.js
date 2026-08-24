@@ -20,7 +20,7 @@
 const path = require('path');
 const fs = require('fs');
 const S = path.join(__dirname, 'cdp.js');
-const { collega, val, clicca, pausa, partiPulito } = require(S);
+const { collega, val, clicca, pausa, partiPulito, wavDiProva } = require(S);
 
 let ko = 0;
 function ok(n, atteso, avuto) {
@@ -39,18 +39,6 @@ async function finoA(expr, quanto) {
     if (Date.now() > fine) return null;
     await pausa(200);
   }
-}
-
-/** Un WAV vero: PCM 16 bit, mono, 8 kHz, un sinusoide — 60 secondi. */
-function wavDiProva(secondi) {
-  const rate = 8000, n = rate * secondi, dati = Buffer.alloc(n * 2);
-  for (let i = 0; i < n; i++) dati.writeInt16LE(Math.round(3000 * Math.sin(i / 20)), i * 2);
-  const h = Buffer.alloc(44);
-  h.write('RIFF', 0); h.writeUInt32LE(36 + dati.length, 4); h.write('WAVE', 8);
-  h.write('fmt ', 12); h.writeUInt32LE(16, 16); h.writeUInt16LE(1, 20); h.writeUInt16LE(1, 22);
-  h.writeUInt32LE(rate, 24); h.writeUInt32LE(rate * 2, 28); h.writeUInt16LE(2, 32); h.writeUInt16LE(16, 34);
-  h.write('data', 36); h.writeUInt32LE(dati.length, 40);
-  return Buffer.concat([h, dati]);
 }
 
 const ZAINO = 'media-di-prova';

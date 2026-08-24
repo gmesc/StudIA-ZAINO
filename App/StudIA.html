@@ -5366,11 +5366,74 @@ function zainoTrascinati(files){
 }
 
 /** Il gesto: dei media trascinati sopra la finestra, in modalità zaino. */
+/**
+ * Questo file il lettore lo sa aprire? Lo si CHIEDE a lui.
+ *
+ * ⚠️ Non c'è nessuna lista dei formati buoni, ed è deliberato: sarebbe una
+ * copia di ciò che decide Chromium — che cambia a ogni Electron — e la sesta
+ * copia del difetto che Q7 ha appena chiuso. Si prova ad aprire il file vero e
+ * si guarda come va: così anche un `.mkv` con dentro un codec esotico viene
+ * riconosciuto, e un formato che un domani Chromium imparerà entrerà da solo,
+ * senza che nessuno tocchi una riga.
+ *
+ * ⚠️ Si passa da `createObjectURL`, non dal percorso: il file è ancora fuori
+ * dal vault (sta sulla scrivania di chi trascina), e un blob URL si carica
+ * sempre, senza dipendere da che cosa il renderer possa leggere da `file://`.
+ *
+ * ⚠️ E NEL DUBBIO SI LASCIA ENTRARE: se entro qualche secondo non si è capito,
+ * la risposta è «sì». Rifiutare un file valido è il danno peggiore — quello
+ * dell'utente resta fuori e lui non sa perché — mentre uno che entra e non si
+ * apre lo dice all'apertura. È la stessa regola scritta in `lib/album.js`:
+ * «non lo so» non è «no».
+ */
+function mediaSiApre(file){
+  return new Promise(function(risolvi){
+    var tipo=(typeof Lettore!=='undefined') ? Lettore.tipoDi(file && file.name) : '';
+    if(!tipo){ risolvi(true); return; }          // non è roba nostra: non tocca a noi dire di no
+    var el=document.createElement(tipo==='audio' ? 'audio' : 'video');
+    el.preload='metadata'; el.muted=true;
+    var url='';
+    try{ url=URL.createObjectURL(file); }catch(e){ risolvi(true); return; }
+    var chiuso=false;
+    var fine=function(esito){
+      if(chiuso) return; chiuso=true;
+      clearTimeout(orologio);
+      try{ URL.revokeObjectURL(url); }catch(e){}
+      try{ el.removeAttribute('src'); el.load(); el.remove(); }catch(e){}
+      risolvi(esito);
+    };
+    var orologio=setTimeout(function(){ fine(true); }, 6000);
+    el.addEventListener('loadedmetadata', function(){ fine(true); });
+    el.addEventListener('error', function(){ fine(false); });
+    el.style.position='absolute'; el.style.left='-9999px'; el.style.width='1px'; el.style.height='1px';
+    document.body.appendChild(el);
+    el.src=url;
+  });
+}
+
 async function mediaTrascinati(files){
   var api=(window.vault && window.vault.media) || null;
   var id=corsoAttivo();
   if(!api || !id){ toast('Apri uno zaino prima di trascinare i media', false); return; }
   if(MEDIAIMP.inCorso){ toast('Sto ancora importando: un momento', false); return; }
+  /* ⚠️ LA SOGLIA. Nello zaino un media che il lettore non apre non serve a
+     niente: non si ascolta e non si trascrive («qui non si trascrive niente»,
+     PIANO-ZAINO §1.5). Farlo entrare vuol dire un file numerato nel vault che a
+     ogni click risponde «non lo apro» — il terzo caso, quello che la regola
+     vieta: o entra e si vede, o si ferma sulla soglia dicendo perché.
+     Nei CORSI non si ferma niente, ed è giusto così: là la pipeline lo
+     trascrive, e passa da ffmpeg invece che da Chromium. Questa funzione la
+     chiama solo lo zaino. */
+  var lista=[].slice.call(files||[]);
+  var esiti=await Promise.all(lista.map(mediaSiApre));
+  var fuori=lista.filter(function(f, i){ return !esiti[i]; });
+  files=lista.filter(function(f, i){ return esiti[i]; });
+  if(fuori.length){
+    var perche=(typeof Lettore!=='undefined')
+      ? Lettore.rifiutoSullaSoglia(fuori.map(function(f){ return f.name; })) : '';
+    if(perche) toast(perche, false);
+  }
+  if(!files.length) return;
   /* ⚠️ Da Electron 32 un `File` trascinato non ha più `.path`: il percorso vero
      lo dà `webUtils.getPathForFile`, esposto dal preload. Senza, di un video da
      due giga si avrebbe solo il contenuto — e copiarlo leggendolo e
@@ -7785,8 +7848,47 @@ function playerApri(file, t, label){
        media non ancora caricato viene ignorato in silenzio, e la lezione
        ripartirebbe dall'inizio ogni volta. Solo DOPO il salto il segno
        d'ascolto può fidarsi del tempo corrente (vedi `PLAYER.pronto`). */
-    var alPunto=function(){ try{ if(sec) v.currentTime=sec; }catch(e){} PLAYER.pronto=true; v.removeEventListener('loadedmetadata',alPunto); };
+    /* ⚠️ I due esiti si tolgono a VICENDA, non ciascuno se stesso: un media che
+       non si apre lasciava `alPunto` appeso, e il gestore successivo si
+       sommava a quello di prima — dieci aperture, dieci gestori sullo stesso
+       elemento. */
+    var alPunto, seNonSiApre;
+    var basta=function(){ v.removeEventListener('loadedmetadata', alPunto); v.removeEventListener('error', seNonSiApre); };
+    /* ⚠️ E ogni esito vale solo per IL MEDIA CHE L'HA CHIESTO: aprendone un
+       altro mentre il primo sta ancora caricando, l'esito del primo arriva
+       dopo — e senza questa guardia l'errore di quello vecchio chiuderebbe il
+       player che intanto ha in mano quello nuovo, o il suo `currentTime`
+       farebbe saltare la lezione appena aperta. */
+    var mio=function(){ return PLAYER.file===file; };
+    alPunto=function(){ basta(); if(!mio()) return; try{ if(sec) v.currentTime=sec; }catch(e){} PLAYER.pronto=true; };
+    /* ⚠️ «Entra e non suona» è la promessa rotta dall'altro lato: un `.avi` o
+       un `.aiff` hanno un tipo, quindi passano di qui, e Chromium li rifiuta
+       lasciando un riquadro nero MUTO. Che cosa dire lo decide `Lettore`, che
+       guarda l'errore vero invece di tenere una lista di formati — sarebbe la
+       copia di ciò che decide Chromium, e cambia a ogni Electron. */
+    seNonSiApre=function(){
+      basta();
+      if(!mio()) return;
+      /* ⚠️ Il rimedio dipende da dove si è, e glielo si PASSA: nei corsi la
+         trascrizione c'è, nello zaino no («qui non si trascrive niente»,
+         PIANO-ZAINO §1.5). Prometterla in uno zaino è un cartello che indica
+         una porta che non esiste. */
+      var m=(typeof Lettore!=='undefined')
+        ? Lettore.erroreDaDire(v.error, titoloMateriale(file)||file, { siTrascrive: modoAttivo()!=='zaino' })
+        : '';
+      if(m) toast(m, false);
+      /* ⚠️ E il player si RIMETTE VUOTO: dirlo non basta, perché il toast passa
+         e quello che resta è un riquadro con dentro un media morto — comandi
+         accesi che non comandano niente, il tempo fermo a 0:00, i controlli
+         neri del `<video>` sopra un fondo che sembra un guasto dell'app. Un
+         comando che promette un gesto impossibile è la cosa che questo
+         progetto si vieta in più punti. Si passa dalla porta di sempre
+         (`playerChiudi`), che è anche l'unica che sa rimettere a posto il
+         resto: il segno d'ascolto, il vestito del riquadro, le forbici. */
+      playerChiudi();
+    };
     v.addEventListener('loadedmetadata', alPunto);
+    v.addEventListener('error', seNonSiApre);
   }
   try{ v.playbackRate=PLAYER.vel; }catch(e){}
   v.play().catch(function(){});
@@ -7856,7 +7958,6 @@ function playerVelocita(verso){
  *  solo quando hanno qualcosa su cui agire. */
 function playerBarraAggiorna(){
   var c=playerAperto();
-  var t=$('#plTitle'); if(t) t.textContent=c ? PLAYER.label : 'Player';
   var b=$('#plScegli');
   if(b){
     b.textContent=(c ? PLAYER.label : 'Media')+' ▾';
@@ -20144,7 +20245,15 @@ window.addEventListener('keydown', function(e){
 </section>
 <section id="playerPane" aria-label="Player: video e audio">
   <div class="tbar plbar">
-    <strong id="plTitle">Player</strong>
+    <!-- ⚠️ Qui, fino al 24 agosto 2026, c'era «&lt;strong id="plTitle"&gt;», che
+         diventava il NOME DEL MATERIALE aperto. Non c'è più, per la stessa
+         ragione per cui il 23 agosto è sparito «pdfTitle» dalla barra delle
+         fonti: era la terza copia di due cose già dette meglio — il nome del
+         materiale sta nel selettore qui sotto, che lo accorcia coi puntini
+         apposta perché è un comando e non un'insegna, e il nome dello STRUMENTO
+         sta nella testata del blocco, due centimetri più su. Scritto qui faceva
+         leggere «Player · Funk · FUNK ▾»: la stessa parola due volte, e un nome
+         lungo mandava i comandi a capo. -->
     <!-- La porta per aprire un media: stessa forma del selettore dei documenti
          nella barra delle fonti, e per la stessa ragione — è una leva del
          MATERIALE, non della lezione. -->

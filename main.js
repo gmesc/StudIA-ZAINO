@@ -233,7 +233,9 @@ async function ensureDeps(send) {
 }
 
 // ---- elenco dei media (Media/ + Fonti/) con stato di elaborazione ----
-const MEDIA_EXT = ['.mp4', '.mov', '.mkv', '.webm', '.avi', '.mpeg', '.mpg', '.m4a', '.mp3', '.wav', '.aac', '.flac'];
+// ⚠️ La lista la dice `lib/materiali.js` e basta: la copia che stava qui non
+// aveva `.ogg .opus .aiff`, e un memo vocale in `Media/` non veniva elencato.
+const MEDIA_EXT = mat.EXT_MEDIA;
 ipcMain.handle('media:list', () => {
   const cfg = readCfg(); if (!cfg.vaultPath) return [];
   const V = cfg.vaultPath;
@@ -316,7 +318,9 @@ const courseDir = (id) => corsiLib.cartella(vaultDir(), id);
    migrato si chiama ancora `_progetto.md`: leggerlo col nome nuovo darebbe un
    corso senza titolo invece di un errore, ed è il modo peggiore di sbagliare. */
 const fileCorsoDi = (id) => corsiLib.fileCorso(vaultDir(), id);
-const MEDIA_EXTS = ['.mp4', '.mov', '.mkv', '.webm', '.avi', '.mpeg', '.mpg', '.m4a', '.mp3', '.wav', '.aac', '.flac'];
+// la stessa lista di `MEDIA_EXT` qui sopra, e per lo stesso motivo una sola:
+// il drop nel vault e il conto delle trascrizioni chiedono a `lib/materiali.js`
+const MEDIA_EXTS = mat.EXT_MEDIA;
 
 // scrittura atomica: mai lasciare un .md a metà se il processo muore
 function writeAtomic(file, text) {

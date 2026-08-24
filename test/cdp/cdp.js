@@ -130,4 +130,51 @@ async function partiVuoto() {
   await pausa(250);
 }
 
-module.exports = { collega, invia, val, clicca, pausa, apriStrumento, partiPulito, partiVuoto, ws: () => ws };
+
+/* ---- media veri per le prove --------------------------------------------
+ *
+ * ⚠️ Il vault di prova è una copia magra SENZA `MATERIALI/` (23 GB → 13 MB),
+ * quindi un media vero lì dentro non c'è: va fabbricato. Prima queste prove
+ * usavano un NOME inventato, e reggeva finché un media che non si apriva
+ * falliva in silenzio. Dal 24 agosto 2026 non è più così — il player dice
+ * perché e si rimette vuoto — e un fantasma non regge una barra: i media di
+ * prova sono veri.
+ */
+
+/** Un WAV vero: PCM 16 bit, mono, 8 kHz, un sinusoide. Zero dipendenze. */
+function wavDiProva(secondi) {
+  const rate = 8000, n = rate * (secondi || 1), dati = Buffer.alloc(n * 2);
+  for (let i = 0; i < n; i++) dati.writeInt16LE(Math.round(3000 * Math.sin(i / 20)), i * 2);
+  const h = Buffer.alloc(44);
+  h.write('RIFF', 0); h.writeUInt32LE(36 + dati.length, 4); h.write('WAVE', 8);
+  h.write('fmt ', 12); h.writeUInt32LE(16, 16); h.writeUInt16LE(1, 20); h.writeUInt16LE(1, 22);
+  h.writeUInt32LE(rate, 24); h.writeUInt32LE(rate * 2, 28); h.writeUInt16LE(2, 32); h.writeUInt16LE(16, 34);
+  h.write('data', 36); h.writeUInt32LE(dati.length, 40);
+  return Buffer.concat([h, dati]);
+}
+
+/**
+ * Un file media vero, scritto in `dove`, con `ffmpeg`. Torna il percorso, o
+ * `''` se ffmpeg non c'è — e allora chi chiama SALTA la sua sezione dicendolo,
+ * invece di fallire: ffmpeg non è un requisito del progetto.
+ *
+ * Un `.wav` non passa da qui: quello si fabbrica senza nessuno (`wavDiProva`).
+ */
+function mediaConFfmpeg(percorso) {
+  const ext = require('path').extname(percorso).toLowerCase();
+  const args = {
+    '.mp4': ['-f', 'lavfi', '-i', 'testsrc=d=2:s=64x64:r=10', '-f', 'lavfi', '-i', 'sine=f=440:d=2',
+             '-c:v', 'libx264', '-c:a', 'aac', '-shortest'],
+    '.m4a': ['-f', 'lavfi', '-i', 'sine=f=440:d=2', '-c:a', 'aac'],
+    '.aiff': ['-f', 'lavfi', '-i', 'sine=f=440:d=1', '-c:a', 'pcm_s16be']
+  }[ext];
+  if (!args) throw new Error('mediaConFfmpeg: non so fare un ' + ext);
+  try {
+    require('fs').mkdirSync(require('path').dirname(percorso), { recursive: true });
+    require('child_process').execFileSync('ffmpeg', ['-y'].concat(args, [percorso]), { stdio: 'ignore' });
+    return require('fs').existsSync(percorso) ? percorso : '';
+  } catch (e) { return ''; }
+}
+
+module.exports = { collega, invia, val, clicca, pausa, apriStrumento, partiPulito, partiVuoto,
+  wavDiProva, mediaConFfmpeg, ws: () => ws };
