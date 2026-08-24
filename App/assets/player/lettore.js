@@ -79,17 +79,28 @@
    * — `removeAttribute('src')` + `load()` — non emette `error` affatto ma solo
    * `emptied`: misurato, non supposto.)
    */
-  function erroreDaDire(err, nome) {
+  function erroreDaDire(err, nome, opz) {
     const code = err && err.code;
     if (!code || code === 1) return '';
+    const o = opz || {};
     const che = str(nome) ? '«' + str(nome) + '»' : 'questo file';
     if (code === 2) return 'Non riesco a leggere ' + che + ': il file è stato spostato o non si può aprire.';
+    /* ⚠️ IL RIMEDIO DIPENDE DA DOVE SI È, e si fa PASSARE perché questo modulo
+       la modalità non la può leggere. Nei corsi la trascrizione c'è, e un
+       formato che il lettore non apre si trascrive lo stesso: passa da ffmpeg,
+       non da Chromium. Nello ZAINO non c'è — «qui non si trascrive niente» è
+       una decisione dichiarata in PIANO-ZAINO.md §1.5 — e prometterla lì
+       sarebbe un cartello che indica una porta che non esiste, cioè il difetto
+       che questo progetto si vieta in più punti. Pagato il 24 agosto 2026:
+       l'utente ha letto «si può trascrivere lo stesso» dentro uno zaino. */
+    const rimedio = o.siTrascrive
+      ? ' Si può trascrivere lo stesso — la trascrizione non passa da qui.'
+      : ' Per ascoltarlo qui va convertito in un formato che il lettore apre (per esempio .m4a o .mp3).';
     if (code === 4) {
-      return 'Il lettore non apre ' + che + ': questo formato non lo sa decodificare. ' +
-        'Si può trascrivere lo stesso — la trascrizione non passa da qui.';
+      return 'Il lettore non apre ' + che + ': questo formato non lo sa decodificare.' + rimedio;
     }
     return che.charAt(0).toUpperCase() + che.slice(1) + ' si apre ma non si riesce a leggerlo: ' +
-      'il file è danneggiato, o il codec che ha dentro non si decodifica. Si può trascrivere lo stesso.';
+      'il file è danneggiato, o il codec che ha dentro non si decodifica.' + rimedio;
   }
 
   /**

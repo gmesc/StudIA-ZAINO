@@ -94,9 +94,22 @@ sezione('Quando il media non si apre, si dice — e quando non c\'è niente da d
      trascrive) ma Chromium non li apre — `code=4`, DEMUXER_ERROR_COULD_NOT_OPEN
      — e lasciavano un riquadro nero MUTO. Il terzo caso, quello che non deve
      esistere: né entra e si vede, né si ferma sulla soglia dicendo perché. */
-  const q = P.erroreDaDire({ code: 4 }, '07 lezione.avi');
+  const q = P.erroreDaDire({ code: 4 }, '07 lezione.avi', { siTrascrive: true });
   check('un formato che non si apre lo dice, e nomina il file', true, q.indexOf('«07 lezione.avi»') > 0);
-  check('e dice dove si rimedia: la trascrizione non passa da lì', true, /trascrivere/.test(q));
+  check('e nei CORSI dice dove si rimedia: la trascrizione non passa da lì', true, /trascrivere/.test(q));
+
+  /* ⚠️ NELLO ZAINO la trascrizione NON esiste — «qui non si trascrive niente»,
+     PIANO-ZAINO.md §1.5 — e prometterla lì è un cartello che indica una porta
+     che non c'è: il difetto che questo progetto si vieta in più punti. Pagato
+     il 24 agosto 2026, provando a mano un `.aiff` dentro uno zaino: il
+     messaggio era giusto sul perché e falso sul rimedio. */
+  const z = P.erroreDaDire({ code: 4 }, '07 lezione.avi', { siTrascrive: false });
+  check('nello ZAINO non promette la trascrizione, che lì non c\'è', false, /trascriv/.test(z));
+  check('e dice il rimedio VERO: convertirlo', true, /convertito/.test(z));
+  check('il perché resta lo stesso in tutte e due', true, /non lo sa decodificare/.test(z));
+  /* Senza dire dove si è, non si promette: il valore di comodo è il più cauto. */
+  check('e chi non lo dice non si prende la promessa', false,
+    /trascriv/.test(P.erroreDaDire({ code: 4 }, 'x.avi')));
 
   /* ⚠️ `code 1` TACE: MEDIA_ERR_ABORTED è il caricamento interrotto perché si
      è aperto un altro media — succede a ogni cambio di lezione, e un toast lì
@@ -108,6 +121,9 @@ sezione('Quando il media non si apre, si dice — e quando non c\'è niente da d
   check('il file sparito è un\'altra causa, e un altro rimedio', true,
     /spostato/.test(P.erroreDaDire({ code: 2 }, 'x.mp4')));
   check('il file rotto pure', true, /danneggiato/.test(P.erroreDaDire({ code: 3 }, 'x.mp4')));
+  check('e anche lì il rimedio segue la modalità', [true, false],
+    [/trascriv/.test(P.erroreDaDire({ code: 3 }, 'x.mp4', { siTrascrive: true })),
+     /trascriv/.test(P.erroreDaDire({ code: 3 }, 'x.mp4', { siTrascrive: false }))]);
   /* Senza nome si parla lo stesso: meglio un messaggio generico che nessuno. */
   check('senza nome dice comunque che cos\'è successo', true,
     P.erroreDaDire({ code: 4 }, '').indexOf('questo file') > 0);

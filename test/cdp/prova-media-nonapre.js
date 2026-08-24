@@ -126,8 +126,19 @@ function sezione(t) { console.log('\n== ' + t); }
       /* ⚠️ Seconda metà: e allora lo si DICE. Il terzo caso — entra, non si
          apre, e nessuno lo dice — è quello che non deve esistere. */
       const detti = await val(`JSON.stringify(window.__toasts||[])`);
-      ok('e l\'app lo dice', true, JSON.parse(detti).some((m) => /non apre/i.test(m)));
-      if (!JSON.parse(detti).some((m) => /non apre/i.test(m))) console.log('      i messaggi visti: ' + detti);
+      const messaggi = JSON.parse(detti);
+      ok('e l\'app lo dice', true, messaggi.some((m) => /non apre/i.test(m)));
+      if (!messaggi.some((m) => /non apre/i.test(m))) console.log('      i messaggi visti: ' + detti);
+      /* ⚠️ E QUI SIAMO IN UNO ZAINO, dove la trascrizione NON esiste
+         («qui non si trascrive niente», PIANO-ZAINO §1.5). Il messaggio era
+         giusto sul perché e falso sul rimedio: prometteva una porta che in
+         questa metà dell'app non c'è. Trovato dall'utente provando a mano un
+         `.aiff` vero, con la prova qui sopra già verde — perché guardava che
+         l'app parlasse, non CHE COSA dicesse. */
+      ok('e nello zaino non promette la trascrizione, che qui non c\'è', false,
+        messaggi.some((m) => /trascriv/i.test(m)));
+      ok('ma dice il rimedio vero: convertirlo', true,
+        messaggi.some((m) => /convertito/i.test(m)));
       /* ⚠️ E il vestito resta quello dell'AUDIO: un `.aiff` è un audio anche
          quando non si apre, e il rettangolo nero del video sarebbe un buco che
          sembra un guasto dell'app. */

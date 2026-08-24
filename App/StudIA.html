@@ -7806,7 +7806,13 @@ function playerApri(file, t, label){
     seNonSiApre=function(){
       basta();
       if(!mio()) return;
-      var m=(typeof Lettore!=='undefined') ? Lettore.erroreDaDire(v.error, titoloMateriale(file)||file) : '';
+      /* ⚠️ Il rimedio dipende da dove si è, e glielo si PASSA: nei corsi la
+         trascrizione c'è, nello zaino no («qui non si trascrive niente»,
+         PIANO-ZAINO §1.5). Prometterla in uno zaino è un cartello che indica
+         una porta che non esiste. */
+      var m=(typeof Lettore!=='undefined')
+        ? Lettore.erroreDaDire(v.error, titoloMateriale(file)||file, { siTrascrive: modoAttivo()!=='zaino' })
+        : '';
       if(m) toast(m, false);
       /* ⚠️ E il player si RIMETTE VUOTO: dirlo non basta, perché il toast passa
          e quello che resta è un riquadro con dentro un media morto — comandi
