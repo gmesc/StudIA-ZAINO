@@ -146,8 +146,46 @@
    * possono divergere sul salvataggio. Il vocabolario del rimando sta lì, non
    * qui: questo modulo lo trasporta, non lo giudica.
    */
+  /**
+   * Il rimando che finisce SU UN NODO: copiato, normalizzato, e solo se sa
+   * davvero indicare qualcosa. Altrimenti `null`, e il nodo nasce senza — cioè
+   * senza pallino.
+   *
+   * ⚠️ È qui che si decide se il pallino della fonte comparirà, e la regola è
+   * quella dell'app intera: **meglio nessun pallino di uno che non apre**. Un
+   * segno che compare e non porta da nessuna parte è «un comando su carta»,
+   * cioè un disegno che promette un gesto impossibile — e il progetto se lo
+   * vieta in più punti (il segmento Generata/Mie che si spegne invece di
+   * sparire, la voce «Capitolo» che non si offre in uno zaino).
+   *
+   * ⚠️ Serve il FILE, non solo la posizione: `openNote` apre `n.file`, e un
+   * `{type:'pdf', page:3}` senza file chiama `openPdf(undefined, 3)`, che non
+   * apre niente e non lo dice. Serve anche la posizione, e per un PDF una
+   * pagina è un intero ≥ 1 — su un video invece lo ZERO è un tempo, «riportato
+   * all'inizio» è un fatto, ed è la stessa distinzione già scritta per
+   * `_ascolto.json` in PIANO-ZAINO.
+   *
+   * ⚠️ Accetta anche la forma ITALIANA (`tipo`/`pagina`), che è quella con cui
+   * il renderer descrive da dove viene una selezione (`origineDaRange`). La
+   * traduzione sta QUI e non nel renderer perché è la forma del nodo a
+   * comandare, e un secondo traduttore altrove sarebbe la seconda grammatica
+   * che l'invariante 7 vieta.
+   */
   function copiaRimando(r) {
-    return (r && typeof r === 'object') ? Object.assign({}, r) : null;
+    if (!r || typeof r !== 'object') return null;
+    var tipo = String(r.type || r.tipo || '');
+    var file = String(r.file == null ? '' : r.file).trim();
+    if (!file) return null;
+    var etichetta = String(r.label == null ? '' : r.label);
+    if (tipo === 'video') {
+      var t = Math.floor(Number(r.t != null ? r.t : r.secondo));
+      if (!isFinite(t) || t < 0) t = 0;          // lo zero è un tempo, non un'assenza
+      return { type: 'video', file: file, t: t, label: etichetta };
+    }
+    if (tipo !== 'pdf') return null;
+    var p = Math.floor(Number(r.page != null ? r.page : r.pagina));
+    if (!isFinite(p) || p < 1) return null;      // senza pagina il pallino non deve comparire
+    return { type: 'pdf', file: file, page: p, label: etichetta };
   }
 
   /**

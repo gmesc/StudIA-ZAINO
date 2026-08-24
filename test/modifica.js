@@ -188,12 +188,12 @@ sezione('creaNodo — origine, rimando, nota, capitolo: il nodo estratto (§3)')
   check('i campi del nodo estratto, nell\'ordine',
     ['id', 'testo', 'origine', 'rimando', 'nota', 'capitolo', 'x', 'y', 'colore'],
     Object.keys(M.creaNodo(base(), {
-      testo: 't', origine: 'fonte', rimando: { type: 'pdf', page: 2 },
+      testo: 't', origine: 'fonte', rimando: { type: 'pdf', file: '02 dispensa.pdf', page: 2 },
       nota: 'a', capitolo: 1, x: 0, y: 0, colore: '#111'
     }).nodi[6]));
 
   puro('creaNodo con rimando e nota', base(),
-    (x) => M.creaNodo(x, { origine: 'fonte', rimando: { type: 'pdf', page: 4 }, nota: 'a', capitolo: 1 }));
+    (x) => M.creaNodo(x, { origine: 'fonte', rimando: { type: 'pdf', file: '04 x.pdf', page: 4 }, nota: 'a', capitolo: 1 }));
 }
 
 sezione('estrai — chi dichiara una fonte deve saperla indicare');
@@ -233,6 +233,39 @@ sezione('estrai — chi dichiara una fonte deve saperla indicare');
   check('né lo è un capitolo vuoto', 'utente', M.estrai(base(), { capitolo: '' }).nodi[6].origine);
   check('senza puntatore non resta nemmeno mezza chiave sul nodo',
     ['id', 'testo', 'origine'], Object.keys(senza.nodi[6]));
+
+  /* ---- Q3: il pallino compare SOLO se saprà aprire qualcosa -------------
+     ⚠️ «Meglio nessun pallino di uno che non apre.» `openNote` apre `n.file`:
+     un rimando senza file chiama `openPdf(undefined, …)`, che non apre niente
+     e non lo dice — è «un comando su carta», il disegno che promette un gesto
+     impossibile. La severità sta in `copiaRimando`, cioè nell'unico punto da
+     cui un rimando entra su un nodo. */
+  check('un rimando senza file non è un puntatore', ['utente', false],
+    (function(){ const n = M.estrai(base(), { rimando: { type: 'pdf', page: 3 } }).nodi[6];
+      return [n.origine, 'rimando' in n]; })());
+  check('e nemmeno un PDF senza pagina', ['utente', false],
+    (function(){ const n = M.estrai(base(), { rimando: { type: 'pdf', file: '03 x.pdf' } }).nodi[6];
+      return [n.origine, 'rimando' in n]; })());
+  check('una pagina che non è un numero non inventa la prima', false,
+    'rimando' in M.estrai(base(), { rimando: { type: 'pdf', file: '03 x.pdf', page: 'sette' } }).nodi[6]);
+  check('un tipo che non sappiamo aprire nemmeno', false,
+    'rimando' in M.estrai(base(), { rimando: { type: 'foglio', file: 'x.ods', page: 1 } }).nodi[6]);
+  /* ⚠️ Su un VIDEO lo zero è un tempo, non un'assenza: «riportato all'inizio» è
+     un fatto. È la stessa distinzione già scritta per `_ascolto.json`. */
+  check('un video al secondo zero è un puntatore buono', ['fonte', 0],
+    (function(){ const n = M.estrai(base(), { rimando: { type: 'video', file: '07 lez.mp4', t: 0 } }).nodi[6];
+      return [n.origine, n.rimando.t]; })());
+
+  /* ⚠️ E si accetta la forma ITALIANA, che è quella con cui il renderer
+     descrive da dove viene una selezione (`origineDaRange` → `{tipo, file,
+     pagina}`). La traduzione sta nel modulo, non nel renderer: è la forma del
+     NODO a comandare, e un secondo traduttore sarebbe la seconda grammatica
+     che l'invariante 7 vieta. */
+  check('la forma italiana del renderer diventa quella del nodo',
+    { type: 'pdf', file: '03 dispensa.pdf', page: 7, label: 'Dispensa DSA' },
+    M.estrai(base(), { rimando: { tipo: 'pdf', file: '03 dispensa.pdf', pagina: 7, label: 'Dispensa DSA' } }).nodi[6].rimando);
+  check('e senza etichetta il campo c\'è comunque, vuoto', '',
+    M.estrai(base(), { rimando: { tipo: 'pdf', file: '03 x.pdf', pagina: 1 } }).nodi[6].rimando.label);
 
   check('estrai senza opzioni non fa saltare niente', 7, M.estrai(base()).nodi.length);
   puro('estrai', base(), (x) => M.estrai(x, { testo: 'X', rimando: { type: 'pdf', file: '02', page: 9 } }));
@@ -514,7 +547,7 @@ sezione('libera / liberaTutte — togliere le coordinate, non azzerarle');
   check('il colore scelto a mano sopravvive alla liberazione', '#0aa',
     M.liberaTutte(M.colora(fissa, 'n4', '#0aa', {})).nodi[3].colore);
   check('e così il rimando di un nodo estratto', 'pdf',
-    M.liberaTutte(M.estrai(fissa, { rimando: { type: 'pdf', page: 3 }, x: 5, y: 5 })).nodi[6].rimando.type);
+    M.liberaTutte(M.estrai(fissa, { rimando: { type: 'pdf', file: '03 x.pdf', page: 3 }, x: 5, y: 5 })).nodi[6].rimando.type);
 
   puro('libera', fissa, (x) => M.libera(x, 'n4'));
   puro('liberaTutte', fissa, (x) => M.liberaTutte(x));
