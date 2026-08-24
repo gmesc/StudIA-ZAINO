@@ -2133,9 +2133,32 @@ ipcMain.handle('mappe:salva', (e, { corso, file, mappa } = {}) => {
   return mappeLib.salva(d.v, corso, file, mappa || {});
 });
 
-ipcMain.handle('mappe:rimuovi', (e, { corso, file } = {}) => {
+/* ⚠️ `shell.trashItem` e non `unlink`: mappe, appunti e immagini dell'album
+   sono lavoro dell'UTENTE — l'unica cosa nel vault che non ha una seconda
+   copia da nessuna parte — e devono poter tornare dal Cestino di sistema come
+   già i documenti, i media e gli zaini. `lib/` non conosce Electron: la
+   funzione si inietta, come in `fonti.elimina`. */
+ipcMain.handle('mappe:rimuovi', async (e, { corso, file } = {}) => {
   const d = mappeDove(corso); if (d.error) return { ok: false, error: d.error };
-  return { ok: mappeLib.rimuovi(d.v, corso, file), error: '' };
+  return { ok: await mappeLib.rimuovi(d.v, corso, file, { cestina: (p) => shell.trashItem(p) }), error: '' };
+});
+
+/* Le cancellazioni di appunti e album passano di qui — e non da preload, dove
+   vive il resto delle loro API — per la sola ragione che `shell.trashItem`
+   esiste solo nel main. Tutto il resto (leggere, salvare, rinominare) resta
+   sincrono in preload, dov'era. `mappeDove` risponde solo di vault e corso,
+   quindi vale anche per loro. */
+const appuntiLib = require('./lib/appunti');
+const albumLib = require('./lib/album');
+
+ipcMain.handle('note:rimuovi', async (e, { corso, file } = {}) => {
+  const d = mappeDove(corso); if (d.error) return { ok: false, error: d.error };
+  return { ok: await appuntiLib.remove(d.v, corso, file, { cestina: (p) => shell.trashItem(p) }), error: '' };
+});
+
+ipcMain.handle('album:rimuovi', async (e, { corso, id, opt } = {}) => {
+  const d = mappeDove(corso); if (d.error) return { tolto: false, usi: null, error: d.error };
+  return albumLib.rimuovi(d.v, corso, id, Object.assign({}, opt, { cestina: (p) => shell.trashItem(p) }));
 });
 
 ipcMain.handle('mappe:rinomina', (e, { corso, file, titolo } = {}) => {

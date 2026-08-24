@@ -564,7 +564,60 @@ sezione('La GIF entra com\'è: passarla da un canvas la ridurrebbe a un fotogram
       dati: 'data:image/gif;base64,' + Buffer.from('non una gif').toString('base64') }, QUANDO).error));
 }
 
-try { fs.rmSync(VAULT, { recursive: true, force: true }); } catch (e) { /* la cartella era temporanea */ }
+/* --------------------------------------------------------------------------
+   `cestina` iniettata: l'immagine va nel Cestino, non nel nulla.
 
-console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
-process.exit(ko ? 1 : 0);
+   Il patto di `fonti.elimina` portato sull'album: chi passa `cestina`
+   (nell'app è `shell.trashItem`) ottiene una Promise, e nel Cestino finiscono
+   l'immagine E la sua miniatura; chi non la passa, la cancellazione sincrona
+   delle sezioni sopra.
+
+   ⚠️ Da qui in poi la prova è asincrona: il `return` interrompe il modulo, e
+   la pulizia e il conto finale vivono in fondo alla catena. Chi aggiunge
+   sezioni sincrone le metta PRIMA di questa. */
+sezione('`cestina` iniettata: l\'immagine va nel Cestino, non nel nulla');
+{
+  pulisci();
+  const CESTINO = path.join(VAULT, '_cestino-finto');
+  fs.mkdirSync(CESTINO, { recursive: true });
+  const cestinati = [];
+  const cestina = (p) => { cestinati.push(path.basename(p)); fs.renameSync(p, path.join(CESTINO, path.basename(p))); };
+
+  const r = A.salva(VAULT, CORSO, ritaglio(), QUANDO);
+  const voce = r.voce;
+  return Promise.resolve(A.rimuovi(VAULT, CORSO, voce.id, { cestina })).then((t) => {
+    check('con `cestina` si toglie', [true, ''], [t.tolto, t.error]);
+    check('l\'immagine è nel cestino', true, cestinati.indexOf(voce.file) >= 0);
+    check('e la miniatura con lei', true, !voce.mini || cestinati.indexOf(path.basename(voce.mini)) >= 0);
+    check('l\'indice non la elenca più', 0, A.elenco(VAULT, CORSO).voci.length);
+    check('e in ALBUM/ non resta niente', [], suDisco());
+
+    /* Un Cestino che rifiuta non è «fatto»: l'errore si dice e l'indice non si
+       tocca — un indice ripulito con il file ancora lì sarebbe la riga vuota
+       al contrario. */
+    const r2 = A.salva(VAULT, CORSO, ritaglio({ pagina: 5 }), QUANDO);
+    return Promise.resolve(A.rimuovi(VAULT, CORSO, r2.voce.id, {
+      cestina: () => Promise.reject(new Error('il Cestino ha detto no'))
+    })).then((t2) => {
+      check('se il Cestino rifiuta, non è tolto', false, t2.tolto);
+      check('e l\'errore lo dice', 'il Cestino ha detto no', t2.error);
+      check('l\'indice la elenca ancora', 1, A.elenco(VAULT, CORSO).voci.length);
+      check('e il file è ancora lì', true, fs.existsSync(path.join(DIR, r2.voce.file)));
+
+      /* Il file già sparito dal Finder: l'indice va ripulito lo stesso, e
+         `cestina` non si chiama su un file che non c'è. */
+      fs.unlinkSync(path.join(DIR, r2.voce.file));
+      if (r2.voce.mini) { try { fs.unlinkSync(path.join(DIR, r2.voce.mini)); } catch (e) {} }
+      const prima = cestinati.length;
+      return Promise.resolve(A.rimuovi(VAULT, CORSO, r2.voce.id, { cestina })).then((t3) => {
+        check('un file già sparito si toglie dall\'indice lo stesso', [true, ''], [t3.tolto, t3.error]);
+        check('senza chiamare `cestina` a vuoto', prima, cestinati.length);
+        check('e l\'indice è vuoto', 0, A.elenco(VAULT, CORSO).voci.length);
+
+        try { fs.rmSync(VAULT, { recursive: true, force: true }); } catch (e) { /* la cartella era temporanea */ }
+        console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
+        process.exit(ko ? 1 : 0);
+      });
+    });
+  });
+}

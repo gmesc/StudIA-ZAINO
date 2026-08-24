@@ -715,5 +715,46 @@ sezione('Cinque slot, sempre cinque');
       .memorie[0].protetta);
 }
 
-console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
-process.exit(ko ? 1 : 0);
+/* --------------------------------------------------------------------------
+   `cestina` iniettata: la mappa va nel Cestino, non nel nulla.
+
+   Il patto di `fonti.elimina` portato sulle mappe: chi passa `cestina`
+   (nell'app è `shell.trashItem`) ottiene una Promise e il file consegnato al
+   Cestino; chi non la passa, la cancellazione sincrona delle sezioni sopra.
+
+   ⚠️ Da qui in poi la prova è asincrona: il `return` interrompe il modulo, e
+   il conto finale vive in fondo alla catena. Chi aggiunge sezioni sincrone le
+   metta PRIMA di questa. */
+sezione('`cestina` iniettata: la mappa va nel Cestino, non nel nulla');
+{
+  pulisci();
+  const CESTINO = path.join(VAULT, '_cestino-finto');
+  fs.mkdirSync(CESTINO, { recursive: true });
+  const cestina = (p) => { fs.renameSync(p, path.join(CESTINO, path.basename(p))); };
+
+  const r = M.salva(VAULT, PROG, null, { titolo: 'Da cestinare', nodi: [{ id: 'a', testo: 'x' }], archi: [] });
+  return Promise.resolve(M.rimuovi(VAULT, PROG, r.file, { cestina })).then((tolto) => {
+    check('con `cestina` la risposta è vera', true, tolto);
+    check('il file non è più in MAPPE/', false, fs.existsSync(path.join(DIR, r.file)));
+    check('ed è arrivato nel cestino', true, fs.existsSync(path.join(CESTINO, r.file)));
+
+    const r2 = M.salva(VAULT, PROG, null, { titolo: 'Resta qui', nodi: [], archi: [] });
+    return Promise.resolve(M.rimuovi(VAULT, PROG, r2.file, {
+      cestina: () => Promise.reject(new Error('il Cestino ha detto no'))
+    })).then((tolto2) => {
+      check('se il Cestino rifiuta, la risposta è false', false, tolto2);
+      check('e la mappa è ancora lì', true, fs.existsSync(path.join(DIR, r2.file)));
+
+      let chiamata = false;
+      return Promise.resolve(M.rimuovi(VAULT, PROG, '../APPUNTI/prezioso.md', {
+        cestina: (p) => { chiamata = true; }
+      })).then((evaso) => {
+        check('un nome che esce dalla cartella si rifiuta anche col cestino', false, evaso);
+        check('e `cestina` non è mai stata chiamata', false, chiamata);
+
+        console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
+        process.exit(ko ? 1 : 0);
+      });
+    });
+  });
+}

@@ -275,7 +275,11 @@ contextBridge.exposeInMainWorld('vault', {
         return appunti.rinomina(vaultPath, courseId, file, titolo);
       } catch (e) { return { error: e.message }; }
     },
-    remove: (courseId, file) => { try { return appunti.remove(vaultPath, courseId, file); } catch (e) { return false; } },
+    /* ⚠️ L'unica voce ASINCRONA del blocco: passa dal main perché
+       `shell.trashItem` — il Cestino di sistema — esiste solo là, e un appunto
+       è l'unico file che esiste soltanto in questo vault. Non serve dentro
+       `beforeunload`: si cancella a gesto, mai alla chiusura. */
+    remove: (courseId, file) => ipcRenderer.invoke('note:rimuovi', { corso: courseId, file }).then((r) => !!(r && r.ok)),
     reindex: (courseId) => { try { return appunti.reindex(vaultPath, courseId); } catch (e) { return 0; } },
     indexPath: (courseId) => { try { return path.join(appunti.dir(vaultPath, courseId), '_indice.md'); } catch (e) { return ''; } }
   },
@@ -415,13 +419,11 @@ contextBridge.exposeInMainWorld('vault', {
       try { return albumLib.usi(vaultPath, corso, id); }
       catch (e) { return { appunti: [], mappe: [], illeggibili: [], quanti: 0, error: e.message }; }
     },
-    // rifiuta se l'immagine è usata: si passa con `{ insisti: true }`, che è una
-    // scelta dell'utente e non un valore di fabbrica
-    rimuovi: (corso, id, opt) => {
-      if (!vaultPath) return { tolto: false, usi: null, error: 'nessuna cartella vault impostata' };
-      try { return albumLib.rimuovi(vaultPath, corso, id, opt); }
-      catch (e) { return { tolto: false, usi: null, error: e.message }; }
-    },
+    /* Rifiuta se l'immagine è usata: si passa con `{ insisti: true }`, che è una
+       scelta dell'utente e non un valore di fabbrica.
+       ⚠️ ASINCRONA, sola del blocco: passa dal main perché `shell.trashItem` —
+       il Cestino di sistema — esiste solo là. `usi` resta qui: è una lettura. */
+    rimuovi: (corso, id, opt) => ipcRenderer.invoke('album:rimuovi', { corso, id, opt }),
     /* La URL con cui `<img>` mostra l'immagine, come `srcUrl` fa per i materiali.
        ⚠️ Vuole anche il corso, a differenza della firma abbozzata nel piano:
        l'album è di un corso, e un id da solo non individua nessun file — il nome
