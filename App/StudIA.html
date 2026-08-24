@@ -7785,8 +7785,25 @@ function playerApri(file, t, label){
        media non ancora caricato viene ignorato in silenzio, e la lezione
        ripartirebbe dall'inizio ogni volta. Solo DOPO il salto il segno
        d'ascolto può fidarsi del tempo corrente (vedi `PLAYER.pronto`). */
-    var alPunto=function(){ try{ if(sec) v.currentTime=sec; }catch(e){} PLAYER.pronto=true; v.removeEventListener('loadedmetadata',alPunto); };
+    /* ⚠️ I due esiti si tolgono a VICENDA, non ciascuno se stesso: un media che
+       non si apre lasciava `alPunto` appeso, e il gestore successivo si
+       sommava a quello di prima — dieci aperture, dieci gestori sullo stesso
+       elemento. */
+    var alPunto, seNonSiApre;
+    var basta=function(){ v.removeEventListener('loadedmetadata', alPunto); v.removeEventListener('error', seNonSiApre); };
+    alPunto=function(){ basta(); try{ if(sec) v.currentTime=sec; }catch(e){} PLAYER.pronto=true; };
+    /* ⚠️ «Entra e non suona» è la promessa rotta dall'altro lato: un `.avi` o
+       un `.aiff` hanno un tipo, quindi passano di qui, e Chromium li rifiuta
+       lasciando un riquadro nero MUTO. Che cosa dire lo decide `Lettore`, che
+       guarda l'errore vero invece di tenere una lista di formati — sarebbe la
+       copia di ciò che decide Chromium, e cambia a ogni Electron. */
+    seNonSiApre=function(){
+      basta();
+      var m=(typeof Lettore!=='undefined') ? Lettore.erroreDaDire(v.error, titoloMateriale(file)||file) : '';
+      if(m) toast(m, false);
+    };
     v.addEventListener('loadedmetadata', alPunto);
+    v.addEventListener('error', seNonSiApre);
   }
   try{ v.playbackRate=PLAYER.vel; }catch(e){}
   v.play().catch(function(){});

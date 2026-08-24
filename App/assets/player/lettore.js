@@ -55,6 +55,44 @@
   }
 
   /**
+   * Che cosa dire quando il media non si apre — o `''`, se non c'è niente da
+   * dire. Si fa passare `err` (il `MediaError` dell'elemento), perché il modulo
+   * il DOM non ce l'ha.
+   *
+   * ⚠️ Esiste perché «entra e non suona» è la promessa rotta dall'altro lato
+   * rispetto a «non entra e non lo dice». Misurato il 24 agosto 2026 con file
+   * veri dentro l'Electron del progetto: di tutto ciò che le liste accettano,
+   * **`.aiff`, `.avi` e `.mpg`/`.mpeg` Chromium non li apre** (`code=4`,
+   * `DEMUXER_ERROR_COULD_NOT_OPEN`) — entravano nel vault e davano un riquadro
+   * nero muto. ⚠️ Il sospetto sull'`.ogg` era invece della MISURA, non
+   * dell'app: il primo file di prova l'aveva scritto l'encoder vorbis
+   * sperimentale di ffmpeg; con un Ogg sano si apre benissimo.
+   *
+   * ⚠️ Qui NON c'è una lista dei formati che non si aprono, ed è deliberato:
+   * sarebbe la sesta copia del difetto che Q7 ha appena chiuso, e per giunta
+   * una copia di ciò che decide Chromium — che cambia a ogni Electron. Si
+   * guarda che cosa è successo davvero, così anche un `.mkv` con dentro un
+   * codec esotico viene detto.
+   *
+   * ⚠️ E il `code 1` tace: `MEDIA_ERR_ABORTED` è il caricamento interrotto
+   * perché si è aperto un altro media, non un guasto. (La chiusura del player
+   * — `removeAttribute('src')` + `load()` — non emette `error` affatto ma solo
+   * `emptied`: misurato, non supposto.)
+   */
+  function erroreDaDire(err, nome) {
+    const code = err && err.code;
+    if (!code || code === 1) return '';
+    const che = str(nome) ? '«' + str(nome) + '»' : 'questo file';
+    if (code === 2) return 'Non riesco a leggere ' + che + ': il file è stato spostato o non si può aprire.';
+    if (code === 4) {
+      return 'Il lettore non apre ' + che + ': questo formato non lo sa decodificare. ' +
+        'Si può trascrivere lo stesso — la trascrizione non passa da qui.';
+    }
+    return che.charAt(0).toUpperCase() + che.slice(1) + ' si apre ma non si riesce a leggerlo: ' +
+      'il file è danneggiato, o il codec che ha dentro non si decodifica. Si può trascrivere lo stesso.';
+  }
+
+  /**
    * Secondi → `m:ss`, e `h:mm:ss` quando l'ora c'è.
    *
    * ⚠️ L'ora non è un vezzo: una lezione registrata dura più di un'ora, e
@@ -132,7 +170,7 @@
 
   return {
     EXT_VIDEO: EXT_VIDEO, EXT_AUDIO: EXT_AUDIO, VELOCITA: VELOCITA,
-    estensione: estensione, tipoDi: tipoDi, tempo: tempo,
+    estensione: estensione, tipoDi: tipoDi, tempo: tempo, erroreDaDire: erroreDaDire,
     salto: salto, velocita: velocita, rigaAppunto: rigaAppunto
   };
 }));

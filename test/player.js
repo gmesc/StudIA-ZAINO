@@ -42,6 +42,39 @@ sezione('Le due liste di estensioni sono la stessa lista');
   check('e il verdetto è lo stesso', campioni.map(M.tipoDi), campioni.map(P.tipoDi));
 }
 
+sezione('E le altre liste non esistono più: una sola sorgente');
+{
+  /* ⚠️ La copia dichiarata è UNA: `lib/materiali.js` ↔ il player, inchiodata
+     qui sopra. Le altre quattro erano copie e basta — nessuna aveva
+     `.ogg .opus .aiff`, e un `.opus` messo in `Media/` di un corso non veniva
+     elencato mentre nello zaino entrava (misurato il 23 agosto 2026).
+
+     Questo controllo guarda i SORGENTI, non i valori: confrontare
+     `mat.EXT_MEDIA` con se stesso dopo la modifica sarebbe un verde che non
+     prova niente. Quello che deve restare vero è che nessun altro file
+     RIDICHIARI la lista — ed è l'unica forma in cui una sesta copia potrebbe
+     rinascere fra sei mesi, in silenzio. */
+  const fs = require('fs');
+  const path = require('path');
+  const radice = path.join(__dirname, '..');
+  const guardati = ['main.js', 'preload.js', 'lib/importa.js', 'lib/corpus.js',
+    'lib/media.js', 'lib/genera.js', 'lib/schede.js', 'lib/zaini.js', 'lib/fonti.js'];
+  /* Una lista di estensioni scritta a mano: due o più estensioni note fra
+     apici, separate da virgola. Non prende le menzioni singole nei commenti. */
+  const listaAMano = /\[\s*'\.(?:mp4|mov|mkv|webm|avi|mpeg|mpg|m4a|mp3|wav|aac|flac|ogg|opus|aiff)'\s*,\s*'\./;
+  const colpevoli = guardati.filter((f) => {
+    try { return listaAMano.test(fs.readFileSync(path.join(radice, f), 'utf-8')); }
+    catch (e) { return false; }
+  });
+  check('nessun altro file riscrive la lista dei media', [], colpevoli);
+
+  /* E il valore vero della lista unica, dichiarato: chi la chiede riceve
+     video + audio, `.opus` compreso. */
+  check('EXT_MEDIA è video + audio', mat.EXT_VIDEO.concat(mat.EXT_AUDIO), mat.EXT_MEDIA);
+  check('e comprende i tre che mancavano ovunque', [true, true, true],
+    ['.ogg', '.opus', '.aiff'].map((e) => mat.EXT_MEDIA.includes(e)));
+}
+
 sezione('Che cosa è questo file');
 {
   check('un mp4 è un video', 'video', P.tipoDi('01 lezione.mp4'));
@@ -51,6 +84,33 @@ sezione('Che cosa è questo file');
   check('un nome senza punto nemmeno', '', P.tipoDi('lezione'));
   /* Il punto in mezzo al nome non è un'estensione. */
   check('e l’estensione è l’ultimo pezzo', 'audio', P.tipoDi('lezione 1.2 finale.mp3'));
+}
+
+sezione('Quando il media non si apre, si dice — e quando non c\'è niente da dire, si tace');
+{
+  /* ⚠️ Il caso che questa funzione esiste per coprire, MISURATO il 24 agosto
+     2026 con file veri dentro l'Electron del progetto: `.aiff`, `.avi` e
+     `.mpg` entrano nel vault (le liste li accettano, e la pipeline li
+     trascrive) ma Chromium non li apre — `code=4`, DEMUXER_ERROR_COULD_NOT_OPEN
+     — e lasciavano un riquadro nero MUTO. Il terzo caso, quello che non deve
+     esistere: né entra e si vede, né si ferma sulla soglia dicendo perché. */
+  const q = P.erroreDaDire({ code: 4 }, '07 lezione.avi');
+  check('un formato che non si apre lo dice, e nomina il file', true, q.indexOf('«07 lezione.avi»') > 0);
+  check('e dice dove si rimedia: la trascrizione non passa da lì', true, /trascrivere/.test(q));
+
+  /* ⚠️ `code 1` TACE: MEDIA_ERR_ABORTED è il caricamento interrotto perché si
+     è aperto un altro media — succede a ogni cambio di lezione, e un toast lì
+     sarebbe rumore su un gesto riuscito. */
+  check('il caricamento interrotto non è un guasto', '', P.erroreDaDire({ code: 1 }, 'x.mp4'));
+  check('e senza errore non si dice niente', '', P.erroreDaDire(null, 'x.mp4'));
+  check('nemmeno con un errore senza codice', '', P.erroreDaDire({}, 'x.mp4'));
+
+  check('il file sparito è un\'altra causa, e un altro rimedio', true,
+    /spostato/.test(P.erroreDaDire({ code: 2 }, 'x.mp4')));
+  check('il file rotto pure', true, /danneggiato/.test(P.erroreDaDire({ code: 3 }, 'x.mp4')));
+  /* Senza nome si parla lo stesso: meglio un messaggio generico che nessuno. */
+  check('senza nome dice comunque che cos\'è successo', true,
+    P.erroreDaDire({ code: 4 }, '').indexOf('questo file') > 0);
 }
 
 sezione('Come si scrive un tempo');
