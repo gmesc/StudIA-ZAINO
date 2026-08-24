@@ -17,15 +17,20 @@
  *      scrivere «job» in un appunto farebbe saltare la lezione;
  *   6. chiudere il player lascia il documento dov'è.
  *
- * ⚠️ Il media è FINTO: un nome di file che non esiste. Serve a provare il
- * cablaggio — stato, barra, banco, tasti — non la riproduzione, che è del
- * browser. Le regole di tempo, salto, velocità e riga d'appunto sono provate a
+ * ⚠️ I media sono VERI (un WAV fabbricato qui, e un mp4 se c'è ffmpeg), e fino
+ * al 24 agosto 2026 erano nomi inventati: reggevano finché un media che non si
+ * apriva falliva in silenzio. Adesso il player dice perché e si rimette vuoto,
+ * e una barra accesa sopra un media inesistente non esiste più — né qui né
+ * nell'app. Si prova comunque il CABLAGGIO — stato, barra, banco, tasti — non
+ * la riproduzione, che è del browser. Le regole di tempo, salto, velocità e riga d'appunto sono provate a
  * parte, in Node, da `test/player.js`: qui non si ricontrollano.
  *
  *   ./test/cdp/con-vault-di-prova.sh prova-player.js
  */
-const S = require('path').join(__dirname, 'cdp.js');
-const { collega, val, pausa, partiPulito, partiVuoto, apriStrumento } = require(S);
+const path = require('path');
+const fs = require('fs');
+const S = path.join(__dirname, 'cdp.js');
+const { collega, val, pausa, partiPulito, partiVuoto, apriStrumento, wavDiProva, mediaConFfmpeg } = require(S);
 
 let ko = 0;
 function ok(n, atteso, avuto) {
@@ -35,13 +40,54 @@ function ok(n, atteso, avuto) {
 }
 function sezione(t) { console.log('\n== ' + t); }
 
-const FINTO = '01 lezione finta.mp4';
-const FINTO_AUDIO = '02 registrazione finta.m4a';
+/* ⚠️ I media sono VERI, e prima non lo erano: fino al 24 agosto 2026 qui
+   c'erano due nomi inventati («01 lezione finta.mp4»), e reggevano soltanto
+   perché un media che non si apriva falliva in SILENZIO. Da quando il player
+   dice perché e si rimette vuoto — il difetto che l'utente ha visto con un
+   `.aiff` vero, con tutte le suite verdi — un fantasma non regge più una
+   barra, ed è giusto così: una barra accesa sopra un media inesistente era
+   esattamente ciò che nessuno voleva vedere nell'app.
+   L'audio non ha bisogno di nessuno (`wavDiProva`); il video sì, e se ffmpeg
+   non c'è le due righe che riguardano solo lui si saltano DICENDOLO. */
+const VIDEO = '01 lezione vera.mp4';
+const AUDIO = '02 registrazione vera.wav';
 
 (async () => {
   await collega();
   /* il riquadro del player si misura vuoto: il ripristino gli metterebbe un media in mano */
   await partiVuoto();
+
+  /* I due media veri, dentro il CORSO attivo. ⚠️ Si scrivono sul disco del
+     vault di prova (temporaneo), non si trascinano: un trascinamento di file
+     veri non si simula col CDP, ed è la stessa ricetta di `prova-media-punto`.
+     ⚠️ E nel corso, non in uno zaino nuovo: la sezione «aprire un documento non
+     spegne il player» — la ragione per cui questa prova esiste — ha bisogno di
+     un documento da aprire, e uno zaino appena creato è vuoto. Misurato: con
+     lo zaino quella sezione si SALTAVA, e la prova restava verde senza aver
+     provato il suo punto principale. */
+  const vault = await val('window.vault.path');
+  const corso = await val('corsoAttivo()');
+  const dirAudio = path.join(vault, 'Corsi', corso, 'MATERIALI', 'Audio');
+  const dirVideo = path.join(vault, 'Corsi', corso, 'MATERIALI', 'Video');
+  fs.mkdirSync(dirAudio, { recursive: true });
+  fs.writeFileSync(path.join(dirAudio, AUDIO), wavDiProva(60));
+  const conVideo = !!mediaConFfmpeg(path.join(dirVideo, VIDEO));
+  if (!conVideo) console.log('  --  senza ffmpeg: le due righe che riguardano SOLO il video si saltano');
+  /* ⚠️ E un DOCUMENTO accanto ai media, che prima non serviva. Creando
+     `MATERIALI/` dentro il corso si cambia dove l'app guarda: `corpus:list`
+     con un corso cerca SOLO lì dentro, mentre finché quella cartella non
+     esisteva cadeva sul ripiego globale (`Fonti/` del vault) e i PDF li
+     trovava. Senza questa riga la sezione «aprire un documento non spegne il
+     player» — la ragione per cui questa prova esiste — si saltava, e la prova
+     restava verde senza provare il suo punto principale. */
+  const dirPdf = path.join(vault, 'Corsi', corso, 'MATERIALI', 'PDF');
+  const daCopiare = (fs.existsSync(path.join(vault, 'Fonti'))
+    ? fs.readdirSync(path.join(vault, 'Fonti')).filter((f) => /\.pdf$/i.test(f))[0] : '') || '';
+  if (daCopiare) {
+    fs.mkdirSync(dirPdf, { recursive: true });
+    fs.copyFileSync(path.join(vault, 'Fonti', daCopiare), path.join(dirPdf, '01 dispensa di prova.pdf'));
+  }
+  await val('zainoNavAggiorna()');
 
   sezione('Il registro: «Player» è uno strumento, e lo è in tutte e due le modalità');
   {
@@ -73,22 +119,41 @@ const FINTO_AUDIO = '02 registrazione finta.m4a';
 
   sezione('Aprire un media accende la barra');
   {
-    await val(`(()=>{ playerApri(${JSON.stringify(FINTO)}, 30, 'Lezione finta'); return 1; })()`);
-    await pausa(400);
-    ok('il player sa che cosa ha in mano', [FINTO, 'video'],
+    /* ⚠️ Il video PRIMA dell'audio, e solo se c'è: le righe che riguardano il
+       vestito «video» e le forbici non si possono provare su un audio. */
+    if (conVideo) {
+      await val(`(()=>{ playerApri(${JSON.stringify(VIDEO)}, 1, 'Lezione vera'); return 1; })()`);
+      for (let i = 0; i < 40 && !(await val(`PLAYER.pronto ? 1 : 0`)); i++) await pausa(200);
+      ok('il player sa che cosa ha in mano', [VIDEO, 'video'],
+        await val(`[PLAYER.file, PLAYER.tipo]`));
+      ok('il riquadro dichiara il tipo', 'video',
+        await val(`document.getElementById('plHost').dataset.tipo||''`));
+      ok('e le forbici ci sono, che è un video', false,
+        await val(`document.getElementById('plRitaglia').hidden`));
+    }
+    await val(`(()=>{ playerApri(${JSON.stringify(AUDIO)}, 0, 'Registrazione vera'); return 1; })()`);
+    for (let i = 0; i < 40 && !(await val(`PLAYER.pronto ? 1 : 0`)); i++) await pausa(200);
+    ok('il player ha in mano l\'audio', [AUDIO, 'audio'],
       await val(`[PLAYER.file, PLAYER.tipo]`));
-    ok('il riquadro dichiara il tipo', 'video',
-      await val(`document.getElementById('plHost').dataset.tipo||''`));
-    ok('il titolo è quello passato', 'Lezione finta',
-      await val(`document.getElementById('plTitle').textContent`));
+    /* ⚠️ Il nome del materiale sta SOLO nel selettore, e in nessun altro posto
+       della barra. Fino al 24 agosto 2026 lo scriveva anche un «plTitle»
+       accanto, che era la terza copia di due cose già dette — il nome dello
+       STRUMENTO lo dice la testata del blocco, il nome del MATERIALE lo dice il
+       selettore, che lo accorcia coi puntini perché è un comando e non
+       un'insegna. Questo controllo prima affermava il contrario e passava
+       grazie al difetto: è stato riscritto con la promessa. */
+    ok('il nome del materiale è nel selettore', true,
+      /Registrazione vera/.test(await val(`document.getElementById('plScegli').textContent`)));
+    ok('e non è scritto da nessun\'altra parte nella barra', 0,
+      await val(`(function(){ var b=document.querySelector('.tbar.plbar'); if(!b) return -1;
+        var n=0; b.querySelectorAll('*').forEach(function(el){
+          if(el.id!=='plScegli' && el.children.length===0 && /Registrazione vera/.test(el.textContent||'')) n++;
+        });
+        return n; })()`));
     ok('i comandi sono accesi', true,
       await val(`!document.getElementById('plComandi').hidden && !document.getElementById('plNota').hidden`));
-    ok('e le forbici pure, che è un video', false,
-      await val(`document.getElementById('plRitaglia').hidden`));
     /* Un audio è lo stesso elemento senza immagine: cambia il vestito, non il
        motore — e le forbici, che su un audio non hanno niente da inquadrare. */
-    await val(`(()=>{ playerApri(${JSON.stringify(FINTO_AUDIO)}, 0, 'Registrazione'); return 1; })()`);
-    await pausa(300);
     ok('un audio dichiara «audio»', 'audio',
       await val(`document.getElementById('plHost').dataset.tipo||''`));
     ok('e lì le forbici spariscono', true,
@@ -104,7 +169,7 @@ const FINTO_AUDIO = '02 registrazione finta.m4a';
       await val(`(()=>{ openPdf(${JSON.stringify(pdf)}, 1, 'Documento'); return 1; })()`);
       await pausa(1200);
       /* ⚠️ È la riga che prima fermava il media e gli toglieva la sorgente. */
-      ok('il media aperto resta quello di prima', FINTO_AUDIO, await val(`PLAYER.file`));
+      ok('il media aperto resta quello di prima', AUDIO, await val(`PLAYER.file`));
       ok('e il riquadro del player non si è svuotato', 'audio',
         await val(`document.getElementById('plHost').dataset.tipo||''`));
       ok('il documento intanto è aperto', 'pdf', await val(`ANTEPRIMA.tipo||''`));
@@ -139,7 +204,13 @@ const FINTO_AUDIO = '02 registrazione finta.m4a';
     ok('e il documento è ancora lì', primaPdf, await val(`ANTEPRIMA.file||''`));
   }
 
+  /* ⚠️ La modalità resta quella dei corsi per tutta la prova, e non è un
+     dettaglio: una prova che finisce dentro uno zaino lascia le successive
+     senza capitoli e senza quiz — pagato il 24 agosto 2026, cinque prove rosse
+     a valle per una modalità rimasta. */
   await partiPulito();
+  ok('e la modalità è ancora quella dei corsi, per chi viene dopo', 'corso', await val(`modoAttivo()`));
+
   console.log(ko ? '\n✗ ' + ko + ' controlli falliti' : '\n✓ tutti i controlli passati');
   process.exit(ko ? 1 : 0);
 })().catch((e) => { console.log('✗ ' + (e && e.message ? e.message : e)); process.exit(1); });

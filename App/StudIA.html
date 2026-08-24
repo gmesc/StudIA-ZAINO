@@ -7791,7 +7791,13 @@ function playerApri(file, t, label){
        elemento. */
     var alPunto, seNonSiApre;
     var basta=function(){ v.removeEventListener('loadedmetadata', alPunto); v.removeEventListener('error', seNonSiApre); };
-    alPunto=function(){ basta(); try{ if(sec) v.currentTime=sec; }catch(e){} PLAYER.pronto=true; };
+    /* ⚠️ E ogni esito vale solo per IL MEDIA CHE L'HA CHIESTO: aprendone un
+       altro mentre il primo sta ancora caricando, l'esito del primo arriva
+       dopo — e senza questa guardia l'errore di quello vecchio chiuderebbe il
+       player che intanto ha in mano quello nuovo, o il suo `currentTime`
+       farebbe saltare la lezione appena aperta. */
+    var mio=function(){ return PLAYER.file===file; };
+    alPunto=function(){ basta(); if(!mio()) return; try{ if(sec) v.currentTime=sec; }catch(e){} PLAYER.pronto=true; };
     /* ⚠️ «Entra e non suona» è la promessa rotta dall'altro lato: un `.avi` o
        un `.aiff` hanno un tipo, quindi passano di qui, e Chromium li rifiuta
        lasciando un riquadro nero MUTO. Che cosa dire lo decide `Lettore`, che
@@ -7799,8 +7805,18 @@ function playerApri(file, t, label){
        copia di ciò che decide Chromium, e cambia a ogni Electron. */
     seNonSiApre=function(){
       basta();
+      if(!mio()) return;
       var m=(typeof Lettore!=='undefined') ? Lettore.erroreDaDire(v.error, titoloMateriale(file)||file) : '';
       if(m) toast(m, false);
+      /* ⚠️ E il player si RIMETTE VUOTO: dirlo non basta, perché il toast passa
+         e quello che resta è un riquadro con dentro un media morto — comandi
+         accesi che non comandano niente, il tempo fermo a 0:00, i controlli
+         neri del `<video>` sopra un fondo che sembra un guasto dell'app. Un
+         comando che promette un gesto impossibile è la cosa che questo
+         progetto si vieta in più punti. Si passa dalla porta di sempre
+         (`playerChiudi`), che è anche l'unica che sa rimettere a posto il
+         resto: il segno d'ascolto, il vestito del riquadro, le forbici. */
+      playerChiudi();
     };
     v.addEventListener('loadedmetadata', alPunto);
     v.addEventListener('error', seNonSiApre);
@@ -7873,7 +7889,6 @@ function playerVelocita(verso){
  *  solo quando hanno qualcosa su cui agire. */
 function playerBarraAggiorna(){
   var c=playerAperto();
-  var t=$('#plTitle'); if(t) t.textContent=c ? PLAYER.label : 'Player';
   var b=$('#plScegli');
   if(b){
     b.textContent=(c ? PLAYER.label : 'Media')+' ▾';
@@ -20161,7 +20176,15 @@ window.addEventListener('keydown', function(e){
 </section>
 <section id="playerPane" aria-label="Player: video e audio">
   <div class="tbar plbar">
-    <strong id="plTitle">Player</strong>
+    <!-- ⚠️ Qui, fino al 24 agosto 2026, c'era «&lt;strong id="plTitle"&gt;», che
+         diventava il NOME DEL MATERIALE aperto. Non c'è più, per la stessa
+         ragione per cui il 23 agosto è sparito «pdfTitle» dalla barra delle
+         fonti: era la terza copia di due cose già dette meglio — il nome del
+         materiale sta nel selettore qui sotto, che lo accorcia coi puntini
+         apposta perché è un comando e non un'insegna, e il nome dello STRUMENTO
+         sta nella testata del blocco, due centimetri più su. Scritto qui faceva
+         leggere «Player · Funk · FUNK ▾»: la stessa parola due volte, e un nome
+         lungo mandava i comandi a capo. -->
     <!-- La porta per aprire un media: stessa forma del selettore dei documenti
          nella barra delle fonti, e per la stessa ragione — è una leva del
          MATERIALE, non della lezione. -->
