@@ -7471,13 +7471,16 @@ function albumElimina(corso, v){
   var dove=u.quanti ? ('È usata in '+u.quanti+(u.quanti===1?' posto':' posti')+
     (u.appunti.length?' · appunti: '+u.appunti.length:'')+(u.mappe.length?' · mappe: '+u.mappe.length:'')+
     '.\nEliminandola quei riferimenti resteranno vuoti.\n\n') : '';
-  var msg=dove+'Eliminare «'+(v.didascalia||v.file)+'»?';
+  var msg=dove+'Eliminare «'+(v.didascalia||v.file)+'»? Va nel Cestino di sistema.';
   var ok=(typeof confirm==='function') ? confirm(msg) : true;
   if(!ok) return;
-  var r=window.vault.album.rimuovi(corso, v.id, { insisti:true });
-  if(r.error){ toast('Non eliminata: '+r.error, false); return; }
-  albumRidisegna(v);
-  toast('Immagine eliminata', true);
+  /* `rimuovi` passa dal Cestino di sistema, che è asincrono: si ridisegna
+     DOPO la risposta, o la card appena tolta resterebbe a schermo. */
+  Promise.resolve(window.vault.album.rimuovi(corso, v.id, { insisti:true })).then(function(r){
+    if(!r || r.error){ toast('Non eliminata: '+((r&&r.error)||'errore sconosciuto'), false); return; }
+    albumRidisegna(v);
+    toast('Immagine nel Cestino di sistema', true);
+  });
 }
 
 /* ---- i gesti: trascinare sul documento, e i comandi della superficie ---- */
@@ -12378,14 +12381,21 @@ function noteDelete(){
   var api=notesApi(); if(!api) return;
   var m=curMeta();
   var pid=NOTES.courseId || (m?m.courseId:null); if(!pid) return;
-  if(!window.confirm('Eliminare l’appunto «'+noteEtichetta(NOTES.cur)+'»? L’operazione non è reversibile.')) return;
+  if(!window.confirm('Eliminare l’appunto «'+noteEtichetta(NOTES.cur)+'»? Va nel Cestino di sistema.')) return;
+  // quello che era in canna non si scrive più: si sta togliendo il bersaglio,
+  // e il salvataggio automatico lo riscriverebbe mezzo secondo dopo
   clearTimeout(NOTES.timer); NOTES.timer=null;
-  api.remove(pid, NOTES.cur.file);
+  var eliminando=api.remove(pid, NOTES.cur.file);
   NOTES.cur=null; NOTES.dirty=false; NOTES.invito=false;
   apertoScrivi('appunto','');
   noteCaricaCorpo('');
-  notesReload(); refreshNoteUI(); refreshMyNotes();
-  toast('Appunto eliminato',true);
+  /* `remove` passa dal Cestino di sistema, che è asincrono: l'elenco si
+     ricarica DOPO la risposta, o mostrerebbe ancora l'appunto appena tolto. */
+  Promise.resolve(eliminando).then(function(ok){
+    notesReload(); refreshNoteUI(); refreshMyNotes();
+    if(ok) toast('Appunto nel Cestino di sistema',true);
+    else toast('Appunto non eliminato',false);
+  });
 }
 /**
  * Le voci della tendina «documento» della rinomina, nello zaino.
@@ -18694,7 +18704,7 @@ function mappaEliminaMappa(){
   var api=mappeApi(), p=MAPPA.mia.corso||corsoAttivo();
   if(!api||!p) return;
   var file=MAPPA.mia.file, titolo=MAPPA.mia.titolo||file;
-  if(!window.confirm('Eliminare la mappa «'+titolo+'»?\n\nIl file esce dal corso e non si può annullare.')) return;
+  if(!window.confirm('Eliminare la mappa «'+titolo+'»?\n\nVa nel Cestino di sistema.')) return;
   // quello che era in canna non si scrive più: si sta cancellando il bersaglio
   clearTimeout(MAPPA.mia.timer); MAPPA.mia.timer=null;
   MAPPA.mia.sporca=false; MAPPA.mia.vistaSporca=false;
@@ -18709,7 +18719,7 @@ function mappaEliminaMappa(){
     return mappaCaricaElenco().then(function(){
       mappaSincronizzaComandi(); mappaAmbiti();
       var prossima=(MAPPA.elenco.filter(function(m){ return !m.errore; })[0]||{}).file;
-      toast('Mappa «'+titolo+'» eliminata', true);
+      toast('Mappa «'+titolo+'» nel Cestino di sistema', true);
       if(prossima) return mappaApriMia(prossima);
       /* Nessuna mappa rimasta: il segno non deve continuare a indicare il file
          appena eliminato — riaprendo l'app cercherebbe un fantasma. */

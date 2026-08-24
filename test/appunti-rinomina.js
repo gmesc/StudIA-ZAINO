@@ -402,7 +402,53 @@ pulisci();
     finale.indexOf('## Fondamenti') < finale.indexOf('## Delegation'));
 }
 
-try { fs.rmSync(VAULT, { recursive: true, force: true }); } catch (e) {}
+/* --------------------------------------------------------------------------
+   `cestina` iniettata: l'appunto va nel Cestino, non nel nulla.
 
-console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
-process.exit(ko ? 1 : 0);
+   È il patto di `fonti.elimina` portato sui file che l'utente ha SCRITTO: chi
+   passa `cestina` (nell'app è `shell.trashItem`) ottiene una Promise e il file
+   consegnato al Cestino; chi non la passa, la cancellazione sincrona di sempre
+   — sono le sezioni qui sopra.
+
+   ⚠️ Da qui in poi la prova è asincrona: il `return` interrompe il modulo, e
+   la pulizia e il conto finale vivono in fondo alla catena. Chi aggiunge
+   sezioni sincrone le metta PRIMA di questa. */
+sezione('`cestina` iniettata: l\'appunto va nel Cestino, non nel nulla');
+{
+  const CESTINO = path.join(VAULT, '_cestino-finto');
+  fs.mkdirSync(CESTINO, { recursive: true });
+  const cestina = (p) => { fs.renameSync(p, path.join(CESTINO, path.basename(p))); };
+
+  const r = scrivi({ title: 'Da cestinare' }, 'il corpo che deve sopravvivere nel Cestino');
+  return Promise.resolve(A.remove(VAULT, CORSO, r.file, { cestina })).then((tolto) => {
+    check('con `cestina` la risposta è vera', true, tolto);
+    check('il file non è più in APPUNTI/', false, fs.existsSync(path.join(DIR, r.file)));
+    check('ed è arrivato nel cestino, intero', true,
+      /il corpo che deve sopravvivere/.test(fs.readFileSync(path.join(CESTINO, r.file), 'utf-8')));
+    check('e l\'indice non lo elenca più', false, indice().indexOf('Da cestinare') >= 0);
+
+    /* Un Cestino che rifiuta non è «fatto»: la risposta è false e il file
+       resta dov'era — «non lo so» non è «sì». */
+    const r2 = scrivi({ title: 'Resta qui' }, 'x');
+    return Promise.resolve(A.remove(VAULT, CORSO, r2.file, {
+      cestina: () => Promise.reject(new Error('il Cestino ha detto no'))
+    })).then((tolto2) => {
+      check('se il Cestino rifiuta, la risposta è false', false, tolto2);
+      check('e l\'appunto è ancora lì', true, fs.existsSync(path.join(DIR, r2.file)));
+
+      /* La porta resta sbarrata anche col Cestino in mano: un nome che esce
+         dalla cartella non arriva mai a `cestina`. */
+      let chiamata = false;
+      return Promise.resolve(A.remove(VAULT, CORSO, '../MAPPE/prezioso.json', {
+        cestina: (p) => { chiamata = true; }
+      })).then((evaso) => {
+        check('un nome che esce dalla cartella si rifiuta anche col cestino', false, evaso);
+        check('e `cestina` non è mai stata chiamata', false, chiamata);
+
+        try { fs.rmSync(VAULT, { recursive: true, force: true }); } catch (e) {}
+        console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
+        process.exit(ko ? 1 : 0);
+      });
+    });
+  });
+}

@@ -111,7 +111,12 @@ const TRASCINA = (selBersaglio, x, y) => `(()=>{
   sezione('Pulizia: quello che questa prova ha creato, questa prova lo toglie');
   await val(`(async()=>{
     try{ await window.vault.mappe.rimuovi(corsoAttivo(), MAPPA.mia.file); }catch(e){}
-    try{ window.vault.notes.remove(corsoAttivo(), 'prova-trascina.md'); }catch(e){}
+    /* Da quando appunti e mappe vanno nel Cestino di sistema, remove e'
+       asincrona: senza await la prova dopo vedrebbe ancora l'appunto. E i due
+       file finiscono nel Cestino VERO di chi lancia le prove — sono briciole,
+       come gia' per zaino:elimina. (Niente apici inversi qui: siamo DENTRO un
+       template literal.) */
+    try{ await window.vault.notes.remove(corsoAttivo(), 'prova-trascina.md'); }catch(e){}
     try{ await mappaRegistro('generata'); }catch(e){}
     return 1; })()`);
   await pausa(600);
