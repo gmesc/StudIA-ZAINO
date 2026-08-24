@@ -9,9 +9,8 @@
 
 ## 0. Da dove ripartire, in tre righe
 
-`main` è a **`f57ce69`** — «merge: il quaderno va nel Cestino, non nel nulla (Q8)» — albero pulito.
-⚠️ **Non ancora spinta**: `origin/main` è ferma a `cef6e73`. Il ramo `quaderno-cestino` è unito e
-si può togliere.
+`main` porta il merge di Q8 (`f57ce69`) più i documenti, **spinta** (`origin/main` allineata),
+albero pulito, **nessun ramo, nessun worktree**.
 
 Il prossimo lavoro è **Q7** del pacchetto «Quaderno» (le cinque liste audio): il file di riferimento è
 **`HANDOFF-PACCHETTO-QUADERNO.md`**, che è autosufficiente — dice che cosa costruire, dove vive ogni
@@ -32,8 +31,8 @@ un processo per nome**.
 | | |
 |---|---|
 | `main` | **`f57ce69`** — «merge: il quaderno va nel Cestino, non nel nulla (Q8)» |
-| remoto | `git@github.com:gmesc/StudIA.git` — ⚠️ **da spingere** (`origin/main` a `cef6e73`) |
-| rami · worktree | `quaderno-cestino` (unito, si può togliere) · nessun worktree |
+| remoto | `git@github.com:gmesc/StudIA.git` — ✅ **allineato** (`0 0`) |
+| rami · worktree | **nessuno** |
 | unità | ✅ **46 file**, tutti dentro la catena di `npm test`, exit 0 |
 | CDP | ✅ **57 prove** in elenco · 60 file `prova-*.js` sul disco |
 | monolite | `App/StudIA.html` **21.075 righe** · moduli in `App/assets/` (pdf.js escluso): **34** |
