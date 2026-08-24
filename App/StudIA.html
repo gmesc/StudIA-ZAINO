@@ -5366,11 +5366,74 @@ function zainoTrascinati(files){
 }
 
 /** Il gesto: dei media trascinati sopra la finestra, in modalità zaino. */
+/**
+ * Questo file il lettore lo sa aprire? Lo si CHIEDE a lui.
+ *
+ * ⚠️ Non c'è nessuna lista dei formati buoni, ed è deliberato: sarebbe una
+ * copia di ciò che decide Chromium — che cambia a ogni Electron — e la sesta
+ * copia del difetto che Q7 ha appena chiuso. Si prova ad aprire il file vero e
+ * si guarda come va: così anche un `.mkv` con dentro un codec esotico viene
+ * riconosciuto, e un formato che un domani Chromium imparerà entrerà da solo,
+ * senza che nessuno tocchi una riga.
+ *
+ * ⚠️ Si passa da `createObjectURL`, non dal percorso: il file è ancora fuori
+ * dal vault (sta sulla scrivania di chi trascina), e un blob URL si carica
+ * sempre, senza dipendere da che cosa il renderer possa leggere da `file://`.
+ *
+ * ⚠️ E NEL DUBBIO SI LASCIA ENTRARE: se entro qualche secondo non si è capito,
+ * la risposta è «sì». Rifiutare un file valido è il danno peggiore — quello
+ * dell'utente resta fuori e lui non sa perché — mentre uno che entra e non si
+ * apre lo dice all'apertura. È la stessa regola scritta in `lib/album.js`:
+ * «non lo so» non è «no».
+ */
+function mediaSiApre(file){
+  return new Promise(function(risolvi){
+    var tipo=(typeof Lettore!=='undefined') ? Lettore.tipoDi(file && file.name) : '';
+    if(!tipo){ risolvi(true); return; }          // non è roba nostra: non tocca a noi dire di no
+    var el=document.createElement(tipo==='audio' ? 'audio' : 'video');
+    el.preload='metadata'; el.muted=true;
+    var url='';
+    try{ url=URL.createObjectURL(file); }catch(e){ risolvi(true); return; }
+    var chiuso=false;
+    var fine=function(esito){
+      if(chiuso) return; chiuso=true;
+      clearTimeout(orologio);
+      try{ URL.revokeObjectURL(url); }catch(e){}
+      try{ el.removeAttribute('src'); el.load(); el.remove(); }catch(e){}
+      risolvi(esito);
+    };
+    var orologio=setTimeout(function(){ fine(true); }, 6000);
+    el.addEventListener('loadedmetadata', function(){ fine(true); });
+    el.addEventListener('error', function(){ fine(false); });
+    el.style.position='absolute'; el.style.left='-9999px'; el.style.width='1px'; el.style.height='1px';
+    document.body.appendChild(el);
+    el.src=url;
+  });
+}
+
 async function mediaTrascinati(files){
   var api=(window.vault && window.vault.media) || null;
   var id=corsoAttivo();
   if(!api || !id){ toast('Apri uno zaino prima di trascinare i media', false); return; }
   if(MEDIAIMP.inCorso){ toast('Sto ancora importando: un momento', false); return; }
+  /* ⚠️ LA SOGLIA. Nello zaino un media che il lettore non apre non serve a
+     niente: non si ascolta e non si trascrive («qui non si trascrive niente»,
+     PIANO-ZAINO §1.5). Farlo entrare vuol dire un file numerato nel vault che a
+     ogni click risponde «non lo apro» — il terzo caso, quello che la regola
+     vieta: o entra e si vede, o si ferma sulla soglia dicendo perché.
+     Nei CORSI non si ferma niente, ed è giusto così: là la pipeline lo
+     trascrive, e passa da ffmpeg invece che da Chromium. Questa funzione la
+     chiama solo lo zaino. */
+  var lista=[].slice.call(files||[]);
+  var esiti=await Promise.all(lista.map(mediaSiApre));
+  var fuori=lista.filter(function(f, i){ return !esiti[i]; });
+  files=lista.filter(function(f, i){ return esiti[i]; });
+  if(fuori.length){
+    var perche=(typeof Lettore!=='undefined')
+      ? Lettore.rifiutoSullaSoglia(fuori.map(function(f){ return f.name; })) : '';
+    if(perche) toast(perche, false);
+  }
+  if(!files.length) return;
   /* ⚠️ Da Electron 32 un `File` trascinato non ha più `.path`: il percorso vero
      lo dà `webUtils.getPathForFile`, esposto dal preload. Senza, di un video da
      due giga si avrebbe solo il contenuto — e copiarlo leggendolo e

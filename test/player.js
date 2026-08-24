@@ -129,6 +129,27 @@ sezione('Quando il media non si apre, si dice — e quando non c\'è niente da d
     P.erroreDaDire({ code: 4 }, '').indexOf('questo file') > 0);
 }
 
+sezione('La soglia dello zaino: che cosa si dice a chi trascina un formato che non si apre');
+{
+  /* ⚠️ Nello zaino un media che il lettore non apre non serve a niente — non
+     si ascolta e non si trascrive — quindi si ferma sulla soglia invece di
+     entrare e fallire a ogni click. Nei CORSI non si ferma niente: là la
+     pipeline lo trascrive, e passa da ffmpeg invece che da Chromium. */
+  const uno = P.rifiutoSullaSoglia(['01 Funk.aiff']);
+  check('lo nomina', true, uno.indexOf('«01 Funk.aiff»') > 0);
+  check('dice che non entra', true, /Non porto dentro/.test(uno));
+  /* ⚠️ Un «no» che non dice come si fa è un vicolo cieco. */
+  check('e dice il rimedio, al singolare', true, /Convertilo/.test(uno) && /ritrascina\./.test(uno));
+
+  const tre = P.rifiutoSullaSoglia(['a.aiff', 'b.avi', 'c.mpg']);
+  check('con più file li conta e li elenca', true, /3 file \(a\.aiff · b\.avi · c\.mpg\)/.test(tre));
+  check('e il rimedio va al plurale', true, /Convertili/.test(tre) && /ritrascinali\./.test(tre));
+
+  /* Niente da rifiutare, niente da dire: un toast su un gesto riuscito è rumore. */
+  check('senza rifiutati non si dice niente', '', P.rifiutoSullaSoglia([]));
+  check('e nemmeno con un elenco di nulla', '', P.rifiutoSullaSoglia([null, '', undefined]));
+}
+
 sezione('Come si scrive un tempo');
 {
   check('sotto il minuto', '0:07', P.tempo(7));

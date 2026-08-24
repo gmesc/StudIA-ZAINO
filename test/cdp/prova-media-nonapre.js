@@ -81,7 +81,7 @@ function sezione(t) { console.log('\n== ' + t); }
     ok('cinque aperture fallite, cinque messaggi', 5, quanti);
   }
 
-  sezione('Un .aiff VERO: entra nello zaino, e il lettore dice perché non lo apre');
+  sezione('Un .aiff VERO: si ferma sulla soglia — e chi passa lo stesso lo dice all\'apertura');
   {
     /* ⚠️ Qui il file è vero, non un nome inventato: `.aiff` è il caso misurato
        — Chromium lo rifiuta con `code 4` mentre il vault lo accetta, perché la
@@ -101,13 +101,43 @@ function sezione(t) { console.log('\n== ' + t); }
       await partiPulito();
       await val(`(async()=>{ await cambiaModo('zaino'); await zainoCrea('Zaino aiff'); return 1; })()`);
       for (let i = 0; i < 40 && !(await val(`zainoAttivo()==='zaino-aiff' ? 1 : 0`)); i++) await pausa(300);
+      /* ⚠️ LA SOGLIA, dal 24 agosto 2026: nello zaino un `.aiff` NON entra più.
+         Il gesto vero è un trascinamento, e un `File` che arrivi davvero da
+         fuori non si costruisce col CDP — ma la decisione non sta nel gesto:
+         sta in `mediaSiApre`, che si CHIEDE a Chromium invece di consultare una
+         lista. Qui si prova quella, con un File vero costruito dai byte del
+         file vero, che è esattamente ciò che il drop passa a `mediaTrascinati`. */
+      const byte = fs.readFileSync(sorgente).toString('base64');
+      const verdetti = await val(`(async()=>{
+        const daB64=(b64, nome, mime)=>{ const bin=atob(b64); const u=new Uint8Array(bin.length);
+          for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+          return new File([u], nome, { type: mime||'' }); };
+        const aiff=daB64(${JSON.stringify(byte)}, 'Registrazione vera.aiff');
+        /* e un WAV sano, per la controprova: la soglia deve dire di sì a lui */
+        const rate=8000, n=rate, dati=new Uint8Array(44+n*2), dv=new DataView(dati.buffer);
+        const scriviTesto=(off,t)=>{ for(let i=0;i<t.length;i++) dati[off+i]=t.charCodeAt(i); };
+        scriviTesto(0,'RIFF'); dv.setUint32(4, 36+n*2, true); scriviTesto(8,'WAVE');
+        scriviTesto(12,'fmt '); dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,1,true);
+        dv.setUint32(24,rate,true); dv.setUint32(28,rate*2,true); dv.setUint16(32,2,true); dv.setUint16(34,16,true);
+        scriviTesto(36,'data'); dv.setUint32(40, n*2, true);
+        for(let i=0;i<n;i++) dv.setInt16(44+i*2, Math.round(3000*Math.sin(i/20)), true);
+        const wav=new File([dati], 'Registrazione sana.wav', { type:'audio/wav' });
+        return [await mediaSiApre(aiff), await mediaSiApre(wav)]; })()`);
+      ok('la soglia dice NO all\'aiff e SÌ al wav', [false, true], verdetti);
+
+      /* E il messaggio del rifiuto è quello del modulo puro, provato in Node. */
+      ok('il rifiuto nomina il file e dice come si rimedia', true,
+        await val(`(function(){ var m=Lettore.rifiutoSullaSoglia(['Registrazione vera.aiff']);
+          return /Non porto dentro/.test(m) && /Registrazione vera\.aiff/.test(m) && /Convertilo/.test(m); })()`));
+
+      /* ⚠️ La PORTA resta aperta: `media.importa` non filtra niente, ed è
+         voluto — la soglia è dello zaino, non del canale. Nei corsi lo stesso
+         file deve poter entrare, perché là si trascrive. */
       const esito = await val(`(async()=>{ const r=await window.vault.media.importa(corsoAttivo(),
         [${JSON.stringify(sorgente)}]);
         return { copiati:(r.copiati||[]).map(function(x){ return x.nome; }), scartati:r.scartati||[], error:r.error||'' }; })()`);
-      /* ⚠️ Prima metà della promessa: un `.aiff` ENTRA. È la lista unica di Q7 —
-         se un giorno qualcuno la accorcia, questa riga lo dice. */
-      ok('il .aiff entra nello zaino', ['01 Registrazione vera.aiff'], esito.copiati);
-      ok('e non viene scartato', [], esito.scartati);
+      ok('il canale dell\'import non filtra: la soglia è dello zaino', ['01 Registrazione vera.aiff'], esito.copiati);
+      ok('e non viene scartato dal canale', [], esito.scartati);
 
       await apriStrumento('player');
       await val(`(function(){ window.__toasts=[]; window.__codici=[];

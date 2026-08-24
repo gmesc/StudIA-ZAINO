@@ -104,6 +104,31 @@
   }
 
   /**
+   * Che cosa dire a chi trascina, nello ZAINO, dei media che il lettore non
+   * apre — o `''` se non ce n'è nessuno.
+   *
+   * ⚠️ Nello zaino un media che non si apre non serve a NIENTE: non si ascolta
+   * e non si trascrive (PIANO-ZAINO.md §1.5). Farlo entrare vuol dire un file
+   * nel vault, numerato, che a ogni click risponde «non lo apro»: è il terzo
+   * caso — né entra e si vede, né si ferma sulla soglia dicendo perché — e la
+   * regola del progetto dice che non deve esistere. Nei CORSI è l'opposto, e
+   * infatti lì non si ferma niente: la pipeline lo trascrive benissimo.
+   *
+   * ⚠️ Il messaggio dice il RIMEDIO, non solo il rifiuto: un «no» che non dice
+   * come si fa è un vicolo cieco, e la conversione è un gesto che si fa in un
+   * minuto con qualunque programma.
+   */
+  function rifiutoSullaSoglia(nomi) {
+    const l = (nomi || []).map(str).filter(Boolean);
+    if (!l.length) return '';
+    const chi = l.length === 1 ? '«' + l[0] + '»' : l.length + ' file (' + l.join(' · ') + ')';
+    const verbo = l.length === 1 ? 'Convertilo' : 'Convertili';
+    return 'Non porto dentro ' + chi + ': il lettore non apre questo formato, e qui non si ' +
+      'trascrive. ' + verbo + ' in un formato che si apre (per esempio .m4a o .mp3) e ritrascina' +
+      (l.length === 1 ? '' : 'li') + '.';
+  }
+
+  /**
    * Secondi → `m:ss`, e `h:mm:ss` quando l'ora c'è.
    *
    * ⚠️ L'ora non è un vezzo: una lezione registrata dura più di un'ora, e
@@ -182,6 +207,7 @@
   return {
     EXT_VIDEO: EXT_VIDEO, EXT_AUDIO: EXT_AUDIO, VELOCITA: VELOCITA,
     estensione: estensione, tipoDi: tipoDi, tempo: tempo, erroreDaDire: erroreDaDire,
+    rifiutoSullaSoglia: rifiutoSullaSoglia,
     salto: salto, velocita: velocita, rigaAppunto: rigaAppunto
   };
 }));
