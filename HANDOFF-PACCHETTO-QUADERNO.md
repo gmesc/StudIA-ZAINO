@@ -12,8 +12,8 @@
 > **Il punto di partenza**: `main` a **`ab74eba`**, `origin/main` allineata, albero pulito, nessun
 > ramo. Suite intera CDP verde (**57 prove**) · `npm test` verde (**46 file**).
 >
-> ✅ **Q2 e Q8 SONO FATTI E UNITI** (24 agosto 2026). **Restano sette**: Q1, Q3, Q4, Q5, Q6, Q7,
-> Q9. L'ordine consigliato è al §5, e il prossimo è **Q7** (le cinque liste audio).
+> ✅ **Q2, Q8 e Q7 SONO FATTI E UNITI** (24 agosto 2026). **Restano sei**: Q1, Q3, Q4, Q5, Q6, Q9.
+> L'ordine consigliato è al §5, e il prossimo è **Q3** (il pallino che non apre).
 
 ---
 
@@ -62,7 +62,7 @@ per questo stanno insieme: toccano `_evidenze.json`, la barra della selezione, l
 | Q4 | **Sbirciare senza saltare** | M | ritrovare |
 | Q5 | **La lente legge anche le mappe e le didascalie** | S | ritrovare |
 | Q6 | **La postilla** | S | lavorare |
-| Q7 | **Chi entra si vede** | S | riparazione |
+| Q7 | ✅ **Chi entra si vede** — *fatto il 24 ago 2026, `PIANO-ZAINO.md` §Z15* | S | riparazione |
 | Q8 | ✅ **Il quaderno va nel Cestino, non nel nulla** — *fatto il 24 ago 2026, `PIANO-ZAINO.md` §Z14* | S | riparazione |
 | Q9 | **Le sottolineature del tutor arrivano come lettura** | M | insieme |
 
@@ -279,7 +279,7 @@ scrive nel codice, non solo nel commento.
 
 ---
 
-## Q7 — Chi entra si vede · S
+## Q7 — Chi entra si vede ✅ *FATTO (24 ago 2026 — il racconto è in `PIANO-ZAINO.md` §Z15)*
 
 **Il difetto, misurato il 23 agosto.** La lista delle estensioni audio esiste in **cinque copie**.
 Due concordano, tre no:
@@ -549,8 +549,10 @@ utile.
 0. ~~**Q2** (la lente al punto esatto)~~ — ✅ **fatto il 24 agosto**, tutti e quattro i pezzi;
 1. ~~**Q8** (il Cestino)~~ — ✅ **fatto il 24 agosto** (`PIANO-ZAINO.md` §Z14): il rischio più
    grave del pacchetto è tolto;
-2. **Q7** (le liste audio) — **il prossimo**: salda l'invariante 5 e chiude una perdita silenziosa;
-3. **Q3** (il pallino) — piccolo, di principio, e prepara la mano sulla barra della selezione;
+2. ~~**Q7** (le liste audio)~~ — ✅ **fatto il 24 agosto** (`PIANO-ZAINO.md` §Z15): le copie erano
+   sette, non cinque, e la promessa è chiusa da tutti e due i lati;
+3. **Q3** (il pallino) — **il prossimo**: piccolo, di principio, e prepara la mano sulla barra
+   della selezione;
 4. **Q6** (la postilla) — il campo `nota`, con la prova che l'identità non cambia;
 5. **Q1** e **Q2** (il quaderno: la riga e la lente) — stessa materia, stessa porta `noteOpen`;
 6. **Q5** (la lente vede mappe e didascalie) — due costruttori nel modulo puro;

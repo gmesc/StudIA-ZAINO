@@ -9,10 +9,9 @@
 
 ## 0. Da dove ripartire, in tre righe
 
-`main` porta il merge di Q8 (`f57ce69`) più i documenti, **spinta** (`origin/main` allineata),
-albero pulito, **nessun ramo, nessun worktree**.
+`main` porta i merge di **Q8** e **Q7**, albero pulito, **nessun ramo, nessun worktree**.
 
-Il prossimo lavoro è **Q7** del pacchetto «Quaderno» (le cinque liste audio): il file di riferimento è
+Il prossimo lavoro è **Q3** del pacchetto «Quaderno» (il pallino che non apre): il file di riferimento è
 **`HANDOFF-PACCHETTO-QUADERNO.md`**, che è autosufficiente — dice che cosa costruire, dove vive ogni
 pezzo, quali fatti sono già misurati e quali trappole già pagate.
 
@@ -30,11 +29,11 @@ un processo per nome**.
 
 | | |
 |---|---|
-| `main` | **`f57ce69`** — «merge: il quaderno va nel Cestino, non nel nulla (Q8)» |
+| `main` | **`e124c7b`** — «merge: le liste dei media sono una sola, e la soglia dello zaino dice di no (Q7)» |
 | remoto | `git@github.com:gmesc/StudIA.git` — ✅ **allineato** (`0 0`) |
 | rami · worktree | **nessuno** |
 | unità | ✅ **46 file**, tutti dentro la catena di `npm test`, exit 0 |
-| CDP | ✅ **57 prove** in elenco · 60 file `prova-*.js` sul disco |
+| CDP | ✅ **58 prove** in elenco · 61 file `prova-*.js` sul disco (i 3 fuori sono i noti di luglio) |
 | monolite | `App/StudIA.html` **21.075 righe** · moduli in `App/assets/` (pdf.js escluso): **34** |
 | pacchetti | ⚠️ **nessuno**: `dist/` è stata svuotata il 23 agosto (2,3 GB). I tre installer che c'erano erano del **17 agosto** e saltavano il lavoro del 18, 19 e 22 — andavano rifatti comunque. Si rifanno con `npm run pacchetto` |
 
@@ -114,6 +113,28 @@ diventare **rosse** sul codice di prima. ⚠️ Pagata di nuovo (l'ottava volta)
 apici inversi in un commento dentro un template literal: la suite CDP moriva in `SyntaxError`
 prima di partire, in `prova-album-trascina.js`.
 
+### Il pacchetto «Quaderno» — Q7, o entra e si vede, o si ferma sulla soglia (24 agosto, notte)
+
+Il racconto è in `PIANO-ZAINO.md` **§Z15**. Le copie della lista dei media erano **sette, non
+cinque**: `preload.js` ne aveva una che l'elenco del 23 agosto non nominava, ed è quella da cui
+nascono i rimandi `video:NN`. Ora la sorgente è `mat.EXT_MEDIA`; la copia col player resta,
+dichiarata e inchiodata.
+
+Il caso opposto è stato **misurato** con file veri dentro l'Electron del progetto: `.aiff`, `.avi` e
+`.mpg`/`.mpeg` Chromium non li apre. Nei corsi restano (la pipeline li trascrive), nello **zaino si
+fermano sulla soglia** — e la soglia non consulta nessuna lista: prova ad aprire il file vero, così
+due `.mkv` con codec diversi ricevono verdetti diversi e un formato che Chromium imparerà domani
+entra da solo. ⚠️ **Nel dubbio si lascia entrare**: il conto è asimmetrico.
+
+⚠️ **Tre difetti li ha trovati l'utente provando a mano, con tutte le suite verdi**: il player
+restava con un media morto in mano dopo aver detto perché; il nome del materiale era scritto due
+volte nella barra (la stessa forma tolta dalle Fonti il 23); e il rimedio prometteva la trascrizione
+**dentro uno zaino**, dove non esiste. Le prove guardavano che l'app *parlasse*, non che cosa
+dicesse, e non guardavano affatto che cosa restasse a schermo dopo.
+
+⚠️ E la causa dietro tutti e tre: **le prove del player giravano su media che non esistevano**.
+Reggeva finché un media che non si apriva falliva in silenzio.
+
 ### I tre lavori laterali
 
 - il **pannellino della ricerca** nel documento: una riga sola, campo a larghezza costante;
@@ -164,14 +185,13 @@ banco di prova fuori dall'app, e il numero era sbagliato del 38%.
 
 ## 5. Che cosa resta da fare
 
-### Il prossimo lavoro: il pacchetto «Quaderno», sette voci su nove
+### Il prossimo lavoro: il pacchetto «Quaderno», sei voci su nove
 
-`HANDOFF-PACCHETTO-QUADERNO.md` è autosufficiente. **Q2 e Q8 sono fatti**; restano:
+`HANDOFF-PACCHETTO-QUADERNO.md` è autosufficiente. **Q2, Q8 e Q7 sono fatti**; restano:
 
 | | | costo |
 |---|---|---|
-| **Q7** | `.opus` entra e non compare: cinque copie della lista audio — **il prossimo** | S |
-| Q3 | il pallino di «Alla mappa» che non apre | S |
+| **Q3** | il pallino di «Alla mappa» che non apre — **il prossimo** | S |
 | Q6 | la postilla: il corpo sul bersaglio | S |
 | Q1 | il quaderno si riapre alla riga | S |
 | Q5 | la lente legge anche mappe e didascalie | S |

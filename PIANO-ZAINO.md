@@ -754,6 +754,74 @@ appena tolto. E i messaggi ora dicono la verità nuova: «Va nel Cestino di sist
 ⚠️ Le prove CDP che cancellano appunti o mappe di prova mandano quelle briciole nel **Cestino VERO**
 di chi le lancia — come già `zaino:elimina`.
 
+### Z15 — o entra e si vede, o si ferma sulla soglia (24 agosto 2026, Q7 del pacchetto «Quaderno»)
+
+Due metà della stessa promessa. Il terzo caso — entra, non si vede, e nessuno lo dice — c'era da
+tutti e due i lati.
+
+**Le copie della lista dei media erano SETTE, non cinque.** Il conto si fa, non si ricorda:
+`preload.js` ne aveva una che l'elenco del 23 agosto non nominava, ed è proprio quella da cui
+nascono le mappe `NN → file`, cioè i rimandi `video:NN`. Cinque erano copie e basta, tutte senza
+`.ogg .opus .aiff`. Adesso chiedono `mat.EXT_MEDIA`, che nasce in `lib/materiali.js` come
+`EXT_VIDEO.concat(EXT_AUDIO)`. La copia col player RESTA: è dichiarata, ha il suo perché scritto, e
+`test/player.js` la inchioda.
+
+⚠️ **La prova nuova guarda i SORGENTI, non i valori**: confrontare `EXT_MEDIA` con se stesso sarebbe
+un verde che non prova niente. Quello che deve restare vero è che nessun altro file *ridichiari* la
+lista — l'unica forma in cui una sesta copia può rinascere fra sei mesi, in silenzio.
+
+**Il caso opposto, misurato invece che sospettato.** Con file veri generati per tutte e quattordici
+le estensioni e caricati dentro l'Electron del progetto: **`.aiff`, `.avi` e `.mpg`/`.mpeg` Chromium
+non li apre** (`code 4`). Restano accettati nei CORSI — la pipeline li trascrive, passa da ffmpeg —
+ma **nello ZAINO si fermano sulla soglia**, perché lì non si ascoltano e non si trascrivono: un file
+numerato che a ogni click risponde «non lo apro» non serve a niente.
+
+⚠️ **Il righello ha mentito due volte.** `canPlayType` dice NO a `video/quicktime` mentre Chromium
+apre i `.mov` eccome (si fida del contenitore, non del MIME dichiarato): buttato, e si è passati ai
+file veri. E il primo `.ogg` che non si apriva l'aveva scritto l'encoder vorbis **sperimentale** di
+ffmpeg — con un Ogg sano si apre. Il sospetto sull'`.ogg` era della misura, non dell'app.
+
+⚠️ **Niente liste di formati buoni, né di cattivi**, e regge tutto il resto: sarebbe una copia di
+ciò che decide Chromium — che cambia a ogni Electron — cioè la sesta copia del difetto appena
+chiuso. Si prova ad aprire il file vero (`createObjectURL`, non il percorso: il file è ancora sulla
+scrivania di chi trascina). Due conseguenze: due `.mkv` con codec diversi ricevono verdetti diversi,
+e un formato che Chromium imparerà domani entrerà da solo. Stessa ragione per cui `lib/crediti.js`
+**ricava** le licenze invece di elencarle.
+
+⚠️ **Nel dubbio si lascia entrare**: al timeout la risposta è «sì». Il conto è asimmetrico — un file
+valido rifiutato resta fuori e l'app non sa di aver avuto torto, quindi non può spiegarlo; uno che
+entra e non si apre lo dice all'apertura, col rimedio. I casi veri: un file da due giga su un disco
+lento, e un trascinamento mentre gira l'OCR. Stessa regola di `lib/album.js` — «non lo so» non è
+«no» — con l'applicazione **opposta**, perché il danno irreversibile lì è cancellare e qui è
+rifiutare.
+
+⚠️ **La soglia è dello ZAINO, non del canale**: `media.importa` non filtra niente, e la prova lo
+inchioda. Nei corsi lo stesso file deve poter entrare.
+
+**E all'apertura, se un media non si apre lo stesso:**
+
+- il messaggio dice **perché** e **dove si rimedia**, e il rimedio **dipende dalla modalità** — nei
+  corsi «si può trascrivere», nello zaino «va convertito», perché qui non si trascrive (§1.5).
+  ⚠️ La modalità si fa **passare**: il modulo è puro e non la può leggere;
+- **il player si rimette vuoto**. Dirlo non basta: il toast passa, e quello che resta è un riquadro
+  con dentro un media morto — comandi accesi che non comandano niente. È il «comando che promette
+  un gesto impossibile» che il progetto si vieta altrove;
+- ⚠️ e ogni esito vale solo per **il media che l'ha chiesto**: aprendone un altro mentre il primo
+  carica, l'errore del vecchio chiudeva il player che intanto aveva in mano il nuovo.
+
+**Il nome del materiale, nella barra del player, adesso sta in un posto solo.** `plTitle` era la
+terza copia di due cose già dette — il nome dello *strumento* lo dice la testata del blocco, quello
+del *materiale* il selettore — ed è la stessa forma tolta dalla barra delle fonti il 23 agosto.
+
+⚠️ **Le prove del player giravano su media che non esistevano.** «01 lezione finta.mp4» reggeva solo
+finché un media che non si apriva falliva in silenzio: una barra accesa sopra un fantasma, cioè
+esattamente ciò che nessuno voleva vedere nell'app. Ora i media sono veri (`wavDiProva` in
+`test/cdp/cdp.js`, più ffmpeg per il video quando c'è).
+
+⚠️ **E i tre difetti di questa voce li ha trovati l'utente provando a mano, con tutte le suite
+verdi**: le prove guardavano che l'app *parlasse*, non **che cosa dicesse**, e non guardavano
+affatto **che cosa restasse a schermo dopo**.
+
 ---
 
 ## 6. Che cosa NON si fa
