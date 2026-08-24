@@ -9,10 +9,11 @@
 
 ## 0. Da dove ripartire, in tre righe
 
-`main` è a **`ab74eba`**, **spinta** (`origin/main` allineata), albero pulito, **nessun ramo, nessun
-worktree**.
+`main` è a **`f57ce69`** — «merge: il quaderno va nel Cestino, non nel nulla (Q8)» — albero pulito.
+⚠️ **Non ancora spinta**: `origin/main` è ferma a `cef6e73`. Il ramo `quaderno-cestino` è unito e
+si può togliere.
 
-Il prossimo lavoro è **Q8** del pacchetto «Quaderno»: il file di riferimento è
+Il prossimo lavoro è **Q7** del pacchetto «Quaderno» (le cinque liste audio): il file di riferimento è
 **`HANDOFF-PACCHETTO-QUADERNO.md`**, che è autosufficiente — dice che cosa costruire, dove vive ogni
 pezzo, quali fatti sono già misurati e quali trappole già pagate.
 
@@ -30,9 +31,9 @@ un processo per nome**.
 
 | | |
 |---|---|
-| `main` | **`ab74eba`** — «merge: la lente porta al punto esatto, su tutte e due le metà del banco (Q2)» |
-| remoto | `git@github.com:gmesc/StudIA.git` — ✅ **allineato** (`0 0`) |
-| rami · worktree | **nessuno** |
+| `main` | **`f57ce69`** — «merge: il quaderno va nel Cestino, non nel nulla (Q8)» |
+| remoto | `git@github.com:gmesc/StudIA.git` — ⚠️ **da spingere** (`origin/main` a `cef6e73`) |
+| rami · worktree | `quaderno-cestino` (unito, si può togliere) · nessun worktree |
 | unità | ✅ **46 file**, tutti dentro la catena di `npm test`, exit 0 |
 | CDP | ✅ **57 prove** in elenco · 60 file `prova-*.js` sul disco |
 | monolite | `App/StudIA.html` **21.075 righe** · moduli in `App/assets/` (pdf.js escluso): **34** |
@@ -102,6 +103,18 @@ secondi), nell'editor **per niente**.
 
 Due moduli: `fonti/attesa.js` e `RicercaIndice.punto`.
 
+### Il pacchetto «Quaderno» — Q8, il quaderno va nel Cestino (24 agosto, sera)
+
+Il racconto è in `PIANO-ZAINO.md` **§Z14**. In breve: appunti, mappe e immagini dell'album — i file
+che l'utente ha scritto, gli unici senza seconda copia — ora vanno nel **Cestino di sistema** come
+già documenti, media e zaini. Pattern dei fratelli maggiori: `lib/` non conosce Electron, il main
+inietta `cestina = shell.trashItem`; con `cestina` la risposta è una Promise, senza resta sincrona.
+`note:rimuovi` e `album:rimuovi` sono canali IPC nuovi (solo il main ha `trashItem`); i messaggi
+dicono «Va nel Cestino di sistema» invece di «non è reversibile». Le prove nuove sono state fatte
+diventare **rosse** sul codice di prima. ⚠️ Pagata di nuovo (l'ottava volta) la trappola degli
+apici inversi in un commento dentro un template literal: la suite CDP moriva in `SyntaxError`
+prima di partire, in `prova-album-trascina.js`.
+
 ### I tre lavori laterali
 
 - il **pannellino della ricerca** nel documento: una riga sola, campo a larghezza costante;
@@ -152,14 +165,13 @@ banco di prova fuori dall'app, e il numero era sbagliato del 38%.
 
 ## 5. Che cosa resta da fare
 
-### Il prossimo lavoro: il pacchetto «Quaderno», otto voci su nove
+### Il prossimo lavoro: il pacchetto «Quaderno», sette voci su nove
 
-`HANDOFF-PACCHETTO-QUADERNO.md` è autosufficiente. **Q2 è fatto**; restano:
+`HANDOFF-PACCHETTO-QUADERNO.md` è autosufficiente. **Q2 e Q8 sono fatti**; restano:
 
 | | | costo |
 |---|---|---|
-| **Q8** | il quaderno va nel Cestino, non nel nulla — **il prossimo** | S |
-| Q7 | `.opus` entra e non compare: cinque copie della lista audio | S |
+| **Q7** | `.opus` entra e non compare: cinque copie della lista audio — **il prossimo** | S |
 | Q3 | il pallino di «Alla mappa» che non apre | S |
 | Q6 | la postilla: il corpo sul bersaglio | S |
 | Q1 | il quaderno si riapre alla riga | S |

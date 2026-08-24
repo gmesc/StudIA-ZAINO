@@ -726,6 +726,34 @@ la normalizzazione «preserva la lunghezza»: è falso, `toLowerCase()` non è s
 il **frammento** della lente invece sì, e su un testo con quella lettera parte sfasato di uno.
 Piccolo e cosmetico, ma adesso è **scritto e misurato** invece che scoperto fra sei mesi.
 
+### Z14 — il quaderno va nel Cestino, non nel nulla (24 agosto 2026, Q8 del pacchetto «Quaderno») ✅
+
+L'asimmetria era **rovesciata rispetto al valore**: un PDF cancellato finiva nel Cestino di sistema
+— e comunque è ancora nella mail del professore — mentre un appunto, una mappa o un ritaglio, gli
+unici file che esistono soltanto in questo vault perché li ha scritti l'utente, sparivano con
+`fs.unlinkSync`. E i messaggi erano coerenti col difetto: «non è reversibile», «non si può
+annullare».
+
+Il lavoro è la riga copiata dai fratelli maggiori (fonti, media, zaini): `lib/` non conosce
+Electron, il main **inietta** `{ cestina: (p) => shell.trashItem(p) }`. `appunti.remove`,
+`mappe.rimuovi` e `album.rimuovi` accettano `opt.cestina`; l'album cestina **anche la miniatura**,
+e un file già sparito dal Finder pulisce l'indice senza chiamare il Cestino a vuoto.
+
+⚠️ **Con `cestina` la risposta è una Promise; senza, resta sincrona.** Il Cestino è asincrono, ma
+le prove e le altre porte sincrone non dovevano cambiare forma: il doppio binario è dichiarato nel
+commento di ciascuna funzione.
+
+⚠️ **`shell.trashItem` esiste solo nel main**: per questo `note:rimuovi` e `album:rimuovi` sono
+canali IPC nuovi, mentre tutto il resto delle API di appunti e album resta sincrono in preload,
+dov'era (la ragione del sincrono — `beforeunload` — vale per i salvataggi, non per una
+cancellazione a gesto).
+
+⚠️ Nel renderer **l'elenco si ricarica DOPO la risposta del Cestino**, o mostrerebbe ancora il file
+appena tolto. E i messaggi ora dicono la verità nuova: «Va nel Cestino di sistema».
+
+⚠️ Le prove CDP che cancellano appunti o mappe di prova mandano quelle briciole nel **Cestino VERO**
+di chi le lancia — come già `zaino:elimina`.
+
 ---
 
 ## 6. Che cosa NON si fa

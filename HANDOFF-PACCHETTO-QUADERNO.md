@@ -12,8 +12,8 @@
 > **Il punto di partenza**: `main` a **`ab74eba`**, `origin/main` allineata, albero pulito, nessun
 > ramo. Suite intera CDP verde (**57 prove**) · `npm test` verde (**46 file**).
 >
-> ✅ **Q2 È FATTO E UNITO** (24 agosto 2026), tutti e quattro i suoi pezzi. **Restano gli altri
-> otto**: Q1, Q3, Q4, Q5, Q6, Q7, Q8, Q9. L'ordine consigliato è al §5, e il prossimo è **Q8**.
+> ✅ **Q2 e Q8 SONO FATTI E UNITI** (24 agosto 2026). **Restano sette**: Q1, Q3, Q4, Q5, Q6, Q7,
+> Q9. L'ordine consigliato è al §5, e il prossimo è **Q7** (le cinque liste audio).
 
 ---
 
@@ -63,7 +63,7 @@ per questo stanno insieme: toccano `_evidenze.json`, la barra della selezione, l
 | Q5 | **La lente legge anche le mappe e le didascalie** | S | ritrovare |
 | Q6 | **La postilla** | S | lavorare |
 | Q7 | **Chi entra si vede** | S | riparazione |
-| Q8 | **Il quaderno va nel Cestino, non nel nulla** | S | riparazione |
+| Q8 | ✅ **Il quaderno va nel Cestino, non nel nulla** — *fatto il 24 ago 2026, `PIANO-ZAINO.md` §Z14* | S | riparazione |
 | Q9 | **Le sottolineature del tutor arrivano come lettura** | M | insieme |
 
 ⚠️ **I numeri di riga di `App/StudIA.html` NON sono in questo documento**, ed è deliberato: il file
@@ -315,7 +315,7 @@ codec Opus, e con cinque liste che non concordano non si sa nemmeno in quale met
 
 ---
 
-## Q8 — Il quaderno va nel Cestino, non nel nulla · S
+## Q8 — Il quaderno va nel Cestino, non nel nulla ✅ *FATTO (24 ago 2026 — il racconto è in `PIANO-ZAINO.md` §Z14)*
 
 **L'asimmetria, misurata.**
 
@@ -547,9 +547,9 @@ minime, poi si aggiunge superficie**. Così, se il lavoro si ferma a metà, ciò
 utile.
 
 0. ~~**Q2** (la lente al punto esatto)~~ — ✅ **fatto il 24 agosto**, tutti e quattro i pezzi;
-1. **Q8** (il Cestino) — **il prossimo**: è una riga copiata da un fratello maggiore, e toglie il
-   rischio più grave del pacchetto;
-2. **Q7** (le liste audio) — salda l'invariante 5 e chiude una perdita silenziosa;
+1. ~~**Q8** (il Cestino)~~ — ✅ **fatto il 24 agosto** (`PIANO-ZAINO.md` §Z14): il rischio più
+   grave del pacchetto è tolto;
+2. **Q7** (le liste audio) — **il prossimo**: salda l'invariante 5 e chiude una perdita silenziosa;
 3. **Q3** (il pallino) — piccolo, di principio, e prepara la mano sulla barra della selezione;
 4. **Q6** (la postilla) — il campo `nota`, con la prova che l'identità non cambia;
 5. **Q1** e **Q2** (il quaderno: la riga e la lente) — stessa materia, stessa porta `noteOpen`;
