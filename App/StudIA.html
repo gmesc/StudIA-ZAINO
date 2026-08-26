@@ -791,6 +791,12 @@
   .selmenu{ min-width:212px; max-width:min(340px,92vw); }
   .selmenu .ctx-head{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-transform:none;
     letter-spacing:.02em; font-weight:400; font-style:italic; }
+  /* La postilla, letta dentro il menu della selezione: è un TESTO, non un
+     comando — niente hover, niente cursore a dito — e sta sotto la sua voce
+     come la riga dei colori sta sotto «Keyword». Va a capo, perché una riga
+     di commento tagliata coi puntini non si può leggere. */
+  .ctx-postilla{ font-size:11px; line-height:1.35; color:var(--muted); font-style:italic;
+    padding:.1rem .6rem .45rem; max-width:100%; white-space:normal; overflow-wrap:anywhere; }
   .ctx-item{ display:flex; align-items:center; gap:.55rem; width:100%; text-align:left; border:0; background:transparent;
     color:var(--ink); font:inherit; font-size:12px; padding:.45rem .6rem; cursor:pointer; }
   .ctx-item:hover{ background:var(--hover); }
@@ -13025,6 +13031,15 @@ function selMenuHTML(sel){
        fa «Keyword» con «Ricolora». */
     voce('postilla', (sopra && evNotaDi(sopra)) ? 'Correggi la postilla…' : 'Postilla…',
          conEvidenze? '' : 'serve un capitolo o un documento')+
+    /* ⚠️ E LA POSTILLA SI LEGGE QUI. Su un documento non ha altro posto dove
+       farsi vedere: le evidenze sul PDF si dipingono con la Custom Highlight
+       API, che non crea elementi su cui passare il mouse, e una frase lunga non
+       diventa «parola chiave», quindi non ha nemmeno un chip. Riselezionando la
+       frase, il menu mostra ciò che ci si era scritto — che è il gesto con cui
+       si torna su una sottolineatura per ricordarsi perché la si era fatta. */
+    ((sopra && evNotaDi(sopra))
+      ? '<div class="ctx-postilla" title="La postilla di questa frase">'+escHtml(evNotaDi(sopra))+'</div>'
+      : '')+
     righeColore+
     voce('cancella','Cancella evidenziatura', sopra? '' : 'qui non ce n’è')+
     '<div class="ctx-sep"></div>'+
@@ -13118,10 +13133,22 @@ async function postillaChiedi(range){
   if(t===null) return;                         // annullato: non si tocca niente
   var r=api.postilla(corso, ev.id, t);
   if(r && r.error){ toast('Postilla non salvata: '+r.error, false); return; }
-  evidenzeCarica(); evidenzeDisegna();
-  try{ kwRidisegna(); }catch(e){}
+  /* ⚠️ Il ridisegno è quello di `kwRicolora` e `kwCambiaTratto`, i due gemelli:
+     l'elenco in memoria si adotta dalla risposta e si ridisegna. Qui prima
+     c'era una `kwRidisegna()` dentro un try/catch — una funzione che NON
+     ESISTE, quindi un ridisegno che non avveniva mai, in silenzio. È la
+     ragione per cui una scrittura riuscita sembrava non essere avvenuta. */
+  if(r && r.evidenze) EVIDENZE.elenco=r.evidenze; else evidenzeCarica();
+  evidenzeDisegna();
+  try{ evidenzeNegliAppunti(); }catch(e){}
+  /* ⚠️ E il toast RIPETE quello che hai scritto, invece di dire «salvata».
+     Su un documento una postilla non ha ancora un posto dove mostrarsi — le
+     evidenze sul PDF si dipingono con la Custom Highlight API, che non crea
+     elementi su cui passare il mouse — e un «fatto» senza il testo lascia chi
+     scrive senza nessuna prova di aver scritto. Misurato: l'utente ha riferito
+     «non si salva» di una postilla che era sul disco. */
   var ora=(r && r.evidenza) ? evNotaDi(r.evidenza) : '';
-  toast(ora ? 'Postilla salvata' : 'Postilla tolta', true);
+  toast(ora ? ('Postilla: «'+ora+'»') : 'Postilla tolta', true);
 }
 /* Le voci del menu e i tasti della barra. Un click delegato, come tutto il
    resto dell'app. */
