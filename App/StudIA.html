@@ -13019,6 +13019,12 @@ function selMenuHTML(sel){
     voce('mappa','Alla mappa', (mappeApi() && corsoAttivo() && mappaPronta())? '' : 'serve un corso aperto')+
     voce('keyword', sopra? 'Ricolora la parola chiave' : 'Keyword',
          conEvidenze? '' : 'serve un capitolo o un documento')+
+    /* ⚠️ La POSTILLA sta accanto a «Keyword» perché è la sua seconda metà: nel
+       modello W3C un'annotazione ha un BERSAGLIO e un CORPO, e finora c'era
+       solo il bersaglio. Il testo dice se la si scrive o la si corregge, come
+       fa «Keyword» con «Ricolora». */
+    voce('postilla', (sopra && evNotaDi(sopra)) ? 'Correggi la postilla…' : 'Postilla…',
+         conEvidenze? '' : 'serve un capitolo o un documento')+
     righeColore+
     voce('cancella','Cancella evidenziatura', sopra? '' : 'qui non ce n’è')+
     '<div class="ctx-sep"></div>'+
@@ -13075,6 +13081,47 @@ function selAzione(az, testo, range){
   if(az==='keyword'){ evidenzia(range, evidenzeColore()); return; }
   if(az==='cancella'){ evidenzaCancella(range); return; }
   if(az==='mappa'){ mappaEstrai(testo, range); return; }
+  if(az==='postilla'){ postillaChiedi(range); return; }
+}
+
+/** La postilla di un'evidenza, o `''`. Una funzione sola perché la leggono in
+ *  tre: il menu (per dire «scrivi» o «correggi»), il chip, e l'appunto che la
+ *  cita. */
+function evNotaDi(ev){ return (ev && typeof ev.nota==='string') ? ev.nota : ''; }
+
+/**
+ * Scrive o corregge la postilla della frase selezionata.
+ *
+ * ⚠️ Se quella frase non è ancora segnata, la si segna: il momento in cui si
+ * scrive il perché è lo stesso in cui si sottolinea, e chiedere prima
+ * «evidenzia» e poi «postilla» sarebbe due gesti per uno. Il colore è quello
+ * corrente, come per «Appunta» — la parola nata così non deve distinguersi da
+ * una segnata a mano.
+ *
+ * ⚠️ Il limite di UNA RIGA non si controlla qui: lo fa `lib/evidenze.js`, che è
+ * l'unico posto da cui la postilla entra nel file. Qui si dichiara soltanto al
+ * campo (`maxlength`), perché chi scrive lo veda mentre scrive invece di
+ * scoprirlo dopo.
+ */
+async function postillaChiedi(range){
+  var api=(window.vault && window.vault.evidenze) || null, corso=corsoAttivo();
+  if(!api || !corso){ toast('Le postille servono un corso aperto', false); return; }
+  var ev=(typeof evidenzaSotto==='function') ? evidenzaSotto(range) : null;
+  if(!ev){
+    /* Non c'è ancora: si segna adesso, con il colore corrente. */
+    var fatta=(typeof evidenzia==='function') ? evidenzia(range, evidenzeColore()) : null;
+    ev=(typeof evidenzaSotto==='function') ? evidenzaSotto(range) : null;
+    if(!ev){ toast('Qui non si può segnare una frase, quindi nemmeno postillarla', false); return; }
+  }
+  var prima=evNotaDi(ev);
+  var t=await askText(prima ? 'Correggi la postilla' : 'Postilla', prima);
+  if(t===null) return;                         // annullato: non si tocca niente
+  var r=api.postilla(corso, ev.id, t);
+  if(r && r.error){ toast('Postilla non salvata: '+r.error, false); return; }
+  evidenzeCarica(); evidenzeDisegna();
+  try{ kwRidisegna(); }catch(e){}
+  var ora=(r && r.evidenza) ? evNotaDi(r.evidenza) : '';
+  toast(ora ? 'Postilla salvata' : 'Postilla tolta', true);
 }
 /* Le voci del menu e i tasti della barra. Un click delegato, come tutto il
    resto dell'app. */
@@ -15124,7 +15171,10 @@ var LETTURA_CAP = LetturaCapitolo.crea({
   evidenza: function (id) {
     if (!corsoAttivo()) return null;
     var v = kwDaId(id);
-    return v ? { colore: v.colore, tratto: evTrattoDi(v) } : null;
+    /* La POSTILLA viaggia con colore e tratto, e per la stessa ragione: nel
+       markdown c'è l'indirizzo, non il dato — quindi correggerla cambia anche
+       gli appunti che la citano, senza toccarne uno. */
+    return v ? { colore: v.colore, tratto: evTrattoDi(v), nota: evNotaDi(v) } : null;
   }
 });
 /* I nomi di prima restano nomi: il resto del renderer chiama `mdChapter` da

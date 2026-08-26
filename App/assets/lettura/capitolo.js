@@ -21,7 +21,7 @@
      pdfNum()        la mappa NN → file dei DOCUMENTI del contenitore aperto
      corsoAttivo()   quale contenitore è aperto (serve solo alle immagini
                      dell'album, che vivono dentro di lui)
-     evidenza(id)    colore e tratto di un'evidenza → `{colore, tratto}` o null.
+     evidenza(id)    colore, tratto e postilla di un'evidenza → `{colore, tratto, nota}` o null.
                      ⚠️ È un gancio e non un dato SCRITTO nel markdown: il
                      colore vive in un posto solo (`APPUNTI/_evidenze.json`), e
                      un appunto che ne portasse una copia mostrerebbe il colore
@@ -326,10 +326,23 @@
        guardia — quella là difende il file, questa difende la pagina. */
     var col=String(v.colore==null?'':v.colore).replace(/[\x00-\x1f;"'<>]/g,'').trim().slice(0,40);
     var tratto=(v.tratto==='overlay') ? 'overlay' : 'sotto';
-    var segno='<mark class="evid" data-tratto="'+tratto+'"'+(col?' style="--ev:'+col+'"':'')+'>'+t+'</mark>';
+    /* ⚠️ LA POSTILLA SI EREDITA, come il colore: nel markdown c'è la
+       CITAZIONE, non il dato. Copiarla qui dentro la farebbe divergere al primo
+       ritocco — è la regola di P1.1-bis, la stessa per cui ricolorare una
+       parola chiave cambia anche gli appunti che la citano senza toccarne uno.
+       Va nel `title`, che è il posto dove un commento si legge passandoci
+       sopra senza rubare spazio alla riga. */
+    var nota=String(v.nota==null?'':v.nota).replace(/[\x00-\x1f]+/g,' ').trim();
+    var segno='<mark class="evid" data-tratto="'+tratto+'"'+(col?' style="--ev:'+col+'"':'')+
+      (nota?' data-postilla="1" title="'+g.esc(nota)+'"':'')+'>'+t+'</mark>';
     var rim=Rimandi.scriviEv(id);
     if(!rim) return segno;
-    return '<a href="#" class="evlink" data-ev="'+g.esc(id)+'" title="Torna dove l\'hai segnata">'+segno+'</a>';
+    /* ⚠️ Il `title` del link NON deve coprire quello del segno: quando c'è una
+       postilla, è lei la cosa da leggere passandoci sopra — dove porta il link
+       lo dice già il cursore. Due `title` annidati mostrano quello più interno,
+       ma solo se quello esterno non c'è. */
+    var dove=nota ? '' : ' title="Torna dove l\'hai segnata"';
+    return '<a href="#" class="evlink" data-ev="'+g.esc(id)+'"'+dove+'>'+segno+'</a>';
   }
   function _mdInline(s, nota){ s=g.esc(s);
     /* ⚠️ La figura si riconosce PRIMA del rimando normale: la regex dei link
