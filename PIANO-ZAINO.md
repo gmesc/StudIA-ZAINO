@@ -956,6 +956,40 @@ mai scritte» da «hai sottolineature ma nessuna postilla».
 postille sono la **terza vista** sulle stesse evidenze, e chi cambia il dato non deve ricordarsi di
 avvisare tre pannelli.
 
+### Z19 — il quaderno si riapre alla riga (26 agosto 2026, Q1 del pacchetto «Quaderno»)
+
+L'app ricordava dove eri in ogni documento (`_lettura.json`) e in ogni media (`_ascolto.json`);
+l'appunto — il pezzo su cui si torna più spesso, e l'unico che l'utente ha scritto lui — si riapriva
+sempre in cima. Su un appunto di un semestre vuol dire scorrere ogni volta.
+
+**IL BIVIO, deciso: la riga viaggia col vault.** La linea è quella del 19 agosto — nel vault sta lo
+stato dei *contenuti*, nel `localStorage` come si vede lo schermo di questa macchina — e dove sei
+arrivato a leggere è un fatto del contenuto, come la pagina di un PDF e il secondo di un video.
+
+⚠️ **E il file sta in `APPUNTI/_riga.json`**, non nella radice come `_lettura.json`:
+`lib/pacchetto.js` esclude `APPUNTI/*` quando l'autore non dà i suoi appunti, e dove era arrivato a
+leggerli è roba sua quanto il testo. Fuori di lì viaggerebbe anche in un pacchetto che gli appunti
+non contiene.
+
+⚠️ **Lo zero è una riga**, a differenza della pagina che comincia da 1: «non l'ho mai riaperto» e
+«sono tornato in cima» sono due fatti diversi. Stessa distinzione di `_ascolto.json`.
+
+⚠️ **Se l'appunto si accorcia il segno si stringe** all'ultima riga vera — la regola di
+`vaiAPagina` — invece di puntare nel vuoto o di riportare in cima buttando via il segno. Fra il
+segno e la riapertura passa la vita del file: un altro computer, Obsidian, o chi ha cancellato ieri
+sera.
+
+⚠️ **Il cursore ci va DOPO il `refresh()` di CodeMirror**: su un editor che non conosce ancora la
+propria altezza finisce dove capita, e lo scorrimento non segue. È la lezione di Q2 — si aspetta la
+condizione, non un numero.
+
+⚠️ **E si tace mentre si carica**: `noteCaricaCorpo` muove il cursore per conto suo, e senza la
+sentinella aprire un appunto scriverebbe «riga 0» sopra il segno vero, perdendolo nel momento esatto
+in cui serve.
+
+⚠️ **La decisione sta in un UMD** (`App/assets/appunti/segno.js`) richiamato sia dal renderer sia da
+`lib/riga.js`: una regola per due lati, non due copie (invariante 5).
+
 ---
 
 ## 6. Che cosa NON si fa

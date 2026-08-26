@@ -12,8 +12,9 @@
 > **Il punto di partenza**: `main` a **`ab74eba`**, `origin/main` allineata, albero pulito, nessun
 > ramo. Suite intera CDP verde (**57 prove**) · `npm test` verde (**46 file**).
 >
-> ✅ **Q2, Q8, Q7, Q3 e Q6 SONO FATTI E UNITI**. **Restano quattro**: Q1, Q4, Q5, Q9.
-> L'ordine consigliato è al §5, e il prossimo è **Q1** (il quaderno si riapre alla riga).
+> ✅ **Q1, Q2, Q3, Q6, Q7 e Q8 SONO FATTI E UNITI**. **Restano tre**: Q4, Q5, Q9.
+> Il prossimo è **Q5** (la lente vede mappe e didascalie); Q4 e Q9 sono i due **M**, e meritano un
+> piano ciascuno con `/architetto`.
 
 ---
 
@@ -56,7 +57,7 @@ per questo stanno insieme: toccano `_evidenze.json`, la barra della selezione, l
 
 | | | costo | famiglia |
 |---|---|---|---|
-| Q1 | **Il quaderno si riapre alla riga** | S | ritrovare |
+| Q1 | ✅ **Il quaderno si riapre alla riga** — *fatto il 26 ago 2026, `PIANO-ZAINO.md` §Z19* | S | ritrovare |
 | Q2 | ✅ **La lente porta al punto esatto della parola cercata** (editor **e** PDF) — *fatto, `ab74eba`* | S | ritrovare |
 | Q3 | ✅ **Il pallino che mantiene la promessa** — *fatto il 24 ago 2026, `PIANO-ZAINO.md` §Z16* | S | lavorare |
 | Q4 | **Sbirciare senza saltare** | M | ritrovare |
@@ -74,7 +75,7 @@ con un `grep -n` tuo.
 
 ---
 
-## Q1 — Il quaderno si riapre alla riga · S
+## Q1 — Il quaderno si riapre alla riga ✅ *FATTO (26 ago 2026 — il racconto è in `PIANO-ZAINO.md` §Z19)*
 
 **Il gesto.** Riapri un appunto e il cursore è dove l'avevi lasciato, con quella riga a vista. Come
 il PDF si riapre alla pagina e il video al secondo. Nessun comando nuovo.
@@ -555,8 +556,8 @@ utile.
    della selezione è già stata fatta, e serve a Q6;
 4. ~~**Q6** (la postilla)~~ — ✅ **fatto il 26 agosto** (`PIANO-ZAINO.md` §Z17), con le due reti
    sotto gli appunti che sono nate lo stesso giorno da un guasto vero;
-5. **Q1** (il quaderno si riapre alla riga) — **il prossimo**: stessa porta `noteOpen`;
-6. **Q5** (la lente vede mappe e didascalie) — due costruttori nel modulo puro;
+5. ~~**Q1** (il quaderno si riapre alla riga)~~ — ✅ **fatto il 26 agosto** (`PIANO-ZAINO.md` §Z19);
+6. **Q5** (la lente vede mappe e didascalie) — **il prossimo**: due costruttori nel modulo puro;
 7. **Q4** (sbirciare) — il primo **M**, e vale la pena farlo *dopo* Q3 e Q6, perché la bolla deve
    saper mostrare anche il rimando che Q3 crea e la postilla che Q6 scrive;
 8. **Q9** (la lettura del tutor) — l'altro **M**, e l'ultimo: è quello con il vincolo più stretto,
@@ -572,7 +573,8 @@ braindump della voce, che leggerà la guida e passerà il piano contro gli invar
 Sono i bivi veri: due letture producono lavori materialmente diversi. Vanno chiesti all'utente, non
 indovinati.
 
-1. **Q1** — la riga dell'appunto viaggia col vault o resta di questa macchina?
+1. ~~**Q1** — la riga dell'appunto viaggia col vault o resta di questa macchina?~~ ✅ **deciso il
+   26 agosto: viaggia col vault**, in `APPUNTI/_riga.json` (§Z19).
 2. **Q9** — il canale è un `_evidenze.json` trascinato, oppure un pacchetto vero costruito con
    `lib/pacchetto.js`?
 3. **Q9** — quando l'impronta del documento non combacia: si rifiuta tutto, o si importa lo stesso
