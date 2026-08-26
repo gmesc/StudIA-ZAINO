@@ -47,6 +47,7 @@
      domani gli strati. Sta accanto all'ancoraggio perché è l'altra metà della
      stessa domanda, e come quello non sa niente del DOM. -->
 <script src="assets/evidenze/strati.js"></script>
+<script src="assets/evidenze/postille.js"></script>
 <!-- Il parser dei capitoli. ⚠️ Prima stava dentro l'inline qui sotto e le prove
      in Node lo ritagliavano dal sorgente con due `indexOf`: adesso l'app e
      `test/roundtrip.js` caricano lo STESSO file. Non ha dipendenze: sta qui in
@@ -797,6 +798,25 @@
      di commento tagliata coi puntini non si può leggere. */
   .ctx-postilla{ font-size:11px; line-height:1.35; color:var(--muted); font-style:italic;
     padding:.1rem .6rem .45rem; max-width:100%; white-space:normal; overflow-wrap:anywhere; }
+  /* ---- Il pannello delle POSTILLE ----------------------------------------
+     Un elenco di righe, raggruppate per documento. La postilla e' la cosa che
+     si legge, quindi sta in evidenza; la frase segnata sotto, piu' piccola,
+     serve a riconoscere DOVE. Le misure vengono dai token delle barre e dalle
+     variabili del tema: un pannello che si disegna i propri numeri diverge dal
+     resto dell'app al primo ritocco (invariante 8). */
+  #postillePane{ display:flex; flex-direction:column; min-height:0; }
+  .poconto{ font-size:11px; color:var(--muted); white-space:nowrap; padding-right:.2rem; }
+  .polista{ flex:1; min-height:0; overflow:auto; padding:.2rem 0 .6rem; }
+  .po-gruppo{ font-size:10px; text-transform:uppercase; letter-spacing:.14em; color:var(--muted);
+    font-weight:700; padding:.7rem .8rem .3rem; position:sticky; top:0; background:var(--panel); z-index:1; }
+  .po-voce{ display:block; width:100%; text-align:left; border:0; background:transparent; cursor:pointer;
+    font:inherit; padding:.45rem .8rem; border-left:3px solid transparent; }
+  .po-voce:hover{ background:var(--hover); border-left-color:var(--ev, var(--teal)); }
+  .po-nota{ font-size:12.5px; line-height:1.4; color:var(--ink); }
+  .po-dove{ font-size:11px; line-height:1.35; color:var(--muted); font-style:italic; margin-top:.15rem;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .po-pag{ font-style:normal; }
+  .povuoto{ padding:1.2rem .9rem; font-size:12px; color:var(--muted); line-height:1.5; }
   .ctx-item{ display:flex; align-items:center; gap:.55rem; width:100%; text-align:left; border:0; background:transparent;
     color:var(--ink); font:inherit; font-size:12px; padding:.45rem .6rem; cursor:pointer; }
   .ctx-item:hover{ background:var(--hover); }
@@ -13750,6 +13770,11 @@ function evidenzeDisegna(){
     CSS.highlights.set(nome, h); EVIDENZE.nomi.push(nome);
   });
   keywordDisegna();
+  /* ⚠️ Le postille sono la TERZA vista sulle stesse evidenze — dopo il testo e
+     i chip — e si aggiorna da qui per la stessa ragione delle altre due: la
+     reazione a un cambiamento sta in un punto solo, e chi cambia il dato non
+     deve ricordarsi di avvisare tre pannelli (invariante 6). */
+  try{ if(typeof postilleDisegna==='function') postilleDisegna(); }catch(e){ console.error('postille:', e); }
   evidenzeNegliAppunti();
 }
 
@@ -13827,6 +13852,94 @@ function kwMarkdown(e){
   }
   return e.capitoloId ? RimandiSintassi.link(e.exact, RimandiSintassi.scriviCap(e.capitoloId)) : e.exact;
 }
+/* ===== LO STRUMENTO «POSTILLE» ==============================================
+ *
+ * Il perche' delle proprie sottolineature, tutte insieme. Nasce da un difetto
+ * vero: la postilla si scriveva e non aveva nessun posto dove mostrarsi — sul
+ * documento gli highlight si dipingono con la Custom Highlight API, che non
+ * crea elementi su cui passare il mouse, e una frase lunga non diventa parola
+ * chiave, quindi non ha nemmeno un chip. L'utente ha riferito «non si salva»
+ * di una postilla che era sul disco.
+ *
+ * ⚠️ Che cosa entra, come si raggruppa e in che ordine lo decide
+ * `evidenze/postille.js`, provato in Node: qui si disegna e si va, e basta.
+ */
+var POSTILLE={ filtro:'' };
+
+/** Il testo che si legge sotto la postilla: la frase segnata, accorciata. Sta
+ *  in una funzione sua perche' la stessa regola vale per la voce e per il suo
+ *  `title`, e due tagli diversi sulla stessa frase sono due verita'. */
+function poFrase(e){
+  var t=String((e && e.exact)||'').replace(/\s+/g,' ').trim();
+  return t.length>120 ? t.slice(0,120)+'\u2026' : t;
+}
+
+function postilleDisegna(){
+  var host=document.getElementById('poLista'); if(!host) return;
+  var tutte=(EVIDENZE.elenco||[]);
+  /* ⚠️ Il conto e' quello di TUTTE, non del filtro: dice quante postille ci
+     sono, non quante se ne stanno guardando adesso — se no cercando sembra che
+     ne spariscano. Quante ne mostra il filtro lo si vede dall'elenco. */
+  var conto=document.getElementById('poConto');
+  var quante=EvidenzePostille.quante(tutte);
+  if(conto) conto.textContent=quante ? (quante===1 ? '1 postilla' : quante+' postille') : '';
+
+  var q=POSTILLE.filtro.trim().toLowerCase();
+  var filtrate=q ? tutte.filter(function(e){
+    return EvidenzePostille.nota(e).toLowerCase().indexOf(q)>=0 ||
+           String(e.exact||'').toLowerCase().indexOf(q)>=0;
+  }) : tutte;
+  /* Il documento aperto va in cima: chi apre questo pannello mentre legge cerca
+     quasi sempre le postille di QUELLA pagina. */
+  var aperto=(typeof ANTEPRIMA!=='undefined' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf') ? (ANTEPRIMA.file||'') : '';
+  var gruppi=EvidenzePostille.gruppi(filtrate, { materialeAperto:aperto });
+
+  if(!gruppi.length){
+    /* Tre vuoti diversi, e vanno detti diversi: chi non ne ha mai scritte deve
+       leggere COME si scrivono, non «nessun risultato». */
+    var msg;
+    if(q) msg='Nessuna postilla contiene \u00ab'+escHtml(POSTILLE.filtro.trim())+'\u00bb.';
+    else if(!tutte.length) msg='Qui compariranno le tue postille. Seleziona una frase e scegli <b>Postilla\u2026</b> per scrivere perch\u00e9 l\u2019hai segnata.';
+    else msg='Nessuna delle tue sottolineature ha una postilla. Selezionane una e scegli <b>Postilla\u2026</b>: il perch\u00e9 resta attaccato alla frase.';
+    host.innerHTML='<div class="povuoto">'+msg+'</div>';
+    return;
+  }
+
+  var html='';
+  gruppi.forEach(function(g){
+    var dove=g.materiale ? (titoloMateriale(g.materiale)||g.materiale)
+                         : (g.capitolo || 'Senza documento');
+    html+='<div class="po-gruppo">'+escHtml(dove)+'</div>';
+    g.voci.forEach(function(e){
+      var pag=EvidenzePostille.pagina(e);
+      var col=String(e.colore||'').replace(/[\x00-\x1f;"'<>]/g,'').trim().slice(0,40);
+      html+='<button class="po-voce" type="button" role="listitem" data-po="'+escHtml(e.id||'')+'"'+
+        (col?' style="--ev:'+col+'"':'')+
+        ' title="Vai dove l\u2019hai segnata">'+
+        '<span class="po-nota">'+escHtml(EvidenzePostille.nota(e))+'</span>'+
+        '<span class="po-dove">'+(pag!==null?('<span class="po-pag">p. '+pag+'</span> \u00b7 '):'')+
+          escHtml(poFrase(e))+'</span>'+
+        '</button>';
+    });
+  });
+  host.innerHTML=html;
+}
+
+/* I gesti del pannello: un click porta dove la frase e' stata segnata — la
+   stessa porta del chip («Vai»), non una seconda strada. */
+document.addEventListener('click', function(e){
+  if(!e.target.closest) return;
+  var v=e.target.closest('#poLista .po-voce'); if(!v) return;
+  var ev=kwDaId(v.getAttribute('data-po'));
+  if(!ev){ toast('Questa postilla non ha piu\u2019 la sua frase', false); return; }
+  evidenzaVai(ev);
+});
+document.addEventListener('input', function(e){
+  if(!e.target || e.target.id!=='poCerca') return;
+  POSTILLE.filtro=e.target.value||'';
+  postilleDisegna();
+});
+
 function keywordDisegna(){
   var host=document.getElementById('kwLista'); if(!host) return;
   var b=document.getElementById('kwOrdine');
@@ -16542,7 +16655,14 @@ function bancoStrumenti(){
     /* «Ripasso» e non «Flashcard»: la chiave resta `flashcard` perché è quella
        scritta nelle disposizioni già salvate, e cambiarla svuoterebbe il blocco
        a chi l'aveva scelto. Il nome in tendina dice che cosa si fa. */
-    flashcard: { nome:'Ripasso',         famiglia:'quaderno', sel:'#ripassoPane' }
+    flashcard: { nome:'Ripasso',         famiglia:'quaderno', sel:'#ripassoPane' },
+    /* Le POSTILLE: il perche' delle proprie sottolineature, tutte insieme.
+       Sta nella famiglia del quaderno perche' e' roba scritta dall'utente, come
+       le parole chiave — ed e' il posto in cui una postilla si RILEGGE senza
+       dover ritrovare la frase che la porta. Su un documento non ne aveva
+       nessuno: le evidenze del PDF si dipingono con la Custom Highlight API,
+       che non crea elementi su cui passare il mouse. */
+    postille:  { nome:'Postille',        famiglia:'quaderno', sel:'#postillePane' }
   };
 }
 function bancoStrumento(id){ return bancoStrumenti()[id] || null; }
@@ -16874,6 +16994,12 @@ function bancoDopoLayout(){
      direbbe che adesso è a schermo. Si rilegge dal disco invece di fidarsi di
      una copia in memoria, perché nel frattempo può essere arrivato un ritaglio
      nuovo — o può essere cambiato il corso. */
+  /* Le postille: stessa ragione delle parole chiave — montare un pannello è un
+     `appendChild`, e nessuno gli direbbe che adesso è a schermo. */
+  try{ if(typeof postilleDisegna==='function' && bancoVisibile('postille')){
+    if(EVIDENZE.corso!==corsoAttivo()) evidenzeCarica();
+    postilleDisegna();
+  } }catch(e){ console.error('banco/postille:', e); }
   try{ if(typeof albumAggiorna==='function' && bancoVisibile('album')) albumAggiorna(); }
   catch(e){ console.error('banco/album:', e); }
   /* Stessa ragione per l'Album Foto: montarlo è un `appendChild`, e nessuno gli
@@ -20507,6 +20633,20 @@ window.addEventListener('keydown', function(e){
             aria-label="Nascondi le sottolineature sul testo (restano salvate)">&#128397;</button>
   </div>
   <div id="kwLista" class="kwlista" role="list"></div>
+</section>
+<!-- LE POSTILLE: il perche' delle proprie sottolineature, tutte insieme.
+     Uno strumento del banco come le parole chiave, e per la stessa ragione: e'
+     roba scritta dall'utente, e va riletta senza dover prima ritrovare la frase
+     che la porta. Sul documento una postilla non aveva nessun posto dove
+     mostrarsi — gli highlight del PDF non sono elementi del DOM — e questo
+     pannello e' quel posto. -->
+<section id="postillePane" aria-label="Postille">
+  <div class="tbar pobar">
+    <input id="poCerca" type="search" placeholder="Cerca fra le postille&#8230;" aria-label="Cerca fra le postille">
+    <span class="tbspazio"></span>
+    <span id="poConto" class="poconto" aria-live="polite"></span>
+  </div>
+  <div id="poLista" class="polista" role="list"></div>
 </section>
 <!-- IL RIPASSO (P3.3): una carta per volta, il fronte, «mostra risposta», e i
      quattro esiti coi tempi previsti sopra. È uno strumento del banco come gli
