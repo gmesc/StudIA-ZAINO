@@ -14529,13 +14529,33 @@ function mappaEstrai(testo, range){
       }
     }
   }catch(e){ /* la nota è un di più, non una condizione */ }
+  /* ⚠️ IL PALLINO DEVE APRIRE QUALCOSA. Un frammento preso da un DOCUMENTO
+     nasceva con `capitolo: state.current` — cioè il capitolo che si stava
+     leggendo, che con un PDF davanti non c'entra niente, e in uno zaino non
+     esiste affatto. Il pallino compariva lo stesso e non apriva: «un comando su
+     carta», il disegno che promette un gesto impossibile.
+     La pagina non si calcola qui: `origineDaRange` è la STESSA funzione da cui
+     «Appunta» ricava `pdf:NN#p=X`, nello stesso menu e sulla stessa selezione.
+     Si passa al nodo quello che il fratello accanto ha già in mano — e la forma
+     la raddrizza `MappaModifica`, che è chi possiede quella del nodo. */
+  var da=(typeof origineDaRange==='function') ? origineDaRange(range) : null;
+  var rim=null;
+  if(da && da.file){
+    rim={ tipo:da.tipo, file:da.file, pagina:da.pagina,
+          label:(titoloMateriale(da.file)||da.file)+(da.pagina ? ', p. '+da.pagina : '') };
+  }
   /* ⚠️ Il capitolo di un nodo è l'INDICE, non il numero umano: `genera.js` scrive
      `capitolo: idx` (0-based, `indice: state.current`) e `mappaVaiAllaFonte` fa
      `go(d.capitolo)`, che è 0-based a sua volta. Con il `+1` che c'era, il
      pallino di un frammento estratto dal capitolo 1 apriva il capitolo 2 — e
-     sull'ultimo capitolo non apriva niente, in silenzio. */
-  var opt={ testo:t, nota:nota,
-            capitolo:(typeof state!=='undefined' && state ? state.current : null) };
+     sull'ultimo capitolo non apriva niente, in silenzio.
+     ⚠️ E il capitolo si passa SOLO se il frammento non viene da un documento:
+     tenere tutti e due vorrebbe dire un nodo che dichiara due provenienze, e
+     chi lo apre ne sceglierebbe una — cioè un pallino che a volte porta altrove.
+     `mappaVaiAllaFonte` dà la precedenza al rimando, ma la doppia verità sul
+     disco resterebbe. */
+  var opt={ testo:t, nota:nota, rimando:rim,
+            capitolo:rim ? null : ((typeof state!=='undefined' && state) ? state.current : null) };
   try{ bancoMostra('mappa'); }catch(e){}
 
   if(mappaMie() && MAPPA.mia.grafo){
