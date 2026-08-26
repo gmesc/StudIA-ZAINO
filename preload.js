@@ -288,6 +288,12 @@ contextBridge.exposeInMainWorld('vault', {
        `beforeunload`: si cancella a gesto, mai alla chiusura. */
     remove: (courseId, file) => ipcRenderer.invoke('note:rimuovi', { corso: courseId, file }).then((r) => !!(r && r.ok)),
     reindex: (courseId) => { try { return appunti.reindex(vaultPath, courseId); } catch (e) { return 0; } },
+    /* Le copie di ciò che è stato perso, dalla più recente. Sono `.md` veri in
+       `APPUNTI/_versioni/`: si aprono col Finder o con Obsidian anche senza
+       che l'app offra un gesto: un backup che si legge solo con lo strumento
+       che l'ha rotto non è un backup. */
+    versioni: (courseId, file) => { try { return appunti.versioni(vaultPath, courseId, file); } catch (e) { return []; } },
+    cartellaVersioni: (courseId) => { try { return appunti.dirVersioni(vaultPath, courseId); } catch (e) { return ''; } },
     indexPath: (courseId) => { try { return path.join(appunti.dir(vaultPath, courseId), '_indice.md'); } catch (e) { return ''; } }
   },
   /* Le parole chiave evidenziate nel testo (APPUNTI/_evidenze.json).
