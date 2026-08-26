@@ -98,6 +98,67 @@ sezione('⚠️ Un appunto pieno non si svuota da sé');
   check('un appunto nuovo può nascere vuoto', undefined, nuovo.error);
 }
 
+/* ------------------------------- 0-bis. le versioni, per i casi estremi */
+sezione('Le VERSIONI: la copia di ciò che sta per essere perso');
+{
+  pulisci();
+  const s = scrivi({ title: 'Prezioso' }, 'RIGA UNO\nRIGA DUE\nRIGA TRE');
+
+  /* ⚠️ SI VERSIONA SOLO CIÒ CHE PERDE. Un autosalvataggio ogni 1,8 secondi
+     seminerebbe migliaia di file per un pomeriggio di scrittura, e il rumore
+     renderebbe inservibile proprio la cosa che deve salvare. */
+  A.save(VAULT, CORSO, s.file, { title: 'Prezioso' }, 'RIGA UNO\nRIGA DUE\nRIGA TRE\nRIGA QUATTRO');
+  check('scrivere di più non lascia nessuna copia', 0, A.versioni(VAULT, CORSO, s.file).length);
+
+  A.save(VAULT, CORSO, s.file, { title: 'Prezioso' }, 'RIGA UNO');
+  const dopo = A.versioni(VAULT, CORSO, s.file);
+  check('accorciare sì', 1, dopo.length);
+  check('e la copia contiene il testo perso', true,
+    fs.readFileSync(path.join(A.dirVersioni(VAULT, CORSO), dopo[0]), 'utf-8').indexOf('RIGA QUATTRO') > 0);
+  check('col frontmatter, così si riapre come un appunto', true,
+    fs.readFileSync(path.join(A.dirVersioni(VAULT, CORSO), dopo[0]), 'utf-8').indexOf('title: "Prezioso"') > 0);
+
+  /* ⚠️ Anche lo svuotamento DICHIARATO lascia la sua copia: è il gesto giusto,
+     ma resta il gesto che fa sparire più testo di tutti. */
+  A.save(VAULT, CORSO, s.file, { title: 'Prezioso' }, '', null, { svuota: true });
+  check('e svuotare lascia la sua', 2, A.versioni(VAULT, CORSO, s.file).length);
+
+  /* ⚠️ Due versioni nello stesso SECONDO non devono diventarne una: succede a
+     chi annulla e risalva di seguito, cioè nel gesto da cui questa cartella
+     difende. Il nome porta i millesimi — misurato al primo collaudo, dove la
+     seconda copia sovrascriveva la prima. */
+  check('due copie ravvicinate restano due', true,
+    A.nomeVersione('x.md', '2026-08-26T10:00:00.100Z') !== A.nomeVersione('x.md', '2026-08-26T10:00:00.900Z'));
+
+  /* La rotazione: si tengono le più recenti, non tutte per sempre.
+     ⚠️ L'ora si PASSA, non si lascia al clock: venti salvataggi di fila cadono
+     anche nello stesso millisecondo, due copie prendono lo stesso nome e il
+     conto balla — un rosso a corse alterne, che è la cosa peggiore da avere in
+     una suite. È la stessa lezione di `fonti/attesa.js`: una prova che dipende
+     dal tempo vero è una prova che a volte passa. */
+  const quando = (n) => '2026-08-26T10:' + String(10 + n).padStart(2, '0') + ':00.000Z';
+  A.save(VAULT, CORSO, s.file, { title: 'Prezioso' }, 'a'.repeat(60), quando(0));
+  for (let i = 59; i > 40; i--) {
+    A.save(VAULT, CORSO, s.file, { title: 'Prezioso' }, 'a'.repeat(i), quando(60 - i));
+  }
+  const tenute = A.versioni(VAULT, CORSO, s.file);
+  check('non se ne accumulano più del tetto', true, tenute.length <= A.VERSIONI_MAX);
+  check('e il tetto è dichiarato dal modulo, non indovinato qui', 10, A.VERSIONI_MAX);
+  /* ⚠️ Quelle che restano sono le PIÙ RECENTI: tenere le più vecchie vorrebbe
+     dire che dopo dieci ritocchi la copia utile non c'è più. */
+  check('e sono le più recenti', tenute.slice().sort().reverse(), tenute);
+
+  /* ⚠️ Le versioni NON sono appunti: non devono comparire nell'elenco né
+     nell'indice, o il quaderno si riempirebbe di copie di se stesso. */
+  check('l\'elenco degli appunti non le vede', 1, A.read(VAULT, CORSO).notes.length);
+  check('e nemmeno l\'indice', false, /— 2026-/.test(indice()));
+
+  /* Una copia di sicurezza non deve poter far fallire il salvataggio: se non si
+     riesce a scriverla, il testo NUOVO dell'utente si salva lo stesso. */
+  check('versionare un file che non c\'è non solleva e non inventa', '',
+    A.versiona(VAULT, CORSO, 'mai-esistito.md'));
+}
+
 /* ------------------------------------------------- 1. la rinomina normale */
 sezione('Rinominare: il titolo dentro e il nome fuori restano d\'accordo');
 pulisci();
