@@ -619,6 +619,14 @@ contextBridge.exposeInMainWorld('vault', {
     leggi: (corso) => ipcRenderer.invoke('ascolto:leggi', { corso }),
     segna: (corso, file, secondo) => ipcRenderer.invoke('ascolto:segna', { corso, file, secondo })
   },
+  /* A che RIGA si era arrivati in un appunto: il terzo gemello di `lettura` e
+     `ascolto`. Passa dal main come gli altri due — il segno sta nel vault, non
+     nel `localStorage`, perché è un fatto del contenuto e viaggia con lui. */
+  riga: {
+    leggi: (corso) => ipcRenderer.invoke('riga:leggi', { corso }),
+    segna: (corso, file, riga) => ipcRenderer.invoke('riga:segna', { corso, file, riga }),
+    dimentica: (corso, file) => ipcRenderer.invoke('riga:dimentica', { corso, file })
+  },
   /* I media di un contenitore: i video e gli audio che l'utente porta dentro.
      ⚠️ `percorsoDi` è quello delle fonti, e per la stessa ragione — da Electron
      32 un `File` trascinato non ha più `.path`. Sta anche qui perché chi

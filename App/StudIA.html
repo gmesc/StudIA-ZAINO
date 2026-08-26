@@ -48,6 +48,7 @@
      stessa domanda, e come quello non sa niente del DOM. -->
 <script src="assets/evidenze/strati.js"></script>
 <script src="assets/evidenze/postille.js"></script>
+<script src="assets/appunti/segno.js"></script>
 <!-- Il parser dei capitoli. ⚠️ Prima stava dentro l'inline qui sotto e le prove
      in Node lo ritagliavano dal sorgente con due `indexOf`: adesso l'app e
      `test/roundtrip.js` caricano lo STESSO file. Non ha dipendenze: sta qui in
@@ -8133,6 +8134,7 @@ async function apertoRipristina(){
      per poi saltare sotto gli occhi: `openPdf` legge la copia in memoria. */
   try{ await letturaCarica(); }catch(e){}
   try{ await ascoltoCarica(); }catch(e){}
+  try{ await rigaCarica(); }catch(e){}
   /* L'elenco vero del contenitore: un segno può parlare di un file tolto da
      fuori. «Non lo so» non è «non c'è» — senza elenco si prova lo stesso, e
      al peggio il riquadro dice che non riesce ad aprire. */
@@ -10662,6 +10664,10 @@ function modoAggiorna(){
   /* E con lui il segno di ascolto, per la stessa ragione: la copia in memoria
      di un altro contenitore direbbe minuti di lezioni che qui non ci sono. */
   try{ ascoltoCarica(); }catch(e){ console.error('ascolto:', e); }
+  /* E il terzo gemello: a che riga eravamo in ogni appunto. Stessa ragione —
+     la copia in memoria di un altro contenitore parlerebbe di appunti che qui
+     non ci sono. */
+  try{ rigaCarica(); }catch(e){ console.error('riga:', e); }
   try{ fontiIndiciCarica(); }catch(e){ console.error('indici:', e); }
   /* E il quaderno: l'elenco degli appunti è del contenitore, e la tendina
      dell'editor deve dirlo — la sidebar dello zaino se lo rilegge da sé, ma
@@ -11523,6 +11529,11 @@ function notesOfChapter(){
 // salva subito quello che c'è in canna: prima di cambiare capitolo, lezione,
 // appunto, o di chiudere/ricaricare la finestra
 function noteFlush(){
+  /* ⚠️ Il segno della riga si scrive SEMPRE, anche quando il testo non è
+     cambiato: leggere un appunto senza toccarlo è il caso più comune che
+     esista, ed è esattamente quello in cui il segno serve. Sta prima
+     dell'uscita anticipata qui sotto, che riguarda il TESTO. */
+  try{ rigaFlush(); }catch(e){ console.error('riga:', e); }
   if(typeof NOTES==='undefined' || !NOTES || !NOTES.cur || !NOTES.dirty) return;
   clearTimeout(NOTES.timer); NOTES.timer=null;
   try{ noteSave(true); }catch(e){ console.error('appunti/flush:', e); }
@@ -11662,6 +11673,18 @@ function ensureMde(){
     if(!NOTES.cur){ noteInvito(); return; }
     NOTES.dirty=true; var d=$('#noteDirty'); if(d) d.hidden=false;
     clearTimeout(NOTES.timer); NOTES.timer=setTimeout(function(){ noteSave(true); },1800); // autosave
+  });
+  /* ⚠️ Dov'è il cursore ADESSO: è il segno di lettura dell'appunto (Q1).
+     `cursorActivity` scatta a ogni freccia e a ogni click, quindi la scrittura
+     va col RESPIRO — come il segno d'ascolto, che a scriverlo a ogni secondo
+     riscriverebbe il vault trenta volte al minuto.
+     ⚠️ E si tace mentre si CARICA: `noteCaricaCorpo` muove il cursore per
+     conto suo, e senza questa sentinella aprire un appunto scriverebbe subito
+     il segno «riga 0» sopra quello vero — cioè lo perderebbe proprio nel
+     momento in cui serve. */
+  NOTES.mde.codemirror.on('cursorActivity', function(){
+    if(NOTES.caricando || !NOTES.cur) return;
+    try{ rigaSegna(); }catch(e){ console.error('riga:', e); }
   });
   NOTES.mde.codemirror.setOption('extraKeys', Object.assign({}, NOTES.mde.codemirror.getOption('extraKeys')||{}, {
     'Cmd-S':function(){ noteSave(); }, 'Ctrl-S':function(){ noteSave(); }
@@ -12021,7 +12044,92 @@ function noteOpen(file){
   noteCaricaCorpo(n.body);
   openEditor();
   try{ refreshNoteUI(); }catch(e){}
-  setTimeout(function(){ mde.codemirror.refresh(); mde.codemirror.focus(); },60);
+  setTimeout(function(){
+    mde.codemirror.refresh(); mde.codemirror.focus();
+    /* ⚠️ QUI, e non prima: `refresh()` è ciò che dà a CodeMirror le sue
+       misure vere: portare il cursore su una riga di un editor che non sa
+       ancora quanto è alto lo mette dove capita, e lo scorrimento non segue.
+       È la stessa lezione dell'attesa del layer di testo (Q2): si aspetta la
+       condizione, non un numero. */
+    rigaVaiAlSegno(n.file);
+  },60);
+}
+
+/* ===== IL SEGNO DI LETTURA DEGLI APPUNTI (Q1) ==============================
+ *
+ * L'app ricordava dove eri in ogni documento (`_lettura.json`) e in ogni media
+ * (`_ascolto.json`); l'appunto — il pezzo su cui si torna più spesso, e
+ * l'unico che l'utente ha scritto lui — si riapriva sempre in cima.
+ *
+ * ⚠️ Copia in memoria e scrittura col RESPIRO, esattamente come il segno
+ * d'ascolto: muovere il cursore è il gesto più frequente che esista in un
+ * editor, e scrivere sul disco a ogni freccia vorrebbe dire centinaia di
+ * scritture per una pagina letta.
+ *
+ * ⚠️ E la decisione — DOVE si apre davvero, dato quanto è lungo l'appunto
+ * adesso — sta in `lib/riga.js` e si prova in Node: qui resta il cablaggio.
+ */
+var RIGA={ corso:'', appunti:{}, timer:null, attesa:null };
+
+function rigaApi(){ try{ return (window.vault && window.vault.riga) || null; }catch(e){ return null; } }
+
+function rigaCarica(){
+  var api=rigaApi(), corso=corsoAttivo();
+  if(!api || !corso){ RIGA.appunti={}; RIGA.corso=''; return Promise.resolve(); }
+  return api.leggi(corso).then(function(r){
+    r=r||{};
+    RIGA.appunti=r.appunti||{}; RIGA.corso=corso;
+    if(r.error) console.error('riga/leggi:', r.error);
+  }).catch(function(e){ console.error('riga/leggi:', e); });
+}
+
+/** A che riga eravamo su questo appunto, secondo la copia in memoria. */
+function rigaSegnata(file){
+  var v=RIGA.appunti[String(file||'')];
+  return v ? v.riga : null;
+}
+
+/** Porta l'editor dove si era arrivati. La regola di dove sia «dove» la dice
+ *  il modulo: qui si contano le righe di adesso e si esegue. */
+function rigaVaiAlSegno(file){
+  if(!NOTES.mde || typeof AppuntiSegno==='undefined') return;
+  var cm=NOTES.mde.codemirror;
+  var dove=AppuntiSegno.dove(rigaSegnata(file), cm.lineCount());
+  if(!dove) return;                       // la riga 0 è dove si aprirebbe da solo
+  try{
+    cm.setCursor({ line:dove, ch:0 });
+    /* ⚠️ `'center'` e non `scrollIntoView()` nudo: portare la riga sul bordo
+       basso della finestra è formalmente «a vista», ma chi riapre un appunto
+       vuole vedere anche quello che c'era intorno. */
+    cm.scrollIntoView({ line:dove, ch:0 }, 120);
+  }catch(e){ /* un editor appena montato può non essere pronto: si resta in cima */ }
+}
+
+/** Segna la riga del cursore, col respiro. */
+function rigaSegna(){
+  if(!NOTES.cur || !NOTES.mde) return;
+  var api=rigaApi(), corso=NOTES.courseId || corsoAttivo();
+  if(!api || !corso) return;
+  var n=0;
+  try{ n=NOTES.mde.codemirror.getCursor().line||0; }catch(e){ return; }
+  var file=NOTES.cur.file;
+  /* La copia in memoria si aggiorna SUBITO: è lei che l'app legge, e aspettare
+     il disco vorrebbe dire riaprire l'appunto al segno di prima. */
+  RIGA.appunti[file]={ riga:n, quando:new Date().toISOString() };
+  RIGA.attesa={ corso:corso, file:file, riga:n };
+  clearTimeout(RIGA.timer);
+  RIGA.timer=setTimeout(rigaFlush, 900);
+}
+
+/** Scrive quello che è in canna. Si chiama anche alla chiusura dell'appunto e
+ *  dell'app: un segno che vive solo in memoria è un segno che non c'è. */
+function rigaFlush(){
+  var att=RIGA.attesa, api=rigaApi();
+  clearTimeout(RIGA.timer); RIGA.timer=null; RIGA.attesa=null;
+  if(!att || !api) return;
+  api.segna(att.corso, att.file, att.riga).then(function(r){
+    if(r && r.error) console.error('riga/segna:', r.error);
+  }).catch(function(e){ console.error('riga/segna:', e); });
 }
 /**
  * Porta il cursore dell'editor sulla prima occorrenza di quello che si è
@@ -14848,7 +14956,7 @@ document.addEventListener('keydown',function(e){
 });
 /* Il salvataggio automatico ha 1,8 s di ritardo: chiudere o ricaricare la finestra
    in quella finestra di tempo buttava via l'ultima riga scritta. Ora si sbriga prima. */
-window.addEventListener('beforeunload', function(){ noteFlush(); });
+window.addEventListener('beforeunload', function(){ noteFlush(); rigaFlush(); });
 document.addEventListener('visibilitychange', function(){ if(document.hidden) noteFlush(); });
 /* Le mappe si salvano PRIMA: quando la finestra passa in secondo piano e quando
    perde il fuoco, non alla chiusura.

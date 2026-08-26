@@ -406,6 +406,16 @@ ipcMain.handle('ascolto:leggi', (e, { corso } = {}) => ascoltoLib.leggi(vaultDir
 ipcMain.handle('ascolto:segna', (e, { corso, file, secondo } = {}) =>
   ascoltoLib.segna(vaultDir(), corso, file, secondo));
 
+/* ---- il segno degli APPUNTI: a che riga si era arrivati (Q1) ----
+ * Il terzo gemello di `lettura` e `ascolto`, e passa da qui per la stessa
+ * ragione: sta nel vault, quindi lo scrive il main. */
+const rigaLib = require('./lib/riga');
+ipcMain.handle('riga:leggi', (e, { corso } = {}) => rigaLib.leggi(vaultDir(), corso));
+ipcMain.handle('riga:segna', (e, { corso, file, riga } = {}) =>
+  rigaLib.segna(vaultDir(), corso, file, riga));
+ipcMain.handle('riga:dimentica', (e, { corso, file } = {}) =>
+  rigaLib.dimentica(vaultDir(), corso, file));
+
 /* ---- i media di un contenitore: video e audio che entrano ----
  * ⚠️ Qui non si trascrive niente. Un video importato è un video che si guarda e
  * si cita al secondo: la trascrizione costa minuti di macchina, è un derivato,
