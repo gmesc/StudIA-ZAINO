@@ -12,8 +12,8 @@
 > **Il punto di partenza**: `main` a **`ab74eba`**, `origin/main` allineata, albero pulito, nessun
 > ramo. Suite intera CDP verde (**57 prove**) · `npm test` verde (**46 file**).
 >
-> ✅ **Q2, Q8 e Q7 SONO FATTI E UNITI** (24 agosto 2026). **Restano sei**: Q1, Q3, Q4, Q5, Q6, Q9.
-> L'ordine consigliato è al §5, e il prossimo è **Q3** (il pallino che non apre).
+> ✅ **Q2, Q8, Q7 e Q3 SONO FATTI E UNITI** (24 agosto 2026). **Restano cinque**: Q1, Q4, Q5, Q6,
+> Q9. L'ordine consigliato è al §5, e il prossimo è **Q6** (la postilla).
 
 ---
 
@@ -58,7 +58,7 @@ per questo stanno insieme: toccano `_evidenze.json`, la barra della selezione, l
 |---|---|---|---|
 | Q1 | **Il quaderno si riapre alla riga** | S | ritrovare |
 | Q2 | ✅ **La lente porta al punto esatto della parola cercata** (editor **e** PDF) — *fatto, `ab74eba`* | S | ritrovare |
-| Q3 | **Il pallino che mantiene la promessa** | S | lavorare |
+| Q3 | ✅ **Il pallino che mantiene la promessa** — *fatto il 24 ago 2026, `PIANO-ZAINO.md` §Z16* | S | lavorare |
 | Q4 | **Sbirciare senza saltare** | M | ritrovare |
 | Q5 | **La lente legge anche le mappe e le didascalie** | S | ritrovare |
 | Q6 | **La postilla** | S | lavorare |
@@ -150,7 +150,7 @@ le prove) e **tornare ai corsi** alla fine, perché `partiPulito()` chiude panne
 
 ---
 
-## Q3 — Il pallino che mantiene la promessa · S
+## Q3 — Il pallino che mantiene la promessa ✅ *FATTO (24 ago 2026 — il racconto è in `PIANO-ZAINO.md` §Z16)*
 
 **Il difetto.** Selezioni una frase nel PDF, premi **«Alla mappa»**: nasce un nodo col testo, e col
 **pallino della fonte nell'angolo** — che cliccato **non apre niente**. Un nodo nato da una parola
@@ -551,9 +551,9 @@ utile.
    grave del pacchetto è tolto;
 2. ~~**Q7** (le liste audio)~~ — ✅ **fatto il 24 agosto** (`PIANO-ZAINO.md` §Z15): le copie erano
    sette, non cinque, e la promessa è chiusa da tutti e due i lati;
-3. **Q3** (il pallino) — **il prossimo**: piccolo, di principio, e prepara la mano sulla barra
-   della selezione;
-4. **Q6** (la postilla) — il campo `nota`, con la prova che l'identità non cambia;
+3. ~~**Q3** (il pallino)~~ — ✅ **fatto il 24 agosto** (`PIANO-ZAINO.md` §Z16): la mano sulla barra
+   della selezione è già stata fatta, e serve a Q6;
+4. **Q6** (la postilla) — **il prossimo**: il campo `nota`, con la prova che l'identità non cambia;
 5. **Q1** e **Q2** (il quaderno: la riga e la lente) — stessa materia, stessa porta `noteOpen`;
 6. **Q5** (la lente vede mappe e didascalie) — due costruttori nel modulo puro;
 7. **Q4** (sbirciare) — il primo **M**, e vale la pena farlo *dopo* Q3 e Q6, perché la bolla deve

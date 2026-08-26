@@ -822,6 +822,46 @@ esattamente ciò che nessuno voleva vedere nell'app. Ora i media sono veri (`wav
 verdi**: le prove guardavano che l'app *parlasse*, non **che cosa dicesse**, e non guardavano
 affatto **che cosa restasse a schermo dopo**.
 
+### Z16 — il pallino della fonte apre davvero, o non compare (24 agosto 2026, Q3 del pacchetto «Quaderno»)
+
+**Il difetto.** Selezionavi una frase in un PDF, premevi «Alla mappa», e nasceva un nodo col
+**pallino della fonte** nell'angolo — che cliccato **non apriva niente**. Il frammento nasceva con
+`capitolo: state.current`, cioè il capitolo che si stava *leggendo*: con un documento davanti non
+c'entra, e in uno zaino non esiste affatto.
+
+Un pallino che compare e non apre è **«un comando su carta»**, il disegno che promette un gesto
+impossibile — già scritto nel modulo di stampa, e vietato altrove in più punti (il segmento
+Generata/Mie che si spegne invece di sparire, la voce «Capitolo» che non si offre in uno zaino).
+
+**Il lavoro.** `mappaEstrai` passa al nodo quello che il fratello accanto ha già in mano:
+`origineDaRange`, la **stessa** funzione da cui «Appunta» ricava `pdf:NN#p=X`, nello stesso menu e
+sulla stessa selezione. Nessuna pagina calcolata di nuovo, e `MAPPE/*.json` **non cambia forma**: si
+riempie il campo `rimando` che c'era già (invariante 7).
+
+⚠️ **La severità sta in `copiaRimando`**, cioè nell'unico punto da cui un rimando entra su un nodo —
+così vale per ogni chiamante, non solo per questo. Senza `file` o senza pagina il rimando non entra
+e il nodo nasce «utente»: **nessun pallino**. «Meglio nessun pallino di uno che non apre», che è lo
+stesso difetto al contrario. `openNote` apre `n.file`: un `{type:'pdf', page:3}` chiamava
+`openPdf(undefined, 3)`, che non apre niente e non lo dice.
+
+⚠️ **Sul video lo zero è un tempo**, non un'assenza: «riportato all'inizio» è un fatto. È la stessa
+distinzione già scritta per `_ascolto.json`.
+
+⚠️ **La traduzione italiano→inglese sta nel modulo**, non nel renderer: `origineDaRange` descrive
+una selezione con `{tipo, pagina}`, il nodo vuole `{type, page}`. È la forma del **nodo** a
+comandare, e un secondo traduttore nel renderer sarebbe la seconda grammatica che l'invariante 7
+vieta.
+
+⚠️ **Il capitolo si passa SOLO se il frammento non viene da un documento**: tenerli tutti e due
+vorrebbe dire un nodo che dichiara due provenienze sul disco, e chi lo apre ne sceglie una.
+
+⚠️ **Tre fixture di `test/modifica.js` passavano `{type:'pdf', page:3}` senza file** — cioè il
+difetto di Q3 dentro una prova, usato come riempitivo per provare altro (l'ordine dei campi, la
+purezza). Rese valide, e aggiunta la regola esplicita, che prima non era scritta da nessuna parte.
+
+⚠️ **E due rossi erano della PROVA, non dell'app**: `mappaVaiA` non esiste (inventato) e il campo è
+`ANTEPRIMA.page`, non `.pagina`. Cercati nel codice invece che ricordati.
+
 ---
 
 ## 6. Che cosa NON si fa
