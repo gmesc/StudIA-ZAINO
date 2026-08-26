@@ -9,9 +9,9 @@
 
 ## 0. Da dove ripartire, in tre righe
 
-`main` porta i merge di **Q8** e **Q7**, albero pulito, **nessun ramo, nessun worktree**.
+`main` porta i merge di **Q8**, **Q7** e **Q3**, albero pulito, **nessun ramo, nessun worktree**.
 
-Il prossimo lavoro è **Q3** del pacchetto «Quaderno» (il pallino che non apre): il file di riferimento è
+Il prossimo lavoro è **Q6** del pacchetto «Quaderno» (la postilla): il file di riferimento è
 **`HANDOFF-PACCHETTO-QUADERNO.md`**, che è autosufficiente — dice che cosa costruire, dove vive ogni
 pezzo, quali fatti sono già misurati e quali trappole già pagate.
 
@@ -29,18 +29,18 @@ un processo per nome**.
 
 | | |
 |---|---|
-| `main` | **`e124c7b`** — «merge: le liste dei media sono una sola, e la soglia dello zaino dice di no (Q7)» |
+| `main` | **`2267083`** — «merge: il pallino della fonte apre davvero, o non compare (Q3)» |
 | remoto | `git@github.com:gmesc/StudIA.git` — ✅ **allineato** (`0 0`) |
 | rami · worktree | **nessuno** |
 | unità | ✅ **46 file**, tutti dentro la catena di `npm test`, exit 0 |
-| CDP | ✅ **58 prove** in elenco · 61 file `prova-*.js` sul disco (i 3 fuori sono i noti di luglio) |
-| monolite | `App/StudIA.html` **21.075 righe** · moduli in `App/assets/` (pdf.js escluso): **34** |
+| CDP | ✅ **59 prove** in elenco · 62 file `prova-*.js` sul disco (i 3 fuori sono i noti di luglio) |
+| monolite | `App/StudIA.html` **21.214 righe** · moduli in `App/assets/` (pdf.js escluso): **34** |
 | pacchetti | ⚠️ **nessuno**: `dist/` è stata svuotata il 23 agosto (2,3 GB). I tre installer che c'erano erano del **17 agosto** e saltavano il lavoro del 18, 19 e 22 — andavano rifatti comunque. Si rifanno con `npm run pacchetto` |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
 npm test                                                   # 46 file, exit 0
-STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 57 prove sull'app viva
+STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 59 prove sull'app viva
 STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh prova-lente-punto.js   # una sola
 ```
 
@@ -54,7 +54,7 @@ corretto» solo perché guardava un'altra build.
 
 ⚠️ **Tre file di prova restano fuori dall'elenco**: `prova-l1.js`, `prova-l2.js`, `prova-l3l4.js`
 chiedono un `cdp.js` dentro uno scratchpad di luglio che non esiste più. Il conto si fa, non si
-ricorda: 60 file, 57 in elenco, 3 fuori.
+ricorda: **62 file, 59 in elenco, 3 fuori** (contati il 24 agosto a notte).
 
 ---
 
@@ -135,6 +135,15 @@ dicesse, e non guardavano affatto che cosa restasse a schermo dopo.
 ⚠️ E la causa dietro tutti e tre: **le prove del player giravano su media che non esistevano**.
 Reggeva finché un media che non si apriva falliva in silenzio.
 
+### Il pacchetto «Quaderno» — Q3, il pallino apre davvero (24 agosto, notte)
+
+Il racconto è in `PIANO-ZAINO.md` **§Z16**. Un frammento preso da un documento nasceva con
+`capitolo: state.current` — il capitolo che si stava *leggendo*, che con un PDF davanti non c'entra
+e in uno zaino non esiste — quindi il pallino compariva e non apriva. Adesso `mappaEstrai` passa al
+nodo il rimando che **«Appunta» ha già in mano** (`origineDaRange`), e `MAPPE/*.json` non cambia
+forma. ⚠️ La severità sta in `copiaRimando`, l'unico punto da cui un rimando entra su un nodo: senza
+`file` o senza pagina il pallino **non compare affatto**, che è lo stesso difetto al contrario.
+
 ### I tre lavori laterali
 
 - il **pannellino della ricerca** nel documento: una riga sola, campo a larghezza costante;
@@ -185,14 +194,13 @@ banco di prova fuori dall'app, e il numero era sbagliato del 38%.
 
 ## 5. Che cosa resta da fare
 
-### Il prossimo lavoro: il pacchetto «Quaderno», sei voci su nove
+### Il prossimo lavoro: il pacchetto «Quaderno», cinque voci su nove
 
-`HANDOFF-PACCHETTO-QUADERNO.md` è autosufficiente. **Q2, Q8 e Q7 sono fatti**; restano:
+`HANDOFF-PACCHETTO-QUADERNO.md` è autosufficiente. **Q2, Q8, Q7 e Q3 sono fatti**; restano:
 
 | | | costo |
 |---|---|---|
-| **Q3** | il pallino di «Alla mappa» che non apre — **il prossimo** | S |
-| Q6 | la postilla: il corpo sul bersaglio | S |
+| **Q6** | la postilla: il corpo sul bersaglio — **il prossimo** | S |
 | Q1 | il quaderno si riapre alla riga | S |
 | Q5 | la lente legge anche mappe e didascalie | S |
 | Q4 | sbirciare senza saltare (hover = anteprima) | M |
@@ -244,7 +252,7 @@ scritte».
 
 | | |
 |---|---|
-| **verificato oggi** | `npm test` exit 0 (46 file) · suite CDP intera verde · albero pulito · `origin/main` allineata · nessun ramo né worktree · i conti delle prove (46 · 57 · 60) · le righe del monolite (21.075) |
+| **verificato oggi** | `npm test` exit 0 (46 file) · suite CDP intera verde · albero pulito · `origin/main` allineata · nessun ramo né worktree · i conti delle prove (46 · 59 · 62) · le righe del monolite (21.214) |
 | **ereditato** | i debiti al §5, che vengono dagli handoff precedenti e non sono stati rimisurati |
 | **misurato e lasciato aperto** | il `frammento` sfasato sulla «İ» · `dist/` che non esiste |
 
