@@ -76,6 +76,11 @@ const ZAINO = 'zaino-postilla';
   ok('e NON è spenta', false, voce && voce.spenta);
 
   sezione('E il gesto scrive davvero, ancorando alla PAGINA');
+  /* la spia dei messaggi: serve alla sezione finale, che guarda se l'app ha
+     DETTO che cosa ha scritto — non solo se l'ha scritto */
+  await val(`(()=>{ window.__toastVisti=[]; const t=window.toast;
+    window.toast=function(m){ window.__toastVisti.push(String(m)); return t.apply(this, arguments); };
+    return 1; })()`);
   await val(`document.querySelector('#selMenu .ctx-item[data-az="postilla"]').click(), 1`);
   await pausa(700);
   ok('la modale si apre', true, await val(`!!document.getElementById('uiModal').hasAttribute('open')`));
@@ -91,6 +96,38 @@ const ZAINO = 'zaino-postilla';
      un capitoloId, l'evidenza sarebbe ancorata a qualcosa che qui non esiste. */
   ok('ancorata al documento e alla sua pagina', ['01 Dispensa.pdf', 1, false],
     ev ? [ev.materiale, ev.pagina, ev.haCapitolo] : null);
+
+  sezione('⚠️ E la postilla SI VEDE: è la metà che mancava');
+  {
+    /* ⚠️ IL CONTROLLO NATO DA UN GUASTO VERO. La prima versione di Q6 scriveva
+       la postilla e non le dava nessun posto dove mostrarsi: su un documento le
+       evidenze si dipingono con la Custom Highlight API — che non crea elementi
+       su cui passare il mouse — e una frase lunga non diventa «parola chiave»,
+       quindi non ha nemmeno un chip. L'utente ha riferito «non si salva» di una
+       postilla che era sul disco: era invisibile, che per chi la usa è la
+       stessa cosa. Provare che il dato è scritto NON basta. */
+    const detto = await val(`JSON.stringify(window.__toastVisti||[])`);
+    ok('il messaggio RIPETE quello che si è scritto, non dice solo «fatto»', true,
+      JSON.parse(detto).some((m) => m.indexOf('da rivedere col tutor') >= 0));
+
+    /* Riselezionando la stessa frase, il menu mostra la postilla: è il gesto con
+       cui si torna su una sottolineatura per ricordarsi perché la si era fatta. */
+    await val('getSelection().removeAllRanges(), 1');
+    await invia('Input.dispatchMouseEvent', { type: 'mousePressed', x: riga.x1, y: riga.y, button: 'left', clickCount: 1 });
+    await invia('Input.dispatchMouseEvent', { type: 'mouseMoved', x: riga.x2, y: riga.y, button: 'left', buttons: 1 });
+    await invia('Input.dispatchMouseEvent', { type: 'mouseReleased', x: riga.x2, y: riga.y, button: 'left', clickCount: 1 });
+    await pausa(600);
+    const menu = await val(`(()=>{ const s=getSelection(); if(!s.rangeCount) return null;
+      const r=s.getRangeAt(0); selMenuApri(60,60,{ testo:r.toString(), range:r });
+      const p=document.querySelector('#selMenu .ctx-postilla');
+      const v=document.querySelector('#selMenu .ctx-item[data-az="postilla"]');
+      return { testo:p?(p.textContent||'').trim():'', larghezza:p?Math.round(p.getBoundingClientRect().width):0,
+               voce:v?(v.textContent||'').trim():'' }; })()`);
+    ok('il menu mostra la postilla scritta', 'da rivedere col tutor', menu && menu.testo);
+    ok('ed è davvero a schermo, non larga zero', true, !!menu && menu.larghezza > 0);
+    ok('e la voce invita a CORREGGERLA, non a scriverla', true,
+      !!menu && /Correggi/.test(menu.voce));
+  }
 
   await val(`(async()=>{ if(modoAttivo()!=='corso') await cambiaModo('corso'); return 1; })()`);
   console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati'));
