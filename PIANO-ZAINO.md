@@ -925,6 +925,37 @@ esatto da cui la cartella difende: ⌘Z e subito ⌘S.
 ⚠️ **Una copia di sicurezza non può far fallire il salvataggio**: se non si riesce a scriverla si va
 avanti, o il testo nuovo si perderebbe per colpa della rete che doveva difenderlo.
 
+### Z18 — lo strumento «Postille» (26 agosto 2026, chiesto dall'utente)
+
+**Perché.** La postilla si scriveva e restava **invisibile**: sul documento gli highlight si
+dipingono con la Custom Highlight API — che non crea elementi su cui passare il mouse — e una frase
+lunga non diventa «parola chiave», quindi non ha nemmeno un chip. L'utente ha riferito «non si
+salva» di una postilla che era sul disco. **Invisibile e non salvato, per chi la usa, sono la stessa
+cosa.**
+
+**Che cos'è.** Uno strumento del banco come «Parole chiave», nella tendina della testata: elenca
+tutte le postille del contenitore, **raggruppate per documento**, con la frase segnata e la sua
+pagina sotto. Un click porta dove la frase è stata segnata, passando da `evidenzaVai` — la stessa
+porta del chip, non una seconda strada (invariante 6).
+
+⚠️ **La decisione sta in un modulo puro** (`App/assets/evidenze/postille.js`, 26 controlli in Node):
+che cosa entra, come si raggruppa, in che ordine. Al pannello resta disegnare.
+
+⚠️ **La chiave del gruppo è il dato grezzo** (`materiale`, `capitoloId`), non il titolo leggibile:
+due capitoli possono chiamarsi uguale, e due documenti pure se uno è stato rinominato.
+
+⚠️ **La pagina si ordina come numero**: «10» prima di «9» è l'ordinamento di chi confronta stringhe.
+Chi non ha pagina va **in fondo** — è un caso raro, e in cima sposterebbe tutto ciò che si cerca.
+
+**Quattro scelte dichiarate, perché discutibili:** tutte le postille e non solo quelle del documento
+aperto (che però va in cima); ordine per **pagina**, non per data; il conto in barra dice quante ne
+**esistono**, non quante ne mostra il filtro; il vuoto spiega il **gesto** e distingue «non ne hai
+mai scritte» da «hai sottolineature ma nessuna postilla».
+
+⚠️ **Il ridisegno è agganciato in un punto solo**, dove già si aggiornano il testo e i chip: le
+postille sono la **terza vista** sulle stesse evidenze, e chi cambia il dato non deve ricordarsi di
+avvisare tre pannelli.
+
 ---
 
 ## 6. Che cosa NON si fa

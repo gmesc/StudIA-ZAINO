@@ -33,18 +33,18 @@ un processo per nome**.
 
 | | |
 |---|---|
-| `main` | **`3b87e82`** — «merge: la postilla — il corpo dell'annotazione (Q6)» |
+| `main` | **`7178e95`** — «merge: lo strumento «Postille» (chiesto dall'utente)» |
 | remoto | `git@github.com:gmesc/StudIA.git` — ✅ **allineato** (`0 0`) |
 | rami · worktree | **nessuno** |
-| unità | ✅ **46 file**, tutti dentro la catena di `npm test`, exit 0 |
-| CDP | ✅ **61 prove** in elenco · 64 file `prova-*.js` sul disco (i 3 fuori sono i noti di luglio) |
-| monolite | `App/StudIA.html` **21.279 righe** · moduli in `App/assets/` (pdf.js escluso): **34** |
+| unità | ✅ **47 file**, tutti dentro la catena di `npm test`, exit 0 |
+| CDP | ✅ **62 prove** in elenco · 65 file `prova-*.js` sul disco (i 3 fuori sono i noti di luglio) |
+| monolite | `App/StudIA.html` **21.446 righe** · moduli in `App/assets/` (pdf.js escluso): **35** |
 | pacchetti | ⚠️ **nessuno**: `dist/` è stata svuotata il 23 agosto (2,3 GB). I tre installer che c'erano erano del **17 agosto** e saltavano il lavoro del 18, 19 e 22 — andavano rifatti comunque. Si rifanno con `npm run pacchetto` |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
-npm test                                                   # 46 file, exit 0
-STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 61 prove sull'app viva
+npm test                                                   # 47 file, exit 0
+STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 62 prove sull'app viva
 STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh prova-lente-punto.js   # una sola
 ```
 
@@ -58,7 +58,7 @@ corretto» solo perché guardava un'altra build.
 
 ⚠️ **Tre file di prova restano fuori dall'elenco**: `prova-l1.js`, `prova-l2.js`, `prova-l3l4.js`
 chiedono un `cdp.js` dentro uno scratchpad di luglio che non esiste più. Il conto si fa, non si
-ricorda: **64 file, 61 in elenco, 3 fuori** (contati il 26 agosto).
+ricorda: **65 file, 62 in elenco, 3 fuori** (contati il 26 agosto).
 
 ---
 
@@ -164,6 +164,10 @@ gesto sospettato ma nei punti da cui passano **tutte** le scritture — il racco
 
 1. **`appunti.save` rifiuta di svuotare** un appunto che ha del testo, salvo `opt.svuota`: il
    salvataggio automatico non lo dichiara mai, quello esplicito sì. E il rifiuto **si dice**.
+   ⚠️ E il **26 agosto** si è aggiunto un terzo pezzo: la postilla era **scritta e invisibile**, e
+   ne è nato lo strumento **«Postille»** (`PIANO-ZAINO.md` §Z18). La lezione vale oltre: *provare
+   che il dato è sul disco non basta* — nessuna delle tre prove di Q6 guardava se qualcosa
+   comparisse a schermo.
 2. **`APPUNTI/_versioni/`**: una copia di ciò che sta per essere perso, **solo quando un
    salvataggio accorcia il testo**. `.md` leggibili col Finder, le 10 più recenti, fuori
    dall'esportazione.
@@ -279,7 +283,7 @@ scritte».
 
 | | |
 |---|---|
-| **verificato oggi** | `npm test` exit 0 (46 file) · suite CDP intera verde · albero pulito · nessun ramo né worktree · i conti delle prove (46 · 61 · 64) · le righe del monolite (21.279) |
+| **verificato oggi** | `npm test` exit 0 (47 file) · suite CDP intera verde · albero pulito · nessun ramo né worktree · i conti delle prove (47 · 62 · 65) · le righe del monolite (21.446) |
 | **ereditato** | i debiti al §5, che vengono dagli handoff precedenti e non sono stati rimisurati |
 | **misurato e lasciato aperto** | il `frammento` sfasato sulla «İ» · `dist/` che non esiste |
 
