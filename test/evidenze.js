@@ -706,6 +706,79 @@ sezione('Il tratto: come si segna');
   check('una voce vecchia resta sottolineata', 'sotto', E.leggi(VAULT, C).evidenze[0].tratto);
 }
 
+sezione('La POSTILLA: il corpo dell\'annotazione, accanto al bersaglio');
+{
+  /* ⚠️ IL CONTROLLO CHE GIUSTIFICA TUTTO IL LAVORO. La postilla è commento,
+     non identità: sta accanto a `colore` e `tratto`. Se entrasse nel seme,
+     scriverla farebbe nascere una SECONDA evidenza e ogni
+     `[==testo==](ev:<id>)` già negli appunti smetterebbe di ritrovare la sua —
+     in silenzio. È la trappola catalogata, e questo è il suo valore d'oro. */
+  const nudo = { capitoloId: 'c1', exact: 'sinapsi', prefix: '', suffix: '' };
+  check('la postilla NON entra nell\'identità: stessa parola, stesso id',
+    E.identita(nudo), E.identita(Object.assign({}, nudo, { nota: 'chiedere al prof' })));
+  check('e nemmeno cambiandola una seconda volta',
+    E.identita(nudo), E.identita(Object.assign({}, nudo, { nota: 'tutt\'altra cosa' })));
+
+  /* ⚠️ UNA RIGA, e il limite si fa rispettare nel codice. Il giorno che accetta
+     tre paragrafi, chi studia ha due posti dove scrivere — uno cercabile, uno
+     no — e non saprà mai in quale ha messo quella cosa. */
+  check('gli a capo diventano spazio: è una riga sola',
+    'contraddice p. 4 — chiedere al prof',
+    E.notaValida('contraddice p. 4\n— chiedere\tal prof'));
+  check('gli spazi doppi si stringono e i bordi si tagliano',
+    'due parole', E.notaValida('   due    parole   '));
+  check('il tetto è dichiarato e si applica', E.NOTA_MAX,
+    E.notaValida('a'.repeat(E.NOTA_MAX + 50)).length);
+  check('e non è un numero inventato qui: lo dice il modulo', 200, E.NOTA_MAX);
+  check('una postilla di soli spazi è nessuna postilla', '', E.notaValida('   \n  '));
+
+  /* ⚠️ I VAULT VECCHI RESTANO IDENTICI BYTE PER BYTE: un campo assente resta
+     assente, non diventa `""`. Gli altri campi si scrivono sempre, anche vuoti;
+     farlo anche per questo avrebbe cambiato ogni `_evidenze.json` già in giro,
+     al primo salvataggio, per una funzione mai usata da quell'utente. */
+  check('senza postilla la chiave non c\'è proprio', false,
+    'nota' in E.normalizzaVoce({ exact: 'x', capitoloId: 'c1' }));
+  check('e i campi restano quelli di prima, nello stesso ordine',
+    ['id', 'exact', 'prefix', 'suffix', 'colore', 'tratto', 'strato',
+      'lezioneId', 'capitoloId', 'capitolo', 'materiale', 'pagina', 'creato'],
+    Object.keys(E.normalizzaVoce({ exact: 'x', capitoloId: 'c1' })));
+  check('con la postilla la chiave si aggiunge IN CODA', 'nota',
+    Object.keys(E.normalizzaVoce({ exact: 'x', capitoloId: 'c1', nota: 'perché' })).pop());
+
+  const C = 'corso-postilla';
+  E.aggiungi(VAULT, C, { exact: 'sinapsi', capitoloId: 'c1' }, QUANDO);
+  const prima = E.leggi(VAULT, C).evidenze[0];
+  const r = E.postilla(VAULT, C, prima.id, '  contraddice\np. 4  ');
+  check('si scrive, ripulita', 'contraddice p. 4', r.evidenza.nota);
+  check('⚠️ e l\'id è rimasto quello: è la stessa evidenza', prima.id, r.evidenza.id);
+  check('senza duplicare l\'elenco', 1, r.evidenze.length);
+  check('sopravvive alla rilettura dal disco', 'contraddice p. 4',
+    E.leggi(VAULT, C).evidenze[0].nota);
+  /* ⚠️ Il colore non deve essersi portato via la postilla, né viceversa: sono
+     due gemelli che scrivono lo stesso record da due porte diverse. */
+  E.colora(VAULT, C, prima.id, '#a16207');
+  check('cambiare colore non cancella la postilla',
+    ['contraddice p. 4', '#a16207'],
+    [E.leggi(VAULT, C).evidenze[0].nota, E.leggi(VAULT, C).evidenze[0].colore]);
+
+  /* ⚠️ Cancellarla è un gesto che deve esistere, e TOGLIE la chiave invece di
+     scrivere `""`: un campo vuoto sul disco è indistinguibile da una postilla
+     mai scritta. */
+  E.postilla(VAULT, C, prima.id, '   ');
+  check('una postilla vuota la toglie, e la chiave sparisce', false,
+    'nota' in E.leggi(VAULT, C).evidenze[0]);
+  check('e l\'id non è cambiato nemmeno togliendola', prima.id, E.leggi(VAULT, C).evidenze[0].id);
+  check('postillare una che non c\'è lo dice',
+    'evidenza non trovata', E.postilla(VAULT, C, 'inesistente', 'x').error);
+
+  /* Una riga scritta prima che questo campo esistesse si legge senza postilla,
+     non come un guasto. */
+  fs.writeFileSync(E.percorso(VAULT, C),
+    JSON.stringify({ evidenze: [{ id: 'vecchia', exact: 'mitocondrio', capitoloId: 'c1' }] }), 'utf-8');
+  check('una voce vecchia non ha postilla, e va bene così', [1, false],
+    [E.leggi(VAULT, C).evidenze.length, 'nota' in E.leggi(VAULT, C).evidenze[0]]);
+}
+
 /* La regola «≤ 3 parole appuntate diventano anche parola chiave» si gioca tutta
    su questo conteggio: se sbaglia, la selezione giusta non diventa keyword — o,
    peggio, mezza frase ci diventa. Qui si prova il conteggio, non l'interfaccia

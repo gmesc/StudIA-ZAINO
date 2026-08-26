@@ -34,7 +34,10 @@ function sezione(t) { console.log('\n== ' + t); }
 const INDICE = {
   '9f2c1a4b7e01': { colore: '#fdf14d', tratto: 'sotto' },
   'aa11bb22cc33': { colore: '#6fdcff', tratto: 'overlay' },
-  'dd44ee55ff66': { colore: '', tratto: 'sotto' }
+  'dd44ee55ff66': { colore: '', tratto: 'sotto' },
+  /* Una con la POSTILLA: il corpo dell'annotazione, che l'appunto EREDITA
+     invece di copiarselo accanto. */
+  'be77cc88dd99': { colore: '#a16207', tratto: 'sotto', nota: 'contraddice p. 4' }
 };
 const P = CAP.crea({
   pdfNum: () => ({ '03': '03 La disortografia - Galton.pdf' }),
@@ -148,6 +151,36 @@ sezione('Dentro un capitolo, e dentro un riquadro');
   const b = P.mdToHtml('- primo [==segnato==](ev:9f2c1a4b7e01)\n- secondo', true);
   check('un segno dentro un elenco puntato regge', true,
     /<li>primo <a href="#" class="evlink"/.test(b));
+}
+
+sezione('La POSTILLA si eredita, come il colore');
+{
+  /* ⚠️ Nel markdown c'è la CITAZIONE, non il dato: la postilla vive
+     nell'evidenza e l'appunto la CHIEDE al momento di disegnare. Copiarla nel
+     markdown la farebbe divergere al primo ritocco — è la regola P1.1-bis,
+     la stessa per cui ricolorare una parola chiave cambia anche gli appunti. */
+  const h = P._mdInline('Qui [==il passaggio==](ev:be77cc88dd99) non torna.');
+  check('la postilla finisce nel title del segno', true,
+    h.indexOf('title="contraddice p. 4"') > 0);
+  check('e il segno la dichiara, per chi vuole vederla a colpo d\'occhio', true,
+    /data-postilla="1"/.test(h));
+  check('nel markdown la postilla NON è scritta', false, /contraddice/.test(
+    'Qui [==il passaggio==](ev:be77cc88dd99) non torna.'));
+
+  /* ⚠️ Due `title` annidati: si legge quello più interno solo se quello esterno
+     non c'è. Con una postilla, la cosa da leggere passandoci sopra è LEI —
+     dove porta il link lo dice già il cursore. */
+  check('l\'ancora non copre la postilla col suo title', false,
+    /class="evlink"[^>]*title=/.test(h));
+  const senza = P._mdInline('Qui [==altra frase==](ev:9f2c1a4b7e01) invece sì.');
+  check('ma senza postilla l\'ancora dice ancora dove porta', true,
+    /class="evlink"[^>]*title="Torna dove l/.test(senza));
+  check('e il segno senza postilla non ha title', false, /<mark[^>]*title=/.test(senza));
+
+  /* Un'evidenza che non c'è più resta muta e scolorita, come prima: la
+     postilla non cambia quel patto. */
+  check('l\'orfana non è cambiata', true,
+    /evorfana/.test(P._mdInline('[==sparita==](ev:000000000000)')));
 }
 
 console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti  (' + (ok + ko) + ' controlli)'

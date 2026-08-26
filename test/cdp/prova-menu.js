@@ -82,8 +82,12 @@ async function esc() {
   ok('il menu è aperto', true, await aperto());
   /* Erano sei quando questo file è stato scritto: c'era anche `evidenzia`.
      È caduta costruendo — la riga dei colori È l'evidenziatore, e una voce che
-     ripete lo stesso gesto con meno precisione è un bottone senza mestiere. */
-  ok('ha le cinque voci, in ordine', ['appunta', 'mappa', 'keyword', 'cancella', 'copia'], await voci());
+     ripete lo stesso gesto con meno precisione è un bottone senza mestiere.
+     ⚠️ E dal 24 agosto 2026 sono SEI di nuovo: «Postilla…» sta accanto a
+     «Keyword» perché è la sua seconda metà — nel modello W3C un'annotazione ha
+     un bersaglio e un CORPO, e finora c'era solo il bersaglio (Q6). */
+  ok('ha le sei voci, in ordine',
+    ['appunta', 'mappa', 'keyword', 'postilla', 'cancella', 'copia'], await voci());
   /* ⚠️ La riga dei riquadri sta sotto «Appunta» e funziona come quella dei
      colori: il primo bottone è «senza riquadro» (testo e rimando), gli altri
      sette sono i callout. Quello in uso si dichiara con `aria-pressed`, e la
@@ -144,7 +148,7 @@ async function esc() {
      due superfici non possano divergere lo prova `prova-selezione-menu.js`;
      qui si controlla solo che la barra le porti tutte. */
   ok('con le voci del menu, nell\'ordine del menu',
-    ['appunta', 'mappa', 'keyword', 'cancella', 'copia'],
+    ['appunta', 'mappa', 'keyword', 'postilla', 'cancella', 'copia'],
     await val(`[...document.querySelectorAll('#selBarra .ctx-item')].map(b=>b.dataset.az)`));
   ok('e la tavolozza: cinque preset più il picker', [5, 1],
     await val(`[document.querySelectorAll('#selBarra .ctx-col').length,

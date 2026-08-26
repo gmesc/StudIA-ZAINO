@@ -327,6 +327,14 @@ contextBridge.exposeInMainWorld('vault', {
       try { return evidenzeLib.colora(vaultPath, courseId, id, colore); }
       catch (e) { return { evidenza: null, evidenze: [], error: e.message }; }
     },
+    /* Il terzo gemello di `colora`: la POSTILLA, cioè il perché di una
+       sottolineatura. Non tocca l'identità — sta accanto a colore e tratto —
+       e una postilla vuota la toglie. */
+    postilla: (courseId, id, testo) => {
+      if (!vaultPath) return { evidenza: null, evidenze: [], error: 'nessuna cartella vault impostata' };
+      try { return evidenzeLib.postilla(vaultPath, courseId, id, testo); }
+      catch (e) { return { evidenza: null, evidenze: [], error: e.message }; }
+    },
     // il gemello di `colora`, per il TRATTO: sottolineatura o fondo pieno
     tratta: (courseId, id, tratto) => {
       if (!vaultPath) return { evidenza: null, evidenze: [], error: 'nessuna cartella vault impostata' };
