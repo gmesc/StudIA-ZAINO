@@ -257,10 +257,15 @@ contextBridge.exposeInMainWorld('vault', {
     // leggi() dice anche che cosa è andato storto; list() resta per compatibilità
     leggi: (courseId) => vaultPath ? appunti.read(vaultPath, courseId) : { notes: [], error: 'nessuna cartella vault impostata' },
     list: (courseId) => vaultPath ? appunti.read(vaultPath, courseId).notes : [],
-    save: (courseId, file, meta, body) => {
+    /* ⚠️ `opt.svuota` è la chiave che permette di scrivere il VUOTO sopra un
+       appunto che ha del testo. Non ha valore di comodo: chi non la passa non
+       può svuotare niente, e l'autosalvataggio non la passa MAI. La difesa
+       vera sta in `lib/appunti.js`, che è l'unico punto da cui passano tutte
+       le scritture; qui si limita a lasciarla dichiarare. */
+    save: (courseId, file, meta, body, opt) => {
       try {
         if (!vaultPath) throw new Error('nessuna cartella vault impostata');
-        return appunti.save(vaultPath, courseId, file, meta || {}, body || '');
+        return appunti.save(vaultPath, courseId, file, meta || {}, body || '', null, opt || {});
       } catch (e) { return { error: e.message }; }
     },
     /* Rinomina: cambia il titolo DENTRO il file E il nome del file, che devono

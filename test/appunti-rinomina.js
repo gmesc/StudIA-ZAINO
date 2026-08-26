@@ -53,6 +53,51 @@ function inode(nome) {
 }
 function scrivi(meta, corpo) { return A.save(VAULT, CORSO, null, meta, corpo, '2026-08-01T09:00:00.000Z'); }
 
+/* ---------------------------------- 0. la rete contro lo svuotamento */
+sezione('⚠️ Un appunto pieno non si svuota da sé');
+{
+  pulisci();
+  /* ⚠️ IL 26 AGOSTO 2026 un appunto dell'utente è stato trovato col frontmatter
+     intatto e il CORPO VUOTO: il file c'era, il lavoro di settimane no. La causa
+     non è stata riprodotta — e la difesa sta qui, nell'unico punto da cui
+     passano tutte le scritture, invece che nel gesto che si sospettava.
+     Perdere in silenzio è l'unica cosa peggiore di perdere (invariante 4). */
+  const s = scrivi({ title: 'Prezioso' }, 'IL LAVORO DI UN SEMESTRE');
+
+  const auto = A.save(VAULT, CORSO, s.file, { title: 'Prezioso' }, '');
+  check('un salvataggio che svuoterebbe viene RIFIUTATO', true, !!auto.error);
+  check('e il rifiuto dice perché', true, /svuoterebbe/.test(auto.error));
+  check('⚠️ il testo è ancora tutto sul disco', 'IL LAVORO DI UN SEMESTRE',
+    A.apri(VAULT, CORSO, s.file).nota.body.trim());
+  check('e il file non è stato riscritto a vuoto', 1, suDisco().length);
+
+  /* Solo gli spazi valgono come vuoto: un appunto di soli a capo non è testo. */
+  check('anche il corpo di soli spazi è «vuoto»', true,
+    !!A.save(VAULT, CORSO, s.file, { title: 'Prezioso' }, '   \n\n  ').error);
+
+  /* ⚠️ Ma svuotare DEVE restare possibile: è un gesto legittimo, e va
+     dichiarato da chi lo compie. L'autosalvataggio non lo dichiara mai. */
+  const voluto = A.save(VAULT, CORSO, s.file, { title: 'Prezioso' }, '', null, { svuota: true });
+  check('chi lo dichiara può svuotare', undefined, voluto.error);
+  check('e allora il corpo se ne va davvero', '', A.apri(VAULT, CORSO, s.file).nota.body.trim());
+
+  /* Un appunto GIÀ vuoto si riscrive senza cerimonie: non c'è niente da
+     perdere, e chiedere il permesso per non fare danni sarebbe rumore. */
+  check('un appunto già vuoto si salva vuoto senza storie', undefined,
+    A.save(VAULT, CORSO, s.file, { title: 'Prezioso' }, '').error);
+
+  /* ⚠️ E scrivere del TESTO non passa mai dalla rete: la difesa riguarda solo
+     il vuoto, o rallenterebbe ogni battuta. */
+  check('scrivere testo non viene mai rifiutato', undefined,
+    A.save(VAULT, CORSO, s.file, { title: 'Prezioso' }, 'di nuovo pieno').error);
+  check('e il testo nuovo c\'è', 'di nuovo pieno', A.apri(VAULT, CORSO, s.file).nota.body.trim());
+
+  /* Un appunto NUOVO nasce vuoto tutte le volte che serve: la rete difende
+     ciò che c'è, non impedisce di cominciare. */
+  const nuovo = A.save(VAULT, CORSO, null, { title: 'Appena nato' }, '');
+  check('un appunto nuovo può nascere vuoto', undefined, nuovo.error);
+}
+
 /* ------------------------------------------------- 1. la rinomina normale */
 sezione('Rinominare: il titolo dentro e il nome fuori restano d\'accordo');
 pulisci();

@@ -12467,10 +12467,25 @@ function noteSave(silent){
   clearTimeout(NOTES.timer); NOTES.timer=null;
   var body=NOTES.mde.value();
   var meta=noteMeta(NOTES.cur);
+  /* ⚠️ SVUOTARE UN APPUNTO È UN GESTO, NON UN INCIDENTE.
+     Il 26 agosto 2026 un appunto è stato trovato col frontmatter intatto e il
+     corpo vuoto: il file c'era, il lavoro no. La causa non è stata riprodotta,
+     e proprio per questo la rete sta in `lib/appunti.js` — l'unico punto da cui
+     passano tutte le scritture — invece che nel gesto che si sospetta.
+     Qui si dichiara soltanto QUANDO è lecito: un salvataggio automatico
+     (`silent`) non può svuotare niente; uno esplicito — ⌘S, il bottone — sì,
+     perché lì c'è una mano che ha appena cancellato il testo apposta. */
   var res;
-  try{ res=api.save(pid, NOTES.cur.file, meta, body); }
+  try{ res=api.save(pid, NOTES.cur.file, meta, body, { svuota: !silent }); }
   catch(err){ console.error('appunti/save:',err); toast('Salvataggio fallito: '+err.message,false); return; }
-  if(!res || res.error){ console.error('appunti/save:',res&&res.error); toast('Salvataggio fallito: '+((res&&res.error)||'errore sconosciuto'),false); return; }
+  if(!res || res.error){
+    console.error('appunti/save:',res&&res.error);
+    /* ⚠️ Il rifiuto si DICE anche quando il salvataggio era silenzioso: «non ho
+       salvato» e «ho salvato» sono due fatti diversi, e questo è esattamente il
+       caso in cui tacere farebbe credere che il lavoro sia al sicuro. */
+    toast('Salvataggio fallito: '+((res&&res.error)||'errore sconosciuto'),false);
+    return;
+  }
   if(res.file) NOTES.cur.file=res.file;
   NOTES.cur.body=body; NOTES.dirty=false;
   var d=$('#noteDirty'); if(d) d.hidden=true;
