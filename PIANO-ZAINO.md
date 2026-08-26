@@ -862,6 +862,69 @@ purezza). Rese valide, e aggiunta la regola esplicita, che prima non era scritta
 ⚠️ **E due rossi erano della PROVA, non dell'app**: `mappaVaiA` non esiste (inventato) e il campo è
 `ANTEPRIMA.page`, non `.pagina`. Cercati nel codice invece che ricordati.
 
+### Z17 — la postilla, e le due reti sotto gli appunti (26 agosto 2026)
+
+**La postilla (Q6).** Nel modello W3C un'annotazione ha due metà: il **bersaglio** e il **corpo**.
+StudIA aveva solo il bersaglio (`prefix/exact/suffix`). Il momento in cui sottolinei è quello in cui
+sai già perché — «contraddice p. 4» — ma scriverlo in un appunto è un cambio di stanza, e per una
+riga non lo fai: così la ragione della sottolineatura, l'unica cosa che valeva, si perdeva.
+
+`lib/evidenze.js` ha ora `nota`, con il gemello `postilla()` accanto a `colora` e `tratta`, e la
+voce «Postilla…» accanto a «Keyword» (una sola `selMenuHTML` per la barra e il menu).
+
+⚠️ **Non entra nell'identità**, ed è il controllo che vale il lavoro: scriverla non deve far nascere
+una seconda evidenza, o ogni `[==testo==](ev:<id>)` già negli appunti smetterebbe di ritrovare la
+sua, in silenzio.
+
+⚠️ **E qui si è imparato qualcosa scrivendo la prova.** La prima versione della prova CDP restava
+**verde col difetto dentro** (postilla nel seme): su un'evidenza che esiste già `normalizzaVoce` non
+ricalcola l'id — lo trova e lo tiene. Il punto in cui il seme conta davvero è `identita()`, la porta
+da cui «Appunta» ricava l'id **futuro** per scrivere il rimando *prima* che l'evidenza esista.
+
+⚠️ **Si scrive solo quando c'è**, in coda al record: gli altri campi si scrivono sempre anche vuoti,
+e fare lo stesso avrebbe cambiato i **byte di ogni `_evidenze.json`** già nei vault.
+
+⚠️ **Il limite è nel codice**: `NOTA_MAX = 200`, gli a capo collassano. Il giorno che accetta tre
+paragrafi, chi studia ha due posti dove scrivere — uno cercabile, uno no.
+
+⚠️ **Provata in tutte e due le metà.** Q6 era stata provata solo nei corsi, e l'utente ha riferito
+«non funziona» lavorando in uno **zaino**: le superfici ancorabili sono diverse — là il capitolo,
+qui la pagina di un PDF — e una voce provata da una parte sola è provata a metà.
+
+---
+
+**LE DUE RETI SOTTO GLI APPUNTI.** Il 26 agosto un appunto dell'utente è stato trovato col
+frontmatter intatto e il **corpo vuoto**: il file c'era, il lavoro no. Nel Cestino non c'era niente
+— quindi non una cancellazione — ed è stato ricostruito da un PDF stampato, ricollegando le 36
+evidenze ai loro id veri (`_evidenze.json` era intatto).
+
+**La causa**, riconosciuta dall'utente: **⌘Z** su un editor la cui cronologia era stata azzerata da
+un `setValue` riporta l'editor a uno stato **vuoto**, e il salvataggio automatico scriveva.
+
+⚠️ **Tre riproduzioni sull'app viva erano risultate innocue** — la postilla dal preload, il gesto
+completo in un corso, lo stesso in uno zaino. Per questo la difesa **non** sta nel gesto che si
+sospettava, ma nei punti da cui passano tutte le scritture.
+
+**Rete 1 — un appunto pieno non si svuota da sé** (`appunti.save`): scrivere il vuoto sopra un
+appunto che ha del testo si rifiuta, a meno che chi chiama lo dichiari (`opt.svuota`). Il
+salvataggio **automatico** non lo dichiara mai; quello **esplicito** sì. ⚠️ E il rifiuto **si dice**
+anche quando il salvataggio era silenzioso: è il caso in cui tacere farebbe credere che il lavoro
+sia al sicuro.
+
+**Rete 2 — le versioni** (`APPUNTI/_versioni/`): una copia di ciò che sta per essere perso.
+⚠️ **Si versiona solo ciò che PERDE** — quando il testo nuovo è più corto di quello sul disco — o un
+autosalvataggio ogni 1,8 s seminerebbe migliaia di file, e il rumore renderebbe inservibile la cosa
+che deve salvare. Sono `.md` leggibili col Finder, le 10 più recenti per appunto, e **non escono
+nell'esportazione**: sono una rete di questa macchina, non contenuto da spedire.
+
+⚠️ **Due copie nello stesso istante diventavano una sola**, con la più vecchia — quella che serviva
+— sovrascritta. Due volte lo stesso difetto: al secondo, poi al millesimo. Il secondo l'ha trovato
+un **rosso a corse alterne** (una su cinque), fatto *parlare* invece che rilanciato. Ed era il gesto
+esatto da cui la cartella difende: ⌘Z e subito ⌘S.
+
+⚠️ **Una copia di sicurezza non può far fallire il salvataggio**: se non si riesce a scriverla si va
+avanti, o il testo nuovo si perderebbe per colpa della rete che doveva difenderlo.
+
 ---
 
 ## 6. Che cosa NON si fa

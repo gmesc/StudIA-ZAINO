@@ -12,8 +12,8 @@
 > **Il punto di partenza**: `main` a **`ab74eba`**, `origin/main` allineata, albero pulito, nessun
 > ramo. Suite intera CDP verde (**57 prove**) · `npm test` verde (**46 file**).
 >
-> ✅ **Q2, Q8, Q7 e Q3 SONO FATTI E UNITI** (24 agosto 2026). **Restano cinque**: Q1, Q4, Q5, Q6,
-> Q9. L'ordine consigliato è al §5, e il prossimo è **Q6** (la postilla).
+> ✅ **Q2, Q8, Q7, Q3 e Q6 SONO FATTI E UNITI**. **Restano quattro**: Q1, Q4, Q5, Q9.
+> L'ordine consigliato è al §5, e il prossimo è **Q1** (il quaderno si riapre alla riga).
 
 ---
 
@@ -61,7 +61,7 @@ per questo stanno insieme: toccano `_evidenze.json`, la barra della selezione, l
 | Q3 | ✅ **Il pallino che mantiene la promessa** — *fatto il 24 ago 2026, `PIANO-ZAINO.md` §Z16* | S | lavorare |
 | Q4 | **Sbirciare senza saltare** | M | ritrovare |
 | Q5 | **La lente legge anche le mappe e le didascalie** | S | ritrovare |
-| Q6 | **La postilla** | S | lavorare |
+| Q6 | ✅ **La postilla** — *fatto il 26 ago 2026, `PIANO-ZAINO.md` §Z17* | S | lavorare |
 | Q7 | ✅ **Chi entra si vede** — *fatto il 24 ago 2026, `PIANO-ZAINO.md` §Z15* | S | riparazione |
 | Q8 | ✅ **Il quaderno va nel Cestino, non nel nulla** — *fatto il 24 ago 2026, `PIANO-ZAINO.md` §Z14* | S | riparazione |
 | Q9 | **Le sottolineature del tutor arrivano come lettura** | M | insieme |
@@ -242,7 +242,7 @@ ritagli — e scriverlo — fa parte del lavoro.
 
 ---
 
-## Q6 — La postilla · S
+## Q6 — La postilla ✅ *FATTO (26 ago 2026 — il racconto è in `PIANO-ZAINO.md` §Z17)*
 
 **Il gesto.** Nella barra della selezione, accanto a «Keyword», **«Postilla…»** apre un campo di una
 riga; il testo si salva come `nota` dell'evidenza. Sulla pagina l'evidenza con postilla porta un
@@ -553,8 +553,9 @@ utile.
    sette, non cinque, e la promessa è chiusa da tutti e due i lati;
 3. ~~**Q3** (il pallino)~~ — ✅ **fatto il 24 agosto** (`PIANO-ZAINO.md` §Z16): la mano sulla barra
    della selezione è già stata fatta, e serve a Q6;
-4. **Q6** (la postilla) — **il prossimo**: il campo `nota`, con la prova che l'identità non cambia;
-5. **Q1** e **Q2** (il quaderno: la riga e la lente) — stessa materia, stessa porta `noteOpen`;
+4. ~~**Q6** (la postilla)~~ — ✅ **fatto il 26 agosto** (`PIANO-ZAINO.md` §Z17), con le due reti
+   sotto gli appunti che sono nate lo stesso giorno da un guasto vero;
+5. **Q1** (il quaderno si riapre alla riga) — **il prossimo**: stessa porta `noteOpen`;
 6. **Q5** (la lente vede mappe e didascalie) — due costruttori nel modulo puro;
 7. **Q4** (sbirciare) — il primo **M**, e vale la pena farlo *dopo* Q3 e Q6, perché la bolla deve
    saper mostrare anche il rimando che Q3 crea e la postilla che Q6 scrive;

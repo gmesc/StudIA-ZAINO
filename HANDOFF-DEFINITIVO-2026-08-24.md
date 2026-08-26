@@ -9,9 +9,13 @@
 
 ## 0. Da dove ripartire, in tre righe
 
-`main` porta i merge di **Q8**, **Q7** e **Q3**, albero pulito, **nessun ramo, nessun worktree**.
+`main` porta i merge di **Q8**, **Q7**, **Q3** e **Q6**, più le **due reti sotto gli appunti**
+(§3-bis), albero pulito, **nessun ramo, nessun worktree**.
 
-Il prossimo lavoro è **Q6** del pacchetto «Quaderno» (la postilla): il file di riferimento è
+⚠️ **Se leggi una cosa sola, leggi il §3-bis**: il 26 agosto un appunto dell'utente è stato trovato
+col corpo vuoto. È stato ricostruito, la causa ha un nome, e sotto ci sono adesso due reti.
+
+Il prossimo lavoro è **Q1** del pacchetto «Quaderno» (il quaderno si riapre alla riga): il file di riferimento è
 **`HANDOFF-PACCHETTO-QUADERNO.md`**, che è autosufficiente — dice che cosa costruire, dove vive ogni
 pezzo, quali fatti sono già misurati e quali trappole già pagate.
 
@@ -29,18 +33,18 @@ un processo per nome**.
 
 | | |
 |---|---|
-| `main` | **`2267083`** — «merge: il pallino della fonte apre davvero, o non compare (Q3)» |
+| `main` | **`3b87e82`** — «merge: la postilla — il corpo dell'annotazione (Q6)» |
 | remoto | `git@github.com:gmesc/StudIA.git` — ✅ **allineato** (`0 0`) |
 | rami · worktree | **nessuno** |
 | unità | ✅ **46 file**, tutti dentro la catena di `npm test`, exit 0 |
-| CDP | ✅ **59 prove** in elenco · 62 file `prova-*.js` sul disco (i 3 fuori sono i noti di luglio) |
-| monolite | `App/StudIA.html` **21.214 righe** · moduli in `App/assets/` (pdf.js escluso): **34** |
+| CDP | ✅ **61 prove** in elenco · 64 file `prova-*.js` sul disco (i 3 fuori sono i noti di luglio) |
+| monolite | `App/StudIA.html` **21.279 righe** · moduli in `App/assets/` (pdf.js escluso): **34** |
 | pacchetti | ⚠️ **nessuno**: `dist/` è stata svuotata il 23 agosto (2,3 GB). I tre installer che c'erano erano del **17 agosto** e saltavano il lavoro del 18, 19 e 22 — andavano rifatti comunque. Si rifanno con `npm run pacchetto` |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
 npm test                                                   # 46 file, exit 0
-STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 59 prove sull'app viva
+STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 61 prove sull'app viva
 STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh prova-lente-punto.js   # una sola
 ```
 
@@ -54,7 +58,7 @@ corretto» solo perché guardava un'altra build.
 
 ⚠️ **Tre file di prova restano fuori dall'elenco**: `prova-l1.js`, `prova-l2.js`, `prova-l3l4.js`
 chiedono un `cdp.js` dentro uno scratchpad di luglio che non esiste più. Il conto si fa, non si
-ricorda: **62 file, 59 in elenco, 3 fuori** (contati il 24 agosto a notte).
+ricorda: **64 file, 61 in elenco, 3 fuori** (contati il 26 agosto).
 
 ---
 
@@ -144,6 +148,30 @@ nodo il rimando che **«Appunta» ha già in mano** (`origineDaRange`), e `MAPPE
 forma. ⚠️ La severità sta in `copiaRimando`, l'unico punto da cui un rimando entra su un nodo: senza
 `file` o senza pagina il pallino **non compare affatto**, che è lo stesso difetto al contrario.
 
+### ⚠️ §3-bis — UN APPUNTO SVUOTATO, e le due reti che ne sono nate (26 agosto)
+
+**Il fatto.** Un appunto dello zaino `flow` è stato trovato col frontmatter intatto e il **corpo
+vuoto**: il file c'era, il lavoro no. Nel Cestino non c'era niente — quindi non una cancellazione.
+Ricostruito da un PDF che l'utente aveva stampato, ricollegando le **36 evidenze** ai loro id veri
+(`_evidenze.json` era intatto).
+
+**La causa**, riconosciuta dall'utente: **⌘Z** su un editor la cui cronologia era stata azzerata da
+un `setValue` riporta l'editor a uno stato **vuoto**, e il salvataggio automatico scriveva.
+
+⚠️ **Tre riproduzioni sull'app viva erano risultate innocue.** Per questo la difesa non sta nel
+gesto sospettato ma nei punti da cui passano **tutte** le scritture — il racconto intero è in
+`PIANO-ZAINO.md` **§Z17**:
+
+1. **`appunti.save` rifiuta di svuotare** un appunto che ha del testo, salvo `opt.svuota`: il
+   salvataggio automatico non lo dichiara mai, quello esplicito sì. E il rifiuto **si dice**.
+2. **`APPUNTI/_versioni/`**: una copia di ciò che sta per essere perso, **solo quando un
+   salvataggio accorcia il testo**. `.md` leggibili col Finder, le 10 più recenti, fuori
+   dall'esportazione.
+
+⚠️ E due volte lo stesso difetto dentro la rete stessa: **due copie nello stesso istante
+diventavano una sola**, con la più vecchia — quella che serviva — sovrascritta. Trovato da un rosso
+**a corse alterne**, fatto parlare invece che rilanciato.
+
 ### I tre lavori laterali
 
 - il **pannellino della ricerca** nel documento: una riga sola, campo a larghezza costante;
@@ -194,14 +222,13 @@ banco di prova fuori dall'app, e il numero era sbagliato del 38%.
 
 ## 5. Che cosa resta da fare
 
-### Il prossimo lavoro: il pacchetto «Quaderno», cinque voci su nove
+### Il prossimo lavoro: il pacchetto «Quaderno», quattro voci su nove
 
-`HANDOFF-PACCHETTO-QUADERNO.md` è autosufficiente. **Q2, Q8, Q7 e Q3 sono fatti**; restano:
+`HANDOFF-PACCHETTO-QUADERNO.md` è autosufficiente. **Q2, Q8, Q7, Q3 e Q6 sono fatti**; restano:
 
 | | | costo |
 |---|---|---|
-| **Q6** | la postilla: il corpo sul bersaglio — **il prossimo** | S |
-| Q1 | il quaderno si riapre alla riga | S |
+| **Q1** | il quaderno si riapre alla riga — **il prossimo** | S |
 | Q5 | la lente legge anche mappe e didascalie | S |
 | Q4 | sbirciare senza saltare (hover = anteprima) | M |
 | Q9 | le sottolineature del tutor arrivano come lettura | M |
@@ -252,7 +279,7 @@ scritte».
 
 | | |
 |---|---|
-| **verificato oggi** | `npm test` exit 0 (46 file) · suite CDP intera verde · albero pulito · `origin/main` allineata · nessun ramo né worktree · i conti delle prove (46 · 59 · 62) · le righe del monolite (21.214) |
+| **verificato oggi** | `npm test` exit 0 (46 file) · suite CDP intera verde · albero pulito · nessun ramo né worktree · i conti delle prove (46 · 61 · 64) · le righe del monolite (21.279) |
 | **ereditato** | i debiti al §5, che vengono dagli handoff precedenti e non sono stati rimisurati |
 | **misurato e lasciato aperto** | il `frammento` sfasato sulla «İ» · `dist/` che non esiste |
 
