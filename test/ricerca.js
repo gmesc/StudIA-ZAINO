@@ -435,5 +435,61 @@ check('solo spazi', null, R.punto('qualcosa', R.interpreta('   ')));
 check('niente del tutto', null, R.punto(null, null));
 check('virgolette vuote non sono una richiesta', null, R.punto('qualcosa', R.interpreta('""')));
 
+sezione('Q5 — la lente vede anche le MAPPE e le DIDASCALIE');
+{
+  /* ⚠️ I nodi di mappa e le didascalie sono l'altro testo che l'utente ha
+     SCRITTO, e la lente non li vedeva. Il principio era già dichiarato dentro
+     questo modulo — «quello che hai scritto tu viene prima di quello che hai
+     letto» — e loro stavano dalla stessa parte di quella linea restandone
+     fuori. */
+  const nodo = R.docNodoMappa({ id: 'n7', testo: 'perielio', nota: 'il punto più vicino al Sole' },
+    { file: 'Sistema solare.json', titolo: 'Il sistema solare' }, 3);
+  check('il nodo porta con sé dove tornare', ['Sistema solare.json', 'n7'], [nodo.mappa, nodo.nodo]);
+  check('il gruppo è il titolo della mappa', 'Il sistema solare', nodo.lessonTitle);
+  /* ⚠️ Nel testo cercabile entra anche la NOTA: è la frase attorno da cui il
+     nodo è nato, e chi cerca la ricorda com'era, non come l'ha accorciata. */
+  check('si trova per il testo del nodo', 1, R.cerca([nodo], 'perielio').length);
+  check('e anche per la frase attorno', 1, R.cerca([nodo], 'vicino al Sole').length);
+  check('il titolo pesa: è il testo del nodo', true, R.cerca([nodo], 'perielio')[0].score >= 30);
+
+  const rit = R.docRitaglio({ id: 'a1b2c3', didascalia: 'schema del perielio', origine: 'ritaglio' }, 1);
+  check('il ritaglio porta il suo id', 'a1b2c3', rit.album);
+  check('e il gruppo dice quale delle due viste', 'Ritagli', rit.lessonTitle);
+  check('una FOTO lo dice a sua volta', 'Album Foto',
+    R.docRitaglio({ id: 'x', didascalia: 'la lavagna', origine: 'foto' }, 0).lessonTitle);
+  check('si trova per la didascalia', 1, R.cerca([rit], 'perielio').length);
+  /* ⚠️ Il nome del file NON entra nel testo cercabile: `a1b2c3.png` è un
+     dettaglio tecnico, e cercarci dentro darebbe risposte che nessuno
+     riconosce. */
+  check('ma non per il nome del file', 0, R.cerca([rit], 'a1b2c3').length);
+
+  /* ⚠️ L'ORDINE DEI GRUPPI È UNA PROMESSA, non un caso: prima ciò che l'utente
+     ha scritto — appunti, poi mappe, poi didascalie — e dopo ciò che ha letto.
+     Gli appunti restano primi perché sono prosa, cioè il posto dove una frase
+     si ritrova per intero; le didascalie ultime perché sono una riga sola. */
+  const misti = [
+    R.docPagina('03 dispensa.pdf', 'Dispensa', { page: 4, text: 'il perielio di Mercurio' }),
+    R.docRitaglio({ id: 'z', didascalia: 'perielio', origine: 'ritaglio' }, 0),
+    R.docNodoMappa({ id: 'n1', testo: 'perielio' }, { file: 'm.json', titolo: 'Orbite' }, 0),
+    R.docAppunto({ file: 'n.md', title: 'Appunto', body: 'perielio' }, 'Appunti', 0)
+  ];
+  check('appunti, mappe, ritagli, e infine ciò che si è letto',
+    ['Appunti', 'Orbite', 'Ritagli', 'Dispensa'],
+    R.cerca(misti, 'perielio').map((x) => x.d.lessonTitle));
+  /* ⚠️ E vale anche col punteggio ROVESCIATO: la pagina qui nomina il termine
+     una volta come gli altri, ma se ne avesse dieci resterebbe comunque ultima.
+     «Prima ciò che hai scritto» non è «prima se vince». */
+  const forte = R.docPagina('03 dispensa.pdf', 'Dispensa',
+    { page: 4, text: 'perielio perielio perielio perielio perielio' });
+  check('anche quando ciò che si è letto vince per punteggio',
+    ['Appunti', 'Orbite', 'Ritagli', 'Dispensa'],
+    R.cerca([forte, misti[1], misti[2], misti[3]], 'perielio').map((x) => x.d.lessonTitle));
+
+  /* Il rango è una funzione a sé perché è una DECISIONE, e si prova come tale. */
+  check('il rango mette in fila le quattro nature', [0, 1, 2, 3],
+    [misti[3], misti[2], misti[1], misti[0]].map(R.rango));
+  check('e una voce che non è niente di tutto ciò va in fondo', 9, R.rango(null));
+}
+
 console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
 process.exit(ko ? 1 : 0);
