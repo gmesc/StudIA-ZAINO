@@ -12,9 +12,10 @@
 > **Il punto di partenza**: `main` a **`ab74eba`**, `origin/main` allineata, albero pulito, nessun
 > ramo. Suite intera CDP verde (**57 prove**) · `npm test` verde (**46 file**).
 >
-> ✅ **SETTE VOCI SU NOVE SONO FATTE E UNITE**: Q1, Q2, Q3, Q5, Q6, Q7, Q8.
-> **Restano i due M**: **Q4** (sbirciare senza saltare) e **Q9** (le sottolineature del tutor), e
-> il pacchetto stesso raccomanda un piano ciascuno con `/architetto` prima di scriverli.
+> ✅ **OTTO VOCI SU NOVE SONO FATTE E UNITE**: Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8.
+> **Resta soltanto Q9** — il più importante dei nove, con il vincolo non negoziabile sugli strati e
+> **due bivi veri ancora da decidere con l'utente** (§6.2 e §6.3). Il pacchetto raccomanda
+> `/architetto` prima di scriverlo.
 
 ---
 
@@ -60,7 +61,7 @@ per questo stanno insieme: toccano `_evidenze.json`, la barra della selezione, l
 | Q1 | ✅ **Il quaderno si riapre alla riga** — *fatto il 26 ago 2026, `PIANO-ZAINO.md` §Z19* | S | ritrovare |
 | Q2 | ✅ **La lente porta al punto esatto della parola cercata** (editor **e** PDF) — *fatto, `ab74eba`* | S | ritrovare |
 | Q3 | ✅ **Il pallino che mantiene la promessa** — *fatto il 24 ago 2026, `PIANO-ZAINO.md` §Z16* | S | lavorare |
-| Q4 | **Sbirciare senza saltare** | M | ritrovare |
+| Q4 | ✅ **Sbirciare senza saltare** — *fatto il 26 ago 2026, `PIANO-ZAINO.md` §Z21* | M | ritrovare |
 | Q5 | ✅ **La lente legge anche le mappe e le didascalie** — *fatto il 26 ago 2026, `PIANO-ZAINO.md` §Z20* | S | ritrovare |
 | Q6 | ✅ **La postilla** — *fatto il 26 ago 2026, `PIANO-ZAINO.md` §Z17* | S | lavorare |
 | Q7 | ✅ **Chi entra si vede** — *fatto il 24 ago 2026, `PIANO-ZAINO.md` §Z15* | S | riparazione |
@@ -179,7 +180,7 @@ apre. È lo stesso difetto, al contrario.
 
 ---
 
-## Q4 — Sbirciare senza saltare · M
+## Q4 — Sbirciare senza saltare ✅ *FATTO (26 ago 2026 — il racconto è in `PIANO-ZAINO.md` §Z21)*
 
 **Il gesto.** Ti fermi col mouse su un rimando — nell'anteprima di un appunto, su un chip delle
 Parole chiave, sul pallino di un nodo — e dopo mezzo secondo una bolla mostra che cosa c'è
@@ -558,8 +559,8 @@ utile.
    sotto gli appunti che sono nate lo stesso giorno da un guasto vero;
 5. ~~**Q1** (il quaderno si riapre alla riga)~~ — ✅ **fatto il 26 agosto** (`PIANO-ZAINO.md` §Z19);
 6. ~~**Q5** (la lente vede mappe e didascalie)~~ — ✅ **fatto il 26 agosto** (`PIANO-ZAINO.md` §Z20);
-7. **Q4** (sbirciare) — il primo **M**, e vale la pena farlo *dopo* Q3 e Q6, perché la bolla deve
-   saper mostrare anche il rimando che Q3 crea e la postilla che Q6 scrive;
+7. ~~**Q4** (sbirciare)~~ — ✅ **fatto il 26 agosto** (`PIANO-ZAINO.md` §Z21), e l'ordine ha pagato:
+   la bolla mostra il rimando che Q3 crea e la postilla che Q6 scrive;
 8. **Q9** (la lettura del tutor) — l'altro **M**, e l'ultimo: è quello con il vincolo più stretto,
    e merita di trovare `_evidenze.json` già assestato.
 

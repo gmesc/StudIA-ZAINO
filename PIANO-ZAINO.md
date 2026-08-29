@@ -1035,6 +1035,50 @@ lascia il banco come l'ha trovato** — la regola era già scritta in `prova-ban
 📌 `prova-b1` e `prova-mappe-ui` usano ancora la chiave morta: difetto latente identico, **non
 toccato** in questo lavoro.
 
+### Z21 — sbirciare senza saltare (26 agosto 2026, Q4)
+
+«Hover = anteprima; click = torni lì» è il principio fondante di `PIANO-BRAYNR.md` §0, e nello
+zaino non c'era: rileggere un appunto pieno di rimandi costava **un salto per ciascuno**, e ogni
+salto butta via il filo. Per chi legge con una dislessia è il costo più alto, e chi rilegge appunti
+vecchi verifica la fonte dieci volte al minuto.
+
+**La disciplina con cui il piano diceva di giudicare il lavoro** — *«gli stessi risolutori del
+click, mai un secondo lettore dei rimandi»* — è rispettata: i link resi portano già i dati risolti
+negli attributi, scritti da `_mdInline` **dopo** essere passati da `RimandiSintassi.leggi`. La bolla
+li raccoglie e basta.
+
+⚠️ E ad `album:` la **porta unica è stata insegnata**: la grammatica esisteva (la scrivono gli
+appunti) ma la leggeva solo il costruttore del markdown, con una regex sua. Scriverne una seconda
+qui sarebbe stata la seconda grammatica che l'invariante 7 vieta.
+
+⚠️ **La decisione sta in `App/assets/rimandi/anteprima.js`** (39 controlli in Node), e il modulo
+**non va a prendere niente**: i dati si fanno *passare*, quindi si prova senza vault, senza indici
+e senza DOM.
+
+⚠️ **Il vestito è il tooltip dell'app** (`.note-tip` e le sue classi): cambia solo la posizione
+(invariante 8). E la bolla **si costruisce al passaggio**, non in anticipo: su un appunto lungo
+sarebbero cento letture per una pagina che magari nessuno sfiora.
+
+**Tre scelte dichiarate:**
+
+1. **Se non si sa niente, la bolla non si apre.** Una che dice «non lo so» ruba il testo sotto senza
+   dare niente in cambio; chi clicca lo scopre lo stesso, con un messaggio.
+2. **`fig:` e i link esterni non hanno anteprima**: una figura è già un'immagine a schermo, e per un
+   link esterno l'unica anteprima onesta sarebbe andare a prendere la pagina — una richiesta di rete
+   che nessuno ha chiesto, da un'app che lavora sul disco.
+3. **Esc è il primo gradino**, e ferma la propagazione **solo se c'era qualcosa da chiudere**: la
+   regola pagata il 23 agosto, quando un gestore in cattura su `window` ingoiava l'Esc di mezza app.
+
+⚠️ `tempo()` è una **copia dichiarata** di `Lettore.tempo` — questo modulo gira anche dove il player
+non è caricato — e `test/anteprima.js` confronta le due forme su nove campioni.
+
+⚠️ E un errore trovato scrivendo: avevo chiamato `capitoloPerId`, che **non esiste**, dietro un
+`typeof` — la bolla sarebbe rimasta muta sui rimandi ai capitoli, **in silenzio**. La porta vera è
+`trovaCapitolo`, la stessa del click. Cercata nel codice, non ricordata.
+
+**E la prova viva misura soprattutto una cosa: che il CLICK resti quello di sempre.** Se sbirciare
+rompesse il click, il lavoro sarebbe da buttare.
+
 ---
 
 ## 6. Che cosa NON si fa

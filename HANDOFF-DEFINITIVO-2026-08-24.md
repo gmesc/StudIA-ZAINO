@@ -15,9 +15,9 @@
 ⚠️ **Se leggi una cosa sola, leggi il §3-bis**: il 26 agosto un appunto dell'utente è stato trovato
 col corpo vuoto. È stato ricostruito, la causa ha un nome, e sotto ci sono adesso due reti.
 
-I prossimi lavori sono i due **M** del pacchetto «Quaderno» — **Q4** (sbirciare senza saltare) e
-**Q9** (le sottolineature del tutor) — e il pacchetto stesso raccomanda **un piano ciascuno con
-`/architetto`** prima di scriverli. Il file di riferimento è
+Resta **soltanto Q9** del pacchetto «Quaderno» — le sottolineature del tutor: il più importante dei
+nove, con il **vincolo non negoziabile** sugli strati e **due bivi veri ancora da decidere con
+l'utente**. Il pacchetto raccomanda `/architetto` prima di scriverlo. Il file di riferimento è
 **`HANDOFF-PACCHETTO-QUADERNO.md`**, che è autosufficiente — dice che cosa costruire, dove vive ogni
 pezzo, quali fatti sono già misurati e quali trappole già pagate.
 
@@ -35,18 +35,18 @@ un processo per nome**.
 
 | | |
 |---|---|
-| `main` | **`6c3c691`** — «merge: la lente vede anche le mappe e le didascalie (Q5)» |
+| `main` | **`66282ca`** — «merge: sbirciare senza saltare (Q4)» |
 | remoto | `git@github.com:gmesc/StudIA.git` — ✅ **allineato** (`0 0`) |
 | rami · worktree | **nessuno** |
-| unità | ✅ **48 file**, tutti dentro la catena di `npm test`, exit 0 |
-| CDP | ✅ **64 prove** in elenco · 67 file `prova-*.js` sul disco (i 3 fuori sono i noti di luglio) |
-| monolite | `App/StudIA.html` **21.621 righe** · moduli in `App/assets/` (pdf.js escluso): **36** |
+| unità | ✅ **49 file**, tutti dentro la catena di `npm test`, exit 0 |
+| CDP | ✅ **65 prove** in elenco · 68 file `prova-*.js` sul disco (i 3 fuori sono i noti di luglio) |
+| monolite | `App/StudIA.html` **21.797 righe** · moduli in `App/assets/` (pdf.js escluso): **37** |
 | pacchetti | ⚠️ **nessuno**: `dist/` è stata svuotata il 23 agosto (2,3 GB). I tre installer che c'erano erano del **17 agosto** e saltavano il lavoro del 18, 19 e 22 — andavano rifatti comunque. Si rifanno con `npm run pacchetto` |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
-npm test                                                   # 48 file, exit 0
-STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 64 prove sull'app viva
+npm test                                                   # 49 file, exit 0
+STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 65 prove sull'app viva
 STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh prova-lente-punto.js   # una sola
 ```
 
@@ -60,7 +60,7 @@ corretto» solo perché guardava un'altra build.
 
 ⚠️ **Tre file di prova restano fuori dall'elenco**: `prova-l1.js`, `prova-l2.js`, `prova-l3l4.js`
 chiedono un `cdp.js` dentro uno scratchpad di luglio che non esiste più. Il conto si fa, non si
-ricorda: **67 file, 64 in elenco, 3 fuori** (contati il 26 agosto).
+ricorda: **68 file, 65 in elenco, 3 fuori** (contati il 26 agosto).
 
 ---
 
@@ -205,6 +205,29 @@ diagnostica è rimasta nella prova.** E il primo rimedio non funzionava perché 
 del banco SBAGLIATA (`studia.banco`, morta dal 13 agosto, invece di `studia.banco.c.<contenitore>`).
 📌 `prova-b1` e `prova-mappe-ui` usano ancora quella morta: difetto latente identico, non toccato.
 
+### Il pacchetto «Quaderno» — Q4, sbirciare senza saltare (26 agosto)
+
+Il racconto è in `PIANO-ZAINO.md` **§Z21**. «Hover = anteprima; click = torni lì», il principio
+fondante di `PIANO-BRAYNR` §0 che nello zaino non c'era. **La disciplina è rispettata**: nessun
+secondo lettore dei rimandi — i link portano già i dati risolti dalla porta unica — e ad `album:` la
+porta unica è stata **insegnata** invece di scriverle accanto una regex.
+
+⚠️ Se non si sa niente **la bolla non si apre**: una che dice «non lo so» ruba il testo sotto senza
+dare niente in cambio. Ed Esc è il primo gradino, che ferma la propagazione **solo se** c'era
+qualcosa da chiudere.
+
+⚠️ E un errore trovato scrivendo: `capitoloPerId` NON ESISTE, ed era chiamata dietro un `typeof` —
+la bolla sarebbe rimasta muta sui rimandi ai capitoli **in silenzio**. La porta vera è
+`trovaCapitolo`, la stessa del click.
+
+### ⚠️ E una cosa dell'AMBIENTE, non del codice (26 agosto)
+
+`npm start` è morto con `electron: command not found`: era sparita **l'intera `node_modules`**, non
+solo Electron. Rimessa con `npm install` (il `package-lock.json` era intatto). ⚠️ npm blocca gli
+script `postinstall` (`allow-scripts`), e quello di Electron è ciò che scarica il binario da 271 MB:
+se ricapita con la cartella presente, il rimedio è `npm approve-scripts electron && npm rebuild
+electron`. **Perché sia sparita non è noto.**
+
 ### I tre lavori laterali
 
 - il **pannellino della ricerca** nel documento: una riga sola, campo a larghezza costante;
@@ -255,15 +278,13 @@ banco di prova fuori dall'app, e il numero era sbagliato del 38%.
 
 ## 5. Che cosa resta da fare
 
-### Il prossimo lavoro: il pacchetto «Quaderno», DUE voci su nove
+### Il prossimo lavoro: il pacchetto «Quaderno», UNA voce su nove
 
-`HANDOFF-PACCHETTO-QUADERNO.md` è autosufficiente. **Sette voci su nove sono fatte** (Q1, Q2, Q3,
-Q5, Q6, Q7, Q8); restano i due **M**, e meritano un piano ciascuno:
+`HANDOFF-PACCHETTO-QUADERNO.md` è autosufficiente. **Otto voci su nove sono fatte** (Q1–Q8); resta:
 
 | | | costo |
 |---|---|---|
-| **Q4** | sbirciare senza saltare (hover = anteprima) — **il prossimo** | M |
-| Q9 | le sottolineature del tutor arrivano come lettura | M |
+| **Q9** | le sottolineature del tutor arrivano come lettura — **l'ultimo, e il più importante** | M |
 
 ⚠️ **Q9 ha un vincolo dichiarato dall'utente e non negoziabile**: deve **aggiungere** uno strato,
 mai sovrascrivere quelli che lo studente ha già. Il meccanismo esiste (`salva()` conserva il
@@ -311,7 +332,7 @@ scritte».
 
 | | |
 |---|---|
-| **verificato oggi** | `npm test` exit 0 (48 file) · suite CDP intera verde · albero pulito · nessun ramo né worktree · i conti delle prove (48 · 64 · 67) · le righe del monolite (21.621) |
+| **verificato oggi** | `npm test` exit 0 (49 file) · suite CDP intera verde · albero pulito · nessun ramo né worktree · i conti delle prove (49 · 65 · 68) · le righe del monolite (21.797) |
 | **ereditato** | i debiti al §5, che vengono dagli handoff precedenti e non sono stati rimisurati |
 | **misurato e lasciato aperto** | il `frammento` sfasato sulla «İ» · `dist/` che non esiste |
 
