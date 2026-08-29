@@ -15,7 +15,9 @@
 ⚠️ **Se leggi una cosa sola, leggi il §3-bis**: il 26 agosto un appunto dell'utente è stato trovato
 col corpo vuoto. È stato ricostruito, la causa ha un nome, e sotto ci sono adesso due reti.
 
-Il prossimo lavoro è **Q5** del pacchetto «Quaderno» (la lente vede mappe e didascalie): il file di riferimento è
+I prossimi lavori sono i due **M** del pacchetto «Quaderno» — **Q4** (sbirciare senza saltare) e
+**Q9** (le sottolineature del tutor) — e il pacchetto stesso raccomanda **un piano ciascuno con
+`/architetto`** prima di scriverli. Il file di riferimento è
 **`HANDOFF-PACCHETTO-QUADERNO.md`**, che è autosufficiente — dice che cosa costruire, dove vive ogni
 pezzo, quali fatti sono già misurati e quali trappole già pagate.
 
@@ -33,18 +35,18 @@ un processo per nome**.
 
 | | |
 |---|---|
-| `main` | **`f452fe2`** — «merge: il quaderno si riapre alla riga (Q1)» |
+| `main` | **`6c3c691`** — «merge: la lente vede anche le mappe e le didascalie (Q5)» |
 | remoto | `git@github.com:gmesc/StudIA.git` — ✅ **allineato** (`0 0`) |
 | rami · worktree | **nessuno** |
 | unità | ✅ **48 file**, tutti dentro la catena di `npm test`, exit 0 |
-| CDP | ✅ **63 prove** in elenco · 66 file `prova-*.js` sul disco (i 3 fuori sono i noti di luglio) |
-| monolite | `App/StudIA.html` **21.554 righe** · moduli in `App/assets/` (pdf.js escluso): **36** |
+| CDP | ✅ **64 prove** in elenco · 67 file `prova-*.js` sul disco (i 3 fuori sono i noti di luglio) |
+| monolite | `App/StudIA.html` **21.621 righe** · moduli in `App/assets/` (pdf.js escluso): **36** |
 | pacchetti | ⚠️ **nessuno**: `dist/` è stata svuotata il 23 agosto (2,3 GB). I tre installer che c'erano erano del **17 agosto** e saltavano il lavoro del 18, 19 e 22 — andavano rifatti comunque. Si rifanno con `npm run pacchetto` |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
 npm test                                                   # 48 file, exit 0
-STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 63 prove sull'app viva
+STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 64 prove sull'app viva
 STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh prova-lente-punto.js   # una sola
 ```
 
@@ -58,7 +60,7 @@ corretto» solo perché guardava un'altra build.
 
 ⚠️ **Tre file di prova restano fuori dall'elenco**: `prova-l1.js`, `prova-l2.js`, `prova-l3l4.js`
 chiedono un `cdp.js` dentro uno scratchpad di luglio che non esiste più. Il conto si fa, non si
-ricorda: **66 file, 63 in elenco, 3 fuori** (contati il 26 agosto).
+ricorda: **67 file, 64 in elenco, 3 fuori** (contati il 26 agosto).
 
 ---
 
@@ -189,6 +191,20 @@ decisione sta in un UMD richiamato da tutti e due i lati.
 con `-m` fra doppi apici, la shell li ha eseguiti e due nomi sono spariti dal testo. Riscritto con
 l'heredoc quotato, che è la forma sicura.
 
+### Il pacchetto «Quaderno» — Q5, la lente vede mappe e didascalie (26 agosto)
+
+Il racconto è in `PIANO-ZAINO.md` **§Z20**. I nodi di mappa e le didascalie erano l'altro testo
+scritto dall'utente che la lente non guardava. **Il bivio §6.4 è deciso**: appunti → mappe → ritagli
+→ ciò che si è letto, e vale **anche quando un documento vince per punteggio**. Sul nodo il click
+**mette a fuoco**.
+
+⚠️ E una lezione di metodo che vale oltre il caso: `prova-testolayer` era **verde da sola e rossa
+nella suite**, con una causa invisibile. L'ha detta solo la domanda giusta — *chi c'è sotto il
+puntatore* — e la risposta è stata `svg#mappaSvg`: una prova che lasciava la mappa a schermo. **La
+diagnostica è rimasta nella prova.** E il primo rimedio non funzionava perché toglieva la chiave
+del banco SBAGLIATA (`studia.banco`, morta dal 13 agosto, invece di `studia.banco.c.<contenitore>`).
+📌 `prova-b1` e `prova-mappe-ui` usano ancora quella morta: difetto latente identico, non toccato.
+
 ### I tre lavori laterali
 
 - il **pannellino della ricerca** nel documento: una riga sola, campo a larghezza costante;
@@ -239,14 +255,14 @@ banco di prova fuori dall'app, e il numero era sbagliato del 38%.
 
 ## 5. Che cosa resta da fare
 
-### Il prossimo lavoro: il pacchetto «Quaderno», tre voci su nove
+### Il prossimo lavoro: il pacchetto «Quaderno», DUE voci su nove
 
-`HANDOFF-PACCHETTO-QUADERNO.md` è autosufficiente. **Q1, Q2, Q3, Q6, Q7 e Q8 sono fatti**; restano:
+`HANDOFF-PACCHETTO-QUADERNO.md` è autosufficiente. **Sette voci su nove sono fatte** (Q1, Q2, Q3,
+Q5, Q6, Q7, Q8); restano i due **M**, e meritano un piano ciascuno:
 
 | | | costo |
 |---|---|---|
-| **Q5** | la lente legge anche mappe e didascalie — **il prossimo** | S |
-| Q4 | sbirciare senza saltare (hover = anteprima) | M |
+| **Q4** | sbirciare senza saltare (hover = anteprima) — **il prossimo** | M |
 | Q9 | le sottolineature del tutor arrivano come lettura | M |
 
 ⚠️ **Q9 ha un vincolo dichiarato dall'utente e non negoziabile**: deve **aggiungere** uno strato,
@@ -295,7 +311,7 @@ scritte».
 
 | | |
 |---|---|
-| **verificato oggi** | `npm test` exit 0 (48 file) · suite CDP intera verde · albero pulito · nessun ramo né worktree · i conti delle prove (48 · 63 · 66) · le righe del monolite (21.554) |
+| **verificato oggi** | `npm test` exit 0 (48 file) · suite CDP intera verde · albero pulito · nessun ramo né worktree · i conti delle prove (48 · 64 · 67) · le righe del monolite (21.621) |
 | **ereditato** | i debiti al §5, che vengono dagli handoff precedenti e non sono stati rimisurati |
 | **misurato e lasciato aperto** | il `frammento` sfasato sulla «İ» · `dist/` che non esiste |
 

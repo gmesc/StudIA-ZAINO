@@ -12,9 +12,9 @@
 > **Il punto di partenza**: `main` a **`ab74eba`**, `origin/main` allineata, albero pulito, nessun
 > ramo. Suite intera CDP verde (**57 prove**) · `npm test` verde (**46 file**).
 >
-> ✅ **Q1, Q2, Q3, Q6, Q7 e Q8 SONO FATTI E UNITI**. **Restano tre**: Q4, Q5, Q9.
-> Il prossimo è **Q5** (la lente vede mappe e didascalie); Q4 e Q9 sono i due **M**, e meritano un
-> piano ciascuno con `/architetto`.
+> ✅ **SETTE VOCI SU NOVE SONO FATTE E UNITE**: Q1, Q2, Q3, Q5, Q6, Q7, Q8.
+> **Restano i due M**: **Q4** (sbirciare senza saltare) e **Q9** (le sottolineature del tutor), e
+> il pacchetto stesso raccomanda un piano ciascuno con `/architetto` prima di scriverli.
 
 ---
 
@@ -61,7 +61,7 @@ per questo stanno insieme: toccano `_evidenze.json`, la barra della selezione, l
 | Q2 | ✅ **La lente porta al punto esatto della parola cercata** (editor **e** PDF) — *fatto, `ab74eba`* | S | ritrovare |
 | Q3 | ✅ **Il pallino che mantiene la promessa** — *fatto il 24 ago 2026, `PIANO-ZAINO.md` §Z16* | S | lavorare |
 | Q4 | **Sbirciare senza saltare** | M | ritrovare |
-| Q5 | **La lente legge anche le mappe e le didascalie** | S | ritrovare |
+| Q5 | ✅ **La lente legge anche le mappe e le didascalie** — *fatto il 26 ago 2026, `PIANO-ZAINO.md` §Z20* | S | ritrovare |
 | Q6 | ✅ **La postilla** — *fatto il 26 ago 2026, `PIANO-ZAINO.md` §Z17* | S | lavorare |
 | Q7 | ✅ **Chi entra si vede** — *fatto il 24 ago 2026, `PIANO-ZAINO.md` §Z15* | S | riparazione |
 | Q8 | ✅ **Il quaderno va nel Cestino, non nel nulla** — *fatto il 24 ago 2026, `PIANO-ZAINO.md` §Z14* | S | riparazione |
@@ -215,7 +215,7 @@ dell'evidenza) → **il contenuto della bolla**, come struttura. Il DOM lo costr
 
 ---
 
-## Q5 — La lente legge anche le mappe e le didascalie · S
+## Q5 — La lente legge anche le mappe e le didascalie ✅ *FATTO (26 ago 2026 — il racconto è in `PIANO-ZAINO.md` §Z20)*
 
 **Il gesto.** Cerchi «perielio» e, sotto APPUNTI e prima dei documenti, compaiono:
 
@@ -557,7 +557,7 @@ utile.
 4. ~~**Q6** (la postilla)~~ — ✅ **fatto il 26 agosto** (`PIANO-ZAINO.md` §Z17), con le due reti
    sotto gli appunti che sono nate lo stesso giorno da un guasto vero;
 5. ~~**Q1** (il quaderno si riapre alla riga)~~ — ✅ **fatto il 26 agosto** (`PIANO-ZAINO.md` §Z19);
-6. **Q5** (la lente vede mappe e didascalie) — **il prossimo**: due costruttori nel modulo puro;
+6. ~~**Q5** (la lente vede mappe e didascalie)~~ — ✅ **fatto il 26 agosto** (`PIANO-ZAINO.md` §Z20);
 7. **Q4** (sbirciare) — il primo **M**, e vale la pena farlo *dopo* Q3 e Q6, perché la bolla deve
    saper mostrare anche il rimando che Q3 crea e la postilla che Q6 scrive;
 8. **Q9** (la lettura del tutor) — l'altro **M**, e l'ultimo: è quello con il vincolo più stretto,
@@ -579,7 +579,8 @@ indovinati.
    `lib/pacchetto.js`?
 3. **Q9** — quando l'impronta del documento non combacia: si rifiuta tutto, o si importa lo stesso
    lasciando i segni orfani (che è quello che già succede a un documento tolto dallo zaino)?
-4. **Q5** — dove vanno i gruppi MAPPE e RITAGLI nell'ordine dei risultati?
+4. ~~**Q5** — dove vanno i gruppi MAPPE e RITAGLI nell'ordine dei risultati?~~ ✅ **deciso il 26
+   agosto: appunti → mappe → ritagli → ciò che si è letto** (§Z20).
 
 Tutto il resto si decide e **si dichiara nel piano**: un piano pieno di domande è una ricognizione
 pigra, uno senza nessuna decisione dichiarata è stato scritto senza pensare.

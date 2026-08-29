@@ -990,6 +990,51 @@ in cui serve.
 ⚠️ **La decisione sta in un UMD** (`App/assets/appunti/segno.js`) richiamato sia dal renderer sia da
 `lib/riga.js`: una regola per due lati, non due copie (invariante 5).
 
+### Z20 — la lente vede anche le mappe e le didascalie (26 agosto 2026, Q5)
+
+I nodi di una mappa e le didascalie dei ritagli sono **l'altro testo che l'utente ha scritto**, e la
+lente non li vedeva. Il principio era già dichiarato dentro `ricerca/indice.js` — *«quello che hai
+scritto tu viene prima di quello che hai letto»*, ed è la ragione per cui gli appunti stanno in cima
+ai risultati — e loro stavano dalla stessa parte di quella linea restandone fuori.
+
+**IL BIVIO (§6.4), deciso con quella stessa regola**: l'ordine dei gruppi è **appunti → mappe →
+ritagli → documenti e capitoli**. Gli appunti restano primi perché sono prosa, cioè il posto dove
+una frase si ritrova per intero; le didascalie ultime perché sono una riga sola. ⚠️ E vale **anche
+quando un documento vince per punteggio**: «prima ciò che hai scritto» non è «prima se vince». La
+regola sta in `rango()`, una funzione a sé perché è una **decisione**.
+
+⚠️ **Nel nodo entra anche la NOTA** — la frase attorno da cui il nodo è nato: chi cerca la ricorda
+com'era, non come l'ha accorciata nel titolo del nodo. **Nel ritaglio entra la sola didascalia**:
+`a1b2c3.png` è un dettaglio tecnico, e trovarlo darebbe risposte che nessuno riconosce.
+
+⚠️ **Sul nodo il click METTE A FUOCO**, non apre e basta: su una mappa di novantotto nodi aprire e
+lasciar cercare a occhio è mezzo gesto. E si aspetta che la mappa sia davvero aperta prima di
+chiedere il fuoco (`mappaApriMia` è asincrona — la lezione di Q2).
+
+⚠️ **Una mappa non ancora aperta entra col suo TITOLO**: i nodi sono su disco, e leggerli tutti
+bloccherebbe la digitazione perché l'indice è sincrono — la lente cerca mentre si scrive.
+
+⚠️ E **il messaggio del vuoto** dice che si è guardato anche fra mappe e didascalie: quello di prima
+manderebbe a cercare a mano proprio dove la lente è appena passata.
+
+**TRE ROSSI, e due erano istruttivi.**
+
+⚠️ `prova-wikilink` riconosceva i capitoli **per esclusione** («tutto ciò che non è appunto né
+pagina»): le voci nuove ci finivano dentro col `lessonId` indefinito. Adesso si chiede il campo che
+**definisce** la cosa, e regge anche alla prossima natura che entrerà nell'indice.
+
+⚠️ **`prova-testolayer` era verde da sola e rossa nella suite**, e la causa non si vedeva: il doppio
+click cadeva sul vuoto o su un pallino. L'ho fatta **parlare** aggiungendo la domanda giusta — *chi
+c'è sotto il puntatore* — e la risposta è stata `svg#mappaSvg`: la prova di Q5 lasciava la mappa a
+schermo. **La diagnostica resta nella prova**, perché quel rosso non si distingueva da un guasto
+dell'allineamento del layer.
+
+⚠️ E il primo rimedio **non funzionava**: toglievo `studia.banco`, che è la chiave di modalità morta
+dal 13 agosto, mentre quella vera è `bancoChiave()` → `studia.banco.c.<contenitore>`. **Una prova
+lascia il banco come l'ha trovato** — la regola era già scritta in `prova-banco-griglia`.
+📌 `prova-b1` e `prova-mappe-ui` usano ancora la chiave morta: difetto latente identico, **non
+toccato** in questo lavoro.
+
 ---
 
 ## 6. Che cosa NON si fa
