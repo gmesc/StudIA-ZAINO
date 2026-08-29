@@ -231,6 +231,76 @@
   }
 
   /**
+   * Una voce dell'indice a partire da un NODO DI MAPPA.
+   *
+   * ⚠️ I nodi di una mappa sono l'altro testo che l'utente ha SCRITTO, e la
+   * lente non li vedeva. Il principio è già dichiarato qui sopra — «quello che
+   * hai scritto tu viene prima di quello che hai letto» — e le mappe stavano
+   * dalla stessa parte di quella linea restandone fuori.
+   *
+   * Nel testo cercabile entrano il testo del nodo e la sua NOTA: la nota è la
+   * frase attorno da cui il nodo è nato (`mappaEstrai` la ricava dal contorno),
+   * e chi cerca una frase che ricorda di aver messo in mappa la cerca com'era,
+   * non come l'ha accorciata nel nodo.
+   *
+   * ⚠️ `nodo` viaggia col risultato perché serve all'ATTERRAGGIO: aprire la
+   * mappa e lasciare che l'utente cerchi a occhio fra novantotto nodi è mezzo
+   * gesto — chi arriva qui deve poter mettere a fuoco QUEL nodo.
+   */
+  function docNodoMappa(nodo, mappa, idx) {
+    var n = nodo || {}, m = mappa || {};
+    var titolo = String(n.testo == null ? '' : n.testo);
+    var text = [titolo, n.nota || ''].join('  ');
+    return {
+      mappa: m.file, nodo: n.id, lessonTitle: m.titolo || 'Mappe',
+      idx: idx || 0, title: titolo,
+      text: text, ntext: sNorm(text), ntitle: sNorm(titolo)
+    };
+  }
+
+  /**
+   * Una voce dell'indice a partire da una DIDASCALIA dell'album.
+   *
+   * ⚠️ Stessa ragione dei nodi: la didascalia di un ritaglio è testo scritto
+   * dall'utente — spesso l'unica cosa che dice che cosa sia quell'immagine — e
+   * restava invisibile alla lente.
+   *
+   * Il testo cercabile è la sola didascalia: il nome del file è un dettaglio
+   * tecnico (`a1b2c3.png`) e cercarci dentro darebbe risposte che nessuno
+   * riconosce.
+   */
+  function docRitaglio(voce, idx) {
+    var v = voce || {};
+    var titolo = String(v.didascalia == null ? '' : v.didascalia);
+    return {
+      album: v.id, lessonTitle: v.origine === 'foto' ? 'Album Foto' : 'Ritagli',
+      idx: idx || 0, title: titolo,
+      text: titolo, ntext: sNorm(titolo), ntitle: sNorm(titolo)
+    };
+  }
+
+  /**
+   * Il RANGO di una voce nell'elenco: prima ciò che l'utente ha scritto.
+   *
+   * ⚠️ È la regola dell'ordinamento, e sta in una funzione sua perché è una
+   * DECISIONE — non un dettaglio del confronto. «Quello che hai scritto tu
+   * viene prima di quello che hai letto» vale per gli appunti, per i nodi di
+   * mappa e per le didascalie: tre forme della stessa cosa. I documenti e i
+   * capitoli — quello che si è letto — vengono dopo.
+   *
+   * Fra le tre: gli appunti per primi perché sono prosa, cioè il posto dove una
+   * frase si ritrova per intero; poi le mappe, dove il testo è un titolo di
+   * nodo; poi le didascalie, che sono una riga sola.
+   */
+  function rango(d) {
+    if (!d) return 9;
+    if (d.appunto) return 0;
+    if (d.mappa) return 1;
+    if (d.album) return 2;
+    return 3;
+  }
+
+  /**
    * Cerca `q` fra le voci e le ordina.
    *
    * Tutti i termini devono esserci (AND): una ricerca di due parole che
@@ -307,7 +377,7 @@
     });
     out.sort(function (a, b) {
       var ka = String(a.d.lessonTitle || ''), kb = String(b.d.lessonTitle || '');
-      return ((b.d.appunto ? 1 : 0) - (a.d.appunto ? 1 : 0)) ||
+      return (rango(a.d) - rango(b.d)) ||
         (meglio[kb] - meglio[ka]) ||
         ka.localeCompare(kb) ||
         (b.score - a.score) ||
@@ -367,5 +437,6 @@
 
   return { sNorm: sNorm, interpreta: interpreta, punto: punto,
     docCapitolo: docCapitolo, docPagina: docPagina, docAppunto: docAppunto,
+    docNodoMappa: docNodoMappa, docRitaglio: docRitaglio, rango: rango,
     cerca: cerca, frammento: frammento };
 }));

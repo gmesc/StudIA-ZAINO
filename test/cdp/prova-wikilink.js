@@ -155,7 +155,15 @@ const TROVA_LINK = `(()=>{
      era diventata imprecisa, non la regola. */
   const ric = await val(`(()=>{ searchBuild();
     const visibili=new Set(lezioniOrdinati().map(c=>c.id));
-    const capitoli=SEARCH.docs.filter(d=>!d.appunto && !d.materiale);
+    /* ⚠️ Un CAPITOLO si riconosce da lessonId, non «per esclusione». Il filtro
+       di prima diceva «tutto cio' che non e' appunto ne' pagina», e dal 26
+       agosto 2026 nell'indice ci sono anche i nodi delle mappe e le didascalie
+       dei ritagli (Q5): finivano qui dentro col loro lessonId indefinito, e la
+       prova accusava un percorso che non c'entrava. Chiedere il campo che
+       definisce la cosa regge anche alla prossima natura che entrera'.
+       (Niente apici inversi qui: siamo DENTRO un template literal — la
+       trappola e' costata la decima volta proprio su questa riga.) */
+    const capitoli=SEARCH.docs.filter(d=>!!d.lessonId);
     const dentro=capitoli.map(d=>d.lessonId);
     return { doc:dentro.length, fuori:[...new Set(dentro.filter(id=>!visibili.has(id)))],
              lezioniIndicizzate:new Set(dentro).size, visibili:visibili.size,

@@ -147,6 +147,19 @@ async function clickXY(x, y, quanti) {
       if(!s.rangeCount || s.isCollapsed) return '';
       return s.getRangeAt(0).toString(); })()`);
     const dentro = !!scelto && b.testo.toLowerCase().indexOf(scelto.trim().toLowerCase()) >= 0;
+    /* ⚠️ QUANDO FALLISCE, SI DICE CHI C'ERA SOTTO IL PUNTATORE. Senza, il rosso
+       accusa l'allineamento del layer e non si distingue da un click finito
+       sopra un pannello, un toast o un righello lasciato acceso da un'altra
+       prova — che è la famiglia di guasti già pagata qui tre volte. */
+    if (!dentro) {
+      const chi = await val(`(()=>{ const e=document.elementFromPoint(${b.x}, ${b.y});
+        if(!e) return 'niente';
+        const dentroA=[]; let n=e;
+        while(n && n!==document.body){ dentroA.push(n.tagName.toLowerCase()+(n.id?('#'+n.id):'')+
+          (n.className && typeof n.className==='string' ? ('.'+n.className.trim().split(/\s+/).join('.')) : '')); n=n.parentElement; }
+        return dentroA.slice(0,4).join(' < '); })()`);
+      console.log('      sotto il puntatore c\'era: ' + chi);
+    }
     ok('la parola selezionata sta nel pezzo puntato — ' + JSON.stringify(scelto.trim().slice(0, 24)),
       true, dentro);
     if (!dentro) console.log('      il pezzo diceva: ' + JSON.stringify(b.testo.slice(0, 60)));

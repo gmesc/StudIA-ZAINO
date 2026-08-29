@@ -1492,7 +1492,14 @@
   /* Il titolo di un APPUNTO è ciò che l'utente ha scritto lui, e prende
      l'accento come l'intestazione: nell'elenco è la voce che sta cercando più
      spesso, ed è quella che nel gruppo «Appunti» distingue una riga dall'altra. */
-  #searchRes .sr-item[data-tipo="appunto"] .sr-head{ color:var(--teal-strong); }
+  /* ⚠️ Il colore dice CHE COSA HAI SCRITTO TU: l'appunto, il nodo di una mappa,
+     la didascalia di un ritaglio. È lo stesso teal, perché sono la stessa cosa
+     vista da tre parti — e distinguerli con tre colori direbbe che sono tre
+     nature diverse quando la natura è una: testo tuo. Che poi siano un appunto
+     o un nodo lo dice l'intestazione del gruppo, due righe più su. */
+  #searchRes .sr-item[data-tipo="appunto"] .sr-head,
+  #searchRes .sr-item[data-tipo="mappa"] .sr-head,
+  #searchRes .sr-item[data-tipo="ritaglio"] .sr-head{ color:var(--teal-strong); }
   /* ⚠️ Il frammento si ferma a DUE RIGHE. Prima ne prendeva tre o quattro quando
      il testo attorno era fitto, e otto risultati riempivano lo schermo: il
      pannello serve a scegliere una riga, non a leggere il documento — quello si
@@ -15044,6 +15051,36 @@ function searchBuild(){
     if(!n || !n.file) return;
     SEARCH.docs.push(RicercaIndice.docAppunto(n, GRUPPO_APPUNTI, i));
   });
+  /* ⚠️ E con loro le MAPPE e le DIDASCALIE (Q5): sono l'altro testo che
+     l'utente ha SCRITTO, e la lente non li vedeva. Stanno qui fuori dai due
+     rami per la stessa ragione degli appunti — mancavano nei corsi esattamente
+     come negli zaini.
+     ⚠️ Si legge quello che c'è IN MEMORIA e non si va sul disco: costruire
+     l'indice è sincrono (la lente cerca mentre si scrive) e una lettura per
+     ogni mappa bloccherebbe la digitazione. Le mappe non ancora aperte hanno
+     solo il titolo nell'elenco, e il titolo entra lo stesso: meglio trovare la
+     mappa giusta e aprirla, che non trovarla. */
+  (MAPPA.elenco||[]).forEach(function(m,i){
+    if(!m || m.errore) return;
+    var suo=(MAPPA.mia.file===m.file && MAPPA.mia.grafo) ? MAPPA.mia.grafo : null;
+    var nodi=(suo && suo.nodi) ? suo.nodi : [];
+    if(!nodi.length){
+      /* La mappa non è aperta: entra il suo TITOLO, così cercandolo la si trova
+         e la si apre — e da lì i suoi nodi entrano nell'indice. */
+      SEARCH.docs.push(RicercaIndice.docNodoMappa({ id:'', testo:m.titolo||m.file }, m, i));
+      return;
+    }
+    nodi.forEach(function(nd,k){ SEARCH.docs.push(RicercaIndice.docNodoMappa(nd, m, k)); });
+  });
+  (function(){
+    var api=(window.vault && window.vault.album) || null, corso=corsoAttivo();
+    if(!api || !corso) return;
+    var r=null; try{ r=api.elenco(corso); }catch(e){ return; }
+    ((r&&r.voci)||[]).forEach(function(v,i){
+      if(!v || !v.didascalia) return;    // senza didascalia non c'è testo da cercare
+      SEARCH.docs.push(RicercaIndice.docRitaglio(v, i));
+    });
+  })();
 }
 function searchRun(q){
   var m=curMeta(); var pid=m?m.courseId:null;
@@ -15057,9 +15094,13 @@ function searchRender(res,q){
   var box=$('#searchRes'); if(!box) return;
   SEARCH.last=res; SEARCH.sel=-1;
   if(!q.trim()){ box.classList.remove('open'); box.innerHTML=''; return; }
+  /* ⚠️ Il messaggio del vuoto dice DOVE si è guardato, e da Q5 si guarda anche
+     nelle mappe e nelle didascalie: lasciare l'elenco di prima farebbe credere
+     che una parola scritta in un nodo non sia stata cercata — cioè manderebbe a
+     cercarla a mano proprio dove la lente è appena passata. */
   if(!res.length){ box.innerHTML='<div class="sr-empty">Nessun risultato per «'+escHtml(q)+'» '+
-    (modoAttivo()==='zaino' ? 'nei documenti e negli appunti di questo zaino.'
-                            : 'nei capitoli e negli appunti del corso attivo.')+'</div>'; }
+    (modoAttivo()==='zaino' ? 'nei documenti, negli appunti, nelle mappe e nelle didascalie di questo zaino.'
+                            : 'nei capitoli, negli appunti, nelle mappe e nelle didascalie del corso attivo.')+'</div>'; }
   else{
     var html='', lastLesson=null, i=0;
     res.forEach(function(r){
@@ -15072,7 +15113,10 @@ function searchRender(res,q){
          il doppio del necessario per dire la stessa cosa.
          Il tipo viaggia nel markup perché il colore dipende da lui: il titolo di
          un appunto è ciò che l'utente ha SCRITTO, e si vede. */
-      var tipo=r.d.appunto ? 'appunto' : (r.d.materiale ? 'pagina' : 'capitolo');
+      var tipo=r.d.appunto ? 'appunto'
+             : r.d.mappa ? 'mappa'
+             : r.d.album ? 'ritaglio'
+             : (r.d.materiale ? 'pagina' : 'capitolo');
       html+='<button type="button" class="sr-item" role="option" data-i="'+i+'" data-tipo="'+tipo+'">'+
         '<div class="sr-head">'+escHtml(r.d.title)+'</div>'+
         '<div class="sr-snip">'+searchSnippet(r)+'</div></button>';
@@ -15163,6 +15207,29 @@ function searchGoto(r,q){
     try{ bancoMostra('appunti'); }catch(e){}
     noteOpen(r.d.appunto);
     noteVaiAlPunto(q);
+    return;
+  }
+  /* Un NODO DI MAPPA: si apre la mappa e si METTE A FUOCO quel nodo.
+     ⚠️ Aprire e basta sarebbe mezzo gesto: su una mappa di novantotto nodi
+     lascerebbe l'utente a cercare a occhio proprio ciò che la lente ha appena
+     trovato. `mappaFocus` esiste già ed è la porta di sempre.
+     ⚠️ E si aspetta che la mappa sia DAVVERO aperta prima di mettere a fuoco:
+     `mappaApriMia` è asincrona, e chiedere il fuoco su un grafo non ancora
+     caricato non fa niente e non lo dice (la lezione di Q2). */
+  if(r.d.mappa){
+    try{ bancoMostra('mappa'); }catch(e){}
+    MAPPA.registro='mie';
+    Promise.resolve(mappaApriMia(r.d.mappa)).then(function(){
+      if(!r.d.nodo) return;              // era il titolo: la mappa aperta basta
+      try{ mappaFocus(r.d.nodo, 'vicini'); }catch(e){ console.error('lente/mappa:', e); }
+    }).catch(function(e){ console.error('lente/mappa:', e); });
+    return;
+  }
+  /* Una DIDASCALIA: la sua card, nella vista giusta — i Ritagli o l'Album Foto.
+     La porta è quella che usa già un rimando `album:<id>` scritto in un
+     appunto, non una seconda strada (invariante 7). */
+  if(r.d.album){
+    try{ albumMostraCitata(r.d.album); }catch(e){ console.error('lente/album:', e); }
     return;
   }
   /* Un risultato dello zaino è un documento a una pagina: ci si va con la porta
