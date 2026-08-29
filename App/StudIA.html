@@ -49,6 +49,7 @@
 <script src="assets/evidenze/strati.js"></script>
 <script src="assets/evidenze/postille.js"></script>
 <script src="assets/appunti/segno.js"></script>
+<script src="assets/rimandi/anteprima.js"></script>
 <!-- Il parser dei capitoli. ⚠️ Prima stava dentro l'inline qui sotto e le prove
      in Node lo ritagliavano dal sorgente con due `indexOf`: adesso l'app e
      `test/roundtrip.js` caricano lo STESSO file. Non ha dipendenze: sta qui in
@@ -2207,6 +2208,24 @@
   .note-tip .nt-doc{ display:block; font-weight:700; }
   .note-tip .nt-loc{ display:block; font-size:11px; color:var(--muted); font-weight:600; margin-top:.15rem; }
   .note-tip .nt-hint{ display:block; font-size:10px; color:var(--muted); margin-top:.35rem; text-transform:uppercase; letter-spacing:.1em; }
+  /* ---- La bolla dell'anteprima (Q4) --------------------------------------
+     ⚠️ Il VESTITO è quello del tooltip dell'app (`.note-tip`): fondo, bordo,
+     ombra e le tre classi del contenuto vengono da lì (invariante 8). Qui si
+     cambia solo ciò che deve cambiare — la posizione, che è fissa e calcolata
+     dal renderer invece che ancorata a un `sup`. */
+  .rimbolla{ position:fixed; left:0; top:0; bottom:auto; transform:none;
+    opacity:1; pointer-events:none; max-width:340px; z-index:210; }
+  .rimbolla[hidden]{ display:none; }
+  .rimbolla .nt-txt{ display:block; font-weight:400; margin-top:.3rem; line-height:1.4; }
+  .rimbolla .nt-nota{ display:block; font-size:11px; font-style:italic; color:var(--muted);
+    font-weight:400; margin-top:.3rem; }
+  .rimbolla .nt-img{ display:block; max-width:100%; max-height:150px; margin-top:.35rem; }
+  /* L'esatto acceso col colore dell'evidenza: lo stesso segno che ha sul testo,
+     con le stesse misure — due segni che sono lo stesso segno non possono avere
+     due numeri. */
+  .rimbolla .nt-ex{ background:transparent; color:inherit;
+    text-decoration:underline var(--ev, var(--ev-nudo)) var(--ev-spessore);
+    text-underline-offset:var(--ev-stacco); }
 
   /* ---- Sezione "Note e materiali" (vista d'insieme, in fondo alla scheda) ---- */
   .notes{ margin:2rem 0; padding:1rem 1.1rem; background:color-mix(in srgb, var(--blue) 6%, var(--panel)); }
@@ -14287,6 +14306,158 @@ function evidenzaVai(ev){
   if(ev.materiale){ openPdf(ev.materiale, ev.pagina||1, titoloMateriale(ev.materiale)||ev.materiale); return; }
   if(!vaiAlCapitolo(ev.capitoloId)) toast('Capitolo non trovato', false);
 }
+/* ===== SBIRCIARE SENZA SALTARE (Q4) =======================================
+ *
+ * «Hover = anteprima; click = torni lì» è il principio fondante di
+ * `PIANO-BRAYNR.md` §0, e nello zaino non c'era: rileggere un appunto pieno di
+ * rimandi costava un salto per ciascuno, e ogni salto butta via il filo.
+ *
+ * ⚠️ CHE COSA si mostra lo decide `rimandi/anteprima.js`, provato in Node. Qui
+ * restano tre cose che in Node non si possono fare: capire su che cosa è fermo
+ * il mouse, raccogliere i dati che il renderer ha già in mano, e posare la
+ * bolla senza farla uscire dallo schermo.
+ *
+ * ⚠️ E NON SI RILEGGE NESSUN RIMANDO. I link resi portano già i dati risolti
+ * negli attributi (`data-file`, `data-page`, `data-ev`…), scritti da
+ * `_mdInline` DOPO essere passati da `RimandiSintassi.leggi` — la porta unica.
+ * Qui si raccolgono quegli attributi: interpretare di nuovo l'URL sarebbe il
+ * secondo lettore che l'invariante 7 vieta.
+ */
+var SBIRCIA={ timer:null, su:null };
+
+/** Il rimando che un link porta addosso, nella forma che `anteprima` si
+ *  aspetta. Non interpreta niente: legge ciò che la porta unica ha già
+ *  risolto. `null` se quel link non è un rimando dell'app. */
+function rimandoDaLink(a){
+  if(!a || !a.classList) return null;
+  if(a.classList.contains('plink') && !a.classList.contains('figlink')){
+    return { tipo:'pdf', numero:a.getAttribute('data-file'),
+             pagina:parseInt(a.getAttribute('data-page'),10)||1 };
+  }
+  if(a.classList.contains('vlink')){
+    return { tipo:'video', numero:a.getAttribute('data-file'),
+             t:parseInt(a.getAttribute('data-t'),10)||0 };
+  }
+  if(a.classList.contains('evlink')) return { tipo:'ev', id:a.getAttribute('data-ev') };
+  if(a.classList.contains('alink'))  return { tipo:'album', id:a.getAttribute('data-album') };
+  if(a.classList.contains('clink'))  return { tipo:'cap', capitoloId:a.getAttribute('data-cap') };
+  return null;
+}
+
+/** I dati che il renderer ha in mano, nella forma che il modulo si fa passare.
+ *  ⚠️ Si legge quello che è GIÀ in memoria: `FONTI.indici` (li usa anche la
+ *  lente), `EVIDENZE`, l'album. Andare sul disco al passaggio del mouse
+ *  vorrebbe dire una lettura per ogni rimando sfiorato. */
+function sbirciaDati(){
+  return {
+    titoloMateriale: function(file){ return titoloMateriale(file)||file||''; },
+    testoPagina: function(file, pag){
+      var d=(FONTI.indici||[]).filter(function(x){ return x.pdf===file; })[0];
+      if(!d) return '';
+      var p=(d.pagine||[]).filter(function(x){ return x.n===pag || x.page===pag; })[0];
+      return p ? (p.t||p.text||'') : '';
+    },
+    evidenza: function(id){
+      var e=kwDaId(id); if(!e) return null;
+      return { exact:e.exact, prefix:e.prefix, suffix:e.suffix,
+               colore:e.colore, nota:(typeof evNotaDi==='function') ? evNotaDi(e) : '' };
+    },
+    immagine: function(id){
+      var v=(typeof albumVoce==='function') ? albumVoce(id) : null;
+      if(!v) return null;
+      var src=''; try{ src=window.vault.album.srcUrl(corsoAttivo(), id, 'mini'); }catch(e){}
+      return { didascalia:v.didascalia||'', src:src };
+    },
+    capitolo: function(id){
+      /* ⚠️ `trovaCapitolo` è la porta di sempre — la stessa che usa
+         `vaiAlCapitolo` per il click. Qui prima avevo scritto una
+         `capitoloPerId` che NON ESISTE: la bolla sarebbe rimasta muta sui
+         rimandi ai capitoli, in silenzio, perché il richiamo era dietro un
+         `typeof`. Cercata nel codice, non ricordata. */
+      var p=(typeof trovaCapitolo==='function') ? trovaCapitolo(id) : null;
+      if(!p) return null;
+      var co=LESSONS[p.lezione]||{}, ch=(co.chapters||[])[p.indice]||{};
+      return { titolo:ch.title||'', lezione:co.title||'' };
+    }
+  };
+}
+
+/** Apre la bolla su questo link, se c'è qualcosa da dire. */
+function sbirciaApri(a){
+  var box=document.getElementById('rimBolla'); if(!box) return;
+  if(typeof RimandiAnteprima==='undefined') return;
+  var c=RimandiAnteprima.contenuto(rimandoDaLink(a), sbirciaDati());
+  /* ⚠️ Se non si sa niente NON si apre: una bolla che dice «non lo so» ruba il
+     testo sotto senza dare niente in cambio. Chi clicca lo scopre lo stesso,
+     con un messaggio. */
+  if(!c || c.vuoto){ sbirciaChiudi(); return; }
+
+  var h='';
+  if(c.titolo) h+='<span class="nt-doc">'+escHtml(c.titolo)+'</span>';
+  if(c.dove)   h+='<span class="nt-loc">'+escHtml(c.dove)+'</span>';
+  if(c.tipo==='album' && c.immagine){
+    h+='<img class="nt-img" src="'+escHtml(c.immagine)+'" alt="">';
+  }
+  if(c.tipo==='ev'){
+    /* La frase col suo contorno, e l'ESATTO acceso del suo colore: è ciò che
+       distingue «la memoria» ripetuta in tre punti diversi. */
+    var col=String(c.colore||'').replace(/[\x00-\x1f;"'<>]/g,'').trim().slice(0,40);
+    h+='<span class="nt-txt">'+escHtml(c.prefix)+
+       '<mark class="nt-ex"'+(col?' style="--ev:'+col+'"':'')+'>'+escHtml(c.esatto)+'</mark>'+
+       escHtml(c.suffix)+'</span>';
+    if(c.nota) h+='<span class="nt-nota">'+escHtml(c.nota)+'</span>';
+  } else if(c.testo){
+    h+='<span class="nt-txt">'+escHtml(c.testo)+'</span>';
+  }
+  box.innerHTML=h;
+  box.hidden=false;
+  /* Si posa sotto il link, e si tiene dentro la finestra: la stessa aritmetica
+     di `popAt`, senza chiudere gli altri pannellini — una bolla che compare
+     sfiorando non deve spegnere il menu che si aveva aperto. */
+  var r=a.getBoundingClientRect(), b=box.getBoundingClientRect();
+  box.style.left=Math.max(8, Math.min(window.innerWidth-b.width-8, r.left))+'px';
+  var sotto=r.bottom+6;
+  box.style.top=((sotto+b.height <= window.innerHeight-8) ? sotto
+                 : Math.max(8, r.top-6-b.height))+'px';
+  SBIRCIA.su=a;
+}
+
+function sbirciaChiudi(){
+  clearTimeout(SBIRCIA.timer); SBIRCIA.timer=null; SBIRCIA.su=null;
+  var box=document.getElementById('rimBolla');
+  if(box){ box.hidden=true; box.innerHTML=''; }
+}
+
+/* ⚠️ Mezzo secondo di attesa, e la bolla si costruisce SOLO allora: farlo in
+   anticipo per tutti i rimandi di un appunto lungo vorrebbe dire cento letture
+   per una pagina che magari nessuno sfiora. È il costo che il piano segnala. */
+document.addEventListener('mouseover', function(e){
+  if(!e.target || !e.target.closest) return;
+  var a=e.target.closest('a.plink, a.vlink, a.evlink, a.alink, a.clink');
+  if(!a){ if(SBIRCIA.su && !e.target.closest('#rimBolla')) sbirciaChiudi(); return; }
+  if(a===SBIRCIA.su) return;
+  clearTimeout(SBIRCIA.timer);
+  SBIRCIA.timer=setTimeout(function(){ sbirciaApri(a); }, 500);
+});
+document.addEventListener('mouseout', function(e){
+  if(!e.target || !e.target.closest) return;
+  if(e.target.closest('a.plink, a.vlink, a.evlink, a.alink, a.clink')) sbirciaChiudi();
+});
+/* Lo SCORRIMENTO la chiude: una bolla ancorata a un link che si è spostato
+   indica un punto che non c'è più. */
+document.addEventListener('scroll', function(){ if(SBIRCIA.su) sbirciaChiudi(); }, true);
+/* Ed Esc, che è il primo gradino di tutti: la bolla è lo strato più esterno —
+   compare sfiorando, senza che nessuno l'abbia chiesta.
+   ⚠️ SI FERMA LA PROPAGAZIONE SOLO SE C'ERA QUALCOSA DA CHIUDERE. È la regola
+   pagata il 23 agosto: un gestore in cattura su `window` che ingoia l'Esc
+   prima di decidere fa sparire l'Esc di mezza app. Qui si guarda lo stato
+   PRIMA, e se la bolla non c'è si lascia passare senza toccare niente. */
+window.addEventListener('keydown', function(e){
+  if(e.key!=='Escape' || !SBIRCIA.su) return;
+  e.preventDefault(); e.stopPropagation();
+  sbirciaChiudi();
+}, true);
+
 /* Il testo evidenziato dentro un appunto riporta dov'era. ⚠️ Il click sul
    segno NON apre il campo di scrittura del blocco: quel gestore lascia passare
    i link e le immagini per questa ragione esatta — sono i gesti per cui
@@ -21008,6 +21179,11 @@ window.addEventListener('keydown', function(e){
 <!-- Le fonti di un nodo della mappa: fuori dai blocchi del banco, come tutti i
      pannellini, o `container-type` sul blocco la farebbe finire sotto la topbar. -->
 <div id="fontiBolla" class="popmenu fbolla" role="menu" aria-label="Fonti di questo concetto"></div>
+<!-- ⚠️ La bolla dell'anteprima (Q4): «hover = anteprima, click = torni lì».
+     Sta a livello di pagina come gli altri pannellini, o dentro un riquadro con
+     `overflow` verrebbe tagliata. `aria-hidden` finché non ha niente da dire:
+     è un aiuto alla lettura del mouse, e chi naviga a tastiera ha il `title`. -->
+<div id="rimBolla" class="note-tip rimbolla" role="tooltip" hidden aria-hidden="true"></div>
 <!-- La ricerca: un bottone che apre il campo, invece di un campo sempre steso in
      barra. Il pannello dei risultati (`#searchRes`) non è cambiato — si posa già
      da sé sotto l'input, ovunque l'input si trovi. -->
