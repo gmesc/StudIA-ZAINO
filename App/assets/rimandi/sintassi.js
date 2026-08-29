@@ -54,7 +54,15 @@
        (`lib/evidenze.js` → `identita`). Si accettano da sei in su per la stessa
        ragione dell'album: la lunghezza è una scelta di quel file, e inchiodarla
        qui vorrebbe dire due posti da cambiare insieme. */
-    ev: /^ev:([0-9a-f]{6,40})$/
+    ev: /^ev:([0-9a-f]{6,40})$/,
+    /* Un'immagine dell'ALBUM: un ritaglio o una foto, citata per id. La
+       grammatica esisteva già — la scrivono gli appunti come
+       `![didascalia](album:<id>)` — ma la leggeva solo il costruttore del
+       markdown, con una regex sua. Da Q4 passa da QUI: chi deve sapere che cosa
+       c'è dall'altra parte di un rimando lo chiede alla porta unica, e una
+       seconda funzione che interpreta un rimando è la seconda grammatica che
+       l'invariante 7 vieta. */
+    album: /^album:([0-9a-f]{6,40})$/
   };
 
   function nn(n) {
@@ -116,6 +124,7 @@
       return { tipo: 'fig', numero: nn(m[1]), pagina: parseInt(m[2], 10), i: parseInt(m[3] || '1', 10) };
     }
     if ((m = RE.ev.exec(s))) return { tipo: 'ev', id: m[1] };
+    if ((m = RE.album.exec(s))) return { tipo: 'album', id: m[1] };
     if (/^https?:/i.test(s)) return { tipo: 'esterno', url: s };
     return null;
   }
