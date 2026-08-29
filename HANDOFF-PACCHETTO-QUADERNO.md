@@ -13,9 +13,13 @@
 > ramo. Suite intera CDP verde (**57 prove**) · `npm test` verde (**46 file**).
 >
 > ✅ **OTTO VOCI SU NOVE SONO FATTE E UNITE**: Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8.
-> **Resta soltanto Q9** — il più importante dei nove, con il vincolo non negoziabile sugli strati e
-> **due bivi veri ancora da decidere con l'utente** (§6.2 e §6.3). Il pacchetto raccomanda
-> `/architetto` prima di scriverlo.
+>
+> 🧊 **Q9 È IN FREEZER**, per decisione dell'utente del 26 agosto 2026. **Non è abbandonato: è in
+> attesa**, e resta il più importante dei nove. Quando si riprende: `/architetto` prima di
+> scrivere, e i **due bivi veri** del §6 vanno **chiesti**, non indovinati.
+>
+> ⚠️ E il vincolo dell'utente non è negoziabile: **deve aggiungere uno strato, mai sovrascrivere
+> quelli che lo studente ha già.**
 
 ---
 
@@ -66,7 +70,7 @@ per questo stanno insieme: toccano `_evidenze.json`, la barra della selezione, l
 | Q6 | ✅ **La postilla** — *fatto il 26 ago 2026, `PIANO-ZAINO.md` §Z17* | S | lavorare |
 | Q7 | ✅ **Chi entra si vede** — *fatto il 24 ago 2026, `PIANO-ZAINO.md` §Z15* | S | riparazione |
 | Q8 | ✅ **Il quaderno va nel Cestino, non nel nulla** — *fatto il 24 ago 2026, `PIANO-ZAINO.md` §Z14* | S | riparazione |
-| Q9 | **Le sottolineature del tutor arrivano come lettura** | M | insieme |
+| Q9 | 🧊 **Le sottolineature del tutor arrivano come lettura** — *in freezer dal 26 ago 2026* | M | insieme |
 
 ⚠️ **I numeri di riga di `App/StudIA.html` NON sono in questo documento**, ed è deliberato: il file
 è un monolite da ~20.400 righe che si muove sotto i piedi, e la trappola è catalogata in
@@ -351,7 +355,12 @@ salvataggio lo riscriva mezzo secondo dopo.
 
 ---
 
-## Q9 — Le sottolineature del tutor arrivano come lettura · M
+## Q9 — Le sottolineature del tutor arrivano come lettura · M · 🧊 IN FREEZER
+
+> 🧊 **Messo in attesa dall'utente il 26 agosto 2026**, con le altre otto voci finite e unite. Non
+> è abbandonato e non è stato cominciato: quello che segue è il materiale intatto con cui
+> scriverne il piano. ⚠️ Prima di toccare una riga, i **due bivi del §6** vanno chiesti
+> all'utente — sono decisioni che producono lavori materialmente diversi.
 
 **È il lavoro più importante dei nove**, e quello con il vincolo più stretto.
 
@@ -561,8 +570,9 @@ utile.
 6. ~~**Q5** (la lente vede mappe e didascalie)~~ — ✅ **fatto il 26 agosto** (`PIANO-ZAINO.md` §Z20);
 7. ~~**Q4** (sbirciare)~~ — ✅ **fatto il 26 agosto** (`PIANO-ZAINO.md` §Z21), e l'ordine ha pagato:
    la bolla mostra il rimando che Q3 crea e la postilla che Q6 scrive;
-8. **Q9** (la lettura del tutor) — l'altro **M**, e l'ultimo: è quello con il vincolo più stretto,
-   e merita di trovare `_evidenze.json` già assestato.
+8. **Q9** (la lettura del tutor) — 🧊 **in freezer dal 26 agosto**. Era l'ultimo per una ragione
+   che è stata rispettata: ha trovato `_evidenze.json` già assestato da Q6 (il campo `nota`) e da
+   Q3 (la severità dei rimandi).
 
 ⚠️ **Q4 e Q9 meritano ciascuno il suo piano** prima di essere scritti: usa `/architetto` con il
 braindump della voce, che leggerà la guida e passerà il piano contro gli invarianti uno per uno.
@@ -573,6 +583,9 @@ braindump della voce, che leggerà la guida e passerà il piano contro gli invar
 
 Sono i bivi veri: due letture producono lavori materialmente diversi. Vanno chiesti all'utente, non
 indovinati.
+
+✅ **I due di Q1 e Q5 sono stati decisi** il 26 agosto e sono segnati qui sotto. **Restano aperti
+quelli di Q9**, che è in freezer: si chiedono quando si riprende, non prima.
 
 1. ~~**Q1** — la riga dell'appunto viaggia col vault o resta di questa macchina?~~ ✅ **deciso il
    26 agosto: viaggia col vault**, in `APPUNTI/_riga.json` (§Z19).

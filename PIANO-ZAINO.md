@@ -1037,6 +1037,12 @@ toccato** in questo lavoro.
 
 ### Z21 — sbirciare senza saltare (26 agosto 2026, Q4)
 
+> 📌 **Con Z21 il pacchetto «Quaderno» è chiuso a otto voci su nove.** La nona — Q9, le
+> sottolineature del tutor — è 🧊 **in freezer** per decisione dell'utente del 26 agosto: il
+> materiale per scriverla è intatto in `HANDOFF-PACCHETTO-QUADERNO.md`, e i suoi due bivi vanno
+> chiesti quando si riprende.
+
+
 «Hover = anteprima; click = torni lì» è il principio fondante di `PIANO-BRAYNR.md` §0, e nello
 zaino non c'era: rileggere un appunto pieno di rimandi costava **un salto per ciascuno**, e ogni
 salto butta via il filo. Per chi legge con una dislessia è il costo più alto, e chi rilegge appunti

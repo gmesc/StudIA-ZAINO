@@ -1,6 +1,13 @@
 # Handoff definitivo — 24 agosto 2026
 
-> **A chi arriva adesso: questo file basta per ripartire.** Sostituisce
+> 📍 **NON È PIÙ IL PUNTO D'INGRESSO**: lo è `HANDOFF-DEFINITIVO-2026-08-26.md`. Questo resta come
+> archivio del 24 agosto — **Q2, Q8, Q7 e Q3**, le trappole di quei due giorni, e il primo racconto
+> del guasto agli appunti (§3-bis), che nel file del 26 è ripreso e ampliato al §2.
+>
+> ⚠️ I NUMERI DI QUESTO FILE SONO FERMI AL 26 MATTINA e non vanno più aggiornati: `main`, i conti
+> delle prove e le righe del monolite si leggono nell'handoff del 26.
+>
+> **A chi arrivava allora: questo file bastava per ripartire.** Sostituisce
 > `HANDOFF-DEFINITIVO-2026-08-23.md` come punto d'ingresso e ne eredita per riferimento ciò che non
 > ripete. Il *come si costruisce qui* sta in `GUIDA-ARCHITETTO.md` e non cambia; il dettaglio di
 > ogni area sta nei `PIANO-*`.

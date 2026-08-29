@@ -100,7 +100,10 @@ App/StudIA.html          il guscio: markup, <style>, e il renderer che CABLA i m
 App/assets/…             i moduli UMD (lettura, mappa, banco, evidenze, rimandi, ripasso, tts, stampa,
                          appunti, ricerca, player, dati, fonti/zoom, album/foto, appunti/importa,
                          tasti/nomi = i nomi dei tasti secondo la piattaforma).
-                         Provabili in Node, caricati con <script src>
+                         Provabili in Node, caricati con <script src>.
+                         Dal 26 ago: evidenze/postille (che cosa entra nell'elenco delle postille),
+                         appunti/segno (dove si riapre un appunto), rimandi/anteprima (che cosa
+                         mostra la bolla di un rimando)
 App/assets/pdfjs/        pdf.js vendorizzato (build LEGACY) + `pdf_viewer.scoped.css`, GENERATO da
                          bin/pdfjs-css.js: il foglio del viewer incapsulato sotto
                          `:is(#pdfPane, #pdfPane2)`. ⚠️ Chi aggiunge un terzo riquadro col viewer
@@ -141,6 +144,12 @@ StudIA - file/
     LEZIONI/<lezione>/    _lezione.md + NN-*.md   ← della PIPELINE, rigenerabile
     MATERIALI/           i file sorgente numerati + _rimossi.json (lapidi)
     APPUNTI/ MAPPE/ RIPASSO/ ALBUM/ PERCORSI/     ← dell'UTENTE, mai toccate dalla pipeline
+      APPUNTI/_riga.json      a che riga si era arrivati in ogni appunto (il terzo gemello di
+                              _lettura.json e _ascolto.json). Sta QUI e non nella radice perché
+                              pacchetto.js esclude APPUNTI/ quando l'autore non dà i suoi appunti
+      APPUNTI/_versioni/      le copie di ciò che stava per essere perso: si scrive una copia solo
+                              quando un salvataggio ACCORCIA il testo, le 10 più recenti per
+                              appunto. Non escono mai nell'esportazione
     _lavorazione/        stato intermedio della pipeline
   Zaini/<id>/            come un corso, ma senza LEZIONI/
 ```
@@ -333,6 +342,26 @@ Le più costose, distillate dagli handoff. Ogni ⚠️ è stato pagato almeno un
   click arriva — e la risposta dice **perché** e **dove si rimedia**.
 - **Quando una misura e l'utente si contraddicono, apri il file dell'utente**: tre prove verdi
   contro «non funziona», e la differenza stava in un campo dentro la sua mappa (`vista.motore`).
+- **Provare che il dato è SUL DISCO non basta**: una funzione può scrivere benissimo e restare
+  INVISIBILE. Le evidenze sul PDF si dipingono con la Custom Highlight API, che non crea elementi
+  su cui passare il mouse; una frase lunga non diventa parola chiave, quindi non ha un chip. La
+  postilla era scritta e non aveva nessun posto dove mostrarsi, e per chi la usa invisibile e non
+  salvato sono la stessa cosa. Una prova che verifica la scrittura e non guarda lo schermo è mezza
+  prova.
+- **Una prova lascia il BANCO come l'ha trovato.** È il terzo modo in cui lo stato residuo avvelena
+  le prove successive, dopo la modalità e i pannellini: `partiPulito()` non tocca il banco, e più
+  blocchi vuol dire riquadri più bassi — chi calcola un bersaglio su un layout e ci clicca con un
+  altro accusa l'app per colpa propria. ⚠️ E la chiave è `bancoChiave()` →
+  `studia.banco.c.<contenitore>`: `studia.banco` è la chiave di modalità, **morta dal 13 agosto**.
+- **Un rosso invisibile si fa PARLARE aggiungendo la domanda giusta**, non rilanciando: davanti a un
+  doppio click che «non seleziona», la domanda che ha risolto in un colpo è stata *chi c'è sotto il
+  puntatore* (`document.elementFromPoint`). La diagnostica poi RESTA nella prova, perché quel rosso
+  non si distingueva da un guasto vero.
+- **Un salvataggio automatico non può distruggere il lavoro di chi scrive**: `appunti.save` rifiuta
+  di scrivere il vuoto sopra un appunto che ha del testo, salvo che chi chiama lo dichiari
+  (`opt.svuota`) — e solo un gesto esplicito lo dichiara. Nato da un appunto vero trovato col corpo
+  vuoto (26 agosto): la causa era un ⌘Z su una cronologia azzerata da un `setValue`, ma la difesa
+  non sta nel gesto sospettato — sta nel punto da cui passano tutte le scritture.
 
 ## 9. Protocollo per un braindump
 
@@ -360,7 +389,7 @@ Chi riceve un braindump dell'utente e deve produrne un piano:
 
 | documento | che cosa dice |
 |---|---|
-| `HANDOFF-DEFINITIVO-<data>.md`, quello con la **data più alta** (oggi: 23 agosto 2026) | lo stato: che cosa è appena successo, che cosa viene dopo, le trappole fresche. Il suo **§9** dice quale handoff storico tiene quale argomento — la catena non si risale a memoria |
+| `HANDOFF-DEFINITIVO-<data>.md`, quello con la **data più alta** (oggi: **26 agosto 2026**) | lo stato: che cosa è appena successo, che cosa viene dopo, le trappole fresche. Il suo **§9** dice quale handoff storico tiene quale argomento — la catena non si risale a memoria |
 | `HANDOFF.md` | ⚠️ è vecchio nei numeri, ma è l'**unica specifica della pipeline**: wizard, composer, percorsi, figure, Chandra. Finché quell'area non ha un `PIANO-*` suo, si legge lì |
 | `PIANO-BRAYNR.md` | appunti, evidenze, mappe, flashcard/ripasso (aree P1–P3) |
 | `PIANO-MODULI.md` | lo smontaggio del monolite: criterio, albero dei moduli, metriche |
