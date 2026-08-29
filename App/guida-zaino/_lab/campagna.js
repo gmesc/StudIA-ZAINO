@@ -22,6 +22,19 @@ async function toastVia() { await L.pausa(3600); }
 async function conferma(ritorno) { await L.val(`window.__conf=null; window.confirm=function(m){ window.__conf=m; return ${ritorno ? 'true' : 'false'}; };`); }
 async function bloccoLargo(blocco) { await L.val(`bancoZoom(${JSON.stringify(blocco)})`); await L.pausa(900); }
 async function bloccoTorna() { await L.val(`bancoZoomTorna()`); await L.pausa(600); }
+/** Seleziona una frase provandola su piu' pagine.
+ *  ⚠️ pdf.js tiene reso solo un INTORNO della pagina corrente, e quale intorno
+ *  dipende da dove si era prima: la stessa frase c'e' o non c'e' a seconda del
+ *  passo precedente. Il 26 agosto questo ha reso rosso il passo 54-55 (e con
+ *  lui il 130, che vive dei rimandi che il 54 scrive). */
+async function selezionaFra(testo, pagine) {
+  let ultimo;
+  for (const p of pagine) {
+    await L.val(`vaiAPagina(${p})`); await L.pausa(1600);
+    try { return await L.selezionaTesto(testo); } catch (e) { ultimo = e; }
+  }
+  throw ultimo;
+}
 async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi(corsoAttivo()).notes.map(n=>n.file)`); return f.find(x => re.test(x)); }
 
 (async () => {
@@ -165,7 +178,11 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
     await bloccoLargo('A');
     const bar = await L.rect('#pdfPane .pdfbar');
     await L.banda(bar, { altezza: 36 });
-    await L.numeri([{ sel: '#pdfDoc', n: 1, dove: 'b' }, { sel: '#pdfPrev', n: 2, dove: 'b' }, { sel: '#pdfPagN', n: 3, dove: 'b' }, { sel: '#pdfNext', n: 4, dove: 'b' }, { sel: '#pdfZoomOut', n: 5, dove: 'b' }, { sel: '#pdfZoomLvl', n: 6, dove: 'b' }, { sel: '#pdfZoomIn', n: 7, dove: 'b' }, { sel: '#pdfRitaglia', n: 8, dove: 'b' }, { sel: '#pdfFindBtn', n: 9, dove: 'b' }, { sel: '#pdfNewtab', n: 10, dove: 'b' }, { sel: '#pdfElimina', n: 11, dove: 'b' }, { sel: '#pdfClose', n: 12, dove: 'b' }], { filo: bar.y + bar.h + 6 });
+    /* ⚠️ Diciassette, non dodici: da quando la barra fu numerata (17 ago) ci
+       sono entrati il foglio colorato, il righello, la voce, l'interruttore
+       delle sottolineature e le letture. Una figura numerata che salta dei
+       bottoni PRESENTI nella figura è peggio di nessuna figura. */
+    await L.numeri([{ sel: '#pdfDoc', n: 1, dove: 'b' }, { sel: '#pdfPrev', n: 2, dove: 'b' }, { sel: '#pdfPagN', n: 3, dove: 'b' }, { sel: '#pdfNext', n: 4, dove: 'b' }, { sel: '#pdfTinta', n: 5, dove: 'b' }, { sel: '#pdfRighelloBtn', n: 6, dove: 'b' }, { sel: '#pdfVoce', n: 7, dove: 'b' }, { sel: '#pdfZoomOut', n: 8, dove: 'b' }, { sel: '#pdfZoomLvl', n: 9, dove: 'b' }, { sel: '#pdfZoomIn', n: 10, dove: 'b' }, { sel: '#pdfEvid', n: 11, dove: 'b' }, { sel: '#pdfStrati', n: 12, dove: 'b' }, { sel: '#pdfRitaglia', n: 13, dove: 'b' }, { sel: '#pdfFindBtn', n: 14, dove: 'b' }, { sel: '#pdfNewtab', n: 15, dove: 'b' }, { sel: '#pdfElimina', n: 16, dove: 'b' }, { sel: '#pdfClose', n: 17, dove: 'b' }], { filo: bar.y + bar.h + 6 });
     await L.scatta('20-pdfbar-numerata', { clip: { x: bar.x, y: bar.y - 2, width: bar.w, height: bar.h + 38 }, scala: 3 });
     await L.overlayPulisci();
     await bloccoTorna();
@@ -207,7 +224,7 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
     await L.scatta('31-menu-selezione', { sel: '#selBarra', margine: 10, scala: 2 });
     const menu = await L.rect('#selBarra');
     await L.banda({ x: menu.x + menu.w + 6, y: menu.y - 8, w: 60, h: 0 }, { altezza: menu.h + 16 });
-    await L.numeri([{ sel: '#selBarra .ctx-item[data-az="appunta"]', n: 1, dove: 'r' }, { sel: '#selBarra .ctx-cals', n: 2, dove: 'r' }, { sel: '#selBarra .ctx-item[data-az="mappa"]', n: 3, dove: 'r' }, { sel: '#selBarra .ctx-item[data-az="keyword"]', n: 4, dove: 'r' }, { sel: '#selBarra .ctx-colori', n: 5, dove: 'r' }, { sel: '#selBarra .ctx-tratti', n: 6, dove: 'r' }, { sel: '#selBarra .ctx-item[data-az="cancella"]', n: 7, dove: 'r' }, { sel: '#selBarra .ctx-item[data-az="copia"]', n: 8, dove: 'r' }], { dove: 'r' });
+    await L.numeri([{ sel: '#selBarra .ctx-item[data-az="appunta"]', n: 1, dove: 'r' }, { sel: '#selBarra .ctx-cals', n: 2, dove: 'r' }, { sel: '#selBarra .ctx-item[data-az="mappa"]', n: 3, dove: 'r' }, { sel: '#selBarra .ctx-item[data-az="keyword"]', n: 4, dove: 'r' }, { sel: '#selBarra .ctx-item[data-az="postilla"]', n: 5, dove: 'r' }, { sel: '#selBarra .ctx-colori', n: 6, dove: 'r' }, { sel: '#selBarra .ctx-tratti', n: 7, dove: 'r' }, { sel: '#selBarra .ctx-item[data-az="cancella"]', n: 8, dove: 'r' }, { sel: '#selBarra .ctx-item[data-az="copia"]', n: 9, dove: 'r' }], { dove: 'r' });
     await L.scatta('31-menu-selezione-numerato', { clip: { x: menu.x - 8, y: menu.y - 8, width: menu.w + 66, height: menu.h + 16 }, scala: 2 });
     await L.overlayPulisci();
     const p = await L.val(`(()=>{const r=getSelection().getRangeAt(0).getBoundingClientRect(); return {x:r.left,y:r.top}})()`);
@@ -350,12 +367,15 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
     await L.val(`NOTES.mde.toggleSideBySide()`); await L.pausa(600);
   });
   await passo('54-55 appunta e anteprima', async () => {
-    await L.val(`vaiAPagina(3)`); await L.pausa(1200);
-    await L.selezionaTesto('Le teorie più accreditate sulla formazione del sistema');
+    /* ⚠️ Il PDF va RIAPERTO: il passo qui sopra lo chiude per fotografare
+       l'editor a tutta larghezza, e senza documento non c'e' nessun layer di
+       testo da selezionare — la selezione falliva con «testo non trovato». */
+    await L.val(`openPdf('01 Sistema solare.pdf', 2, 'Sistema solare')`); await L.pausa(2200);
+    await selezionaFra('Il sistema solare è costituito dal Sole', [2, 3, 1, 4]);
     await L.clicca('#selBarra .ctx-cal[data-app="definizione"]'); await L.pausa(900);
     await L.scatta('54-appunta-riquadro');
     await L.pulito();
-    await L.selezionaTesto('La contrazione causò un aumento della velocità di rotazione');
+    await selezionaFra('le sue idee non presero piede nella comunità dei filosofi', [2, 3, 1, 4]);
     await L.clicca('#selBarra .ctx-cal[data-app=""]'); await L.pausa(900);
     await L.scatta('54b-appunta-senza-riquadro', { sel: '#notePane', scala: 2 });
     await L.pulito();
@@ -597,6 +617,201 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
       await L.pulito();
       await L.scatta('99-ocr-evidenza', { clip: { x: 300, y: p2.y0 - 40, width: 660, height: 100 }, scala: 3 });
     } catch (e) { console.log('evidenza su scansione:', e.message); }
+    await toastVia();
+  });
+
+
+  /* ══ 13. IL QUADERNO DI FINE AGOSTO ══════════════════════════════════════
+     Gli undici lavori entrati fra il 24 e il 26 agosto 2026. Stanno in coda e
+     non sparsi fra i passi di prima per una ragione sola: qui il vault e' gia'
+     pieno (un PDF, due appunti, una mappa con cinque nodi, ritagli, foto,
+     evidenze) ed e' esattamente lo stato in cui queste cose si vedono. Un
+     pannello delle Postille su uno zaino vergine e' una scatola vuota. */
+
+  /* Prima il VUOTO, che va fotografato finche' e' vuoto: dopo il passo dopo non
+     lo e' piu'. E il vuoto che si vede qui e' il secondo dei tre — evidenze ce
+     ne sono, postille no — cioe' quello che l'utente incontra davvero. */
+  await passo('120 postille: il pannello vuoto', async () => {
+    await L.val(`closePdf()`); await L.pausa(400);
+    await L.val(`bancoForma('due-col'); bancoAssegna('C','postille')`); await L.pausa(900);
+    const pp = await L.rect('#postillePane');
+    await L.scatta('120-postille-vuoto', { clip: { x: pp.x, y: pp.y - 40, width: pp.w, height: 190 }, scala: 2 });
+    await L.val(`bancoAssegna('C','appunti')`); await L.pausa(400);
+  });
+
+  /* ── Q6: la postilla, cioe' il PERCHE' di una sottolineatura ── */
+  await passo('110-113 postilla', async () => {
+    await L.val(`openPdf('01 Sistema solare.pdf', 1, 'Sistema solare')`); await L.pausa(2000);
+    await L.selezionaTesto('In ordine di distanza dal Sole');
+    const v = await L.centro('#selBarra .ctx-item[data-az="postilla"]');
+    await L.puntatore(v.x, v.y);
+    const mb = await L.rect('#selBarra');
+    await L.scatta('110-voce-postilla', { clip: { x: mb.x - 8, y: mb.y - 8, width: mb.w + 16, height: mb.h + 16 }, scala: 2 });
+    await L.overlayPulisci();
+    await L.clicca('#selBarra .ctx-item[data-az="postilla"]'); await L.pausa(700);
+    await L.val(`document.getElementById('umInput').value="Da rileggere: l\u2019ordine non è per grandezza"`);
+    await L.scatta('111-postilla-modale', { sel: '#uiModal .um-card', margine: 40, scala: 2 });
+    await L.clicca('#umOk'); await L.pausa(1200);
+    const t = await L.rect('#toast').catch(() => null);
+    if (t) await L.scatta('112-postilla-toast', { clip: { x: t.x - 20, y: t.y - 20, width: t.w + 40, height: t.h + 40 }, scala: 3 });
+    await toastVia();
+    /* ⚠️ E QUI si vede la cosa che vale il capitolo: riselezionando la STESSA
+       frase il menu porta la postilla scritta, e la voce cambia in «Correggi».
+       Su un PDF non c'e' altro posto dove una postilla si possa rileggere —
+       le evidenze si dipingono con la Custom Highlight API, che non fa
+       elementi su cui passare il mouse. */
+    await L.pulito();
+    await L.selezionaTesto('In ordine di distanza dal Sole');
+    const mb2 = await L.rect('#selBarra');
+    await L.scatta('113-postilla-nel-menu', { clip: { x: mb2.x - 8, y: mb2.y - 8, width: mb2.w + 16, height: mb2.h + 16 }, scala: 2 });
+    await L.pulito();
+    /* una seconda, su un'altra pagina: un pannello con un solo gruppo non
+       mostra che le postille si raccolgono PER DOCUMENTO. */
+    await L.val(`vaiAPagina(4)`); await L.pausa(1600);
+    await L.selezionaTesto('perielio');
+    await L.clicca('#selBarra .ctx-item[data-az="postilla"]'); await L.pausa(700);
+    await L.val(`document.getElementById('umInput').value="Il punto più vicino al Sole: non confonderlo con l\u2019afelio"`);
+    await L.clicca('#umOk'); await L.pausa(1200);
+    await toastVia();
+  });
+
+  /* ── Lo strumento POSTILLE: dove il perche' si rilegge tutto insieme ── */
+  await passo('121-122 strumento Postille', async () => {
+    await L.val(`bancoAssegna('C','postille')`); await L.pausa(1000);
+    const pp = await L.rect('#postillePane');
+    await L.scatta('121-postille-pannello', { clip: { x: pp.x, y: pp.y - 40, width: pp.w, height: 330 }, scala: 2 });
+    await L.clicca('#poCerca'); await L.scrivi('afelio'); await L.pausa(700);
+    await L.scatta('122-postille-cerca', { clip: { x: pp.x, y: pp.y - 40, width: pp.w, height: 320 }, scala: 2 });
+    await L.val(`document.getElementById('poCerca').value=''; document.getElementById('poCerca').dispatchEvent(new Event('input',{bubbles:true}));`); await L.pausa(400);
+  });
+
+  /* ── Q4: sbirciare senza saltare ── */
+  await passo('130 bolla del rimando', async () => {
+    await L.val(`bancoAssegna('C','appunti')`); await L.pausa(600);
+    const nf = await noteFileChe(/rocciosi/i);
+    await L.val(`noteOpen(${JSON.stringify(nf)})`); await L.pausa(900);
+    if (!(await L.val(`!!document.querySelector('#noteHost .editor-preview-active, #noteHost .editor-preview-active-side')`))) {
+      await L.clicca('#noteHost .editor-toolbar button.preview'); await L.pausa(1000);
+    }
+    const a = await L.val(`(()=>{ const l=document.querySelector('#noteHost .editor-preview-active a.plink, #noteHost .editor-preview-active a.evlink'); if(!l) return null; l.scrollIntoView({block:'center'}); const r=l.getBoundingClientRect(); return {x:r.left+r.width/2, y:r.top+r.height/2, x0:r.left, y0:r.top, w:r.width, h:r.height}; })()`);
+    if (!a) throw new Error('nessun rimando nell anteprima dell appunto');
+    await L.pausa(400);
+    await L.muovi(a.x, a.y);
+    /* ⚠️ Mezzo secondo di attesa e' il ritardo VERO (SBIRCIA.timer): sfiorando
+       di passaggio la bolla non deve comparire. Scattare prima da' un vuoto. */
+    await L.pausa(900);
+    const b = await L.rect('#rimBolla');
+    const x0 = Math.min(a.x0, b.x) - 24, y0 = Math.min(a.y0, b.y) - 24;
+    await L.puntatore(a.x, a.y);
+    await L.scatta('130-sbircia-bolla', { clip: { x: x0, y: y0, width: Math.max(a.x0 + a.w, b.x + b.w) - x0 + 24, height: Math.max(a.y0 + a.h, b.y + b.h) - y0 + 24 }, scala: 2 });
+    await L.overlayPulisci();
+    await L.val(`sbirciaChiudi()`);
+    await L.clicca('#noteHost .editor-toolbar button.preview'); await L.pausa(400);
+  });
+
+  /* ── Q1: il quaderno si riapre alla riga ── */
+  await passo('140 il segno di riga', async () => {
+    const nf = await noteFileChe(/rocciosi/i);
+    await L.val(`noteOpen(${JSON.stringify(nf)})`); await L.pausa(800);
+    /* un corpo abbastanza lungo da avere un «piu' in basso» */
+    /* ⚠️ L'appunto dev'essere piu' lungo della finestra, o non scorre niente e
+       il segno non ha nulla da dimostrare: la prima versione ci stava tutta a
+       schermo, e la riga segnata cadeva fuori dal ritaglio. */
+    await L.val(`NOTES.mde.value(["# Pianeti rocciosi","","I quattro pianeti interni sono rocciosi: Mercurio, Venere, Terra e Marte. Sono piccoli, densi, con una superficie solida su cui in teoria si potrebbe camminare.","","## Mercurio","Il piu\u0300 vicino al Sole. Non ha atmosfera: quello che c\u2019era e\u0300 stato spazzato via dal vento solare.","","Di giorno supera i 400 gradi, di notte scende sotto i meno 170. La differenza piu\u0300 grande del sistema solare.","","## Venere","Atmosfera densissima di anidride carbonica, e un effetto serra che non si ferma piu\u0300.","","In superficie ci sono novanta atmosfere: come stare a novecento metri sott\u2019acqua.","","## Terra","L\u2019unico con acqua liquida in superficie, ed e\u0300 questo che cambia tutto il resto.","","## Marte","Il pianeta rosso: il colore lo da\u0300 l\u2019ossido di ferro nella polvere.","","Ha le due calotte di ghiaccio, e il vulcano piu\u0300 alto che si conosca.","","## Che cosa hanno in comune","Superficie solida, densita\u0300 alta, pochi satelliti o nessuno.","","## Da chiedere alla prof","Perche\u0301 i giganti gassosi stanno tutti oltre la linea del ghiaccio?",""].join("\\n"))`);
+    await L.pausa(600);
+    await L.val(`(()=>{ const cm=NOTES.mde.codemirror; cm.setCursor({line:26,ch:0}); cm.focus(); if(typeof rigaSegna==='function') rigaSegna(); return 1; })()`);
+    await L.pausa(1400);
+    await L.val(`rigaFlush && rigaFlush()`); await L.pausa(600);
+    /* si chiude davvero: si apre l'ALTRO appunto e si torna. Fingere di
+       riaprire (rigaVaiAlSegno a mano) proverebbe la funzione, non il gesto. */
+    const altro = await noteFileChe(/classe/i);
+    await L.val(`noteOpen(${JSON.stringify(altro)})`); await L.pausa(900);
+    await L.val(`noteOpen(${JSON.stringify(nf)})`); await L.pausa(1400);
+    const riga = await L.val(`(()=>{ const cm=NOTES.mde.codemirror; const n=cm.getCursor().line; const c=cm.charCoords({line:n,ch:0},'window'); const w=cm.getWrapperElement().getBoundingClientRect(); return {x:w.left+6, y:c.top, w:w.width-12, h:Math.max(18,c.bottom-c.top), n:n}; })()`);
+    console.log('riga al riaprire:', riga && riga.n);
+    const cont = await L.rect('#noteHost .EasyMDEContainer');
+    if (riga) await L.cornice({ x: riga.x, y: riga.y, w: riga.w, h: riga.h }, { etichetta: 'qui eri rimasto' });
+    await L.scatta('140-riga-al-segno', { clip: { x: cont.x, y: cont.y - 6, width: cont.w, height: cont.h + 12 }, scala: 2 });
+    await L.overlayPulisci();
+  });
+
+  /* ── Q5: la lente vede anche le mappe e le didascalie ── */
+  await passo('150 la lente su mappe e ritagli', async () => {
+    /* un ritaglio senza didascalia non ha testo da trovare: dargliela e' il
+       gesto vero, ed e' anche il modo di farsi trovare. */
+    await L.val(`bancoAssegna('C','album')`); await L.pausa(900);
+    const rid = await L.val(`document.querySelector('#albLista .alcard')?.dataset.id`);
+    if (rid) {
+      await L.val(`albumAzione('rinomina', ${JSON.stringify(rid)})`); await L.pausa(600);
+      await L.val(`document.getElementById('umInput').value='Le orbite dei pianeti rocciosi'`);
+      await L.clicca('#umOk'); await L.pausa(900);
+    }
+    await toastVia();
+    /* ⚠️ I NODI di una mappa entrano nell'indice solo se la mappa e' APERTA:
+       l'indice si costruisce da quello che sta in memoria (searchBuild non va
+       sul disco, o bloccherebbe la digitazione), e di una mappa chiusa c'e'
+       solo il titolo. Senza questo la sezione MAPPE non compariva, e la figura
+       diceva il contrario di quello che il capitolo promette. */
+    await L.val(`bancoForma('due-col'); bancoAssegna('C','mappa')`); await L.pausa(1200);
+    await L.val(`(async()=>{ if(!MAPPA.mia || !MAPPA.mia.grafo){ const l=await window.vault.mappe.elenco(corsoAttivo()); const m=(l.mappe||l)[0]; if(m) await mappaApriMia(m.file); } return 1; })()`); await L.pausa(1200);
+    await L.clicca('#searchBtn'); await L.pausa(400);
+    await scattaLente('150-lente-quattro-sezioni', 'rocciosi', 1400);
+    await L.pulito();
+    await L.val(`bancoAssegna('C','appunti')`); await L.pausa(400);
+  });
+
+  /* ── Q7: la soglia dello zaino ── */
+  await passo('160 la soglia dei media', async () => {
+    await L.pulito();
+    await L.rilascia([M + 'Nota vocale.aiff']); await L.pausa(3000);
+    const t = await L.rect('#toast').catch(() => null);
+    if (t) await L.scatta('160-soglia-rifiuto', { clip: { x: t.x - 20, y: t.y - 20, width: t.w + 40, height: t.h + 40 }, scala: 3 });
+    else console.log('nessun toast: il file e ENTRATO — la soglia non ha fermato l aiff');
+    const dentro = await L.val(`(async()=>{ const l=await window.vault.media.elenco(corsoAttivo()); return JSON.stringify((l.media||l||[]).map(m=>m.nome||m)); })()`).catch(() => '?');
+    console.log('media nello zaino dopo l aiff:', dentro);
+    await toastVia();
+  });
+
+  /* ── Q8: appunti, mappe e ritagli vanno nel Cestino di sistema ──
+     ULTIMO, perche' distrugge le cose che tutti i passi di sopra usano. */
+  await passo('170-173 il Cestino del quaderno', async () => {
+    const altro = await noteFileChe(/classe/i);
+    await L.val(`noteOpen(${JSON.stringify(altro)})`); await L.pausa(800);
+    await conferma(false);
+    await L.val(`noteDelete()`); await L.pausa(400);
+    const q = await L.val(`window.__conf`);
+    console.log('CONFERMA APPUNTO:', q);
+    await L.dialogoFinto(q || '(nessuna conferma)');
+    await L.scatta('170-conferma-elimina-appunto', { clip: { x: W / 2 - 260, y: 150, width: 520, height: 340 }, scala: 2 });
+    await L.overlayPulisci();
+    await conferma(true);
+    await L.val(`noteDelete()`); await L.pausa(2000);
+    const t = await L.rect('#toast').catch(() => null);
+    if (t) await L.scatta('171-appunto-nel-cestino', { clip: { x: t.x - 20, y: t.y - 20, width: t.w + 40, height: t.h + 40 }, scala: 3 });
+    await toastVia();
+
+    /* la mappa: il cestino sta nella sua barra, e compare solo quando c'e'
+       davvero una mappa da eliminare. */
+    await L.val(`bancoAssegna('C','mappa')`); await L.pausa(1200);
+    await L.val(`(async()=>{ if(!MAPPA.mia || !MAPPA.mia.file){ const l=await window.vault.mappe.elenco(corsoAttivo()); const m=(l.mappe||l)[0]; if(m) await mappaApriMia(m.file); } return 1; })()`); await L.pausa(1000);
+    await bloccoLargo('C');
+    const ces = await L.centro('#mCestino').catch(() => null);
+    if (ces) {
+      await L.puntatore(ces.x, ces.y);
+      const mb = await L.rect('#mappaView .mtoolbar');
+      await L.scatta('172-cestino-mappa', { clip: { x: mb.x, y: mb.y - 4, width: Math.min(mb.w, 620), height: mb.h + 8 }, scala: 3 });
+      await L.overlayPulisci();
+      await conferma(false);
+      await L.clicca('#mCestino'); await L.pausa(400);
+      const q2 = await L.val(`window.__conf`);
+      console.log('CONFERMA MAPPA:', q2);
+      await L.dialogoFinto(q2 || '(nessuna conferma)');
+      await L.scatta('173-conferma-elimina-mappa', { clip: { x: W / 2 - 260, y: 150, width: 520, height: 340 }, scala: 2 });
+      await L.overlayPulisci();
+    } else console.log('#mCestino assente: nessuna mappa aperta');
+    await bloccoTorna();
+    await conferma(false);
+    await L.val(`bancoAssegna('C','appunti')`); await L.pausa(400);
     await toastVia();
   });
 
