@@ -59,7 +59,8 @@ DMG="dist/$NOME-$VERSIONE-$ARCH.dmg"
 # ── 0. le due cose che devono esserci PRIMA, o si scopre alla fine ───────────
 # ⚠️ Un build da 227 MB che fallisce all'ultimo passo perché manca un certificato
 # è mezz'ora buttata. Si chiede prima, e si dice come rimediare.
-CERT="$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 || true)"
+IDENTITA="$(security find-identity -v -p codesigning 2>/dev/null || true)"
+CERT="$(printf '%s\n' "$IDENTITA" | grep "Developer ID Application" | head -1 || true)"
 if [ -z "$CERT" ]; then
   echo "✗ nel portachiavi non c'è nessun «Developer ID Application»."
   echo "  Xcode → Settings → Accounts → Manage Certificates → + → Developer ID Application"
@@ -91,9 +92,17 @@ echo "── 1/5  il bundle, firmato con Developer ID ────────�
 npx electron-builder --mac "--$ARCH"
 [ -d "$APP" ] || { echo "✗ manca $APP"; exit 1; }
 codesign --verify --strict --deep "$APP"
-codesign -dv "$APP" 2>&1 | grep -q "flags=.*runtime" \
-  || { echo "✗ l'app non ha l'hardened runtime: la notarizzazione la rifiuterebbe"; exit 1; }
-echo "  firma valida, hardened runtime acceso"
+# ⚠️ L'esito si legge da una VARIABILE, non da una pipe. `codesign -dv | grep -q`
+# sembra la cosa ovvia e sotto `set -o pipefail` è una trappola: `grep -q` esce
+# appena trova, `codesign` si prende un SIGPIPE, e la pipeline risulta fallita
+# ESATTAMENTE quando il controllo ha successo. Il 30 agosto 2026 ha fermato una
+# notarizzazione su un'app firmata benissimo, dicendo il contrario di com'era.
+INFO="$(codesign -dv "$APP" 2>&1 || true)"
+case "$INFO" in
+  *"flags=0x"*"runtime"*) echo "  firma valida, hardened runtime acceso" ;;
+  *) echo "✗ l'app non ha l'hardened runtime: la notarizzazione la rifiuterebbe"
+     printf '%s\n' "$INFO" | sed 's/^/    /'; exit 1 ;;
+esac
 
 echo ""
 echo "── 2/5  la notarizzazione dell'APP ─────────────────────"
@@ -134,9 +143,10 @@ ESITO=0
 MONTA="$(mktemp -d "${TMPDIR:-/tmp}/studia-verifica-XXXXXX")"
 hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$MONTA" >/dev/null
 VERDETTO="$(spctl -a -vvv -t exec "$MONTA/$NOME.app" 2>&1 || true)"
-echo "$VERDETTO" | sed 's/^/    /'
-echo "$VERDETTO" | grep -q "accepted" || { ESITO=1; echo "  ✗ Gatekeeper NON accetta l'app dentro il dmg"; }
-echo "$VERDETTO" | grep -qi "Notarized" || { ESITO=1; echo "  ✗ manca la notarizzazione (firma valida ma non notarizzata)"; }
+printf '%s\n' "$VERDETTO" | sed 's/^/    /'
+# Stessa ragione di sopra: si guarda dentro la variabile, senza pipe.
+case "$VERDETTO" in *accepted*) ;; *) ESITO=1; echo "  ✗ Gatekeeper NON accetta l'app dentro il dmg" ;; esac
+case "$VERDETTO" in *Notarized*|*notarized*) ;; *) ESITO=1; echo "  ✗ manca la notarizzazione (firma valida ma non notarizzata)" ;; esac
 xcrun stapler validate "$MONTA/$NOME.app" >/dev/null 2>&1 \
   || { ESITO=1; echo "  ✗ l'app dentro il dmg non ha il ticket cucito: senza rete non si aprirà"; }
 # ⚠️ E che sia l'architettura CHIESTA: i due dmg si chiamano quasi uguale, e un
