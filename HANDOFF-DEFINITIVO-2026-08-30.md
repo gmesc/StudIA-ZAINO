@@ -137,7 +137,21 @@ esistevano più. Quel che restava è stato chiuso lo stesso giorno, e sta in fon
 chiuso», con il perché. È il motivo per cui un debito si rilegge prima di ripeterlo: costa meno
 riverificarlo che inseguirlo — e di dieci voci, **due erano lavoro vero**.
 
-1. **I due pacchetti esistono ma nessuno li ha aperti** (`PIANO-ONBOARDING.md`). Costruiti il 30
+1. **La notarizzazione è configurata ma non è ancora stata eseguita**: manca un solo passo, e lo
+   deve fare l'utente perché chiede una password. Il certificato **Developer ID Application:
+   Giacomo Meschini (32678PYY8K)** è nel portachiavi; `npm run notarizza` si ferma dicendo che
+   serve il profilo di `notarytool`:
+   ```bash
+   xcrun notarytool store-credentials studia-notarize --apple-id "…" --team-id 32678PYY8K
+   ```
+   (la password è una *app-specific password* di appleid.apple.com; il profilo la tiene cifrata nel
+   portachiavi e da lì in poi nessuno script la vede). ⚠️ Il team del Developer ID (`32678PYY8K`) è
+   **diverso** da quello del certificato di sviluppo (`QWXZYBYN7U`): vale il primo, e lo script lo
+   legge dal certificato invece di farselo dire.
+   ⚠️ **Windows non si risolve con l'account Apple**: senza Authenticode l'installer fa comparire
+   SmartScreen. Le vie sono un certificato OV (la reputazione si accumula coi download), uno EV
+   (nessun avviso subito, token hardware) o Azure Trusted Signing, che oggi è la più economica.
+2. **I due pacchetti esistono ma nessuno li ha aperti** (`PIANO-ONBOARDING.md`). Costruiti il 30
    agosto con `npm run pacchetto` (mac arm64) e `npm run dist:win` (Windows x64), e controllati
    **dentro**: la guida c'è con tutte e 117 le figure, `_lab/` e le prove restano fuori, i moduli
    nuovi ci sono, e l'app nel dmg è firmata, integra e arm64. Restano due cose che qui non si
@@ -145,7 +159,7 @@ riverificarlo che inseguirlo — e di dieci voci, **due erano lavoro vero**.
    Impostazioni di Sistema → Privacy e sicurezza → «Apri comunque», e `spctl` dirà sempre
    «rejected» — e ⚠️ **l'installer provato su Windows**: si è misurato che è un NSIS valido e
    completo (`PE32 executable (GUI) … Nullsoft Installer`), non che parta.
-2. **Q9 in freezer** — quando si riprende: `/architetto`, e **due bivi veri da chiedere
+3. **Q9 in freezer** — quando si riprende: `/architetto`, e **due bivi veri da chiedere
    all'utente** (il canale: `_evidenze.json` trascinato o pacchetto vero con `lib/pacchetto.js`; e
    che cosa fare quando l'impronta del documento non combacia: rifiutare tutto o importare
    lasciando i segni orfani). ⚠️ Vincolo non negoziabile dell'utente: **aggiunge uno strato, non

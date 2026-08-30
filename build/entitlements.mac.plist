@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  I permessi che l'hardened runtime toglie e che a Electron servono per girare.
+  Sono TRE, e nessuno è di comodo: senza il primo l'app non parte affatto.
+
+  ⚠️ allow-jit e allow-unsigned-executable-memory: V8 compila JavaScript in
+  codice macchina a runtime, che è esattamente ciò che l'hardened runtime vieta.
+  Senza, l'app firmata si chiude all'avvio senza una finestra e senza un errore
+  leggibile — nel Console si trova un EXC_BAD_ACCESS che non nomina la causa.
+
+  ⚠️ allow-dyld-environment-variables: Electron passa variabili DYLD_* ai suoi
+  processi figli (il renderer, la GPU). È la terza riga della lista minima che
+  Electron stesso documenta per la notarizzazione.
+
+  ⚠️ Quello che NON c'è, e perché. `disable-library-validation` servirebbe a
+  caricare librerie native non firmate da noi: qui non ce ne sono (tesseract.js è
+  WASM, pdf-lib è JavaScript). Il `python3` che l'app lancia per l'ingest e l'OCR
+  è un PROCESSO esterno, non una libreria caricata nel bundle, e l'hardened
+  runtime non lo ostacola. `audio-input` e `camera` non ci sono perché l'app non
+  registra niente: chiederli farebbe comparire un permesso che nessuno usa, e un
+  permesso di troppo è una domanda a cui l'utente deve rispondere per niente.
+-->
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+  <true/>
+</dict>
+</plist>

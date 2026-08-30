@@ -1,8 +1,14 @@
 #!/bin/bash
-# Il pacchetto per Mac, dall'inizio alla fine, in un comando solo.
+# Il pacchetto per Mac da provare SUL PROPRIO MAC, in un comando solo.
 #
 #   npm run dist:mac        ← electron-builder: il bundle e un dmg
-#   npm run pacchetto       ← questo: bundle, FIRMA, e il dmg che contiene l'app firmata
+#   npm run pacchetto       ← questo: bundle, firma AD-HOC, e il dmg che la contiene
+#   npm run notarizza       ← quello da SPEDIRE: Developer ID + notarizzazione
+#
+# ⚠️ QUESTO SCRIPT NON FA UN PACCHETTO DA DISTRIBUIRE, e dal 30 agosto 2026 non è
+# più l'unica strada: chi lo riceve vede «Apri comunque», perché la firma ad-hoc
+# non è notarizzabile per definizione. Serve a provare in fretta sul proprio Mac
+# senza toccare il portachiavi. Per chiunque altro c'è `npm run notarizza`.
 #
 # ⚠️ Perché esiste, cioè che cosa si sbagliava a mano. `mac.identity: null` dice a
 # electron-builder di **saltare la firma**, e su arm64 un bundle non sigillato è un bundle
@@ -44,7 +50,12 @@ APP="$CARTELLA/$NOME.app"
 DMG="dist/$NOME-$VERSIONE-$ARCH.dmg"
 
 echo "── 1/4  il bundle ($ARCH) ──────────────────────────────"
-npx electron-builder --mac "--$ARCH"
+# ⚠️ `identity=null` e l'hardened runtime spento si passano QUI, a riga di
+# comando, invece di stare nel `package.json`: là dentro adesso c'è la
+# configurazione della firma VERA (Developer ID, hardened runtime, entitlements),
+# che è quella che conta. Se restassero anche nel file, il pacchetto da spedire
+# uscirebbe non firmato senza che nessuno se ne accorga fino a Gatekeeper.
+npx electron-builder --mac "--$ARCH" -c.mac.identity=null -c.mac.hardenedRuntime=false
 
 [ -d "$APP" ] || { echo "✗ manca $APP"; exit 1; }
 
