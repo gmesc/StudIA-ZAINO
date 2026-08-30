@@ -753,7 +753,8 @@ un fatto misurabile, e `cross: true` esiste già nel modello e si disegna tratte
    ⚠️ **Rovesciata il 10 agosto 2026, dall'utente: le scale sono DUE.** Del capitolo non si genera
    più niente — quella mappa la fa lo studente, scegliendo lui che cosa metterci. `MAPPA.ambito`
    vale `corso` o `lezione`, e un `capitolo` rimasto in una config vecchia viene *corretto*, non
-   solo mostrato male. Il verbale è in `HANDOFF-SESSIONE-2026-08-10.md` §3.1.
+   solo mostrato male. Il verbale è in `HANDOFF-SESSIONE-2026-08-10.md` §3.1, eliminato il 30 agosto 2026 e ripreso
+   con `git show 52b0ad5:HANDOFF-SESSIONE-2026-08-10.md`.
 2. **Prima il giro gratis, poi i verbi.** Nodi dai grassetti + glossario, archi **muti** da
    co-occorrenza e definizione: zero chiamate. Si guarda se la spina regge, e solo dopo l'AI mette
    i verbi sugli archi sopravvissuti al filtro. Se la forma non funziona senza verbi, non

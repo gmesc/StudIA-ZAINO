@@ -6,7 +6,8 @@
 >
 > **Prima di scrivere una riga, leggi in quest'ordine** (è il protocollo di `GUIDA-ARCHITETTO.md` §9):
 > 1. `GUIDA-ARCHITETTO.md` — invarianti numerati, vocabolario, trappole permanenti;
-> 2. `HANDOFF-DEFINITIVO-2026-08-23.md` — lo stato: dove sono i lavori, che cosa è appena successo;
+> 2. l'`HANDOFF-DEFINITIVO-*.md` con la data più alta — lo stato: dove sono i lavori, che cosa è
+>    appena successo (dal 30 agosto 2026 ce n'è uno solo: gli storici stanno in git);
 > 3. `PIANO-BRAYNR.md` (appunti, evidenze, mappe) e `PIANO-ZAINO.md` (§1 le decisioni, §6 i non-obiettivi).
 >
 > **Il punto di partenza**: `main` a **`ab74eba`**, `origin/main` allineata, albero pulito, nessun

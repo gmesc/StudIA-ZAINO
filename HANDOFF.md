@@ -1,8 +1,8 @@
 # Handoff — StudIA, 3-8 agosto 2026
 
 > 📍 **Storico.** Il punto d'ingresso è **sempre** l'`HANDOFF-DEFINITIVO-*` con la data più alta
-> — oggi [23 agosto 2026](HANDOFF-DEFINITIVO-2026-08-23.md), che porta in §9 la mappa di tutta
-> la catena.
+> — oggi quello del **30 agosto 2026**. ⚠️ Gli handoff storici sono stati eliminati quel giorno e
+> vivono in git: il §7 del più recente dice come si riprendono.
 > Qui resta: la **pipeline**, di cui è l'unica specifica: il wizard a sette passi (§5-pre), il
 > composer e i percorsi (§5), perché i PDF non venivano citati (§7 e §7-bis), il riquadro «Note
 > e materiali» (§8), Chandra e la regola per scegliere le pagine (§9).
@@ -19,8 +19,8 @@
 > |---|---|---|
 > | `HANDOFF §7` | `lib/ocr.js:31` | **questo** (§7, il digest amputato) |
 > | `HANDOFF §9` | `lib/mappe.js:24` | **questo** (§9, `motore` su ogni pagina) |
-> | `HANDOFF §5.1` · `§5.2` | `lib/appunti.js:44,119` · `lib/album.js:512` | [HANDOFF-SESSIONE-2026-08-09.md](HANDOFF-SESSIONE-2026-08-09.md) |
-> | «guasto 5.6 dell'HANDOFF» | `test/disegna-fonti.js:19` | [HANDOFF-SESSIONE-2026-08-09.md](HANDOFF-SESSIONE-2026-08-09.md) |
+> | `HANDOFF §5.1` · `§5.2` | `lib/appunti.js:44,119` · `lib/album.js:512` | `HANDOFF-SESSIONE-2026-08-09.md` (in git: `git show 52b0ad5:HANDOFF-SESSIONE-2026-08-09.md`) |
+> | «guasto 5.6 dell'HANDOFF» | `test/disegna-fonti.js:19` | `HANDOFF-SESSIONE-2026-08-09.md` (in git: `git show 52b0ad5:HANDOFF-SESSIONE-2026-08-09.md`) |
 >
 > Chi tocca uno di quei commenti scriva il nome del file per esteso: il numero di sezione da solo
 > non basta più a dire dove si va.
@@ -37,7 +37,8 @@ Stato consegnato: **1260 controlli verdi** (`npm test`), app funzionante, tre co
 
 > 📄 **Il racconto della sessione dell'8-9 agosto** — mappe personali (L0–L4) e primo lotto del
 > banco (B1), con i nove guasti trovati e le misure prese — sta in
-> [HANDOFF-SESSIONE-2026-08-09.md](HANDOFF-SESSIONE-2026-08-09.md). Questo file resta il punto di
+> `HANDOFF-SESSIONE-2026-08-09.md`, eliminato il 30 agosto e ripreso con
+> `git show 52b0ad5:HANDOFF-SESSIONE-2026-08-09.md`. Questo file resta il punto di
 > ripartenza generale; quello serve a chi deve capire in fretta dove siamo arrivati.
 >
 > **PUNTO DI RIPARTENZA (8-9 agosto, fine sessione).**
@@ -765,7 +766,7 @@ Verificato: `ocr:leggi` **rifiuta** TD74-DSA (protetto) e l'indice resta intatto
 > `![didascalia](fig:03#p=7&i=2)`, il campo nello schema, il validatore, `mdser`, la raccolta dei
 > rimandi, l'offerta delle figure al modello e il conteggio nell'esportazione sono scritti e provati
 > (`test/figure.js`, 32 controlli). Il verbale sta in
-> [HANDOFF-SESSIONE-2026-08-10.md §3.4](HANDOFF-SESSIONE-2026-08-10.md).
+> `HANDOFF-SESSIONE-2026-08-10.md` §3.4 (`git show 52b0ad5:HANDOFF-SESSIONE-2026-08-10.md`).
 >
 > ⚠️ Due cose scoperte scrivendola, che questo paragrafo non prevedeva: `srcUrl` doveva imparare a
 > cercare anche in `MATERIALI/Figure/` (senza, casella vuota e nessuna causa visibile), e la figura

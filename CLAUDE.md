@@ -12,9 +12,12 @@ ritocco — è la trappola ④ del progetto, in forma di documento.
 
 1. **`GUIDA-ARCHITETTO.md`** — come si costruisce qui: invarianti numerati, vocabolario, mappa del
    codice e dei dati, trappole permanenti. Cambia di rado.
-2. **`HANDOFF-DEFINITIVO-*.md` con la DATA PIÙ ALTA** — a che punto siamo. Tutti gli altri sono
-   storici, e la mappa di quale file porta quale argomento sta nel §8 di quello più recente: **la
-   catena non si risale a memoria**.
+2. **`HANDOFF-DEFINITIVO-*.md` con la DATA PIÙ ALTA** — a che punto siamo. ⚠️ Dal **30 agosto
+   2026 ce n'è uno solo**: i venti storici sono stati eliminati (stavano in git, e ci restano —
+   `git log -S "<parola>" -- 'HANDOFF*'`, `git show 52b0ad5:<nome>`), perché le regole che
+   valevano davvero erano già nella guida dell'architetto e la catena costava una sessione a
+   risalirla. Accanto restano due file che handoff cronologici **non sono**: `HANDOFF.md`
+   (l'unica specifica della pipeline) e `HANDOFF-PACCHETTO-QUADERNO.md`.
 3. **Il `PIANO-*` dell'area toccata** — BRAYNR (appunti, evidenze, mappe, ripasso) · ZAINO · BANCO ·
    MODULI (lo smontaggio del monolite) · MAPPE-EDITOR · ONBOARDING · FOTO.
 

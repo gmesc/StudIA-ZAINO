@@ -389,7 +389,7 @@ Chi riceve un braindump dell'utente e deve produrne un piano:
 
 | documento | che cosa dice |
 |---|---|
-| `HANDOFF-DEFINITIVO-<data>.md`, quello con la **data più alta** (oggi: **26 agosto 2026**) | lo stato: che cosa è appena successo, che cosa viene dopo, le trappole fresche. Il suo **§9** dice quale handoff storico tiene quale argomento — la catena non si risale a memoria |
+| `HANDOFF-DEFINITIVO-<data>.md`, quello con la **data più alta** (oggi: **30 agosto 2026**) | lo stato: che cosa è appena successo, che cosa viene dopo, le trappole fresche. ⚠️ Dal 30 agosto è **l'unico**: i venti storici sono stati eliminati e vivono in git (il suo **§7** dice come si riprendono). Un handoff vecchio non è una legge in vigore — due decisioni scritte lì come vincolanti sono state poi rovesciate |
 | `HANDOFF.md` | ⚠️ è vecchio nei numeri, ma è l'**unica specifica della pipeline**: wizard, composer, percorsi, figure, Chandra. Finché quell'area non ha un `PIANO-*` suo, si legge lì |
 | `PIANO-BRAYNR.md` | appunti, evidenze, mappe, flashcard/ripasso (aree P1–P3) |
 | `PIANO-MODULI.md` | lo smontaggio del monolite: criterio, albero dei moduli, metriche |
