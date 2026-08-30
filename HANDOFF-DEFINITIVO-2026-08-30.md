@@ -33,7 +33,7 @@ un processo per nome**.
 | | |
 |---|---|
 | `main` | la punta di **`guida-campagna`**, unita oggi — quattro commit del 29-30 più i tre di oggi |
-| remoto | `git@github.com:gmesc/StudIA.git` — ⚠️ **da spingere**: il merge di oggi non è stato pubblicato |
+| remoto | `git@github.com:gmesc/StudIA.git` — ✅ **allineata** (spinto il 30 agosto) |
 | rami · worktree | **nessuno** |
 | unità | ✅ **49 file** nella catena di `npm test`, exit 0 |
 | CDP | ✅ **65 prove** in elenco · 68 file `prova-*.js` sul disco (i 3 fuori sono i noti di luglio) |
@@ -131,24 +131,23 @@ Sta scritto in testa allo script e nel `README.md` del laboratorio.
 
 ## 3. Che cosa resta da fare
 
-1. ⚠️ **Spingere**: `origin/main` è indietro del merge di oggi (`git push`).
-2. **Nessun pacchetto costruito**: `dist/` è vuota. `npm run pacchetto`, poi notarizzazione e
+1. **Nessun pacchetto costruito**: `dist/` è vuota. `npm run pacchetto`, poi notarizzazione e
    installer Windows provato su Windows (`PIANO-ONBOARDING.md`).
-3. **Q9 in freezer** — quando si riprende: `/architetto`, e **due bivi veri da chiedere
+2. **Q9 in freezer** — quando si riprende: `/architetto`, e **due bivi veri da chiedere
    all'utente** (il canale: `_evidenze.json` trascinato o pacchetto vero con `lib/pacchetto.js`; e
    che cosa fare quando l'impronta del documento non combacia: rifiutare tutto o importare
    lasciando i segni orfani). ⚠️ Vincolo non negoziabile dell'utente: **aggiunge uno strato, non
    sovrascrive** quelli che lo studente ha già.
-4. **Le tre prove fuori elenco** (`prova-l1`, `prova-l2`, `prova-l3l4`): chiedono un `cdp.js` di
+3. **Le tre prove fuori elenco** (`prova-l1`, `prova-l2`, `prova-l3l4`): chiedono un `cdp.js` di
    luglio che non esiste più.
-5. **Il `frammento` della lente sfasato di uno** su un testo con «İ» (U+0130).
-6. **Le 46 variabili morte** di `pdf_viewer.scoped.css`.
-7. **La rinomina di una fonte**: il nome è citato per esteso in sei posti (`fonti.usi()`).
-8. **La didascalia di un'immagine dell'album passa due volte dall'escape** (`albumHtml`).
-9. 📌 **`prova-b1` e `prova-mappe-ui`** ripristinano il banco con la chiave **morta**
+4. **Il `frammento` della lente sfasato di uno** su un testo con «İ» (U+0130).
+5. **Le 46 variabili morte** di `pdf_viewer.scoped.css`.
+6. **La rinomina di una fonte**: il nome è citato per esteso in sei posti (`fonti.usi()`).
+7. **La didascalia di un'immagine dell'album passa due volte dall'escape** (`albumHtml`).
+8. 📌 **`prova-b1` e `prova-mappe-ui`** ripristinano il banco con la chiave **morta**
    (`studia.banco` invece di `studia.banco.c.<contenitore>`): difetto latente noto, non toccato.
-10. **Le code più vecchie**: `PIANO-BRAYNR.md` §P1.1-quater e -quinquies, gli incrementi 2 e 3
-    dell'anteprima scrivibile, le bande orizzontali sui fondi sovrapposti.
+9. **Le code più vecchie**: `PIANO-BRAYNR.md` §P1.1-quater e -quinquies, gli incrementi 2 e 3
+   dell'anteprima scrivibile, le bande orizzontali sui fondi sovrapposti.
 
 **Chiuso oggi**, e non è più un debito: `20-pdfbar-numerata.png` mostrava la barra col titolo — la
 campagna rifatta a fine agosto l'ha risolto, e la barra fotografata è quella di adesso.
@@ -162,7 +161,7 @@ campagna rifatta a fine agosto l'ha risolto, e la barra fotografata è quella di
 | **verificato oggi** | `npm test` exit 0 (49 file) · suite CDP intera verde (65 prove) · i conti (49 · 65 · 68 · 37 · 117) · le righe del monolite (21.818) · la barra del Confronto letta dal vivo (`Sistema solare ▾`) · la figura 24 riguardata a occhio |
 | **provato a mano dall'utente** | i gesti del Confronto: aprire, cambiare documento, chiudere |
 | **ereditato** | i debiti del §3, che vengono dagli handoff precedenti e non sono stati rimisurati |
-| **non fatto** | `git push` · nessun pacchetto costruito |
+| **non fatto** | nessun pacchetto costruito |
 
 ⚠️ Prima di dichiarare finito un lavoro, la suite CDP va **rieseguita per intera**, non per i file
 toccati. È la lezione che negli ultimi dieci giorni è tornata più spesso.
