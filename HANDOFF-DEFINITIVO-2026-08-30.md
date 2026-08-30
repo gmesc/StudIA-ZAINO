@@ -36,7 +36,7 @@ un processo per nome**.
 | remoto | `git@github.com:gmesc/StudIA.git` — ✅ **allineata** (spinto il 30 agosto) |
 | rami · worktree | **nessuno** |
 | unità | ✅ **49 file** nella catena di `npm test`, exit 0 |
-| CDP | ✅ **65 prove** in elenco · 68 file `prova-*.js` sul disco (i 3 fuori sono i noti di luglio) |
+| CDP | ✅ **68 prove** in elenco = 68 file `prova-*.js` sul disco: **nessuna fuori** (le tre L sono rientrate il 30 agosto) |
 | monolite | `App/StudIA.html` **21.818 righe** · moduli in `App/assets/` (pdf.js escluso): **37** |
 | guida ZAINO | **117 figure** in `App/guida-zaino/img/`, di cui **103 rifatte** fra il 29 e il 30 agosto |
 | pacchetti | ⚠️ **nessuno**: `dist/` è vuota dal 23 agosto. Si rifanno con `npm run pacchetto` |
@@ -44,7 +44,7 @@ un processo per nome**.
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
 npm test                                                   # 49 file, exit 0
-STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 65 prove sull'app viva
+STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 68 prove sull'app viva
 STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh prova-confronto.js   # una sola
 ```
 
@@ -143,23 +143,16 @@ prima di ripeterlo: costa meno riverificarlo che inseguirlo.
    che cosa fare quando l'impronta del documento non combacia: rifiutare tutto o importare
    lasciando i segni orfani). ⚠️ Vincolo non negoziabile dell'utente: **aggiunge uno strato, non
    sovrascrive** quelli che lo studente ha già.
-3. **Le tre prove L fuori elenco parlano il vocabolario vecchio.** ⚠️ Non è il `cdp.js` di luglio,
-   come si è ripetuto per settimane: `prova-l2.js` e `prova-l3l4.js` importano `test/cdp/cdp.js`,
-   che esiste ed esporta tutto ciò che chiedono. Eseguite il 30 agosto, muoiono su
-   `ReferenceError: progettoAttivo is not defined` — «progetto» prima che diventasse **corso**
-   (`RINOMINA-GLOSSARIO.md`). Solo `prova-l1.js` ha anche il `require` rotto, e punta allo
-   scratchpad di una sessione di agosto che non esiste più. Il lavoro è una **rinomina**, poi
-   `PROVE=(` — oppure si tolgono, dichiarando che cosa resta scoperto delle mappe L0–L4.
-4. **La rinomina di una fonte**: si può tenendo il numero, ma il nome del file è citato per esteso
+3. **La rinomina di una fonte**: si può tenendo il numero, ma il nome del file è citato per esteso
    in sei posti — l'elenco è quello di `fonti.usi()` (`lib/fonti.js:296`): il file in `MATERIALI/`,
    `_evidenze.json`, gli appunti `.md`, le mappe `.json`, `_album.json` e la lapide in
    `_rimossi.json`. Non esiste nessuna `fonti.rinomina()`.
-5. 📌 **`prova-b1` e `prova-mappe-ui` ripuliscono la chiave sbagliata del banco**
+4. 📌 **`prova-b1` e `prova-mappe-ui` ripuliscono la chiave sbagliata del banco**
    (`prova-b1.js:22,127`, `prova-mappe-ui.js:42`). ⚠️ `studia.banco` non è morta del tutto —
    `bancoChiave()` la usa come ripiego quando non c'è contenitore — ma la chiave che il banco
    scrive davvero è `studia.banco.c.<contenitore>`, e quella non la tocca nessuno: le due prove
    credono di partire da un banco di fabbrica e non è vero.
-6. **Gli incrementi 2 e 3 dell'anteprima scrivibile.** Si vedono nel codice: il campo di blocco
+5. **Gli incrementi 2 e 3 dell'anteprima scrivibile.** Si vedono nel codice: il campo di blocco
    chiude con `t.setSelectionRange(fine, fine)` — il cursore va **in fondo**, non dove hai
    cliccato (incremento 3, il più piccolo passo utile) — e il suo `keydown` conosce solo Escape e
    ⌘Invio, quindi niente ↹ al blocco dopo né elenchi e riquadri riga per riga (incremento 2).
@@ -178,6 +171,25 @@ prima di ripeterlo: costa meno riverificarlo che inseguirlo.
   misurata** (`PIANO-BRAYNR.md:291`): `::highlight()` applica solo `background-color`, un
   `linear-gradient` viene ignorato, e al loro posto c'è la mescolanza dei fondi. Rifarle vorrebbe
   dire abbandonare gli highlight per un motore di pittura da risincronizzare a ogni scorrimento.
+- **Le tre prove L erano fuori elenco**: ✅ rientrate il 30 agosto, e la causa non era quella
+  scritta per settimane («chiedono un `cdp.js` di luglio»): due delle tre importavano già
+  `test/cdp/cdp.js`, e morivano su `progettoAttivo is not defined` — il vocabolario di prima della
+  rinomina. Rimesse in vita hanno chiesto di seguire cinque cose cambiate sotto: la mappa si apre
+  come strumento del banco (`apriStrumento`, non `#mappaBtn`, e `mappaAperta()` al posto di
+  `dataset.mappa`); **Esc non chiude più la mappa** (esce dal focus: chiude la ✕); «Modifica una
+  copia» è diventato **«Parti da qui»** e semina la sola radice; i comandi `.mlungo` spariscono
+  sotto i 560px di contenitore (container query: il bottone c'è, non è `hidden`, misura 0×0 —
+  la prova ora mette la mappa a tutto banco, che è il gesto vero); in «Mie» i motori non sono più
+  in barra ma nel menu della tela. ⚠️ E hanno trovato un difetto vero (qui sotto). Elenco: 65 → 68.
+- **⚠️ La lente lasciava la barra della mappa a dire il registro sbagliato**: ✅ chiuso il 30
+  agosto. Atterrando su un nodo di mappa, `searchGoto` scriveva `MAPPA.registro='mie'` a mano; se
+  quella mappa era **già aperta**, `mappaApriMia` è un no-op dichiarato e nessuno ridisegnava la
+  barra — si guardava una propria mappa con «Generata» premuto e «Parti da qui» al posto di «+».
+  E premere «Mie» non rimediava: `mappaRegistro` usciva subito perché il registro *era* già quello.
+  Due punti: la lente adesso sincronizza, e `mappaRegistro` **risincronizza invece di uscire muto**
+  quando il registro chiesto è già il suo — così qualunque scrittura a mano viene riparata dal
+  primo click. Il controllo sta in `prova-lente-mappe.js`, dove vive il gesto: due atterraggi, il
+  secondo su una mappa già aperta.
 - **Il `frammento` della lente partiva sfasato di uno sulla «İ»**: ✅ chiuso il 30 agosto, e non in
   `frammento`. La promessa violata era di `sNorm`, che nel suo stesso commento dice «preserva la
   lunghezza»: `toLowerCase()` faceva diventare «İ» (U+0130) due code unit, e da lì passano TUTTI
@@ -207,9 +219,9 @@ prima di ripeterlo: costa meno riverificarlo che inseguirlo.
 
 | | |
 |---|---|
-| **verificato oggi** | `npm test` exit 0 (49 file) · suite CDP intera verde (65 prove) · i conti (49 · 65 · 68 · 37 · 117) · le righe del monolite (21.818) · la barra del Confronto letta dal vivo (`Sistema solare ▾`) · la figura 24 riguardata a occhio |
+| **verificato oggi** | `npm test` exit 0 (49 file) · suite CDP intera verde (**68 prove**) · i conti (49 · 68 · 37 · 117) · le righe del monolite (21.818) · la barra del Confronto letta dal vivo (`Sistema solare ▾`) · la figura 24 riguardata a occhio |
 | **provato a mano dall'utente** | i gesti del Confronto: aprire, cambiare documento, chiudere |
-| **riverificato oggi** | tutte le voci del §3, una per una: tre avevano la causa sbagliata, sei sono state chiuse |
+| **riverificato oggi** | tutte le voci del §3, una per una: tre avevano la causa sbagliata, sette sono state chiuse |
 | **non fatto** | nessun pacchetto costruito |
 
 ⚠️ Prima di dichiarare finito un lavoro, la suite CDP va **rieseguita per intera**, non per i file

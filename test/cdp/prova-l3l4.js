@@ -1,6 +1,6 @@
 /* L3 (archi e linking word) + L4 (menu contestuale) dalla porta principale. */
 const S = require('path').join(__dirname, 'cdp.js');
-const { collega, invia, val, clicca, pausa } = require(S);
+const { collega, invia, val, clicca, pausa, apriStrumento, partiPulito } = require(S);
 const fs = require('fs'), path = require('path');
 
 let ko = 0;
@@ -42,15 +42,96 @@ async function trascina(da, a) {
   await pausa(350);
 }
 
+/**
+ * Cambia registro e ASPETTA che la barra sia d'accordo.
+ *
+ * ⚠️ Perché non basta una pausa. `mappaRegistro` passa da `mappaFlush()`, che è
+ * una PROMESSA: se c'è una mappa sporca da salvare — magari lasciata da un'altra
+ * prova — il seguito (che sincronizza la barra) arriva più tardi. Da sola questa
+ * prova era verde con 700 ms; dentro la suite no, e il rosso diceva
+ * «MAPPA.registro=mie» con la barra ancora su «generata»: due cose vere in due
+ * istanti diversi, non un difetto. Qui si aspetta la CONDIZIONE, e se non arriva
+ * si dice tutto quello che si sa invece di lasciare un rosso muto.
+ */
+async function registro(val, clicca, pausa, reg) {
+  /* ⚠️ Lo stato PRIMA del click è metà della diagnosi: `mappaRegistro` esce
+     subito se il registro è già quello chiesto (`if(reg===MAPPA.registro)
+     return`), e in quel caso la barra resta com'era — se qualcuno l'aveva
+     lasciata indietro, indietro rimane. Senza questa riga il rosso dice solo
+     che la barra non segue, non da dove viene. */
+  const prima = await val(`(()=>{ const b=document.querySelector('#mRegistro button[data-reg="${reg}"]');
+    return { reg: MAPPA.registro, pressed: b && b.getAttribute('aria-pressed'), aperta: mappaAperta() }; })()`);
+  await clicca(`#mRegistro button[data-reg="${reg}"]`);
+  let st = null;
+  for (let i = 0; i < 40; i++) {
+    st = await val(`(()=>{ const b=document.querySelector('#mRegistro button[data-reg="${reg}"]');
+      return { reg: MAPPA.registro, pressed: b && b.getAttribute('aria-pressed'),
+               nuova: !!document.querySelector('#mNuova').hidden,
+               copia: !!document.querySelector('#mCopia').hidden,
+               sporca: !!(MAPPA.mia && MAPPA.mia.sporca), file: (MAPPA.mia && MAPPA.mia.file) || '',
+               /* quante barre della mappa ci sono davvero a schermo: se fossero
+                  due, premi() aggiornerebbe la prima e a vedersi sarebbe l'altra */
+               barre: document.querySelectorAll('[id="mRegistro"]').length,
+               viste: document.querySelectorAll('[id="mappaView"]').length,
+               dentro: !!(b && b.closest('#mappaView')) }; })()`);
+    if (st.reg === reg && st.pressed === 'true') return st;
+    await pausa(200);
+  }
+  console.log('  ·   la barra non ha seguito il registro in 8 s.');
+  console.log('  ·   prima del click: ' + JSON.stringify(prima));
+  console.log('  ·   dopo:            ' + JSON.stringify(st));
+  return st;
+}
+
+
+/**
+ * La mappa a tutto banco, e perché serve.
+ *
+ * ⚠️ «Parti da qui» e «adatta» portano la classe `.mlungo`, e una container
+ * query li toglie sotto i 560px di contenitore
+ * (`@container mappa (max-width:560px)`). In un banco a due colonne la mappa sta
+ * sotto quella soglia: il bottone c'è, non è `hidden`, ma misura 0×0 e `clicca`
+ * lo rifiuta con «non cliccabile» — che è vero e insieme fuorviante. Il gesto
+ * dell'utente per premerlo è mettere la mappa a tutto banco (doppio click sulla
+ * testata); qui si passa da `bancoZoom`, che è la funzione che quel gesto chiama.
+ */
+async function mappaLarga(val) {
+  return await val(`(()=>{ const b=['A','B','C','D','E','F','G','H','I']
+      .find(x=>bancoStrumentoIn(x)==='mappa');
+    if(!b) return ''; bancoZoom(b); return b; })()`);
+}
+
 (async () => {
   await collega();
-  const cfg = JSON.parse(fs.readFileSync(process.env.HOME + '/Library/Application Support/studia/config.json', 'utf-8'));
-  const prog = await val('progettoAttivo()');
-  const DIR = path.join(cfg.vaultPath, 'Progetti', prog, 'MAPPE');
+  await partiPulito();
+  /* ⚠️ Il vault lo dice l'APP, non la config di casa. L'istanza di prova ha una
+     cartella dati sua (`--user-data-dir`), quindi la config dell'utente indica un
+     altro vault: i controlli su disco guarderebbero nel posto sbagliato e —
+     peggio — la pulizia finale cancellerebbe nella cartella VERA. È la trappola
+     ⑧, e la rete è quella di `prova-mappe-ui`. */
+  const vault = await val('window.vault && window.vault.vaultPath');
+  if (!vault) { console.log('  KO  l\'app non dice dove sia il vault'); process.exit(1); }
+  if (vault.indexOf('studia-prove-') < 0) {
+    console.log('  KO  sto guardando il vault VERO (' + vault + '): mi fermo prima di creare qualcosa');
+    process.exit(1);
+  }
+  const corso = await val('corsoAttivo()');
+  const DIR = path.join(vault, 'Corsi', corso, 'MAPPE');
+  /* ⚠️ SI SGANCIA CIÒ CHE UN'ALTRA PROVA HA LASCIATO IN CANNA. Nella suite,
+     prima di qui, qualcuno apre una mappa e poi ne rimuove il FILE dal disco
+     lasciando lo stato in memoria agganciato: al primo `mappaFlush()` — e ce
+     n'è uno dentro ogni cambio di registro — quel file RINASCE, e il conteggio
+     finale accusa questa prova di aver lasciato in giro «Mappa.json», che non
+     ha mai creato. Nell'app non capita, perché il cestino chiude anche la mappa;
+     qui capita perché una prova ha usato l'API saltando il gesto. */
+  await val(`(()=>{ MAPPA.mia.file=''; MAPPA.mia.grafo=null; MAPPA.sel=null; return 1; })()`);
   const prima = fs.existsSync(DIR) ? fs.readdirSync(DIR) : [];
 
-  if (!(await val('mappaAperta()'))) { await clicca('#mappaBtn'); await pausa(500); }
-  if ((await val('MAPPA.registro')) !== 'mie') { await clicca('#mRegistro button[data-reg="mie"]'); await pausa(900); }
+  if (!(await val('mappaAperta()'))) await apriStrumento('mappa');
+  if ((await val('MAPPA.registro')) !== 'mie' ||
+      (await val("document.querySelector('#mRegistro button[data-reg=\"mie\"]').getAttribute('aria-pressed')")) !== 'true') {
+    await registro(val, clicca, pausa, 'mie');
+  }
   await clicca('#mNuova'); await pausa(300);
   await val("document.querySelector('#umInput').value='Prova L3L4 da cancellare'");
   await clicca('#umOk'); await pausa(1300);
@@ -137,14 +218,64 @@ async function trascina(da, a) {
   /* Il punto dell'arco lo chiedo all'app: il centro del RIQUADRO di un
      tracciato curvo non sta sulla curva, e il tasto destro cadrebbe sulla tela
      vuota. `meta` è il punto in cui il disegno mette l'etichetta, cioè sul filo. */
-  const arco = await val(`(()=>{const d=(MAPPA.res.archi||[]).concat(MAPPA.res.extra||[])
-      .filter(x=>x.e && x.e.da==='${radice}' && x.e.a==='${idTerzo}')[0];
-    if(!d||!d.meta) return null; const p=mappaClientDaGrafo(d.meta.x, d.meta.y);
-    return p?{x:Math.round(p.x), y:Math.round(p.y)}:null;})()`);
-  ok('il legame etichettato si trova nel disegno', true, !!arco);
+  /* ⚠️ PRIMA si fa spazio. Con tre nodi appena creati le card stanno addosso al
+     loro legame: campionando tutto il filo, sotto il puntatore c'era «rect.»
+     dal primo all'ultimo punto — l'arco esiste ma è interamente coperto, e
+     nessun tasto destro potrebbe mai raggiungerlo. Si allontana il nodo di
+     arrivo, che è ciò che farebbe chiunque volesse cliccare quel filo. */
+  await val(`MAPPA.mia.grafo=MappaModifica.sposta(MAPPA.mia.grafo, '${idTerzo}', {x:520, y:360}); mappaRidisegna();`);
+  await pausa(500);
+
+  /* ⚠️ Il punto dell'etichetta NON basta: con tre nodi e il motore ad albero
+     cade sopra una card, e il tasto destro apre il menu del NODO. L'ha detto la
+     diagnostica qui sotto («rect. (dentro una card)»), non un'ipotesi. Si chiede
+     al DISEGNO: si scorre il tracciato dell'arco vero — `.marco[data-da][data-a]`
+     — e si prende il primo punto che non sia coperto da una card. Se non ce ne
+     fosse nessuno, si dice: meglio un rosso che parla di un menu che si apre sul
+     nodo sbagliato. */
+  const arco = await val(`(()=>{
+    const el=document.querySelector('#mappaSvg .marco[data-da="${radice}"][data-a="${idTerzo}"]');
+    if(!el) return null;
+    /* Il primo path del gruppo e il BERSAGLIO: stesso tracciato, invisibile e
+       spesso 12px, con pointer-events="stroke". E quello che il mouse prende. */
+    const path=el.querySelector('path'); if(!path||!path.getPointAtLength) return null;
+    const L=path.getTotalLength(); const visti=[];
+    for(let q=0.5, passo=0.02, i=0; i<46; i++){
+      q = 0.5 + ((i%2) ? 1 : -1) * passo * Math.ceil(i/2);
+      if(q<=0.02 || q>=0.98) continue;
+      const pt=path.getPointAtLength(L*q);
+      const m=path.getScreenCTM && path.getScreenCTM(); if(!m) break;
+      const r=pt.matrixTransform(m);
+      const x=Math.round(r.x), y=Math.round(r.y);
+      const sotto=document.elementFromPoint(x,y);
+      /* Non basta «non e una card»: fra i due capi ci sono le PORTE (i pallini),
+         e li il tasto destro apre il menu della porta — misurato. Sotto il
+         puntatore dev'esserci QUESTO arco, che e cio che il gestore cerca con
+         closest('.marco'). (Niente apici inversi: siamo in un template literal.) */
+      if(sotto && sotto.closest('.marco')===el) return {x:x, y:y};
+      if(visti.length<6) visti.push(sotto ? (sotto.tagName+'.'+(sotto.getAttribute('class')||'')) : 'niente');
+    }
+    return { errore:'nessun punto libero sul filo', visti:visti };})()`);
+  if (arco && arco.errore) console.log('  ·   ' + arco.errore + ': ' + JSON.stringify(arco.visti));
+  ok('il legame etichettato si trova nel disegno', true, !!(arco && arco.x !== undefined));
+  /* ⚠️ Un menu aperto resta SOPRA la tela, e il tasto destro successivo cade su
+     di lui: la diagnostica qui sotto lo ha detto in chiaro — «sotto: DIV.ctxmenu
+     mapmenu open, menu: tipo=nodo». È lo stesso difetto delle prove che non
+     lasciano lo stato come l'hanno trovato, dentro una prova sola. Si chiude
+     come lo chiude l'utente, con Esc. */
+  await tasto('Escape', { code: 'Escape', vk: 27 }); await pausa(250);
+  ok('nessun menu resta aperto sopra la tela', false,
+    await val("!!document.querySelector('#mapMenu.open')"));
+  /* ⚠️ CHI C'È SOTTO IL PUNTATORE, chiesto PRIMA di premere: dopo, sotto il
+     puntatore c'è il menu appena aperto, e la risposta non dice più niente. È la
+     domanda che ha risolto in un colpo il rosso del 30 agosto. La diagnostica
+     resta, perché questo rosso non si distingue da un guasto vero. */
+  const sotto = await val(`(()=>{ const e=document.elementFromPoint(${arco.x}, ${arco.y});
+    return e ? (e.tagName+'.'+(e.getAttribute('class')||'')+(e.closest('.mnodo')?' (dentro una card)':'')) : 'niente'; })()`);
+  console.log('  ·   sotto il punto scelto sul filo:', sotto);
   await destro(arco);
-  ok('il menu dell’arco si apre', true,
-    await val("document.querySelector('#mapMenu').dataset.tipo==='arco'"));
+  ok('il menu dell’arco si apre', 'arco',
+    await val("document.querySelector('#mapMenu').dataset.tipo||''"));
   await sinistro(await punto('#mapMenu .ctx-item[data-az="inverti"]'));
   await pausa(400);
   ok('invertendo, i capi si scambiano', true,
@@ -159,7 +290,7 @@ async function trascina(da, a) {
   await destro(await punto(`#mappaSvg .mnodo[data-id="${radice}"] rect`));
   await tasto('Escape', { code: 'Escape', vk: 27 }); await pausa(250);
   ok('Esc chiude il menu…', false, await val("document.querySelector('#mapMenu').classList.contains('open')"));
-  ok('…e NON la mappa', true, await val("document.documentElement.dataset.mappa==='1'"));
+  ok('…e NON la mappa', true, await val('mappaAperta()'));
 
   // ---- la porta: trascinare per collegare
   const porte = await val("document.querySelectorAll('#mappaSvg .mporta').length");
@@ -201,7 +332,16 @@ async function trascina(da, a) {
   ok('e nel punto in cui avevo aperto il menu', true,
     await val('MappaGrafo.fissato(MAPPA.mia.grafo.nodi[MAPPA.mia.grafo.nodi.length-1])'));
 
-  await destro(vuoto);
+  /* ⚠️ Non si riapre il menu NELLO STESSO PUNTO: lì adesso c'è il nodo appena
+     creato («Dal menu», messo proprio dove il menu era stato aperto), e il tasto
+     destro aprirebbe il menu del nodo — che di motori non ne offre. Si prende un
+     altro angolo di tela vuota. */
+  const vuoto2 = await val(`(()=>{const s=document.querySelector('#mappaSvg');
+    const r=s.getBoundingClientRect();
+    return {x:Math.round(r.right-60), y:Math.round(r.top+60)};})()`);
+  await destro(vuoto2);
+  ok('e il menu della tela si riapre altrove', true,
+    await val("!!document.querySelector('#mapMenu.open [data-motore=\"percorso\"]')"));
   await sinistro(await punto('#mapMenu .ctx-item[data-motore="percorso"]'));
   await pausa(400);
   ok('il motore si cambia anche dal menu', 'percorso', await val('MAPPA.vista.motore'));
@@ -218,7 +358,7 @@ async function trascina(da, a) {
 
   // ---- pulizia
   await clicca('#mRegistro button[data-reg="mie"]'); await pausa(900);
-  const tolta = await val(`(async()=>{ return await window.vault.mappe.rimuovi(progettoAttivo(), ${JSON.stringify(file)}); })()`);
+  const tolta = await val(`(async()=>{ return await window.vault.mappe.rimuovi(corsoAttivo(), ${JSON.stringify(file)}); })()`);
   await pausa(400);
   const dopo = fs.existsSync(DIR) ? fs.readdirSync(DIR) : [];
   ok('la prova non lascia niente nel vault', prima.length, dopo.length);
