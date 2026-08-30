@@ -27,28 +27,37 @@ function sezione(t) { console.log('\n== ' + t); }
 /* Lo `stripHtml` del renderer, nella sua forma minima: qui non c'è un DOM. */
 const via = (h) => String(h == null ? '' : h).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
-sezione('La normalizzazione preserva la lunghezza — per le lettere che usiamo');
+sezione('La normalizzazione preserva la lunghezza — anche per la «İ»');
 {
   /* ⚠️ È la condizione che tiene in piedi `frammento`: le posizioni trovate nel
      testo normalizzato si usano per ritagliare il frammento dal testo
      ORIGINALE. Se `sNorm` togliesse o aggiungesse anche un solo carattere, il
      ritaglio partirebbe sfasato e il frammento comincerebbe a mezza parola.
 
-     ⚠️ E IL TITOLO DI QUESTA SEZIONE ERA TROPPO FORTE, fino al 24 agosto 2026:
-     diceva «preserva la lunghezza», senza «per le lettere che usiamo».
-     `toLowerCase()` non è sempre uno a uno — la «İ» turca (U+0130) diventa DUE
-     caratteri — e l'ha trovato la prova di `punto()`, scritta per l'editor degli
-     appunti. Il caso è in fondo a questa sezione, dichiarato: su un testo che
-     contiene quella lettera il FRAMMENTO della lente parte sfasato di uno.
-     Piccolo e cosmetico (una riga di anteprima che comincia mezzo carattere
-     prima), ma è un fatto e sta scritto invece che scoperto.
-     ⚠️ `punto()` NON dipende da questa proprietà: mappa le posizioni una per
-     una, apposta. Chi userà quelle posizioni per mettere un cursore non deve
-     ereditare un limite che si può togliere. */
+     ⚠️ FRA IL 24 E IL 30 AGOSTO 2026 QUESTA SEZIONE DICHIARAVA UN LIMITE, e il
+     titolo era «per le lettere che usiamo»: `toLowerCase()` non è uno a uno — la
+     «İ» turca (U+0130) diventa DUE caratteri — e su un testo che la contiene il
+     frammento della lente partiva sfasato di uno. L'aveva trovato la prova di
+     `punto()`, scritta per l'editor degli appunti. Adesso `sNorm` abbassa
+     carattere per carattere e la lunghezza torna: il limite non c'è più, e i
+     controlli qui sotto lo tengono chiuso.
+     ⚠️ `punto()` non dipendeva da questa proprietà nemmeno prima: mappa le
+     posizioni una per una, apposta. Resta qui il suo controllo, perché è la
+     prova che ha fatto emergere il caso. */
   const casi = ['perché', 'città', 'è così', 'l’altro', '“virgolette”', 'ñandù', 'ÀÈÌÒÙ'];
   for (const s of casi) check('«' + s + '» resta lunga uguale', s.length, R.sNorm(s).length);
-  /* Il confine misurato, non supposto. */
-  check('⚠️ ma la «İ» (U+0130) si allunga: il limite è questo', 2, R.sNorm('İ').length);
+  /* La lettera che allungava, misurata: una code unit dentro, una fuori. */
+  check('anche la «İ» (U+0130) resta lunga uno', 1, R.sNorm('İ').length);
+  check('e diventa una «i», quindi si trova cercandola', 'istanbul', R.sNorm('İstanbul'));
+  /* ⚠️ IL CONTROLLO CHE VALE IL FIX: il frammento accende la parola cercata, non
+     la parola meno la sua prima lettera. Con la normalizzazione più lunga
+     dell'originale usciva «la m<mark>emoria</mark>». */
+  check('e il frammento accende la parola intera, non da metà',
+    'İstanbul e la <mark>memoria</mark>',
+    R.frammento({ d: { text: 'İstanbul e la memoria' }, pos: 12, toks: ['memoria'], esatta: false }));
+  check('lo stesso testo senza la «İ» si comporta identico',
+    'Istanbul e la <mark>memoria</mark>',
+    R.frammento({ d: { text: 'Istanbul e la memoria' }, pos: 12, toks: ['memoria'], esatta: false }));
   check('e `punto` non ci casca lo stesso', 'perielio',
     (() => { const t = 'İstanbul e il perielio'; const p = R.punto(t, R.interpreta('perielio'));
       return p ? t.slice(p.da, p.a) : null; })());

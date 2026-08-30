@@ -150,26 +150,16 @@ prima di ripeterlo: costa meno riverificarlo che inseguirlo.
    (`RINOMINA-GLOSSARIO.md`). Solo `prova-l1.js` ha anche il `require` rotto, e punta allo
    scratchpad di una sessione di agosto che non esiste più. Il lavoro è una **rinomina**, poi
    `PROVE=(` — oppure si tolgono, dichiarando che cosa resta scoperto delle mappe L0–L4.
-4. **Il `frammento` della lente parte sfasato di uno** su un testo che contiene «İ» (U+0130).
-   Riprodotto in Node il 30 agosto: `sNorm` fa `toLowerCase()`, e quella lettera diventa **due**
-   code unit — la stringa normalizzata è più lunga dell'originale, e gli indici su cui `frammento`
-   accende i `<mark>` scorrono di uno.
-   ```
-   "İstanbul e la memoria"  →  İstanbul e la m<mark>emoria</mark>
-   "Istanbul e la memoria"  →  Istanbul e la <mark>memoria</mark>
-   ```
-   Chi lo chiude tocca `frammento` (`App/assets/ricerca/indice.js:408`), che **suppone che la
-   normalizzazione conservi la lunghezza**. Il confine ha già il suo controllo in `test/ricerca.js`.
-5. **La rinomina di una fonte**: si può tenendo il numero, ma il nome del file è citato per esteso
+4. **La rinomina di una fonte**: si può tenendo il numero, ma il nome del file è citato per esteso
    in sei posti — l'elenco è quello di `fonti.usi()` (`lib/fonti.js:296`): il file in `MATERIALI/`,
    `_evidenze.json`, gli appunti `.md`, le mappe `.json`, `_album.json` e la lapide in
    `_rimossi.json`. Non esiste nessuna `fonti.rinomina()`.
-6. 📌 **`prova-b1` e `prova-mappe-ui` ripuliscono la chiave sbagliata del banco**
+5. 📌 **`prova-b1` e `prova-mappe-ui` ripuliscono la chiave sbagliata del banco**
    (`prova-b1.js:22,127`, `prova-mappe-ui.js:42`). ⚠️ `studia.banco` non è morta del tutto —
    `bancoChiave()` la usa come ripiego quando non c'è contenitore — ma la chiave che il banco
    scrive davvero è `studia.banco.c.<contenitore>`, e quella non la tocca nessuno: le due prove
    credono di partire da un banco di fabbrica e non è vero.
-7. **Gli incrementi 2 e 3 dell'anteprima scrivibile.** Si vedono nel codice: il campo di blocco
+6. **Gli incrementi 2 e 3 dell'anteprima scrivibile.** Si vedono nel codice: il campo di blocco
    chiude con `t.setSelectionRange(fine, fine)` — il cursore va **in fondo**, non dove hai
    cliccato (incremento 3, il più piccolo passo utile) — e il suo `keydown` conosce solo Escape e
    ⌘Invio, quindi niente ↹ al blocco dopo né elenchi e riquadri riga per riga (incremento 2).
@@ -188,6 +178,16 @@ prima di ripeterlo: costa meno riverificarlo che inseguirlo.
   misurata** (`PIANO-BRAYNR.md:291`): `::highlight()` applica solo `background-color`, un
   `linear-gradient` viene ignorato, e al loro posto c'è la mescolanza dei fondi. Rifarle vorrebbe
   dire abbandonare gli highlight per un motore di pittura da risincronizzare a ogni scorrimento.
+- **Il `frammento` della lente partiva sfasato di uno sulla «İ»**: ✅ chiuso il 30 agosto, e non in
+  `frammento`. La promessa violata era di `sNorm`, che nel suo stesso commento dice «preserva la
+  lunghezza»: `toLowerCase()` faceva diventare «İ» (U+0130) due code unit, e da lì passano TUTTI
+  gli indici del modulo (`ntext`, `cerca`, `frammento`). Ora l'ASCII e il resto si abbassano
+  separatamente, e `minuscola()` prende la forma minuscola solo se è lunga uguale — altrimenti
+  toglie i segni combinanti, che sono ciò che la allunga, e in ultima istanza tiene il carattere
+  com'era. ⚠️ Effetto secondario, buono: «İstanbul» adesso si trova cercando `istanbul`, mentre
+  prima la normalizzata era `i̇stanbul`, col punto combinante in mezzo, e non corrispondeva a
+  niente. `punto()` non ne soffriva: mappa le posizioni una per una. `test/ricerca.js` da 127 a
+  130 controlli, e la sezione che **dichiarava il limite** adesso lo tiene chiuso.
 - **La didascalia di un'immagine dell'album passava due volte dall'escape**: ✅ chiuso il 30
   agosto. `_mdInline` escapa l'intera riga prima di riconoscere le figure, e `albumHtml`
   riescapava la didascalia — «Sole & Luna» arrivava a schermo come `Sole &amp;amp; Luna`,
@@ -209,7 +209,7 @@ prima di ripeterlo: costa meno riverificarlo che inseguirlo.
 |---|---|
 | **verificato oggi** | `npm test` exit 0 (49 file) · suite CDP intera verde (65 prove) · i conti (49 · 65 · 68 · 37 · 117) · le righe del monolite (21.818) · la barra del Confronto letta dal vivo (`Sistema solare ▾`) · la figura 24 riguardata a occhio |
 | **provato a mano dall'utente** | i gesti del Confronto: aprire, cambiare documento, chiudere |
-| **riverificato oggi** | tutte le voci del §3, una per una: tre avevano la causa sbagliata, cinque sono state chiuse |
+| **riverificato oggi** | tutte le voci del §3, una per una: tre avevano la causa sbagliata, sei sono state chiuse |
 | **non fatto** | nessun pacchetto costruito |
 
 ⚠️ Prima di dichiarare finito un lavoro, la suite CDP va **rieseguita per intera**, non per i file

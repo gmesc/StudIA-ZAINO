@@ -22,13 +22,37 @@
 }(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
+  /* La minuscola di UN carattere, garantita lunga quanto l'originale.
+     ⚠️ `toLowerCase()` non è uno a uno: la «İ» turca (U+0130) diventa «i» più il
+     punto combinante U+0307 — DUE code unit al posto di una. Da lì in poi ogni
+     posizione trovata nel testo normalizzato indica un carattere più in là in
+     quello originale, e il frammento della lente cominciava a mezza parola
+     («…la m<mark>emoria</mark>»). Trovato dalla prova di `punto()` il 24 agosto
+     2026, dichiarato come limite, e chiuso qui il 30.
+     Si prende la minuscola solo se è lunga uguale; se non lo è si tolgono i
+     segni combinanti — che sono esattamente ciò che la allunga — e se nemmeno
+     così torna il conto si tiene il carattere com'era: meglio una lettera non
+     abbassata (che al massimo non si trova cercandola in minuscolo) che tutte
+     le posizioni sbagliate di un testo intero. */
+  function minuscola(ch) {
+    var l = ch.toLowerCase();
+    if (l.length === ch.length) return l;
+    var piano = l.normalize ? l.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : l;
+    return piano.length === ch.length ? piano : ch;
+  }
+
   /* Normalizzazione che PRESERVA LA LUNGHEZZA: accenti e virgolette diventano
      la loro forma piana, ma nessun carattere sparisce. È la condizione che
      permette di usare le posizioni trovate nel testo normalizzato per ritagliare
      il frammento dal testo ORIGINALE — togliere anche un solo carattere
-     sfaserebbe il ritaglio di uno, e il frammento comincerebbe a mezza parola. */
+     sfaserebbe il ritaglio di uno, e il frammento comincerebbe a mezza parola.
+     ⚠️ L'ASCII e il resto si abbassano SEPARATAMENTE, e non con un
+     `toLowerCase()` sull'intera stringa: quello riallungherebbe i caratteri che
+     `minuscola` ha lasciato apposta com'erano. */
   function sNorm(s) {
-    return String(s == null ? '' : s).toLowerCase()
+    return String(s == null ? '' : s)
+      .replace(/[A-Z]/g, function (ch) { return ch.toLowerCase(); })
+      .replace(/[^\u0000-\u007F]/gu, minuscola)
       .replace(/[àáâãäå]/g, 'a').replace(/[èéêë]/g, 'e').replace(/[ìíîï]/g, 'i')
       .replace(/[òóôõö]/g, 'o').replace(/[ùúûü]/g, 'u').replace(/[ç]/g, 'c').replace(/[ñ]/g, 'n')
       .replace(/[’‘]/g, "'").replace(/[“”]/g, '"');
