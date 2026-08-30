@@ -147,6 +147,12 @@
    * l'album del corso (il nome del file lo sa solo il suo indice) e il click non
    * apre un documento — apre l'album, perché è lì che l'immagine si governa.
    *
+   * ⚠️ La didascalia arriva GIÀ ESCAPATA, come a `figuraHtml`: `_mdInline` fa
+   * `esc` sull'intera riga prima di riconoscere le figure. Riescaparla qui
+   * mandava a schermo «Sole &amp;amp; Luna» — nell'`alt`, nell'`aria-label` e
+   * sotto la figura. Ciò che invece NON passa di lì (l'id, la sorgente) si
+   * escapa, come fanno i gemelli.
+   *
    * ⚠️ `typeof window` per la stessa ragione di `figuraHtml`: questo blocco gira
    * anche in Node, estratto da `lib/reader-parser.js`. Là non c'è né `window` né
    * un vault, e la sola menzione del nome farebbe saltare tutto il parsing dei
@@ -161,12 +167,12 @@
     var src=(typeof window!=='undefined' && window.vault && window.vault.album &&
              typeof g.corsoAttivo==='function')
       ? window.vault.album.srcUrl(g.corsoAttivo(), id) : '';
-    if(!src) return '<span class="figmanca">'+(d?g.esc(d)+' — ':'')+'immagine dell\'album non trovata</span>';
-    return '<span class="figura album'+v.cls+'" role="figure" aria-label="'+g.esc(d)+'"'+v.stile+'>'+
+    if(!src) return '<span class="figmanca">'+(d?d+' — ':'')+'immagine dell\'album non trovata</span>';
+    return '<span class="figura album'+v.cls+'" role="figure" aria-label="'+d+'"'+v.stile+'>'+
       '<a href="#" class="alink" data-album="'+g.esc(id)+'" title="Mostra questa immagine nell\'album">'+
-        '<img class="figimg" src="'+g.esc(src)+'" alt="'+g.esc(d)+'" loading="lazy" onerror="figuraRotta(this)">'+
+        '<img class="figimg" src="'+g.esc(src)+'" alt="'+d+'" loading="lazy" onerror="figuraRotta(this)">'+
       '</a>'+
-      (d ? '<span class="figcap">'+g.esc(d)+'</span>' : '')+
+      (d ? '<span class="figcap">'+d+'</span>' : '')+
     '</span>';
   }
   function figuraHtml(didascalia, nn, pg, i){

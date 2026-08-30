@@ -133,7 +133,7 @@ Sta scritto in testa allo script e nel `README.md` del laboratorio.
 
 ⚠️ **Questo elenco è stato riverificato il 30 agosto, voce per voce, misurando** — non ereditato.
 Tre voci erano scritte con la causa sbagliata, una era già chiusa da quindici giorni e due non
-esistevano più: le trovi in fondo, sotto «già chiuso». È il motivo per cui un debito si rilegge
+esistevano più — e una l'ho chiusa lo stesso giorno: le trovi in fondo, sotto «già chiuso». È il motivo per cui un debito si rilegge
 prima di ripeterlo: costa meno riverificarlo che inseguirlo.
 
 1. **Nessun pacchetto costruito**: `dist/` è vuota. `npm run pacchetto`, poi notarizzazione e
@@ -164,17 +164,12 @@ prima di ripeterlo: costa meno riverificarlo che inseguirlo.
    in sei posti — l'elenco è quello di `fonti.usi()` (`lib/fonti.js:296`): il file in `MATERIALI/`,
    `_evidenze.json`, gli appunti `.md`, le mappe `.json`, `_album.json` e la lapide in
    `_rimossi.json`. Non esiste nessuna `fonti.rinomina()`.
-6. **La didascalia di un'immagine dell'album passa due volte dall'escape.** Riprodotto il 30
-   agosto: `_mdInline` escapa la stringa, e `albumHtml` (`App/assets/lettura/capitolo.js:156`)
-   riescapa la didascalia — «Sole & Luna» arriva a schermo come `Sole &amp;amp; Luna`, nell'`alt`,
-   nell'`aria-label` e sotto la figura. ⚠️ I gemelli fanno la cosa giusta (`figuraHtml` e i
-   rimandi danno `Sole &amp; Luna`): il fix è **togliere l'escape di troppo**, non aggiungerne uno.
-7. 📌 **`prova-b1` e `prova-mappe-ui` ripuliscono la chiave sbagliata del banco**
+6. 📌 **`prova-b1` e `prova-mappe-ui` ripuliscono la chiave sbagliata del banco**
    (`prova-b1.js:22,127`, `prova-mappe-ui.js:42`). ⚠️ `studia.banco` non è morta del tutto —
    `bancoChiave()` la usa come ripiego quando non c'è contenitore — ma la chiave che il banco
    scrive davvero è `studia.banco.c.<contenitore>`, e quella non la tocca nessuno: le due prove
    credono di partire da un banco di fabbrica e non è vero.
-8. **Gli incrementi 2 e 3 dell'anteprima scrivibile.** Si vedono nel codice: il campo di blocco
+7. **Gli incrementi 2 e 3 dell'anteprima scrivibile.** Si vedono nel codice: il campo di blocco
    chiude con `t.setSelectionRange(fine, fine)` — il cursore va **in fondo**, non dove hai
    cliccato (incremento 3, il più piccolo passo utile) — e il suo `keydown` conosce solo Escape e
    ⌘Invio, quindi niente ↹ al blocco dopo né elenchi e riquadri riga per riga (incremento 2).
@@ -193,6 +188,16 @@ prima di ripeterlo: costa meno riverificarlo che inseguirlo.
   misurata** (`PIANO-BRAYNR.md:291`): `::highlight()` applica solo `background-color`, un
   `linear-gradient` viene ignorato, e al loro posto c'è la mescolanza dei fondi. Rifarle vorrebbe
   dire abbandonare gli highlight per un motore di pittura da risincronizzare a ogni scorrimento.
+- **La didascalia di un'immagine dell'album passava due volte dall'escape**: ✅ chiuso il 30
+  agosto. `_mdInline` escapa l'intera riga prima di riconoscere le figure, e `albumHtml`
+  riescapava la didascalia — «Sole & Luna» arrivava a schermo come `Sole &amp;amp; Luna`,
+  nell'`alt`, nell'`aria-label` e sotto la figura. Tolto l'escape di troppo dai quattro posti
+  (i gemelli `figuraHtml` e i rimandi facevano già la cosa giusta: il fix era togliere, non
+  aggiungere), e la convenzione — *chi chiama escapa, le funzioni `*Html` no* — è scritta nella
+  docstring, dove ci si sbagliava. ⚠️ I primi controlli erano **verdi col difetto rimesso**: in
+  Node non c'è `window`, quindi `albumHtml` cade sempre nel ramo «immagine non trovata», e i tre
+  posti sbagliati stanno nell'altro ramo. Con un `window` finto e il gancio del contenitore la
+  prova morde: 5 controlli su 5 rossi col difetto, `test/appunti-md.js` da 47 a 50.
 - **`20-pdfbar-numerata.png` mostrava la barra col titolo**: la campagna rifatta a fine agosto l'ha
   risolto, e la barra fotografata è quella di adesso.
 
@@ -204,7 +209,7 @@ prima di ripeterlo: costa meno riverificarlo che inseguirlo.
 |---|---|
 | **verificato oggi** | `npm test` exit 0 (49 file) · suite CDP intera verde (65 prove) · i conti (49 · 65 · 68 · 37 · 117) · le righe del monolite (21.818) · la barra del Confronto letta dal vivo (`Sistema solare ▾`) · la figura 24 riguardata a occhio |
 | **provato a mano dall'utente** | i gesti del Confronto: aprire, cambiare documento, chiudere |
-| **riverificato oggi** | tutte le voci del §3, una per una: tre avevano la causa sbagliata, quattro sono state chiuse |
+| **riverificato oggi** | tutte le voci del §3, una per una: tre avevano la causa sbagliata, cinque sono state chiuse |
 | **non fatto** | nessun pacchetto costruito |
 
 ⚠️ Prima di dichiarare finito un lavoro, la suite CDP va **rieseguita per intera**, non per i file

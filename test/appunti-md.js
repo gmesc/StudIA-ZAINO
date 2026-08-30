@@ -146,5 +146,42 @@ check('e nel recinto nemmeno', 0,
    lo scrive il modello — e restava morto pure lì. */
 contiene('e vale anche nei capitoli', '<a href="https://www.iss.it"', capitolo('Fonte: https://www.iss.it'));
 
+/* ⚠️ L'ESCAPE SI FA UNA VOLTA SOLA. `_mdInline` escapa l'intera riga PRIMA di
+   riconoscere le figure, quindi ciò che arriva a `albumHtml` e a `figuraHtml` è
+   già HTML-safe: riescaparlo mandava a schermo «Sole &amp;amp; Luna» — nell'alt,
+   nell'aria-label e sotto la figura. Il difetto stava nel solo `albumHtml`, e si
+   vedeva confrontandolo coi gemelli, che qui restano il termine di paragone. */
+console.log('\n— l\'escape delle didascalie, una volta sola —');
+nonContiene('l\'immagine dell\'album non escapa due volte', '&amp;amp;',
+  appunto('![Sole & Luna](album:abc123def456)'));
+contiene('e la e commerciale arriva scritta bene', 'Sole &amp; Luna',
+  appunto('![Sole & Luna](album:abc123def456)'));
+nonContiene('la figura di un documento fa lo stesso', '&amp;amp;',
+  appunto('![Sole & Luna](fig:01#p=3)'));
+nonContiene('e un rimando pure', '&amp;amp;',
+  appunto('[Sole & Luna](pdf:01#p=3)'));
+/* Il testo dell'utente resta escapato: togliere l'escape di troppo non deve
+   togliere quello che serve. */
+nonContiene('e un tag scritto nella didascalia resta inerte', '<b>',
+  appunto('![<b>Sole</b>](album:abc123def456)'));
+
+/* ⚠️ I CONTROLLI DI SOPRA VEDONO SOLO META FUNZIONE. In Node non c'è `window`,
+   quindi `albumHtml` cade sempre nel ramo «immagine non trovata» — e i tre posti
+   dove l'escape era doppio (alt, aria-label, didascalia sotto la figura) stanno
+   nell'ALTRO ramo, quello che vede chi usa l'app. Si accende un `window` finto e
+   si crea un parser col gancio del contenitore, che `reader-parser` non passa
+   perché in Node nessun corso è aperto. Senza questo, rimettere il difetto
+   lasciava la prova verde: misurato. */
+global.window = { vault: { album: { srcUrl: function(){ return 'album/x.webp'; } } } };
+const CAPV = require('../App/assets/lettura/capitolo.js').crea({
+  mediaNum: function(){ return {}; }, pdfNum: function(){ return {}; },
+  corsoAttivo: function(){ return 'corso-di-prova'; }
+});
+const conImg = CAPV.mdToHtml('![Sole & Luna](album:abc123def456)', true);
+nonContiene('con l\'immagine vera, niente doppio escape', '&amp;amp;', conImg);
+contiene('l\'alt è scritto bene', 'alt="Sole &amp; Luna"', conImg);
+contiene('e la didascalia sotto la figura pure',
+  '<span class="figcap">Sole &amp; Luna</span>', conImg);
+
 console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutto a posto') + ' (' + (ok + ko) + ' controlli)');
 process.exit(ko ? 1 : 0);
