@@ -15408,7 +15408,14 @@ function searchGoto(r,q){
      caricato non fa niente e non lo dice (la lezione di Q2). */
   if(r.d.mappa){
     try{ bancoMostra('mappa'); }catch(e){}
+    /* ⚠️ Il registro si scrive a mano — la porta vera (`mappaRegistro`) qui non
+       serve, perché la mappa da aprire la sappiamo già — ma allora tocca a noi
+       ridisegnare la barra: `mappaApriMia` è un NO-OP dichiarato quando quel
+       file è già aperto, e in quel caso nessun altro la sincronizza. Senza
+       questa riga si atterrava su una propria mappa con «Generata» premuto e
+       «Parti da qui» al posto di «+» — e premere «Mie» non rimediava. */
     MAPPA.registro='mie';
+    try{ mappaSincronizzaComandi(); }catch(e){}
     Promise.resolve(mappaApriMia(r.d.mappa)).then(function(){
       if(!r.d.nodo) return;              // era il titolo: la mappa aperta basta
       try{ mappaFocus(r.d.nodo, 'vicini'); }catch(e){ console.error('lente/mappa:', e); }
@@ -18492,7 +18499,12 @@ function mappaRegistro(reg){
      disposizione e le prove. Un comando che non ha senso in un posto si nega
      dove si esegue, non dove si disegna. */
   if(reg==='generata' && !mappaGenerateQui()) return;
-  if(reg===MAPPA.registro) return;
+  /* ⚠️ Già in quel registro: non c'è niente da cambiare, ma la barra può essere
+     rimasta indietro (qualcuno ha scritto `MAPPA.registro` a mano, e un no-op a
+     valle non ha ridisegnato niente). Uscire muti rendeva quel bottone un
+     comando che non fa nulla proprio quando serviva: si risincronizza, che è
+     l'unica cosa sensata da fare qui. */
+  if(reg===MAPPA.registro){ try{ mappaSincronizzaComandi(); }catch(e){} return; }
   if(MAPPA.rinomina) mappaRinominaChiudi(true);
   mappaCollegaAnnulla(); mapMenuChiudi();
   mappaFlush().then(function(){

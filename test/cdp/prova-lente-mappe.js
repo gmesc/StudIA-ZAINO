@@ -94,6 +94,39 @@ const PAROLA = 'perielio';
        lascerebbe a cercare a occhio ciò che la lente ha appena trovato. */
     const aFuoco = await finoA(`(MAPPA.focus && MAPPA.focus.id) ? 1 : 0`, 8000);
     ok('e il nodo è a fuoco, non solo la mappa aperta', 1, aFuoco);
+    /* ⚠️ E LA BARRA DEVE DIRE DOVE SEI. Atterrando su un nodo la lente portava
+       il registro a «Mie» scrivendolo a mano, senza ridisegnare i comandi: si
+       guardava una propria mappa con «Generata» premuto e «Parti da qui» al
+       posto di «+». Peggio, premere «Mie» non rimediava — `mappaRegistro` esce
+       subito quando il registro chiesto è già quello, e usciva senza
+       risincronizzare niente. Trovato il 30 agosto da `prova-l1` dentro la
+       suite, dove girava dopo questa. */
+    const barra = await val(`(()=>{ const b=document.querySelector('#mRegistro button[data-reg="mie"]');
+      return { reg: MAPPA.registro, pressed: b && b.getAttribute('aria-pressed'),
+               nuova: !!document.querySelector('#mNuova').hidden,
+               copia: !!document.querySelector('#mCopia').hidden }; })()`);
+    ok('e la barra dice che sei nelle TUE mappe',
+      { reg:'mie', pressed:'true', nuova:false, copia:true }, barra);
+
+    /* ⚠️ E LA SECONDA VOLTA, che è quella che rompeva. Si torna alla mappa
+       generata — il registro cambia, la barra lo segue, ma `MAPPA.mia.file`
+       resta (serve a riaprire quella su cui stavi lavorando) — e si atterra di
+       nuovo sullo stesso nodo. Lì `mappaApriMia` è un NO-OP dichiarato
+       («riaprire la mappa aperta non ricarica sopra le modifiche»), quindi
+       nessuno ridisegna la barra: senza la sincronizzazione nella lente, si
+       resta a guardare una mappa propria con «Generata» acceso. */
+    await val("mappaRegistro('generata')");
+    await finoA("MAPPA.registro==='generata' ? 1 : 0", 8000);
+    await val(`(()=>{ const r=searchRun('${PAROLA}').filter(function(x){ return x.d.mappa && x.d.nodo; })[0];
+      if(r) searchGoto(r, '${PAROLA}'); return 1; })()`);
+    await finoA("MAPPA.registro==='mie' ? 1 : 0", 8000);
+    await pausa(600);
+    const barra2 = await val(`(()=>{ const b=document.querySelector('#mRegistro button[data-reg="mie"]');
+      return { reg: MAPPA.registro, pressed: b && b.getAttribute('aria-pressed'),
+               nuova: !!document.querySelector('#mNuova').hidden,
+               copia: !!document.querySelector('#mCopia').hidden }; })()`);
+    ok('anche atterrando su una mappa GIÀ aperta',
+      { reg:'mie', pressed:'true', nuova:false, copia:true }, barra2);
   }
 
   sezione('⚠️ E il ritaglio porta alla sua card');
