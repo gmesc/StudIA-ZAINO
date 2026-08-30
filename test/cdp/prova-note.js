@@ -299,6 +299,74 @@ async function capitoloConNote() {
   ok('Esc non tocca il sorgente', prima2, await val(`NOTES.mde.value()`));
   ok('e chiude comunque il campo', false, await val(`!!document.querySelector('#noteHost .mdb-edit')`));
 
+  console.log('\n== ⚠️ Un elenco si apre VOCE per voce, e ↹ passa al blocco dopo');
+  /* La decisione — quali elenchi si spezzano e dove cade il cursore — sta in
+     `App/assets/appunti/scrivibile.js` e la provano 26 controlli in Node. Qui si
+     prova quello che in Node non esiste: che i confini arrivino sui `<li>` veri,
+     che cliccando la terza voce si apra la TERZA e non l'elenco intero, e che
+     ↹ tenga e passi oltre. */
+  const LISTA = 'Prima riga.\n\n- uno\n- due\n- tre\n\nUltima riga.\n';
+  await val(`NOTES.mde.value(${JSON.stringify(LISTA)}), 1`); await pausa(600);
+  const voci = await val(`[...document.querySelectorAll('#noteHost .editor-preview-active-side li.mdb')]
+    .map(function(b){ return b.dataset.da+'-'+b.dataset.a; })`);
+  console.log('   voci: ' + JSON.stringify(voci));
+  ok('ogni voce dell\'elenco è un blocco suo', ['2-2', '3-3', '4-4'], voci);
+  await clicca('#noteHost .editor-preview-active-side li.mdb[data-da="3"]');
+  await pausa(400);
+  /* ⚠️ Il controllo che vale l'incremento: prima qui si apriva «- uno\n- due\n-
+     tre», cioè l'elenco intero, e cambiare una parola voleva dire riscrivere
+     tutte e tre le voci. */
+  ok('cliccando la seconda si apre SOLO la seconda', '- due',
+    await val(`(document.querySelector('#noteHost .mdb-edit')||{}).value`));
+  await invia('Input.dispatchKeyEvent', { type:'keyDown', key:'Tab', code:'Tab', windowsVirtualKeyCode:9 });
+  await invia('Input.dispatchKeyEvent', { type:'keyUp', key:'Tab', code:'Tab', windowsVirtualKeyCode:9 });
+  await pausa(500);
+  ok('↹ tiene e apre la voce dopo', '- tre',
+    await val(`(document.querySelector('#noteHost .mdb-edit')||{}).value`));
+  ok('e il cursore è all\'inizio, pronto a scrivere', 0,
+    await val(`(document.querySelector('#noteHost .mdb-edit')||{}).selectionStart`));
+  await invia('Input.dispatchKeyEvent', { type:'keyDown', key:'Tab', code:'Tab', modifiers:8, windowsVirtualKeyCode:9 });
+  await invia('Input.dispatchKeyEvent', { type:'keyUp', key:'Tab', code:'Tab', modifiers:8, windowsVirtualKeyCode:9 });
+  await pausa(500);
+  ok('⇧↹ torna indietro', '- due',
+    await val(`(document.querySelector('#noteHost .mdb-edit')||{}).value`));
+  ok('e il sorgente non è cambiato passando di blocco in blocco', LISTA, await val(`NOTES.mde.value()`));
+  await invia('Input.dispatchKeyEvent', { type:'keyDown', key:'Escape', code:'Escape', windowsVirtualKeyCode:27 });
+  await invia('Input.dispatchKeyEvent', { type:'keyUp', key:'Escape', code:'Escape', windowsVirtualKeyCode:27 });
+  await pausa(400);
+
+  console.log('\n== ⚠️ Il cursore atterra DOVE si è cliccato');
+  /* Il campo contiene il markdown, il click è avvenuto sul testo reso: fra i due
+     c'è la sintassi. Si clicca sull'ultima parola di un paragrafo che comincia
+     con del grassetto, e si guarda che il cursore NON sia in fondo (com'era
+     sempre) né a zero, ma dentro quella parola. */
+  await val(`NOTES.mde.value('**Grassetto** e poi la parola cercata.'), 1`); await pausa(600);
+  const punto = await val(`(()=>{ const b=document.querySelector('#noteHost .editor-preview-active-side .mdb');
+    if(!b) return null;
+    /* il rettangolo dell'ULTIMA parola: si prende il testo del blocco e si
+       misura con un Range, che è come lo misura il browser quando ci clicchi */
+    const nodo=[...b.querySelectorAll('p')][0].firstChild ? b : null; if(!nodo) return null;
+    const t=b.textContent, i=t.indexOf('cercata');
+    const w=document.createTreeWalker(b, NodeFilter.SHOW_TEXT); let n, visti=0, target=null, off=0;
+    while((n=w.nextNode())){ const L=n.nodeValue.length;
+      if(visti+L>i){ target=n; off=i-visti; break; } visti+=L; }
+    if(!target) return null;
+    const r=document.createRange(); r.setStart(target, off); r.setEnd(target, off+1);
+    const box=r.getBoundingClientRect();
+    return { x:Math.round(box.left+box.width/2), y:Math.round(box.top+box.height/2), atteso:i }; })()`);
+  ok('la parola da colpire si trova nel disegno', true, !!punto);
+  await invia('Input.dispatchMouseEvent', { type:'mousePressed', x:punto.x, y:punto.y, button:'left', clickCount:1 });
+  await invia('Input.dispatchMouseEvent', { type:'mouseReleased', x:punto.x, y:punto.y, button:'left', clickCount:1 });
+  await pausa(500);
+  const cur = await val(`(()=>{ const t=document.querySelector('#noteHost .mdb-edit');
+    return t ? { start:t.selectionStart, fine:t.value.length, intorno:t.value.slice(t.selectionStart, t.selectionStart+7) } : null; })()`);
+  console.log('   ' + JSON.stringify(cur));
+  ok('il campo si è aperto', true, !!cur);
+  ok('e il cursore è nella parola cliccata, non in fondo', 'cercata', cur && cur.intorno);
+  await invia('Input.dispatchKeyEvent', { type:'keyDown', key:'Escape', code:'Escape', windowsVirtualKeyCode:27 });
+  await invia('Input.dispatchKeyEvent', { type:'keyUp', key:'Escape', code:'Escape', windowsVirtualKeyCode:27 });
+  await pausa(400);
+
   await val(`NOTES.mde.toggleSideBySide(), 1`); await pausa(700);
   ok('e togliendola si torna com\'era', [false, senza.testo.w],
     [(await val(lato)).affiancata, (await val(lato)).testo.w]);

@@ -35,15 +35,15 @@ un processo per nome**.
 | `main` | la punta di **`guida-campagna`**, unita oggi — quattro commit del 29-30 più i tre di oggi |
 | remoto | `git@github.com:gmesc/StudIA.git` — ✅ **allineata** (spinto il 30 agosto) |
 | rami · worktree | **nessuno** |
-| unità | ✅ **49 file** nella catena di `npm test`, exit 0 |
+| unità | ✅ **50 file** nella catena di `npm test`, exit 0 |
 | CDP | ✅ **68 prove** in elenco = 68 file `prova-*.js` sul disco: **nessuna fuori** (le tre L sono rientrate il 30 agosto) |
-| monolite | `App/StudIA.html` **21.818 righe** · moduli in `App/assets/` (pdf.js escluso): **37** |
+| monolite | `App/StudIA.html` **21.818 righe** · moduli in `App/assets/` (pdf.js escluso): **38** |
 | guida ZAINO | **117 figure** in `App/guida-zaino/img/`, di cui **103 rifatte** fra il 29 e il 30 agosto |
 | pacchetti | ⚠️ **nessuno**: `dist/` è vuota dal 23 agosto. Si rifanno con `npm run pacchetto` |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
-npm test                                                   # 49 file, exit 0
+npm test                                                   # 50 file, exit 0
 STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 68 prove sull'app viva
 STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh prova-confronto.js   # una sola
 ```
@@ -131,10 +131,11 @@ Sta scritto in testa allo script e nel `README.md` del laboratorio.
 
 ## 3. Che cosa resta da fare
 
-⚠️ **Questo elenco è stato riverificato il 30 agosto, voce per voce, misurando** — non ereditato.
-Tre voci erano scritte con la causa sbagliata, una era già chiusa da quindici giorni e due non
-esistevano più — e una l'ho chiusa lo stesso giorno: le trovi in fondo, sotto «già chiuso». È il motivo per cui un debito si rilegge
-prima di ripeterlo: costa meno riverificarlo che inseguirlo.
+⚠️ **Questo elenco è stato riverificato il 30 agosto, voce per voce, misurando** — non ereditato:
+tre voci erano scritte con la causa sbagliata, una era già chiusa da quindici giorni e due non
+esistevano più. Quel che restava è stato chiuso lo stesso giorno, e sta in fondo sotto «già
+chiuso», con il perché. È il motivo per cui un debito si rilegge prima di ripeterlo: costa meno
+riverificarlo che inseguirlo — e di dieci voci, **due erano lavoro vero**.
 
 1. **Nessun pacchetto costruito**: `dist/` è vuota. `npm run pacchetto`, poi notarizzazione e
    installer Windows provato su Windows (`PIANO-ONBOARDING.md`).
@@ -143,10 +144,6 @@ prima di ripeterlo: costa meno riverificarlo che inseguirlo.
    che cosa fare quando l'impronta del documento non combacia: rifiutare tutto o importare
    lasciando i segni orfani). ⚠️ Vincolo non negoziabile dell'utente: **aggiunge uno strato, non
    sovrascrive** quelli che lo studente ha già.
-3. **Gli incrementi 2 e 3 dell'anteprima scrivibile.** Si vedono nel codice: il campo di blocco
-   chiude con `t.setSelectionRange(fine, fine)` — il cursore va **in fondo**, non dove hai
-   cliccato (incremento 3, il più piccolo passo utile) — e il suo `keydown` conosce solo Escape e
-   ⌘Invio, quindi niente ↹ al blocco dopo né elenchi e riquadri riga per riga (incremento 2).
 
 **Già chiuso, e tolto da questo elenco** (verificato il 30 agosto):
 
@@ -162,6 +159,20 @@ prima di ripeterlo: costa meno riverificarlo che inseguirlo.
   misurata** (`PIANO-BRAYNR.md:291`): `::highlight()` applica solo `background-color`, un
   `linear-gradient` viene ignorato, e al loro posto c'è la mescolanza dei fondi. Rifarle vorrebbe
   dire abbandonare gli highlight per un motore di pittura da risincronizzare a ogni scorrimento.
+- **Gli incrementi 2 e 3 dell'anteprima scrivibile**: ✅ fatti il 30 agosto, ed erano in coda dal
+  17. **3 — il cursore dove hai cliccato**: il campo contiene il markdown, il click è avvenuto sul
+  testo reso, e fra i due c'è la sintassi; `posSorgente` allinea i due testi a due dita (dove i
+  caratteri coincidono avanzano entrambi, dove no avanza solo il sorgente) e mette il cursore
+  davanti al carattere che SI VEDE — fermarsi prima lo lascerebbe fra gli asterischi del
+  grassetto, e la prima lettera battuta finirebbe nel marcatore. **2 — l'elenco voce per voce**:
+  otto voci erano un blocco solo, quindi un campo con otto righe; adesso ogni `<li>` è il suo
+  blocco, e ↹ tiene e passa al prossimo (⇧↹ indietro). ⚠️ `vociElenco` dice di NO agli annidati e
+  alle voci che continuano sotto: quelle coordinate sono le due con cui si sovrascrive il file, e
+  una sbagliata si mangia le voci vicine. Le due decisioni stanno in un modulo puro,
+  `App/assets/appunti/scrivibile.js` (26 controlli in `test/scrivibile.js`); al renderer resta il
+  cablaggio, e `mdbApri` è una funzione sola perché le porte sono due — il click e il ↹.
+  ⚠️ Una riga di CSS che non si indovina: `div.mdb{display:contents}` invece di `.mdb`, perché un
+  `<li>` a `display:contents` non ha rettangolo — non si può cliccare e perde il pallino.
 - **La rinomina di una fonte**: ✅ fatta il 30 agosto, logica e gesto.
   `fonti.rinomina(vault, corso, nome, titolo)` cambia la parte leggibile e **lascia stare il
   numero** — `03` è ciò che scrivono i rimandi `pdf:03#p=7`, e cambiarlo vorrebbe dire riscrivere
@@ -228,9 +239,9 @@ prima di ripeterlo: costa meno riverificarlo che inseguirlo.
 
 | | |
 |---|---|
-| **verificato oggi** | `npm test` exit 0 (49 file) · suite CDP intera verde (**68 prove**) · i conti (49 · 68 · 37 · 117) · le righe del monolite (21.818) · la barra del Confronto letta dal vivo (`Sistema solare ▾`) · la figura 24 riguardata a occhio |
+| **verificato oggi** | `npm test` exit 0 (50 file) · suite CDP intera verde (**68 prove**) · i conti (50 · 68 · 38 · 117) · le righe del monolite (21.818) · la barra del Confronto letta dal vivo (`Sistema solare ▾`) · la figura 24 riguardata a occhio |
 | **provato a mano dall'utente** | i gesti del Confronto: aprire, cambiare documento, chiudere |
-| **riverificato oggi** | tutte le voci del §3, una per una: tre avevano la causa sbagliata, nove sono state chiuse |
+| **riverificato oggi** | tutte le voci del §3, una per una: tre avevano la causa sbagliata, dieci sono state chiuse |
 | **non fatto** | nessun pacchetto costruito |
 
 ⚠️ Prima di dichiarare finito un lavoro, la suite CDP va **rieseguita per intera**, non per i file

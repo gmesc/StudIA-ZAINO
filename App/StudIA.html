@@ -82,6 +82,7 @@
      divergono, e quello dimenticato fa cancellare storie alla potatura. -->
 <script src="assets/ripasso/sorgenti.js"></script>
 <script src="assets/appunti/elenco.js"></script>
+<script src="assets/appunti/scrivibile.js"></script>
 <!-- Dati, non codice: le icone in base64 e la tavolozza delle emoji. Stanno
      prima dell'inline perché il renderer le legge appena parte. -->
 <script src="assets/dati/icone.js"></script>
@@ -1244,8 +1245,16 @@
      generare una scatola, o l'anteprima cambierebbe impaginazione per una
      funzione che non c'entra con come si legge. Diventa un blocco vero solo
      mentre lo si sta scrivendo. */
-  #noteHost .mdb{ display:contents; }
-  #noteHost .mdb[data-edit]{ display:block; }
+  /* ⚠️ `div.mdb`, non `.mdb`: da quando una VOCE di elenco è un blocco a sé, la
+     classe sta anche sui `<li>` — e un `<li>` a `display:contents` sparisce dal
+     flusso, cioè non ha rettangolo, non si può cliccare e perde il pallino.
+     L'involucro invisibile serve solo dove il blocco è un `<div>` aggiunto da
+     noi; il `<li>` nel DOM c'era già. */
+  #noteHost div.mdb{ display:contents; }
+  #noteHost div.mdb[data-edit]{ display:block; }
+  /* Scrivendo dentro una voce il pallino resta al suo posto: `display:block` la
+     toglierebbe dall'elenco per il tempo della modifica, e la riga ballerebbe. */
+  #noteHost li.mdb[data-edit]{ display:list-item; }
   /* Il puntatore dice che si può scrivere lì: senza, l'unica maniera di
      scoprirlo è cliccare per caso. */
   #noteHost .editor-preview-active-side .mdb, #noteHost .editor-preview-active .mdb{ cursor:text; }
@@ -9042,7 +9051,19 @@ function renderNoteMd(md, opt){
        blocchi non li sapeva più nessuno, e senza confini non c'è mappa. */
     var inizio=i, buf=[];
     while(i<lines.length && !vuota(lines[i]) && !/^>\s*\[!/.test(lines[i])){ buf.push(lines[i]); i++; }
-    out+=avvolgi(mdToHtml(buf.join('\n'), true), inizio, i-1);
+    var html=mdToHtml(buf.join('\n'), true);
+    /* ⚠️ UN ELENCO NON È UN BLOCCO SOLO. Otto voci di seguito sono otto righe
+       piene, quindi finivano in un campo unico: cliccare la terza apriva tutte e
+       otto, e per cambiare una parola si riscriveva l'elenco intero. Qui ogni
+       voce diventa il suo blocco — i confini li dà `AppuntiScrivibile`, che dice
+       di no a tutto ciò che non è la forma semplice (annidati, voci che
+       continuano sotto): quelle coordinate sono le due con cui si SOVRASCRIVE
+       il markdown, e una sbagliata si mangia le voci vicine.
+       L'involucro `.mdb` qui non serve: la classe va sui `<li>`, che nel DOM ci
+       sono già — un `<div>` dentro un `<ul>` sarebbe markup illegale, e il
+       browser lo sposterebbe fuori dall'elenco. */
+    var conVoci = mappa ? AppuntiScrivibile.marcaVoci(html, buf, inizio) : html;
+    out += (conVoci !== html) ? conVoci : avvolgi(html, inizio, i-1);
   }
   return out;
 }
@@ -11828,6 +11849,95 @@ function noteAnteprimaRidisegna(){
   if(!pv) return;
   try{ pv.innerHTML=renderNoteMd(NOTES.mde.value(), { mappa:true }); }catch(e){}
 }
+/**
+ * Quanti caratteri di testo RESO stanno prima del punto toccato, dentro questo
+ * blocco — e da lì, dove cade il cursore nel markdown.
+ *
+ * ⚠️ `caretRangeFromPoint` è di Chromium e qui basta: l'app è Electron. Se un
+ * giorno non ci fosse, o il punto cadesse fuori dal blocco, si risponde `null`
+ * e il cursore torna in fondo come prima — mai un numero indovinato.
+ */
+function mdbPuntoCliccato(box, x, y){
+  if(!box || !NOTES.mde || typeof document.caretRangeFromPoint!=='function') return null;
+  var da=parseInt(box.getAttribute('data-da'),10), a=parseInt(box.getAttribute('data-a'),10);
+  if(isNaN(da) || isNaN(a)) return null;
+  var r;
+  try{ r=document.caretRangeFromPoint(x, y); }catch(e){ return null; }
+  if(!r || !box.contains(r.startContainer)) return null;
+  var pre;
+  try{
+    pre=document.createRange();
+    pre.selectNodeContents(box);
+    pre.setEnd(r.startContainer, r.startOffset);
+  }catch(e){ return null; }
+  var cm=NOTES.mde.codemirror;
+  if(a>=cm.lineCount()) return null;
+  var sorgente=cm.getRange({line:da,ch:0},{line:a,ch:cm.getLine(a).length});
+  return AppuntiScrivibile.posSorgente(sorgente, box.textContent||'', pre.toString().length);
+}
+/**
+ * Apre UN blocco dell'anteprima in scrittura, col cursore dove si dice.
+ *
+ * ⚠️ È una funzione e non il corpo del gestore di click perché le porte sono
+ * due: il click, e ↹ dal blocco di prima. Due riti per lo stesso gesto
+ * divergono al primo ritocco — è l'invariante 6, e qui si vedrebbe subito: la
+ * scorciatoia aprirebbe un campo senza l'altezza che cresce, o senza Esc.
+ */
+function mdbApri(box, pos){
+  if(!box || !NOTES.mde) return false;
+  var da=parseInt(box.getAttribute('data-da'),10), a=parseInt(box.getAttribute('data-a'),10);
+  if(isNaN(da) || isNaN(a)) return false;
+  var cm=NOTES.mde.codemirror;
+  if(a>=cm.lineCount()) return false;
+  var sorgente=cm.getRange({line:da,ch:0},{line:a,ch:cm.getLine(a).length});
+  box.setAttribute('data-edit','1');
+  box.innerHTML='';
+  var t=document.createElement('textarea');
+  t.className='mdb-edit'; t.value=sorgente; t.spellcheck=false;
+  t.setAttribute('aria-label','Il markdown di questo blocco');
+  box.appendChild(t);
+  /* L'altezza segue il testo: un campo di tre righe sopra un paragrafo di
+     sei nasconde metà di quello che si sta modificando. */
+  var cresci=function(){ t.style.height='auto'; t.style.height=(t.scrollHeight+2)+'px'; };
+  t.addEventListener('input', cresci);
+  t.addEventListener('keydown', function(ev){
+    if(ev.key==='Escape'){ ev.preventDefault(); ev.stopPropagation(); mdbChiudi(false); }
+    /* ⌘Invio chiude e salva: è la scorciatoia che chi scrive in un campo si
+       aspetta, e lascia Invio libero di andare a capo dentro il blocco. */
+    else if(ev.key==='Enter' && (ev.metaKey||ev.ctrlKey)){ ev.preventDefault(); ev.stopPropagation(); mdbChiudi(true); }
+    /* ↹ tiene e passa al blocco dopo (⇧↹ a quello prima): correggere due
+       paragrafi di seguito voleva dire ⌘Invio, mano al mouse, click. */
+    else if(ev.key==='Tab'){ ev.preventDefault(); ev.stopPropagation(); mdbVicino(!ev.shiftKey); }
+  });
+  cresci(); t.focus();
+  /* ⚠️ Il cursore dove si è cliccato, non in fondo. Il campo contiene il
+     MARKDOWN e il click è avvenuto sul testo RESO: il conto lo fa
+     `AppuntiScrivibile.posSorgente`, e quando non torna risponde `null` — allora
+     si va in fondo, che è ciò che si faceva sempre. */
+  var n=(typeof pos==='number' && pos>=0 && pos<=t.value.length) ? pos : t.value.length;
+  t.setSelectionRange(n, n);
+  return true;
+}
+/**
+ * Chiude il blocco aperto tenendolo, e apre il vicino.
+ *
+ * ⚠️ Si conta l'INDICE prima di chiudere e si ripesca dopo: `mdbChiudi` ridisegna
+ * l'anteprima, quindi i nodi di prima non esistono più — tenersi il riferimento
+ * al `<div>` vicino darebbe un elemento staccato dal documento, e il campo si
+ * aprirebbe su niente senza dire niente.
+ */
+function mdbVicino(avanti){
+  var host=document.getElementById('noteHost'); if(!host) return false;
+  var aperto=host.querySelector('.mdb[data-edit]'); if(!aperto) return false;
+  var prima=[].slice.call(host.querySelectorAll('.mdb'));
+  var i=prima.indexOf(aperto);
+  if(i<0) return false;
+  mdbChiudi(true);
+  var dopo=[].slice.call(host.querySelectorAll('.mdb'));
+  var box=dopo[i + (avanti?1:-1)];
+  if(!box) return false;
+  return mdbApri(box, 0);
+}
 (function(){
   document.addEventListener('click', function(e){
     if(!e.target || !e.target.closest) return;
@@ -11844,29 +11954,9 @@ function noteAnteprimaRidisegna(){
        il documento alla sua pagina, e una figura apre l'album. Sono i due gesti
        per cui l'anteprima esiste, e non si perdono per aprire un campo. */
     if(e.target.closest('a') || e.target.closest('img')) return;
-    var da=parseInt(box.getAttribute('data-da'),10), a=parseInt(box.getAttribute('data-a'),10);
-    if(isNaN(da) || isNaN(a) || !NOTES.mde) return;
-    var cm=NOTES.mde.codemirror;
-    if(a>=cm.lineCount()) return;
-    var sorgente=cm.getRange({line:da,ch:0},{line:a,ch:cm.getLine(a).length});
-    box.setAttribute('data-edit','1');
-    box.innerHTML='';
-    var t=document.createElement('textarea');
-    t.className='mdb-edit'; t.value=sorgente; t.spellcheck=false;
-    t.setAttribute('aria-label','Il markdown di questo blocco');
-    box.appendChild(t);
-    /* L'altezza segue il testo: un campo di tre righe sopra un paragrafo di
-       sei nasconde metà di quello che si sta modificando. */
-    var cresci=function(){ t.style.height='auto'; t.style.height=(t.scrollHeight+2)+'px'; };
-    t.addEventListener('input', cresci);
-    t.addEventListener('keydown', function(ev){
-      if(ev.key==='Escape'){ ev.preventDefault(); ev.stopPropagation(); mdbChiudi(false); }
-      /* ⌘Invio chiude e salva: è la scorciatoia che chi scrive in un campo si
-         aspetta, e lascia Invio libero di andare a capo dentro il blocco. */
-      else if(ev.key==='Enter' && (ev.metaKey||ev.ctrlKey)){ ev.preventDefault(); ev.stopPropagation(); mdbChiudi(true); }
-    });
-    cresci(); t.focus();
-    var fine=t.value.length; t.setSelectionRange(fine, fine);
+    /* ⚠️ Il punto toccato si misura PRIMA di svuotare il blocco: dopo, il testo
+       che si stava guardando non c'è più e non c'è più niente da misurare. */
+    mdbApri(box, mdbPuntoCliccato(box, e.clientX, e.clientY));
   });
 })();
 
