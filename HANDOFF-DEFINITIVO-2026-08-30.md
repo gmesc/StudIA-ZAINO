@@ -39,7 +39,7 @@ un processo per nome**.
 | CDP | ✅ **68 prove** in elenco = 68 file `prova-*.js` sul disco: **nessuna fuori** (le tre L sono rientrate il 30 agosto) |
 | monolite | `App/StudIA.html` **21.818 righe** · moduli in `App/assets/` (pdf.js escluso): **38** |
 | guida ZAINO | **117 figure** in `App/guida-zaino/img/`, di cui **103 rifatte** fra il 29 e il 30 agosto |
-| pacchetti | ⚠️ **nessuno**: `dist/` è vuota dal 23 agosto. Si rifanno con `npm run pacchetto` |
+| pacchetti | ✅ rifatti il **30 agosto**: `dist/StudIA-1.0.0-arm64.dmg` (227 MB, firma **ad-hoc**) e `dist/StudIA-1.0.0-setup-x64.exe` (167 MB, NSIS non firmato). ⚠️ Nessuno dei due è mai stato **eseguito**: il dmg va aperto a mano, l'installer va provato su Windows |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
@@ -137,8 +137,14 @@ esistevano più. Quel che restava è stato chiuso lo stesso giorno, e sta in fon
 chiuso», con il perché. È il motivo per cui un debito si rilegge prima di ripeterlo: costa meno
 riverificarlo che inseguirlo — e di dieci voci, **due erano lavoro vero**.
 
-1. **Nessun pacchetto costruito**: `dist/` è vuota. `npm run pacchetto`, poi notarizzazione e
-   installer Windows provato su Windows (`PIANO-ONBOARDING.md`).
+1. **I due pacchetti esistono ma nessuno li ha aperti** (`PIANO-ONBOARDING.md`). Costruiti il 30
+   agosto con `npm run pacchetto` (mac arm64) e `npm run dist:win` (Windows x64), e controllati
+   **dentro**: la guida c'è con tutte e 117 le figure, `_lab/` e le prove restano fuori, i moduli
+   nuovi ci sono, e l'app nel dmg è firmata, integra e arm64. Restano due cose che qui non si
+   possono fare: ⚠️ la **notarizzazione** — la firma è ad-hoc, quindi al primo avvio serve
+   Impostazioni di Sistema → Privacy e sicurezza → «Apri comunque», e `spctl` dirà sempre
+   «rejected» — e ⚠️ **l'installer provato su Windows**: si è misurato che è un NSIS valido e
+   completo (`PE32 executable (GUI) … Nullsoft Installer`), non che parta.
 2. **Q9 in freezer** — quando si riprende: `/architetto`, e **due bivi veri da chiedere
    all'utente** (il canale: `_evidenze.json` trascinato o pacchetto vero con `lib/pacchetto.js`; e
    che cosa fare quando l'impronta del documento non combacia: rifiutare tutto o importare
@@ -242,7 +248,7 @@ riverificarlo che inseguirlo — e di dieci voci, **due erano lavoro vero**.
 | **verificato oggi** | `npm test` exit 0 (50 file) · suite CDP intera verde (**68 prove**) · i conti (50 · 68 · 38 · 117) · le righe del monolite (21.818) · la barra del Confronto letta dal vivo (`Sistema solare ▾`) · la figura 24 riguardata a occhio |
 | **provato a mano dall'utente** | i gesti del Confronto: aprire, cambiare documento, chiudere |
 | **riverificato oggi** | tutte le voci del §3, una per una: tre avevano la causa sbagliata, dieci sono state chiuse |
-| **non fatto** | nessun pacchetto costruito |
+| **non fatto** | i due pacchetti non sono stati **aperti**: il dmg non è stato montato a mano né l'installer eseguito su Windows |
 
 ⚠️ Prima di dichiarare finito un lavoro, la suite CDP va **rieseguita per intera**, non per i file
 toccati. È la lezione che negli ultimi dieci giorni è tornata più spesso.
