@@ -12,6 +12,10 @@ ricetta per rifare le immagini, e **non entra nel pacchetto** (`!App/guida-zaino
 - `campagna.js` — la sequenza completa, in ordine di guida: azzera il vault di prova, crea lo
   zaino «Sistema solare», importa i materiali e fotografa ogni stato. Finestra 1470×956 @2x =
   MacBook Air 13″ a schermo intero.
+- `scatto-24.js` — la ricetta per rifare **una sola** figura (`24-confronto`), quando cambia la
+  barra del Confronto: ricostruisce a mano lo stato che il passo 24 eredita dai passi 21-23
+  (pagina 9, ricerca «pianeti» aperta, zoom alla larghezza) invece di riscrivere tutte e 117 le
+  immagini. Stesso modo di lanciarlo della campagna: `GUIDA_VAULT=<vault> node scatto-24.js`.
 - `materiali/` — i sei file che la campagna importa (PDF, video, audio, foto, `.md`, «scheda
   fotografata» = PDF di sole immagini). Stanno qui e non in una cartella temporanea perché la
   campagna deve potersi rifare fra un anno.
