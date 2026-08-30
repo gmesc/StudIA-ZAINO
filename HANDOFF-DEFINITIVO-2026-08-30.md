@@ -39,7 +39,7 @@ un processo per nome**.
 | CDP | ✅ **68 prove** in elenco = 68 file `prova-*.js` sul disco: **nessuna fuori** (le tre L sono rientrate il 30 agosto) |
 | monolite | `App/StudIA.html` **21.818 righe** · moduli in `App/assets/` (pdf.js escluso): **38** |
 | guida ZAINO | **117 figure** in `App/guida-zaino/img/`, di cui **103 rifatte** fra il 29 e il 30 agosto |
-| pacchetti | ✅ rifatti il **30 agosto**: `dist/StudIA-1.0.0-arm64.dmg` (227 MB, firma **ad-hoc**) e `dist/StudIA-1.0.0-setup-x64.exe` (167 MB, NSIS non firmato). ⚠️ Nessuno dei due è mai stato **eseguito**: il dmg va aperto a mano, l'installer va provato su Windows |
+| pacchetti | ✅ **`dist/StudIA-1.0.0-arm64.dmg` (246 MB) è firmato Developer ID e NOTARIZZATO**: `spctl` dice `accepted · source=Notarized Developer ID`, ticket cucito all'app e al dmg — si apre con un doppio click, anche senza rete. `dist/StudIA-1.0.0-setup-x64.exe` (167 MB) è un NSIS **non firmato**: SmartScreen avvisa. ⚠️ Nessuno dei due è stato **eseguito** |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
@@ -137,28 +137,17 @@ esistevano più. Quel che restava è stato chiuso lo stesso giorno, e sta in fon
 chiuso», con il perché. È il motivo per cui un debito si rilegge prima di ripeterlo: costa meno
 riverificarlo che inseguirlo — e di dieci voci, **due erano lavoro vero**.
 
-1. **La notarizzazione è configurata ma non è ancora stata eseguita**: manca un solo passo, e lo
-   deve fare l'utente perché chiede una password. Il certificato **Developer ID Application:
-   Giacomo Meschini (32678PYY8K)** è nel portachiavi; `npm run notarizza` si ferma dicendo che
-   serve il profilo di `notarytool`:
-   ```bash
-   xcrun notarytool store-credentials studia-notarize --apple-id "…" --team-id 32678PYY8K
-   ```
-   (la password è una *app-specific password* di appleid.apple.com; il profilo la tiene cifrata nel
-   portachiavi e da lì in poi nessuno script la vede). ⚠️ Il team del Developer ID (`32678PYY8K`) è
-   **diverso** da quello del certificato di sviluppo (`QWXZYBYN7U`): vale il primo, e lo script lo
-   legge dal certificato invece di farselo dire.
-   ⚠️ **Windows non si risolve con l'account Apple**: senza Authenticode l'installer fa comparire
-   SmartScreen. Le vie sono un certificato OV (la reputazione si accumula coi download), uno EV
-   (nessun avviso subito, token hardware) o Azure Trusted Signing, che oggi è la più economica.
-2. **I due pacchetti esistono ma nessuno li ha aperti** (`PIANO-ONBOARDING.md`). Costruiti il 30
-   agosto con `npm run pacchetto` (mac arm64) e `npm run dist:win` (Windows x64), e controllati
-   **dentro**: la guida c'è con tutte e 117 le figure, `_lab/` e le prove restano fuori, i moduli
-   nuovi ci sono, e l'app nel dmg è firmata, integra e arm64. Restano due cose che qui non si
-   possono fare: ⚠️ la **notarizzazione** — la firma è ad-hoc, quindi al primo avvio serve
-   Impostazioni di Sistema → Privacy e sicurezza → «Apri comunque», e `spctl` dirà sempre
-   «rejected» — e ⚠️ **l'installer provato su Windows**: si è misurato che è un NSIS valido e
-   completo (`PE32 executable (GUI) … Nullsoft Installer`), non che parta.
+1. ⚠️ **Windows: l'installer non è firmato**, e l'account Apple non c'entra. Senza Authenticode
+   SmartScreen avvisa a ogni installazione. Le vie sono un certificato OV (la reputazione si
+   accumula coi download), uno EV (nessun avviso subito, token hardware) o **Azure Trusted
+   Signing**, oggi la più economica e supportata da `electron-builder`. Tutte chiedono una verifica
+   d'identità di giorni.
+2. **Nessuno dei due pacchetti è stato eseguito** (`PIANO-ONBOARDING.md`). Controllati **dentro** — la guida c'è
+   con tutte e 117 le figure, `_lab/` e le prove restano fuori, i moduli nuovi ci sono — e per il
+   dmg si è misurato il verdetto di Gatekeeper, che è la domanda vera. Ma nessuno ha ancora fatto
+   la cosa più semplice: **aprirli**. Del dmg manca il doppio click su un Mac che non sia questo;
+   dell'installer si è misurato che è un NSIS valido e completo (`PE32 executable (GUI) … Nullsoft
+   Installer`), non che parta — per quello serve una macchina Windows.
 3. **Q9 in freezer** — quando si riprende: `/architetto`, e **due bivi veri da chiedere
    all'utente** (il canale: `_evidenze.json` trascinato o pacchetto vero con `lib/pacchetto.js`; e
    che cosa fare quando l'impronta del documento non combacia: rifiutare tutto o importare
@@ -193,6 +182,16 @@ riverificarlo che inseguirlo — e di dieci voci, **due erano lavoro vero**.
   cablaggio, e `mdbApri` è una funzione sola perché le porte sono due — il click e il ↹.
   ⚠️ Una riga di CSS che non si indovina: `div.mdb{display:contents}` invece di `.mdb`, perché un
   `<li>` a `display:contents` non ha rettangolo — non si può cliccare e perde il pallino.
+- **La notarizzazione del pacchetto Mac**: ✅ fatta il 30 agosto. `npm run notarizza` firma con
+  **Developer ID Application: Giacomo Meschini (32678PYY8K)**, notarizza l'app, le cuce il ticket,
+  rifà il dmg dall'app cucita, notarizza anche il dmg e chiude chiedendo a Gatekeeper che cosa ne
+  pensa: `accepted · source=Notarized Developer ID`. Le credenziali stanno in un profilo del
+  portachiavi (`studia-notarize`), quindi nessuno script vede la password. ⚠️ Le cuciture sono
+  DUE apposta: solo sul dmg, l'app trascinata in Applicazioni resta senza ticket e offline
+  Gatekeeper non può verificarla; solo sull'app, è il dmg scaricato dal browser a far comparire
+  l'avviso. ⚠️ E `bin/pacchetto-mac.sh` non è morto: è la via locale ad-hoc, che ora dichiara di
+  esserlo e passa `identity=null` a riga di comando — nel `package.json` c'è la firma vera, così
+  il pacchetto da spedire non può uscire non firmato per distrazione.
 - **La rinomina di una fonte**: ✅ fatta il 30 agosto, logica e gesto.
   `fonti.rinomina(vault, corso, nome, titolo)` cambia la parte leggibile e **lascia stare il
   numero** — `03` è ciò che scrivono i rimandi `pdf:03#p=7`, e cambiarlo vorrebbe dire riscrivere
