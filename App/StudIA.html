@@ -6226,7 +6226,6 @@ async function fonte2Apri(file){
     toast('Il documento non si è potuto aprire: '+((e&&e.message)||e), false);
     return;
   }
-  var t=$('#pdf2Title'); if(t){ t.textContent=titoloMateriale(file)||file; t.title=file; }
   try{ bancoMostra('fonte2'); }catch(e){}
   fonte2Aggiorna();
 }
@@ -6234,7 +6233,6 @@ function fonte2Chiudi(){
   if(FONTE2.doc){ try{ FONTE2.doc.destroy(); }catch(e){} }
   FONTE2.doc=null; FONTE2.file=''; FONTE2.page=1;
   try{ if(FONTE2.viewer) FONTE2.viewer.setDocument(null); }catch(e){}
-  var t=$('#pdf2Title'); if(t){ t.textContent='Confronto'; t.title=''; }
   fonte2Aggiorna();
 }
 
@@ -6243,6 +6241,21 @@ function fonte2Aggiorna(){
   var pane=$('#pdfPane2'); if(!pane) return;
   var aperta=fonte2Aperta();
   pane.dataset.doc=aperta?'1':'0';
+  /* Il nome del documento sta NEL SELETTORE, come nella Fonte dal 23 agosto
+     2026: in barra ripeteva il nome dello strumento — «Confronto» è già scritto
+     nella testata del blocco due centimetri più su — e su un nome lungo come
+     «FLOW Manuale Fidelity MONITORING…» spingeva fuori i comandi. Il selettore
+     lo accorcia coi puntini (regola `#pdfDoc,#pdf2Doc`) perché è un comando e
+     non un'insegna.
+     ⚠️ Anche l'`aria-label` va riscritto: quello del markup COPRE il testo
+     visibile, e chi ascolta lo schermo non saprebbe mai quale documento sia. */
+  var sel=$('#pdf2Doc');
+  if(sel){
+    var nome=aperta ? (titoloMateriale(FONTE2.file)||FONTE2.file) : '';
+    sel.textContent=(nome || 'Documenti')+' \u25BE';
+    var dice=nome ? ('A confronto: '+nome+' — premi per cambiarlo') : 'Scegli il documento da confrontare';
+    sel.title=dice; sel.setAttribute('aria-label', dice);
+  }
   var vuoto=$('#pdf2Vuoto'); if(vuoto) vuoto.hidden=aperta;
   var pag=$('#pdf2Pag'), zoom=$('#pdf2Zoom'), chiudi=$('#pdf2Close');
   if(pag) pag.hidden=!aperta;
@@ -20807,7 +20820,9 @@ window.addEventListener('keydown', function(e){
      che cita il documento sbagliato. Meglio un riquadro che dice che cos'è. -->
 <section id="pdfPane2" aria-label="Confronto: un secondo documento">
   <div class="tbar pdfbar">
-    <strong id="pdf2Title">Confronto</strong>
+    <!-- ⚠️ Qui c'era «<strong id="pdf2Title">», che diventava il nome del
+         documento aperto: stessa storia di «pdfTitle» (23 ago 2026) e di
+         «plTitle» (24 ago). Il nome lo dice il selettore qui sotto. -->
     <button class="tbtn" id="pdf2Doc" type="button" aria-haspopup="menu" aria-expanded="false"
             title="Scegli il documento da confrontare" aria-label="Scegli il documento da confrontare">Documenti &#9662;</button>
     <span class="tbspazio"></span>

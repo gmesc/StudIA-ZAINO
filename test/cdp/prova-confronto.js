@@ -101,26 +101,35 @@ const PDF = 'Piano-di-studio-della-Scuola-dell-obbligo-ticinese.pdf';
       return e ? Math.round(e.getBoundingClientRect().height) : null; }
     return { token:parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tb-h'),10),
              zoom:h('#pdf2ZoomIn'), livello:h('#pdf2ZoomLvl'), pagina:h('#pdf2Prev'), chiudi:h('#pdf2Close'),
-             titolo:Math.round(parseFloat(getComputedStyle(document.getElementById('pdf2Title')).fontSize)),
+             titolo:Math.round(parseFloat(getComputedStyle(document.getElementById('pdf2Doc')).fontSize)),
              corpo:Math.round(parseFloat(getComputedStyle(document.body).fontSize)) }; })()`);
   console.log('   ' + JSON.stringify(misure));
   ok('i comandi stanno tutti dentro il token',
     [misure.token, misure.token, misure.token, misure.token],
     [misure.zoom, misure.livello, misure.pagina, misure.chiudi]);
-  /* Il corpo del titolo si misurava contro quello della Fonte, che aveva il
-     gemello «#pdfTitle» nella sua barra. Dal 23 agosto 2026 la Fonte non ha più
-     titolo — in barra ripeteva il nome del documento e la pagina, già detti dal
-     selettore e dal chip, e su un nome lungo mandava i comandi a capo — quindi
-     il paragone non ha più il suo termine. Resta però la domanda vera di questa
-     sezione: la regola della barra arriva fin qui, o il titolo è coi caratteri
-     di fabbrica? Lo si chiede al testo della pagina, che il carattere di
-     fabbrica lo È: se la regola della barra arriva, il titolo è più piccolo di
-     lui; se non arriva, sono la stessa misura. Nessun numero scritto a mano. */
-  ok('e il titolo non è rimasto coi caratteri di fabbrica', true, misure.titolo < misure.corpo);
+  /* La domanda vera di questa sezione: la regola della barra arriva fin qui, o
+     i comandi sono coi caratteri di fabbrica? Lo si chiede al testo della
+     pagina, che il carattere di fabbrica lo È: se la regola arriva, il
+     selettore è più piccolo di lui; se non arriva, sono la stessa misura.
+     Nessun numero scritto a mano. */
+  ok('e il selettore non è rimasto coi caratteri di fabbrica', true, misure.titolo < misure.corpo);
+
+  sezione('Il nome del documento sta nel selettore, non in un titolo a parte');
+  /* Un titolo in barra ripeteva il nome dello strumento (già nella testata del
+     blocco) e su un nome lungo spingeva i comandi fuori: il nome lo porta il
+     selettore, che lo accorcia coi puntini perché è un comando. */
+  ok('il titolo a parte non c\'è più', true,
+    await val("document.getElementById('pdf2Title')===null"));
+  ok('e il selettore porta il nome del documento a confronto', true,
+    await val("document.getElementById('pdf2Doc').textContent.indexOf('Piano di studio')===0"));
+  ok('lo dice anche a voce', true,
+    /Piano di studio/.test(await val("document.getElementById('pdf2Doc').getAttribute('aria-label')")));
 
   sezione('La ✕ chiude solo il confronto');
   await val('fonte2Chiudi(), 1'); await pausa(400);
   ok('il confronto è vuoto', false, await val('fonte2Aperta()'));
+  ok('e il selettore torna a invitare', 'Documenti \u25BE',
+    await val("document.getElementById('pdf2Doc').textContent"));
   ok('e lo dice', false, await val("document.getElementById('pdf2Vuoto').hidden"));
   ok('la Fonte è ancora aperta', true, await val('!!PDFJS.doc'));
 
