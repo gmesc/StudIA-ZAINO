@@ -747,17 +747,17 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
       await L.clicca('#umOk'); await L.pausa(900);
     }
     await toastVia();
-    /* ⚠️ I NODI di una mappa entrano nell'indice solo se la mappa e' APERTA:
-       l'indice si costruisce da quello che sta in memoria (searchBuild non va
-       sul disco, o bloccherebbe la digitazione), e di una mappa chiusa c'e'
-       solo il titolo. Senza questo la sezione MAPPE non compariva, e la figura
-       diceva il contrario di quello che il capitolo promette. */
-    await L.val(`bancoForma('due-col'); bancoAssegna('C','mappa')`); await L.pausa(1200);
-    await L.val(`(async()=>{ if(!MAPPA.mia || !MAPPA.mia.grafo){ const l=await window.vault.mappe.elenco(corsoAttivo()); const m=(l.mappe||l)[0]; if(m) await mappaApriMia(m.file); } return 1; })()`); await L.pausa(1200);
+    /* ⚠️ La mappa qui e' CHIUSA di proposito, ed e' il punto della figura: fino
+       al 30 agosto 2026 di una mappa non aperta la lente conosceva solo il
+       titolo. Se un giorno questa figura tornasse senza la sezione della mappa,
+       vuol dire che `mappe.nodi` non risponde piu'. */
+    await L.val(`bancoForma('due-col'); bancoAssegna('C','appunti')`); await L.pausa(900);
+    await L.val(`(()=>{ if(typeof mappaChiudi==='function') mappaChiudi(); MAPPA.mia={}; return 1; })()`).catch(() => {});
+    await L.pausa(600);
+    console.log('mappa aperta al momento della lente:', await L.val(`JSON.stringify((MAPPA.mia&&MAPPA.mia.file)||null)`));
     await L.clicca('#searchBtn'); await L.pausa(400);
     await scattaLente('150-lente-quattro-sezioni', 'rocciosi', 1400);
     await L.pulito();
-    await L.val(`bancoAssegna('C','appunti')`); await L.pausa(400);
   });
 
   /* ── Q7: la soglia dello zaino ── */
