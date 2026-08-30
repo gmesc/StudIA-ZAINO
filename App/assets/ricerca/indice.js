@@ -435,8 +435,44 @@
     return h;
   }
 
+  /**
+   * Le voci d'indice di TUTTE le mappe di un contenitore.
+   *
+   * ⚠️ Qui si decide QUALE GRAFO VINCE, e per questo è una funzione e non tre
+   * righe dentro `searchBuild`. Una mappa aperta nell'editor tiene in memoria
+   * anche ciò che non è ancora sul disco: cercare nella sua copia salvata
+   * vorrebbe dire non trovare il nodo scritto un minuto fa. Per tutte le altre
+   * vale il disco — e finché non è valso, di una mappa chiusa si poteva cercare
+   * solo il titolo, cioè quasi niente.
+   *
+   * `mappe`      `[{ file, titolo, nodi:[{id,testo,nota}], errore }]` — dal disco
+   * `opt.aperta` `{ file, nodi }` — quella che l'utente ha sotto gli occhi
+   */
+  function docsMappe(mappe, opt) {
+    const aperta = (opt || {}).aperta || null;
+    const fuori = [];
+    (mappe || []).forEach(function (m, i) {
+      if (!m || m.errore) return;      // una mappa illeggibile si dice altrove, non si indicizza
+      /* ⚠️ `Array.isArray` sul grafo aperto, non un semplice `&&`: quando la
+         mappa e' aperta ma il grafo non e' ancora caricato si deve cadere sul
+         disco, non sul niente. Sul lato `m.nodi` non serve nessuna guardia: il
+         sommario leggero della tendina porta `nodi` come NUMERO, e un numero
+         non ha `.length` — finisce da solo nel ramo del titolo. */
+      const nodi = (aperta && aperta.file === m.file && Array.isArray(aperta.nodi))
+        ? aperta.nodi : (m.nodi || []);
+      if (!nodi.length) {
+        /* Una mappa vuota non diventa invisibile: entra col suo TITOLO, o
+           cercandolo non la si troverebbe nemmeno per aprirla. */
+        fuori.push(docNodoMappa({ id: '', testo: m.titolo || m.file }, m, i));
+        return;
+      }
+      nodi.forEach(function (nd, k) { fuori.push(docNodoMappa(nd, m, k)); });
+    });
+    return fuori;
+  }
+
   return { sNorm: sNorm, interpreta: interpreta, punto: punto,
     docCapitolo: docCapitolo, docPagina: docPagina, docAppunto: docAppunto,
-    docNodoMappa: docNodoMappa, docRitaglio: docRitaglio, rango: rango,
+    docNodoMappa: docNodoMappa, docsMappe: docsMappe, docRitaglio: docRitaglio, rango: rango,
     cerca: cerca, frammento: frammento };
 }));

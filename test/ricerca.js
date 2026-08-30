@@ -485,6 +485,49 @@ sezione('Q5 — la lente vede anche le MAPPE e le DIDASCALIE');
     ['Appunti', 'Orbite', 'Ritagli', 'Dispensa'],
     R.cerca([forte, misti[1], misti[2], misti[3]], 'perielio').map((x) => x.d.lessonTitle));
 
+  /* ⚠️ QUALE GRAFO VINCE (`docsMappe`). Fino al 30 agosto 2026 nell'indice
+     entravano i nodi della sola mappa APERTA: di tutte le altre c'era il
+     titolo e basta. Il difetto era invisibile — nessun errore, nessun vuoto:
+     semplicemente una parola scritta in un nodo di una mappa chiusa non si
+     trovava, e chi cercava concludeva di non averla mai scritta. */
+  const dueMappe = [
+    { file: 'Orbite.json', titolo: 'Orbite', nodi: [{ id: 'n1', testo: 'perielio' }] },
+    { file: 'Pianeti.json', titolo: 'Pianeti', nodi: [{ id: 'n2', testo: 'rocciosi' }] }
+  ];
+  /* ⚠️ Si guarda il TITOLO delle voci, non il gruppo: col codice di prima il
+     gruppo era identico — le mappe entravano lo stesso, col loro titolo — e una
+     prova sul gruppo sarebbe rimasta verde davanti al difetto che descrive. */
+  check('di una mappa CHIUSA entrano i NODI, non il suo titolo', ['perielio', 'rocciosi'],
+    R.docsMappe(dueMappe, {}).map((d) => d.title));
+  check('e si trovano cercandoli', 1, R.cerca(R.docsMappe(dueMappe, {}), 'rocciosi').length);
+
+  /* ⚠️ La mappa aperta vince sul disco: in memoria c'è anche quello che non è
+     ancora salvato, e cercare nella copia salvata vorrebbe dire non trovare il
+     nodo scritto un minuto fa. */
+  const conAperta = R.docsMappe(dueMappe, {
+    aperta: { file: 'Orbite.json', nodi: [{ id: 'n1', testo: 'perielio' }, { id: 'n9', testo: 'afelio' }] }
+  });
+  check('la mappa aperta vince sul disco', 1, R.cerca(conAperta, 'afelio').length);
+  check('e le altre restano quelle del disco', 1, R.cerca(conAperta, 'rocciosi').length);
+
+  /* Una mappa senza nodi non sparisce: entra col titolo, o non la si potrebbe
+     nemmeno trovare per aprirla. */
+  check('una mappa vuota entra col suo titolo', 1,
+    R.cerca(R.docsMappe([{ file: 'Vuota.json', titolo: 'Da fare', nodi: [] }], {}), 'da fare').length);
+  check('una mappa illeggibile non entra affatto', 0,
+    R.docsMappe([{ file: 'Rotta.json', titolo: 'Rotta', errore: 'JSON non valido' }], {}).length);
+
+  /* Il sommario leggero della tendina porta `nodi` come NUMERO: si degrada al
+     titolo, che è ciò che la lente sapeva fare prima e continua a bastare. */
+  check('un elenco leggero (nodi = un numero) si degrada al titolo', ['Orbite'],
+    R.docsMappe([{ file: 'Orbite.json', titolo: 'Orbite', nodi: 12 }], {}).map((d) => d.title));
+
+  /* ⚠️ Mappa aperta ma grafo non ancora caricato: si cade sul DISCO, non sul
+     niente — altrimenti proprio la mappa che si sta guardando sparirebbe dalla
+     lente per la frazione di secondo in cui si apre. */
+  check('la mappa aperta senza grafo cade sul disco', 1,
+    R.cerca(R.docsMappe(dueMappe, { aperta: { file: 'Orbite.json', nodi: null } }), 'perielio').length);
+
   /* Il rango è una funzione a sé perché è una DECISIONE, e si prova come tale. */
   check('il rango mette in fila le quattro nature', [0, 1, 2, 3],
     [misti[3], misti[2], misti[1], misti[0]].map(R.rango));

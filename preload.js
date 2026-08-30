@@ -6,6 +6,7 @@ const mat = require('./lib/materiali');   // materiali del corso, con ripiego su
 const corsiLib = require('./lib/corsi');  // dove stanno corsi e lezioni, anche nei vault mai migrati
 const evidenzeLib = require('./lib/evidenze'); // le parole chiave evidenziate, accanto agli appunti
 const albumLib = require('./lib/album');  // le immagini ritagliate dai documenti, per corso
+const mappeLib = require('./lib/mappe');  // i grafi delle mappe: la lente ha bisogno del loro testo
 const heicLib = require('./lib/heic');    // le foto dell'iPhone, che il browser non sa disegnare
 const voceLib = require('./lib/voce');    // sintesi di sistema per la lettura ad alta voce
 
@@ -469,6 +470,36 @@ contextBridge.exposeInMainWorld('vault', {
   mappe: {
     // elenco leggero (titoli e conteggi): i nodi arrivano solo con apri()
     elenco: (corso) => ipcRenderer.invoke('mappe:elenco', { corso }),
+    /**
+     * Il TESTO di tutte le mappe del contenitore, in un colpo e SINCRONO.
+     *
+     * ⚠️ Serve alla LENTE, e ha dovuto essere una porta nuova. `elenco` di
+     * proposito i nodi non li porta — un grafo intero che attraversa il ponte
+     * per riempire una tendina è peso per niente — e `apri` è asincrona, mentre
+     * l'indice della ricerca si costruisce in modo sincrono. Il risultato era
+     * che di una mappa non aperta si poteva cercare solo il titolo: una parola
+     * scritta in un nodo non si trovava, senza nessun errore da nessuna parte.
+     *
+     * Sincrona come `album.elenco`, e per la stessa ragione: è una lettura, e
+     * l'indice si ricostruisce una volta per contenitore, non a ogni tasto.
+     *
+     * ⚠️ Passano solo i tre campi che l'indice cerca. Posizioni, colori, archi
+     * e memorie non c'entrano niente con la ricerca, e su un vault con molte
+     * mappe sarebbero il grosso di ciò che attraversa il ponte.
+     */
+    nodi: (corso) => {
+      if (!vaultPath) return { mappe: [], error: 'nessuna cartella vault impostata' };
+      try {
+        const r = mappeLib.read(vaultPath, corso);
+        return {
+          mappe: (r.mappe || []).map((m) => ({
+            file: m.file || '', titolo: m.titolo || '', errore: m.errore || '',
+            nodi: (m.nodi || []).map((n) => ({ id: n.id, testo: n.testo, nota: n.nota }))
+          })),
+          error: r.error || ''
+        };
+      } catch (e) { return { mappe: [], error: e.message }; }
+    },
     apri: (corso, file) => ipcRenderer.invoke('mappe:apri', { corso, file }),
     // `file` assente = mappa nuova; il nome scelto torna in `{ file }`
     salva: (corso, file, mappa) => ipcRenderer.invoke('mappe:salva', { corso, file, mappa }),

@@ -15226,23 +15226,29 @@ function searchBuild(){
      l'utente ha SCRITTO, e la lente non li vedeva. Stanno qui fuori dai due
      rami per la stessa ragione degli appunti — mancavano nei corsi esattamente
      come negli zaini.
-     ⚠️ Si legge quello che c'è IN MEMORIA e non si va sul disco: costruire
-     l'indice è sincrono (la lente cerca mentre si scrive) e una lettura per
-     ogni mappa bloccherebbe la digitazione. Le mappe non ancora aperte hanno
-     solo il titolo nell'elenco, e il titolo entra lo stesso: meglio trovare la
-     mappa giusta e aprirla, che non trovarla. */
-  (MAPPA.elenco||[]).forEach(function(m,i){
-    if(!m || m.errore) return;
-    var suo=(MAPPA.mia.file===m.file && MAPPA.mia.grafo) ? MAPPA.mia.grafo : null;
-    var nodi=(suo && suo.nodi) ? suo.nodi : [];
-    if(!nodi.length){
-      /* La mappa non è aperta: entra il suo TITOLO, così cercandolo la si trova
-         e la si apre — e da lì i suoi nodi entrano nell'indice. */
-      SEARCH.docs.push(RicercaIndice.docNodoMappa({ id:'', testo:m.titolo||m.file }, m, i));
-      return;
-    }
-    nodi.forEach(function(nd,k){ SEARCH.docs.push(RicercaIndice.docNodoMappa(nd, m, k)); });
-  });
+     ⚠️ E LE MAPPE SI LEGGONO DAL DISCO. Fino al 30 agosto 2026 entravano solo
+     i nodi della mappa APERTA: di tutte le altre c'era il titolo e basta, e una
+     parola scritta in un nodo di una mappa chiusa non si trovava — senza nessun
+     errore, che è il modo peggiore in cui una ricerca si rompe. La ragione era
+     che `mappe.apri` è asincrona e questa funzione è sincrona; la porta nuova
+     `mappe.nodi` è sincrona come `album.elenco` qui sotto. Il costo è una
+     lettura per contenitore, non per tasto: `searchRun` ricostruisce l'indice
+     solo quando cambia il corso o il percorso.
+     ⚠️ QUALE grafo vince lo decide `RicercaIndice.docsMappe`, provato in Node:
+     la mappa aperta porta anche ciò che non è ancora salvato, e su quella il
+     disco non deve avere l'ultima parola. */
+  (function(){
+    var api=(window.vault && window.vault.mappe) || null, corso=corsoAttivo();
+    var r=(api && api.nodi && corso) ? api.nodi(corso) : null;
+    if(r && r.error) console.error('lente/mappe:', r.error);
+    var aperta=(MAPPA.mia && MAPPA.mia.file && MAPPA.mia.grafo)
+      ? { file:MAPPA.mia.file, nodi:MAPPA.mia.grafo.nodi } : null;
+    /* Senza la porta si ripiega sull'elenco in memoria: i sommari portano
+       `nodi` come numero e `docsMappe` li degrada al titolo — cioè si torna a
+       quello che la lente sapeva fare prima, invece di non trovare niente. */
+    var mappe=(r && r.mappe) ? r.mappe : (MAPPA.elenco||[]);
+    RicercaIndice.docsMappe(mappe, { aperta:aperta }).forEach(function(d){ SEARCH.docs.push(d); });
+  })();
   (function(){
     var api=(window.vault && window.vault.album) || null, corso=corsoAttivo();
     if(!api || !corso) return;

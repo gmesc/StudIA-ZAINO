@@ -376,8 +376,16 @@ async function capitoloConNote() {
                accento:rgb(acc) }; })()`);
     console.log('   capo: ' + JSON.stringify(forma.capo) + ' · tipi: ' + JSON.stringify(forma.tipi));
     ok('la riga non ripete la parola cercata', false, forma.ripeteLaParola);
+    /* ⚠️ La lista bianca è di prima di Q5 e non conosceva «mappa» né
+       «ritaglio»: restava verde solo perché i nodi delle mappe non entravano
+       nell'indice dei CORSI. Da quando `mappe.nodi` li legge dal disco entrano,
+       ed è la promessa di Q5 — «mancavano nei corsi esattamente come negli
+       zaini». Una lista bianca che non si aggiorna trasforma una funzione nuova
+       in un rosso, e sembra un difetto. */
     ok('e ogni riga dichiara di che tipo è', true,
-      forma.tipi.length > 0 && forma.tipi.every(function (t) { return ['appunto', 'pagina', 'capitolo'].indexOf(t) >= 0; }));
+      forma.tipi.length > 0 && forma.tipi.every(function (t) {
+        return ['appunto', 'pagina', 'capitolo', 'mappa', 'ritaglio'].indexOf(t) >= 0;
+      }));
     ok('il frammento si ferma a due righe', '2', String(forma.righeFrammento));
     /* L'accento serve a leggere: l'intestazione dice «da qui in poi un'altra
        fonte», e il titolo di un appunto è ciò che l'utente ha scritto lui. */
