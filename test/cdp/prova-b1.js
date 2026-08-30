@@ -19,7 +19,15 @@ const dentro = (sel, padre) => val(`!!document.querySelector('${padre} ${sel}')`
      un giro dell'utente — perché nove controlli diventassero rossi senza che il codice
      avesse nulla che non andasse. È costato due diagnosi sbagliate il 9 agosto, prima di
      capire che il colpevole era la prova e non ciò che provava. */
-  await val('localStorage.removeItem("studia.banco"), 1');
+  await val(`(()=>{ /* ⚠️ TUTTE le chiavi del banco, non «studia.banco». Quella è la chiave
+       di MODALITÀ, morta dal 13 agosto: da allora ogni corso e ogni zaino
+       ricordano il SUO banco in studia.banco.c.<contenitore> (bancoChiave()),
+       e togliere la morta non ripristinava niente — la prova credeva di partire
+       dalla forma di fabbrica e partiva da quella lasciata da un'altra. Si
+       spazza il prefisso, così vale anche per i contenitori che questa prova non
+       sa di stare per aprire. */
+    Object.keys(localStorage).filter(function(k){ return k.indexOf('studia.banco')===0; })
+      .forEach(function(k){ localStorage.removeItem(k); }); return 1; })()`);
   await val('location.reload(), 1');
   await pausa(1500);
   await collega();
@@ -124,7 +132,9 @@ const dentro = (sel, padre) => val(`!!document.querySelector('${padre} ${sel}')`
   ok('e il capitolo resta dov’era', true, await val("bancoVisibile('capitolo')"));
 
   // ---- si rimette com'era, per non lasciare il banco storto
-  await val(`(()=>{ localStorage.removeItem('studia.banco'); bancoCarica(); bancoDisegna(); })()`);
+  await val(`(()=>{ Object.keys(localStorage).filter(function(k){ return k.indexOf('studia.banco')===0; })
+      .forEach(function(k){ localStorage.removeItem(k); });
+    bancoCarica(); bancoDisegna(); return 1; })()`);
   await pausa(300);
   ok('lo stato di fabbrica si ripristina', 'due-col', await val('bancoStato().forma'));
 

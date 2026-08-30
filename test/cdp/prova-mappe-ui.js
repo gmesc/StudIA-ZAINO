@@ -39,7 +39,8 @@ const visibile = (sel) => val(`(()=>{const e=document.querySelector(${JSON.strin
      mappa si stava guardando: una prova passata prima che abbia aperto una
      mappa dell'utente la farebbe riaprire, e qui il primo controllo — la
      tendina della mappa GENERATA — misurerebbe l'altro registro. */
-  await val(`localStorage.removeItem('studia.banco');
+  await val(`Object.keys(localStorage).filter(function(k){ return k.indexOf('studia.banco')===0; })
+               .forEach(function(k){ localStorage.removeItem(k); });
              localStorage.removeItem('studia.aperto');
              localStorage.removeItem('studia.mappa.'+(localStorage.getItem('studia.corso')||'-')); 1`);
   await val('location.reload(), 1'); await pausa(1600);
@@ -300,8 +301,15 @@ const visibile = (sel) => val(`(()=>{const e=document.querySelector(${JSON.strin
   await val('mappaEliminaMappa(), 1'); await pausa(1000);
   await val('noteDelete(), 1'); await pausa(800);
   const restano = (fs.existsSync(DIR_MAPPE) ? fs.readdirSync(DIR_MAPPE) : []).filter((f) => f.indexOf('Prova UI') === 0);
+  /* ⚠️ Si saltano TUTTI i file di servizio, non solo `_indice.md`: in `APPUNTI/`
+     cominciano per underscore, e dal 24 agosto ce n'è uno in più — `_riga.json`,
+     il segno di dove eri rimasto (Q1), che nasce da solo appena si apre un
+     appunto. Da sola questa prova era rossa dicendo «appunto di prova rimasto:
+     _riga.json»; nella suite no, perché una prova precedente l'aveva già fatto
+     nascere e finiva nel conto di partenza. Un rosso che dipende da chi ti
+     precede è un rosso che non parla. */
   const noteRestano = (fs.existsSync(DIR_NOTE) ? fs.readdirSync(DIR_NOTE) : [])
-    .filter((f) => primaNote.indexOf(f) < 0 && f !== '_indice.md');
+    .filter((f) => primaNote.indexOf(f) < 0 && f.charAt(0) !== '_');
   ok('nessuna mappa di prova rimasta', [], restano);
   ok('nessun appunto di prova rimasto', [], noteRestano);
 
