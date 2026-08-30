@@ -175,8 +175,47 @@ async function apertoA(pagina) {
       return v.some(b=>b.textContent.indexOf('p. 9')>=0); })()`));
   await val(`(()=>{ closePops(); return 1; })()`);
 
+  sezione('⚠️ Rinominare un documento: il numero resta, il lavoro sopra pure');
+  {
+    /* La logica sta in `lib/fonti.js` e la provano 20 controlli in Node
+       (`test/fonti.js`): il nome riscritto nei sei posti che lo citano. Qui si
+       prova il CABLAGGIO, cioè le tre cose che in Node non esistono — il
+       bottone c'è solo dove il gesto ha senso, la finestra chiede, e dopo il
+       documento resta APERTO col nome nuovo invece di lasciare l'anteprima
+       appesa a un file che non c'è più. */
+    ok('nello zaino il comando c\'è', false,
+      await val("document.getElementById('pdfRinomina').hidden"));
+    const vecchio = await val('ANTEPRIMA.file');
+    const pagina = await val('ANTEPRIMA.page');
+    await clicca('#pdfRinomina'); await pausa(300);
+    ok('la finestra si apre col nome di adesso', true,
+      await val(`document.getElementById('umInput').value === (titoloMateriale(${JSON.stringify(vecchio)})||'')`));
+    await val("document.getElementById('umInput').value='Dispensa rinominata'; 1");
+    await clicca('#umOk');
+    const nuovo = await finoA(`ANTEPRIMA.file && ANTEPRIMA.file.indexOf('Dispensa rinominata')>=0 ? ANTEPRIMA.file : 0`, 15000);
+    ok('il documento resta aperto col nome nuovo', true, !!nuovo);
+    /* ⚠️ Il numero è la parte che i rimandi citano: se cambiasse, ogni
+       `pdf:NN#p=7` scritto negli appunti aprirebbe un altro documento. */
+    ok('e il numero è quello di prima', (vecchio.match(/^\d{1,3}/) || [''])[0],
+      (String(nuovo).match(/^\d{1,3}/) || [''])[0]);
+    ok('la pagina dov\'eri non si perde', pagina, await val('ANTEPRIMA.page'));
+    ok('sul disco c\'è il nome nuovo, e il vecchio non c\'è più', [true, false],
+      [fs.existsSync(path.join(dirPdf, nuovo)), fs.existsSync(path.join(dirPdf, vecchio))]);
+    /* Si rimette com'era: la prova lascia il vault come l'ha trovato.
+       ⚠️ Il titolo da ridare è la parte dopo il numero PRESA DAL NOME DEL FILE,
+       non `titoloMateriale`: quella è la forma da leggere — trattini diventati
+       spazi — e ridarla creerebbe un terzo nome invece di riportare il primo. */
+    const titoloVero = vecchio.replace(/^\d{1,3}[\s._-]+/, '').replace(/\.pdf$/i, '');
+    await val(`(async()=>{ await window.vault.fonti.rinomina(zainoAttivo(), ANTEPRIMA.file,
+      ${JSON.stringify(titoloVero)}); return 1; })()`);
+    await pausa(600);
+    ok('e il nome di prima si può rimettere', true, fs.existsSync(path.join(dirPdf, vecchio)));
+  }
+
   await val(`(async()=>{ await cambiaModo('corso'); return 1; })()`);
   await pausa(400);
+  ok('nei corsi il comando sparisce', true,
+    await val("document.getElementById('pdfRinomina').hidden"));
   await val(`(()=>{ try{ closePdf(); }catch(e){} return 1; })()`);
 
   console.log('');

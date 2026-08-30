@@ -8526,6 +8526,7 @@ function closePdf(){ document.documentElement.dataset.pdf='';
 (function(){
   document.addEventListener('click',function(e){ if(e.target.closest && e.target.closest('#pdfClose')) closePdf(); });
   document.addEventListener('click',function(e){ if(e.target.closest && e.target.closest('#pdfElimina')) fonteElimina(); });
+  document.addEventListener('click',function(e){ if(e.target.closest && e.target.closest('#pdfRinomina')) fonteRinomina(); });
   /* ⚠️ ESC NON CHIUDE IL DOCUMENTO, e dal 23 agosto 2026 non lo chiude più
      nessun tasto: il documento si chiude con la ✕, che è un gesto esplicito.
      Qui resta un anello solo, la RICERCA.
@@ -10061,6 +10062,42 @@ function barreSeparatori(){
  *      motivo per cui questa non è una cancellazione, ed è giusto dirlo prima e
  *      non dopo.
  */
+/**
+ * Cambia il nome di un documento dello zaino.
+ *
+ * ⚠️ IL NUMERO NON SI TOCCA, e la finestra lo dice mostrandolo: `03` è ciò che
+ * scrivono i rimandi negli appunti e nelle mappe (`pdf:03#p=7`), e cambiarlo
+ * vorrebbe dire riscrivere ogni rimando di ogni file — sbagliandone uno, un link
+ * che apre il documento sbagliato senza dire niente. Si cambia la parte che si
+ * legge; il resto lo tiene insieme `fonti.rinomina`, che riscrive il nome dove
+ * è citato per esteso (evidenze, ritagli, appunti, mappe, lapidi, indice).
+ *
+ * ⚠️ Quello che non si è potuto riscrivere SI DICE: un avviso qui vale più di un
+ * «fatto» che nasconde due appunti rimasti col nome di prima.
+ */
+async function fonteRinomina(){
+  if(modoAttivo()!=='zaino') return;
+  var api=window.vault && window.vault.fonti;
+  if(!api || typeof api.rinomina!=='function'){ toast('Non disponibile in questa versione', false); return; }
+  var corso=corsoAttivo(); var f=(ANTEPRIMA && ANTEPRIMA.tipo==='pdf') ? ANTEPRIMA.file : '';
+  if(!corso || !f){ toast('Nessun documento aperto', false); return; }
+  var num=(/^(\d{1,3})[\s._-]+/.exec(f)||[])[1]||'';
+  var titolo=await askText(num ? ('Rinomina «'+num+' …» — il numero resta') : 'Rinomina il documento',
+                           titoloMateriale(f)||f);
+  if(titolo===null) return;
+  var r;
+  try{ r=await api.rinomina(corso, f, titolo); }
+  catch(e){ toast('Non rinominato: '+((e&&e.message)||e), false); return; }
+  if(!r || r.error){ toast('Non rinominato: '+((r&&r.error)||'?'), false); return; }
+  if(r.nome===f){ toast('Il nome è già questo', true); return; }
+  /* Il documento aperto è quello di prima con un altro nome: si riapre alla
+     pagina dov'eri, o l'anteprima resterebbe appesa a un file che non c'è. */
+  var pag=(ANTEPRIMA && ANTEPRIMA.page) || 1;
+  try{ await zainoNavAggiorna(); }catch(e){}
+  try{ openPdf(r.nome, pag, titoloMateriale(r.nome)||r.nome); }catch(e){}
+  if(r.avvisi && r.avvisi.length) toast('Rinominato, ma: '+r.avvisi.join(' · '), false);
+  else toast('Adesso si chiama «'+(titoloMateriale(r.nome)||r.nome)+'»', true);
+}
 async function fonteElimina(){
   if(modoAttivo()!=='zaino') return;
   var api=window.vault && window.vault.fonti;
@@ -10159,8 +10196,11 @@ function aggiornaBarraPagina(){
      e un cestino lì prometterebbe un gesto che non esiste.
      ⚠️ Prima di `barreSeparatori()`: le barrette si spengono guardando che cosa
      è a schermo, e deciderlo dopo lascerebbe una barretta accanto al nulla. */
+  var soloMio = (modoAttivo()==='zaino' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file);
   var cest=$('#pdfElimina');
-  if(cest) cest.hidden = !(modoAttivo()==='zaino' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file);
+  if(cest) cest.hidden = !soloMio;
+  var rin=$('#pdfRinomina');
+  if(rin) rin.hidden = !soloMio;
   try{ barreSeparatori(); }catch(e){}
   var box=$('#pdfPag'), et=$('#pdfPagN');
   if(!box) return;
@@ -20779,6 +20819,12 @@ window.addEventListener('keydown', function(e){
          dentro dall'utente: sta accanto alla ✕ ma è un'altra cosa, e la barretta
          prima lo dichiara. Compare SOLO nello zaino, dove i documenti sono suoi;
          nei corsi i materiali li governa la pipeline. -->
+    <!-- ⚠️ Rinominare NON è togliere, e sta prima del cestino apposta: il numero
+         resta (è quello che scrivono i rimandi `pdf:03#p=7`), cambia solo la
+         parte che si legge. Come il cestino, compare solo nello zaino: nei corsi
+         i nomi dei materiali li governa la pipeline. -->
+    <button class="tbtn" id="pdfRinomina" type="button" hidden
+            title="Rinomina questo documento" aria-label="Rinomina questo documento">&#9998;</button>
     <button class="tbtn" id="pdfElimina" type="button" hidden
             title="Togli questo documento dallo zaino" aria-label="Togli questo documento dallo zaino">&#128465;</button>
     <!-- ⚠️ Il `title` è nato il 23 agosto insieme alla scomparsa dell'Esc: da

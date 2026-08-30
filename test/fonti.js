@@ -153,6 +153,105 @@ sezione('Un contenitore senza indici');
     false, fs.existsSync(F.dirIndici(VAULT, 'vuoto')));
 }
 
+sezione('Rinominare una fonte: cambia il nome, non il filo');
+{
+  /* ⚠️ Il nome di un documento è citato in SEI posti, ed è l'elenco che `usi()`
+     legge: il file, il suo indice, il campo `materiale` di `_evidenze.json` e di
+     `_album.json`, il testo di appunti e mappe, e il `nome` sulle lapidi.
+     Rinominare toccandone cinque su sei è peggio che non rinominare — il
+     documento c'è e il lavoro sopra no. Qui si mette del lavoro in ognuno dei
+     sei e si guarda che ci resti attaccato. */
+  const Z3 = 'zaino-rinomine';
+  Z.crea(VAULT, { nome: 'Rinomine' });
+  const src = suScrivania('dispensa.pdf', '%PDF-1.4 la dispensa da rinominare');
+  F.importa(VAULT, Z3, [src]);
+  F.scriviIndice(VAULT, Z3, '01 dispensa.pdf', [{ n: 1, t: 'prima pagina' }], 'pdfjs');
+
+  const base = path.dirname(F.dirPdf(VAULT, Z3));      // .../MATERIALI
+  const cont = path.dirname(base);                     // la cartella del contenitore
+  const APP = path.join(cont, 'APPUNTI'), MAP = path.join(cont, 'MAPPE'), ALB = path.join(cont, 'ALBUM');
+  for (const d of [APP, MAP, ALB]) fs.mkdirSync(d, { recursive: true });
+  /* ⚠️ Voci VERE, non abbozzi: chi legge normalizza e scarta ciò che non ha i
+     campi che servono — un'evidenza senza `exact`, un ritaglio il cui `file` non
+     è una foglia di `ALBUM/`. Con due abbozzi la prova sarebbe stata verde sul
+     JSON riscritto e cieca su `usi()`, che è la domanda vera. */
+  fs.writeFileSync(path.join(APP, '_evidenze.json'), JSON.stringify({ evidenze: [
+    { id: 'e1', exact: 'una frase evidenziata', materiale: '01 dispensa.pdf', pagina: 7, colore: '#fdf14d' }
+  ] }, null, 2));
+  fs.writeFileSync(path.join(ALB, '_album.json'), JSON.stringify({ voci: [
+    { id: 'a1b2c3d4e5f6', file: 'a1b2c3d4e5f6.webp', materiale: '01 dispensa.pdf', didascalia: 'un ritaglio',
+      pagina: 3, rect: { x: 0.1, y: 0.1, w: 0.3, h: 0.2 } }
+  ] }, null, 2));
+  /* Un appunto che nomina il documento in DUE modi: per esteso nel frontmatter,
+     e col numero in un rimando. Il primo deve cambiare, il secondo restare. */
+  fs.writeFileSync(path.join(APP, 'Nota.md'),
+    '---\nmateriale: "01 dispensa.pdf"\n---\n\nVedi [pagina 7](pdf:01#p=7) di «01 dispensa.pdf».\n');
+  fs.writeFileSync(path.join(MAP, 'Mappa.json'),
+    JSON.stringify({ titolo: 'M', nodi: [{ id: 'n1', testo: 'da 01 dispensa.pdf' }], archi: [] }, null, 2));
+  /* Una lapide scritta a mano: `elimina` è asincrona e qui serve solo il dato. */
+  /* Il registro delle lapidi è `{ fonti: [...] }`: un array nudo lo legge come
+     «nessuna traccia», ed è la forma che `scriviRimossi` mette su disco. */
+  fs.writeFileSync(path.join(base, F.RIMOSSI),
+    JSON.stringify({ fonti: [{ nome: '01 dispensa.pdf', impronta: 'xyz', pagine: 1, tolto: QUANDO }] }, null, 2));
+
+  const r = F.rinomina(VAULT, Z3, '01 dispensa.pdf', 'Diritto costituzionale');
+  check('il numero resta, il nome cambia', ['01 Diritto costituzionale.pdf', ''], [r.nome, r.error]);
+  check('il file nuovo c\'è', true, fs.existsSync(path.join(F.dirPdf(VAULT, Z3), '01 Diritto costituzionale.pdf')));
+  check('e il vecchio non c\'è più', false, fs.existsSync(path.join(F.dirPdf(VAULT, Z3), '01 dispensa.pdf')));
+  check('l\'indice ha seguito il documento', [true, false],
+    [F.haIndice(VAULT, Z3, '01 Diritto costituzionale.pdf'), F.haIndice(VAULT, Z3, '01 dispensa.pdf')]);
+  check('le evidenze puntano al nome nuovo', '01 Diritto costituzionale.pdf',
+    JSON.parse(fs.readFileSync(path.join(APP, '_evidenze.json'), 'utf8')).evidenze[0].materiale);
+  check('e i ritagli dell\'album pure', '01 Diritto costituzionale.pdf',
+    JSON.parse(fs.readFileSync(path.join(ALB, '_album.json'), 'utf8')).voci[0].materiale);
+  const nota = fs.readFileSync(path.join(APP, 'Nota.md'), 'utf8');
+  check('l\'appunto lo nomina col nome nuovo', true, nota.indexOf('01 Diritto costituzionale.pdf') > 0);
+  check('e non lo nomina più col vecchio', false, nota.indexOf('01 dispensa.pdf') >= 0);
+  /* ⚠️ IL CONTROLLO CHE VALE LA FUNZIONE: il rimando cita il NUMERO, e il numero
+     non si tocca. Se cambiasse, ogni link scritto negli appunti aprirebbe il
+     documento sbagliato — o niente — e nessuno direbbe niente. */
+  check('ma il rimando pdf:01 è rimasto quello', true, nota.indexOf('(pdf:01#p=7)') > 0);
+  check('anche la mappa lo nomina col nome nuovo', true,
+    fs.readFileSync(path.join(MAP, 'Mappa.json'), 'utf8').indexOf('da 01 Diritto costituzionale.pdf') > 0);
+  check('e la lapide porta il nome di adesso', ['01 Diritto costituzionale.pdf'],
+    F.rimossi(VAULT, Z3).map((x) => x.nome));
+  check('e si dice che cosa si è toccato', [1, 1, ['Nota.md'], ['Mappa.json'], 1],
+    [r.tocchi.evidenze, r.tocchi.album, r.tocchi.appunti, r.tocchi.mappe, r.tocchi.lapidi]);
+  check('niente di storto da segnalare', [], r.avvisi);
+  /* La prova che il filo regge davvero: `usi()` col nome NUOVO ritrova tutto. */
+  const u = F.usi(VAULT, Z3, '01 Diritto costituzionale.pdf');
+  check('e usi() ritrova il lavoro appeso al nome nuovo', [1, ['Nota.md'], ['Mappa.json'], 1],
+    [u.evidenze, u.appunti, u.mappe, u.ritagli]);
+
+  /* Le risposte che non devono essere «sì». */
+  const src2 = suScrivania('altra.pdf', '%PDF-1.4 un secondo documento');
+  F.importa(VAULT, Z3, [src2]);
+  check('un documento che non c\'è si rifiuta', 'documento non trovato',
+    F.rinomina(VAULT, Z3, '99 mai vista.pdf', 'Qualcosa').error);
+  check('un nome vuoto si rifiuta', 'un documento senza nome non si distinguerebbe dagli altri',
+    F.rinomina(VAULT, Z3, '02 altra.pdf', '   ').error);
+  /* ⚠️ Una collisione vera. Il numero resta, quindi due documenti diversi non
+     possono scontrarsi cambiando nome — a meno che nella cartella ci sia già un
+     file con lo STESSO numero, che è proprio il caso in cui sovrascrivere
+     cancellerebbe un documento dell'utente senza dirlo. */
+  fs.writeFileSync(path.join(F.dirPdf(VAULT, Z3), '02 Gemella.pdf'), '%PDF-1.4 stesso numero');
+  check('un nome già preso si rifiuta', 'esiste già un documento con questo nome',
+    F.rinomina(VAULT, Z3, '02 altra.pdf', 'Gemella').error);
+  check('e il documento che stava lì è ancora suo', '%PDF-1.4 stesso numero',
+    fs.readFileSync(path.join(F.dirPdf(VAULT, Z3), '02 Gemella.pdf'), 'utf8'));
+  /* Il nome arriva da un campo di testo: ciò che il file system non vuole non
+     deve poterci entrare da qui, come non entra dall'import. */
+  check('i caratteri che fanno danno spariscono', '02 a b.pdf',
+    F.rinomina(VAULT, Z3, '02 altra.pdf', 'a/b').nome);
+  /* ⚠️ Cambiare le sole MAIUSCOLE: su un volume che non le distingue il file
+     nuovo «esiste già» ed è sé stesso. Confrontare i nomi lo farebbe rifiutare
+     (o, peggio, cancellare il file appena scritto: è costato una mappa vera). */
+  const maiuscole = F.rinomina(VAULT, Z3, '02 a b.pdf', 'A B');
+  check('cambiare solo le maiuscole si può', ['02 A B.pdf', ''], [maiuscole.nome, maiuscole.error]);
+  check('e il documento c\'è, con il nome nuovo', true,
+    F.elenco(VAULT, Z3).map((m) => m.nome || m).indexOf('02 A B.pdf') >= 0);
+}
+
 sezione('Togliere una fonte, e il filo del lavoro che ci sta sopra');
 {
   /* Una fonte non è un file: è il capo di un filo a cui sono legate evidenze,

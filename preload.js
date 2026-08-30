@@ -601,6 +601,10 @@ contextBridge.exposeInMainWorld('vault', {
        del suo contenuto, così se lo stesso documento torna riprende il nome e il
        numero di prima e il lavoro che ci stava sopra si riaggancia da sé. */
     elimina: (corso, file) => ipcRenderer.invoke('fonti:elimina', { corso, file }),
+    /* Cambiare il nome di un documento: il NUMERO resta — è quello che scrivono
+       i rimandi `pdf:03#p=7` — e il nome per esteso si riscrive dove è citato
+       (evidenze, ritagli, appunti, mappe, lapidi, e l'indice del documento). */
+    rinomina: (corso, file, titolo) => ipcRenderer.invoke('fonti:rinomina', { corso, file, titolo }),
     rimossi: (corso) => ipcRenderer.invoke('fonti:rimossi', { corso }),
     usi: (corso, file) => ipcRenderer.invoke('fonti:usi', { corso, file }),
     dimentica: (corso, impronta) => ipcRenderer.invoke('fonti:dimentica', { corso, impronta }),

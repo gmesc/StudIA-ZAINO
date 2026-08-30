@@ -502,6 +502,8 @@ ipcMain.handle('ripasso:pota', (e, { corso, vive } = {}) => {
 
 ipcMain.handle('fonti:elimina', (e, { corso, file } = {}) =>
   fontiLib.elimina(vaultDir(), corso, file, { cestina: (p) => shell.trashItem(p) }));
+ipcMain.handle('fonti:rinomina', (e, { corso, file, titolo } = {}) =>
+  fontiLib.rinomina(vaultDir(), corso, file, titolo));
 ipcMain.handle('fonti:rimossi', (e, { corso } = {}) => fontiLib.rimossi(vaultDir(), corso));
 ipcMain.handle('fonti:usi', (e, { corso, file } = {}) => fontiLib.usi(vaultDir(), corso, file));
 ipcMain.handle('fonti:dimentica', (e, { corso, impronta } = {}) =>

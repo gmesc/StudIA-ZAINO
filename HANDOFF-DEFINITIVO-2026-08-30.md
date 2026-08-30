@@ -143,16 +143,7 @@ prima di ripeterlo: costa meno riverificarlo che inseguirlo.
    che cosa fare quando l'impronta del documento non combacia: rifiutare tutto o importare
    lasciando i segni orfani). ⚠️ Vincolo non negoziabile dell'utente: **aggiunge uno strato, non
    sovrascrive** quelli che lo studente ha già.
-3. **La rinomina di una fonte**: si può tenendo il numero, ma il nome del file è citato per esteso
-   in sei posti — l'elenco è quello di `fonti.usi()` (`lib/fonti.js:296`): il file in `MATERIALI/`,
-   `_evidenze.json`, gli appunti `.md`, le mappe `.json`, `_album.json` e la lapide in
-   `_rimossi.json`. Non esiste nessuna `fonti.rinomina()`.
-4. 📌 **`prova-b1` e `prova-mappe-ui` ripuliscono la chiave sbagliata del banco**
-   (`prova-b1.js:22,127`, `prova-mappe-ui.js:42`). ⚠️ `studia.banco` non è morta del tutto —
-   `bancoChiave()` la usa come ripiego quando non c'è contenitore — ma la chiave che il banco
-   scrive davvero è `studia.banco.c.<contenitore>`, e quella non la tocca nessuno: le due prove
-   credono di partire da un banco di fabbrica e non è vero.
-5. **Gli incrementi 2 e 3 dell'anteprima scrivibile.** Si vedono nel codice: il campo di blocco
+3. **Gli incrementi 2 e 3 dell'anteprima scrivibile.** Si vedono nel codice: il campo di blocco
    chiude con `t.setSelectionRange(fine, fine)` — il cursore va **in fondo**, non dove hai
    cliccato (incremento 3, il più piccolo passo utile) — e il suo `keydown` conosce solo Escape e
    ⌘Invio, quindi niente ↹ al blocco dopo né elenchi e riquadri riga per riga (incremento 2).
@@ -171,6 +162,24 @@ prima di ripeterlo: costa meno riverificarlo che inseguirlo.
   misurata** (`PIANO-BRAYNR.md:291`): `::highlight()` applica solo `background-color`, un
   `linear-gradient` viene ignorato, e al loro posto c'è la mescolanza dei fondi. Rifarle vorrebbe
   dire abbandonare gli highlight per un motore di pittura da risincronizzare a ogni scorrimento.
+- **La rinomina di una fonte**: ✅ fatta il 30 agosto, logica e gesto.
+  `fonti.rinomina(vault, corso, nome, titolo)` cambia la parte leggibile e **lascia stare il
+  numero** — `03` è ciò che scrivono i rimandi `pdf:03#p=7`, e cambiarlo vorrebbe dire riscrivere
+  ogni rimando di ogni file, sbagliandone uno senza accorgersene. Il nome per esteso invece viene
+  riscritto in tutti e sei i posti che `usi()` legge: il file, il suo indice, il campo `materiale`
+  di `_evidenze.json` e di `_album.json`, il testo di appunti e mappe, il `nome` sulle lapidi.
+  Prima il file, poi chi lo nomina — al contrario un errore a metà lascerebbe riferimenti a un
+  documento inesistente — e ciò che non si è potuto riscrivere finisce in `avvisi`.
+  Il gesto è ✎ in barra accanto al cestino, **solo nello zaino** con un documento aperto: nei corsi
+  i nomi li governa la pipeline. Dopo, il documento si riapre col nome nuovo alla pagina dov'eri.
+  `test/fonti.js` da 62 a 82 controlli (4 diventano rossi se i riferimenti non si aggiornano);
+  `prova-fonti.js` prova il cablaggio, che in Node non esiste.
+- **📌 `prova-b1` e `prova-mappe-ui` ripulivano la chiave sbagliata del banco**: ✅ chiuso il 30
+  agosto. Adesso spazzano **tutte** le chiavi `studia.banco*` invece della sola `studia.banco`, che
+  è la chiave di modalità morta dal 13 agosto: spazzare il prefisso vale anche per i contenitori
+  che la prova non sa di stare per aprire. ⚠️ E `prova-mappe-ui` nascondeva un rosso suo: da sola
+  falliva con «appunto di prova rimasto: `_riga.json`» — il segno di dove eri rimasto (Q1), che
+  nasce da solo — perché il filtro saltava solo `_indice.md`. Ora salta tutti i file di servizio.
 - **Le tre prove L erano fuori elenco**: ✅ rientrate il 30 agosto, e la causa non era quella
   scritta per settimane («chiedono un `cdp.js` di luglio»): due delle tre importavano già
   `test/cdp/cdp.js`, e morivano su `progettoAttivo is not defined` — il vocabolario di prima della
@@ -221,7 +230,7 @@ prima di ripeterlo: costa meno riverificarlo che inseguirlo.
 |---|---|
 | **verificato oggi** | `npm test` exit 0 (49 file) · suite CDP intera verde (**68 prove**) · i conti (49 · 68 · 37 · 117) · le righe del monolite (21.818) · la barra del Confronto letta dal vivo (`Sistema solare ▾`) · la figura 24 riguardata a occhio |
 | **provato a mano dall'utente** | i gesti del Confronto: aprire, cambiare documento, chiudere |
-| **riverificato oggi** | tutte le voci del §3, una per una: tre avevano la causa sbagliata, sette sono state chiuse |
+| **riverificato oggi** | tutte le voci del §3, una per una: tre avevano la causa sbagliata, nove sono state chiuse |
 | **non fatto** | nessun pacchetto costruito |
 
 ⚠️ Prima di dichiarare finito un lavoro, la suite CDP va **rieseguita per intera**, non per i file
