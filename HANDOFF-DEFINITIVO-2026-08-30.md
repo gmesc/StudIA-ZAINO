@@ -131,6 +131,11 @@ Sta scritto in testa allo script e nel `README.md` del laboratorio.
 
 ## 3. Che cosa resta da fare
 
+⚠️ **Questo elenco è stato riverificato il 30 agosto, voce per voce, misurando** — non ereditato.
+Tre voci erano scritte con la causa sbagliata, una era già chiusa da quindici giorni e due non
+esistevano più: le trovi in fondo, sotto «già chiuso». È il motivo per cui un debito si rilegge
+prima di ripeterlo: costa meno riverificarlo che inseguirlo.
+
 1. **Nessun pacchetto costruito**: `dist/` è vuota. `npm run pacchetto`, poi notarizzazione e
    installer Windows provato su Windows (`PIANO-ONBOARDING.md`).
 2. **Q9 in freezer** — quando si riprende: `/architetto`, e **due bivi veri da chiedere
@@ -138,19 +143,58 @@ Sta scritto in testa allo script e nel `README.md` del laboratorio.
    che cosa fare quando l'impronta del documento non combacia: rifiutare tutto o importare
    lasciando i segni orfani). ⚠️ Vincolo non negoziabile dell'utente: **aggiunge uno strato, non
    sovrascrive** quelli che lo studente ha già.
-3. **Le tre prove fuori elenco** (`prova-l1`, `prova-l2`, `prova-l3l4`): chiedono un `cdp.js` di
-   luglio che non esiste più.
-4. **Il `frammento` della lente sfasato di uno** su un testo con «İ» (U+0130).
-5. **Le 46 variabili morte** di `pdf_viewer.scoped.css`.
-6. **La rinomina di una fonte**: il nome è citato per esteso in sei posti (`fonti.usi()`).
-7. **La didascalia di un'immagine dell'album passa due volte dall'escape** (`albumHtml`).
-8. 📌 **`prova-b1` e `prova-mappe-ui`** ripristinano il banco con la chiave **morta**
-   (`studia.banco` invece di `studia.banco.c.<contenitore>`): difetto latente noto, non toccato.
-9. **Le code più vecchie**: `PIANO-BRAYNR.md` §P1.1-quater e -quinquies, gli incrementi 2 e 3
-   dell'anteprima scrivibile, le bande orizzontali sui fondi sovrapposti.
+3. **Le tre prove L fuori elenco parlano il vocabolario vecchio.** ⚠️ Non è il `cdp.js` di luglio,
+   come si è ripetuto per settimane: `prova-l2.js` e `prova-l3l4.js` importano `test/cdp/cdp.js`,
+   che esiste ed esporta tutto ciò che chiedono. Eseguite il 30 agosto, muoiono su
+   `ReferenceError: progettoAttivo is not defined` — «progetto» prima che diventasse **corso**
+   (`RINOMINA-GLOSSARIO.md`). Solo `prova-l1.js` ha anche il `require` rotto, e punta allo
+   scratchpad di una sessione di agosto che non esiste più. Il lavoro è una **rinomina**, poi
+   `PROVE=(` — oppure si tolgono, dichiarando che cosa resta scoperto delle mappe L0–L4.
+4. **Il `frammento` della lente parte sfasato di uno** su un testo che contiene «İ» (U+0130).
+   Riprodotto in Node il 30 agosto: `sNorm` fa `toLowerCase()`, e quella lettera diventa **due**
+   code unit — la stringa normalizzata è più lunga dell'originale, e gli indici su cui `frammento`
+   accende i `<mark>` scorrono di uno.
+   ```
+   "İstanbul e la memoria"  →  İstanbul e la m<mark>emoria</mark>
+   "Istanbul e la memoria"  →  Istanbul e la <mark>memoria</mark>
+   ```
+   Chi lo chiude tocca `frammento` (`App/assets/ricerca/indice.js:408`), che **suppone che la
+   normalizzazione conservi la lunghezza**. Il confine ha già il suo controllo in `test/ricerca.js`.
+5. **La rinomina di una fonte**: si può tenendo il numero, ma il nome del file è citato per esteso
+   in sei posti — l'elenco è quello di `fonti.usi()` (`lib/fonti.js:296`): il file in `MATERIALI/`,
+   `_evidenze.json`, gli appunti `.md`, le mappe `.json`, `_album.json` e la lapide in
+   `_rimossi.json`. Non esiste nessuna `fonti.rinomina()`.
+6. **La didascalia di un'immagine dell'album passa due volte dall'escape.** Riprodotto il 30
+   agosto: `_mdInline` escapa la stringa, e `albumHtml` (`App/assets/lettura/capitolo.js:156`)
+   riescapa la didascalia — «Sole & Luna» arriva a schermo come `Sole &amp;amp; Luna`, nell'`alt`,
+   nell'`aria-label` e sotto la figura. ⚠️ I gemelli fanno la cosa giusta (`figuraHtml` e i
+   rimandi danno `Sole &amp; Luna`): il fix è **togliere l'escape di troppo**, non aggiungerne uno.
+7. 📌 **`prova-b1` e `prova-mappe-ui` ripuliscono la chiave sbagliata del banco**
+   (`prova-b1.js:22,127`, `prova-mappe-ui.js:42`). ⚠️ `studia.banco` non è morta del tutto —
+   `bancoChiave()` la usa come ripiego quando non c'è contenitore — ma la chiave che il banco
+   scrive davvero è `studia.banco.c.<contenitore>`, e quella non la tocca nessuno: le due prove
+   credono di partire da un banco di fabbrica e non è vero.
+8. **Gli incrementi 2 e 3 dell'anteprima scrivibile.** Si vedono nel codice: il campo di blocco
+   chiude con `t.setSelectionRange(fine, fine)` — il cursore va **in fondo**, non dove hai
+   cliccato (incremento 3, il più piccolo passo utile) — e il suo `keydown` conosce solo Escape e
+   ⌘Invio, quindi niente ↹ al blocco dopo né elenchi e riquadri riga per riga (incremento 2).
 
-**Chiuso oggi**, e non è più un debito: `20-pdfbar-numerata.png` mostrava la barra col titolo — la
-campagna rifatta a fine agosto l'ha risolto, e la barra fotografata è quella di adesso.
+**Già chiuso, e tolto da questo elenco** (verificato il 30 agosto):
+
+- **Le «46 variabili morte» di `pdf_viewer.scoped.css`**: la causa era `bin/pdfjs-css.js`, che
+  lasciava i blocchi `:root` **annidati** dentro il guscio (`#pdfPane #pdfPane`, che non
+  corrisponde a niente). Il generatore scrive `:is(#pdfPane, #pdfPane2)` di primo livello **dal 15
+  agosto**, e nel foglio ci sono **zero** regole annidate. Restano solo anomalie di pdf.js stesso
+  (4 variabili definite e mai usate, 12 usate e mai definite, che prendono il fallback). ⚠️ Il
+  numero 46 non si riproduce con nessun criterio: era una cifra ricordata, non ricontata.
+- **`PIANO-BRAYNR.md` §P1.1-quater e -quinquies**: ✅ fatti il **18 agosto 2026**, e c'è scritto
+  nel piano stesso (righe 217 e 270). Erano stati trascinati per inerzia.
+- **Le bande orizzontali sui fondi sovrapposti**: non sono una coda, sono una **decisione chiusa e
+  misurata** (`PIANO-BRAYNR.md:291`): `::highlight()` applica solo `background-color`, un
+  `linear-gradient` viene ignorato, e al loro posto c'è la mescolanza dei fondi. Rifarle vorrebbe
+  dire abbandonare gli highlight per un motore di pittura da risincronizzare a ogni scorrimento.
+- **`20-pdfbar-numerata.png` mostrava la barra col titolo**: la campagna rifatta a fine agosto l'ha
+  risolto, e la barra fotografata è quella di adesso.
 
 ---
 
@@ -160,7 +204,7 @@ campagna rifatta a fine agosto l'ha risolto, e la barra fotografata è quella di
 |---|---|
 | **verificato oggi** | `npm test` exit 0 (49 file) · suite CDP intera verde (65 prove) · i conti (49 · 65 · 68 · 37 · 117) · le righe del monolite (21.818) · la barra del Confronto letta dal vivo (`Sistema solare ▾`) · la figura 24 riguardata a occhio |
 | **provato a mano dall'utente** | i gesti del Confronto: aprire, cambiare documento, chiudere |
-| **ereditato** | i debiti del §3, che vengono dagli handoff precedenti e non sono stati rimisurati |
+| **riverificato oggi** | tutte le voci del §3, una per una: tre avevano la causa sbagliata, quattro sono state chiuse |
 | **non fatto** | nessun pacchetto costruito |
 
 ⚠️ Prima di dichiarare finito un lavoro, la suite CDP va **rieseguita per intera**, non per i file
