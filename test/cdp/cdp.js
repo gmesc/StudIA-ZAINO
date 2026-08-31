@@ -95,6 +95,13 @@ async function partiPulito() {
     try{ if(typeof albumRitaglioModo==='function') albumRitaglioModo(false); }catch(e){}
     try{ getSelection().removeAllRanges(); }catch(e){}
     return 1; })()`);
+  /* ⚠️ E la SOGLIA DELLA PIPELINE si dichiara già vista. Dal 31 agosto 2026,
+     entrando nei corsi, l'app chiede motore AI e Python se mancano — e su
+     un'istanza di prova mancano sempre, perché non ha chiavi. La card comparirebbe
+     sopra l'app alla prima `cambiaModo('corso')` di qualunque prova, e i click
+     finirebbero su di lei: successo davvero, tre prove rosse in un colpo. Chi
+     quella soglia la vuole provare la riazzera da sé (`prova-primo-avvio`). */
+  await val(`(async()=>{ try{ await window.vault.onboarding.pipelineVista(true); }catch(e){} return 1; })()`);
   await pausa(200);
 }
 

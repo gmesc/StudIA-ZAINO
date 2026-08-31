@@ -83,6 +83,7 @@
 <script src="assets/ripasso/sorgenti.js"></script>
 <script src="assets/appunti/elenco.js"></script>
 <script src="assets/appunti/scrivibile.js"></script>
+<script src="assets/onboarding/avvio.js"></script>
 <!-- Dati, non codice: le icone in base64 e la tavolozza delle emoji. Stanno
      prima dell'inline perché il renderer le legge appena parte. -->
 <script src="assets/dati/icone.js"></script>
@@ -10874,6 +10875,9 @@ async function cambiaModo(m){
      sua, e si ridisegna. Senza, resterebbe a schermo quella dell'altra metà
      dell'app — nello zaino, il capitolo di un corso. */
   bancoRicarica();
+  /* Entrando nei CORSI si passa dalla soglia: è lì che si chiede il motore AI e
+     Python, cioè al momento del bisogno invece che all'ingresso dell'app. */
+  if(nuovo==='corso' && typeof window.pipelineInvito==='function') window.pipelineInvito();
   if(nuovo==='zaino') await zainiAggiorna();
   else{
     /* Tornando ai corsi si riapre quello che c'era: il valore non è mai stato
@@ -11283,11 +11287,26 @@ async function zainoCrea(nome){
      sarebbe un vicolo cieco — si resta ai corsi e la card di creazione aspetta
      chi ci vuole tornare. */
   modoInvitoIniziale();
-  var salvato='corso'; try{ salvato=localStorage.getItem('studia.modo')||'corso'; }catch(e){}
+  /* ⚠️ Non più «di norma i corsi». Da dove si comincia è una DECISIONE, e sta in
+     `OnboardingAvvio.modoIniziale`: la modalità di ieri vince su tutto, un vault
+     che ha già dei corsi apre nei corsi, e un vault vergine apre nello ZAINO —
+     l'unica metà che funziona senza motore AI, senza chiavi e senza Python, cioè
+     l'unica in cui chi arriva può fare qualcosa nei primi due minuti.
+     ⚠️ I corsi si contano da `window.vault.courses`, che il main ha già riempito
+     prima che questa riga giri: è l'elenco delle cartelle sul DISCO, non una
+     memoria del browser. */
+  var salvato=null; try{ salvato=localStorage.getItem('studia.modo')||null; }catch(e){}
+  var quantiCorsi=(window.vault && Array.isArray(window.vault.courses)) ? window.vault.courses.length : 0;
+  var dove=OnboardingAvvio.modoIniziale({ salvato:salvato, corsi:quantiCorsi });
   try{ MODO.zaino=localStorage.getItem('studia.zaino')||null; }catch(e){}
-  if(salvato==='zaino'){
+  if(dove==='zaino'){
     zainiAggiorna().then(function(lista){
-      if(lista.length){
+      /* ⚠️ Nessuno zaino NON vuol dire «torna ai corsi». Vale se ce n'erano e
+         sono spariti — la modalità salvata è diventata un vicolo cieco — ma al
+         PRIMO avvio non c'è niente da nessuna parte, e ricadere sui corsi
+         rimetterebbe davanti proprio la metà che chiede motore e Python. Si
+         resta nello zaino, dove la sua card invita a crearne uno. */
+      if(lista.length || (!salvato && !quantiCorsi)){
         MODO.ora='zaino'; modoAggiorna();
         /* ⚠️ Il banco è già stato disegnato con la chiave dei corsi: quando
            questo `.then` arriva, `modoAttivo()` è appena diventato «zaino» e la
@@ -16809,6 +16828,11 @@ try{
 
       function mostraProfilo(){
         if(!profCard || !window.vault.path || !OB) return;
+        /* ⚠️ «Come vuoi studiare?» regola la FORMA delle lezioni che la pipeline
+           genera: nello zaino lezioni non ce ne sono, e chiederlo lì è la stessa
+           domanda fuori posto che questo lavoro è nato per togliere. Ricompare
+           quando si entra nei corsi. */
+        if(modoAttivo()==='zaino') return;
         var prof = P ? (P.read()||{}) : {};
         if(prof.exists) return;                       // profilo già scritto: niente card
         OB.skipped().then(function(saltato){
@@ -16817,10 +16841,35 @@ try{
       }
 
       if(!card || !window.vault.path || !AMB || !OB || !OB.stato){ mostraProfilo(); return; }
+      /* ⚠️ Il modo da cui si comincia lo dice la stessa funzione che lo decide
+         per l'app: due regole diverse per la stessa domanda si allontanerebbero
+         al primo ritocco, e l'utente si troverebbe la card della pipeline in una
+         metà che la pipeline non la usa. */
+      var quantiCorsi=(window.vault && Array.isArray(window.vault.courses)) ? window.vault.courses.length : 0;
+      var salvatoOra=null; try{ salvatoOra=localStorage.getItem('studia.modo')||null; }catch(e){}
+      var dovePrimo=OnboardingAvvio.modoIniziale({ salvato:salvatoOra, corsi:quantiCorsi });
       OB.stato().then(function(st){
         if(st && st.fatto) mostraProfilo();           // già fatto una volta: non si ripresenta
-        else avvia();
+        else avvia(dovePrimo);
       }).catch(function(){ mostraProfilo(); });
+
+      /**
+       * La soglia dei CORSI: si entra nella metà che genera, e SOLO qui si
+       * chiede che cosa serve per farlo.
+       *
+       * ⚠️ È una porta sola, e la chiamano tutte le strade che portano ai corsi
+       * (invariante 6). La card è la stessa del primo avvio, con gli stessi
+       * pannelli e le stesse frasi — che stanno in `consiglio()`, non nell'HTML:
+       * una seconda schermata «uguale ma scritta un'altra volta» divergerebbe
+       * al primo ritocco, ed è la trappola ④.
+       */
+      window.pipelineInvito=function(){
+        if(!card || !window.vault.path || !AMB || !OB || !OB.stato) return;
+        OB.stato().then(function(st){
+          if(st && st.pipelineVista) return;     // gliel'abbiamo già chiesto una volta
+          avvia('corso', { pipeline:true });
+        }).catch(function(){});
+      };
 
       /* ---------------- lo stato rilevato e i tre pannelli ---------------- */
       var STATO=null, CONS=null, passo=0, vuoleChiave=false;
@@ -16908,7 +16957,13 @@ try{
         return { titolo:'Spazio e primo download', html:h };
       }
 
-      var PANNELLI=[panMotore,panPython,panSpazio];
+      /* ⚠️ La lista non è più fissa: la decide `OnboardingAvvio.passiPrimoAvvio`,
+         perché QUALI requisiti chiedere dipende da dove si comincia. Nello ZAINO
+         non se ne chiede nessuno — motore e Python servono alla pipeline, e
+         l'OCR dello zaino è `tesseract.js`, in-process — quindi la lista è vuota
+         e la card non si apre affatto. Nei CORSI restano i tre di sempre. */
+      var PAN={ motore:panMotore, python:panPython, spazio:panSpazio };
+      var PANNELLI=[];
 
       function disegna(){
         var p=PANNELLI[passo]();
@@ -16921,14 +16976,55 @@ try{
         body.scrollTop=0;
       }
 
-      function avvia(){
-        card.hidden=false;
-        if(titolo) titolo.textContent='Guardo com’è fatto il computer…';
-        if(steps) steps.textContent='';
-        body.innerHTML='<p>Cerco il motore AI, Python e lo spazio disponibile. Un momento.</p>';
-        avanti.disabled=true; salta.disabled=true;
+      /**
+       * Guarda com'è fatta la macchina e apre la card SE c'è qualcosa da chiedere.
+       *
+       * ⚠️ `modo` non è un dettaglio: è ciò che decide se questa card esiste. In
+       * ZAINO non si chiede niente e non si apre niente — il rilevamento gira lo
+       * stesso (costa poco e lo spazio va detto), ma quello che ne esce è al
+       * massimo un avviso di passaggio. La card compare solo dove serve: alla
+       * soglia dei CORSI.
+       */
+      var perPipeline=false;
+      function avvia(modo, opt){
+        modo = modo==='zaino' ? 'zaino' : 'corso';
+        perPipeline = !!(opt && opt.pipeline);
+        /* ⚠️ Alla soglia la card NON si apre prima di sapere se serve: aprirla e
+           richiuderla è un lampo a schermo, e chi lo vede pensa a un guasto. */
+        var zitto = (modo==='zaino') || perPipeline;
+        if(!zitto){
+          card.hidden=false;
+          if(titolo) titolo.textContent='Guardo com’è fatto il computer…';
+          if(steps) steps.textContent='';
+          body.innerHTML='<p>Cerco il motore AI, Python e lo spazio disponibile. Un momento.</p>';
+          avanti.disabled=true; salta.disabled=true;
+        }
         Promise.resolve(AMB.rileva()).then(function(r){
           avanti.disabled=false; salta.disabled=false;
+          /* ⚠️ Alla soglia si apre SOLO se manca qualcosa. Con motore e Python a
+             posto non c'è niente da dire, e una finestra che dice «tutto bene» è
+             una porta da aprire per niente proprio mentre si stava andando a
+             fare un'altra cosa. Si segna che la domanda è stata fatta e via.
+             (Misurato: la prima versione apriva sempre, e nella suite copriva
+             l'app — tre prove rosse con i click finiti sulla card.) */
+          if(perPipeline && !OnboardingAvvio.serveSoglia((r&&r.consiglio)||null)){
+            card.hidden=true;
+            if(OB.pipelineVista) OB.pipelineVista(true);
+            return;
+          }
+          if(zitto && !perPipeline){
+            /* Nello zaino l'unica cosa che vale la pena dire è lo spazio, e si
+               dice di passaggio: un dialogo modale per una riga sola sarebbe lo
+               stesso muro, più basso. Il primo avvio è comunque «fatto». */
+            var scelta=OnboardingAvvio.passiPrimoAvvio({ modo:'zaino', consiglio:(r&&r.consiglio)||null });
+            if(scelta.toastSpazio){
+              var av=(((r&&r.consiglio)||{}).avvisi||[]).filter(function(a){ return a.id==='spazio'; })[0];
+              if(av) toast(av.testo, false);
+            }
+            if(OB.fatto) OB.fatto(true);
+            mostraProfilo();
+            return;
+          }
           if(!r || r.error){
             // un rilevamento fallito non deve trattenere nessuno, e non va segnato
             // come «fatto»: al prossimo avvio si riprova
@@ -16937,7 +17033,11 @@ try{
               '. Trovi tutto in ⚙ Impostazioni.',false);
             return;
           }
-          STATO=r.stato; CONS=r.consiglio; passo=0; disegna();
+          STATO=r.stato; CONS=r.consiglio; passo=0;
+          PANNELLI=OnboardingAvvio.passiPrimoAvvio({ modo:'corso', consiglio:CONS })
+            .pannelli.map(function(k){ return PAN[k]; });
+          card.hidden=false;                 // adesso sì: c'è qualcosa da mostrare
+          disegna();
         }).catch(function(err){
           avanti.disabled=false; salta.disabled=false;
           chiudi(false);
@@ -16948,6 +17048,10 @@ try{
       function chiudi(segna){
         card.hidden=true;
         if(segna!==false && OB.fatto) OB.fatto(true);
+        /* ⚠️ Quando questa card l'ha aperta la SOGLIA DEI CORSI, quello che si è
+           appena visto è la domanda sulla pipeline: si segna il suo flag, o
+           tornerebbe a ogni passaggio fra le due metà. */
+        if(segna!==false && perPipeline && OB.pipelineVista) OB.pipelineVista(true);
         mostraProfilo();
       }
 

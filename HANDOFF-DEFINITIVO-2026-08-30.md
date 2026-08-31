@@ -35,16 +35,16 @@ un processo per nome**.
 | `main` | la punta di **`guida-campagna`**, unita oggi — quattro commit del 29-30 più i tre di oggi |
 | remoto | `git@github.com:gmesc/StudIA.git` — ✅ **allineata** (spinto il 30 agosto) |
 | rami · worktree | **nessuno** |
-| unità | ✅ **50 file** nella catena di `npm test`, exit 0 |
-| CDP | ✅ **68 prove** in elenco = 68 file `prova-*.js` sul disco: **nessuna fuori** (le tre L sono rientrate il 30 agosto) |
+| unità | ✅ **51 file** nella catena di `npm test`, exit 0 |
+| CDP | ✅ **69 prove** in elenco = 69 file `prova-*.js` sul disco: **nessuna fuori** (le tre L sono rientrate il 30 agosto; `prova-primo-avvio` è del 31) |
 | monolite | `App/StudIA.html` **21.818 righe** · moduli in `App/assets/` (pdf.js escluso): **38** |
 | guida ZAINO | **117 figure** in `App/guida-zaino/img/`, di cui **103 rifatte** fra il 29 e il 30 agosto |
 | pacchetti | ✅ **`dist/StudIA-1.0.0-arm64.dmg` (246 MB) è firmato Developer ID e NOTARIZZATO**: `spctl` dice `accepted · source=Notarized Developer ID`, ticket cucito all'app e al dmg — si apre con un doppio click, anche senza rete. `dist/StudIA-1.0.0-setup-x64.exe` (167 MB) è un NSIS **non firmato**: SmartScreen avvisa. ⚠️ Nessuno dei due è stato **eseguito** |
 
 ```bash
 cd "/Users/giacomomeschini/Claude/StudIA/StudIA"
-npm test                                                   # 50 file, exit 0
-STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 68 prove sull'app viva
+npm test                                                   # 51 file, exit 0
+STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh         # le 69 prove sull'app viva
 STUDIA_PORTA=9346 ./test/cdp/con-vault-di-prova.sh prova-confronto.js   # una sola
 ```
 
@@ -182,6 +182,11 @@ riverificarlo che inseguirlo — e di dieci voci, **due erano lavoro vero**.
   cablaggio, e `mdbApri` è una funzione sola perché le porte sono due — il click e il ↹.
   ⚠️ Una riga di CSS che non si indovina: `div.mdb{display:contents}` invece di `.mdb`, perché un
   `<li>` a `display:contents` non ha rettangolo — non si può cliccare e perde il pallino.
+- **⚠️ Il primo avvio parte dallo ZAINO** (31 agosto): l'app non apre più sempre nei corsi, e i
+  requisiti della pipeline — motore AI, chiave, Python — non si chiedono più all'ingresso ma alla
+  **soglia dei corsi**, e solo se manca qualcosa. Le tre decisioni stanno in
+  `App/assets/onboarding/avvio.js` (20 controlli in Node); il racconto per intero, con le due
+  trappole pagate, è in `PIANO-ONBOARDING.md`.
 - **La notarizzazione del pacchetto Mac**: ✅ fatta il 30 agosto. `npm run notarizza` firma con
   **Developer ID Application: Giacomo Meschini (32678PYY8K)**, notarizza l'app, le cuce il ticket,
   rifà il dmg dall'app cucita, notarizza anche il dmg e chiude chiedendo a Gatekeeper che cosa ne
@@ -258,7 +263,7 @@ riverificarlo che inseguirlo — e di dieci voci, **due erano lavoro vero**.
 
 | | |
 |---|---|
-| **verificato oggi** | `npm test` exit 0 (50 file) · suite CDP intera verde (**68 prove**) · i conti (50 · 68 · 38 · 117) · le righe del monolite (21.818) · la barra del Confronto letta dal vivo (`Sistema solare ▾`) · la figura 24 riguardata a occhio |
+| **verificato oggi** | `npm test` exit 0 (51 file) · suite CDP intera verde (**69 prove**) · i conti (50 · 68 · 38 · 117) · le righe del monolite (21.818) · la barra del Confronto letta dal vivo (`Sistema solare ▾`) · la figura 24 riguardata a occhio |
 | **provato a mano dall'utente** | i gesti del Confronto: aprire, cambiare documento, chiudere |
 | **riverificato oggi** | tutte le voci del §3, una per una: tre avevano la causa sbagliata, dieci sono state chiuse |
 | **non fatto** | i due pacchetti non sono stati **aperti**: il dmg non è stato montato a mano né l'installer eseguito su Windows |

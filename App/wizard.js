@@ -1035,7 +1035,15 @@
     if (e.target.closest('#wzGenVia')) { avviaGenerazione(); return; }
     if (e.target.closest('#wzGenStop')) { window.vault.gen.cancel(W.corso); toast('Mi fermo dopo questo capitolo', true); return; }
 
-    if (e.target.closest('#newLessonBtn')) { open(null); return; }
+    if (e.target.closest('#newLessonBtn')) {
+      /* ⚠️ La soglia della pipeline vale anche da qui, e non solo dal cambio di
+         modalità: chi è già nei corsi e preme «Nuovo corso» sta per chiedere
+         proprio le cose — motore AI, Python — che dal 31 agosto 2026 non si
+         chiedono più all'ingresso dell'app. La porta è una sola
+         (`pipelineInvito`), e dice da sé se c'è qualcosa da mostrare. */
+      if (typeof window.pipelineInvito === 'function') window.pipelineInvito();
+      open(null); return;
+    }
     if (e.target === $('#wizard')) { close(); return; }
   });
   document.addEventListener('keydown', function (e) {

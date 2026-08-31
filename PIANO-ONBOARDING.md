@@ -148,6 +148,43 @@ invece di lasciarlo comparire da solo.
   può risolvere da sé — serve l'iscrizione all'Apple Developer Program (99 €/anno)
   e il certificato «Developer ID Application». Vedi «Notarizzazione» in coda.
 
+## ⚠️ Il primo avvio parte dallo ZAINO — *31 agosto 2026*
+
+**Il difetto, detto dall'utente**: «l'installer parte proponendo Python e le API, sono cose
+complesse che spaventano l'utente principiante e causano attrito». Aveva ragione, e la causa era
+architetturale, non di testo: l'app apriva **sempre** nei CORSI (una riga scritta a mano,
+`salvato='corso'`), e i tre pannelli del primo avvio chiedevano motore AI, chiave e Python —
+requisiti della **pipeline**, davanti a chi magari voleva solo aprire un PDF e prenderci appunti.
+Lo ZAINO di Python non sa che farsene: il suo OCR è `tesseract.js`, in-process.
+
+| dove | che cosa |
+|---|---|
+| `App/assets/onboarding/avvio.js` (nuovo, UMD) | le tre decisioni: `modoIniziale` (da dove si comincia), `passiPrimoAvvio` (che cosa si chiede), `serveSoglia` (alla soglia dei corsi c'è qualcosa da dire?) |
+| `test/onboarding-avvio.js` | 20 controlli, in catena a `npm test` |
+| `App/StudIA.html` | usa il modulo per la modalità di partenza e per costruire `PANNELLI`; `window.pipelineInvito()` è la soglia; `#profiloSetup` non compare più nello zaino |
+| `App/wizard.js` | «+ Nuovo corso» passa dalla stessa soglia |
+| `main.js` · `preload.js` | il secondo flag `pipelineVista` e la sua porta |
+| `test/cdp/prova-primo-avvio.js` | il cablaggio: il modulo è nel bundle, legge i dati veri, la porta è una |
+
+**Le regole, in tre righe.** La modalità di ieri vince su tutto. Un vault che ha già dei corsi apre
+nei corsi — anche la primissima volta: chi apre un vault esistente si aspetta il suo lavoro, non la
+metà vuota. Un vault vergine apre nello Zaino, dove non serve né motore né Python.
+
+⚠️ **Due trappole pagate qui**, e la seconda ha reso rosse tre prove:
+
+1. **Nessuno zaino non vuol dire «torna ai corsi».** Il ripiego esisteva per il vicolo cieco (gli
+   zaini c'erano e sono spariti), ma al primo avvio non c'è niente da nessuna parte, e ricadere sui
+   corsi rimetteva davanti proprio la metà che chiede Python.
+2. **La soglia si apre solo se manca qualcosa.** La prima versione apriva la card a ogni ingresso
+   nei corsi finché il flag non era segnato: nella suite copriva l'app e i click delle prove
+   finivano su di lei. Per l'utente sarebbe stata la stessa cosa una volta sola — una finestra per
+   dire «tutto bene». Ora `serveSoglia` guarda solo motore e Python; lo spazio è un avviso, non un
+   requisito. E `partiPulito()` di `cdp.js` dichiara la soglia già vista, come fa per i pannellini
+   e per le forbici dell'album: un'istanza di prova non ha chiavi, quindi il motore le risulta
+   sempre assente.
+
+---
+
 ## Esito — che cosa è stato costruito
 
 | Pezzo | Dove |

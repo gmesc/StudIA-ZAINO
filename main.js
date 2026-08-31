@@ -1357,7 +1357,20 @@ ipcMain.handle('ocr:rimuovi', () => {
 /** Se l'onboarding è già stato fatto (o saltato) non si ripresenta all'avvio. */
 ipcMain.handle('onboarding:stato', () => {
   const c = readCfg();
-  return { fatto: !!c.onboardingFatto, profiloSaltato: !!c.profiloSaltato };
+  /* ⚠️ Due flag, due domande diverse. `onboardingFatto` dice «ha già visto il
+     primo avvio»; `pipelineVista` dice «gli è già stato chiesto che cosa serve
+     per GENERARE» — e dal 31 agosto 2026 quella domanda non si fa più
+     all'ingresso dell'app, ma la prima volta che si entra nei corsi. Con un flag
+     solo, chi comincia dallo zaino non si vedrebbe chiedere mai motore e Python,
+     o se li vedrebbe chiedere a ogni passaggio. */
+  return { fatto: !!c.onboardingFatto, profiloSaltato: !!c.profiloSaltato,
+           pipelineVista: !!c.pipelineVista };
+});
+ipcMain.handle('onboarding:pipelineVista', (e, { vista } = {}) => {
+  const c = readCfg();
+  c.pipelineVista = vista === false ? false : true;
+  writeCfg(c);
+  return { ok: true, pipelineVista: c.pipelineVista };
 });
 ipcMain.handle('onboarding:fatto', (e, { fatto } = {}) => {
   const c = readCfg();

@@ -754,6 +754,9 @@ contextBridge.exposeInMainWorld('vault', {
     skip: () => ipcRenderer.invoke('profile:skip'),
     // il primo avvio è una cosa sola, il profilo un'altra: due flag distinti
     stato: () => ipcRenderer.invoke('onboarding:stato'),
-    fatto: (v) => ipcRenderer.invoke('onboarding:fatto', { fatto: v !== false })
+    fatto: (v) => ipcRenderer.invoke('onboarding:fatto', { fatto: v !== false }),
+    /* «I requisiti per generare gli sono già stati mostrati»: è la domanda del
+       primo ingresso nei CORSI, non quella del primo avvio dell'app. */
+    pipelineVista: (v) => ipcRenderer.invoke('onboarding:pipelineVista', { vista: v !== false })
   }
 });
