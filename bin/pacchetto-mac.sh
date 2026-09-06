@@ -76,6 +76,25 @@ ln -s /Applications "$STAGE/Applications"      # il trascinamento che tutti si a
 rm -f "$DMG" "$DMG.blockmap"
 hdiutil create -volname "$NOME $VERSIONE" -srcfolder "$STAGE" -ov -format UDZO "$DMG" >/dev/null
 
+# ⚠️ E si BUTTA il dmg che electron-builder ha fatto per conto suo nel passo 1.
+# Ne resterebbero due, quasi omonimi — «StudIA - ZAINO-1.1.0-arm64.dmg» (questo,
+# rifatto dall'app buona) e «StudIA-ZAINO-1.1.0-arm64.dmg» (il suo, con dentro la
+# copia NON notarizzata) — e il secondo ha pure il nome più pulito, quindi è
+# quello che uno spedisce. È la stessa trappola dei due archi, un piano più giù:
+# firmare un bundle e spedirne un altro.
+COSTRUITO="dist/$(node -p "
+  const b = require('./package.json');
+  (b.build.mac.artifactName || '\${productName}-\${version}-\${arch}.\${ext}')
+    .replace('\${version}', b.version)
+    .replace('\${productName}', b.build.productName)
+    .replace('\${arch}', process.argv[1])
+    .replace('\${ext}', 'dmg')" "$ARCH")"
+if [ "$COSTRUITO" != "$DMG" ] && [ -f "$COSTRUITO" ]; then
+  rm -f "$COSTRUITO" "$COSTRUITO.blockmap"
+  echo "  buttato $COSTRUITO — è la copia di electron-builder, quella non buona"
+fi
+
+
 echo ""
 echo "── 4/4  la controprova ─────────────────────────────────"
 # Non «il dmg esiste», ma «l'app DENTRO il dmg è firmata»: è l'unica copia che il tester
