@@ -3,14 +3,25 @@ const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
 const c=require('./cdp');
-async function aspetta(expr){const end=Date.now()+10000;while(Date.now()<end){if(await c.val(expr))return;await c.pausa(100);}throw new Error('Attesa scaduta: '+expr);}
-async function click(sel){await c.val(`document.querySelector(${JSON.stringify(sel)}).scrollIntoView({block:'center'})`);await c.pausa(80);return c.clicca(sel);}
+async function aspetta(expr,diagnosi){const end=Date.now()+10000;while(Date.now()<end){if(await c.val(expr))return;await c.pausa(100);}
+ if(diagnosi)console.error('  stato alla scadenza: '+JSON.stringify(await c.val(diagnosi)));
+ throw new Error('Attesa scaduta: '+expr);}
+async function click(sel){
+ // ⚠️ Prima si aspetta che ci SIA. La navigazione dello zaino si disegna dopo
+ // che `chatBtn` esiste, e il click arrivava a volte su un elenco ancora vuoto:
+ // una corsa su otto moriva in `null.scrollIntoView` o in un'attesa scaduta su
+ // `NOTES.mde`, cioè dicendo un sintomo diverso dalla stessa causa. La guardia
+ // sta QUI e non sulla singola chiamata: i click di questa prova sono venti.
+ await aspetta(`!!document.querySelector(${JSON.stringify(sel)})`);
+ const dove=()=>c.val(`(()=>{const e=document.querySelector(${JSON.stringify(sel)});if(!e)return '';const r=e.getBoundingClientRect();return [Math.round(r.top),Math.round(r.left),Math.round(r.height)].join(',');})()`);
+ for(let i=0,prima=await dove();i<25;i++){await c.pausa(100);const ora=await dove();if(ora&&ora===prima)break;prima=ora;}
+ await c.val(`document.querySelector(${JSON.stringify(sel)}).scrollIntoView({block:'center'})`);await c.pausa(80);return c.clicca(sel);}
 async function testo(id, value){await c.val(`(()=>{const el=document.getElementById(${JSON.stringify(id)});el.value=${JSON.stringify(value)};el.dispatchEvent(new Event('input',{bubbles:true}));return true;})()`);}
 async function scegli(id,value){await c.val(`(()=>{const el=document.getElementById(${JSON.stringify(id)});el.value=${JSON.stringify(value)};el.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`);}
 (async()=>{
  await c.collega();await aspetta(`!!document.getElementById('chatBtn') && zainoAttivo()==='biologia'`);
  assert.equal(await c.val('typeof EasyMDE'),'function');
- await click('.zn-appunto');await aspetta(`!!NOTES.mde && !!NOTES.cur`);
+ await click('.zn-appunto');await aspetta(`!!NOTES.mde && !!NOTES.cur`,`({voci:document.querySelectorAll('.zn-appunto').length,mde:typeof NOTES!=='undefined'&&!!NOTES.mde,cur:typeof NOTES!=='undefined'&&!!NOTES.cur,strumento:document.querySelector('.bsel')?.value})`);
  const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
  assert.equal(await c.val('modoAttivo()'),'zaino');await c.val(`cambiaModo('corso')`);assert.equal(await c.val('modoAttivo()'),'zaino');
  assert.deepEqual(await c.val('window.vault.course.list()'),[]);

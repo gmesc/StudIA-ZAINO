@@ -132,26 +132,28 @@
     const panel = el('section', undefined, 'zchat-window'); panel.id = 'zchatWindow'; panel.hidden = true;
     panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Chat AI dello zaino'); panel.setAttribute('aria-modal', 'false');
     panel.innerHTML = `
-      <div class="zchat-head" id="zchatHandle" tabindex="0" aria-label="Sposta finestra chat: trascina o usa i tasti freccia">
+      <div class="tbar zchat-head" id="zchatHandle" tabindex="0" aria-label="Sposta finestra chat: trascina o usa i tasti freccia">
         <label class="zchat-role-label"><span class="zchat-sr">Ruolo del tutor</span><select id="zchatRole"><option value="socratico">Socratico</option><option value="spiegamelo">Spiegamelo</option><option value="chiedimelo">Chiedimelo</option></select></label>
-        <button class="tbtn" type="button" id="zchatSettings" aria-label="Impostazioni AI" title="Impostazioni AI">⚙</button>
+        <i class="tbsep" aria-hidden="true"></i>
         <button class="tbtn" type="button" id="zchatNew" aria-label="Nuova conversazione" title="Nuova conversazione">+</button>
+        <span class="tbspazio"></span>
+        <button class="tbtn" type="button" id="zchatSettings" aria-label="Impostazioni AI" title="Impostazioni AI">⚙</button>
         <button class="tbtn" type="button" id="zchatCollapse" aria-label="Collassa la chat" aria-expanded="true" title="Collassa la chat">−</button>
         <button class="tbtn" type="button" id="zchatClose" aria-label="Chiudi la chat" title="Chiudi la chat">×</button>
       </div>
       <div id="zchatMessages" class="zchat-messages" role="log" aria-label="Messaggi" aria-live="polite" aria-relevant="additions"></div>
       <form id="zchatForm" class="zchat-composer">
         <p id="zchatStatus" class="zchat-hint" role="status" aria-live="polite"></p>
-        <div class="zchat-compose-row"><label for="zchatInput" class="zchat-sr">Messaggio al tutor. Invio per inviare, Maiusc più Invio per andare a capo.</label>
+        <div class="zchat-compose-row tbar-ctl"><label for="zchatInput" class="zchat-sr">Messaggio al tutor. Invio per inviare, Maiusc più Invio per andare a capo.</label>
           <textarea id="zchatInput" rows="1" maxlength="12000" placeholder="Scrivi un messaggio…"></textarea>
-          <button type="button" class="tbtn" id="zchatStop" hidden aria-label="Interrompi la risposta" title="Interrompi la risposta">■</button>
-          <button type="submit" class="tbtn acc" id="zchatSend" aria-label="Invia messaggio" title="Invia messaggio">↑</button>
+          <button type="button" class="tbtn" id="zchatStop" hidden aria-label="Interrompi la risposta" title="Interrompi la risposta">■︎</button>
+          <button type="submit" class="tbtn acc" id="zchatSend" aria-label="Invia messaggio" title="Invia messaggio">↑︎</button>
         </div>
       </form>`;
     document.body.appendChild(panel);
     const renameDialog = el('dialog', undefined, 'zchat-rename'); renameDialog.id = 'zchatRenameDialog';
     renameDialog.setAttribute('aria-labelledby', 'zchatRenameTitle'); renameDialog.setAttribute('aria-describedby', 'zchatRenameNote');
-    renameDialog.innerHTML = `<form id="zchatRenameForm"><h2 id="zchatRenameTitle">Dai un nome alla conversazione</h2><p id="zchatRenameNote">La chat è già salvata nello zaino.</p><label for="zchatRenameInput">Nome</label><input id="zchatRenameInput" type="text" maxlength="160" required><div class="zchat-rename-actions"><button class="tbtn" type="button" id="zchatRenameDefault">Mantieni data</button><button class="tbtn acc" type="submit" id="zchatRenameSave">Salva nome</button></div></form>`;
+    renameDialog.innerHTML = `<form id="zchatRenameForm"><h2 id="zchatRenameTitle">Dai un nome alla conversazione</h2><p id="zchatRenameNote">La chat è già salvata nello zaino.</p><label for="zchatRenameInput">Nome</label><input id="zchatRenameInput" class="ctl-input" type="text" maxlength="160" required><div class="zchat-rename-actions"><button class="tbtn" type="button" id="zchatRenameDefault">Mantieni data</button><button class="tbtn acc" type="submit" id="zchatRenameSave">Salva nome</button></div></form>`;
     document.body.appendChild(renameDialog);
     try { const role = localStorage.getItem('studia-zaino.chat-role'); if (descriptions[role]) $('zchatRole').value = role; } catch (_) {}
     preserveLegacy('utente', `
@@ -172,7 +174,7 @@
       <p id="zchatProviderNote" class="set-note"></p>
       <p class="set-note">La chat usa il profilo predefinito scelto in Impostazioni → Utente. A ogni invio rilegge documenti e appunti dello zaino; invia al provider i passaggi pertinenti, la cronologia e il profilo. Spiegamelo può cercare l’argomento su Wikipedia. Le conversazioni restano nel vault.</p>
       <div class="zchat-profile-actions"><a id="zchatKeyLink" target="_blank" rel="noopener noreferrer">Crea una API key</a><button type="button" class="tbtn" id="zchatModelsRefresh">Aggiorna elenco modelli</button></div>
-      <p id="zchatKeyStatus" class="set-note"></p><form id="zchatKeyForm"><label class="zchat-field">Nuova API key<input id="zchatKeyInput" type="password" autocomplete="new-password" spellcheck="false" placeholder="Incolla una nuova chiave" maxlength="1000"></label><div class="zchat-profile-actions"><button type="submit" class="tbtn acc" id="zchatKeySave">Salva chiave</button><button type="button" class="tbtn" id="zchatKeyRemove">Rimuovi chiave</button></div></form>
+      <p id="zchatKeyStatus" class="set-note"></p><form id="zchatKeyForm"><label class="zchat-field">Nuova API key<input id="zchatKeyInput" class="ctl-input" type="password" autocomplete="new-password" spellcheck="false" placeholder="Incolla una nuova chiave" maxlength="1000"></label><div class="zchat-profile-actions"><button type="submit" class="tbtn acc" id="zchatKeySave">Salva chiave</button><button type="button" class="tbtn" id="zchatKeyRemove">Rimuovi chiave</button></div></form>
       <p id="zchatAIStatus" class="set-note" role="status" aria-live="polite"></p>`);
     for (const [key, [labelText, choices]] of Object.entries(fields)) {
       const label = el('label', labelText); const select = el('select'); select.id = 'zchatField-' + key;
@@ -338,7 +340,7 @@
     function updateSpeechButtons() {
       panel.querySelectorAll('.zchat-speak').forEach(button => {
         const active = button.dataset.messageId === state.speaking;
-        button.textContent = active ? '■' : '▷'; button.setAttribute('aria-pressed', String(active));
+        button.textContent = active ? '■︎' : '▷'; button.setAttribute('aria-pressed', String(active));
         button.title = active ? 'Ferma la lettura' : 'Leggi la risposta'; button.setAttribute('aria-label', button.title);
       });
     }
@@ -431,7 +433,7 @@
             catch (error) { status('zchatStatus', 'Impossibile copiare la risposta: ' + errorText(error), true); }
           }));
           actions.appendChild(messageButton('▷', 'Leggi la risposta', 'zchat-speak', message, () => speak(message)));
-          const branch = messageButton('↗', 'Nuova conversazione da qui', 'zchat-branch', message, () => branchSession(message.id));
+          const branch = messageButton('↗︎', 'Nuova conversazione da qui', 'zchat-branch', message, () => branchSession(message.id));
           branch.disabled = state.sending || state.loading || state.finishing; actions.appendChild(branch); article.appendChild(actions);
         }
         box.appendChild(article);

@@ -82,7 +82,12 @@ stata pagata almeno una volta.
    la testata è la stessa barra ×1,1 via `.tbar-lg`). Un'interfaccia che deve «sembrare un quiz»
    **usa le classi del quiz**, non colori che gli somigliano. Se ti trovi a scrivere `height:` su
    un bottone di barra, stai sbagliando. Il design system è anche skill globale:
-   `~/.claude/skills/studia-app-layout/`.
+   `~/.claude/skills/studia-app-layout/`. Chi lo tiene fermo: `prova-tbar.js` e
+   `prova-topbar-stile.js` per le barre del monolite, **`prova-chat-stile.js`** per la superficie
+   CHAT AI (angoli, le due altezze, `--sh-3d`, emoji-font e la grammatica della barra, **nei due
+   temi e negli stati dinamici** — un audit statico su quella superficie dava zero anomalie
+   mentre il campo della chiave stava a 38,2px). Una superficie nuova si guarda **prima**
+   d'innestarla, con un mockup generato dal codice vero: `node docs/mockup-chat/genera.js`.
 9. **Scrittura atomica, file leggibili.** Tutte le scritture passano da `appunti.writeAtomic`;
    i file dell'utente restano `.md`/JSON ordinati e stabili (un file che cambia ordine a ogni
    salvataggio non si può leggere in un diff).
@@ -169,7 +174,13 @@ STUDIA_APP=dist/mac-arm64/StudIA.app \
 npm run pacchetto                          # bundle + firma ad-hoc + dmg, con la controprova
 npm run pacchetto -- x64                   # …e per i Mac Intel (gira qui con Rosetta)
 npm run dist:win                           # l'installer per Windows 11
+npm run test:ui                            # le prove della CHAT sull'app viva (registro a sé)
 ```
+
+⚠️ **Le prove della chat hanno un runner e un registro tutti loro**: `bin/prova-zaino.sh`, che si
+fabbrica uno zaino «biologia» con due appunti e due PDF e simula il provider. Non stanno in
+`PROVE=(` di `con-vault-di-prova.sh`, che gira invece sulla copia del vault vero e quello zaino non
+ce l'ha. Una prova nuova della chat va scritta **nel `PROVE=(` di `bin/prova-zaino.sh`**.
 
 ⚠️ **La suite intera si lancia al CANCELLETTO, non a ogni passo**: durante il lavoro si lanciano le
 prove che si toccano (quaranta secondi invece di sei minuti); la suite intera prima di dichiarare
@@ -184,6 +195,26 @@ l'elenco del runner ne nomina **56**. I tre fuori (`prova-l1`, `prova-l2`, `prov
 dimenticati per caso: chiedono un `cdp.js` dentro uno scratchpad temporaneo di luglio, quindi non
 partirebbero nemmeno. Un file di prove che non gira è la stessa bugia di un verde che non prova
 niente — si riporta a casa o si toglie.
+
+⚠️ **Su questo FORK la suite `con-vault-di-prova.sh` è in gran parte inapplicabile, e si legge
+per DIFFERENZA con `main`, mai come numero assoluto.** Misurato il 6 settembre 2026, 69 prove
+lanciate: **55 rosse sul ramo di lavoro e 44 su `main` pulita**. La maggior parte chiede corsi,
+lezioni, capitoli e quiz, che lo ZAINO non ha — «il capitolo sta nel blocco A» → falso, «la
+tendina alta quanto i bottoni» → 0 perché nel fork è nascosta, «senza quiz nel corso la prova non
+può provare niente». Non sono regressioni: sono prove che parlano dell'app originale.
+
+⚠️ E il resto si **contamina fra prove**. Le **12** che risultavano rosse solo sul ramo,
+rilanciate da sole, sono venute verdi **11 su 12** (la dodicesima è quella dei quiz assenti).
+Quindi un rosso qui non si crede finché non lo si è rilanciato **in isolamento**
+(`./test/cdp/con-vault-di-prova.sh <nome> ...`), e prima di un merge si confronta l'**insieme**
+dei rossi con quello di `main`, non il totale.
+⚠️ E il conto si fa bene: contare i `✗` nell'uscita dà un numero **diverso** da quello del
+runner (51 contro 55), perché alcune prove muoiono con un'eccezione senza stamparlo. Il numero
+autorevole è quello del runner, che guarda il codice d'uscita.
+
+Le prove che valgono davvero per il fork: quelle dello zaino e del vestito — `prova-zaino`,
+`prova-tbar`, `prova-topbar-stile`, `prova-riquadri-stili`, `prova-appunti-barra`, `prova-emoji`,
+`prova-crediti` — più tutta la catena di `npm run test:ui`.
 
 - Le prove CDP girano su una **copia magra del vault** (23 GB → ~2 MB) e una cartella dati tutta
   loro: non toccano niente dell'utente, e la sua app può restare aperta.
