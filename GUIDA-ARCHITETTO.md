@@ -166,17 +166,19 @@ in silenzio.
 ## 6. Come si verifica
 
 ```bash
-npm test                                   # unità: tutti i file di test/, in catena (45 al 23 ago)
-./test/cdp/con-vault-di-prova.sh           # tutte le prove sull'app viva (56 al 23 ago)
+npm test                                   # unità: la catena di test/ (58 file al 6 set)
+STUDIA_SUITE=zaino \
+  ./test/cdp/con-vault-di-prova.sh         # 15 · quelle che su QUESTO fork possono passare
+STUDIA_SUITE=corsi \
+  ./test/cdp/con-vault-di-prova.sh         # 42 · quelle che i corsi li richiedono (qui rosse)
+npm run test:ui                            # le prove della CHAT sull'app viva (registro a sé)
 ./test/cdp/con-vault-di-prova.sh <nome>    # una sola — è così che si lavora
+./test/cdp/con-vault-di-prova.sh           # tutte e 69: qui 43 rosse, e va bene così (vedi sotto)
 STUDIA_APP=dist/mac-arm64/StudIA.app \
   ./test/cdp/con-vault-di-prova.sh         # le stesse prove DENTRO il pacchetto
 npm run pacchetto                          # bundle + firma ad-hoc + dmg, con la controprova
-npm run pacchetto -- x64                   # …e per i Mac Intel (gira qui con Rosetta)
+npm run notarizza                          # quello da SPEDIRE: Developer ID + notarizzazione
 npm run dist:win                           # l'installer per Windows 11
-npm run test:ui                            # le prove della CHAT sull'app viva (registro a sé)
-STUDIA_SUITE=zaino \
-  ./test/cdp/con-vault-di-prova.sh         # SOLO le prove che su questo fork possono passare
 ```
 
 ⚠️ **Le prove della chat hanno un runner e un registro tutti loro**: `bin/prova-zaino.sh`, che si

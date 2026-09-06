@@ -163,6 +163,35 @@ tempo.
 - ⚠️ `dist` **non è stato rigenerato**, coerentemente con la sezione precedente: i pacchetti
   presenti restano quelli di prima.
 
+### I due registri di prove — e il pacchetto notarizzato
+
+`con-vault-di-prova.sh` ha adesso **due registri**, misurati contro l'app originale
+(`~/Claude/StudIA/StudIA`, base `2644b1a`), dove la suite intera è **69 su 69 verdi** con 1786
+controlli:
+
+```bash
+STUDIA_SUITE=zaino ./test/cdp/con-vault-di-prova.sh   # 15 · verde in TUTTE E DUE le app
+STUDIA_SUITE=corsi ./test/cdp/con-vault-di-prova.sh   # 42 · verde 42/42 sull'originale, rosso qui
+```
+
+`PROVE_CORSI` non è dedotto per esclusione: sono le prove che con lo stesso runner e lo stesso
+vault falliscono qui e passano lì. Il vault i corsi ce li ha (`Corsi/` accanto a `Zaini/`, stessa
+config per i due repo) — è il fork che non li espone. Servono a chi rimetterà insieme ZAINO e
+CORSI: sono l'elenco che dovrà tornare verde. Gli stessi due registri stanno sul ramo
+`registri-zaino-corsi` dell'app originale.
+
+⚠️ Un registro è una **catena, non un insieme**, e l'ORDINE conta quanto i nomi: con gli stessi 43
+nomi in ordine alfabetico `STUDIA_SUITE=corsi` dava 4 rosse sull'originale; nell'ordine di
+`PROVE=(`, nessuna.
+
+⚠️ **Prima di leggere i rossi si guarda se l'app è arrivata VIVA alla fine**: il numero da
+guardare non è quello dei rossi ma quello dei CONTROLLI eseguiti.
+
+Il pacchetto è stato **rigenerato e notarizzato**: `dist/StudIA - ZAINO-1.1.0-arm64.dmg`,
+`status: Accepted`, `source=Notarized Developer ID`, ticket cucito all'app e al dmg. ⚠️ Gli script
+adesso buttano il dmg che electron-builder fa per conto suo: ne restavano due quasi omonimi e il
+non notarizzato aveva il nome più pulito, quindi era quello che uno spedisce.
+
 ### Per chi arriva dopo
 
 Una superficie nuova si guarda **prima** d'innestarla (`docs/mockup-chat/genera.js` è il modello:
