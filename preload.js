@@ -37,10 +37,10 @@ function loadLessons() {
 function srcUrl(file, corso) {
   if (!vaultPath) return '../Fonti/' + encodeURIComponent(file);
   for (const sub of ['Fonti', 'Media', 'Figure']) {
-    const p = mat.trova(vaultPath, sub, file, corso);
+    const p = mat.trova(vaultPath, sub, file, corso, true);
     if (p) return url.pathToFileURL(p).href;
   }
-  return url.pathToFileURL(path.join(vaultPath, 'Fonti', file)).href;
+  return '';
 }
 
 // mappa "NN" -> nome file (per risolvere gli schemi video:NN / pdf:NN dei capitoli .md)
@@ -78,7 +78,7 @@ function numeriPerCorso() {
      zaino la mappa restava vuota: le parole chiave e i frammenti finivano negli
      appunti come testo nudo, senza link, e non si capiva perché. */
   const ids = [];
-  for (const radice of [corsiLib.radice(vaultPath), path.join(vaultPath, corsiLib.RADICE_ZAINI)]) {
+  for (const radice of [path.join(vaultPath, corsiLib.RADICE_ZAINI)]) {
     try { ids.push(...fs.readdirSync(radice, { withFileTypes: true })); } catch (e) { /* non c'è */ }
   }
   for (const d of ids) {
@@ -173,15 +173,15 @@ function prefsSave(o) {
   fs.writeFileSync(prefsPath(), JSON.stringify(o || {}, null, 2), 'utf-8');
   return true;
 }
-contextBridge.exposeInMainWorld('vault', {
+const vaultApi = {
   hasElectron: true,
   path: vaultPath,
-  lessons: loadLessons(),
-  courses: loadCourses(),
+  lessons: [],
+  courses: [],
   // gli schemi video:NN / pdf:NN si risolvono prima sui materiali dei corsi, poi su quelli del vault
   // globali: ripiego per i vault a corpus unico, dove i numeri non hanno corso
-  mediaByNum: vaultPath ? listByNum(mat.cartelle(vaultPath, 'Media').concat(mat.cartelle(vaultPath, 'Fonti')), MEDIA_EXT) : {},
-  pdfByNum: vaultPath ? listByNum(mat.cartelle(vaultPath, 'Fonti'), ['.pdf']) : {},
+  mediaByNum: {},
+  pdfByNum: {},
   numeriPerCorso: numeriPerCorso(),   // e queste sono quelle che contano
   srcUrl: srcUrl,
   /* Mostra un file nel Finder. Prende ciò che il renderer ha per mano — un
@@ -759,4 +759,7 @@ contextBridge.exposeInMainWorld('vault', {
        primo ingresso nei CORSI, non quella del primo avvio dell'app. */
     pipelineVista: (v) => ipcRenderer.invoke('onboarding:pipelineVista', { vista: v !== false })
   }
-});
+};
+require('./lib/zaino-only').proteggiPreload(vaultApi, vaultPath);
+vaultApi.chat = require('./lib/chat-ipc').ponte(ipcRenderer);
+contextBridge.exposeInMainWorld('vault', vaultApi);

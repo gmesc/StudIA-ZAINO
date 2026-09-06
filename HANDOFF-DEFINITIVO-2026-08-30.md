@@ -1,3 +1,5 @@
+> 📍 Documento storico di StudIA. Per questo fork vedere HANDOFF-DEFINITIVO-2026-09-06.md.
+
 # Handoff definitivo — 30 agosto 2026
 
 > **A chi arriva adesso: questo file basta per ripartire.** Sostituisce

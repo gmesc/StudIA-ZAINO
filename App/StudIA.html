@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>StudIA</title>
+<title>StudIA - ZAINO</title>
 <link rel="stylesheet" href="assets/easymde/easymde.min.css">
-<script src="assets/easymde/easymde.min.js" defer></script>
+<!-- Lo zaino inizializza il banco durante il parsing: l’editor deve essere già disponibile. -->
+<script src="assets/easymde/easymde.min.js"></script>
 <!-- pdf.js 6.2.108, build LEGACY e vendorizzata a mano (nessuna riga in
      package.json), come EasyMDE. Tre cose da sapere prima di toccare queste righe:
 
@@ -2993,6 +2994,12 @@
 <!-- Le regole del foglio, scritte al momento di stampare (vedi sopra). Nasce
      vuoto: finché nessuno stampa, non c'è nessun `@page` in giro. -->
 <style id="stampaRegole"></style>
+<link rel="stylesheet" href="assets/chat/ui.css">
+<style>
+[data-tab="corsi"], [data-pane="corsi"], .topbar .lessonrow, #newLessonBtn, #videoBtn, #ingestBtn, #primoAvvio, #profiloSetup, #wizard, #composerModal, #mediaModal, #ingestBar { display:none!important; }
+#modoBtn{pointer-events:none;animation:none!important;}
+#modoBtn::after{display:none!important;}
+</style>
 </head>
 <body>
 <a class="skip" href="#content">Vai al contenuto</a>
@@ -3004,7 +3011,7 @@
        'impostazione ma due identità della stessa app, e il posto che dice
        «questa è l'app» è il suo nome. `aria-pressed` racconta a chi ascolta lo
        schermo in quale delle due si è; il `title` lo riscrive `modoAggiorna`. -->
-  <button class="brand" id="modoBtn" type="button" aria-pressed="false" title="Passa alla modalità Zaino"><img class="oi oi-lg" src="data:image/svg+xml;base64,PHN2ZyBpZD0iZW1vamkiIHZpZXdCb3g9IjAgMCA3MiA3MiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBpZD0iY29sb3IiPjxwb2x5bGluZSBmaWxsPSIjM2YzZjNmIiBzdHJva2U9IiMzZjNmM2YiIHN0cm9rZS1taXRlcmxpbWl0PSIxMCIgc3Ryb2tlLXdpZHRoPSIyIiBwb2ludHM9IjU2IDI3LjkxNjYgNTYgNDUuODk2IDE2IDQ1Ljg5NiAxNiAyNy45MTY2Ii8+PGxpbmUgeDE9IjEwLjA0MzIiIHgyPSIxMC4wNDMyIiB5MT0iMjguNSIgeTI9IjM2LjkwNjMiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2YxYjMxYyIgc3Ryb2tlLW1pdGVybGltaXQ9IjEwIiBzdHJva2Utd2lkdGg9IjIiLz48Y2lyY2xlIGN4PSIxMC4wNDMyIiBjeT0iMzYuOTA2MyIgcj0iMiIgZmlsbD0iI2YxYjMxYyIvPjxwb2x5Z29uIGZpbGw9IiNmMWIzMWMiIHN0cm9rZT0iI2YxYjMxYyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjEuNzQ3IiBwb2ludHM9IjEyLjA0MzIgNDUuODk2IDguMjUgNDUuODk2IDEwLjE0NjYgMzcuNzc2MyAxMC4xNDY2IDM3Ljc3NjMgMTIuMDQzMiA0NS44OTYiLz48cmVjdCB4PSI0IiB5PSIyMi44NzUiIHdpZHRoPSI2NCIgaGVpZ2h0PSI1LjA0MTciIGZpbGw9IiMzZjNmM2YiLz48cG9seWxpbmUgZmlsbD0iIzNmM2YzZiIgcG9pbnRzPSI1NiAzMC45MTY2IDU2IDQ1Ljg5NiAxNiA0NS44OTYgMTYgMzAuOTE2NiIvPjwvZz48ZyBpZD0ibGluZSI+PGNpcmNsZSBjeD0iMzYiIGN5PSIyMi4wMDIzIiByPSIzIi8+PHJlY3QgeD0iNCIgeT0iMjIuODc1IiB3aWR0aD0iNjQiIGhlaWdodD0iNS4wNDE3IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBvbHlsaW5lIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjEuNzQ3IiBwb2ludHM9IjU2IDMwLjkxNjYgNTYgNDUuODk2IDE2IDQ1Ljg5NiAxNiAzMC45MTY2Ii8+PC9nPjwvc3ZnPg==" alt="" aria-hidden="true"><span>StudIA</span></button>
+  <button class="brand" id="modoBtn" type="button" aria-pressed="true" title="StudIA - ZAINO"><img class="oi oi-lg" src="data:image/svg+xml;base64,PHN2ZyBpZD0iZW1vamkiIHZpZXdCb3g9IjAgMCA3MiA3MiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBpZD0iY29sb3IiPjxwb2x5bGluZSBmaWxsPSIjM2YzZjNmIiBzdHJva2U9IiMzZjNmM2YiIHN0cm9rZS1taXRlcmxpbWl0PSIxMCIgc3Ryb2tlLXdpZHRoPSIyIiBwb2ludHM9IjU2IDI3LjkxNjYgNTYgNDUuODk2IDE2IDQ1Ljg5NiAxNiAyNy45MTY2Ii8+PGxpbmUgeDE9IjEwLjA0MzIiIHgyPSIxMC4wNDMyIiB5MT0iMjguNSIgeTI9IjM2LjkwNjMiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2YxYjMxYyIgc3Ryb2tlLW1pdGVybGltaXQ9IjEwIiBzdHJva2Utd2lkdGg9IjIiLz48Y2lyY2xlIGN4PSIxMC4wNDMyIiBjeT0iMzYuOTA2MyIgcj0iMiIgZmlsbD0iI2YxYjMxYyIvPjxwb2x5Z29uIGZpbGw9IiNmMWIzMWMiIHN0cm9rZT0iI2YxYjMxYyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjEuNzQ3IiBwb2ludHM9IjEyLjA0MzIgNDUuODk2IDguMjUgNDUuODk2IDEwLjE0NjYgMzcuNzc2MyAxMC4xNDY2IDM3Ljc3NjMgMTIuMDQzMiA0NS44OTYiLz48cmVjdCB4PSI0IiB5PSIyMi44NzUiIHdpZHRoPSI2NCIgaGVpZ2h0PSI1LjA0MTciIGZpbGw9IiMzZjNmM2YiLz48cG9seWxpbmUgZmlsbD0iIzNmM2YzZiIgcG9pbnRzPSI1NiAzMC45MTY2IDU2IDQ1Ljg5NiAxNiA0NS44OTYgMTYgMzAuOTE2NiIvPjwvZz48ZyBpZD0ibGluZSI+PGNpcmNsZSBjeD0iMzYiIGN5PSIyMi4wMDIzIiByPSIzIi8+PHJlY3QgeD0iNCIgeT0iMjIuODc1IiB3aWR0aD0iNjQiIGhlaWdodD0iNS4wNDE3IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBvbHlsaW5lIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjEuNzQ3IiBwb2ludHM9IjU2IDMwLjkxNjYgNTYgNDUuODk2IDE2IDQ1Ljg5NiAxNiAzMC45MTY2Ii8+PC9nPjwvc3ZnPg==" alt="" aria-hidden="true"><span>StudIA - ZAINO</span></button>
   <div class="controls">
     <!-- Corso e variante stanno PRIMA della lezione: si legge da sinistra a destra
          come si restringe il campo — corso → variante → lezione. -->
@@ -10691,8 +10698,8 @@ var RUOLI_ETICHETTA={ '':'Ufficiali della lezione', integrazione:'Integrazioni',
  * Spostare la dichiarazione più in alto sposta il problema al primo che
  * chiamerà `corsoAttivo` prima di lei; qui invece la domanda ha una risposta
  * sensata anche prima che ci sia uno stato: si è nei corsi. */
-var MODO={ ora:'corso', zaino:null, zaini:[] };
-function modoAttivo(){ return (typeof MODO!=='undefined' && MODO && MODO.ora==='zaino') ? 'zaino' : 'corso'; }
+var MODO={ ora:'zaino', zaino:null, zaini:[] };
+function modoAttivo(){ return 'zaino'; }
 function zainoAttivo(){ return (typeof MODO!=='undefined' && MODO && MODO.zaino) || null; }
 
 function corsoAttivo(){
@@ -10745,7 +10752,7 @@ function modoAggiorna(){
   var b=document.getElementById('modoBtn');
   if(b){
     b.setAttribute('aria-pressed', String(zaino));
-    b.title = zaino ? 'Torna ai corsi' : 'Passa alla modalità Zaino';
+    b.title = 'StudIA - ZAINO';
   }
   /* ⚠️ L'indice dei capitoli è di una LEZIONE: lasciarlo a schermo nello zaino
      vorrebbe dire mostrare la scaletta di un corso mentre si legge altro. Le
@@ -10779,6 +10786,7 @@ function modoAggiorna(){
      dello zaino): le barrette che restano senza niente a fianco vanno spente,
      o resta una linea a separare il vuoto dal vuoto. */
   try{ barreSeparatori(); }catch(e){}
+  window.dispatchEvent(new CustomEvent('studia:zaino-changed', { detail: { id: zainoAttivo() } }));
 }
 
 /** Gli zaini che ci sono, e quello attivo. Torna l'elenco. */
@@ -10865,6 +10873,7 @@ function contenitoreMolla(){
 
 /** Commuta. È l'unica porta: il click sul logo passa di qui, e nient'altro. */
 async function cambiaModo(m){
+  if (m !== 'zaino') return;
   var nuovo = (m==='zaino') ? 'zaino' : 'corso';
   if(nuovo===modoAttivo()) return;
   contenitoreMolla();
@@ -11297,7 +11306,7 @@ async function zainoCrea(nome){
      memoria del browser. */
   var salvato=null; try{ salvato=localStorage.getItem('studia.modo')||null; }catch(e){}
   var quantiCorsi=(window.vault && Array.isArray(window.vault.courses)) ? window.vault.courses.length : 0;
-  var dove=OnboardingAvvio.modoIniziale({ salvato:salvato, corsi:quantiCorsi });
+  var dove='zaino';
   try{ MODO.zaino=localStorage.getItem('studia.zaino')||null; }catch(e){}
   if(dove==='zaino'){
     zainiAggiorna().then(function(lista){
@@ -11306,7 +11315,7 @@ async function zainoCrea(nome){
          PRIMO avvio non c'è niente da nessuna parte, e ricadere sui corsi
          rimetterebbe davanti proprio la metà che chiede motore e Python. Si
          resta nello zaino, dove la sua card invita a crearne uno. */
-      if(lista.length || (!salvato && !quantiCorsi)){
+      if(dove==='zaino'){
         MODO.ora='zaino'; modoAggiorna();
         /* ⚠️ Il banco è già stato disegnato con la chiave dei corsi: quando
            questo `.then` arriva, `modoAttivo()` è appena diventato «zaino» e la
@@ -11331,6 +11340,7 @@ async function zainoCrea(nome){
  * divergono sempre: in questo file è già successo con l'ordinamento delle lezioni.
  */
 function cambiaCorso(id){
+  return; // Il fork espone esclusivamente gli zaini.
   if(!id) return;
   /* Rieleggere il corso di adesso non è un cambio: mollare e riaprire il
      documento per niente lo farebbe lampeggiare sotto gli occhi. */
@@ -16183,6 +16193,7 @@ try{
 
     /* --- 1. schede --- */
     function showTab(name){
+      if (!['utente','zaino','ai'].includes(name)) name='utente';
       modal.querySelectorAll('.set-tab').forEach(function(t){ t.setAttribute('aria-selected', String(t.dataset.tab===name)); });
       modal.querySelectorAll('.set-pane').forEach(function(p){ p.hidden = (p.dataset.pane!==name); });
       try{ localStorage.setItem('studia.settingsTab', name); }catch(e){}
@@ -21616,7 +21627,7 @@ window.addEventListener('keydown', function(e){
     </div>
   </div>
 </div>
-<script src="wizard.js" defer></script>
+
 
 <!-- composer degli indici: righe = lezioni, colonne = indici proposti, otto personaggi da trascinare -->
 <div id="composer" hidden role="dialog" aria-modal="true" aria-label="Composer degli indici">
@@ -21660,7 +21671,7 @@ window.addEventListener('keydown', function(e){
     </div>
   </div>
 </div>
-<script src="composer.js" defer></script>
+
 
 <!-- Atlante delle opzioni: la spiegazione del profilo, a schermo intero come il
      composer. Si apre da ⚙ Impostazioni › Utente. -->
@@ -21687,8 +21698,8 @@ window.addEventListener('keydown', function(e){
 </div>
 <div id="searchRes" role="listbox" aria-label="Risultati della ricerca"></div>
 <div id="setup" hidden><div class="setup-card">
-  <h2>Benvenuto in StudIA</h2>
-  <p>Scegli la cartella dove tenere il tuo <strong>Vault</strong>. Corsi, PDF e video staranno tutti qui: PDF e video vanno insieme nella sottocartella <em>Fonti</em>, e l'app li distingue dall'estensione.</p>
+  <h2>Benvenuto in StudIA - ZAINO</h2>
+  <p>Scegli la cartella del tuo <strong>vault</strong>. Qui troverai i tuoi zaini con documenti, appunti, mappe e conversazioni AI. Puoi usare una cartella nuova oppure aprire un vault esistente.</p>
   <button class="tbtn acc" id="chooseVault" type="button">Scegli cartella&#8230;</button>
 </div></div>
 <div id="mediaModal" hidden role="dialog" aria-modal="true" aria-label="Video da trascrivere">
@@ -21714,7 +21725,7 @@ window.addEventListener('keydown', function(e){
   <div class="media-card">
     <div class="media-head">
       <b>Impostazioni</b>
-      <span class="mh-sub">Profilo, corsi e AI</span>
+      <span class="mh-sub">Profili, zaini e AI</span>
       <span class="sp"></span>
       <button class="tbtn" id="creditsBtn" type="button" aria-label="Crediti e licenze" title="Crediti e licenze"><span class="btn-emoji">&#129497;</span></button>
       <button class="tbtn" id="settingsClose" type="button" aria-label="Chiudi">&#10005;</button>
@@ -21882,13 +21893,6 @@ window.addEventListener('keydown', function(e){
 
       <!-- ============ CORSI ============ -->
       <section class="set-pane" data-pane="corsi" hidden>
-        <div class="set-sec-h">Cartella dei file &laquo;StudIA - file&raquo;</div>
-        <div class="vaultrow">
-          <span class="vr-path" id="vaultPathLabel">Nessuna cartella scelta</span>
-          <button class="tbtn acc" id="vaultChangeBtn" type="button">Scegli cartella&#8230;</button>
-        </div>
-        <p class="set-note">&Egrave; la cartella dove l'app salva e legge tutto: corsi, PDF, video, trascrizioni e appunti. Cambiando cartella l'app si ricarica.</p>
-
         <div class="set-sec-h" style="margin-top:1.4rem;">Corso attivo</div>
         <div class="vaultrow">
           <select id="projSelect" aria-label="Corso attivo" style="flex:1"></select>
@@ -21989,6 +21993,14 @@ window.addEventListener('keydown', function(e){
            cosa che azzera. Questo pannello governa gli ZAINI come contenitori:
            l'unico posto da cui se ne può togliere uno. -->
       <section class="set-pane" data-pane="zaino" hidden>
+        <div class="set-sec-h">Cartella del vault</div>
+        <div class="vaultrow">
+          <span class="vr-path" id="vaultPathLabel">Nessuna cartella scelta</span>
+          <button class="tbtn acc" id="vaultChangeBtn" type="button">Scegli cartella&#8230;</button>
+        </div>
+        <p class="set-note">&Egrave; la cartella dove l'app salva e legge tutto: zaini, documenti, appunti e chat. Cambiando cartella l'app si ricarica.</p>
+
+
         <div class="set-sec-h">Come si usa lo zaino</div>
         <p class="set-note">La guida illustrata di questa modalità: novantatré schermate dell'app vera, con i gesti e le scorciatoie. Si apre in una finestra sua, e si può tenere aperta accanto mentre lavori.</p>
         <p><button class="tbtn" id="setGuida" type="button">📖 Apri la guida allo ZAINO</button></p>
@@ -22066,5 +22078,6 @@ window.addEventListener('keydown', function(e){
   <div class="ib-track"><i id="ibFill"></i></div>
   <div class="ib-file" id="ibFile"></div>
 </div>
+<script src="assets/chat/ui.js"></script>
 </body>
 </html>

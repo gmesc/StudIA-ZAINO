@@ -1,3 +1,5 @@
+> Fork StudIA - ZAINO: partire da README.md e HANDOFF-DEFINITIVO-2026-09-06.md. Le specifiche CORSI sono storiche e non si applicano al prodotto del fork.
+
 # StudIA — istruzioni per chi lavora qui
 
 App desktop (Electron, arm64) per studiare da un corpus di materiali propri. **Il vault è

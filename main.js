@@ -6,6 +6,10 @@ const readline = require('readline');
 const os = require('os');
 const { pathToFileURL } = require('url');
 
+app.setName('StudIA - ZAINO');
+if (!app.commandLine.hasSwitch('user-data-dir')) app.setPath('userData', path.join(app.getPath('appData'), 'studia-zaino'));
+require('./lib/zaino-only').proteggiIpc(ipcMain, () => readCfg().vaultPath);
+
 const CFG = path.join(app.getPath('userData'), 'config.json');
 const readCfg = () => { try { return JSON.parse(fs.readFileSync(CFG, 'utf8')); } catch (e) { return {}; } };
 const writeCfg = (c) => { try { fs.mkdirSync(path.dirname(CFG), { recursive: true }); } catch (e) {} fs.writeFileSync(CFG, JSON.stringify(c, null, 2)); };
@@ -13,22 +17,16 @@ const mat = require('./lib/materiali');   // i materiali possono vivere dentro i
 // Un vault nuovo nasce con le sole cartelle che servono: i materiali di un
 // corso vivono dentro il corso (vedi lib/materiali.js), «Lezioni/» era il
 // formato JSON di prima e non si crea più.
-const scaffold = (v) => { for (const d of [corsiLib.RADICE, mat.ATTESA, '.studia']) { try { fs.mkdirSync(path.join(v, d), { recursive: true }); } catch (e) {} } };
+const scaffold = (v) => { for (const d of ['Zaini', '.studia']) { try { fs.mkdirSync(path.join(v, d), { recursive: true }); } catch (e) {} } };
 
 // ---- chiavi API personali: cifrate con safeStorage (Keychain) quando disponibile ----
-const PROVIDERS = ['anthropic', 'openai', 'google'];
+const PROVIDERS = ['anthropic', 'openai', 'google', 'qwen', 'kimi', 'deepseek'];
 function storeKey(provider, value) {
   const c = readCfg(); c.keys = c.keys || {};
   if (!value) { delete c.keys[provider]; writeCfg(c); return; }
   const hint = value.length > 4 ? value.slice(-4) : '';
-  let rec;
-  try {
-    if (safeStorage && safeStorage.isEncryptionAvailable()) {
-      rec = { enc: true, data: safeStorage.encryptString(value).toString('base64'), hint };
-    } else {
-      rec = { enc: false, data: Buffer.from(value, 'utf8').toString('base64'), hint };
-    }
-  } catch (e) { rec = { enc: false, data: Buffer.from(value, 'utf8').toString('base64'), hint }; }
+  if (!safeStorage || !safeStorage.isEncryptionAvailable() || (safeStorage.getSelectedStorageBackend && safeStorage.getSelectedStorageBackend() === 'basic_text')) throw new Error('Archivio sicuro del sistema non disponibile: chiave non salvata.');
+  const rec = { enc: true, data: safeStorage.encryptString(value).toString('base64'), hint };
   c.keys[provider] = rec; writeCfg(c);
 }
 // esposta solo al main (per la futura generazione): NON passa mai al renderer
@@ -45,7 +43,10 @@ function keysStatus() {
 ipcMain.handle('keys:status', () => keysStatus());
 ipcMain.handle('keys:set', (e, { provider, value }) => {
   if (!PROVIDERS.includes(provider)) return { ok: false };
-  storeKey(provider, (value || '').trim()); return { ok: true, status: keysStatus() };
+  try {
+    if (typeof value !== 'string' || value.length > 4096) throw new Error('Chiave non valida');
+    storeKey(provider, value.trim()); return { ok: true, status: keysStatus() };
+  } catch (err) { return { ok: false, error: err.message }; }
 });
 ipcMain.handle('keys:clear', (e, { provider }) => { if (PROVIDERS.includes(provider)) storeKey(provider, ''); return { ok: true, status: keysStatus() }; });
 
@@ -94,7 +95,7 @@ ipcMain.handle('costs:log', (e, entry) => {
 let win;
 function createWindow() {
   win = new BrowserWindow({
-    width: 1320, height: 880, title: 'StudIA', backgroundColor: '#fbfbfa',
+    width: 1320, height: 880, title: 'StudIA - ZAINO', backgroundColor: '#fbfbfa',
     // backgroundThrottling: una finestra in secondo piano si vede clampare tutti i
     // timer a un secondo. Chi ascolta un capitolo intanto fa altro, e la lettura
     // andrebbe a scatti: fra un paragrafo e l'altro si aprirebbe un secondo di vuoto.
@@ -155,7 +156,7 @@ app.on('before-quit', voceScarta);
 app.on('window-all-closed', voceScarta);
 
 // config sincrona per il preload
-ipcMain.on('cfg:get', (e) => { e.returnValue = readCfg(); });
+ipcMain.on('cfg:get', (e) => { const { keys, ...config } = readCfg(); e.returnValue = config; });
 
 // scelta della cartella del vault
 ipcMain.handle('vault:choose', async () => {
@@ -2203,3 +2204,5 @@ ipcMain.handle('mappe:semina', (e, { corso, grafo, meta } = {}) => {
   const d = mappeDove(corso); if (d.error) return { error: d.error };
   return mappeLib.semina(d.v, corso, grafo || {}, meta || {});
 });
+
+require('./lib/chat-ipc').registra({ ipcMain, app, vaultDir, readCfg, writeCfg, readKey, keysStatus });

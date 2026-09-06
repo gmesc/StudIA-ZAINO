@@ -1,123 +1,49 @@
-# StudIA
+# StudIA - ZAINO
 
-App desktop (Electron) per **studiare da un corpus di materiali propri**. Decine di videolezioni e
-PDF entrano in un *vault*; una pipeline multiagente li trascrive, li indicizza, li legge per intero
-e ne costruisce corsi strutturati; un lettore li presenta con quiz, glossari, mappe concettuali,
-appunti, evidenze a **letture** sovrapposte, album di ritagli e ripasso programmato.
+Fork desktop di StudIA dedicato agli zaini: PDF, testi, appunti, evidenze, mappe, album e lettura ad alta voce. La modalità CORSI e i suoi comandi di ingestion, trascrizione, analisi e generazione di lezioni/indici didattici sono esclusi.
 
-Due proprietà contano più di ogni funzione:
-
-1. **Il vault è dell'utente.** Cartelle di `.md` e JSON leggibili anche in Obsidian, senza
-   database. L'app è un'interfaccia sul disco, non il contrario.
-2. **I contenuti generati sono rigenerabili; quelli dell'utente no.** Tutta l'architettura ruota
-   attorno a questa asimmetria.
-
-> **Dove sono le cose.** Il **codice** sta qui (`StudIA/`); i **dati** stanno fuori, in una cartella
-> scelta al primo avvio (di norma `StudIA - file/`). Sono separati dal 3 agosto 2026: nessun
-> materiale personale finisce nel repository.
-
-## Come si comincia
+## Avvio
 
 ```bash
+cd "/Users/giacomomeschini/Claude/StudIA - ZAINO"
 npm install
-npm start                 # l'app
+npm start
 ```
 
-Al primo avvio StudIA chiede dove tenere il vault e dice che cosa trova sulla macchina — quale
-motore AI, quale Python, quanto spazio. Da lì si importa una cartella di materiali e si generano le
-lezioni, oppure si apre un vault che c'è già.
+Questa copia di lavoro riutilizza le dipendenze già installate in StudIA tramite un collegamento locale `node_modules`. Per spostare il progetto su un altro computer, installare le dipendenze con `npm install` nella nuova copia.
 
-La stessa pipeline si usa da terminale, senza interfaccia:
+Il fork ha identità `ch.insegnai.studia.zaino` e configurazione personale `studia-zaino`, separate da StudIA. Scegli una cartella per il vault al primo avvio. Un vault esistente può essere aperto: il fork mostra soltanto i suoi zaini. Il progetto originale rimane nella sua cartella.
+
+## Chat e profili
+
+Il pulsante **Chat AI** nella barra superiore apre una finestra flottante, spostabile e ridimensionabile. Sono disponibili **Tutor socratico**, **Spiegamelo** e **Chiedimelo**. Ogni invio rilegge documenti e appunti salvati dello zaino attivo; Spiegamelo può integrare estratti Wikipedia con collegamenti alle fonti.
+
+In **Impostazioni → Utente** puoi salvare, clonare, eliminare e scegliere profili: lettura, carico cognitivo, conoscenze iniziali, lingua, presentazione, lunghezza, esempi, verifiche e preferenze libere. Sono inclusi Equilibrato, Explain like I'm 5 e Mr Feynman. I profili descrivono preferenze didattiche, non diagnosi.
+
+In **Impostazioni → AI**, scegli un provider, segui il link per creare una chiave API, salvala e seleziona un modello dall'elenco restituito dal provider. Supportati Anthropic, Gemini, OpenAI, Qwen, Kimi e DeepSeek. Qwen richiede la piattaforma internazionale Singapore; Kimi la piattaforma globale. Le chiavi vengono cifrate con l'archivio sicuro del sistema, restano fuori dal vault e non sono esposte al renderer. Se l'archivio sicuro non è disponibile, il salvataggio viene rifiutato.
+
+```text
+vault/
+  .studia/chat-profili.json
+  Zaini/<zaino>/
+    MATERIALI/   documenti e fonti
+    APPUNTI/     appunti della persona
+    CHAT/        una coppia JSON + Markdown per ogni conversazione
+```
+
+Il contesto inviato all'AI è una selezione di passaggi pertinenti, con nomi dei file e pagine: i limiti e i documenti non leggibili sono dichiarati nella chat. I PDF fotografati richiedono prima l'OCR facoltativo già presente nello zaino. La ricerca locale del testo resta disponibile; non viene eseguita la pipeline CORSI. Vedi [dettagli chat](docs/CHAT.md) e [provider e fonti ufficiali](docs/PROVIDER-AI.md).
+
+## Verifica
 
 ```bash
-npm run studia -- --help
+npm test       # moduli esistenti + nuovi controlli chat, profili, provider e confini
+npm run test:ui # Electron isolato, vault sintetico e AI simulata: nessuna API reale
 ```
 
-## I tre livelli
+Le prove includono un PDF reale, aggiornamento del contesto, persistenza e riapertura, annullamento, separazione tra zaini, chiavi, modelli e profili. La verifica dei sei protocolli usa risposte simulate: una chiamata effettiva richiede la chiave e il credito dell'utente.
 
-**Corso › Lezione › Capitolo.** Un *corso* raccoglie i materiali di un percorso di studio; le
-*lezioni* sono ciò che la pipeline genera; i *capitoli* sono le unità che si leggono. Nel codice
-`LESSONS` sono le lezioni, non i corsi.
+## Pacchetto
 
-Accanto ai corsi ci sono gli **zaini**: contenitori di documenti *senza* lezioni generate, dove si
-studia direttamente sulle fonti — utile per le dispense che non vale la pena trasformare.
+`npm run dist:mac` crea il pacchetto macOS; `npm run dist:win` quello Windows. Identità, nome e nomi degli installer sono propri del fork. L'eventuale firma/notarizzazione del progetto originale non si trasferisce al fork.
 
-## Che cosa c'è dentro il vault
-
-```
-StudIA - file/
-  Corsi/<id>/
-    _corso.md            il frontmatter del corso
-    LEZIONI/             ← della PIPELINE, rigenerabile
-    MATERIALI/           i file sorgente numerati, e le «lapidi» di quelli rimossi
-    APPUNTI/ MAPPE/ RIPASSO/ ALBUM/ PERCORSI/     ← dell'UTENTE, mai toccate dalla pipeline
-  Zaini/<id>/            come un corso, ma senza LEZIONI/
-```
-
-## I pacchetti
-
-```bash
-npm run pacchetto            # macOS Apple Silicon: bundle, firma ad-hoc, dmg, controprova
-npm run pacchetto -- x64     # macOS Intel (gira anche su Apple Silicon, con Rosetta)
-npm run dist:win             # Windows: l'installer NSIS x64
-```
-
-I due comandi per macOS non si fermano al dmg: firmano l'app e **rifanno il dmg dall'app firmata**,
-poi lo montano per verificare che dentro ci sia davvero l'app firmata e dell'architettura giusta.
-La firma è ad-hoc, non notarizzata: al primo avvio serve Impostazioni di Sistema → Privacy e
-sicurezza → «Apri comunque». Su Windows l'equivalente è SmartScreen → «Esegui comunque».
-
-**Requisiti misurati** (16 agosto 2026):
-
-| | |
-|---|---|
-| macOS | **12 o superiore** (Electron 39), Apple Silicon o Intel |
-| memoria | ~560 MB appena aperta, ~670 MB con un PDF grande e la mappa; ~1,3 GB al picco durante l'OCR |
-| OCR di un documento fotografato | 1,7 s a pagina su Apple Silicon, 6,2 s su Intel — e il picco di memoria **non cresce** con la lunghezza |
-| trascrizione locale | vuole Python e parecchia RAM: su una macchina da 4 GB conviene generare altrove e portarsi il vault |
-
-Le due generazioni di risorse (icona ed emoji) si rifanno da sole:
-
-```bash
-npm run icona                # build/icon.png, icon.icns e icon.ico dal tocco OpenMoji
-npm run emoji                # la tavolozza del selettore, da OpenMoji + Unicode CLDR
-npm run crediti              # l'inventario delle licenze, ricavato da node_modules
-```
-
-## Come si verifica
-
-```bash
-npm test                                              # unità: ogni file gira anche da solo
-./test/cdp/con-vault-di-prova.sh                      # le prove sull'app viva
-./test/cdp/con-vault-di-prova.sh prova-menu.js        # una sola — è così che si lavora
-STUDIA_APP=dist/mac-arm64/StudIA.app \
-  ./test/cdp/con-vault-di-prova.sh                    # le stesse prove DENTRO il pacchetto
-```
-
-Le prove sull'app viva girano su una **copia magra del vault** e con una cartella dati tutta loro:
-non toccano niente di tuo, e la tua StudIA può restare aperta mentre lavorano.
-
-## Per chi ci mette le mani
-
-| documento | che cosa dice |
-|---|---|
-| [GUIDA-ARCHITETTO.md](GUIDA-ARCHITETTO.md) | **come si costruisce qui**: filosofia, invarianti numerati, mappa del codice, processo, trappole permanenti |
-| `HANDOFF-DEFINITIVO-<data>.md` (il più recente) | **a che punto siamo**: che cosa è appena entrato, che cosa resta aperto, le trappole fresche |
-| gli altri `HANDOFF-*.md` | **storici**, e non si risalgono a memoria: il **§9** dell'handoff più recente dice quale file tiene quale argomento. ⚠️ `HANDOFF.md` è vecchio nei numeri ma è l'unica specifica della **pipeline** (wizard, composer, percorsi, figure, Chandra) |
-| `PIANO-*.md` | il dettaglio di ogni area (zaino, banco, mappe, appunti, foto, onboarding, moduli) |
-| `graphify-out/` (non versionato) | il **grafo della conoscenza** del progetto: `graph.html` da aprire nel browser, `GRAPH_REPORT.md`, `graph.json` interrogabile. Si rifà con `/graphify .` e si aggiorna con `/graphify . --update` |
-| `App/guida-zaino/` | la **guida illustrata della modalità ZAINO**, con schermate dell'app vera: viaggia col pacchetto e si apre da Impostazioni › Zaino. La ricetta per rifarne le immagini sta in `_lab/` (fuori dal pacchetto) |
-
-Se la guida e un handoff sembrano in conflitto, ha ragione l'handoff: è più recente.
-
-## Licenze
-
-Il codice è MIT. L'inventario completo dei componenti di terze parti si genera con `npm run
-crediti` e si legge dentro l'app (Impostazioni › Crediti). Due note che vale la pena conoscere
-prima di riusare qualcosa:
-
-- le emoji e le icone sono **OpenMoji**, CC BY-SA 4.0: chi redistribuisce mantiene l'attribuzione;
-- **l'icona dell'applicazione** è un'opera derivata dall'emoji «graduation cap» (U+1F393) di
-  OpenMoji, quindi è CC BY-SA 4.0 e **non** MIT come il resto.
-
-Contatto: giacomo@insegnai.ch
+Il codice mantiene la licenza MIT di StudIA. Icona e risorse OpenMoji mantengono attribuzione e licenza CC BY-SA 4.0; i crediti delle dipendenze sono disponibili nell'app.

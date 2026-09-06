@@ -43,3 +43,5 @@ build/cldr-it-derived.json
 # documenti e dal codice che stanno già qui. Si rigenera con
 # `/graphify . --update`, che riestrae solo i file cambiati.
 graphify-out/
+
+/node_modules

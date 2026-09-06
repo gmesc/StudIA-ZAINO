@@ -1,0 +1,31 @@
+'use strict';
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const Z = require('../lib/zaino-only');
+const v = fs.mkdtempSync(path.join(os.tmpdir(), 'zaino-confine-'));
+try {
+  require('../lib/zaini').crea(v, 'Scienze');
+  assert(Z.zainoValido(v, 'scienze'));
+  assert(!Z.zainoValido(v, '../scienze'));
+  fs.mkdirSync(path.join(v, 'Corsi', 'corso'), {recursive:true});
+  assert(!Z.zainoValido(v, 'corso'));
+  for (const c of ['course:create','gen:start','ingest:start','plan:save','scalette:tutte','ocr:installa','import:apply','fonti:set']) assert(!Z.consentito(c), c);
+  for (const c of ['chat:send','fonti:importa','note:rimuovi','mappe:salva','ocrpdf:pagina']) assert(Z.consentito(c), c);
+  const handlers = {}, events = {};
+  const ipc = {handle(c, fn){handlers[c]=fn;},on(c,fn){events[c]=fn;}};
+  Z.proteggiIpc(ipc, () => v);
+  let attivato = false;
+  ipc.handle('course:create', () => {attivato=true;});
+  ipc.on('gen:start', () => {attivato=true;});
+  ipc.handle('mappe:salva', () => {attivato=true;return {ok:true};});
+  assert.strictEqual(handlers['course:create']({}, {}).ok,false);
+  assert(!events['gen:start']);
+  assert.strictEqual(handlers['mappe:salva']({}, {corso:'corso'}).ok,false);
+  assert(!attivato);
+  assert.strictEqual(handlers['mappe:salva']({}, {corso:'scienze'}).ok,true);
+  fs.mkdirSync(path.join(v, 'Corsi', 'scienze'), {recursive:true});
+  assert(!Z.zainoValido(v, 'scienze'), 'Un id ambiguo non deve scrivere dentro Corsi.');
+  console.log('OK: confine ZAINO, pipeline esclusa e scritture nei soli zaini.');
+} finally {fs.rmSync(v,{recursive:true,force:true});}
