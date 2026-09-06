@@ -11,7 +11,14 @@ let ws, id = 0, attesi = new Map();
 const PORTA = process.env.STUDIA_PORTA || '9333';
 
 async function collega() {
-  const r = await fetch('http://localhost:' + PORTA + '/json');
+  let r;
+  try { r = await fetch('http://localhost:' + PORTA + '/json'); }
+  catch (e) {
+    /* Un `fetch failed` nudo non dice niente a chi legge una suite: qui si dice che cosa vuol
+       dire — e il runner, dal 7 settembre 2026, si ferma da solo quando l'app muore. */
+    throw new Error('l\'app di prova non risponde su localhost:' + PORTA +
+      ': è morta, non è partita, o STUDIA_PORTA è un altro numero');
+  }
   const t = (await r.json()).find((x) => x.type === 'page');
   ws = new WS(t.webSocketDebuggerUrl, { perMessageDeflate: false });
   await new Promise((ok, ko) => { ws.on('open', ok); ws.on('error', ko); });
@@ -19,8 +26,27 @@ async function collega() {
     const m = JSON.parse(raw);
     if (m.id && attesi.has(m.id)) { attesi.get(m.id)(m); attesi.delete(m.id); }
   });
+  /* ⚠️ Se l'app muore mentre un comando è in viaggio, la sua promessa non si chiude mai, il
+     processo resta senza niente da fare ed esce ZITTO con codice 0: il runner lo conta VERDE.
+     Successo il 6 settembre 2026 in prova-righello — sezione vuota nell'uscita, nessun rosso a
+     suo nome, e 37 `fetch failed` a valle. Un verde che non ha misurato niente è la bugia
+     peggiore che una prova possa dire. */
+  ws.on('close', () => {
+    if (!attesi.size) return;
+    console.log('✗ la connessione CDP si è chiusa con ' + attesi.size +
+      ' comandi in attesa: l\'app di prova è morta o è stata chiusa');
+    process.exit(2);
+  });
 }
 function invia(method, params) {
+  /* ⚠️ Su un socket già chiuso `ws.send` NON lancia: scarta il messaggio in silenzio, la
+     promessa resta appesa e il processo esce zitto con codice 0 — verde. È la seconda forma
+     della stessa morte (la prima, il comando in viaggio, la prende il gestore di `close`):
+     misurata il 7 settembre 2026 uccidendo l'app di prova apposta durante una pausa. */
+  if (!ws || ws.readyState !== WS.OPEN) {
+    console.log('✗ la connessione CDP non è aperta: l\'app di prova è morta o è stata chiusa');
+    process.exit(2);
+  }
   const n = ++id;
   return new Promise((ok) => { attesi.set(n, ok); ws.send(JSON.stringify({ id: n, method, params })); });
 }

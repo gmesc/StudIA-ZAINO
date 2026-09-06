@@ -156,11 +156,23 @@ esac
 # prove si preparano il terreno a vicenda, e riordinarle le rompe. Misurato — con gli stessi
 # 43 nomi in ordine alfabetico, `STUDIA_SUITE=corsi` sull'app originale dava 4 rosse; nel
 # loro ordine, nessuna.
+#
+# ⚠️ E un verde si guarda in faccia. `prova-wikilink` stava qui perché usciva con codice 0, ma
+# sul fork esce così RINUNCIANDO («corso ai-literacy-anthropic assente: niente da provare»):
+# zero controlli. Un verde per rinuncia non prova niente — è passata fra i CORSI, dove sta il
+# corso che le serve. Dal 7 settembre 2026 il registro è 24: i 14 di prima più i 10 che
+# stavano fuori da tutti e due gli elenchi, misurati verdi LANCIANDO QUESTA CATENA (23 su 24,
+# 465 controlli). La rossa è `prova-appunti-barra`, che qui eredita un banco a UN blocco (la
+# barra della mappa fa 1 riga, 39 px, quella degli appunti 2, 71 px) mentre da sola o nella
+# suite intera ne eredita due (74 px, 2 righe) e passa: misura lo stato ereditato, non il
+# vestito degli appunti. Si sistema nella prova, non togliendola dal registro.
 PROVE_ZAINO=(
   prova-stampa.js prova-banco-avvio.js prova-banco-ripristino.js prova-banco-griglia.js
   prova-media-punto.js prova-appunto-riga.js prova-topbar-stile.js prova-tbar.js
   prova-appunti-barra.js prova-appunti-md.js prova-callout-bolla.js prova-riquadri-stili.js
-  prova-maniglia-indice.js prova-wikilink.js prova-ocr-zaino.js)
+  prova-maniglia-indice.js prova-lente-mappe.js prova-misura-immagine.js prova-memorie.js
+  prova-tendine.js prova-fonte-rimossa.js prova-ocr-zaino.js prova-crediti.js prova-emoji.js
+  prova-sbircia.js prova-postilla-zaino.js prova-postille-vista.js)
 
 # `PROVE_CORSI` sono le prove che chiedono CORSI, LEZIONI, CAPITOLI o QUIZ. Su questo fork
 # non possono passare, ed è giusto così: la pipeline è stata rimossa. Servono a chi rimette
@@ -171,13 +183,21 @@ PROVE_ZAINO=(
 # ⚠️ NON è «tutto il resto» dedotto per esclusione: sono quelle che, con lo STESSO vault e lo
 # STESSO runner, falliscono qui e passano sull'app originale (`~/Claude/StudIA/StudIA`, base
 # 2644b1a), dove la suite intera è 69 su 69 verdi con 1786 controlli. Il vault ce li ha, i
-# corsi: è il fork che non li espone.
+# corsi: è il fork che non li espone. Sull'originale questi 44, in quest'ordine, sono verdi
+# 44 su 44 (misurato il 7 settembre 2026, 1289 controlli).
+#
+# ⚠️ Ma non sono «corsi» tutte allo stesso modo, e il PERCHÉ di ciascuna sta nell'handoff del
+# 7 settembre 2026: 14 vogliono un capitolo, 11 un corso o la commutazione ai corsi, 5 il
+# registro Generata/Mie delle mappe, 2 il quiz, 3 la scheda Corsi delle Impostazioni — e 9
+# vogliono soltanto un PDF che sta in `Fonti/` alla radice del vault e che lo zaino attivo,
+# se ha `MATERIALI/`, NASCONDE (`lib/materiali.js`, `cartelle()`): da sole, sul fork, 8 su 9
+# sono verdi. Fuori da tutti e due i registri resta `prova-evidenze-pdf`, per lo stesso motivo.
 
 PROVE_CORSI=(
   prova-b1.js prova-b2.js prova-banco-contenuto.js prova-menu.js
   prova-selezione-menu.js prova-note.js prova-keyword.js prova-mappe-ui.js
   prova-mappa-trascina.js prova-mappa-pallino.js prova-l1.js prova-l2.js
-  prova-l3l4.js prova-topbar.js prova-identita-capitoli.js prova-pdf.js
+  prova-l3l4.js prova-topbar.js prova-wikilink.js prova-identita-capitoli.js prova-pdf.js
   prova-pagina-campo.js prova-righello.js prova-voce-pagina.js prova-ricerca-pannellino.js
   prova-lente-punto.js prova-confronto.js prova-testolayer.js prova-album.js
   prova-album-trascina.js prova-foto.js prova-modo.js prova-tasti-frecce.js
@@ -193,13 +213,57 @@ else PROVE=(prova-b1.js prova-stampa.js prova-b2.js prova-banco-avvio.js prova-b
 
 KO=0
 ROSSE=()
+MORTA=""                      # la prova durante la quale l'app di prova è morta, se è successo
+USCITA="$LAVORO/prove.log"    # tutto ciò che le prove stampano: serve a CONTARE i controlli
+: > "$USCITA"
 for p in "${PROVE[@]}"; do
   echo ""
   echo "── $p ───────────────────────────────────────────"
-  if ! STUDIA_PORTA="$PORTA" node "test/cdp/$p"; then KO=$((KO+1)); ROSSE+=("$p"); fi
+  STUDIA_PORTA="$PORTA" node "test/cdp/$p" 2>&1 | tee -a "$USCITA"
+  if [ "${PIPESTATUS[0]}" -ne 0 ]; then KO=$((KO+1)); ROSSE+=("$p"); fi
+  # ⚠️ Prima della prova dopo si guarda se l'app è ancora VIVA. Il 6 settembre 2026 è morta
+  # durante prova-righello: quella prova è uscita ZITTA con codice 0 (la promessa CDP in
+  # attesa non si chiude mai, e node esce quando non ha più niente da fare), e le 37 dopo
+  # hanno detto `fetch failed` — 37 rosse che erano UN evento. E il perché non si è saputo
+  # mai, perché `app.log` stava nella cartella temporanea che questo script butta all'uscita.
+  # Qui ci si ferma, si dice il codice d'uscita — che distingue un crash da un kill da un ⌘Q —
+  # e il log dell'app si mette in salvo PRIMA che la cartella sparisca.
+  if ! kill -0 "$PID_APP" 2>/dev/null; then
+    wait "$PID_APP" 2>/dev/null; CODICE=$?
+    MORTA="$p"
+    case "$CODICE" in
+      # ⚠️ Misurato il 7 settembre 2026: un `kill` (SIGTERM) Electron lo trasforma in un'uscita
+      # ORDINATA, codice 0 — lo stesso di un ⌘Q. Quindi 0 non vuol dire «da dentro»: vuol dire
+      # «nessun crash», e il colpevole è una mano o un comando da fuori (§6.1 della guida).
+      0)   COME="uscita pulita (codice 0): un ⌘Q, una chiusura dal Dock, o un kill da fuori — NON un crash" ;;
+      143) COME="SIGTERM non gestito: terminata da fuori" ;;
+      137) COME="SIGKILL: uccisa da fuori (kill -9), o dal sistema per memoria" ;;
+      134|139|133) COME="segnale $((CODICE-128)): un CRASH vero — il rapporto sta in ~/Library/Logs/DiagnosticReports/Electron-*" ;;
+      *)   COME="codice d'uscita $CODICE" ;;
+    esac
+    SALVATO="$HOME/Library/Logs/StudIA-prove/app-morta-$(date +%Y%m%d-%H%M%S).log"
+    mkdir -p "$(dirname "$SALVATO")" && cp "$LAVORO/app.log" "$SALVATO" 2>/dev/null
+    echo ""
+    echo "✗ L'APP DI PROVA È MORTA durante $p — $COME"
+    echo "  il suo log è conservato in: $SALVATO (ultime righe qui sotto)"
+    tail -8 "$LAVORO/app.log" | sed 's/^/    │ /'
+    break
+  fi
 done
 
 echo ""
+# ⚠️ Il numero che dice se la suite è girata DAVVERO non è quello dei rossi ma quello dei
+# CONTROLLI eseguiti: una corsa da 55 rosse aveva 488 controlli invece di 1073, cioè metà
+# suite mai partita. Prima si contava a mano dopo, adesso lo dice il runner.
+echo "  controlli eseguiti: $(grep -c '^  ok  \|^  KO  ' "$USCITA") (ok $(grep -c '^  ok  ' "$USCITA"), KO $(grep -c '^  KO  ' "$USCITA"))"
+if [ -n "$MORTA" ]; then
+  # Le prove dopo la morte NON sono rosse: non sono state eseguite, ed è un'altra cosa.
+  ESEGUITE=0; for p in "${PROVE[@]}"; do ESEGUITE=$((ESEGUITE+1)); [ "$p" = "$MORTA" ] && break; done
+  RESTANO=$((${#PROVE[@]}-ESEGUITE))
+  echo "✗ l'app è morta durante $MORTA: eseguite $ESEGUITE prove su ${#PROVE[@]}, $RESTANO NON eseguite"
+  [ "$RESTANO" -gt 0 ] && echo "    per riprendere da lì:  ./test/cdp/con-vault-di-prova.sh ${PROVE[*]:$ESEGUITE}"
+  exit 1
+fi
 if [ "$KO" -eq 0 ]; then
   echo "✓ tutte le prove sono verdi (${#PROVE[@]})"
 else

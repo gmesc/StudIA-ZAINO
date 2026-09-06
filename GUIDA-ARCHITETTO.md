@@ -168,9 +168,9 @@ in silenzio.
 ```bash
 npm test                                   # unità: la catena di test/ (58 file al 6 set)
 STUDIA_SUITE=zaino \
-  ./test/cdp/con-vault-di-prova.sh         # 15 · quelle che su QUESTO fork possono passare
+  ./test/cdp/con-vault-di-prova.sh         # 24 · quelle che su QUESTO fork possono passare
 STUDIA_SUITE=corsi \
-  ./test/cdp/con-vault-di-prova.sh         # 43 · quelle che i corsi li richiedono (qui rosse)
+  ./test/cdp/con-vault-di-prova.sh         # 44 · quelle che i corsi li richiedono (qui rosse)
 npm run test:ui                            # le prove della CHAT sull'app viva (registro a sé)
 ./test/cdp/con-vault-di-prova.sh <nome>    # una sola — è così che si lavora
 ./test/cdp/con-vault-di-prova.sh           # tutte e 69: qui 43 rosse, e va bene così (vedi sotto)
@@ -210,12 +210,16 @@ stessa config: è il fork che non li espone.
 Per questo il runner ha **tre registri**, e i primi due sono quelli che si lanciano davvero:
 
 ```bash
-STUDIA_SUITE=zaino ./test/cdp/con-vault-di-prova.sh   # 15 · il criterio (a) di un merge QUI
-STUDIA_SUITE=corsi ./test/cdp/con-vault-di-prova.sh   # 43 · ciò che dovrà tornare verde con i corsi
+STUDIA_SUITE=zaino ./test/cdp/con-vault-di-prova.sh   # 24 · il criterio (a) di un merge QUI
+STUDIA_SUITE=corsi ./test/cdp/con-vault-di-prova.sh   # 44 · ciò che dovrà tornare verde con i corsi
 ```
 
-`PROVE_ZAINO` è verde 15 su 15 **in tutte e due le app**; `PROVE_CORSI` è verde 43 su 43
-sull'originale, e qui è rosso per costruzione.
+`PROVE_ZAINO` è **24** dal 7 settembre 2026 (23 verdi qui; la rossa, `prova-appunti-barra`, eredita
+il banco a un blocco — vedi l'handoff di quel giorno); `PROVE_CORSI` è **44**, verde 44 su 44
+sull'originale (1289 controlli), e qui è rosso per costruzione — ma **non tutte allo stesso modo**:
+la classificazione, motivo per motivo, sta nell'handoff del 7 settembre. Nove di quelle 44 vogliono
+soltanto un PDF che sta in `Fonti/` alla radice del vault e che lo zaino attivo, se ha `MATERIALI/`,
+nasconde (`cartelle()` in `lib/materiali.js` si CONFINA dentro il contenitore che ne ha una).
 
 ⚠️ **Un registro è una CATENA, non un insieme**, e questa è la trappola che è costata tre corse:
 1. sceglierlo fra le prove «verdi nella suite intera» non basta — quattro delle prime 19 di
@@ -225,11 +229,14 @@ sull'originale, e qui è rosso per costruzione.
 2. e l'ORDINE conta quanto i nomi: con gli stessi 43 nomi in ordine alfabetico `STUDIA_SUITE=corsi`
    dava 4 rosse sull'originale; nell'ordine di `PROVE=(`, nessuna. I registri lo seguono.
 
-⚠️ **Prima di leggere i rossi si guarda se l'app è arrivata VIVA alla fine.** Una corsa dava 55
-rosse invece di 43: 37 erano `fetch failed`, cioè l'eco di un'app di prova **morta** durante
-`prova-righello` — un evento solo, mai più riprodotto. Il numero che lo dice non è quello dei
-rossi ma quello dei CONTROLLI eseguiti: 488 invece di 1073, cioè metà suite mai girata. Contare i
-file rossi faceva sembrare 55 problemi; contarne i motivi ne mostrava 35 identici.
+⚠️ **Se l'app di prova muore, il runner si ferma e lo dice** (dal 7 settembre 2026). Dopo ogni
+prova controlla che il processo sia vivo; se non lo è, stampa il codice d'uscita — **0 è un ⌘Q o un
+`kill`**, che Electron trasforma in un'uscita ordinata; 134/139 è un crash, col rapporto in
+`DiagnosticReports` — mette in salvo `app.log` in `~/Library/Logs/StudIA-prove/` prima che la
+cartella temporanea sparisca, e conta le prove restanti come NON eseguite, che è un'altra cosa da
+rosse. In coda dice i **controlli eseguiti**: è quel numero, non quello dei rossi, che rivela una
+suite girata a metà — la corsa del 6 settembre ne aveva 488 invece di 1073, e 37 `fetch failed` che
+erano UN evento.
 
 ⚠️ **Una prova si prepara lo stato che le serve, non lo eredita.** `prova-righello` passava nella
 suite intera e cadeva dentro un registro, con due sintomi diversi («ha trovato delle righe nella
@@ -238,8 +245,14 @@ e tutto ciò che misura dipende da quante righe sono in vista — ne restavano 3
 non è abbassare la soglia ma portare la pagina in cima prima di misurare, e scegliere la parola
 fra TUTTE portandola in vista invece di pescare fra quelle già a schermo. Il setaccio che stampa
 quanti span cadono a ogni condizione è rimasto nella prova: è quello che ha risolto il caso.
-⚠️ Resta non spiegato il CRASH dell'app in quella prova, visto una volta sola e mai riprodotto.
-Le due correzioni riguardano lo stato ereditato: non è detto che c'entrino.
+⚠️ Quel «crash» **non era un crash**: nessun rapporto in `DiagnosticReports` alle 19:24 del 6
+settembre, nessuna sessione (Claude o Codex) che abbia ucciso qualcosa in quel minuto, e un'uscita
+che la prova non ha nemmeno visto — `prova-righello` è uscita **zitta con codice 0**, perché una
+promessa CDP senza risposta lascia node senza niente da fare, e il runner l'ha contata verde. Cioè
+una chiusura da fuori (un ⌘Q sulla finestra di prova, che gira in primo piano) travestita da 37
+rossi e da un verde. Le due forme di quel silenzio sono chiuse in `cdp.js`: il socket che si chiude
+con comandi in viaggio, e `send` su un socket già chiuso, che la libreria `ws` scarta senza dire
+niente. Il rosso-apposta che lo dimostra: uccidere l'app di prova **per porta** a metà corsa.
 
 ⚠️ E il runner **dice i nomi** delle prove rosse, non solo quante: ricostruirli dall'uscita con un
 grep ne trova meno del vero, perché una prova che muore in un'eccezione non stampa né «KO» né «✗».
@@ -286,7 +299,11 @@ vera — ed è il motivo per cui quella riga esiste.
 
 **La diagnosi, quando un'app sparisce**: un crash lascia un rapporto in
 `~/Library/Logs/DiagnosticReports/` col nome `Electron-…`. Se lì non c'è niente all'ora giusta,
-non è crashata: è stata terminata da fuori, e il colpevole è la regola 1.
+non è crashata: è stata terminata da fuori, e il colpevole è la regola 1 — o una mano. ⚠️ Il codice
+d'uscita non li distingue: un `kill` (SIGTERM) Electron lo gestisce ed **esce con 0**, come dopo un
+⌘Q (misurato il 7 settembre 2026 uccidendo l'app di prova per porta). Chi c'era in quel minuto lo
+dicono i transcript delle sessioni (`~/.claude/projects/<progetto>/*.jsonl` con i `timestamp`,
+`~/.codex/sessions/`) e le uscite salvate negli scratchpad sotto `/private/tmp/claude-501/`.
 - **Le prove misurano, non guardano.** Dopo ogni passo si consegna all'utente una lista corta di
   gesti da provare a mano: più di un difetto reale è stato trovato da lui con tutte le suite
   verdi. Uno screenshot via CDP prima di dichiarare finito un lavoro di UI.
