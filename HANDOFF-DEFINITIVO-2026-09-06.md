@@ -1,3 +1,5 @@
+> 📍 Non è più il punto d'ingresso: vedere `HANDOFF-DEFINITIVO-2026-09-07.md`.
+
 # Handoff definitivo — fork StudIA - ZAINO, 6 settembre 2026
 
 Questo è il punto d'ingresso del fork. Base StudIA: `2644b1a5ed28cf0b6099e7bbbe58cd4ba859a5cd`. Branch locale `studia-zaino`; upstream locale in sola lettura operativa, nessun push effettuato.

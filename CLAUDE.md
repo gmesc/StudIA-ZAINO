@@ -1,4 +1,4 @@
-> Fork StudIA - ZAINO: partire da README.md e HANDOFF-DEFINITIVO-2026-09-06.md. Le specifiche CORSI sono storiche e non si applicano al prodotto del fork.
+> Fork StudIA - ZAINO: partire da README.md e HANDOFF-DEFINITIVO-2026-09-07.md. Le specifiche CORSI sono storiche e non si applicano al prodotto del fork.
 
 # StudIA — istruzioni per chi lavora qui
 
