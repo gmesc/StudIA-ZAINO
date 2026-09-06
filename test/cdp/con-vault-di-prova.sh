@@ -172,25 +172,19 @@ PROVE_ZAINO=(
 # STESSO runner, falliscono qui e passano sull'app originale (`~/Claude/StudIA/StudIA`, base
 # 2644b1a), dove la suite intera è 69 su 69 verdi con 1786 controlli. Il vault ce li ha, i
 # corsi: è il fork che non li espone.
-#
-# ⚠️ `prova-righello.js` NON è qui dentro pur essendo di quelle 43. Lanciata in questo elenco
-# fallisce («c'era un pezzo su cui puntare»: sotto la fascia trova uno SPAN invece del testo
-# del PDF) mentre nella suite intera passa: dipende da uno stato che solo la catena lunga
-# prepara. È anche l'unica prova che ha fatto MORIRE l'app di prova in una corsa (37
-# `fetch failed` a valle, mai riprodotti). Ha un guaio suo, e va guardata a parte: tenerla
-# qui vorrebbe dire un registro che non passa.
+
 PROVE_CORSI=(
   prova-b1.js prova-b2.js prova-banco-contenuto.js prova-menu.js
   prova-selezione-menu.js prova-note.js prova-keyword.js prova-mappe-ui.js
   prova-mappa-trascina.js prova-mappa-pallino.js prova-l1.js prova-l2.js
   prova-l3l4.js prova-topbar.js prova-identita-capitoli.js prova-pdf.js
-  prova-pagina-campo.js prova-voce-pagina.js prova-ricerca-pannellino.js prova-lente-punto.js
-  prova-confronto.js prova-testolayer.js prova-album.js prova-album-trascina.js
-  prova-foto.js prova-modo.js prova-tasti-frecce.js prova-zaino.js
-  prova-fonti.js prova-import.js prova-player.js prova-media-nonapre.js
-  prova-ripasso.js prova-ripasso-vista.js prova-impostazioni-token.js prova-onboarding-token.js
-  prova-primo-avvio.js prova-atlante.js prova-evidenziatore.js prova-evidenza-appunto.js
-  prova-postilla.js prova-strati.js)
+  prova-pagina-campo.js prova-righello.js prova-voce-pagina.js prova-ricerca-pannellino.js
+  prova-lente-punto.js prova-confronto.js prova-testolayer.js prova-album.js
+  prova-album-trascina.js prova-foto.js prova-modo.js prova-tasti-frecce.js
+  prova-zaino.js prova-fonti.js prova-import.js prova-player.js
+  prova-media-nonapre.js prova-ripasso.js prova-ripasso-vista.js prova-impostazioni-token.js
+  prova-onboarding-token.js prova-primo-avvio.js prova-atlante.js prova-evidenziatore.js
+  prova-evidenza-appunto.js prova-postilla.js prova-strati.js)
 
 if [ $# -gt 0 ]; then PROVE=("$@");
 elif [ "${STUDIA_SUITE:-}" = "zaino" ]; then PROVE=("${PROVE_ZAINO[@]}");

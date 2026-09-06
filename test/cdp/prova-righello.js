@@ -74,6 +74,17 @@ const FASCIA = `(()=>{ const e=document.getElementById('pdfRighello');
     await val("/isola la riga/.test(document.getElementById('pdfRighelloBtn').title)"));
   ok('la fascia parte spenta', true, await val("document.getElementById('pdfRighello').hidden"));
 
+  /* ⚠️ Si porta la pagina in cima PRIMA di accendere la fascia. Tutto ciò che
+     questa prova misura — quante righe trova il righello, e più sotto su quale
+     parola si può puntare — dipende da quante righe sono in vista, e quindi da
+     dove ha lasciato scorso il PDF la prova girata prima. Nel registro dei
+     CORSI ne restavano tre, e `quante > 3` cadeva: un rosso che parlava dello
+     scorrimento ereditato, non del righello. Non si abbassa la soglia: si
+     rimette la prova in uno stato noto. */
+  await val(`(()=>{ const s=document.querySelector('#pdfFrame .textLayer span');
+    if(s) s.scrollIntoView({ block:'start' }); return 1; })()`);
+  await pausa(400);
+
   sezione('Accendendola, si posa su una riga vera');
   await clicca('#pdfRighelloBtn'); await pausa(500);
   const acc = await val(FASCIA);
@@ -137,14 +148,41 @@ const FASCIA = `(()=>{ const e=document.getElementById('pdfRighello');
   console.log('   sotto la fascia c\'è: ' + JSON.stringify(sotto));
   ok('sotto la fascia c\'è la pagina, non la fascia', false, String(sotto).indexOf('pdfRighello') >= 0);
 
-  const scelto = await val(`(()=>{
+  /* ⚠️ Il setaccio dice QUANTI span cadono a ogni condizione, non solo che non
+     ne è rimasto nessuno. Senza, il rosso era «c'era un pezzo su cui puntare:
+     no» — vero e inutile: non distingue «il PDF non è caricato» da «la pagina
+     è scrollata fuori» da «lo zoom le ha fatte troppo strette». */
+  const setaccio = await val(`(()=>{
+    const tutti=[...document.querySelectorAll('#pdfFrame .textLayer span')];
+    const parola=s=>/^[A-Za-zÀ-ÿ]{4,}$/.test(s.textContent.trim());
+    const larghi=tutti.filter(s=>s.getBoundingClientRect().width>20);
+    const dentro=larghi.filter(s=>{const r=s.getBoundingClientRect();return r.top>0&&r.bottom<innerHeight;});
+    return { span:tutti.length, larghi:larghi.length, dentroLoSchermo:dentro.length,
+             parole:dentro.filter(parola).length,
+             pagina:(typeof PDFJS!=='undefined'&&PDFJS.page)||null,
+             zoom:(typeof PDFJS!=='undefined'&&PDFJS.scale)||null }; })()`);
+  console.log('   setaccio: ' + JSON.stringify(setaccio));
+  /* ⚠️ La parola si sceglie fra TUTTE e poi si PORTA IN VISTA, invece di pescare
+     fra quelle che sono già a schermo. Prima il filtro chiedeva anche
+     `top>0 && bottom<innerHeight`, cioè dipendeva da dove aveva lasciato
+     scorso il PDF la prova girata prima: nel registro dei CORSI ne restavano 6
+     su 149, e in una corsa nessuna. Il rosso diceva «non c'era un pezzo su cui
+     puntare» — vero, e senza alcun rapporto col righello, che è ciò che questa
+     prova deve misurare. Una prova si prepara lo stato che le serve. */
+  const testo = await val(`(()=>{
     const sp=[...document.querySelectorAll('#pdfFrame .textLayer span')]
-      .filter(s=>{ const r=s.getBoundingClientRect();
-        return r.width>20 && r.top>0 && r.bottom<innerHeight && /^[A-Za-zÀ-ÿ]{4,}$/.test(s.textContent.trim()); });
+      .filter(s=>s.getBoundingClientRect().width>20 && /^[A-Za-zÀ-ÿ]{4,}$/.test(s.textContent.trim()));
     if(!sp.length) return null;
-    const s=sp[0], r=s.getBoundingClientRect();
-    return { testo:s.textContent.trim(), x:Math.round(r.left+r.width/2), y:Math.round(r.top+r.height/2) }; })()`);
+    window.__righelloPezzo = sp[0];
+    sp[0].scrollIntoView({ block:'center' });
+    return sp[0].textContent.trim(); })()`);
+  await pausa(350);
+  /* Le coordinate si rileggono DOPO lo scorrimento: quelle di prima puntavano a
+     un punto che nel frattempo si è spostato. */
+  const scelto = testo && await val(`(()=>{ const r=window.__righelloPezzo.getBoundingClientRect();
+    return { testo:${JSON.stringify('')}, x:Math.round(r.left+r.width/2), y:Math.round(r.top+r.height/2) }; })()`);
   if (scelto) {
+    scelto.testo = testo;
     /* Si porta la fascia proprio su quella riga, così la selezione avviene
        DENTRO di lei: è il caso peggiore, non uno comodo. */
     await val(`(()=>{ const i=FontiRighello.vicina(RIGHELLO.bande, ${scelto.y}); if(i>=0) righelloVai(i); return 1; })()`);

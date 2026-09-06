@@ -171,7 +171,7 @@ controlli:
 
 ```bash
 STUDIA_SUITE=zaino ./test/cdp/con-vault-di-prova.sh   # 15 · verde in TUTTE E DUE le app
-STUDIA_SUITE=corsi ./test/cdp/con-vault-di-prova.sh   # 42 · verde 42/42 sull'originale, rosso qui
+STUDIA_SUITE=corsi ./test/cdp/con-vault-di-prova.sh   # 43 · verde 43/43 sull'originale, rosso qui
 ```
 
 `PROVE_CORSI` non è dedotto per esclusione: sono le prove che con lo stesso runner e lo stesso
@@ -186,6 +186,11 @@ nomi in ordine alfabetico `STUDIA_SUITE=corsi` dava 4 rosse sull'originale; nell
 
 ⚠️ **Prima di leggere i rossi si guarda se l'app è arrivata VIVA alla fine**: il numero da
 guardare non è quello dei rossi ma quello dei CONTROLLI eseguiti.
+
+`prova-righello` era l'unica fuori dai due registri, ed è stata sistemata: ereditava un PDF
+scrollato e misurava quante righe erano in vista (3 su 149). Adesso si mette in uno stato noto
+prima di misurare. Suite intera dell'originale: **69 su 69, 1786 controlli**, identica a prima.
+⚠️ Il CRASH dell'app visto una volta in quella prova non è stato riprodotto né spiegato.
 
 Il pacchetto è stato **rigenerato e notarizzato**: `dist/StudIA - ZAINO-1.1.0-arm64.dmg`,
 `status: Accepted`, `source=Notarized Developer ID`, ticket cucito all'app e al dmg. ⚠️ Gli script

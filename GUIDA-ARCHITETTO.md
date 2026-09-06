@@ -170,7 +170,7 @@ npm test                                   # unità: la catena di test/ (58 file
 STUDIA_SUITE=zaino \
   ./test/cdp/con-vault-di-prova.sh         # 15 · quelle che su QUESTO fork possono passare
 STUDIA_SUITE=corsi \
-  ./test/cdp/con-vault-di-prova.sh         # 42 · quelle che i corsi li richiedono (qui rosse)
+  ./test/cdp/con-vault-di-prova.sh         # 43 · quelle che i corsi li richiedono (qui rosse)
 npm run test:ui                            # le prove della CHAT sull'app viva (registro a sé)
 ./test/cdp/con-vault-di-prova.sh <nome>    # una sola — è così che si lavora
 ./test/cdp/con-vault-di-prova.sh           # tutte e 69: qui 43 rosse, e va bene così (vedi sotto)
@@ -211,10 +211,10 @@ Per questo il runner ha **tre registri**, e i primi due sono quelli che si lanci
 
 ```bash
 STUDIA_SUITE=zaino ./test/cdp/con-vault-di-prova.sh   # 15 · il criterio (a) di un merge QUI
-STUDIA_SUITE=corsi ./test/cdp/con-vault-di-prova.sh   # 42 · ciò che dovrà tornare verde con i corsi
+STUDIA_SUITE=corsi ./test/cdp/con-vault-di-prova.sh   # 43 · ciò che dovrà tornare verde con i corsi
 ```
 
-`PROVE_ZAINO` è verde 15 su 15 **in tutte e due le app**; `PROVE_CORSI` è verde 42 su 42
+`PROVE_ZAINO` è verde 15 su 15 **in tutte e due le app**; `PROVE_CORSI` è verde 43 su 43
 sull'originale, e qui è rosso per costruzione.
 
 ⚠️ **Un registro è una CATENA, non un insieme**, e questa è la trappola che è costata tre corse:
@@ -231,9 +231,15 @@ rosse invece di 43: 37 erano `fetch failed`, cioè l'eco di un'app di prova **mo
 rossi ma quello dei CONTROLLI eseguiti: 488 invece di 1073, cioè metà suite mai girata. Contare i
 file rossi faceva sembrare 55 problemi; contarne i motivi ne mostrava 35 identici.
 
-⚠️ `prova-righello.js` è fuori da entrambi i registri: nella suite intera passa, dentro un
-registro no (dipende da uno stato che solo la catena lunga prepara), ed è l'unica prova che ha
-fatto morire l'app. Ha un guaio suo, da guardare a parte.
+⚠️ **Una prova si prepara lo stato che le serve, non lo eredita.** `prova-righello` passava nella
+suite intera e cadeva dentro un registro, con due sintomi diversi («ha trovato delle righe nella
+pagina» → no; «c'era un pezzo su cui puntare» → no) e una causa sola: ereditava un PDF SCROLLATO,
+e tutto ciò che misura dipende da quante righe sono in vista — ne restavano 3 su 149. Il rimedio
+non è abbassare la soglia ma portare la pagina in cima prima di misurare, e scegliere la parola
+fra TUTTE portandola in vista invece di pescare fra quelle già a schermo. Il setaccio che stampa
+quanti span cadono a ogni condizione è rimasto nella prova: è quello che ha risolto il caso.
+⚠️ Resta non spiegato il CRASH dell'app in quella prova, visto una volta sola e mai riprodotto.
+Le due correzioni riguardano lo stato ereditato: non è detto che c'entrino.
 
 ⚠️ E il runner **dice i nomi** delle prove rosse, non solo quante: ricostruirli dall'uscita con un
 grep ne trova meno del vero, perché una prova che muore in un'eccezione non stampa né «KO» né «✗».
