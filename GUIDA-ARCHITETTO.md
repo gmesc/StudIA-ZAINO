@@ -82,7 +82,12 @@ stata pagata almeno una volta.
    la testata è la stessa barra ×1,1 via `.tbar-lg`). Un'interfaccia che deve «sembrare un quiz»
    **usa le classi del quiz**, non colori che gli somigliano. Se ti trovi a scrivere `height:` su
    un bottone di barra, stai sbagliando. Il design system è anche skill globale:
-   `~/.claude/skills/studia-app-layout/`.
+   `~/.claude/skills/studia-app-layout/`. Chi lo tiene fermo: `prova-tbar.js` e
+   `prova-topbar-stile.js` per le barre del monolite, **`prova-chat-stile.js`** per la superficie
+   CHAT AI (angoli, le due altezze, `--sh-3d`, emoji-font e la grammatica della barra, **nei due
+   temi e negli stati dinamici** — un audit statico su quella superficie dava zero anomalie
+   mentre il campo della chiave stava a 38,2px). Una superficie nuova si guarda **prima**
+   d'innestarla, con un mockup generato dal codice vero: `node docs/mockup-chat/genera.js`.
 9. **Scrittura atomica, file leggibili.** Tutte le scritture passano da `appunti.writeAtomic`;
    i file dell'utente restano `.md`/JSON ordinati e stabili (un file che cambia ordine a ogni
    salvataggio non si può leggere in un diff).
@@ -169,7 +174,13 @@ STUDIA_APP=dist/mac-arm64/StudIA.app \
 npm run pacchetto                          # bundle + firma ad-hoc + dmg, con la controprova
 npm run pacchetto -- x64                   # …e per i Mac Intel (gira qui con Rosetta)
 npm run dist:win                           # l'installer per Windows 11
+npm run test:ui                            # le prove della CHAT sull'app viva (registro a sé)
 ```
+
+⚠️ **Le prove della chat hanno un runner e un registro tutti loro**: `bin/prova-zaino.sh`, che si
+fabbrica uno zaino «biologia» con due appunti e due PDF e simula il provider. Non stanno in
+`PROVE=(` di `con-vault-di-prova.sh`, che gira invece sulla copia del vault vero e quello zaino non
+ce l'ha. Una prova nuova della chat va scritta **nel `PROVE=(` di `bin/prova-zaino.sh`**.
 
 ⚠️ **La suite intera si lancia al CANCELLETTO, non a ogni passo**: durante il lavoro si lanciano le
 prove che si toccano (quaranta secondi invece di sei minuti); la suite intera prima di dichiarare

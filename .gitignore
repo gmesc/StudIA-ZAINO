@@ -45,3 +45,8 @@ build/cldr-it-derived.json
 graphify-out/
 
 /node_modules
+
+# Il mockup d'approvazione si GENERA dal codice vero (`node docs/mockup-chat/genera.js`):
+# versionarlo vorrebbe dire un diff da 250 KB a ogni ritocco del CSS, e una copia
+# che invecchia in silenzio accanto al file che la produce.
+docs/mockup-chat/index.html

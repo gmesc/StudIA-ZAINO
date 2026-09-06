@@ -1,34 +1,68 @@
+/* Il vestito della chat, scritto SOPRA i token dell'app (`:root` di StudIA.html).
+ *
+ * ⚠️ Qui non si scrive un pixel a mano. Ogni altezza è `--tb-h` (comando di
+ * barra) o `--ctl-h` (controllo grande), ogni angolo è vivo, e l'unica ombra
+ * sta sulle due cose che galleggiano davvero — la finestra e il dialogo — e
+ * vale `--sh-3d`, che nel tema scuro cambia da sé.
+ *
+ * ⚠️ La prima stesura aveva undici `border-radius`, due ombre scritte a mano e
+ * tre stack di font senza `--emoji-font` (le emoji tornavano quelle di Apple).
+ * Erano un dialetto: la chat sembrava un'app diversa incollata dentro StudIA.
+ * Se ti serve un valore che non è un token, fermati: o è un colore-dato, o stai
+ * per riaprire il dialetto.
+ */
+
 .zchat-legacy[hidden] { display:none!important; }
-#chatBtn { width:auto; min-width:76px; padding-inline:12px; }
-#chatBtn[aria-expanded="true"] { background:color-mix(in srgb,var(--teal) 20%,var(--panel)); }
-.zchat-window { position:fixed; z-index:150; top:86px; right:24px; width:460px; height:650px; min-width:min(330px,calc(100vw - 16px)); min-height:min(300px,calc(100vh - 110px)); max-width:calc(100vw - 16px); max-height:calc(100vh - 110px); background:var(--panel); color:var(--ink); border:1px solid var(--line); box-shadow:0 14px 48px rgba(0,0,0,.2); display:flex; flex-direction:column; resize:both; overflow:hidden; border-radius:12px; }
+
+/* ── Il bottone in testata ─────────────────────────────────────────────────
+   Resta `.iconbtn`: dentro `.tbar-lg` l'app lo veste già da `.tbtn` (misure,
+   maiuscole, hover). ⚠️ Le sue misure NON si scrivono qui — `min-width:76px` e
+   `padding-inline:12px` erano l'unico bottone della testata a non seguire
+   `--tb-min`/`--tbig-pad-x`, e si vedeva. */
+/* Alias di `[aria-pressed="true"]`: il pannello è un disclosure, quindi il JS
+   dice `aria-expanded` — ma «acceso» si vede allo stesso modo di ogni altro
+   comando dell'app, stesso teal e stesso 26%. Si aggancia al MESTIERE (il
+   bottone che governa la finestra della chat), non all'id: così la stessa
+   regola veste anche il bottone nel mockup d'approvazione. */
+[aria-controls="zchatWindow"][aria-expanded="true"] { background:color-mix(in srgb,var(--teal) 26%,var(--panel)); color:var(--teal-strong); }
+
+/* ── La finestra ──────────────────────────────────────────────────────────── */
+.zchat-window { position:fixed; z-index:150; top:86px; right:24px; width:460px; height:650px; min-width:min(330px,calc(100vw - 16px)); min-height:min(300px,calc(100vh - 110px)); max-width:calc(100vw - 16px); max-height:calc(100vh - 110px); background:var(--panel); color:var(--ink); border:1px solid var(--line); box-shadow:var(--sh-3d); display:flex; flex-direction:column; resize:both; overflow:hidden; }
 .zchat-window[hidden],.zchat-window [hidden] { display:none!important; }
-.zchat-window :focus-visible,.zchat-settings :focus-visible,.zchat-rename :focus-visible { outline:2px solid var(--teal-strong); outline-offset:2px; }
 .zchat-window.is-collapsed { height:auto!important; min-height:0; resize:none; }
-.zchat-head { flex:none; display:flex; align-items:center; gap:3px; padding:8px 10px; border-bottom:1px solid var(--line); cursor:move; touch-action:none; background:var(--panel); }
-.zchat-role-label { flex:1; min-width:0; margin-right:12px; }
-.zchat-window select,.zchat-settings select { width:100%; min-width:0; border:1px solid var(--line); background:var(--bg); color:var(--ink); font:inherit; font-weight:400; border-radius:5px; height:var(--tb-h,30px); padding:0 7px; }
-.zchat-head #zchatRole { width:auto; max-width:100%; background:transparent; border-color:transparent; font-size:14px; font-weight:600; padding-left:3px; cursor:pointer; }
-.zchat-head .tbtn { flex:none; cursor:pointer; text-transform:none; font-size:20px; padding-inline:5px; border-radius:6px; }
-.zchat-head #zchatSettings { font-size:19px; }
-.zchat-grow { flex:1; min-width:130px!important; }
-.zchat-hint { font-size:11px; line-height:1.5; color:var(--muted); margin:0; }
+
+/* ── La testa È una barra degli strumenti (§5bis), non una testata sua ──────
+   Le misure, le maiuscole e l'hover arrivano da `.tbar`; qui resta soltanto
+   ciò che una barra non sa: che questa si può afferrare e trascinare. */
+.zchat-head { cursor:move; touch-action:none; }
+/* Il ruolo dice CHE COSA stai guardando, quindi apre la barra: nudo come un
+   comando, non incorniciato come un campo. L'altezza e il corpo li dà
+   `.tbar select`. */
+.zchat-head #zchatRole { width:auto; max-width:100%; background:transparent; border-color:transparent; cursor:pointer; }
+.zchat-role-label { min-width:0; }
+
+/* ── I messaggi ───────────────────────────────────────────────────────────── */
 .zchat-messages { flex:1; min-height:60px; overflow:auto; padding:20px 16px; overscroll-behavior:contain; scroll-behavior:smooth; }
+.zchat-hint { font-size:11px; line-height:1.5; color:var(--muted); margin:0; }
 .zchat-empty { max-width:370px; margin:clamp(20px,6vh,62px) auto 12px; text-align:center; color:var(--muted); line-height:1.6; font-size:13px; }
 .zchat-empty>b { color:var(--ink); font-size:17px; font-weight:600; }
 .zchat-empty>p { margin:6px 0 22px; }
+/* L'elenco delle conversazioni è un elenco, non una fila di bottoni: righe
+   separate da `--line-weak`, come l'indice della sidebar. */
 .zchat-history { list-style:none; margin:0; padding:0; text-align:left; }
-.zchat-history li { display:flex; align-items:center; border-bottom:1px solid var(--line); }
+.zchat-history li { display:flex; align-items:center; border-bottom:1px solid var(--line-weak); }
 .zchat-history li:last-child { border-bottom:0; }
-.zchat-history-item { display:flex; flex-direction:column; align-items:flex-start; gap:3px; flex:1; min-width:0; width:100%; padding:12px 10px; border:0; border-radius:6px; background:transparent; color:var(--ink); font:inherit; cursor:pointer; text-align:left; }
-.zchat-history-item:hover,.zchat-history-item:focus-visible { background:var(--bg); }
+.zchat-history-item { display:flex; align-items:center; justify-content:space-between; gap:10px; flex:1; min-width:0; width:100%; height:var(--ctl-h); box-sizing:border-box; padding:0 10px; border:0; border-radius:0; background:transparent; color:var(--ink); font:inherit; cursor:pointer; text-align:left; }
+.zchat-history-item:hover,.zchat-history-item:focus-visible { background:var(--hover); }
 .zchat-history-title { display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.zchat-history-date { color:var(--muted); font-size:11px; }
+.zchat-history-date { flex:none; font-size:10px; text-transform:uppercase; letter-spacing:.12em; font-weight:700; color:var(--muted); }
 .zchat-history-delete { color:var(--muted); }
 .zchat-message { margin:0 0 22px; }
-.zchat-message-user { margin-left:38px; padding:10px 13px; border-radius:14px 14px 3px 14px; background:color-mix(in srgb,var(--teal) 12%,var(--panel)); }
+/* La domanda: fondo d'accento e basta. ⚠️ 8% e non 12% — i FONDI del sistema
+   stanno fra 6 e 9%, il 14–16% è dei chip. E niente bordo colorato. */
+.zchat-message-user { margin-left:38px; padding:10px 13px; background:color-mix(in srgb,var(--teal) 8%,var(--panel)); }
 .zchat-message-assistant { margin-right:6px; }
-.zchat-message-text { white-space:pre-wrap; overflow-wrap:anywhere; font-size:14px; line-height:1.65; font-family:var(--font-text),sans-serif; user-select:text; }
+.zchat-message-text { white-space:pre-wrap; overflow-wrap:anywhere; font-size:14px; line-height:1.65; font-family:var(--font-text),var(--emoji-font),sans-serif; user-select:text; }
 /* Il parser condiviso dà paragrafi e liste; nella chat restano misure da messaggio. */
 .zchat-markdown { white-space:normal; }
 .zchat-markdown :is(p,ul,ol,pre,blockquote) { margin:0 0 .65em; }
@@ -37,12 +71,15 @@
 .zchat-markdown>:last-child { margin-bottom:0; }
 .zchat-markdown :is(ul,ol) { padding-left:1.6em; }
 .zchat-markdown li { margin:.25em 0; }
-.zchat-markdown pre { padding:10px; overflow:auto; background:var(--bg); border-radius:6px; white-space:pre; }
+.zchat-markdown pre { padding:10px; overflow:auto; background:var(--bg); white-space:pre; }
+.zchat-markdown :is(pre,code) { font-family:ui-monospace,SFMono-Regular,Menlo,var(--emoji-font),monospace; }
 .zchat-markdown code { font-size:.92em; }
 .zchat-markdown blockquote { border-left:2px solid var(--line); padding-left:12px; color:var(--muted); }
 .zchat-message .zchat-hint { margin-top:8px; }
+/* Copia · leggi · rami: comandi minuti, quindi `.tbtn` alla misura della barra.
+   Nessun corpo e nessun rientro scritti qui: li dà `--tb-fs`/`--tb-pad-x`. */
 .zchat-message-actions { display:flex; align-items:center; gap:3px; margin-top:7px; }
-.zchat-message-actions .tbtn { color:var(--muted); font-size:17px; padding-inline:5px; border-radius:5px; text-transform:none; }
+.zchat-message-actions .tbtn { color:var(--muted); }
 .zchat-message-actions .tbtn[aria-pressed="true"] { color:var(--teal-strong); }
 .zchat-sources { margin-top:8px; font-size:11px; line-height:1.6; color:var(--muted); }
 .zchat-sources summary { cursor:pointer; }
@@ -51,29 +88,51 @@
 .zchat-sources a,.zchat-settings a { color:var(--teal-strong); text-underline-offset:3px; }
 .zchat-thinking { color:var(--muted); font-size:12px; margin:8px 0; }
 .zchat-context-warning { white-space:pre-wrap; }
+
+/* ── Il composer ──────────────────────────────────────────────────────────
+   Non è una barra: è il piede del riquadro, e ciò che si scrive dev'essere
+   comodo. Quindi scala dei CONTROLLI — la riga porta `.tbar-ctl`, che
+   ridichiara i token, e il bottone d'invio cresce con lei senza una regola. */
 .zchat-composer { flex:none; padding:10px 12px 12px; border-top:1px solid var(--line); }
 #zchatStatus:empty { display:none; }
 #zchatStatus:not(:empty) { margin-bottom:7px; }
-.zchat-compose-row { display:flex; align-items:end; gap:7px; }
-.zchat-composer textarea { flex:1; min-width:0; background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:16px; padding:9px 12px; font:14px/1.5 var(--font-text),sans-serif; box-sizing:border-box; resize:none; min-height:41px; max-height:128px; overflow:auto; }
-.zchat-compose-row .tbtn { flex:none; align-self:end; margin-bottom:5px; border-radius:50%; font-size:20px; padding-inline:6px; text-transform:none; }
-.zchat-error { color:var(--red-strong,#bd4444)!important; }
+.zchat-compose-row { display:flex; align-items:end; gap:7px; padding:0; border:0; background:transparent; min-height:0; }
+.zchat-composer textarea { flex:1; min-width:0; background:var(--bg); color:var(--ink); border:1px solid var(--line); padding:8px 12px; font:14px/1.5 var(--font-text),var(--emoji-font),sans-serif; box-sizing:border-box; resize:none; min-height:var(--ctl-h); max-height:128px; overflow:auto; }
+.zchat-compose-row .tbtn { flex:none; align-self:end; }
+.zchat-error { color:var(--err-ink)!important; }
+
+/* ── Le due schede di Impostazioni ────────────────────────────────────────
+   ⚠️ Qui NON si veste nessun `select`: `.set-body` porta `.tbar-ctl` e l'app
+   dà già a ogni tendina `--ctl-h`, angolo vivo e maiuscole. La regola che
+   c'era (`.zchat-settings select`) vestiva anche `#voceLettura`, che è un
+   controllo dell'app spostato in questa scheda: usciva tondo a 5px. */
 .zchat-settings .set-sec-h:not(:first-child) { margin-top:22px; }
 .zchat-settings .set-note { line-height:1.6; }
 .zchat-profile-actions { display:flex; align-items:end; flex-wrap:wrap; gap:8px; margin:12px 0; }
-.zchat-profile-actions>label { display:flex; flex-direction:column; gap:6px; font-size:11px; font-weight:600; color:var(--muted); min-width:min(230px,100%)!important; }
+.zchat-profile-actions>label { display:flex; flex-direction:column; gap:6px; font-size:10px; text-transform:uppercase; letter-spacing:.12em; font-weight:700; color:var(--muted); min-width:min(230px,100%)!important; }
+.zchat-profile-actions select { width:100%; }
 .zchat-profile-actions>button { flex:none; margin-bottom:0; }
+.zchat-grow { flex:1; min-width:130px!important; }
 .zchat-settings .setgrid { margin:12px 0; }
 .zchat-settings input { width:100%; box-sizing:border-box; }
-.zchat-settings input[type=password] { padding:9px; font:13px/1.4 monospace; color:var(--ink); background:var(--bg); border:1px solid var(--line); }
-.zchat-field { display:flex; flex-direction:column; gap:6px; margin:14px 0 8px; color:var(--muted); font-size:12px; font-weight:600; }
-.zchat-rename { position:fixed; color:var(--ink); background:var(--panel); border:1px solid var(--line); border-radius:12px; width:min(390px,calc(100vw - 48px)); padding:22px; box-shadow:0 14px 48px rgba(0,0,0,.25); }
-.zchat-rename::backdrop { background:rgba(0,0,0,.28); }
+/* La chiave resta a spaziatura fissa (si rilegge carattere per carattere), ma
+   l'altezza è quella di ogni altro controllo: `.ctl-input` nel markup. ⚠️ Senza
+   quella classe usciva a 38,2px in un pannello in cui tutto è a 40 — misurato. */
+.zchat-settings input[type=password] { font-family:ui-monospace,SFMono-Regular,Menlo,var(--emoji-font),monospace; font-size:13px; padding:0 .6rem; color:var(--ink); background:var(--bg); border:1px solid var(--line); }
+.zchat-field { display:flex; flex-direction:column; gap:6px; margin:14px 0 8px; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.12em; font-weight:700; }
+.zchat-field textarea { text-transform:none; letter-spacing:0; font:14px/1.5 var(--font-text),var(--emoji-font),sans-serif; color:var(--ink); background:var(--bg); border:1px solid var(--line); padding:8px 12px; box-sizing:border-box; min-height:var(--ctl-h); }
+
+/* ── Il dialogo del nome ──────────────────────────────────────────────────
+   È un modale come gli altri: cornice `--line`, ombra `--sh-3d`, e il velo
+   dello stesso grigio-blu di `#mediaModal`, non un nero qualunque. */
+.zchat-rename { position:fixed; color:var(--ink); background:var(--panel); border:1px solid var(--line); width:min(390px,calc(100vw - 48px)); padding:22px; box-shadow:var(--sh-3d); }
+.zchat-rename::backdrop { background:rgba(15,17,21,.55); }
 .zchat-rename h2 { margin:0; font-size:17px; }
 .zchat-rename p { color:var(--muted); font-size:13px; line-height:1.5; }
-.zchat-rename label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
-.zchat-rename input { width:100%; box-sizing:border-box; background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:9px; font:14px/1.5 var(--font-text),sans-serif; }
+.zchat-rename label { display:block; font-size:10px; text-transform:uppercase; letter-spacing:.12em; font-weight:700; color:var(--muted); margin-bottom:6px; }
+.zchat-rename input { width:100%; box-sizing:border-box; background:var(--bg); color:var(--ink); border:1px solid var(--line); padding:0 .6rem; font:14px/1.5 var(--font-text),var(--emoji-font),sans-serif; }
 .zchat-rename-actions { display:flex; justify-content:end; flex-wrap:wrap; gap:8px; margin-top:18px; }
+
 .zchat-sr { position:absolute!important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .zchat-window button:disabled,.zchat-settings button:disabled { opacity:.5; cursor:default; }
 @media (max-width:600px) { .zchat-window { right:8px; top:64px; width:calc(100vw - 16px); max-height:calc(100vh - 72px); } }
