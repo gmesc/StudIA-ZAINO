@@ -28,11 +28,26 @@ function ok(nome, atteso, avuto) {
   if (a === b) { console.log('  ok  ' + nome); return; }
   ko++; console.log('  KO  ' + nome + '\n      atteso ' + a + '\n      avuto  ' + b);
 }
-async function aspetta(expr) {
-  const fine = Date.now() + 15000;
+async function aspetta(expr, diagnosi, ms) {
+  const fine = Date.now() + (ms || 15000);
   while (Date.now() < fine) { if (await c.val(expr)) return; await c.pausa(120); }
+  if (diagnosi) console.log('      stato al momento della scadenza: ' + JSON.stringify(await c.val(diagnosi)));
   throw new Error('Attesa scaduta: ' + expr);
 }
+/* Perché il bottone d'invio è spento: i predicati di `updateControls`, letti
+   dal DOM e dal ponte, senza indovinare. */
+const PERCHE_SPENTO = `(async()=>{
+  const s = await window.vault.chat.settings();
+  const m = document.getElementById('zchatSettingsModel');
+  return {
+    zaino: typeof zainoAttivo==='function' ? zainoAttivo() : null,
+    provider: s && s.provider, modello: s && s.model,
+    modelloScelto: m && m.value, modelliInElenco: m ? m.options.length : 0,
+    tendineSpente: !!(m && m.disabled),
+    testo: (document.getElementById('zchatInput')||{}).value ? 'c e' : 'vuoto',
+    stato: (document.getElementById('zchatStatus')||{}).textContent
+  };
+})()`;
 const testo = (id, v) => c.val(`(()=>{const e=document.getElementById(${JSON.stringify(id)});e.value=${JSON.stringify(v)};e.dispatchEvent(new Event('input',{bubbles:true}));return 1;})()`);
 const scegli = (id, v) => c.val(`(()=>{const e=document.getElementById(${JSON.stringify(id)});e.value=${JSON.stringify(v)};e.dispatchEvent(new Event('change',{bubbles:true}));return 1;})()`);
 
@@ -107,10 +122,20 @@ const SUPERFICI = {
   console.log('== Si configura il provider finto e si fa parlare la chat');
   await c.clicca('#settingsBtn'); await c.clicca('[data-tab="ai"]');
   await aspetta(`document.getElementById('zchatSettingsProvider').options.length>1`);
-  await scegli('zchatSettingsProvider', 'openai');
-  await testo('zchatKeyInput', 'chiave-finta-della-prova'); await c.clicca('#zchatKeySave');
-  await aspetta(`document.getElementById('zchatSettingsModel').options.length>1`);
-  await scegli('zchatSettingsModel', 'modello-locale-di-prova');
+  /* ⚠️ Solo se serve. Risalvare la chiave che c'è già fa ricaricare l'elenco
+     dei modelli, e in quella finestra l'invio resta spento: la prova falliva
+     una corsa su sei dicendo «bottone disabilitato», che era vero e non era
+     il difetto. */
+  const gia = await c.val(`(async()=>{const s=await window.vault.chat.settings();return s && s.provider==='openai' && s.model==='modello-locale-di-prova';})()`);
+  if (!gia) {
+    await scegli('zchatSettingsProvider', 'openai');
+    await testo('zchatKeyInput', 'chiave-finta-della-prova'); await c.clicca('#zchatKeySave');
+    await aspetta(`document.getElementById('zchatSettingsModel').options.length>1`);
+    await scegli('zchatSettingsModel', 'modello-locale-di-prova');
+  }
+  /* Si aspetta che la configurazione sia ASSESTATA prima di andare avanti:
+     le tendine tornano vive quando il ponte ha finito di rileggere tutto. */
+  await aspetta(`(()=>{const m=document.getElementById('zchatSettingsModel');return !m.disabled && m.value==='modello-locale-di-prova';})()`, PERCHE_SPENTO);
   await c.clicca('[data-tab="utente"]');
   await aspetta(`document.getElementById('zchatProfileEdit').options.length>0`);
   /* Le due schede si misurano da aperte, quindi si lasciano montate e si
@@ -137,7 +162,7 @@ const SUPERFICI = {
      alterne — cioè diceva una cosa sullo stato ereditato, non sul vestito. */
   const prima = await c.val(`document.querySelectorAll('.zchat-message-assistant').length`);
   await testo('zchatInput', 'Che cosa è la fotosintesi?');
-  await aspetta(`!document.getElementById('zchatSend').disabled`);
+  await aspetta(`!document.getElementById('zchatSend').disabled`, PERCHE_SPENTO, 25000);
   await c.clicca('#zchatSend');
   await aspetta(`document.querySelectorAll('.zchat-message-assistant').length > ${prima}`);
   /* La risposta porta con sé markdown, fonti e i tre comandi: sono i pezzi che
