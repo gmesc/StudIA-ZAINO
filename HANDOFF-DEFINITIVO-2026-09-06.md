@@ -60,3 +60,108 @@ Branch `icona-zaino-guida`, successivo ad `a5f59ba`. Su richiesta dell’utente,
   impaginazione della guida. Confrontati dimensioni e timestamp di tutti i 13713
   file di `dist`: invariati. Per la verifica manuale aprire la guida, ingrandire una
   schermata e controllare il nuovo marchio nella topbar avviando il sorgente.
+
+
+## La superficie CHAT AI vestita col design system — 6 settembre, sera
+
+Branch `chat-vestita-studia`, successivo a `cf09937`. ⚠️ Questa sezione sta nell'handoff di oggi
+invece che in un file nuovo: la data sarebbe la stessa, e due `HANDOFF-DEFINITIVO-2026-09-06`
+sarebbero la trappola ④ in forma di nome di file.
+
+La chat era arrivata col vestito suo. Misurato sull'app viva prima di toccare niente — 98 elementi
+su quattro superfici: **21 tondi** (finestra, tendine, bolle, voci di cronologia, perfino il 50%
+sul bottone d'invio), **2 ombre a riposo** scritte a mano che nel tema scuro restavano nere,
+**3 stack di font senza `--emoji-font`** (cioè emoji di sistema al posto di OpenMoji, contro il
+default globale), **2 altezze fuori famiglia** e **4 colori fissi**. E una testa che somigliava a
+una barra degli strumenti senza esserlo: zero `.tbar`, zero `.tbsep`, zero `.tbspazio`.
+
+Adesso è vestita coi token dell'app (invariante 8). `App/assets/chat/ui.css` passa da 80 a 139
+righe — cresce perché adesso ogni scelta porta scritto il *perché*, non perché faccia di più.
+
+- **La testa È la `.tbar`** di tutte le altre barre, con la grammatica del §5bis: il ruolo dice
+  *che cosa* guardi, la barretta, il verbo che agisce su quel documento (`+`), lo spazio elastico,
+  e in coda i comandi che si premono per ultimi (`⚙ − ×`). Prima erano quattro bottoni schiacciati
+  a destra, senza gerarchia e con `font-size` e `border-radius` scritti a mano su una classe
+  `.tbtn` che quindi non era più una `.tbtn`.
+- **Due sole altezze.** `--tb-h` in barra, `--ctl-h` per i controlli. Il campo della chiave API
+  stava a 38,2px in un pannello in cui tutto è a 40 (gli manca(va) `.ctl-input`); la riga di
+  cronologia a 63,8px con titolo e data impilati — ora è una riga sola, titolo a sinistra e data a
+  destra, alta come un controllo.
+- **`--sh-3d` solo su ciò che galleggia** (finestra e dialogo del nome), angoli vivi ovunque,
+  velo del modale allineato a quello di `#mediaModal`.
+- **`--err` e `--err-ink` aggiunti al `:root` dei due temi.** L'errore della chat era `#bd4444`
+  fisso dietro un `var(--red-strong)` che **non è mai esistito in nessun `:root`**: sul fondo
+  scuro non si leggeva. È l'unico token nuovo, e c'è perché *mancava* rispetto alla skill.
+- ⚠️ **La regola che vestiva i `select` della chat prendeva anche `#voceLettura`**, che è un
+  controllo dell'app spostato in quella scheda: usciva tondo a 5px. È l'omonimia del §8bis, e si
+  chiude **togliendo** la regola — quei campi l'app li veste già meglio da sola.
+
+### Che cosa tiene ferme queste promesse
+
+`test/cdp/prova-chat-stile.js`, nel registro `PROVE=(` di `bin/prova-zaino.sh`. **19 controlli per
+corsa** su cinque superfici (finestra, bottone in testata, dialogo del nome, le due schede di
+Impostazioni), **nei due temi** e con una **conversazione vera** aperta col provider simulato —
+bolla, markdown, fonti e i tre comandi sotto la risposta non esistono finché nessuno parla.
+
+⚠️ **Gli stati dinamici non sono un dettaglio**: l'audit statico sulla stessa superficie dava zero
+anomalie mentre il campo della chiave stava a 38,2px.
+
+La prova è stata **fatta diventare rossa apposta**, rimettendo le cinque cose di prima (angolo,
+ombra a mano, stack senza emoji, campo senza classe, grammatica vecchia): le ha viste tutte e
+cinque. Un suo controllo mentiva — senza `.tbspazio` diceva comunque «la coda sta dopo lo spazio»,
+perché l'indice era `-1` — ed è stato chiuso.
+
+### Il mockup d'approvazione
+
+`docs/mockup-chat/genera.js`: **non si disegna a mano**. Prende il CSS vero dal blocco `<style>`
+del monolite, e il markup di testa, dialogo e scheda AI lo **legge da `ui.js`**; se quelli
+cambiano, o cambia il mockup o la generazione si ferma dicendolo. Il tema scuro lo estrae dai
+token e **verifica** che dentro `html[data-theme="scuro"]` ci siano solo token: se ci finisse una
+regola di componente, si rifiuta di generare invece di mentire sul tema. Il file prodotto è in
+`.gitignore` — versionarlo vorrebbe dire 250 KB di diff a ogni ritocco del CSS.
+
+```bash
+node docs/mockup-chat/genera.js && open docs/mockup-chat/index.html
+```
+
+### Il flake che è costato quattro tornate
+
+`prova-chat-zaino.js` falliva una corsa su otto, con **due sintomi diversi per una causa sola**:
+`TypeError: null.scrollIntoView` sul click di `.zn-appunto`, oppure l'attesa scaduta su
+`NOTES.mde`. L'attesa d'ingresso controlla `chatBtn` e lo zaino attivo, ma la navigazione dello
+zaino si disegna dopo — e ⚠️ **il click CDP va per COORDINATE**: fra il calcolo del rettangolo e i
+due eventi di mouse l'elenco cresce ancora. Nel caso peggiore l'elemento non c'è; in quello più
+comune c'è ma si è spostato, e il click cade accanto.
+
+La guardia sta nell'helper `click` **condiviso** — quella prova ne fa venti, e ognuno correva lo
+stesso rischio: si aspetta che l'elemento esista, poi che la sua posizione resti la stessa per due
+misure di fila.
+
+⚠️ E adesso **le attese parlano**: quando scadono stampano che cosa avevano davanti (quante voci,
+quali oggetti, quale modello scelto). Le prime otto corse le ho spese a indovinare quale predicato
+fosse falso.
+
+Nello stesso giro è emerso un difetto della prova di stile: riconfigurava provider, chiave e
+modello che `prova-chat-zaino.js` aveva **già** impostato, e risalvare la chiave fa ricaricare
+l'elenco dei modelli — nella finestra in cui si ricarica, l'invio è spento a ragione. Ora tocca
+solo ciò che manca e aspetta che la configurazione sia **assestata**, non che sia passato del
+tempo.
+
+### Verifiche
+
+- `npm test`: **58 file** in catena, verde.
+- `npm run test:ui`: **8 corse su 8 verdi** dopo la guardia. Il conto onesto delle tornate
+  precedenti: 5/6, poi 7/8, poi 7/8 — ogni rosso ha prodotto una causa, non un timeout più lungo.
+- Mockup approvato a video nei due temi; gesti provati a mano dall'utente: testa della chat,
+  bottone acceso in testata, bolla, commutazione del tema con la chat aperta, altezze in
+  Impostazioni → AI, emoji OpenMoji in una risposta.
+- ⚠️ `dist` **non è stato rigenerato**, coerentemente con la sezione precedente: i pacchetti
+  presenti restano quelli di prima.
+
+### Per chi arriva dopo
+
+Una superficie nuova si guarda **prima** d'innestarla (`docs/mockup-chat/genera.js` è il modello:
+codice vero, non disegno), e si misura **dopo** negli stati dinamici. Le prove della chat hanno un
+runner e un registro **tutti loro** — `bin/prova-zaino.sh`, che si fabbrica lo zaino «biologia» e
+simula il provider: non stanno nel `PROVE=(` di `con-vault-di-prova.sh`, che gira sulla copia del
+vault vero e quello zaino non ce l'ha.
