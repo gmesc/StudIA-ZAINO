@@ -59,7 +59,12 @@ function sezione(t) { console.log('\n== ' + t); }
       return v.indexOf('appunti')>=0 && v.indexOf('mappa')>=0; })()`));
 
   sezione('Le tendine dicono la funzione; quel che è scelto sta nel title');
-  ok('le etichette sono le funzioni', ['Corso', 'Percorso', 'Lezione'],
+  /* ⚠️ …e quali siano le etichette lo decide la MODALITÀ, non il codice di
+     ieri: nel fork ZAINO la fila visibile è una sola tendina, «Zaino». Il
+     controllo resta lo stesso — le tendine dicono la FUNZIONE, non il titolo
+     di ciò che è scelto — ma l'atteso se lo fa dire dall'app. */
+  ok('le etichette sono le funzioni',
+    await val(`modoAttivo()==='zaino' ? ['Zaino'] : ['Corso','Percorso','Lezione']`),
     /* ⚠️ Ristretto alla TOPBAR. `.tendina` non è più solo sua: lo stesso guscio
        avvolge ora le tendine del banco, della mappa e degli appunti, dove
        l'etichetta è VIVA e dice che cosa è scelto. Cercarlo in tutta la pagina
@@ -79,8 +84,13 @@ function sezione(t) { console.log('\n== ' + t); }
   ok('la lezione scelta si legge nel title della sua tendina', true,
     await val(`(()=>{ const s=document.querySelector('#lessonSelect');
       return !!s.title && s.title===s.options[s.selectedIndex].text; })()`));
-  ok('e il menu che si apre è ancora quello di sistema, con tutte le lezioni', true,
-    await val("document.querySelector('#lessonSelect').options.length > 1"));
+  /* Nel fork non ci sono lezioni da elencare: si prova che il menu è quello di
+     SISTEMA (un `select` vero, non un pannellino disegnato), che è ciò che il
+     controllo voleva dire. Dove le lezioni ci sono, si chiede anche quelle. */
+  ok('e il menu che si apre è ancora quello di sistema', true,
+    await val(`(()=>{ const s=document.querySelector('#lessonSelect');
+      if(!s) return false;
+      return modoAttivo()==='zaino' ? s.tagName==='SELECT' : s.options.length > 1; })()`));
 
   sezione('A− e A+ in un chip solo, delle misure di chiaro/scuro');
   const chip = await val(`(()=>{ const g=document.querySelector('.chipgroup'), t=document.querySelector('#themeToggle');

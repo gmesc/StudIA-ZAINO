@@ -128,15 +128,59 @@ case "$VISTO" in
   *) echo "✗ la pagina aperta non è quella attesa: $VISTO"; exit 1 ;;
 esac
 
-if [ $# -gt 0 ]; then PROVE=("$@"); else PROVE=(prova-b1.js prova-stampa.js prova-b2.js prova-banco-avvio.js prova-banco-contenuto.js prova-banco-ripristino.js prova-banco-griglia.js prova-media-punto.js prova-menu.js prova-selezione-menu.js prova-note.js prova-appunto-riga.js prova-keyword.js prova-mappe-ui.js prova-mappa-trascina.js prova-mappa-pallino.js prova-l1.js prova-l2.js prova-l3l4.js prova-topbar.js prova-topbar-stile.js prova-tbar.js prova-appunti-barra.js prova-appunti-md.js prova-callout-bolla.js prova-riquadri-stili.js prova-maniglia-indice.js prova-wikilink.js prova-identita-capitoli.js prova-pdf.js prova-pagina-campo.js prova-righello.js prova-voce-pagina.js prova-ricerca-pannellino.js prova-lente-punto.js prova-lente-mappe.js prova-confronto.js prova-testolayer.js prova-album.js prova-album-trascina.js prova-foto.js prova-misura-immagine.js prova-memorie.js prova-tendine.js prova-modo.js prova-tasti-frecce.js prova-zaino.js prova-evidenze-pdf.js prova-fonti.js prova-fonte-rimossa.js prova-import.js prova-ocr-zaino.js prova-player.js prova-media-nonapre.js prova-ripasso.js prova-ripasso-vista.js prova-crediti.js prova-impostazioni-token.js prova-onboarding-token.js prova-primo-avvio.js prova-atlante.js prova-emoji.js prova-evidenziatore.js prova-evidenza-appunto.js prova-sbircia.js prova-postilla.js prova-postilla-zaino.js prova-postille-vista.js prova-strati.js); fi
+# ── I due registri ────────────────────────────────────────────────────────────────────
+# ⚠️ Questo fork ha rimosso corsi, lezioni e capitoli: la maggior parte delle prove qui
+# dentro li chiede, e fallisce per COSTRUZIONE — «il capitolo sta nel blocco A» è falso
+# perché non c'è nessun capitolo. Misurato il 6 settembre 2026: 55 rosse su 69, e su
+# `main` pulita 44. Un totale del genere non dice niente a nessuno, e ha già fatto
+# credere a una regressione che non c'era.
+#
+# Perciò il registro è DUE. `PROVE_ZAINO` sono quelle che su questo fork possono essere
+# verdi — misurate tali su due rami diversi, non scelte dal nome. È questo l'elenco che
+# vale per il criterio (a) di un merge:
+#
+#   STUDIA_SUITE=zaino ./test/cdp/con-vault-di-prova.sh      solo quelle che qui hanno senso
+#   ./test/cdp/con-vault-di-prova.sh                         tutte, come prima
+#
+# ⚠️ Una prova entra qui perché è stata VISTA verde LANCIANDO QUESTO ELENCO, non perché
+# sembra parlare dello zaino (`prova-zaino.js` non c'è, e il nome ingannerebbe) e nemmeno
+# perché era verde dentro la suite intera. Il primo elenco ne aveva 19 scelte così, e
+# quattro sono cadute subito:
+#   · `prova-note` e `prova-topbar` chiedono un CAPITOLO, che qui non esiste;
+#   · `prova-album-trascina` e `prova-mappa-trascina` erano verdi solo perché `prova-album`
+#     e `prova-mappe-ui` giravano PRIMA a preparare i dati — e quelle due, di corsi, in
+#     questo elenco non ci sono.
+# Cioè: questo non è un insieme, è una CATENA. Chi ne toglie o sposta un pezzo la rilancia.
+PROVE_ZAINO=(
+  prova-appunti-barra.js prova-appunti-md.js prova-appunto-riga.js prova-banco-avvio.js
+  prova-banco-griglia.js prova-banco-ripristino.js prova-callout-bolla.js prova-maniglia-indice.js
+  prova-media-punto.js prova-ocr-zaino.js prova-riquadri-stili.js prova-stampa.js
+  prova-tbar.js prova-topbar-stile.js prova-wikilink.js)
+
+if [ $# -gt 0 ]; then PROVE=("$@");
+elif [ "${STUDIA_SUITE:-}" = "zaino" ]; then PROVE=("${PROVE_ZAINO[@]}");
+else PROVE=(prova-b1.js prova-stampa.js prova-b2.js prova-banco-avvio.js prova-banco-contenuto.js prova-banco-ripristino.js prova-banco-griglia.js prova-media-punto.js prova-menu.js prova-selezione-menu.js prova-note.js prova-appunto-riga.js prova-keyword.js prova-mappe-ui.js prova-mappa-trascina.js prova-mappa-pallino.js prova-l1.js prova-l2.js prova-l3l4.js prova-topbar.js prova-topbar-stile.js prova-tbar.js prova-appunti-barra.js prova-appunti-md.js prova-callout-bolla.js prova-riquadri-stili.js prova-maniglia-indice.js prova-wikilink.js prova-identita-capitoli.js prova-pdf.js prova-pagina-campo.js prova-righello.js prova-voce-pagina.js prova-ricerca-pannellino.js prova-lente-punto.js prova-lente-mappe.js prova-confronto.js prova-testolayer.js prova-album.js prova-album-trascina.js prova-foto.js prova-misura-immagine.js prova-memorie.js prova-tendine.js prova-modo.js prova-tasti-frecce.js prova-zaino.js prova-evidenze-pdf.js prova-fonti.js prova-fonte-rimossa.js prova-import.js prova-ocr-zaino.js prova-player.js prova-media-nonapre.js prova-ripasso.js prova-ripasso-vista.js prova-crediti.js prova-impostazioni-token.js prova-onboarding-token.js prova-primo-avvio.js prova-atlante.js prova-emoji.js prova-evidenziatore.js prova-evidenza-appunto.js prova-sbircia.js prova-postilla.js prova-postilla-zaino.js prova-postille-vista.js prova-strati.js); fi
 
 KO=0
+ROSSE=()
 for p in "${PROVE[@]}"; do
   echo ""
   echo "── $p ───────────────────────────────────────────"
-  STUDIA_PORTA="$PORTA" node "test/cdp/$p" || KO=$((KO+1))
+  if ! STUDIA_PORTA="$PORTA" node "test/cdp/$p"; then KO=$((KO+1)); ROSSE+=("$p"); fi
 done
 
 echo ""
-if [ "$KO" -eq 0 ]; then echo "✓ tutte le prove sono verdi"; else echo "✗ $KO prove fallite"; fi
+if [ "$KO" -eq 0 ]; then
+  echo "✓ tutte le prove sono verdi (${#PROVE[@]})"
+else
+  # ⚠️ CHI è rossa, non solo quante. Prima si sapeva il numero e basta, e per
+  # risalire ai nomi bisognava ripescarli dall'uscita con un `awk` — che ne
+  # trova MENO del vero, perché una prova che muore in un'eccezione non stampa
+  # né «KO» né «✗». Un conteggio senza nomi costa una corsa in più ogni volta.
+  echo "✗ $KO prove fallite su ${#PROVE[@]}:"
+  for p in "${ROSSE[@]}"; do echo "    $p"; done
+  echo ""
+  echo "  ⚠️ Su questo fork un rosso NON si crede finché non lo si è rilanciato da solo:"
+  echo "     ./test/cdp/con-vault-di-prova.sh ${ROSSE[*]}"
+fi
 exit $KO

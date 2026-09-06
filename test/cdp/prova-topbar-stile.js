@@ -46,7 +46,13 @@ const box = (sel) => val(`(()=>{const e=document.querySelector(${JSON.stringify(
   const chip = await box('#themeToggle');
   ok('il chiaro/scuro non è più una pillola', '0px', chip.raggio);
   ok('…e non ha cornice', '0px0px0px0px', chip.bordo);
-  const tend = await box('.lessonrow .tendina');
+  /* ⚠️ Quale fila di tendine sia A SCHERMO dipende dalla MODALITÀ, e questa
+     prova lo dava per scontato: chiedeva sempre `.lessonrow`, che nel fork
+     ZAINO è nascosta per costruzione. Misurare una fila invisibile dà altezza
+     0 e accusa il vestito di un difetto che non ha. La fila si chiede alla
+     modalità, così il controllo vale in tutte e due le app. */
+  const fila = await val(`modoAttivo()==='zaino' ? 'zainorow' : 'lessonrow'`);
+  const tend = await box('.' + fila + ' .tendina');
   ok('la tendina è nuda', '0px0px0px0px', tend.bordo);
   ok('…e alta quanto i bottoni', 33, tend.h);
   ok('le barrette di gruppo sono a schermo', true,
@@ -61,7 +67,7 @@ const box = (sel) => val(`(()=>{const e=document.querySelector(${JSON.stringify(
   const ordine = await val(`[...document.querySelectorAll('.topbar .controls > *')]
     .filter(e=>!e.hidden && getComputedStyle(e).display!=='none').map(e=>e.id||e.className.split(' ')[0])`);
   console.log('   ordine: ' + JSON.stringify(ordine));
-  ok('la fila dei corsi apre la riga', 'lessonrow', ordine[0]);
+  ok('la fila che sceglie che cosa studiare apre la riga', fila, ordine[0]);
   ok('e «Banco» viene dopo la lente, come prima', true,
     ordine.indexOf('bancoBtn') > ordine.indexOf('searchBtn'));
 

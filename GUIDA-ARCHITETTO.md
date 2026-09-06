@@ -175,6 +175,8 @@ npm run pacchetto                          # bundle + firma ad-hoc + dmg, con la
 npm run pacchetto -- x64                   # …e per i Mac Intel (gira qui con Rosetta)
 npm run dist:win                           # l'installer per Windows 11
 npm run test:ui                            # le prove della CHAT sull'app viva (registro a sé)
+STUDIA_SUITE=zaino \
+  ./test/cdp/con-vault-di-prova.sh         # SOLO le prove che su questo fork possono passare
 ```
 
 ⚠️ **Le prove della chat hanno un runner e un registro tutti loro**: `bin/prova-zaino.sh`, che si
@@ -199,9 +201,13 @@ niente — si riporta a casa o si toglie.
 ⚠️ **Su questo FORK la suite `con-vault-di-prova.sh` è in gran parte inapplicabile, e si legge
 per DIFFERENZA con `main`, mai come numero assoluto.** Misurato il 6 settembre 2026, 69 prove
 lanciate: **55 rosse sul ramo di lavoro e 44 su `main` pulita**. La maggior parte chiede corsi,
-lezioni, capitoli e quiz, che lo ZAINO non ha — «il capitolo sta nel blocco A» → falso, «la
-tendina alta quanto i bottoni» → 0 perché nel fork è nascosta, «senza quiz nel corso la prova non
-può provare niente». Non sono regressioni: sono prove che parlano dell'app originale.
+lezioni, capitoli e quiz, che lo ZAINO non ha — «il capitolo sta nel blocco A» → falso, «nessun
+capitolo con note in tutto il vault di prova», «senza quiz nel corso la prova non può provare
+niente». Non sono regressioni: sono prove che parlano dell'app originale.
+Qualcuna si riporta a casa invece di lasciarla rossa: `prova-topbar` e `prova-topbar-stile`
+pretendevano la fila di tendine dei corsi, e ora l'atteso se lo fanno dire dalla MODALITÀ
+(`modoAttivo()`), così valgono in tutte e due le app — la seconda è tornata verde, la prima muore
+più a valle su `#content`, che un capitolo lo vuole davvero.
 
 ⚠️ E il resto si **contamina fra prove**. Le **12** che risultavano rosse solo sul ramo,
 rilanciate da sole, sono venute verdi **11 su 12** (la dodicesima è quella dei quiz assenti).
@@ -212,9 +218,22 @@ dei rossi con quello di `main`, non il totale.
 runner (51 contro 55), perché alcune prove muoiono con un'eccezione senza stamparlo. Il numero
 autorevole è quello del runner, che guarda il codice d'uscita.
 
-Le prove che valgono davvero per il fork: quelle dello zaino e del vestito — `prova-zaino`,
-`prova-tbar`, `prova-topbar-stile`, `prova-riquadri-stili`, `prova-appunti-barra`, `prova-emoji`,
-`prova-crediti` — più tutta la catena di `npm run test:ui`.
+Per questo il runner ha **due registri**: `PROVE_ZAINO=(` — **15** prove, verde 15 su 15 — è
+quello che vale per il criterio (a) di un merge sul fork:
+
+```bash
+STUDIA_SUITE=zaino ./test/cdp/con-vault-di-prova.sh
+```
+
+⚠️ Quell'elenco è una **catena, non un insieme**, e sceglierlo «a occhio» non funziona: la prima
+stesura ne aveva 19, prese fra quelle risultate verdi nella suite intera, e quattro sono cadute
+alla prima corsa. Due (`prova-note`, `prova-topbar`) chiedono un CAPITOLO, che qui non esiste; due
+(`prova-album-trascina`, `prova-mappa-trascina`) erano verdi **solo perché** `prova-album` e
+`prova-mappe-ui` giravano prima a preparare i dati. Chi tocca l'elenco lo rilancia.
+
+⚠️ E il runner adesso **dice i nomi** delle prove rosse, non solo quante: ricostruirli dall'uscita
+con un `grep` ne trova meno del vero, perché una prova che muore in un'eccezione non stampa né
+«KO» né «✗».
 
 - Le prove CDP girano su una **copia magra del vault** (23 GB → ~2 MB) e una cartella dati tutta
   loro: non toccano niente dell'utente, e la sua app può restare aperta.
