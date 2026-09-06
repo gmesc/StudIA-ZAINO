@@ -196,6 +196,26 @@ dimenticati per caso: chiedono un `cdp.js` dentro uno scratchpad temporaneo di l
 partirebbero nemmeno. Un file di prove che non gira è la stessa bugia di un verde che non prova
 niente — si riporta a casa o si toglie.
 
+⚠️ **Su questo FORK la suite `con-vault-di-prova.sh` è in gran parte inapplicabile, e si legge
+per DIFFERENZA con `main`, mai come numero assoluto.** Misurato il 6 settembre 2026, 69 prove
+lanciate: **55 rosse sul ramo di lavoro e 44 su `main` pulita**. La maggior parte chiede corsi,
+lezioni, capitoli e quiz, che lo ZAINO non ha — «il capitolo sta nel blocco A» → falso, «la
+tendina alta quanto i bottoni» → 0 perché nel fork è nascosta, «senza quiz nel corso la prova non
+può provare niente». Non sono regressioni: sono prove che parlano dell'app originale.
+
+⚠️ E il resto si **contamina fra prove**. Le **12** che risultavano rosse solo sul ramo,
+rilanciate da sole, sono venute verdi **11 su 12** (la dodicesima è quella dei quiz assenti).
+Quindi un rosso qui non si crede finché non lo si è rilanciato **in isolamento**
+(`./test/cdp/con-vault-di-prova.sh <nome> ...`), e prima di un merge si confronta l'**insieme**
+dei rossi con quello di `main`, non il totale.
+⚠️ E il conto si fa bene: contare i `✗` nell'uscita dà un numero **diverso** da quello del
+runner (51 contro 55), perché alcune prove muoiono con un'eccezione senza stamparlo. Il numero
+autorevole è quello del runner, che guarda il codice d'uscita.
+
+Le prove che valgono davvero per il fork: quelle dello zaino e del vestito — `prova-zaino`,
+`prova-tbar`, `prova-topbar-stile`, `prova-riquadri-stili`, `prova-appunti-barra`, `prova-emoji`,
+`prova-crediti` — più tutta la catena di `npm run test:ui`.
+
 - Le prove CDP girano su una **copia magra del vault** (23 GB → ~2 MB) e una cartella dati tutta
   loro: non toccano niente dell'utente, e la sua app può restare aperta.
 - ⚠️ Porta 9333 a esemplare unico: un'istanza orfana di una corsa interrotta falsa **tutta** la

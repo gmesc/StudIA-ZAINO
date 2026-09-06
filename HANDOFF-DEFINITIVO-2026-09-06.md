@@ -155,6 +155,15 @@ tempo.
 - Mockup approvato a video nei due temi; gesti provati a mano dall'utente: testa della chat,
   bottone acceso in testata, bolla, commutazione del tema con la chat aperta, altezze in
   Impostazioni → AI, emoji OpenMoji in una risposta.
+- `./test/cdp/con-vault-di-prova.sh`: **55 rosse su 69**, e `main` pulita ne dà **44**. Le **12**
+  rosse solo sul ramo, rilanciate **in isolamento**, sono verdi **11 su 12**: non erano
+  regressioni, era contaminazione fra prove. La dodicesima (`prova-ripasso-vista`) dice da sé
+  «senza quiz nel corso la prova non può provare niente» — il fork non ha corsi. Le prove che
+  contano per il vestito (`prova-tbar`, `prova-topbar-stile`, `prova-riquadri-stili`,
+  `prova-appunti-barra`, `prova-emoji`, `prova-crediti`) sono **verdi**. ⚠️ Vedi la nota nuova
+  alla §6 della guida: su questo fork quella suite si legge per differenza, e il totale
+  autorevole è quello del runner, non il conteggio dei `✗` (51 contro 55: alcune prove muoiono
+  con un'eccezione senza stamparla).
 - ⚠️ `dist` **non è stato rigenerato**, coerentemente con la sezione precedente: i pacchetti
   presenti restano quelli di prima.
 
