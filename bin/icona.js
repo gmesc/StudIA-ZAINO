@@ -2,8 +2,8 @@
  *
  *   npm run icona      → build/icon.png (1024) e build/icon.icns
  *
- * La sorgente è il tocco accademico di OpenMoji (1F393, CC BY-SA 4.0), lo stesso
- * repertorio da cui vengono tutte le icone dell'app: `build/1F393.svg`. Sta nel
+ * La sorgente è lo zaino di OpenMoji (1F392, CC BY-SA 4.0), lo stesso
+ * repertorio da cui vengono tutte le icone dell'app: `App/assets/1F392.svg`. Sta nel
  * repo perché un'icona che si scarica al momento della build è una build che
  * dipende dalla rete.
  *
@@ -25,19 +25,16 @@ const { execFileSync } = require('child_process');
 
 const RADICE = path.join(__dirname, '..');
 const FUORI = path.join(RADICE, 'build');
-const SORGENTE = path.join(FUORI, '1F393.svg');
+const SORGENTE = path.join(RADICE, 'App', 'assets', '1F392.svg');
 
 const TELA = 1024;
 const TILE = 824;                    // il quadrato dell'icona dentro la tela
 const MARGINE = (TELA - TILE) / 2;   // 100 px: lo spazio dell'ombra di sistema
-const EMOJI = 660;                   // quanto è larga l'emoji dentro il tile
+const EMOJI = 660;                   // lato maggiore dell'emoji dentro il tile
 
-/* Il ritaglio del disegno. L'SVG di OpenMoji è in una tela 72×72 ma il tocco ne
- * occupa solo una fascia: senza questo ritaglio l'icona risulterebbe piccola e
- * spostata in basso, perché il vuoto sopra e sotto conta come disegno.
- * I numeri vengono dalle forme: il bottone in cima (cerchio cy=22 r=3) e il
- * bordo inferiore del corpo (45.896 + mezzo tratto). */
-const RITAGLIO = { x: 3, y: 18, w: 66, h: 30 };
+/* Bounding box dello zaino OpenMoji, compreso il tratto: x 15…57,
+ * y 3…66. Il lato maggiore mantiene i 660 px della ricetta StudIA. */
+const RITAGLIO = { x: 15, y: 3, w: 42, h: 63 };
 
 /* La forma dell'angolo, MISURATA su un'icona di macOS, non indovinata.
  *
@@ -85,10 +82,10 @@ function squircle(lato) {
   ].join(' ');
 }
 
-/** La pagina che il browser fotografa: il tile bianco e il tocco al centro. */
+/** La pagina che il browser fotografa: il tile bianco e lo zaino al centro. */
 function pagina() {
   const disegno = fs.readFileSync(SORGENTE, 'utf-8')
-    .replace(/<svg[^>]*>/, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${RITAGLIO.x} ${RITAGLIO.y} ${RITAGLIO.w} ${RITAGLIO.h}" width="${EMOJI}" height="${(EMOJI * RITAGLIO.h) / RITAGLIO.w}">`);
+    .replace(/<svg[^>]*>/, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${RITAGLIO.x} ${RITAGLIO.y} ${RITAGLIO.w} ${RITAGLIO.h}" width="${EMOJI * RITAGLIO.w / Math.max(RITAGLIO.w, RITAGLIO.h)}" height="${EMOJI * RITAGLIO.h / Math.max(RITAGLIO.w, RITAGLIO.h)}">`);
   return `<!doctype html><meta charset="utf-8"><style>
     html,body{margin:0;padding:0;background:transparent;}
     /* la tela intera, con il tile centrato: il margine è dove macOS mette l'ombra */
@@ -154,7 +151,7 @@ const TAGLIE = [
 
 async function main() {
   if (!fs.existsSync(SORGENTE)) {
-    console.error('manca ' + SORGENTE + ' — è il tocco di OpenMoji (1F393), va nel repo');
+    console.error('manca ' + SORGENTE + ' — è lo zaino di OpenMoji (1F392), va nel repo');
     process.exit(1);
   }
   const { app, BrowserWindow } = require('electron');

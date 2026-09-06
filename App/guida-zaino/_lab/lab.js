@@ -272,11 +272,11 @@ async function dialogoFinto(testo, opt) {
     const velo=document.createElement('div'); velo.style.cssText='position:absolute;inset:0;background:rgba(0,0,0,.18)'; h.appendChild(velo);
     const d=document.createElement('div');
     d.style.cssText='position:absolute;left:50%;top:22%;transform:translateX(-50%);width:420px;background:#ececec;border-radius:12px;box-shadow:0 18px 60px rgba(0,0,0,.45),0 0 0 1px rgba(0,0,0,.15);padding:22px 20px 18px;font:13px/1.45 -apple-system,Helvetica,Arial,sans-serif;color:#111;text-align:center';
-    /* ⚠️ Il cappello è l'ICONA DELL'APP, e l'icona è OpenMoji (build/1F393.svg):
+    /* ⚠️ Lo zaino è l'ICONA DELL'APP, e l'icona è OpenMoji (App/assets/1F392.svg):
        il font va detto qui, o l'overlay eredita -apple-system e disegna il
-       cappello di Apple, che nel confirm() vero l'utente non vede. */
-    d.innerHTML='<div style="font-size:44px;line-height:1;margin-bottom:10px;font-family:\\'OpenMoji\\',sans-serif">🎓</div>'
-      + '<div style="font-weight:700;font-size:13px;margin-bottom:8px">StudIA</div>'
+       zaino di Apple, che nel confirm() vero l'utente non vede. */
+    d.innerHTML='<div style="font-size:44px;line-height:1;margin-bottom:10px;font-family:\\'OpenMoji\\',sans-serif">🎒</div>'
+      + '<div style="font-weight:700;font-size:13px;margin-bottom:8px">StudIA - ZAINO</div>'
       + '<div style="white-space:pre-wrap;text-align:left;font-size:12px;color:#222">'+${JSON.stringify(testo)}.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))+'</div>'
       + '<div style="display:flex;gap:10px;margin-top:16px"><div style="flex:1;background:#fff;border:1px solid #c9c9c9;border-radius:6px;padding:5px 0;font-size:13px">'+${JSON.stringify(o.annulla)}+'</div><div style="flex:1;background:#2f6df6;color:#fff;border-radius:6px;padding:5px 0;font-size:13px;font-weight:600">'+${JSON.stringify(o.ok)}+'</div></div>';
     h.appendChild(d); return 1; })()`);

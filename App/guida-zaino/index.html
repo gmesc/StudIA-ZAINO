@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Guida allo ZAINO di StudIA</title>
-<meta name="description" content="Come si usa la modalità ZAINO di StudIA: creare uno zaino, portarci dentro PDF, video, audio, foto e testi, e studiarci sopra con appunti, mappe, parole chiave e ritagli. Spiegato come a un bambino di cinque anni, ma con tutte le cose vere.">
-<link rel="stylesheet" href="stile.css?v=2026082901">
+<title>Guida di StudIA - ZAINO</title>
+<meta name="description" content="Come si usa StudIA - ZAINO: creare uno zaino, portarci dentro PDF, video, audio, foto e testi, e studiarci sopra con appunti, mappe, parole chiave e ritagli. Spiegato come a un bambino di cinque anni, ma con tutte le cose vere.">
+<link rel="stylesheet" href="stile.css?v=2026090601">
 </head>
 <body>
 <a class="skip" href="#inizio">Salta al contenuto</a>
 
 <header class="topbar">
   <button class="tbtn menubtn" id="menuBtn" aria-label="Mostra o nascondi l'indice">☰</button>
-  <a class="brand" href="#inizio"><span class="cap">🎓</span><b>StudIA</b><span>Guida allo Zaino</span></a>
+  <a class="brand" href="#inizio"><img class="cap" src="../assets/1F392.svg" width="32" height="32" alt=""><b>StudIA - ZAINO</b><span>Guida allo Zaino</span></a>
   <span class="tbsep"></span>
   <button class="tbtn" id="temaBtn" aria-label="Cambia tema chiaro o scuro">☀️ / 🌙</button>
 </header>
@@ -21,49 +21,49 @@
   <aside class="sidebar" aria-label="Indice della guida">
     <h2>Indice</h2>
     <ol class="toc" id="toc"></ol>
-    <div class="sidebar-foot">StudIA · agosto 2026</div>
+    <div class="sidebar-foot">StudIA - ZAINO · settembre 2026</div>
   </aside>
 
   <main id="inizio">
     <article>
-      <p class="kicker">StudIA · modalità Zaino · guida completa</p>
-      <h1>Lo Zaino, spiegato come a un bambino di cinque anni</h1>
+      <p class="kicker">StudIA - ZAINO · guida completa</p>
+      <h1>Studiare con il tuo Zaino</h1>
       <p class="lead">Immagina uno zaino di scuola. Ci metti dentro i tuoi fogli, i tuoi libri, le foto della lavagna, la registrazione della lezione. Poi arrivi al banco, apri lo zaino e ti metti a studiare: sottolinei, prendi appunti, ritagli le figure, disegni una mappa. Lo <strong>ZAINO</strong> di StudIA fa esattamente questo, sul computer.</p>
 
       <div class="callout eli5">
         <div class="ch">🧒 Detto in due parole</div>
-        <p>StudIA ha due «stanze». Nella stanza <strong>CORSO</strong> il computer legge i tuoi materiali e ti costruisce lezioni, quiz e riassunti. Nella stanza <strong>ZAINO</strong> il computer non scrive niente: <em>ci sono solo i tuoi documenti e tu</em>. È la stanza per studiare sulle proprie dispense, sui PDF del professore, sulle foto delle schede.</p>
+        <p><strong>StudIA - ZAINO</strong> si apre direttamente sui tuoi materiali: PDF, testi, appunti, mappe, foto e registrazioni. Puoi studiare in autonomia oppure aprire il <strong>tutor AI</strong>. Il fork non contiene la modalità CORSI: non crea lezioni, trascrizioni o indici didattici.</p>
       </div>
 
       <figure class="fig-intera">
         <img src="img/12-pdf-aperto.png" alt="La finestra di StudIA in modalità Zaino: a sinistra la sidebar con Fonti, Appunti e Mappe; al centro il documento PDF aperto; a destra l'editor degli appunti." loading="lazy">
-        <figcaption><b>Lo zaino al lavoro.</b> A sinistra l'elenco di ciò che c'è dentro (Fonti · Appunti · Mappe). Al centro il documento. A destra il quaderno degli appunti. Tutto quello che vedi in questa guida è fotografato sull'app vera, a schermo intero su un MacBook Air 13″.</figcaption>
+        <figcaption><b>Lo zaino al lavoro.</b> A sinistra l'elenco di ciò che c'è dentro (Fonti · Appunti · Mappe). Al centro il documento. A destra il quaderno degli appunti. Le schermate provengono dal fork, con un vault di esempio e una finestra da 1470 × 956 punti. La chat mostrata usa risposte simulate per illustrare i comandi, senza API personali.</figcaption>
       </figure>
 
       <div class="callout fonte">
         <div class="ch">📎 Come leggere questa guida</div>
-        <p>Ogni immagine si <strong>ingrandisce</strong> con un click (si chiude con <kbd>Esc</kbd> o cliccando fuori; le frecce ← → passano da un'immagine all'altra). Dove serve indicare un bottone preciso, c'è un <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#f2b705;vertical-align:-2px;box-shadow:0 0 0 2px #fff"></span> pallino giallo attorno al puntatore o dei numeri cerchiati con la legenda sotto. Le parole fra «virgolette» sono <em>esattamente</em> quelle che leggi a schermo. Le combinazioni di tasti sono scritte per macOS (<kbd>⌘</kbd>); su Windows <kbd>⌘</kbd> diventa <kbd>Ctrl</kbd> e <kbd>⌥</kbd> diventa <kbd>Alt</kbd>.</p>
+        <p>Ogni immagine si <strong>ingrandisce</strong> con un click (si chiude con <kbd>Esc</kbd> o cliccando fuori; le frecce ← → passano da un'immagine all'altra). Dove serve indicare un bottone preciso, c'è un <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#f2b705;vertical-align:-2px;box-shadow:0 0 0 2px #fff"></span> pallino giallo attorno al puntatore o dei numeri cerchiati con la legenda sotto. I menu e le conferme di sistema sono ricostruiti dal loro contenuto effettivo quando non vengono catturati da Electron. Le parole fra «virgolette» sono <em>esattamente</em> quelle che leggi a schermo. Le combinazioni di tasti sono scritte per macOS (<kbd>⌘</kbd>); su Windows <kbd>⌘</kbd> diventa <kbd>Ctrl</kbd> e <kbd>⌥</kbd> diventa <kbd>Alt</kbd>.</p>
       </div>
 
       <!-- ============================================================ -->
       <section class="cap" id="creare">
         <h2 data-n="01">Creare il primo zaino</h2>
 
-        <p>Quando apri StudIA sei nella stanza dei <strong>corsi</strong>. Per andare nella stanza dello zaino c'è una porta sola: il <strong>logo «StudIA»</strong> in alto a sinistra, con il cappello da laurea. Non sembra un bottone, ma lo è: la prima volta <em>batte</em> piano piano per farsi notare, e il cappello si solleva quando ci passi sopra col mouse.</p>
+        <p>Quando apri <strong>StudIA - ZAINO</strong> sei già nello zaino. Al primo avvio scegli la cartella del <strong>vault</strong>, dove conservare il tuo lavoro. Il marchio in alto a sinistra usa lo zaino rosso OpenMoji; non cambia modalità.</p>
 
         <figure class="fig-pannello">
           <img src="img/01-logo-commutatore.png" alt="Il logo StudIA in alto a sinistra con il puntatore sopra" loading="lazy">
-          <figcaption><b>Il logo è l'interruttore.</b> Un click e passi allo Zaino; un altro click e torni ai corsi. Il suggerimento che compare passandoci sopra dice «Passa alla modalità Zaino» oppure «Torna ai corsi».</figcaption>
+          <figcaption><b>Il marchio del fork.</b> Lo zaino rosso identifica StudIA - ZAINO.</figcaption>
         </figure>
 
         <div class="callout">
           <div class="ch">✅ Non si perde niente</div>
-          <p>Passare da una stanza all'altra non chiude nulla: il corso che stavi leggendo resta esattamente com'era, e quando torni lo ritrovi. Anche lo zaino si ricorda dov'eri: quale documento avevi aperto, a che pagina, quale appunto, quale mappa.</p>
+          <p>Ogni zaino ricorda i materiali aperti, le posizioni di lettura e la disposizione del banco. Passare a un altro zaino mantiene separati documenti, appunti e conversazioni.</p>
         </div>
 
         <h3 id="creare-passi">I passi, uno alla volta</h3>
         <ol class="passi">
-          <li>Clicca il logo <strong>StudIA</strong>. La barra in alto cambia: al posto di CORSO · PERCORSO · LEZIONE compare la tendina <strong>«ZAINO ▾»</strong> con accanto un <strong>«+»</strong>. La sidebar a sinistra ora si intitola «Zaino» e, se non hai ancora zaini, ti dice: <em>«Nessuno zaino. Creane uno con il «+» accanto alla tendina.»</em></li>
+          <li>Nella barra in alto trovi la tendina <strong>«ZAINO ▾»</strong> e il pulsante <strong>«+»</strong>. Se non hai ancora zaini, la sidebar ti indica come crearne uno.</li>
           <li>Clicca il <strong>«+»</strong>. Si apre un pannellino con un solo campo: <strong>«Nome della materia»</strong> (dentro c'è scritto, come esempio, «es. Diritto pubblico»).</li>
           <li>Scrivi il nome — qui abbiamo scritto <em>Sistema solare</em> — e premi <strong>«Crea»</strong> oppure <kbd>Invio</kbd>.</li>
           <li>Fatto. Compare un avviso in basso: <em>«Zaino creato: Sistema solare»</em>. Lo zaino è vuoto, ma è pronto.</li>
@@ -120,6 +120,7 @@
       _zaino.md               <i>titolo, data di nascita</i>
       MATERIALI/PDF/          <i>i documenti (copie numerate)</i>
       MATERIALI/Indici-PDF/   <i>il testo di ogni pagina, per la ricerca</i>
+      CHAT/                   <i>conversazioni salvate: JSON e Markdown</i>
       APPUNTI/                <i>i tuoi appunti (.md) e le parole chiave</i>
       MAPPE/                  <i>le tue mappe (.json)</i>
       ALBUM/                  <i>ritagli e foto</i></pre>
@@ -127,8 +128,40 @@
       </section>
 
       <!-- ============================================================ -->
+
+      <section class="cap" id="chat-ai">
+        <h2 data-n="02">Il tutor AI: una chat nello zaino</h2>
+        <p>Premi <strong>Chat AI</strong> nella topbar. La finestra è spostabile e ridimensionabile: puoi tenerla accanto al documento mentre studi. Prima di iniziare configura un provider e un modello in <a href="#profilo-ai">Impostazioni → AI</a>.</p>
+        <h3 id="chat-ruoli">Scegli come lavorare</h3>
+        <ul><li><strong>Socratico</strong>: ti accompagna con una domanda alla volta e piccoli indizi.</li><li><strong>Spiegamelo</strong>: spiega il concetto usando le tue preferenze e, quando disponibile, estratti Wikipedia con le fonti.</li><li><strong>Chiedimelo</strong>: ti fa esercitare, aspetta la risposta e dà un riscontro.</li></ul>
+        <figure class="fig-pannello"><img src="img/180-chat-tutor.png" alt="Chat del fork: ruolo Socratico, messaggi leggibili e tre azioni sotto la risposta" loading="lazy"><figcaption><b>Una finestra per leggere e conversare.</b> Esempio illustrativo con risposta simulata. La testata contiene ruolo, ingranaggio, +, − e ×.</figcaption></figure>
+        <p>L’<strong>ingranaggio</strong> apre la scheda AI delle impostazioni. <strong>+</strong> inizia una nuova chat; <strong>−</strong> collassa la finestra conservando la conversazione; <strong>×</strong> la chiude. <kbd>Invio</kbd> invia il messaggio, <kbd>Maiusc</kbd> + <kbd>Invio</kbd> va a capo.</p>
+        <h3 id="chat-azioni">Copia, ascolta o riparti da una risposta</h3>
+        <p>Sotto ogni risposta trovi tre pulsanti: <strong>Copia risposta</strong>, <strong>Leggi la risposta</strong> con la sintesi vocale del sistema e <strong>Nuova conversazione da qui</strong>. Quest’ultimo crea una chat distinta, con la cronologia fino a quel punto; la conversazione originale resta invariata. Il pulsante della lettura diventa un quadrato per fermarla. La voce si sceglie nelle impostazioni Utente.</p>
+        <figure class="fig-pannello"><img src="img/183-chat-collassata.png" alt="La chat ridotta alla sola testata" loading="lazy"><figcaption><b>Più spazio al materiale.</b> Premi il comando di espansione, oppure Chat AI nella topbar, per riprendere la finestra collassata.</figcaption></figure>
+        <h3 id="chat-archivio">Riprendere e nominare una conversazione</h3>
+        <p>All’apertura la parte centrale mostra le conversazioni dello zaino. Clicca un titolo per riprendere, oppure scrivi per iniziare una chat. Il piccolo × accanto a una conversazione la elimina solo dopo conferma.</p>
+        <figure class="fig-pannello"><img src="img/181-cronologia-chat.png" alt="Elenco centrale delle conversazioni precedenti da riprendere" loading="lazy"><figcaption><b>La cronologia appartiene allo zaino aperto.</b> Cambiando zaino ritrovi il suo elenco.</figcaption></figure>
+        <p>Le conversazioni vengono salvate automaticamente. Quando chiudi con × o premi +, puoi dare un nome alla chat: per una nuova conversazione il nome proposto contiene <strong>data e ora</strong>. Puoi mantenere la data; <kbd>Esc</kbd> conserva il titolo già salvato. Il dialogo non è necessario per salvare i messaggi: sono già nel vault.</p>
+        <figure class="fig-pannello"><img src="img/182-nome-conversazione.png" alt="Dialogo per nominare la conversazione con data proposta" loading="lazy"><figcaption><b>Un nome per ritrovarla.</b> Ogni chat è una coppia di file JSON e Markdown in <code>Zaini/&lt;zaino&gt;/CHAT/</code>.</figcaption></figure>
+        <h3 id="chat-contesto">Che cosa conosce il tutor</h3>
+        <p>Ad ogni invio vengono salvati gli appunti aperti e riletti i PDF, i testi e gli appunti attuali. Il provider riceve la domanda, una parte della cronologia, il profilo e una <strong>selezione dei passaggi pertinenti</strong>: non l’intero zaino senza limiti. Apri <strong>Fonti</strong> sotto la risposta per vedere i riferimenti e gli eventuali avvisi. I PDF di sole immagini richiedono prima il riconoscimento del testo; il chatbot non avvia trascrizioni o analisi CORSI.</p>
+        <p>Il tutor è guidato da regole didattiche: non può eseguire comandi o modificare i tuoi documenti. Può comunque sbagliare: confronta la spiegazione con le fonti, soprattutto quando un passaggio non è presente nel contesto.</p>
+      </section>
+      <section class="cap" id="profilo-ai">
+        <h2 data-n="03">Impostazioni: il tuo profilo e il provider AI</h2>
+        <h3 id="profilo-utente">Il tuo modo di imparare</h3>
+        <p>In <strong>Impostazioni → Utente</strong> definisci lingua, lettura, carico cognitivo, conoscenze di partenza, modo di affrontare un concetto, lunghezza, esempi e verifiche. Le preferenze libere possono indicare, per esempio, di spiegare i termini nuovi o evitare tabelle larghe. Descrivi ciò che ti aiuta: non servono diagnosi.</p>
+        <figure class="fig-intera"><img src="img/184-profilo-utente.png" alt="Impostazioni Utente: profilo, pulsanti Nuovo Clona Elimina e preferenze di apprendimento" loading="lazy"><figcaption><b>Il profilo è modificabile.</b> Nuovo crea un profilo, Clona ne copia uno ed Elimina lo rimuove, conservandone almeno uno.</figcaption></figure>
+        <p>Premi <strong>Salva profilo</strong> e <strong>Usa come predefinito</strong> per scegliere quello che la chat applicherà. I preset <strong>Equilibrato</strong>, <strong>Explain like I’m 5</strong> e <strong>Mr Feynman</strong> creano copie modificabili. Spiegamelo e Chiedimelo rileggono il profilo ad ogni messaggio. I profili sono condivisi dagli zaini del vault, nella cartella <code>.studia</code>.</p>
+        <h3 id="profilo-provider">API key e modello</h3>
+        <ol class="passi"><li>Apri <strong>Impostazioni → AI</strong> e scegli Anthropic, Gemini, OpenAI, Qwen, Kimi o DeepSeek.</li><li>Segui <strong>Crea una API key</strong> per aprire la pagina del provider; incolla la chiave personale e premi <strong>Salva chiave</strong>.</li><li>Scegli il modello dall’elenco restituito con la tua chiave. <strong>Aggiorna elenco modelli</strong> rilegge quelli disponibili per l’account.</li></ol>
+        <figure class="fig-intera"><img src="img/185-impostazioni-ai.png" alt="Impostazioni AI: provider, modello, collegamento API key e gestione della chiave" loading="lazy"><figcaption><b>Provider e modello si scelgono qui.</b> Schermata di esempio con catalogo simulato: il tuo elenco dipende dall’account del provider.</figcaption></figure>
+        <p>Le chiavi restano nell’archivio credenziali locale dell’app, fuori dal vault e dalle conversazioni. Disponibilità e costi delle API dipendono dal provider. Qwen usa la piattaforma internazionale Singapore; Kimi la piattaforma globale. Puoi rimuovere una chiave dalle stesse impostazioni.</p>
+      </section>
+
       <section class="cap" id="come-faccio">
-        <h2 data-n="02">Come faccio a…</h2>
+        <h2 data-n="04">Come faccio a…</h2>
         <p>Il resto della guida è ordinato per <em>pezzi</em> (la barra, la sidebar, ogni strumento). Questo capitolo è ordinato per <em>domande</em>: parte da una cosa che vuoi fare e raccoglie in un posto solo gli strumenti che ci lavorano, i gesti, i tasti e dove finisce il risultato sul disco. Ogni passo rimanda al capitolo che lo spiega per esteso.</p>
 
         <h3 id="cf-appunti">Come faccio a creare appunti?</h3>
@@ -190,24 +223,25 @@
 
       <!-- ============================================================ -->
       <section class="cap" id="finestra">
-        <h2 data-n="03">La finestra: barra in alto, sidebar, banco e blocchi</h2>
+        <h2 data-n="05">La finestra: barra in alto, sidebar, banco e blocchi</h2>
 
         <p>La finestra dello zaino ha tre parti. In alto una <strong>barra</strong> con pochi comandi. A sinistra la <strong>sidebar</strong>, che è l'elenco di ciò che c'è nello zaino. Tutto il resto è il <strong>banco</strong>: uno spazio che puoi dividere in blocchi, e in ogni blocco metti uno «strumento» (il documento, gli appunti, la mappa…). Come un banco vero: da una parte il libro aperto, dall'altra il quaderno.</p>
 
         <h3 id="finestra-topbar">La barra in alto</h3>
         <figure class="fig-intera">
-          <img src="img/02-topbar-zaino.png" alt="La parte destra della barra in alto con otto elementi numerati" loading="lazy">
-          <figcaption><b>La barra in alto, in modalità Zaino.</b> A sinistra (fuori dall'immagine) c'è il logo-interruttore.</figcaption>
+          <img src="img/02-topbar-zaino.png" alt="La parte destra della barra in alto con nove elementi numerati" loading="lazy">
+          <figcaption><b>La barra di StudIA - ZAINO.</b> Chat AI apre il tutor; l’ingranaggio apre le impostazioni.</figcaption>
         </figure>
         <ol class="legenda">
           <li data-n="1"><strong>ZAINO ▾</strong> — la tendina degli zaini: quale zaino hai aperto, e per cambiarlo.</li>
           <li data-n="2"><strong>+</strong> — crea uno zaino nuovo («Crea uno zaino nuovo»).</li>
           <li data-n="3"><strong>🔍 Lente</strong> — cerca dentro i documenti dello zaino, una voce per pagina (anche <kbd>⌘F</kbd>).</li>
           <li data-n="4"><strong>◫ BANCO</strong> — «Come dividere lo schermo»: sceglie la forma del banco.</li>
-          <li data-n="5"><strong>⚙ Impostazioni</strong> — fra le schede c'è «Zaino»: da lì si rinominano ed eliminano gli zaini, e si apre questa guida.</li>
-          <li data-n="6"><strong>☀️ / 🌙</strong> — tema chiaro o scuro.</li>
-          <li data-n="7"><strong>A−</strong> — testo più piccolo.</li>
-          <li data-n="8"><strong>A+</strong> — testo più grande.</li>
+          <li data-n="5"><strong>Chat AI</strong> — apre la finestra del tutor e le conversazioni dello zaino.</li>
+          <li data-n="6"><strong>⚙ Impostazioni</strong> — fra le schede c'è «Zaino»: da lì si rinominano ed eliminano gli zaini, e si apre questa guida.</li>
+          <li data-n="7"><strong>☀️ / 🌙</strong> — tema chiaro o scuro.</li>
+          <li data-n="8"><strong>A−</strong> — testo più piccolo.</li>
+          <li data-n="9"><strong>A+</strong> — testo più grande.</li>
         </ol>
         <div class="callout attenzione">
           <div class="ch">✅ La stanza resta come la lasci</div>
@@ -266,8 +300,8 @@
         <h3 id="finestra-blocchi">I blocchi: che cosa ci metto dentro</h3>
         <p>Ogni blocco ha una <strong>testata</strong> con una tendina. La tendina dice quale strumento c'è nel blocco e ti lascia cambiarlo. Nello zaino gli strumenti possibili sono nove:</p>
         <figure class="fig-blocco">
-          <img src="img/42-tendina-strumenti.png" alt="La tendina della testata di un blocco aperta: Fonti, Player, Confronto, Appunti, Mappa, Parole chiave, Ritagli, Album Foto, Postille" loading="lazy">
-          <figcaption><b>La tendina di un blocco.</b> (Il menu qui è ridisegnato per farlo vedere: dal vivo è la tendina di sistema.) L'ordine è sempre questo: <strong>Fonti · Player · Confronto · Appunti · Mappa · Parole chiave · Ritagli · Album Foto · Postille</strong>.</figcaption>
+          <img src="img/42-tendina-strumenti.png" alt="La tendina della testata di un blocco aperta: Fonti, Player, Appunti, Mappa, Parole chiave, Ritagli, Album Foto, Postille" loading="lazy">
+          <figcaption><b>La tendina di un blocco.</b> (Il menu qui è ridisegnato per farlo vedere: dal vivo è la tendina di sistema.) L'ordine è sempre questo: <strong>Fonti · Player · Appunti · Mappa · Parole chiave · Ritagli · Album Foto · Postille</strong>.</figcaption>
         </figure>
         <ul>
           <li><strong>Uno strumento sta in un blocco solo.</strong> Se scegli «Mappa» in un blocco dove c'era «Appunti», e la mappa stava già in un altro blocco, i due blocchi si <em>scambiano</em> il contenuto. Non si trascina niente: si sceglie dalla tendina del blocco di destinazione.</li>
@@ -286,6 +320,10 @@
           </figure>
         </div>
 
+        <h3 id="finestra-paralleli">Due appunti e due fonti insieme</h3>
+        <p>Nella testata di un secondo riquadro scegli di nuovo <strong>Appunti</strong> o <strong>Fonti</strong>, poi scegli il file dal menu del materiale. Puoi aprire due appunti diversi, due PDF diversi, oppure tutti e quattro nella forma a quattro riquadri. Ogni riquadro mantiene il suo documento e la sua posizione. Non serve una voce «Compara» o «Confronto».</p>
+        <figure class="fig-intera"><img src="img/187-materiali-paralleli.png" alt="Quattro riquadri del fork con due PDF e due appunti diversi" loading="lazy"><figcaption><b>Materiali in parallelo.</b> Fonti e Appunti sono disponibili in due istanze indipendenti.</figcaption></figure>
+        <p>Il secondo appunto ha il proprio salvataggio, nuovo, rinomina e anteprima Markdown. Lo stesso appunto non può essere modificato nei due editor insieme, per evitare sovrascritture. Entrambi vengono salvati prima di inviare un messaggio al tutor; se uno non si salva, l’invio si ferma conservando la domanda.</p>
         <h3 id="finestra-tuttobanco">Un blocco a tutto schermo, e ritorno</h3>
         <p>Vuoi leggere il documento senza distrazioni? <strong>Doppio click sulla testata</strong> del blocco (non sulla tendina, ma sullo spazio accanto). Il banco passa a «Un blocco solo» con dentro quello strumento; un avviso dice <em>«A tutto banco — doppio click sulla testata per tornare»</em>. Un altro doppio click e tutto torna com'era, misure comprese.</p>
         <div class="griglia2">
@@ -344,7 +382,7 @@
 
       <!-- ============================================================ -->
       <section class="cap" id="strumenti">
-        <h2 data-n="04">Che cosa c'è dentro ogni blocco (gli strumenti)</h2>
+        <h2 data-n="06">Che cosa c'è dentro ogni blocco (gli strumenti)</h2>
         <p>Otto strumenti, uno per volta. Qui li apriamo tutti e guardiamo la loro barra dei comandi. Ogni barra segue la stessa grammatica: prima <em>che cosa</em> stai guardando, poi i comandi che ci lavorano sopra, in fondo a destra i comandi che si premono per ultimi (stampa, chiudi).</p>
 
         <h3 id="str-fonti">Fonti — il documento PDF</h3>
@@ -448,11 +486,11 @@
           <figcaption><b>La postilla, riletta.</b> «Correggi la postilla…», e sotto il testo che ci avevi scritto. Per toglierla: aprila e svuota il campo.</figcaption>
         </figure>
 
-        <h3 id="str-confronto">Confronto — un secondo documento accanto</h3>
-        <p>«Confronto» è un secondo visualizzatore, per tenere due PDF affiancati (o due pagine dello stesso). Ha il suo selettore «Documenti ▾» — che a documento aperto porta scritto il titolo, come quello della Fonte —, le sue frecce e il suo zoom, indipendenti dalla Fonte. Ma è solo per <em>leggere e copiare</em>: lì dentro la selezione non apre nessuna barra, niente evidenze, niente ritagli. Il vuoto lo dice: <em>«Qui si legge e si copia: evidenze, ritagli e «appunta» stanno nella Fonte.»</em></p>
+        <h3 id="str-confronto">Fonti — un secondo documento accanto</h3>
+        <p>Per aprire due PDF, scegli <strong>Fonti</strong> nella testata di due riquadri, poi scegli il documento dal menu di ciascuno. Puoi tenere due documenti diversi o lo stesso PDF a due pagine diverse. Il secondo riquadro ha pagina, scorrimento e zoom indipendenti; permette di leggere e copiare. Evidenze, ricerca, ritagli e «Appunta» restano nel primo riquadro delle fonti.</p>
         <figure class="fig-intera">
-          <img src="img/24-confronto.png" alt="Due documenti affiancati: la Fonte a sinistra e il Confronto a destra, a pagine diverse" loading="lazy">
-          <figcaption><b>Fonte e Confronto.</b> Lo stesso documento a due pagine diverse; potrebbero essere due documenti.</figcaption>
+          <img src="img/24-confronto.png" alt="Due documenti affiancati: due riquadri Fonti, a pagine diverse" loading="lazy">
+          <figcaption><b>Due riquadri Fonti.</b> Lo stesso documento a due pagine diverse; potrebbero essere due documenti.</figcaption>
         </figure>
 
         <h3 id="str-player">Player — video e audio</h3>
@@ -619,7 +657,7 @@
 
       <!-- ============================================================ -->
       <section class="cap" id="fonti">
-        <h2 data-n="05">Le fonti: come si portano dentro e dove finiscono</h2>
+        <h2 data-n="07">Le fonti: come si portano dentro e dove finiscono</h2>
 
         <div class="callout eli5">
           <div class="ch">🧒 La regola d'oro</div>
@@ -708,17 +746,18 @@
     _evidenze.json                <i>le sottolineature, le parole chiave e le postille</i>
     _riga.json                    <i>a che riga eri, appunto per appunto</i>
     _versioni/                    <i>le copie di sicurezza degli appunti accorciati</i>
+  CHAT/                         <i>sessioni del tutor, JSON e Markdown</i>
   MAPPE/Il sistema solare.json    <i>una mappa</i>
   ALBUM/
     _album.json                   <i>l'elenco di ritagli e foto</i>
     01 Sistema solare__p001_ab12cd.png   <i>un ritaglio (documento, pagina)</i>
     foto Foto lavagna_266492c141.jpg     <i>una foto</i></pre>
-        <p>Regola di casa: <strong>i tuoi file non si toccano mai</strong>. Quando trascini un PDF, StudIA ne fa una <em>copia</em> nello zaino; l'originale resta dov'era. Le cartelle APPUNTI, MAPPE e ALBUM sono tue e nessun automatismo ci scrive dentro (tranne <code>_indice.md</code>, che è un indice).</p>
+        <p>Regola di casa: <strong>i tuoi file non si toccano mai</strong>. Quando trascini un PDF, StudIA ne fa una <em>copia</em> nello zaino; l'originale resta dov'era. Le cartelle APPUNTI, MAPPE e ALBUM sono tue e il tutor AI non modifica il loro contenuto. La chat viene salvata nella cartella <code>CHAT</code>.</p>
       </section>
 
       <!-- ============================================================ -->
       <section class="cap" id="appunti-mappe">
-        <h2 data-n="06">Appunti e mappe: crearli e riempirli</h2>
+        <h2 data-n="08">Appunti e mappe: crearli e riempirli</h2>
 
         <h3 id="am-nuovo-appunto">Un appunto nuovo, e a chi appartiene</h3>
         <p>Premi <strong>+</strong> nella barra degli appunti. Si apre una finestrella con due domande: il <strong>titolo</strong>, e — solo nello zaino — <strong>«Nasce dal documento»</strong>: a quale documento appartiene questo appunto. Se hai un PDF aperto è già scelto; puoi anche dire <em>«PERSONALE — nessun documento»</em>. Conferma, e l'appunto è creato e aperto (avviso «Appunto creato»).</p>
@@ -920,7 +959,7 @@
 
       <!-- ============================================================ -->
       <section class="cap" id="eliminare-fonti">
-        <h2 data-n="07">Eliminare: le fonti, e le cose che hai scritto tu</h2>
+        <h2 data-n="09">Eliminare: le fonti, e le cose che hai scritto tu</h2>
 
         <div class="callout eli5">
           <div class="ch">🧒 Le lapidi</div>
@@ -1014,7 +1053,7 @@
 
       <!-- ============================================================ -->
       <section class="cap" id="eliminare-zaino">
-        <h2 data-n="08">Rinominare ed eliminare uno zaino</h2>
+        <h2 data-n="10">Rinominare ed eliminare uno zaino</h2>
         <p>Gli zaini si governano da un posto solo: <strong>⚙ Impostazioni → scheda «Zaino»</strong>. Lì c'è l'elenco «I tuoi zaini», con quanti documenti contengono e, accanto a ciascuno, due comandi: <strong>✎ rinomina</strong> e <strong>🗑 elimina</strong>. Non li trovi nella tendina ZAINO, né in sidebar, né col tasto destro: è voluto, perché eliminare è il gesto più grande che si possa fare.</p>
         <div class="callout eli5"><p>In cima alla stessa scheda c'è <strong>📖 Apri la guida allo ZAINO</strong>: è questa guida, che viaggia dentro l'app. Si apre in una finestra sua, e la puoi tenere accanto a StudIA mentre provi i gesti.</p></div>
 
@@ -1059,7 +1098,7 @@
 
       <!-- ============================================================ -->
       <section class="cap" id="tasti">
-        <h2 data-n="09">Tasti rapidi (macOS e Windows)</h2>
+        <h2 data-n="11">Tasti rapidi (macOS e Windows)</h2>
         <p>Su Windows <kbd>⌘</kbd> = <kbd>Ctrl</kbd>, <kbd>⌥</kbd> = <kbd>Alt</kbd>, <kbd>⇧</kbd> = <kbd>Maiusc</kbd>. Regola generale: le <strong>combinazioni</strong> valgono sempre, anche mentre scrivi; le <strong>lettere sole</strong> del player valgono solo se non stai scrivendo in un campo di testo.</p>
         <div class="callout">
           <div class="ch">✅ I suggerimenti parlano la tua lingua</div>
@@ -1080,10 +1119,10 @@
             <tr><td>Commuta l'anteprima dell'appunto (▣)</td><td><kbd>⌘</kbd><kbd>J</kbd></td><td><kbd>Ctrl</kbd><kbd>J</kbd></td><td>nell'editor degli appunti</td></tr>
             <tr><td>Scrittura e anteprima affiancate (◫)</td><td><kbd>F9</kbd></td><td><kbd>F9</kbd></td><td>nell'editor degli appunti</td></tr>
             <tr><td>Forbici «al volo»: ritaglia mentre tieni premuto</td><td><kbd>⌘</kbd> + trascina</td><td><kbd>Ctrl</kbd> + trascina</td><td>su PDF, foto o video</td></tr>
-            <tr><td>Zoom del PDF / del Confronto / della foto</td><td><kbd>⇧</kbd> + rotella</td><td><kbd>Shift</kbd> + rotella</td><td>sopra la pagina</td></tr>
+            <tr><td>Zoom del PDF / della seconda fonte / della foto</td><td><kbd>⇧</kbd> + rotella</td><td><kbd>Shift</kbd> + rotella</td><td>sopra la pagina</td></tr>
             <tr><td>Zoom della mappa</td><td>rotella</td><td>rotella</td><td>sopra la tela</td></tr>
             <tr><td>Zoom di <em>tutta</em> l'app</td><td><kbd>⌘</kbd><kbd>+</kbd> <kbd>⌘</kbd><kbd>−</kbd> <kbd>⌘</kbd><kbd>0</kbd></td><td><kbd>Ctrl</kbd><kbd>+</kbd> <kbd>Ctrl</kbd><kbd>−</kbd> <kbd>Ctrl</kbd><kbd>0</kbd></td><td>menu View del sistema (non è lo zoom del PDF)</td></tr>
-            <tr><td><strong>Volta pagina</strong> (col fuoco sul documento, o in nessun campo)</td><td><kbd>←</kbd> <kbd>→</kbd></td><td><kbd>←</kbd> <kbd>→</kbd></td><td>nello zaino. Nei corsi le stesse frecce cambiano capitolo</td></tr>
+            <tr><td><strong>Volta pagina</strong> (col fuoco sul documento, o in nessun campo)</td><td><kbd>←</kbd> <kbd>→</kbd></td><td><kbd>←</kbd> <kbd>→</kbd></td><td>con il fuoco sul documento</td></tr>
             <tr><td><strong>Vai a una pagina</strong>: premi «p. 1 di 24» e scrivi il numero (o il nome che il documento dà alla pagina)</td><td>click</td><td>click</td><td><kbd>Invio</kbd> ci va, <kbd>Esc</kbd> rinuncia</td></tr>
             <tr><td><strong>Sposta la finestra sulla riga</strong> di una riga</td><td><kbd>↑</kbd> <kbd>↓</kbd></td><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>solo col righello acceso; da spento quelle frecce scorrono la pagina come sempre</td></tr>
             <tr><td>Chiudi uno strato alla volta: forbici → menu della selezione → barra della selezione → ricerca nel documento → il campo della pagina → la finestra sulla riga → dentro la mappa (casella, menu, «collega», fuoco, pannellino ⚙) → pannellini e finestre</td><td><kbd>Esc</kbd></td><td><kbd>Esc</kbd></td><td>✅ un Esc «a vuoto» non fa niente: <strong>non chiude il documento e non toglie la mappa dal suo blocco</strong>. Per quelli c'è la <strong>✕</strong></td></tr>
@@ -1140,13 +1179,13 @@
         <div class="callout attenzione">
           <div class="ch">⚠️ Tasti che NON esistono (per non cercarli)</div>
           <p>Non c'è un tasto per: passare da Corso a Zaino, cambiare zaino, mostrare/nascondere la sidebar, cambiare la forma del banco o lo strumento di un blocco, il tema, A−/A+, lo zoom del PDF o della mappa da tastiera. Non c'è una schermata «tutte le scorciatoie» dentro l'app: questa tabella è quella. Nota: <kbd>⌘⇧C</kbd> cita <em>solo</em> il minuto del player; per citare la pagina del documento c'è il bottone 🔖 (senza tasto).</p>
-          <p>✅ <strong>Due cose che prima non c'erano, e una che era rotta.</strong> Le frecce <kbd>←</kbd> <kbd>→</kbd> col fuoco sul documento adesso <em>voltano pagina</em>. Prima non lo facevano: sfogliavano in silenzio i capitoli del corso rimasto aperto dietro allo zaino — non se ne vedeva niente, e tornando ai corsi il capitolo era cambiato. E <kbd>⌘←</kbd> non cambia più capitolo: le combinazioni col tasto comando restano del sistema.</p>
+          <p>Le frecce <kbd>←</kbd> e <kbd>→</kbd>, con il fuoco sul documento, voltano pagina. Le combinazioni con il tasto comando restano disponibili al sistema.</p>
         </div>
       </section>
 
       <!-- ============================================================ -->
       <section class="cap" id="pdf">
-        <h2 data-n="10">Quali PDF si possono importare, e come diventano «lavorabili»</h2>
+        <h2 data-n="12">Quali PDF si possono importare, e come diventano «lavorabili»</h2>
 
         <div class="callout eli5">
           <div class="ch">🧒 Due tipi di PDF</div>
@@ -1209,7 +1248,7 @@
             <tr><td>PDF con <strong>font strani</strong> che escono come simboli</td><td>Se ci sono più di 200 caratteri per pagina l'app lo considera «con testo»: la lente cerca sul testo sbagliato e non propone l'OCR. Se il testo estratto è pochissimo, viene trattato come fotografia e il riconoscimento aiuta.</td></tr>
             <tr><td>PDF <strong>enormi</strong> (centinaia di pagine, decine di MB)</td><td>Nessun limite. L'indice e l'OCR lavorano pagina per pagina.</td></tr>
             <tr><td><strong>Modificare o annotare</strong> il PDF</td><td>Non si fa: StudIA non scrive nel PDF (tranne il testo invisibile dell'OCR). Le evidenze stanno in <code>APPUNTI/_evidenze.json</code>, i ritagli in <code>ALBUM/</code>. Il PDF resta pulito.</td></tr>
-            <tr><td><strong>Più PDF in linguette</strong></td><td>Non c'è: un documento per volta nella Fonte, più eventualmente uno nel Confronto.</td></tr>
+            <tr><td><strong>Più PDF in linguette</strong></td><td>Non c'è: un documento per volta nella Fonte, più eventualmente uno nel secondo riquadro Fonti.</td></tr>
           </tbody>
         </table>
         </div>
@@ -1217,26 +1256,26 @@
 
       <!-- ============================================================ -->
       <section class="cap" id="non-esiste">
-        <h2 data-n="11">Che cosa non esiste (ancora), e piccole trappole</h2>
+        <h2 data-n="13">Che cosa non esiste (ancora), e piccole trappole</h2>
         <p>Per non farti cercare quello che non c'è, ecco l'elenco onesto:</p>
         <ul>
-          <li><strong>Rinominare un documento, un video, un audio</strong> — non c'è. Dai il nome giusto al file prima di trascinarlo.</li>
+          <li><strong>Rinominare un PDF</strong> — usa il comando nella barra del documento. Per video e audio scegli il nome prima dell’importazione.</li>
           <li><strong>Un bottone «Importa» / «Aggiungi documento»</strong> — non c'è: si trascina.</li>
           <li><strong>Esportare la mappa in PNG/SVG</strong> — solo stampa e PDF.</li>
-          <li><strong>Trascrizione di video e audio nello zaino</strong> — no: si guardano e si citano al minuto (la trascrizione è dei corsi). Per questo un media che il lettore non apre <a href="#fonti-soglia">non entra nemmeno</a>.</li>
+          <li><strong>Trascrizione di video e audio nello zaino</strong> — no: si guardano e si citano al minuto (la trascrizione non è prevista nel fork). Per questo un media che il lettore non apre <a href="#fonti-soglia">non entra nemmeno</a>.</li>
           <li><strong>Un pannello delle versioni</strong> — non c'è. Le copie di sicurezza degli appunti stanno in <code>APPUNTI/_versioni/</code> e si ripescano dal Finder.</li>
           <li><strong>Le «letture» (☰ nella barra del documento)</strong> — ci sono e funzionano: sullo stesso testo puoi tenere più analisi separate e accenderne una per volta. Non hanno ancora un capitolo in questa guida.</li>
-          <li><strong>Il corso «fantasma»</strong>: entrando nello zaino il corso di prima non viene chiuso, solo nascosto. Per questo il badge del Ripasso in alto (se ne hai) mostra i numeri del corso, la mappa «Generata» mostra la lezione di prima e le frecce ← → premute a vuoto sfogliano i suoi capitoli. Nello zaino usa «Mie» e ignora quel badge.</li>
+          <li><strong>La modalità CORSI</strong> è esclusa dal fork: non rimangono corsi nascosti dietro lo zaino.</li>
           <li><strong>Su Windows</strong> l'app non è ancora stata provata dal vivo (l'installer esiste); tutto ciò che è «Ctrl» in questa guida viene dal codice, non da uno schermo Windows.</li>
         </ul>
         <div class="callout fonte">
           <div class="ch">📎 Glossario minimo</div>
-          <p><strong>Zaino</strong>: la cartella dei tuoi materiali senza lezioni generate. <strong>Fonte</strong>: un documento (PDF), un video o un audio dentro lo zaino. <strong>Banco</strong>: lo spazio di lavoro diviso in blocchi. <strong>Strumento</strong>: quello che sta in un blocco (Fonti, Player, Confronto, Appunti, Mappa, Parole chiave, Ritagli, Album Foto, Postille). <strong>Rimando</strong>: l'indirizzo di un punto preciso di una fonte, come <code>pdf:01#p=7</code> o <code>video:01#t=12</code>. <strong>Evidenza / parola chiave</strong>: un pezzo di testo evidenziato; se corto, è una parola chiave. <strong>Postilla</strong>: il perché di una sottolineatura, scritto da te e attaccato a lei. <strong>Lapide</strong>: il segno lasciato da un documento tolto, che permette di riagganciarlo. <strong>PERSONALE</strong>: un appunto o una mappa che non appartiene a nessun documento.</p>
+          <p><strong>Zaino</strong>: la cartella dei tuoi materiali senza lezioni generate. <strong>Fonte</strong>: un documento (PDF), un video o un audio dentro lo zaino. <strong>Banco</strong>: lo spazio di lavoro diviso in blocchi. <strong>Strumento</strong>: quello che sta in un blocco (Fonti, Player, Appunti, Mappa, Parole chiave, Ritagli, Album Foto, Postille). <strong>Rimando</strong>: l'indirizzo di un punto preciso di una fonte, come <code>pdf:01#p=7</code> o <code>video:01#t=12</code>. <strong>Evidenza / parola chiave</strong>: un pezzo di testo evidenziato; se corto, è una parola chiave. <strong>Postilla</strong>: il perché di una sottolineatura, scritto da te e attaccato a lei. <strong>Lapide</strong>: il segno lasciato da un documento tolto, che permette di riagganciarlo. <strong>PERSONALE</strong>: un appunto o una mappa che non appartiene a nessun documento.</p>
         </div>
       </section>
 
       <footer>
-        Guida alla modalità Zaino di StudIA · fotografata sull'app del 29 agosto 2026 · <a href="mailto:giacomo@insegnai.ch">giacomo@insegnai.ch</a> · icone dell'app: OpenMoji (CC BY-SA 4.0)
+        Guida di StudIA - ZAINO · aggiornata sul fork il 6 settembre 2026 · <a href="mailto:giacomo@insegnai.ch">giacomo@insegnai.ch</a> · icona e marchio: <a href="https://openmoji.org/library/emoji-1F392/">OpenMoji backpack (1F392)</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
       </footer>
     </article>
   </main>

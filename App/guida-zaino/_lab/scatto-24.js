@@ -20,6 +20,7 @@ const W = 1470, H = 956;
 
 (async () => {
   await L.collega();
+  if (!fs.realpathSync(VAULT).startsWith('/private/tmp/studia-guida-') || await L.val('window.vault.path') !== VAULT) throw new Error('Serve un vault isolato del laboratorio guida');
   fs.rmSync(VAULT + '/Zaini', { recursive: true, force: true });
   await L.val(`localStorage.clear(); 1`);
   await L.invia('Page.navigate', { url: 'file://' + path.join(__dirname, '..', '..', 'StudIA.html') });

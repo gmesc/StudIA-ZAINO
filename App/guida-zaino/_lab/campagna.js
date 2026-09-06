@@ -11,10 +11,11 @@ const M = path.join(__dirname, 'materiali') + path.sep;
 const VAULT = process.env.GUIDA_VAULT;
 if (!VAULT) { console.error('Serve GUIDA_VAULT=<cartella del vault di prova> (vedi README.md)'); process.exit(1); }
 const W = 1470, H = 956;
+const errori=[];
 
 async function passo(nome, fn) {
   console.log('\n== ' + nome);
-  try { await fn(); } catch (e) { console.error('  ✗ ' + nome + ': ' + (e && e.message || e)); }
+  try { await fn(); } catch (e) { errori.push(nome); console.error('  ✗ ' + nome + ': ' + (e && e.message || e)); }
   try { await L.pulito(); } catch (e) {}
 }
 async function vista(w, h) { await L.invia('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 2, mobile: false }); await L.pausa(700); }
@@ -39,11 +40,12 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
 
 (async () => {
   await L.collega();
+  if(!fs.realpathSync(VAULT).startsWith('/private/tmp/studia-guida-') || await L.val('window.vault.path')!==VAULT) throw new Error('Serve il vault temporaneo del runner della guida.');
   /* ── azzera tutto: vault vergine, localStorage pulito, ricarica ── */
   await passo('azzera', async () => {
     fs.rmSync(VAULT + '/Zaini', { recursive: true, force: true });
     await L.val(`localStorage.clear(); 1`);
-    await L.invia('Page.navigate', { url: 'file:///Users/giacomomeschini/Claude/StudIA/StudIA/App/StudIA.html' });
+    await L.invia('Page.navigate', { url: require('url').pathToFileURL(path.resolve(__dirname,'../../StudIA.html')).href });
     await L.pausa(3000);
     await L.collega();
     await vista(W, H);
@@ -80,7 +82,7 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
     const zs = await L.rect('#zainoSelect');
     const x0 = zs.x - 30;
     await L.banda({ x: x0, y: tb.y + tb.h, w: W - x0, h: 0 }, { altezza: 34 });
-    await L.numeri([{ sel: '#zainoSelect', n: 1, dove: 'b' }, { sel: '#zainoNuovo', n: 2, dove: 'b' }, { sel: '#searchBtn', n: 3, dove: 'b' }, { sel: '#bancoBtn', n: 4, dove: 'b' }, { sel: '#settingsBtn', n: 5, dove: 'b' }, { sel: '#themeToggle', n: 6, dove: 'b' }, { sel: '#fsMinus', n: 7, dove: 'b' }, { sel: '#fsPlus', n: 8, dove: 'b' }], { filo: tb.y + tb.h + 5 });
+    await L.numeri([{ sel: '#zainoSelect', n: 1, dove: 'b' }, { sel: '#zainoNuovo', n: 2, dove: 'b' }, { sel: '#searchBtn', n: 3, dove: 'b' }, { sel: '#bancoBtn', n: 4, dove: 'b' }, { sel: '#chatBtn', n: 5, dove: 'b' }, { sel: '#settingsBtn', n: 6, dove: 'b' }, { sel: '#themeToggle', n: 7, dove: 'b' }, { sel: '#fsMinus', n: 8, dove: 'b' }, { sel: '#fsPlus', n: 9, dove: 'b' }], { filo: tb.y + tb.h + 5 });
     await L.scatta('02-topbar-zaino', { clip: { x: x0, y: 0, width: W - x0, height: tb.h + 36 }, scala: 3 });
     await L.overlayPulisci();
   });
@@ -815,6 +817,7 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
     await toastVia();
   });
 
-  console.log('\n✓ campagna finita');
-  process.exit(0);
+  console.log('\nCampagna finita. Passi da verificare: '+errori.join(', '));
+  fs.writeFileSync(path.join(VAULT,'screenshot-errori.json'),JSON.stringify(errori));
+  process.exit(errori.length ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });

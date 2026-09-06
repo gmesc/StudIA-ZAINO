@@ -1,19 +1,19 @@
 {
   "_commento": [
     "Ciò che npm non può sapere: la piattaforma su cui gira l'app, le librerie copiate a mano in App/assets/,",
-    "i modelli e i dati di lingua, gli strumenti Python della pipeline, i servizi remoti che l'app richiama.",
+    "i modelli e i dati di lingua, gli strumenti opzionali dello zaino, i servizi remoti che l'app richiama.",
     "Il testo integrale di ogni licenza sta in App/assets/licenze/ ed è il file ORIGINALE del progetto,",
     "scaricato dalla sua fonte: non riscritto a memoria. `npm run crediti` unisce tutto questo",
     "all'inventario npm e produce App/assets/dati/crediti.json, che è ciò che l'app mostra.",
     "Quando aggiorni una libreria vendorizzata, aggiorna qui la versione E riscarica il suo file di licenza."
   ],
   "app": {
-    "nome": "StudIA",
-    "versione": "1.0.0",
+    "nome": "StudIA - ZAINO",
+    "versione": "1.1.0",
     "licenza": "MIT",
     "copyright": "Copyright (c) 2026 Giacomo Meschini",
     "contatto": "giacomo@insegnai.ch",
-    "nota": "StudIA è distribuita con licenza MIT. Il software di terze parti elencato qui resta di chi lo ha scritto, con la propria licenza: l'elenco che segue è l'attribuzione richiesta da quelle licenze, e va conservato in ogni copia dell'app."
+    "nota": "StudIA - ZAINO è distribuita con licenza MIT. Il software di terze parti elencato qui resta di chi lo ha scritto, con la propria licenza: l'elenco che segue è l'attribuzione richiesta da quelle licenze, e va conservato in ogni copia dell'app."
   },
   "obblighi": [
     {
@@ -30,23 +30,19 @@
     },
     {
       "titolo": "L'icona dell'applicazione è un'opera derivata da OpenMoji",
-      "testo": "L'icona di StudIA è basata sull'emoji «graduation cap» (U+1F393) di OpenMoji, adattata al formato icona di macOS. Essendo un'opera derivata da un'opera CC BY-SA 4.0, l'icona stessa è distribuita con licenza CC BY-SA 4.0, non con la licenza MIT del resto dell'app: chi la riusa o la modifica deve mantenere l'attribuzione a OpenMoji e distribuirla con la stessa licenza. Attribuzione: «Icona dell'applicazione: basata sull'emoji graduation cap (1F393) di OpenMoji — il progetto open source di emoji e icone. Licenza: CC BY-SA 4.0»."
+      "testo": "L'icona di StudIA - ZAINO è basata sull'emoji «backpack» (U+1F392) di OpenMoji, adattata al formato icona di macOS. Essendo un'opera derivata da un'opera CC BY-SA 4.0, l'icona stessa è distribuita con licenza CC BY-SA 4.0, non con la licenza MIT del resto dell'app: chi la riusa o la modifica deve mantenere l'attribuzione a OpenMoji e distribuirla con la stessa licenza. Attribuzione: «Icona dell'applicazione: basata sull'emoji backpack (1F392) di OpenMoji — il progetto open source di emoji e icone. Licenza: CC BY-SA 4.0». Sorgente: OpenMoji 16.0.0, color/svg/1F392.svg, usata anche nella topbar. Adattamenti: ritaglio del margine trasparente, ridimensionamento e composizione sul fondo bianco con contorno macOS; il disegno non è stato ricolorato."
     },
     {
       "titolo": "ffmpeg dentro Electron — LGPL-2.1",
-      "testo": "Electron include una build LGPL di ffmpeg (libffmpeg.dylib nel framework). La LGPL-2.1 chiede di dichiararlo, di includere il testo della licenza e di permettere all'utente di sostituire quella libreria con una propria versione: la libreria è spedita come file dinamico separato dentro StudIA.app/Contents/Frameworks/ e può essere sostituita. Il codice sorgente di ffmpeg è quello pubblicato da FFmpeg (ffmpeg.org) nella versione usata da Electron; su richiesta scritta a giacomo@insegnai.ch se ne indica la revisione esatta."
+      "testo": "Electron include una build LGPL di ffmpeg (libffmpeg.dylib nel framework). La LGPL-2.1 chiede di dichiararlo, di includere il testo della licenza e di permettere all'utente di sostituire quella libreria con una propria versione: la libreria è spedita come file dinamico separato dentro StudIA - ZAINO.app/Contents/Frameworks/ e può essere sostituita. Il codice sorgente di ffmpeg è quello pubblicato da FFmpeg (ffmpeg.org) nella versione usata da Electron; su richiesta scritta a giacomo@insegnai.ch se ne indica la revisione esatta."
     },
     {
       "titolo": "Chromium e le sue componenti",
       "testo": "Chromium, dentro Electron, include migliaia di componenti di terzi con licenze proprie. L'elenco completo è il file LICENSES.chromium.html spedito con l'app (si apre da questa schermata)."
     },
     {
-      "titolo": "ffmpeg da riga di comando (trascrizione)",
-      "testo": "La pipeline di trascrizione usa, se presente, il comando `ffmpeg` installato dall'utente sul proprio Mac (per esempio via Homebrew). StudIA non lo spedisce e non lo modifica: lo richiama come programma esterno, quindi valgono la licenza e la build scelte da chi lo ha installato."
-    },
-    {
       "titolo": "Servizi remoti e chiavi dell'utente",
-      "testo": "I modelli AI non sono inclusi nell'app: StudIA chiama le API di Anthropic, OpenAI e Google con la chiave personale dell'utente, e i materiali inviati sono soggetti ai termini d'uso e alla privacy policy del fornitore scelto. Nessun contenuto passa da server di StudIA, che non ne ha."
+      "testo": "Il tutor di StudIA - ZAINO usa le API di Anthropic, OpenAI, Google Gemini, Qwen, Kimi o DeepSeek con la chiave personale dell'utente. I passaggi dei materiali, gli appunti e il profilo inviati sono soggetti ai termini e alla privacy policy del provider scelto. StudIA non ha server propri. Spiegamelo può consultare Wikipedia."
     },
     {
       "titolo": "I materiali di studio sono dell'utente",
@@ -99,7 +95,6 @@
       "licenzaFile": "lgpl-2.1.txt",
       "avviso": "Libreria dinamica separata: sostituibile dall'utente, come chiede la LGPL. Vedi l'obbligo «ffmpeg dentro Electron»."
     },
-
     {
       "nome": "EasyMDE",
       "versione": "2.21.0",
@@ -152,15 +147,14 @@
       "licenzaFile": "cc-by-sa-4.0.txt",
       "avviso": "Licenza con obbligo di condivisione allo stesso modo: vedi l'obbligo «OpenMoji — CC BY-SA 4.0»."
     },
-
     {
-      "nome": "OpenMoji — «graduation cap» (1F393)",
-      "versione": "icona dell'applicazione",
+      "nome": "OpenMoji — «backpack» (1F392)",
+      "versione": "OpenMoji 16.0.0 · icona e topbar",
       "categoria": "vendor",
-      "ruolo": "l'icona di StudIA: opera derivata dall'emoji «graduation cap» di OpenMoji, adattata al formato icona di macOS",
+      "ruolo": "l'icona e il marchio di StudIA - ZAINO: opera derivata dall'emoji «backpack» di OpenMoji, adattata al formato icona di macOS",
       "licenza": "CC BY-SA 4.0",
-      "copyright": "OpenMoji — HfG Schwäbisch Gmünd + Hochschule für Gestaltung",
-      "url": "https://openmoji.org/library/emoji-1F393/",
+      "copyright": "OpenMoji — HfG Schwäbisch Gmünd, Benedikt Groß, Daniel Utz e contributori",
+      "url": "https://openmoji.org/library/emoji-1F392/",
       "licenzaFile": "cc-by-sa-4.0.txt",
       "avviso": "Opera derivata: l'icona è distribuita con la stessa licenza CC BY-SA 4.0, non con la licenza MIT del resto dell'app. Vedi l'obbligo «L'icona dell'applicazione è un'opera derivata da OpenMoji»."
     },
@@ -175,17 +169,6 @@
       "licenzaFile": "tessdata.txt"
     },
     {
-      "nome": "Whisper large-v3-turbo (pesi del modello)",
-      "versione": "mlx-community/whisper-large-v3-turbo",
-      "categoria": "dati",
-      "ruolo": "il modello che trascrive le videolezioni sulla GPU del Mac",
-      "licenza": "MIT",
-      "copyright": "Copyright (c) 2022 OpenAI (modello Whisper); conversione MLX della comunità mlx-community",
-      "url": "https://huggingface.co/mlx-community/whisper-large-v3-turbo",
-      "avviso": "I pesi non sono spediti con l'app: si scaricano al primo uso nella cache di Hugging Face dell'utente."
-    },
-
-    {
       "nome": "mlx-whisper (mlx-examples)",
       "categoria": "python",
       "ruolo": "trascrizione dei video sulla GPU Apple",
@@ -193,26 +176,6 @@
       "copyright": "Copyright © 2023 Apple Inc.",
       "url": "https://github.com/ml-explore/mlx-examples",
       "licenzaFile": "mlx-examples.txt",
-      "avviso": "Strumento Python installato dall'utente nel proprio ambiente: non è spedito dentro l'app."
-    },
-    {
-      "nome": "faster-whisper",
-      "categoria": "python",
-      "ruolo": "trascrizione di riserva su CPU",
-      "licenza": "MIT",
-      "copyright": "Copyright (c) 2023 SYSTRAN",
-      "url": "https://github.com/SYSTRAN/faster-whisper",
-      "licenzaFile": "faster-whisper.txt",
-      "avviso": "Strumento Python installato dall'utente nel proprio ambiente: non è spedito dentro l'app."
-    },
-    {
-      "nome": "pypdf",
-      "categoria": "python",
-      "ruolo": "estrazione del testo dai PDF durante l'ingest",
-      "licenza": "BSD-3-Clause",
-      "copyright": "Copyright (c) 2006-2008, Mathieu Fenniak e contributori",
-      "url": "https://github.com/py-pdf/pypdf",
-      "licenzaFile": "pypdf.txt",
       "avviso": "Strumento Python installato dall'utente nel proprio ambiente: non è spedito dentro l'app."
     },
     {
@@ -225,11 +188,10 @@
       "licenzaFile": "apache-2.0.txt",
       "avviso": "Strumento Python installato dall'utente nel proprio ambiente: non è spedito dentro l'app."
     },
-
     {
       "nome": "Anthropic — API Claude",
       "categoria": "servizio",
-      "ruolo": "generazione dei corsi con la chiave personale dell'utente",
+      "ruolo": "chat didattica dello zaino con la chiave personale dell'utente",
       "licenza": "servizio remoto: valgono i termini d'uso di Anthropic",
       "copyright": "Anthropic PBC",
       "url": "https://www.anthropic.com/legal/commercial-terms",
@@ -238,7 +200,7 @@
     {
       "nome": "OpenAI — API",
       "categoria": "servizio",
-      "ruolo": "generazione dei corsi con la chiave personale dell'utente",
+      "ruolo": "chat didattica dello zaino con la chiave personale dell'utente",
       "licenza": "servizio remoto: valgono i termini d'uso di OpenAI",
       "copyright": "OpenAI",
       "url": "https://openai.com/policies/business-terms/",
@@ -247,28 +209,46 @@
     {
       "nome": "Google — API Gemini",
       "categoria": "servizio",
-      "ruolo": "generazione dei corsi con la chiave personale dell'utente",
+      "ruolo": "chat didattica dello zaino con la chiave personale dell'utente",
       "licenza": "servizio remoto: valgono i termini d'uso di Google",
       "copyright": "Google LLC",
       "url": "https://ai.google.dev/gemini-api/terms",
       "avviso": "I materiali inviati escono dal Mac dell'utente verso Google. StudIA non ha server propri e non ne conserva copia."
     },
     {
-      "nome": "Claude Code (CLI)",
-      "categoria": "servizio",
-      "ruolo": "motore alternativo: l'app delega la generazione al Claude Code già installato dall'utente",
-      "licenza": "software di Anthropic installato e licenziato all'utente: StudIA non lo spedisce",
-      "copyright": "Anthropic PBC",
-      "url": "https://claude.com/product/claude-code",
-      "avviso": "Viene richiamato come programma esterno, con l'abbonamento dell'utente."
-    },
-    {
       "nome": "Voci di sistema macOS (sintesi vocale)",
       "categoria": "servizio",
-      "ruolo": "la lettura ad alta voce dei capitoli",
+      "ruolo": "la lettura ad alta voce di documenti, appunti e risposte della chat",
       "licenza": "componenti di macOS: usate tramite le API di sistema, non ridistribuite",
       "copyright": "Apple Inc.",
       "url": "https://support.apple.com/it-it/guide/mac-help/mchlp2290/mac"
+    },
+    {
+      "nome": "Qwen — API",
+      "categoria": "servizio",
+      "ruolo": "chat didattica con la chiave personale dell’utente",
+      "licenza": "servizio remoto: valgono i termini del provider",
+      "copyright": "Alibaba Cloud",
+      "url": "https://www.alibabacloud.com/product/modelstudio",
+      "avviso": "Il provider riceve la richiesta e i passaggi selezionati dello zaino."
+    },
+    {
+      "nome": "Kimi — API",
+      "categoria": "servizio",
+      "ruolo": "chat didattica con la chiave personale dell’utente",
+      "licenza": "servizio remoto: valgono i termini del provider",
+      "copyright": "Moonshot AI",
+      "url": "https://platform.moonshot.ai/",
+      "avviso": "Il provider riceve la richiesta e i passaggi selezionati dello zaino."
+    },
+    {
+      "nome": "DeepSeek — API",
+      "categoria": "servizio",
+      "ruolo": "chat didattica con la chiave personale dell’utente",
+      "licenza": "servizio remoto: valgono i termini del provider",
+      "copyright": "DeepSeek",
+      "url": "https://platform.deepseek.com/",
+      "avviso": "Il provider riceve la richiesta e i passaggi selezionati dello zaino."
     }
   ]
 }

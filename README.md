@@ -54,4 +54,6 @@ Le prove includono un PDF reale, aggiornamento del contesto, persistenza e riape
 
 `npm run dist:mac` crea il pacchetto macOS; `npm run dist:win` quello Windows. Identità, nome e nomi degli installer sono propri del fork. L'eventuale firma/notarizzazione del progetto originale non si trasferisce al fork.
 
-Il codice mantiene la licenza MIT di StudIA. Icona e risorse OpenMoji mantengono attribuzione e licenza CC BY-SA 4.0; i crediti delle dipendenze sono disponibili nell'app.
+Il codice mantiene la licenza MIT di StudIA. Icona e marchio usano [OpenMoji backpack (1F392)](https://openmoji.org/library/emoji-1F392/), con attribuzione e licenza CC BY-SA 4.0; i crediti delle dipendenze sono disponibili nell'app.
+
+La guida completa del fork è in `App/guida-zaino/index.html`. Gli screenshot si rigenerano su un vault temporaneo con `bash bin/guida-zaino.sh`. `npm run icona` rigenera solo le icone in `build/`, senza modificare i pacchetti in `dist/`.

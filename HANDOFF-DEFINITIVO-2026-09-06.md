@@ -37,3 +37,26 @@ Per provare a mano: creare due zaini, aggiungere un PDF e un appunto, configurar
 - File, pagina, zoom e posizione vengono ripristinati per zaino. Entrambi gli appunti vengono salvati prima della chat; un editor ancora modificato o un flush fallito blocca l’invio. Una bozza del secondo editor resta locale se il vault non è scrivibile.
 - `npm test`: 58 file passati. Dopo l’ultima rifinitura Markdown, ripassato `test/chat-ui.js`. `npm run test:ui` verifica con click reali header, cronologia, nome/data, ramo, copia, TTS tramite adattatore audio silenzioso, Markdown, impostazioni, due note e due PDF, aggiornamento contesto, cambio zaino e reload. Nessuna API o chiave reale usata.
 - Build arm64 1.1.0 firmata ad hoc, verificata con codesign e avviata in un vault temporaneo per provare editor doppio, cronologia, rinomina e ramo. Build stabile in `dist/mac-arm64/StudIA - ZAINO.app`; precedente conservata in `dist/precedente-1.0/mac-arm64`.
+
+
+## Icona e guida del fork — distribuzione in attesa
+
+Branch `icona-zaino-guida`, successivo ad `a5f59ba`. Su richiesta dell’utente,
+**non rigenerare né aggiornare `dist`**: i pacchetti presenti restano quelli precedenti.
+
+- Zaino OpenMoji 1F392, versione 16.0.0, in `App/assets/1F392.svg`: condiviso tra
+  topbar, guida e generatore delle icone. Attribuzione e derivazioni CC BY-SA 4.0
+  documentate nel file LICENSE accanto all’SVG e nei crediti rigenerati.
+- Ricetta StudIA conservata: tela logica 1024, riquadro bianco 824, margini 100,
+  stessa curva del contorno; emoji proporzionata nel lato maggiore di 660.
+  PNG/ICNS/ICO rigenerati in `build`, senza eseguire electron-builder.
+- Guida aggiornata al fork: tutor Messenger, cronologia, rinomina/data, copia/voce/rami,
+  profili accessibili, sei provider e due appunti/due fonti. Rimossi i passaggi di
+  commutazione CORSI e la vecchia presentazione di Confronto.
+- Screenshot aggiornati con `bash bin/guida-zaino.sh`: vault e dati temporanei,
+  risposte simulate dichiarate nelle didascalie, nessuna chiave reale. Il laboratorio
+  controlla il percorso prima di cancellare i materiali sintetici e segnala errori.
+- Suite `npm test` completata (58 file); crediti: 10 controlli. Verificati immagini caricate, indice, ingrandimento e
+  impaginazione della guida. Confrontati dimensioni e timestamp di tutti i 13713
+  file di `dist`: invariati. Per la verifica manuale aprire la guida, ingrandire una
+  schermata e controllare il nuovo marchio nella topbar avviando il sorgente.
