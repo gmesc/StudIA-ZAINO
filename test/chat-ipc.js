@@ -38,7 +38,8 @@ const call = (name, data, id = 1) => handlers.get('chat:' + name)(event(id), dat
   const bridge = IPC.ponte({ invoke: async (...args) => { sent.push(args); return 'ok'; } });
   await bridge.list('primo'); await bridge.read('primo', 'abc'); await bridge.cancel();
   await bridge.setKey({ provider: 'openai', value: 'temporary-test-key' });
-  assert.deepEqual(sent, [['chat:list', { zaino: 'primo' }], ['chat:read', { zaino: 'primo', id: 'abc' }], ['chat:cancel'], ['keys:set', { provider: 'openai', value: 'temporary-test-key' }]]);
+  await bridge.rename('primo', 'abc', 'La mia chat'); await bridge.branch('primo', 'abc', 'reply-1');
+  assert.deepEqual(sent, [['chat:list', { zaino: 'primo' }], ['chat:read', { zaino: 'primo', id: 'abc' }], ['chat:cancel'], ['keys:set', { provider: 'openai', value: 'temporary-test-key' }], ['chat:rename', { zaino: 'primo', id: 'abc', title: 'La mia chat' }], ['chat:branch', { zaino: 'primo', id: 'abc', messageId: 'reply-1' }]]);
 
   assert.deepEqual(await call('settings'), { provider: 'openai', model: 'model-a' });
   const saved = await call('saveSettings', { provider: 'kimi', model: 'model-k', apiKey: 'must-not-be-saved', other: true });
@@ -62,6 +63,10 @@ const call = (name, data, id = 1) => handlers.get('chat:' + name)(event(id), dat
   assert.equal((await call('send', { ...base, provider: 'unknown' })).ok, false);
   assert.equal(sends.length, 0);
   assert.equal((await call('create', { zaino: 'primo' })).session.id, 'session-1');
+  const savedChat = original.crea(root, 'primo');
+  assert.equal((await call('rename', { zaino: 'primo', id: savedChat.id, title: 'Nome salvato' })).session.title, 'Nome salvato');
+  assert.equal((await call('rename', { zaino: 'corso', id: savedChat.id, title: 'No' })).ok, false);
+  assert.equal((await call('branch', { zaino: 'primo', id: savedChat.id, messageId: 'missing' })).ok, false);
 
   const first = call('send', base);
   assert.equal(sends.length, 1);

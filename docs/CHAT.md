@@ -6,13 +6,15 @@ La chat usa esclusivamente lo zaino aperto. Il bottone nella barra superiore apr
 
 - Ogni conversazione vive in `Zaini/<id>/CHAT/<sessione>.json`, con una copia Markdown omonima leggibile fuori dall’app. Il JSON è la copia autorevole. Ogni file viene scritto tramite file temporaneo e rinomina atomica; i due file non costituiscono una transazione unica.
 - Il messaggio della persona viene salvato prima della richiesta al provider. Errori e interruzioni rimangono nella conversazione. Un invio rimasto incompleto dopo la chiusura dell’app viene segnalato alla riapertura.
+- Le nuove chat ricevono un titolo con data e ora. Alla chiusura con × o all’avvio di una nuova chat con +, il dialogo propone il titolo già salvato: è possibile cambiarlo o usare la data. Esc conserva il titolo corrente. Una risposta in corso viene interrotta e salvata prima di chiedere il nome.
+- L’azione «Nuova conversazione da qui» copia i messaggi fino alla risposta scelta in una nuova sessione, con nuovo identificatore e riferimenti `parentId`/`parentMessageId`. La sessione originale resta invariata.
 - I profili sono salvati nel vault in `.studia/chat-profili.json`. I preset iniziali sono Equilibrato, Explain like I'm 5 e Mr Feynman. È possibile modificare, clonare, attivare ed eliminare profili, conservandone almeno uno.
 - Le risposte conservano il provider, il modello e i riferimenti delle fonti disponibili. Eventuali campi tecnici di ragionamento necessari a un provider sono conservati nel JSON e reinviati nella cronologia; non sono mostrati nella chat o nella copia Markdown.
 - Le chiavi API non sono passate al renderer né archiviate nelle sessioni. Sono gestite dal processo principale tramite l’archivio credenziali locale dell’app.
 
 ## Contesto e limiti
 
-Ad ogni invio vengono riletti gli appunti e i materiali attuali dello zaino: aggiunte, modifiche e rimozioni entrano quindi nella richiesta successiva. Il contenuto inviato al provider comprende la domanda, una parte della cronologia, le preferenze del profilo e una selezione di documenti/appunti. È necessario salvare gli appunti per includerne le modifiche.
+Ad ogni invio vengono riletti gli appunti e i materiali attuali dello zaino: aggiunte, modifiche e rimozioni entrano quindi nella richiesta successiva. Il contenuto inviato al provider comprende la domanda, una parte della cronologia, le preferenze del profilo e una selezione di documenti/appunti. Prima dell’invio vengono salvati entrambi gli editor aperti; se il salvataggio fallisce, l’invio viene bloccato conservando la domanda.
 
 I PDF vengono letti localmente con il PDF.js già incluso nell’app, anche se non sono mai stati aperti. Non si avviano OCR, trascrizioni o pipeline di corsi e non si generano indici persistenti. Le pagine senza testo vengono segnalate. Sono inclusi anche file UTF-8 `.txt`, `.text`, `.md`, `.markdown`, `.csv` e `.tsv` in `MATERIALI` e `APPUNTI`; cartelle di indici e trascrizioni vengono escluse.
 

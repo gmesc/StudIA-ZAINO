@@ -2,6 +2,8 @@
 
 Questo è il punto d'ingresso del fork. Base StudIA: `2644b1a5ed28cf0b6099e7bbbe58cd4ba859a5cd`. Branch locale `studia-zaino`; upstream locale in sola lettura operativa, nessun push effettuato.
 
+Aggiornamento 1.1.0: branch `chat-messenger-materiali-paralleli`, successivo a `09bd13b`. Implementa la revisione richiesta dopo gli screenshot del 6 settembre: profili allineati, chat essenziale e materiali paralleli.
+
 La richiesta del fork sostituisce le decisioni storiche che vietavano qualunque AI nello zaino: è stata aggiunta una chat didattica, senza generazione di corsi. I piani precedenti restano documentazione dell'app originale; per questo fork partire dal README e da `docs/CHAT.md`.
 
 - `lib/zaino-only.js`: barriera IPC e preload, esclusione pipeline e accesso ai corsi; protezione id ambigui e symlink dello zaino.
@@ -25,3 +27,13 @@ Per provare a mano: creare due zaini, aggiungere un PDF e un appunto, configurar
 - Pacchetto arm64 in `dist/mac-arm64/StudIA - ZAINO.app`, firmato ad hoc e verificato con codesign. Primo avvio, ponte chat, editor e lettura di PDF/appunti verificati nel runtime incluso. Non notarizzato.
 - Le API esterne sono provate con mock: nessuna chiave o credito reale è stato usato.
 - La verifica visiva ha portato a caricare EasyMDE prima dell’inizializzazione diretta dello zaino; la regressione apre un appunto nell’app.
+
+## Revisione 1.1.0 — chat e split view
+
+- La testata chat mostra soltanto ruolo, ingranaggio AI, +, − e ×. All’apertura compare la cronologia dello zaino; minimizzare conserva la sessione. Chiudere o iniziare una nuova chat chiede il nome dopo aver salvato/annullato la risposta. Il titolo iniziale è la data; Esc conserva il nome già salvato.
+- `chat.rinomina` e `chat.ramifica`, esposte dal ponte come `rename` e `branch`, scrivono JSON e Markdown. Il ramo copia solo i messaggi fino alla risposta scelta, con `parentId` e `parentMessageId`; non modifica la sessione di origine.
+- Risposte con copia, voce di sistema e ramo. Markdown reso dal parser già incluso e ricopiato senza attributi, link attivi, immagini o elementi eseguibili. Le fonti hanno i propri collegamenti verificati.
+- `App/assets/banco/materiali.js` sceglie l’istanza libera dalla singola voce Appunti/Fonti e gestisce il secondo EasyMDE. Il renderer mantiene `fonte2` e `appunti2` come identità interne. Massimo due istanze per tipo; niente modifiche simultanee dello stesso appunto. Seconda fonte: lettura, pagina, zoom e copia; annotazioni/ritagli restano sulla prima.
+- File, pagina, zoom e posizione vengono ripristinati per zaino. Entrambi gli appunti vengono salvati prima della chat; un editor ancora modificato o un flush fallito blocca l’invio. Una bozza del secondo editor resta locale se il vault non è scrivibile.
+- `npm test`: 58 file passati. Dopo l’ultima rifinitura Markdown, ripassato `test/chat-ui.js`. `npm run test:ui` verifica con click reali header, cronologia, nome/data, ramo, copia, TTS tramite adattatore audio silenzioso, Markdown, impostazioni, due note e due PDF, aggiornamento contesto, cambio zaino e reload. Nessuna API o chiave reale usata.
+- Build arm64 1.1.0 firmata ad hoc, verificata con codesign e avviata in un vault temporaneo per provare editor doppio, cronologia, rinomina e ramo. Build stabile in `dist/mac-arm64/StudIA - ZAINO.app`; precedente conservata in `dist/precedente-1.0/mac-arm64`.

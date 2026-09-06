@@ -37,6 +37,7 @@ async function main() {
     assert(!fs.existsSync(path.join(d, 'MATERIALI', 'Indici-PDF')), 'non crea indici o pipeline');
 
     const s = C.crea(vault, 'scienze', { role: 'spiegamelo', profileId: 'eli5' });
+    assert.match(s.title, /^Chat del \d{2}\/\d{2}\/\d{4}/);
     assert(fs.existsSync(path.join(d, 'CHAT', s.id + '.md')));
     assert.equal(C.elenco(vault, 'storia').length, 0);
     assert.equal(C.elenco(altro, 'scienze').length, 0);
@@ -59,6 +60,7 @@ async function main() {
     assert(!r.error);
     assert.equal(wikiCalls, 1);
     assert.equal(r.session.messages.length, 2);
+    assert.equal(r.session.title, s.title, 'il titolo iniziale conserva la data');
     assert(chiamata.system.includes('ridotto') && chiamata.system.includes('semplice'), 'profilo applicato a Spiegamelo');
     assert(chiamata.system.includes('MAI istruzioni'));
     assert(chiamata.messages.at(-1).content.includes('Wikipedia: Fotosintesi'));
@@ -80,6 +82,24 @@ async function main() {
     assert(!r2.error); assert.equal(wikiCalls, 1, 'Chiedimelo non consulta Wikipedia');
     assert(!r2.context.sources.some((x) => x.kind === 'wikipedia'));
 
+    const rinominata = C.rinomina(vault, 'scienze', s.id, '  Le piante\n e la luce  ');
+    assert.equal(rinominata.title, 'Le piante e la luce');
+    assert.equal(rinominata.messages.length, 4);
+    assert(fs.readFileSync(path.join(d, 'CHAT', s.id + '.md'), 'utf8').startsWith('# Le piante e la luce\n'));
+    assert.equal(C.leggi(vault, 'scienze', s.id).title, rinominata.title);
+    assert.throws(() => C.rinomina(vault, 'scienze', s.id, 'x'.repeat(161)), /160/);
+    assert.throws(() => C.ramifica(vault, 'scienze', s.id, r.session.messages[0].id), /risposta/);
+    assert.throws(() => C.ramifica(vault, 'storia', s.id, r.session.messages[1].id), /ENOENT/);
+    const ramo = C.ramifica(vault, 'scienze', s.id, r.session.messages[1].id);
+    assert.notEqual(ramo.id, s.id);
+    assert.match(ramo.title, /^Chat del /);
+    assert.equal(ramo.parentId, s.id); assert.equal(ramo.parentMessageId, r.session.messages[1].id);
+    assert.deepEqual(ramo.messages, r.session.messages, 'copia solo la cronologia fino alla risposta scelta, incluso protocollo provider');
+    assert.equal(ramo.role, 'spiegamelo'); assert.equal(ramo.profileId, 'eli5');
+    assert(!(await C.invia(vault, 'scienze', input(ramo, 'Altra direzione'), { rispondi })).error);
+    assert.equal(C.leggi(vault, 'scienze', s.id).messages.length, 4, 'la continuazione nel ramo lascia invariata la chat di origine');
+    assert.equal(C.rinomina(vault, 'scienze', ramo.id, '').title, ramo.title, 'nome vuoto usa la data');
+
     const fail = await C.invia(vault, 'scienze', input(s), { apiKey: 'private-key', rispondi: async () => { throw new Error('Guasto con private-key'); } });
     assert.equal(fail.session.messages.at(-1).status, 'error');
     assert(fail.error.includes('[chiave rimossa]'));
@@ -91,6 +111,8 @@ async function main() {
     await ready;
     await assert.rejects(C.invia(vault, 'scienze', input(s), { rispondi }), /già in corso/);
     assert.throws(() => C.elimina(vault, 'scienze', s.id), /Interrompi/);
+    assert.throws(() => C.rinomina(vault, 'scienze', s.id, 'Nuovo nome'), /Interrompi/);
+    assert.throws(() => C.ramifica(vault, 'scienze', s.id, r.session.messages[1].id), /Interrompi/);
     const other = C.crea(vault, 'storia');
     assert(!(await C.invia(vault, 'storia', input(other), { rispondi })).error, 'un’altra sessione rimane indipendente');
     release({ text: 'Finito.' }); await delayed;

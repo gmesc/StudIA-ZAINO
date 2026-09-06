@@ -39,6 +39,7 @@
 <!-- Il banco: forme della griglia e regole sullo stato. Puro e UMD come i
      moduli della mappa — i test lo richiedono da Node. -->
 <script src="assets/banco/forme.js"></script>
+<script src="assets/banco/materiali.js"></script>
 <!-- Evidenze: ritrovare un pezzo di testo dopo che la pipeline ha rifatto
      l'HTML. Conosce SOLO stringhe e indici — il ponte col DOM (quale nodo di
      testo, quale offset) sta qui nel renderer, perché un modulo che importasse
@@ -395,7 +396,7 @@
      deve stare più bassa o si mangia lo spazio del contenuto. Due misure
      diverse perché sono due cose diverse; il token serve a non confonderle. */
   .tbtn, .mtoolbar .mbtn,
-  #noteHost .editor-toolbar .notectl .ncbtn, .tendina.piccola,
+  :is(#noteHost,#noteHost2) .editor-toolbar .notectl .ncbtn, .tendina.piccola,
   .tbar-lg .iconbtn, .tbar-lg .chiptoggle, .tbar-lg .tendina{
     height:var(--tb-h); min-width:var(--tb-min); box-sizing:border-box;
     padding:0 var(--tb-pad-x); font-size:var(--tb-fs); font-weight:var(--tb-peso);
@@ -412,7 +413,7 @@
      il mestiere dei comandi. Quello che segnala il bottone sotto il puntatore è
      il fondo, non un bordo che compare. */
   .tbtn:hover:not(:disabled), .mtoolbar .mbtn:hover:not(:disabled),
-  #noteHost .editor-toolbar .notectl .ncbtn:hover:not(:disabled), .tendina.piccola:hover,
+  :is(#noteHost,#noteHost2) .editor-toolbar .notectl .ncbtn:hover:not(:disabled), .tendina.piccola:hover,
   .tbar-lg .iconbtn:hover:not(:disabled), .tbar-lg .chiptoggle:hover, .tbar-lg .tendina:hover{
     background:var(--hover); }
   /* Un comando ACCESO (le forbici, un registro scelto) si dichiara col fondo:
@@ -449,7 +450,7 @@
      storici (`.mtoolbar`, `.pdfbar`, `.editor-toolbar`, `.albar`, `.kwbar`)
      restano nell'elenco come alias, così il markup vecchio non si rompe e non
      c'è una seconda definizione da tenere allineata a mano. */
-  .tbar, .tbar-lg, .topbar, .mtoolbar, :is(#pdfPane,#pdfPane2) .pdfbar, #noteHost .editor-toolbar, .albar, .kwbar,
+  .tbar, .tbar-lg, .topbar, .mtoolbar, :is(#pdfPane,#pdfPane2) .pdfbar, :is(#noteHost,#noteHost2) .editor-toolbar, .albar, .kwbar,
   .media-head, .guida-head, .media-foot, .wz-head, .wz-foot, .pa-foot, .ps-row{
     display:flex; align-items:center; gap:0; flex-wrap:wrap;
     row-gap:var(--tb-bar-rowgap); flex:0 0 auto;
@@ -463,7 +464,7 @@
     letter-spacing:.12em; color:var(--muted); }
   /* Il pallino delle modifiche non salvate: stesso segno e stesso giallo in
      mappa, appunti e chi verrà dopo. */
-  .tbdirty, .mtoolbar .mdirty, #noteHost .editor-toolbar .notectl .dirty{
+  .tbdirty, .mtoolbar .mdirty, :is(#noteHost,#noteHost2) .editor-toolbar .notectl .dirty{
     color:var(--yellow-strong); font-size:14px; line-height:1; }
   /* Tendine e campi di ricerca in barra: alti quanto i bottoni, o la riga si
      sfalsa. Erano tre altezze diverse scritte in tre punti (`--tb-h` nella
@@ -703,7 +704,7 @@
   .pittorepiedi .tbtn{ border:1px solid var(--line); }
 
   /* ⚠️ Il dock non esiste più come pannello. I suoi due pezzi — `#pdfPane` e
-     `#notePane` — sono diventati strumenti del banco, e `bancoMonta` li sposta
+     `:is(#notePane,#notePane2)` — sono diventati strumenti del banco, e `bancoMonta` li sposta
      dentro i blocchi. Il guscio resta nel DOM perché una decina di funzioni lo
      interrogano (`positionPane`, i due ridimensionatori, la guardia di
      la barra sulla selezione) e toglierlo vorrebbe dire dodici modifiche a rischio per un
@@ -715,7 +716,7 @@
      collocazione, non di aspetto: il resto del loro stile è invariato. */
   .bcorpo > #pdfPane{ display:flex!important; height:100%; }
   .bcorpo > #playerPane{ display:flex!important; height:100%; }
-  .bcorpo > #notePane{ display:flex!important; height:100%; flex:1 1 auto; }
+  .bcorpo > :is(#notePane,#notePane2){ display:flex!important; height:100%; flex:1 1 auto; }
   .bcorpo > #mappaView{ display:flex!important; height:100%; }
   .bcorpo > #keywordPane{ display:flex!important; height:100%; }
   .bcorpo > #albumPane{ display:flex!important; height:100%; }
@@ -1090,9 +1091,9 @@
   html[data-pdf="1"] #pdfPane{ display:flex; }
   /* senza editor aperto l'anteprima si prende tutta la colonna (comportamento di prima) */
   html:not([data-editor="1"]) #pdfPane{ height:100%; }
-  html:not([data-editor="1"]) #notePane, html:not([data-editor="1"]) #dockSplit{ display:none; }
+  html:not([data-editor="1"]) :is(#notePane,#notePane2), html:not([data-editor="1"]) #dockSplit{ display:none; }
   html:not([data-pdf="1"]) #dockSplit{ display:none; }
-  #notePane{ flex:1; min-height:0; display:flex; flex-direction:column; }
+  :is(#notePane,#notePane2){ flex:1; min-height:0; display:flex; flex-direction:column; }
   /* maniglia orizzontale fra anteprima ed editor */
   #dockSplit{ position:relative; height:8px; flex:0 0 8px; cursor:row-resize; touch-action:none; }
   #dockSplit::before{ content:''; position:absolute; left:0; top:50%; transform:translateY(-50%); height:1px; width:100%; background:var(--line); transition:background var(--speed),height var(--speed); }
@@ -1218,30 +1219,30 @@
      riga tutta sua, e la barra degli appunti era alta il doppio di quella della
      mappa su un riquadro che spesso è mezza colonna. Adesso è un gruppo come
      gli altri e va a capo solo se non ci sta — che è ciò che fa `.tbar`. */
-  #noteHost .editor-toolbar .notectl{ display:flex; align-items:center; gap:0;
+  :is(#noteHost,#noteHost2) .editor-toolbar .notectl{ display:flex; align-items:center; gap:0;
     flex:0 0 auto; min-width:0; }
-  #noteSelect{ flex:0 1 auto; min-width:70px; }
+  :is(#noteSelect,#noteSelect2){ flex:0 1 auto; min-width:70px; }
   /* Sotto una certa larghezza i separatori sono spazio sprecato. La soglia guarda il
      RIQUADRO, non la finestra: il dock può essere stretto con la finestra larga. */
-  #notePane{ container-type:inline-size; container-name:appunti; }
+  :is(#notePane,#notePane2){ container-type:inline-size; container-name:appunti; }
   @container appunti (max-width:520px){
-    #noteHost .editor-toolbar i.separator{ display:none; }
-    #noteHost .editor-toolbar{ padding-inline:.25rem; }
+    :is(#noteHost,#noteHost2) .editor-toolbar i.separator{ display:none; }
+    :is(#noteHost,#noteHost2) .editor-toolbar{ padding-inline:.25rem; }
   }
   @container appunti (max-width:360px){
-    #noteHost .editor-toolbar .notectl .tbsep{ margin:0 .2rem; }   /* riquadro strettissimo: gruppi più fitti */
-    #noteSelect{ max-width:120px; }
+    :is(#noteHost,#noteHost2) .editor-toolbar .notectl .tbsep{ margin:0 .2rem; }   /* riquadro strettissimo: gruppi più fitti */
+    :is(#noteSelect,#noteSelect2){ max-width:120px; }
   }
   /* Idem: misure dal token. ⚠️ Prima questi bottoni erano senza bordo e alti
      26px, quelli della mappa bordati e alti 30: due barre che fanno lo stesso
      mestiere e sembravano di due app diverse. */
-  #noteSelect{ max-width:clamp(90px,26%,190px); }
+  :is(#noteSelect,#noteSelect2){ max-width:clamp(90px,26%,190px); }
   /* l'appunto aperto non è di questo capitolo: dirlo, invece di lasciarlo capire */
-  #noteHost .editor-toolbar .notectl .nwhere{ font-size:10px; letter-spacing:.04em; white-space:nowrap;
+  :is(#noteHost,#noteHost2) .editor-toolbar .notectl .nwhere{ font-size:10px; letter-spacing:.04em; white-space:nowrap;
     color:var(--yellow-strong); border:1px solid var(--line); padding:.05rem .3rem; cursor:help;
     max-width:150px; overflow:hidden; text-overflow:ellipsis; }
-  #noteHost{ flex:1; min-height:0; overflow:auto; }
-  #noteHost .EasyMDEContainer{ height:100%; display:flex; flex-direction:column; }
+  :is(#noteHost,#noteHost2){ flex:1; min-height:0; overflow:auto; }
+  :is(#noteHost,#noteHost2) .EasyMDEContainer{ height:100%; display:flex; flex-direction:column; }
   /* ---- Scrivere dentro l'anteprima: il blocco e il suo campo --------------
      ⚠️ `display:contents`: l'involucro che porta la mappa delle righe non deve
      generare una scatola, o l'anteprima cambierebbe impaginazione per una
@@ -1252,15 +1253,15 @@
      flusso, cioè non ha rettangolo, non si può cliccare e perde il pallino.
      L'involucro invisibile serve solo dove il blocco è un `<div>` aggiunto da
      noi; il `<li>` nel DOM c'era già. */
-  #noteHost div.mdb{ display:contents; }
-  #noteHost div.mdb[data-edit]{ display:block; }
+  :is(#noteHost,#noteHost2) div.mdb{ display:contents; }
+  :is(#noteHost,#noteHost2) div.mdb[data-edit]{ display:block; }
   /* Scrivendo dentro una voce il pallino resta al suo posto: `display:block` la
      toglierebbe dall'elenco per il tempo della modifica, e la riga ballerebbe. */
-  #noteHost li.mdb[data-edit]{ display:list-item; }
+  :is(#noteHost,#noteHost2) li.mdb[data-edit]{ display:list-item; }
   /* Il puntatore dice che si può scrivere lì: senza, l'unica maniera di
      scoprirlo è cliccare per caso. */
-  #noteHost .editor-preview-active-side .mdb, #noteHost .editor-preview-active .mdb{ cursor:text; }
-  #noteHost .mdb-edit{
+  :is(#noteHost,#noteHost2) .editor-preview-active-side .mdb, :is(#noteHost,#noteHost2) .editor-preview-active .mdb{ cursor:text; }
+  :is(#noteHost,#noteHost2) .mdb-edit{
     display:block; width:100%; box-sizing:border-box; resize:none; overflow:hidden;
     font-family:var(--font-text),var(--emoji-font),sans-serif; font-size:14px; line-height:1.55;
     color:var(--ink); background:var(--bg); border:1px solid var(--teal);
@@ -1268,7 +1269,7 @@
   /* ---- ◫ AFFIANCATA, dentro il blocco ------------------------------------
      ⚠️ Queste tre righe non sono cosmetica: il foglio di EasyMDE veste
      l'affiancata «senza fullscreen» con `.sided--no-fullscreen`, ma le sue
-     regole sono di sola CLASSE e qui sopra c'è un `#noteHost` — un id batte
+     regole sono di sola CLASSE e qui sopra c'è un `:is(#noteHost,#noteHost2)` — un id batte
      due classi, quindi senza ridichiararlo il contenitore resterebbe in colonna
      e la vista affiancata uscirebbe una sopra l'altra. La barra sta sempre per
      intero sulla prima riga (`width:100%`), poi testo e anteprima si dividono
@@ -1279,24 +1280,24 @@
      (misurato). Una griglia dice quello che si intende davvero — una riga per la
      barra, alta quanto le serve, e tutto il resto al testo — e le tre caselle si
      assegnano a mano, così un figlio in più di EasyMDE non sposta niente. */
-  #noteHost .EasyMDEContainer.sided--no-fullscreen{
+  :is(#noteHost,#noteHost2) .EasyMDEContainer.sided--no-fullscreen{
     display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto minmax(0,1fr); }
-  #noteHost .EasyMDEContainer.sided--no-fullscreen .editor-toolbar{ grid-area:1 / 1 / 2 / 3; width:auto; }
-  #noteHost .EasyMDEContainer.sided--no-fullscreen .CodeMirror-sided{
+  :is(#noteHost,#noteHost2) .EasyMDEContainer.sided--no-fullscreen .editor-toolbar{ grid-area:1 / 1 / 2 / 3; width:auto; }
+  :is(#noteHost,#noteHost2) .EasyMDEContainer.sided--no-fullscreen .CodeMirror-sided{
     grid-area:2 / 1 / 3 / 2; width:auto!important; min-width:0; height:auto; }
   /* L'anteprima affiancata è nel flusso, non appesa alla finestra: `position` e
      `top` di fabbrica la incollavano al bordo dello schermo, cioè fuori dal
      blocco che la contiene. */
-  #noteHost .EasyMDEContainer.sided--no-fullscreen .editor-preview-active-side{
+  :is(#noteHost,#noteHost2) .EasyMDEContainer.sided--no-fullscreen .editor-preview-active-side{
     grid-area:2 / 2 / 3 / 3; position:static; width:auto; height:auto; min-width:0; overflow:auto;
     border:0; border-top:1px solid var(--line); border-left:1px solid var(--line);
     background:var(--panel); }
-  #noteHost .EasyMDEContainer .CodeMirror{ flex:1; min-height:0; border:0; border-top:1px solid var(--line);
+  :is(#noteHost,#noteHost2) .EasyMDEContainer .CodeMirror{ flex:1; min-height:0; border:0; border-top:1px solid var(--line);
     background:var(--panel); color:var(--ink); font-size:14px; line-height:1.55; padding:.4rem .2rem;
     font-family:var(--font-text),var(--emoji-font),sans-serif; }
   /* `opacity` e angoli: EasyMDE la vuole smorzata e con gli spigoli arrotondati
      di Bootstrap. In StudIA nessuna barra ha angoli tondi. */
-  #noteHost .editor-toolbar{ opacity:1; border-radius:0; }
+  :is(#noteHost,#noteHost2) .editor-toolbar{ opacity:1; border-radius:0; }
   /* ---- I bottoni di EasyMDE parlano la lingua della barra ------------------
      ⚠️ Il foglio di EasyMDE dà ai suoi bottoni misure sue (30px, `padding 0 6px`,
      `border-radius:3px`, e una cornice che COMPARE al passaggio del mouse). Sono
@@ -1310,41 +1311,41 @@
      larghi 47 l'uno e la barra va a capo anche quando ci sarebbe spazio. Il
      `min-width` del token dà già l'area cliccabile giusta — 30×30 — e il
      rientro laterale su un glifo centrato non aggiunge niente. */
-  #noteHost .editor-toolbar button{ height:var(--tb-h); min-width:var(--tb-min);
+  :is(#noteHost,#noteHost2) .editor-toolbar button{ height:var(--tb-h); min-width:var(--tb-min);
     box-sizing:border-box; padding:0; color:var(--ink);
     border:0; border-radius:0; background:transparent;
     font-family:var(--font-text),var(--emoji-font),sans-serif; }
-  #noteHost .editor-toolbar button:hover{ background:var(--hover); border-color:transparent; }
+  :is(#noteHost,#noteHost2) .editor-toolbar button:hover{ background:var(--hover); border-color:transparent; }
   /* Uno strumento ACCESO (grassetto dentro una parola in grassetto) usa la stessa
      marca dei comandi accesi della mappa: fondo teal, non una cornice. */
-  #noteHost .editor-toolbar button.active{
+  :is(#noteHost,#noteHost2) .editor-toolbar button.active{
     background:color-mix(in srgb, var(--teal) 26%, var(--panel));
     color:var(--teal-strong); border-color:transparent; }
   /* Il separatore di EasyMDE è due bordi (uno grigio e uno bianco) larghi zero:
      a schermo è una linea doppia che nelle altre barre non esiste. Qui diventa
      la barretta di StudIA, la stessa di `.tbsep`. */
-  #noteHost .editor-toolbar i.separator{ width:1px; height:16px; box-sizing:border-box;
+  :is(#noteHost,#noteHost2) .editor-toolbar i.separator{ width:1px; height:16px; box-sizing:border-box;
     border:0; background:var(--line); margin:0 .4rem; align-self:center; }
   /* icone della toolbar come glifi CSS: Font Awesome è disattivato (nessuna chiamata a CDN, app 100% offline) */
-  #noteHost .editor-toolbar button i.fa{ display:none; }
-  #noteHost .editor-toolbar button::before{ font-style:normal; font-weight:700; font-size:12px; line-height:1; letter-spacing:0; }
-  #noteHost .editor-toolbar button.bold::before{ content:"B"; }
-  #noteHost .editor-toolbar button.italic::before{ content:"I"; font-style:italic; }
-  #noteHost .editor-toolbar button.heading::before{ content:"H"; }
-  #noteHost .editor-toolbar button.quote::before{ content:"\201D"; font-size:16px; }
-  #noteHost .editor-toolbar button.unordered-list::before{ content:"\2022\2022"; letter-spacing:2px; }
-  #noteHost .editor-toolbar button.ordered-list::before{ content:"1."; }
+  :is(#noteHost,#noteHost2) .editor-toolbar button i.fa{ display:none; }
+  :is(#noteHost,#noteHost2) .editor-toolbar button::before{ font-style:normal; font-weight:700; font-size:12px; line-height:1; letter-spacing:0; }
+  :is(#noteHost,#noteHost2) .editor-toolbar button.bold::before{ content:"B"; }
+  :is(#noteHost,#noteHost2) .editor-toolbar button.italic::before{ content:"I"; font-style:italic; }
+  :is(#noteHost,#noteHost2) .editor-toolbar button.heading::before{ content:"H"; }
+  :is(#noteHost,#noteHost2) .editor-toolbar button.quote::before{ content:"\201D"; font-size:16px; }
+  :is(#noteHost,#noteHost2) .editor-toolbar button.unordered-list::before{ content:"\2022\2022"; letter-spacing:2px; }
+  :is(#noteHost,#noteHost2) .editor-toolbar button.ordered-list::before{ content:"1."; }
   /* \FE0E = variation selector testuale: senza, macOS renderebbe la freccia come emoji a colori */
-  #noteHost .editor-toolbar button.link::before{ content:"\2197\FE0E"; font-size:14px; }
-  #noteHost .editor-toolbar button.code::before{ content:"</>"; font-size:11px; }
-  #noteHost .editor-toolbar button.preview::before{ content:"\25A3"; font-size:14px; }
-  #noteHost .editor-toolbar button.side-by-side::before{ content:"\25EB"; font-size:14px; }
-  #noteHost .editor-toolbar button.guide::before{ content:"?"; }
-  #noteHost .editor-statusbar{ display:none; }
-  #noteHost .CodeMirror-cursor{ border-left-color:var(--ink); }
-  #noteHost .cm-s-easymde .cm-header{ color:var(--teal-strong); }
-  #noteHost .cm-s-easymde .cm-link, #noteHost .cm-s-easymde .cm-url{ color:var(--blue-strong); }
-  #noteHost .editor-preview, #noteHost .editor-preview-side{ background:var(--panel); color:var(--ink); }
+  :is(#noteHost,#noteHost2) .editor-toolbar button.link::before{ content:"\2197\FE0E"; font-size:14px; }
+  :is(#noteHost,#noteHost2) .editor-toolbar button.code::before{ content:"</>"; font-size:11px; }
+  :is(#noteHost,#noteHost2) .editor-toolbar button.preview::before{ content:"\25A3"; font-size:14px; }
+  :is(#noteHost,#noteHost2) .editor-toolbar button.side-by-side::before{ content:"\25EB"; font-size:14px; }
+  :is(#noteHost,#noteHost2) .editor-toolbar button.guide::before{ content:"?"; }
+  :is(#noteHost,#noteHost2) .editor-statusbar{ display:none; }
+  :is(#noteHost,#noteHost2) .CodeMirror-cursor{ border-left-color:var(--ink); }
+  :is(#noteHost,#noteHost2) .cm-s-easymde .cm-header{ color:var(--teal-strong); }
+  :is(#noteHost,#noteHost2) .cm-s-easymde .cm-link, :is(#noteHost,#noteHost2) .cm-s-easymde .cm-url{ color:var(--blue-strong); }
+  :is(#noteHost,#noteHost2) .editor-preview, :is(#noteHost,#noteHost2) .editor-preview-side{ background:var(--panel); color:var(--ink); }
   .noteempty{ padding:1.4rem 1rem; color:var(--muted); font-size:13px; line-height:1.6; }
   /* blocco "I miei appunti" iniettato nel capitolo dal reader */
   .myotes{ margin:2rem 0; padding:1rem 1.1rem; background:color-mix(in srgb, var(--yellow) 9%, var(--panel)); }
@@ -1572,27 +1573,27 @@
     /* lo stacco fra due paragrafi, uguale nel capitolo e nell'appunto */
     --par:1.05rem;
   }
-  #noteHost .cm-s-easymde .cm-header-1,
-  #noteHost .editor-preview h1, #noteHost .editor-preview-side h1{ font-size:var(--tit-1); }
-  #noteHost .cm-s-easymde .cm-header-2,
-  #noteHost .editor-preview h2, #noteHost .editor-preview-side h2{ font-size:var(--tit-2); }
-  #noteHost .cm-s-easymde .cm-header-3,
-  #noteHost .editor-preview h3, #noteHost .editor-preview-side h3{ font-size:var(--tit-3); }
-  #noteHost .cm-s-easymde .cm-header-4,
-  #noteHost .editor-preview h4, #noteHost .editor-preview-side h4{ font-size:var(--tit-4); }
-  #noteHost .cm-s-easymde .cm-header-5,
-  #noteHost .editor-preview h5, #noteHost .editor-preview-side h5{ font-size:var(--tit-5); }
-  #noteHost .cm-s-easymde .cm-header-6,
-  #noteHost .editor-preview h6, #noteHost .editor-preview-side h6{ font-size:var(--tit-6); }
+  :is(#noteHost,#noteHost2) .cm-s-easymde .cm-header-1,
+  :is(#noteHost,#noteHost2) .editor-preview h1, :is(#noteHost,#noteHost2) .editor-preview-side h1{ font-size:var(--tit-1); }
+  :is(#noteHost,#noteHost2) .cm-s-easymde .cm-header-2,
+  :is(#noteHost,#noteHost2) .editor-preview h2, :is(#noteHost,#noteHost2) .editor-preview-side h2{ font-size:var(--tit-2); }
+  :is(#noteHost,#noteHost2) .cm-s-easymde .cm-header-3,
+  :is(#noteHost,#noteHost2) .editor-preview h3, :is(#noteHost,#noteHost2) .editor-preview-side h3{ font-size:var(--tit-3); }
+  :is(#noteHost,#noteHost2) .cm-s-easymde .cm-header-4,
+  :is(#noteHost,#noteHost2) .editor-preview h4, :is(#noteHost,#noteHost2) .editor-preview-side h4{ font-size:var(--tit-4); }
+  :is(#noteHost,#noteHost2) .cm-s-easymde .cm-header-5,
+  :is(#noteHost,#noteHost2) .editor-preview h5, :is(#noteHost,#noteHost2) .editor-preview-side h5{ font-size:var(--tit-5); }
+  :is(#noteHost,#noteHost2) .cm-s-easymde .cm-header-6,
+  :is(#noteHost,#noteHost2) .editor-preview h6, :is(#noteHost,#noteHost2) .editor-preview-side h6{ font-size:var(--tit-6); }
   /* Il resto del vestito, uguale da tutte e due le parti: il maiuscolo e la
      spaziatura negativa dell'h1 di pagina qui non c'entrano — questo è il
      titolo di un appunto, non l'intestazione dell'app. */
-  #noteHost .editor-preview :is(h1,h2,h3,h4,h5,h6),
-  #noteHost .editor-preview-side :is(h1,h2,h3,h4,h5,h6){
+  :is(#noteHost,#noteHost2) .editor-preview :is(h1,h2,h3,h4,h5,h6),
+  :is(#noteHost,#noteHost2) .editor-preview-side :is(h1,h2,h3,h4,h5,h6){
     font-weight:700; line-height:1.2; letter-spacing:0; text-transform:none;
     margin:.6em 0 .4em; color:var(--ink);
   }
-  #noteHost .editor-preview h6, #noteHost .editor-preview-side h6{ color:var(--muted); }
+  :is(#noteHost,#noteHost2) .editor-preview h6, :is(#noteHost,#noteHost2) .editor-preview-side h6{ color:var(--muted); }
 
   /* ===== Gli stessi titoli, ma DENTRO qualcos'altro =====
      Un appunto reso dentro un callout, nel pannello «I miei appunti» o in una
@@ -1626,14 +1627,14 @@
      ⚠️ La citazione porta un filo SOTTILE e nessun fondo: con un bordo spesso e
      un fondo colorato sarebbe un riquadro, e i riquadri qui vogliono dire
      un'altra cosa. */
-  :is(#noteHost .editor-preview, #noteHost .editor-preview-side, .uc-body,
+  :is(:is(#noteHost,#noteHost2) .editor-preview, :is(#noteHost,#noteHost2) .editor-preview-side, .uc-body,
       .myotes .nt-body, table.guida .g-out, #stampaFoglio .st-corpo) blockquote{
     margin:.7rem 0; padding:.1rem 0 .1rem .8rem; border-left:2px solid var(--line);
     color:var(--muted); font-style:italic;
   }
-  :is(#noteHost .editor-preview, #noteHost .editor-preview-side, .uc-body,
+  :is(:is(#noteHost,#noteHost2) .editor-preview, :is(#noteHost,#noteHost2) .editor-preview-side, .uc-body,
       .myotes .nt-body, table.guida .g-out, #stampaFoglio .st-corpo) blockquote>*:first-child{ margin-top:0; }
-  :is(#noteHost .editor-preview, #noteHost .editor-preview-side, .uc-body,
+  :is(:is(#noteHost,#noteHost2) .editor-preview, :is(#noteHost,#noteHost2) .editor-preview-side, .uc-body,
       .myotes .nt-body, table.guida .g-out, #stampaFoglio .st-corpo) blockquote>*:last-child{ margin-bottom:0; }
   /* Il codice non si manda a capo da sé: una riga spezzata dove capita è una
      riga che dice un'altra cosa. Scorre nel suo riquadro, e il resto della
@@ -1668,7 +1669,7 @@
      Con il margine da un lato solo non c'è collasso da governare né primo da
      eccettuare, e l'aria in fondo all'ultimo la toglie già chi ha un fondo da
      difendere (`.uc-body>*:last-child`). */
-  :is(#noteHost .editor-preview, #noteHost .editor-preview-side, .uc-body,
+  :is(:is(#noteHost,#noteHost2) .editor-preview, :is(#noteHost,#noteHost2) .editor-preview-side, .uc-body,
       .myotes .nt-body, table.guida .g-out, #stampaFoglio .st-corpo) p{ margin:0 0 var(--par); }
   /* La riga di bianco: un paragrafo vuoto alto UNA RIGA di testo. `lh` è
      l'unità che vale l'interlinea corrente, quindi il bianco è alto come la
@@ -1680,7 +1681,7 @@
      ogni Invio in più varrebbe una riga E MEZZA invece di una. Con la stessa
      specificità vince chi viene dopo. Misurato guardando lo scatto: i bianchi
      erano il doppio di quello che dicevano le prove. */
-  :is(#noteHost .editor-preview, #noteHost .editor-preview-side, .uc-body,
+  :is(:is(#noteHost,#noteHost2) .editor-preview, :is(#noteHost,#noteHost2) .editor-preview-side, .uc-body,
       .myotes .nt-body, table.guida .g-out, #stampaFoglio .st-corpo) p.md-vuota{
     margin:0; min-height:1.5em; min-height:1lh;
   }
@@ -6176,8 +6177,18 @@ function pdfjsAvvia(){
  * memoria: chi confronta tiene spesso i due documenti a scale diverse.
  */
 var FONTE2 = { pronto:false, viewer:null, bus:null, link:null, doc:null,
-               file:'', page:1, larghezza:0, CHIAVE:'studia.pdf2.zoom' };
+               file:'', page:1, corso:'', operazione:0, ripresa:null, caricando:false, larghezza:0, CHIAVE:'studia.pdf2.zoom' };
 
+function fonte2Punti(corso){
+  try{ return JSON.parse(localStorage.getItem('studia.banco.c.'+corso+'.fonti2')||'{}')||{}; }catch(e){ return {}; }
+}
+function fonte2Ricorda(){
+  if(!FONTE2.doc || !FONTE2.file || !FONTE2.corso || FONTE2.caricando) return;
+  var host=$('#pdf2Frame'), punti=fonte2Punti(FONTE2.corso);
+  punti[FONTE2.file]={ page:FONTE2.page, zoom:FONTE2.viewer.currentScaleValue,
+    top:host?host.scrollTop:0, left:host?host.scrollLeft:0 };
+  try{ localStorage.setItem('studia.banco.c.'+FONTE2.corso+'.fonti2',JSON.stringify(punti)); }catch(e){}
+}
 function fonte2Aperta(){ return !!FONTE2.doc; }
 function fonte2ZoomSalvato(){
   var v='';
@@ -6209,15 +6220,23 @@ function fonte2Avvia(){
     });
     FONTE2.link.setViewer(FONTE2.viewer);
     FONTE2.bus.on('pagesinit', function(){
-      try{ FONTE2.viewer.currentScaleValue=fonte2ZoomSalvato(); }
+      try{ FONTE2.viewer.currentScaleValue=FONTE2.ripresa?FontiZoom.valido(FONTE2.ripresa.zoom):fonte2ZoomSalvato(); }
       catch(e){ try{ FONTE2.viewer.currentScaleValue='page-width'; }catch(e2){} }
       FONTE2.larghezza=$('#pdf2Frame') ? $('#pdf2Frame').clientWidth : 0;
-      if(FONTE2.page>1){ try{ FONTE2.viewer.currentPageNumber=FONTE2.page; }catch(e){} }
+      var pagina=(FONTE2.ripresa&&FONTE2.ripresa.page)||FONTE2.page;
+      if(pagina>1){ try{ FONTE2.viewer.currentPageNumber=Math.min(pagina,FONTE2.doc.numPages); }catch(e){} }
+      var ripresa=FONTE2.ripresa, op=FONTE2.operazione;
+      requestAnimationFrame(function(){
+        if(op!==FONTE2.operazione) return;
+        var h=$('#pdf2Frame');
+        if(h && ripresa){ h.scrollTop=ripresa.top||0; h.scrollLeft=ripresa.left||0; }
+        FONTE2.caricando=false; FONTE2.ripresa=null; fonte2Ricorda();
+      });
       fonte2Aggiorna();
     });
-    FONTE2.bus.on('scalechanging', function(){ fonte2Aggiorna(); });
+    FONTE2.bus.on('scalechanging', function(){ fonte2Aggiorna(); fonte2Ricorda(); });
     FONTE2.bus.on('pagechanging', function(e){
-      if(e && e.pageNumber){ FONTE2.page=e.pageNumber; fonte2Aggiorna(); }
+      if(e && e.pageNumber){ FONTE2.page=e.pageNumber; fonte2Aggiorna(); fonte2Ricorda(); }
     });
     FONTE2.pronto=true;
     return true;
@@ -6229,26 +6248,34 @@ function fonte2Avvia(){
 
 /** Apre un documento nel confronto. La porta è UNA: il pannellino dei
  *  documenti qui sopra — i rimandi dei capitoli restano della Fonte. */
-async function fonte2Apri(file){
+async function fonte2Apri(file, opt){
   if(!file) return;
-  if(!fonte2Avvia()){ toast('Il visualizzatore del confronto non si è avviato', false); return; }
-  var url=(window.vault&&window.vault.srcUrl)?window.vault.srcUrl(file, corsoAttivo()):('../Fonti/'+encodeURIComponent(file));
+  opt=opt||{};
+  if(!fonte2Avvia()){ toast('Il visualizzatore del secondo documento non si è avviato', false); return; }
+  fonte2Ricorda();
+  var corso=corsoAttivo(), op=++FONTE2.operazione;
+  var url=(window.vault&&window.vault.srcUrl)?window.vault.srcUrl(file,corso):('../Fonti/'+encodeURIComponent(file));
   try{
     var doc=await pdfjsLib.getDocument({ url:url, isEvalSupported:false }).promise;
+    if(op!==FONTE2.operazione || corso!==corsoAttivo()){ doc.destroy(); return; }
     if(FONTE2.doc){ try{ FONTE2.doc.destroy(); }catch(e){} }
-    FONTE2.doc=doc; FONTE2.file=file; FONTE2.page=1;
-    FONTE2.viewer.setDocument(doc);
-    FONTE2.link.setDocument(doc, null);
+    FONTE2.ripresa=fonte2Punti(corso)[file]||null;
+    FONTE2.caricando=true; FONTE2.doc=doc; FONTE2.file=file; FONTE2.corso=corso;
+    FONTE2.page=(FONTE2.ripresa&&FONTE2.ripresa.page)||1;
+    FONTE2.viewer.setDocument(doc); FONTE2.link.setDocument(doc,null);
   }catch(e){
-    toast('Il documento non si è potuto aprire: '+((e&&e.message)||e), false);
+    if(op===FONTE2.operazione && corso===corsoAttivo()) toast('Il documento non si è potuto aprire: '+((e&&e.message)||e),false);
     return;
   }
-  try{ bancoMostra('fonte2'); }catch(e){}
+  apertoScrivi('fonte2',file);
+  if(!opt.ripristina){ try{ bancoMostra('fonte2'); }catch(e){} }
   fonte2Aggiorna();
 }
-function fonte2Chiudi(){
+function fonte2Chiudi(conserva){
+  fonte2Ricorda(); FONTE2.operazione++;
+  if(!conserva) apertoScrivi('fonte2','');
   if(FONTE2.doc){ try{ FONTE2.doc.destroy(); }catch(e){} }
-  FONTE2.doc=null; FONTE2.file=''; FONTE2.page=1;
+  FONTE2.doc=null; FONTE2.file=''; FONTE2.page=1; FONTE2.corso=''; FONTE2.ripresa=null; FONTE2.caricando=false;
   try{ if(FONTE2.viewer) FONTE2.viewer.setDocument(null); }catch(e){}
   fonte2Aggiorna();
 }
@@ -6270,7 +6297,7 @@ function fonte2Aggiorna(){
   if(sel){
     var nome=aperta ? (titoloMateriale(FONTE2.file)||FONTE2.file) : '';
     sel.textContent=(nome || 'Documenti')+' \u25BE';
-    var dice=nome ? ('A confronto: '+nome+' — premi per cambiarlo') : 'Scegli il documento da confrontare';
+    var dice=nome ? (nome+' — premi per cambiarlo') : 'Scegli un documento';
     sel.title=dice; sel.setAttribute('aria-label', dice);
   }
   var vuoto=$('#pdf2Vuoto'); if(vuoto) vuoto.hidden=aperta;
@@ -6331,7 +6358,7 @@ async function fonte2Pannello(btn){
   } else {
     pop.innerHTML=docs.map(function(d){
       var attivo=(d.name===FONTE2.file);
-      return '<button type="button" class="pd-voce'+(attivo?' attivo':'')+'" data-confronto="'+escHtml(d.name)+'">'+
+      return '<button type="button" class="pd-voce'+(attivo?' attivo':'')+'" data-fonte2="'+escHtml(d.name)+'">'+
         escHtml(titoloMateriale(d.name)||d.name)+'</button>';
     }).join('');
   }
@@ -6340,6 +6367,9 @@ async function fonte2Pannello(btn){
 
 (function(){
   function attacca(){
+    var scroller=document.getElementById('pdf2Frame'), salvaTimer;
+    if(scroller) scroller.addEventListener('scroll',function(){ clearTimeout(salvaTimer); salvaTimer=setTimeout(fonte2Ricorda,250); },{passive:true});
+    window.addEventListener('beforeunload',fonte2Ricorda);
     if(typeof ResizeObserver==='function'){
       var el=document.getElementById('pdf2Frame');
       if(el){
@@ -6356,8 +6386,8 @@ async function fonte2Pannello(btn){
   document.addEventListener('click', function(e){
     if(!e.target.closest) return;
     if(e.target.closest('#pdf2Doc')){ fonte2Pannello(e.target.closest('#pdf2Doc')); return; }
-    var voce=e.target.closest('#pdfDocPop .pd-voce[data-confronto]');
-    if(voce){ closePops(); fonte2Apri(voce.getAttribute('data-confronto')); return; }
+    var voce=e.target.closest('#pdfDocPop .pd-voce[data-fonte2]');
+    if(voce){ closePops(); fonte2Apri(voce.getAttribute('data-fonte2')); return; }
     if(e.target.closest('#pdf2Prev')){ fonte2Pagina(false); return; }
     if(e.target.closest('#pdf2Next')){ fonte2Pagina(true); return; }
     if(e.target.closest('#pdf2ZoomIn')){ fonte2ZoomPasso(true); return; }
@@ -8185,7 +8215,7 @@ async function apertoRipristina(){
      quello era un ripristino che non partiva mai per chi aveva lasciato aperti
      soltanto quelli. Un campo nuovo qui va aggiunto anche in questa riga: è la
      trappola delle liste bianche, in forma di guardia. */
-  if(!mio.fonte && !mio.media && !mio.appunto && !mio.mappa) return;
+  if(!mio.fonte && !mio.fonte2 && !mio.media && !mio.appunto && !mio.appunto2 && !mio.mappa) return;
   /* Prima i segni del punto — pagina e secondo — o si riaprirebbe a pagina 1
      per poi saltare sotto gli occhi: `openPdf` legge la copia in memoria. */
   try{ await letturaCarica(); }catch(e){}
@@ -8208,6 +8238,7 @@ async function apertoRipristina(){
      per il resto della sessione. */
   APERTO.ripristinando=true;
   try{
+    if(mio.fonte2 && (!nomi || nomi[mio.fonte2])) fonte2Apri(mio.fonte2, {ripristina:true});
     if(mio.fonte && (!nomi || nomi[mio.fonte])) openPdf(mio.fonte, null, titoloMateriale(mio.fonte)||mio.fonte);
     if(mio.media && (!nomi || nomi[mio.media])){
       playerApri(mio.media, null, titoloMateriale(mio.media)||mio.media);
@@ -8224,6 +8255,7 @@ async function apertoRipristina(){
         if((NOTES.list||[]).some(function(n){ return n.file===mio.appunto; })) noteOpen(mio.appunto);
       }catch(e){ console.error('aperto/appunto:', e); }
     }
+    if(mio.appunto2 && window.appuntiParalleli) window.appuntiParalleli.open(mio.appunto2,{ripristina:true});
     /* E QUALE mappa: il banco ricorda il riquadro, ma dentro il riquadro
        tornava sempre la generata anche a chi aveva lasciato una mappa sua.
        Il file può non esserci più (tolto da fuori): `mappaApri` e
@@ -10041,7 +10073,7 @@ function barreSeparatori(){
   /* ⚠️ `.editor-toolbar` e non solo `.notectl`: da quando i comandi dell'appunto
      stanno sulla riga degli strumenti, le barrette da spegnere sono figlie
      della barra, non del gruppo. */
-  var barre=document.querySelectorAll('.tbar, .topbar .controls, .mtoolbar, :is(#pdfPane,#pdfPane2) .pdfbar, #noteHost .editor-toolbar, #noteHost .editor-toolbar .notectl');
+  var barre=document.querySelectorAll('.tbar, .topbar .controls, .mtoolbar, :is(#pdfPane,#pdfPane2) .pdfbar, :is(#noteHost,#noteHost2) .editor-toolbar, :is(#noteHost,#noteHost2) .editor-toolbar .notectl');
   for(var b=0;b<barre.length;b++){
     var bar=barre[b];
     var sep=bar.querySelectorAll('.tbsep, .msep');
@@ -10819,7 +10851,7 @@ async function zainiAggiorna(){
 /** Cambia lo zaino attivo. `silenzioso` durante la ricostruzione dell'elenco. */
 function cambiaZaino(id, silenzioso){
   if(!id || id===MODO.zaino){ modoAggiorna(); return; }
-  contenitoreMolla();
+  if(contenitoreMolla()===false) return;
   MODO.zaino=id;
   try{ localStorage.setItem('studia.zaino', id); }catch(e){}
   modoAggiorna();
@@ -10844,7 +10876,7 @@ function cambiaZaino(id, silenzioso){
 function contenitoreMolla(){
   /* Non solo il flush: l'appunto aperto e l'elenco sono del contenitore che
      si sta lasciando, e devono uscire di scena con lui. */
-  try{ if(typeof noteMolla==='function') noteMolla(); else noteFlush(); }catch(e){}
+  try{ if(typeof noteMolla==='function'){ if(noteMolla()===false) return false; }else noteFlush(); }catch(e){ toast('Appunti non salvati: '+e.message,false); return false; }
   try{ if(typeof letturaFlush==='function') letturaFlush(); }catch(e){}
   try{ if(typeof ascoltoFlush==='function') ascoltoFlush(); }catch(e){}
   try{
@@ -10858,7 +10890,7 @@ function contenitoreMolla(){
     }
   }catch(e){ console.error('mappe/cambioContenitore:', e); }
   try{ MATERIALI.lista=null; }catch(e){}
-  try{ if(typeof fonte2Chiudi==='function' && fonte2Aperta()) fonte2Chiudi(); }catch(e){}
+  try{ if(typeof fonte2Chiudi==='function') fonte2Chiudi(true); }catch(e){}
   try{ if(typeof fotoChiudiVista==='function' && fotoVistaAperta()) fotoChiudiVista();
     FOTOVISTA.voci=[]; FOTOVISTA.filtro=''; var fc=$('#fotoCerca'); if(fc) fc.value='';
     ALBUMVISTA.voci=[]; ALBUMVISTA.filtro=''; var ac=$('#albCerca'); if(ac) ac.value='';
@@ -10876,7 +10908,7 @@ async function cambiaModo(m){
   if (m !== 'zaino') return;
   var nuovo = (m==='zaino') ? 'zaino' : 'corso';
   if(nuovo===modoAttivo()) return;
-  contenitoreMolla();
+  if(contenitoreMolla()===false) return;
   MODO.ora=nuovo;
   try{ localStorage.setItem('studia.modo', nuovo); }catch(e){}
   modoAggiorna();
@@ -11275,7 +11307,7 @@ async function zainoCrea(nome){
       if(pop && pop.hasAttribute('open')) closePops(); else pdfDocApri(bd);
       return;
     }
-    var voce=e.target.closest('#pdfDocPop .pd-voce');
+    var voce=e.target.closest('#pdfDocPop .pd-voce[data-doc]');
     if(voce){
       closePops();
       /* Senza pagina: la sceglie `openPdf` dal segno di lettura. */
@@ -11379,7 +11411,7 @@ function cambiaCorso(id){
   try{ ripassoCarica().then(function(){ return ripassoPota(); }); }catch(e){}
   /* L'album è di un corso: quello di prima resterebbe a schermo con i suoi
      ritagli, e un click ci lavorerebbe sopra nel corso sbagliato. */
-  try{ if(typeof fonte2Chiudi==='function' && fonte2Aperta()) fonte2Chiudi(); }catch(e){}
+  try{ if(typeof fonte2Chiudi==='function') fonte2Chiudi(true); }catch(e){}
   try{ if(typeof fotoChiudiVista==='function' && fotoVistaAperta()) fotoChiudiVista();
     FOTOVISTA.voci=[]; FOTOVISTA.filtro=''; var fc=$('#fotoCerca'); if(fc) fc.value='';
     ALBUMVISTA.voci=[]; ALBUMVISTA.filtro=''; var ac=$('#albCerca'); if(ac) ac.value='';
@@ -11630,6 +11662,7 @@ function notesReload(){
     NOTES.listError=err; console.error('appunti/list:', err); return;
   }
   NOTES.list=lista; NOTES.listCourse=m.courseId; NOTES.listError=err;
+  if(window.appuntiParalleli) window.appuntiParalleli.refresh();
   /* ⚠️ La lente cerca anche negli appunti, e il suo indice è una COPIA fatta al
      momento: senza questa riga un appunto appena scritto non si troverebbe
      finché non cambia contenitore — e chi cerca concluderebbe di non averlo mai
@@ -11658,6 +11691,7 @@ function notesOfChapter(){
 // salva subito quello che c'è in canna: prima di cambiare capitolo, lezione,
 // appunto, o di chiudere/ricaricare la finestra
 function noteFlush(){
+  if(window.appuntiParalleli) window.appuntiParalleli.flush();
   /* ⚠️ Il segno della riga si scrive SEMPRE, anche quando il testo non è
      cambiato: leggere un appunto senza toccarlo è il caso più comune che
      esista, ed è esattamente quello in cui il segno serve. Sta prima
@@ -11676,6 +11710,8 @@ function noteFlush(){
  */
 function noteMolla(){
   noteFlush();
+  if(NOTES.dirty) return false;
+  if(window.appuntiParalleli && !window.appuntiParalleli.molla()) return false;
   NOTES.cur=null; NOTES.dirty=false; NOTES.courseId=null;
   NOTES.list=[]; NOTES.listCourse=null; NOTES.listError='';
   NOTES.invito=false;
@@ -12183,6 +12219,10 @@ function figRidimensiona(verso){
   window.addEventListener('keydown', function(e){
     if(!(e.metaKey||e.ctrlKey) || e.altKey || e.shiftKey) return;
     if(String(e.key||'').toLowerCase()!=='j') return;
+    if(e.target.closest && e.target.closest('#notePane2')){
+      if(window.appuntiParalleli && window.appuntiParalleli.stato.mde){ e.preventDefault(); e.stopPropagation(); window.appuntiParalleli.stato.mde.togglePreview(); }
+      return;
+    }
     if(typeof NOTES==='undefined' || !NOTES || !NOTES.mde) return;
     var host=document.getElementById('noteHost');
     if(!host || !host.offsetParent) return;      // l'editor non è a schermo
@@ -12226,13 +12266,20 @@ function noteCaricaCorpo(testo){
   finally{ NOTES.caricando=false; }
 }
 function noteOpen(file){
+  if(window.appuntiParalleli && window.appuntiParalleli.occupato(file,corsoAttivo())){
+    toast('Questo appunto è già aperto nell’altro riquadro. Scegline uno diverso per lavorare in parallelo.', false);
+    refreshNoteUI(); window.appuntiParalleli.focus(); return;
+  }
   var n=NOTES.list.filter(function(x){ return x.file===file; })[0];
   // non trovato: prima di dire di no, si rilegge la cartella (può averla cambiata
   // la pipeline, o un'altra finestra, mentre l'elenco in memoria invecchiava)
   if(!n){ notesReload(); n=NOTES.list.filter(function(x){ return x.file===file; })[0]; }
   if(!n && NOTES.cur && NOTES.cur.file===file) n=NOTES.cur;   // l'aperto resta apribile
   if(!n){ try{ refreshNoteUI(); }catch(e){} toast('Appunto non trovato: '+file,false); return; }
-  if(NOTES.cur && NOTES.cur.file!==file) noteFlush();   // non perdere quello che stavi scrivendo
+  if(NOTES.cur && NOTES.dirty){
+    noteFlush(); if(NOTES.dirty) return;
+    n=NOTES.list.filter(function(x){ return x.file===file; })[0]||n;
+  }   // il flush può avere aggiornato anche il corpo dell’appunto che si riapre
   var mde=ensureMde(); if(!mde) return;
   NOTES.cur=n; NOTES.dirty=false;
   if(NOTES.listCourse) NOTES.courseId=NOTES.listCourse;
@@ -12949,9 +12996,11 @@ async function noteRename(){
   toast('Appunto rinominato: «'+NOTES.cur.title+'»', true);
 }
 function noteOpt(n, altrove){
-  return '<option value="'+escHtml(n.file)+'">'+escHtml(altrove?noteEtichettaAltrove(n):noteEtichetta(n))+'</option>';
+  var occupato=window.appuntiParalleli && window.appuntiParalleli.occupato(n.file,corsoAttivo());
+  return '<option value="'+escHtml(n.file)+'"'+(occupato?' disabled':'')+'>'+escHtml(altrove?noteEtichettaAltrove(n):noteEtichetta(n))+(occupato?' · aperto nell’altro riquadro':'')+'</option>';
 }
 function refreshNoteUI(){
+  if(window.appuntiParalleli) window.appuntiParalleli.refresh();
   setTimeout(function(){ try{ barreSeparatori(); }catch(e){} }, 0);
   var sel=$('#noteSelect'); if(!sel) return;
   /* La tendina degli appunti nasce dentro un `<template>` e arriva nel DOM solo
@@ -15298,7 +15347,10 @@ function evidenzaCancella(range){
   toast(r.tolte? 'Parola chiave tolta' : 'Non c’era più', !!r.tolte);
 }
 document.addEventListener('keydown',function(e){
-  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); noteSave(); }
+  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='s'){
+    e.preventDefault();
+    if(e.target.closest && e.target.closest('#notePane2') && window.appuntiParalleli) window.appuntiParalleli.save(false); else noteSave();
+  }
   /* Cmd+P: si intercetta di proposito. Lasciata al browser stamperebbe la
      pagina intera — barre, tendine, maniglie — cioè l'app fotografata invece
      della cosa che si sta studiando. */
@@ -17254,8 +17306,9 @@ function bancoStrumenti(){
     /* Il Confronto: un secondo documento affiancato. Vive in TUTTE le modalità
        — confrontare due dispense serve nei corsi quanto negli zaini — e il suo
        unico ingresso è il pannellino dei documenti nella sua barra. */
-    fonte2:    { nome:'Confronto',       famiglia:'fonte',    sel:'#pdfPane2' },
+    fonte2:    { nome:'Fonti',       famiglia:'fonte',    sel:'#pdfPane2' },
     appunti:   { nome:'Appunti',         famiglia:'quaderno', sel:'#notePane' },
+    appunti2:  { nome:'Appunti',         famiglia:'quaderno', sel:'#notePane2' },
     mappa:     { nome:'Mappa',           famiglia:'quaderno', sel:'#mappaView' },
     keyword:   { nome:'Parole chiave',   famiglia:'quaderno', sel:'#keywordPane' },
     /* «Ritagli» e non «Album»: da quando esiste l'Album Foto, «album» da solo
@@ -17497,27 +17550,29 @@ function bancoStrumentiOfferti(){
        governa la pipeline. Una voce che apre un riquadro in cui non si può
        far entrare niente è la stessa promessa falsa del «Capitolo» in uno
        zaino, al contrario. */
-    Object.keys(reg).forEach(function(id){ if(id!=='foto') out[id]=reg[id]; });
+    Object.keys(reg).forEach(function(id){ if(id!=='foto' && id!=='fonte2' && id!=='appunti2') out[id]=reg[id]; });
     return out;
   }
   /* Nello zaino non si offrono né «Capitolo» né «Ripasso»: i capitoli sono di
      una lezione, e le carte del ripasso nascono dal quiz e dal glossario dei
      capitoli — in uno zaino non c'è né l'uno né l'altro, e una voce che apre
      un riquadro strutturalmente vuoto è una promessa falsa (13 agosto). */
-  Object.keys(reg).forEach(function(id){ if(id!=='capitolo' && id!=='flashcard') out[id]=reg[id]; });
+  Object.keys(reg).forEach(function(id){ if(id!=='capitolo' && id!=='flashcard' && id!=='fonte2' && id!=='appunti2') out[id]=reg[id]; });
   return out;
 }
 function bancoAggiornaTestate(){
   var reg=bancoStrumentiOfferti();
   bancoBlocchiVisibili().forEach(function(b){
     var sel=document.querySelector('.bsel[data-blocco="'+b+'"]'); if(!sel) return;
-    var attuale=bancoStrumentoIn(b);
+    var attuale=BancoMateriali.tipo(bancoStrumentoIn(b));
     sel.innerHTML='';
     Object.keys(reg).forEach(function(id){
       var o=document.createElement('option');
       o.value=id;
       o.textContent=reg[id].nome + (bancoDisponibile(id) ? '' : ' — '+reg[id].arriva);
-      o.disabled=!bancoDisponibile(id) && id!==attuale;
+      var libera=BancoMateriali.scegli(bancoStato().blocchi,bancoBlocchiVisibili(),b,id);
+      o.disabled=(!bancoDisponibile(id) || !libera) && id!==attuale;
+      if(!libera) o.textContent+=' — due riquadri già aperti';
       sel.appendChild(o);
     });
     /* ⚠️ Il blocco può ospitare uno strumento che la tendina non offre — un
@@ -17597,6 +17652,8 @@ function bancoSincronizzaMappa(){
  *  accorge da solo di essere stato spostato o ristretto: senza `refresh()` il
  *  cursore finisce su una riga che non è quella che si vede. */
 function bancoDopoLayout(){
+  try{ if(window.appuntiParalleli) window.appuntiParalleli.layout(); }catch(e){ console.error('banco/appunti2:', e); }
+  try{ if(FONTE2.viewer && FONTE2.doc && bancoVisibile('fonte2')){ fonte2Riadatta(); FONTE2.viewer.update(); } }catch(e){}
   try{ if(NOTES && NOTES.mde) NOTES.mde.codemirror.refresh(); }catch(e){}
   try{ if(typeof MAPPA!=='undefined' && MAPPA && mappaAperta()) mappaRidisegna(); }catch(e){}
   try{ if(typeof positionPanelToggle==='function') positionPanelToggle(); }catch(e){}
@@ -17668,6 +17725,11 @@ function bancoForma(f){
   // gli strumenti usciti di scena non si perdono: restano nello stato, e
   // tornano appena la forma li rimette a schermo. Ma va detto, o sembrano persi
   if(usciti.length) toast('Fuori dal banco: '+usciti.join(' · ')+' — tornano cambiando forma', true);
+}
+function bancoAssegnaDaMenu(blocco, tipo){
+  var id=BancoMateriali.scegli(bancoStato().blocchi,bancoBlocchiVisibili(),blocco,tipo);
+  if(tipo && !id){ toast('Sono già aperti due riquadri di questo tipo.', false); bancoAggiornaTestate(); return; }
+  bancoAssegna(blocco,id);
 }
 function bancoAssegna(blocco, strumento){
   if(!bancoPronto()) return;
@@ -17984,7 +18046,7 @@ document.addEventListener('click', function(e){
 document.addEventListener('change', function(e){
   var sel=e.target && e.target.closest && e.target.closest('.bsel');
   if(!sel) return;
-  bancoAssegna(sel.dataset.blocco, sel.value);
+  bancoAssegnaDaMenu(sel.dataset.blocco, sel.value);
 });
 /* Il doppio click sulla testata: a tutto banco, e ritorno con lo stesso gesto.
    ⚠️ La tendina è esclusa: un doppio click lì è un click impaziente sul menu
@@ -21081,13 +21143,13 @@ window.addEventListener('keydown', function(e){
      raddoppiare ANTEPRIMA, le evidenze e le citazioni (B2 vero, dopo lo
      smontaggio); un corredo a metà che sembra intero vorrebbe dire un «appunta»
      che cita il documento sbagliato. Meglio un riquadro che dice che cos'è. -->
-<section id="pdfPane2" aria-label="Confronto: un secondo documento">
+<section id="pdfPane2" aria-label="Secondo riquadro delle fonti">
   <div class="tbar pdfbar">
     <!-- ⚠️ Qui c'era «<strong id="pdf2Title">», che diventava il nome del
          documento aperto: stessa storia di «pdfTitle» (23 ago 2026) e di
          «plTitle» (24 ago). Il nome lo dice il selettore qui sotto. -->
     <button class="tbtn" id="pdf2Doc" type="button" aria-haspopup="menu" aria-expanded="false"
-            title="Scegli il documento da confrontare" aria-label="Scegli il documento da confrontare">Documenti &#9662;</button>
+            title="Scegli un documento" aria-label="Scegli un documento">Documenti &#9662;</button>
     <span class="tbspazio"></span>
     <i class="tbsep" aria-hidden="true"></i>
     <span class="pdfpag" id="pdf2Pag" hidden>
@@ -21101,14 +21163,14 @@ window.addEventListener('keydown', function(e){
       <button class="tbtn" id="pdf2ZoomLvl" type="button" title="Adattata alla larghezza — segue il riquadro; clicca per adattare alla pagina intera">&#10231;</button>
       <button class="tbtn" id="pdf2ZoomIn" type="button" title="Ingrandisci" aria-label="Ingrandisci">+</button>
     </span>
-    <button class="tbtn" id="pdf2Close" type="button" aria-label="Chiudi il confronto">&#10005;</button>
+    <button class="tbtn" id="pdf2Close" type="button" aria-label="Chiudi il documento">&#10005;</button>
   </div>
   <div id="pdf2Host">
-    <div id="pdf2Frame" tabindex="0" aria-label="Documento a confronto"><div class="pdfViewer"></div></div>
+    <div id="pdf2Frame" tabindex="0" aria-label="Documento nel secondo riquadro"><div class="pdfViewer"></div></div>
   </div>
   <div class="pdfvuoto" id="pdf2Vuoto">
-    <span>Nessun documento a confronto.<br>Scegline uno da <b>Documenti &#9662;</b> qui sopra.<br>
-    <small>Qui si legge e si copia: evidenze, ritagli e «appunta» stanno nella Fonte.</small></span>
+    <span>Nessun documento aperto.<br>Scegline uno da <b>Documenti &#9662;</b> qui sopra.<br>
+    <small>Qui puoi leggere, scorrere e copiare il documento.</small></span>
   </div>
 </section>
 <section id="playerPane" aria-label="Player: video e audio">
@@ -21198,6 +21260,7 @@ window.addEventListener('keydown', function(e){
   </template>
 </section>
 </aside>
+<section id="notePane2" aria-label="Secondo editor degli appunti"><div id="noteHost2"></div></section>
 <!-- L'elenco delle parole chiave: uno strumento del banco come gli altri, e per
      questo qui a livello di pagina. La barra ha ricerca e ordinamento; i chip
      si trascinano negli appunti e sulla mappa. -->
