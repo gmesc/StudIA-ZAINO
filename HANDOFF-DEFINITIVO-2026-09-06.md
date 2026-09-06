@@ -155,15 +155,11 @@ tempo.
 - Mockup approvato a video nei due temi; gesti provati a mano dall'utente: testa della chat,
   bottone acceso in testata, bolla, commutazione del tema con la chat aperta, altezze in
   Impostazioni → AI, emoji OpenMoji in una risposta.
-- `./test/cdp/con-vault-di-prova.sh`: **55 rosse su 69**, e `main` pulita ne dà **44**. Le **12**
-  rosse solo sul ramo, rilanciate **in isolamento**, sono verdi **11 su 12**: non erano
-  regressioni, era contaminazione fra prove. La dodicesima (`prova-ripasso-vista`) dice da sé
-  «senza quiz nel corso la prova non può provare niente» — il fork non ha corsi. Le prove che
-  contano per il vestito (`prova-tbar`, `prova-topbar-stile`, `prova-riquadri-stili`,
-  `prova-appunti-barra`, `prova-emoji`, `prova-crediti`) sono **verdi**. ⚠️ Vedi la nota nuova
-  alla §6 della guida: su questo fork quella suite si legge per differenza, e il totale
-  autorevole è quello del runner, non il conteggio dei `✗` (51 contro 55: alcune prove muoiono
-  con un'eccezione senza stamparla).
+- `./test/cdp/con-vault-di-prova.sh`: **43 rosse su 69** qui, **0 su 69 sull'app originale**
+  (stesso runner, stesso vault). `main` pre-merge ne dava 44: il vestito non ha rotto niente.
+  ⚠️ Una corsa intermedia diceva 55, ma 37 erano `fetch failed` — l'eco di un'app di prova morta
+  a metà, mai più riprodotta; se ne accorge chi guarda i CONTROLLI eseguiti (488 invece di 1073),
+  non chi conta i file rossi. Vedi la §6 della guida, riscritta.
 - ⚠️ `dist` **non è stato rigenerato**, coerentemente con la sezione precedente: i pacchetti
   presenti restano quelli di prima.
 

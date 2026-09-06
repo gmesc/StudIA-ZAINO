@@ -198,42 +198,43 @@ dimenticati per caso: chiedono un `cdp.js` dentro uno scratchpad temporaneo di l
 partirebbero nemmeno. Un file di prove che non gira è la stessa bugia di un verde che non prova
 niente — si riporta a casa o si toglie.
 
-⚠️ **Su questo FORK la suite `con-vault-di-prova.sh` è in gran parte inapplicabile, e si legge
-per DIFFERENZA con `main`, mai come numero assoluto.** Misurato il 6 settembre 2026, 69 prove
-lanciate: **55 rosse sul ramo di lavoro e 44 su `main` pulita**. La maggior parte chiede corsi,
-lezioni, capitoli e quiz, che lo ZAINO non ha — «il capitolo sta nel blocco A» → falso, «nessun
-capitolo con note in tutto il vault di prova», «senza quiz nel corso la prova non può provare
-niente». Non sono regressioni: sono prove che parlano dell'app originale.
-Qualcuna si riporta a casa invece di lasciarla rossa: `prova-topbar` e `prova-topbar-stile`
-pretendevano la fila di tendine dei corsi, e ora l'atteso se lo fanno dire dalla MODALITÀ
-(`modoAttivo()`), così valgono in tutte e due le app — la seconda è tornata verde, la prima muore
-più a valle su `#content`, che un capitolo lo vuole davvero.
+⚠️ **Su questo FORK la suite `con-vault-di-prova.sh` non può essere verde, e va letta sapendo
+perché.** Misurato il 6 settembre 2026, stesso runner e stesso vault copiato: **43 rosse su 69
+qui** (1073 controlli eseguiti), **0 su 69 nell'app originale** (`~/Claude/StudIA/StudIA`, base
+2644b1a — 1786 controlli). Non sono prove rotte: chiedono corsi, lezioni, capitoli e quiz, che il
+fork ha rimosso. Il vault ce li ha — `Corsi/` sta accanto a `Zaini/` e i due repo leggono la
+stessa config: è il fork che non li espone.
 
-⚠️ E il resto si **contamina fra prove**. Le **12** che risultavano rosse solo sul ramo,
-rilanciate da sole, sono venute verdi **11 su 12** (la dodicesima è quella dei quiz assenti).
-Quindi un rosso qui non si crede finché non lo si è rilanciato **in isolamento**
-(`./test/cdp/con-vault-di-prova.sh <nome> ...`), e prima di un merge si confronta l'**insieme**
-dei rossi con quello di `main`, non il totale.
-⚠️ E il conto si fa bene: contare i `✗` nell'uscita dà un numero **diverso** da quello del
-runner (51 contro 55), perché alcune prove muoiono con un'eccezione senza stamparlo. Il numero
-autorevole è quello del runner, che guarda il codice d'uscita.
-
-Per questo il runner ha **due registri**: `PROVE_ZAINO=(` — **15** prove, verde 15 su 15 — è
-quello che vale per il criterio (a) di un merge sul fork:
+Per questo il runner ha **tre registri**, e i primi due sono quelli che si lanciano davvero:
 
 ```bash
-STUDIA_SUITE=zaino ./test/cdp/con-vault-di-prova.sh
+STUDIA_SUITE=zaino ./test/cdp/con-vault-di-prova.sh   # 15 · il criterio (a) di un merge QUI
+STUDIA_SUITE=corsi ./test/cdp/con-vault-di-prova.sh   # 42 · ciò che dovrà tornare verde con i corsi
 ```
 
-⚠️ Quell'elenco è una **catena, non un insieme**, e sceglierlo «a occhio» non funziona: la prima
-stesura ne aveva 19, prese fra quelle risultate verdi nella suite intera, e quattro sono cadute
-alla prima corsa. Due (`prova-note`, `prova-topbar`) chiedono un CAPITOLO, che qui non esiste; due
-(`prova-album-trascina`, `prova-mappa-trascina`) erano verdi **solo perché** `prova-album` e
-`prova-mappe-ui` giravano prima a preparare i dati. Chi tocca l'elenco lo rilancia.
+`PROVE_ZAINO` è verde 15 su 15 **in tutte e due le app**; `PROVE_CORSI` è verde 42 su 42
+sull'originale, e qui è rosso per costruzione.
 
-⚠️ E il runner adesso **dice i nomi** delle prove rosse, non solo quante: ricostruirli dall'uscita
-con un `grep` ne trova meno del vero, perché una prova che muore in un'eccezione non stampa né
-«KO» né «✗».
+⚠️ **Un registro è una CATENA, non un insieme**, e questa è la trappola che è costata tre corse:
+1. sceglierlo fra le prove «verdi nella suite intera» non basta — quattro delle prime 19 di
+   `PROVE_ZAINO` sono cadute subito: due (`prova-note`, `prova-topbar`) vogliono un CAPITOLO, due
+   (`prova-album-trascina`, `prova-mappa-trascina`) erano verdi solo perché `prova-album` e
+   `prova-mappe-ui` giravano prima a preparare i dati;
+2. e l'ORDINE conta quanto i nomi: con gli stessi 43 nomi in ordine alfabetico `STUDIA_SUITE=corsi`
+   dava 4 rosse sull'originale; nell'ordine di `PROVE=(`, nessuna. I registri lo seguono.
+
+⚠️ **Prima di leggere i rossi si guarda se l'app è arrivata VIVA alla fine.** Una corsa dava 55
+rosse invece di 43: 37 erano `fetch failed`, cioè l'eco di un'app di prova **morta** durante
+`prova-righello` — un evento solo, mai più riprodotto. Il numero che lo dice non è quello dei
+rossi ma quello dei CONTROLLI eseguiti: 488 invece di 1073, cioè metà suite mai girata. Contare i
+file rossi faceva sembrare 55 problemi; contarne i motivi ne mostrava 35 identici.
+
+⚠️ `prova-righello.js` è fuori da entrambi i registri: nella suite intera passa, dentro un
+registro no (dipende da uno stato che solo la catena lunga prepara), ed è l'unica prova che ha
+fatto morire l'app. Ha un guaio suo, da guardare a parte.
+
+⚠️ E il runner **dice i nomi** delle prove rosse, non solo quante: ricostruirli dall'uscita con un
+grep ne trova meno del vero, perché una prova che muore in un'eccezione non stampa né «KO» né «✗».
 
 - Le prove CDP girano su una **copia magra del vault** (23 GB → ~2 MB) e una cartella dati tutta
   loro: non toccano niente dell'utente, e la sua app può restare aperta.

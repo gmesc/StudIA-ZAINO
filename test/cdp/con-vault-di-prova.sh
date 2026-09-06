@@ -151,14 +151,50 @@ esac
 #     e `prova-mappe-ui` giravano PRIMA a preparare i dati — e quelle due, di corsi, in
 #     questo elenco non ci sono.
 # Cioè: questo non è un insieme, è una CATENA. Chi ne toglie o sposta un pezzo la rilancia.
+#
+# ⚠️ Per la stessa ragione i due registri seguono l'ORDINE di `PROVE=(`, non l'alfabeto: le
+# prove si preparano il terreno a vicenda, e riordinarle le rompe. Misurato — con gli stessi
+# 43 nomi in ordine alfabetico, `STUDIA_SUITE=corsi` sull'app originale dava 4 rosse; nel
+# loro ordine, nessuna.
 PROVE_ZAINO=(
-  prova-appunti-barra.js prova-appunti-md.js prova-appunto-riga.js prova-banco-avvio.js
-  prova-banco-griglia.js prova-banco-ripristino.js prova-callout-bolla.js prova-maniglia-indice.js
-  prova-media-punto.js prova-ocr-zaino.js prova-riquadri-stili.js prova-stampa.js
-  prova-tbar.js prova-topbar-stile.js prova-wikilink.js)
+  prova-stampa.js prova-banco-avvio.js prova-banco-ripristino.js prova-banco-griglia.js
+  prova-media-punto.js prova-appunto-riga.js prova-topbar-stile.js prova-tbar.js
+  prova-appunti-barra.js prova-appunti-md.js prova-callout-bolla.js prova-riquadri-stili.js
+  prova-maniglia-indice.js prova-wikilink.js prova-ocr-zaino.js)
+
+# `PROVE_CORSI` sono le prove che chiedono CORSI, LEZIONI, CAPITOLI o QUIZ. Su questo fork
+# non possono passare, ed è giusto così: la pipeline è stata rimossa. Servono a chi rimette
+# insieme le due metà — è l'elenco che dovrà tornare verde.
+#
+#   STUDIA_SUITE=corsi ./test/cdp/con-vault-di-prova.sh
+#
+# ⚠️ NON è «tutto il resto» dedotto per esclusione: sono quelle che, con lo STESSO vault e lo
+# STESSO runner, falliscono qui e passano sull'app originale (`~/Claude/StudIA/StudIA`, base
+# 2644b1a), dove la suite intera è 69 su 69 verdi con 1786 controlli. Il vault ce li ha, i
+# corsi: è il fork che non li espone.
+#
+# ⚠️ `prova-righello.js` NON è qui dentro pur essendo di quelle 43. Lanciata in questo elenco
+# fallisce («c'era un pezzo su cui puntare»: sotto la fascia trova uno SPAN invece del testo
+# del PDF) mentre nella suite intera passa: dipende da uno stato che solo la catena lunga
+# prepara. È anche l'unica prova che ha fatto MORIRE l'app di prova in una corsa (37
+# `fetch failed` a valle, mai riprodotti). Ha un guaio suo, e va guardata a parte: tenerla
+# qui vorrebbe dire un registro che non passa.
+PROVE_CORSI=(
+  prova-b1.js prova-b2.js prova-banco-contenuto.js prova-menu.js
+  prova-selezione-menu.js prova-note.js prova-keyword.js prova-mappe-ui.js
+  prova-mappa-trascina.js prova-mappa-pallino.js prova-l1.js prova-l2.js
+  prova-l3l4.js prova-topbar.js prova-identita-capitoli.js prova-pdf.js
+  prova-pagina-campo.js prova-voce-pagina.js prova-ricerca-pannellino.js prova-lente-punto.js
+  prova-confronto.js prova-testolayer.js prova-album.js prova-album-trascina.js
+  prova-foto.js prova-modo.js prova-tasti-frecce.js prova-zaino.js
+  prova-fonti.js prova-import.js prova-player.js prova-media-nonapre.js
+  prova-ripasso.js prova-ripasso-vista.js prova-impostazioni-token.js prova-onboarding-token.js
+  prova-primo-avvio.js prova-atlante.js prova-evidenziatore.js prova-evidenza-appunto.js
+  prova-postilla.js prova-strati.js)
 
 if [ $# -gt 0 ]; then PROVE=("$@");
 elif [ "${STUDIA_SUITE:-}" = "zaino" ]; then PROVE=("${PROVE_ZAINO[@]}");
+elif [ "${STUDIA_SUITE:-}" = "corsi" ]; then PROVE=("${PROVE_CORSI[@]}");
 else PROVE=(prova-b1.js prova-stampa.js prova-b2.js prova-banco-avvio.js prova-banco-contenuto.js prova-banco-ripristino.js prova-banco-griglia.js prova-media-punto.js prova-menu.js prova-selezione-menu.js prova-note.js prova-appunto-riga.js prova-keyword.js prova-mappe-ui.js prova-mappa-trascina.js prova-mappa-pallino.js prova-l1.js prova-l2.js prova-l3l4.js prova-topbar.js prova-topbar-stile.js prova-tbar.js prova-appunti-barra.js prova-appunti-md.js prova-callout-bolla.js prova-riquadri-stili.js prova-maniglia-indice.js prova-wikilink.js prova-identita-capitoli.js prova-pdf.js prova-pagina-campo.js prova-righello.js prova-voce-pagina.js prova-ricerca-pannellino.js prova-lente-punto.js prova-lente-mappe.js prova-confronto.js prova-testolayer.js prova-album.js prova-album-trascina.js prova-foto.js prova-misura-immagine.js prova-memorie.js prova-tendine.js prova-modo.js prova-tasti-frecce.js prova-zaino.js prova-evidenze-pdf.js prova-fonti.js prova-fonte-rimossa.js prova-import.js prova-ocr-zaino.js prova-player.js prova-media-nonapre.js prova-ripasso.js prova-ripasso-vista.js prova-crediti.js prova-impostazioni-token.js prova-onboarding-token.js prova-primo-avvio.js prova-atlante.js prova-emoji.js prova-evidenziatore.js prova-evidenza-appunto.js prova-sbircia.js prova-postilla.js prova-postilla-zaino.js prova-postille-vista.js prova-strati.js); fi
 
 KO=0
