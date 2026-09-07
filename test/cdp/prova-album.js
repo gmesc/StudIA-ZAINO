@@ -10,7 +10,7 @@
  *   ./test/cdp/con-vault-di-prova.sh prova-album.js
  */
 const S = require('path').join(__dirname, 'cdp.js');
-const { collega, val, invia, pausa, partiPulito, partiVuoto, apriStrumento } = require(S);
+const { collega, val, invia, pausa, partiPulito, partiVuoto, apriStrumento, pdfVisibile, cartellaMateriale } = require(S);
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
@@ -83,6 +83,7 @@ const RIQUADRO = `(()=>{ const v=PDFJS.viewer; if(!v) return null;
 
   sezione('Le forbici compaiono solo con un documento aperto');
   ok('senza documento non ci sono', true, await val("document.getElementById('pdfRitaglia').hidden"));
+  await pdfVisibile(PDF);
   await val(`openPdf(${JSON.stringify(PDF)}, 3, 'Piano di studio'), 1`);
   await finoA('!!PDFJS.doc', 20000);
   await finoA(`(()=>{ const c=[...document.querySelectorAll('#pdfFrame canvas')].filter(x=>x.width>0); return c.length>0; })()`, 20000);
@@ -425,8 +426,10 @@ const RIQUADRO = `(()=>{ const v=PDFJS.viewer; if(!v) return null;
       /* Il video di prova lo fabbrica la prova stessa, dentro la COPIA: i video
          veri non entrano nel vault magro (sono il 99% del peso) e una prova che
          dipendesse da un file dell'utente girerebbe solo sulla sua macchina. */
-      const dir = path.join(vault, 'Media');
-      fs.mkdirSync(dir, { recursive: true });
+      /* ⚠️ Non `Media/` alla radice: se il contenitore attivo ha `MATERIALI/`, l'app guarda
+         solo lì dentro (lib/materiali.js) e un video alla radice non esiste. Rossa nella
+         catena ZAINO del 7 settembre 2026 per questo — «il video si carica: null». */
+      const dir = await cartellaMateriale('Media');
       const nome = '00 prova ritaglio.mp4';
       const r = spawnSync(ff, ['-y', '-f', 'lavfi', '-i', 'testsrc=size=320x240:rate=10:duration=3',
         '-pix_fmt', 'yuv420p', path.join(dir, nome)], { encoding: 'utf-8' });

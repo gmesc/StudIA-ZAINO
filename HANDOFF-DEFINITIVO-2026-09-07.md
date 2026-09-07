@@ -26,8 +26,10 @@ comuni agli zaini dello stesso vault. L'appunto aperto viene salvato prima di og
 ```bash
 npm test                                              # 58 file in catena
 npm run test:ui                                       # le prove della CHAT sull'app viva
-STUDIA_SUITE=zaino ./test/cdp/con-vault-di-prova.sh   # 24 · il criterio (a) di un merge QUI
-STUDIA_SUITE=corsi ./test/cdp/con-vault-di-prova.sh   # 44 · rosse qui, e va bene così
+STUDIA_SUITE=zaino ./test/cdp/con-vault-di-prova.sh   # 34 · il criterio (a) di un merge QUI
+STUDIA_SUITE=corsi ./test/cdp/con-vault-di-prova.sh   # 35 · rosse qui, e va bene così
+STUDIA_SORGENTE=~/Claude/StudIA/StudIA STUDIA_SUITE=zaino ./test/cdp/con-vault-di-prova.sh
+                                                      # le STESSE prove contro l'app originale
 ```
 
 ⚠️ **La suite intera dà 43 rosse su 69, e non è una regressione**: quelle prove chiedono corsi,
@@ -156,35 +158,74 @@ passata qui), e quattro che sono ZAINO in tutto tranne l'epilogo «si torna ai c
 `onboarding-token`, `atlante` (il bottone sta nella scheda Corsi, che il fork nasconde con un
 `display:none`).
 
-**⚠️ PDF alla radice del vault, nascosto dallo zaino attivo (9)** — `pdf`, `pagina-campo`,
-`righello`, `voce-pagina`, `ricerca-pannellino`, `testolayer`, `album`, `album-trascina`,
-`mappa-pallino`. Non chiedono corsi: chiedono `Fonti/Piano-di-studio-….pdf`, che sta alla **radice**
-del vault. `srcUrl` → `cartelle()` in `lib/materiali.js` mette in testa il contenitore attivo e, se
-quello ha `MATERIALI/`, **si ferma lì**: la radice non si guarda più. Sull'originale le prove
-«tornano ai corsi», e il corso nella copia magra non ha `MATERIALI/`; sul fork non c'è dove tornare,
-e `prova-media-punto` lascia attivo `media-di-prova`, che l'ha. **Da sole, sul fork, 8 su 9 sono
-verdi** (`pdf` ha un solo KO su un centinaio, sulla sidebar dei corsi). È lo stesso motivo per cui
-`prova-evidenze-pdf` — l'unica rimasta fuori da entrambi i registri — è verde nella suite intera e
-rossa nella catena ZAINO. Per portarle nello ZAINO basta che ognuna metta il PDF **dentro** lo zaino
-che usa, che è anche l'uso vero del prodotto: è la prossima mossa, non fatta oggi.
+**⚠️ PDF alla radice del vault, nascosto dallo zaino attivo (9, ora nello ZAINO)** — `pdf`,
+`pagina-campo`, `righello`, `voce-pagina`, `ricerca-pannellino`, `testolayer`, `album`,
+`album-trascina`, `mappa-pallino`. Non chiedono corsi: chiedono `Fonti/Piano-di-studio-….pdf`, che
+sta alla **radice** del vault. `srcUrl` → `cartelle()` in `lib/materiali.js` mette in testa il
+contenitore attivo e, se quello ha `MATERIALI/`, **si ferma lì**: la radice non si guarda più.
+Sull'originale le prove «tornano ai corsi», e il corso nella copia magra non ha `MATERIALI/`; sul
+fork non c'è dove tornare, e `prova-media-punto` lascia attivo `media-di-prova`, che l'ha. Stesso
+motivo per `prova-evidenze-pdf`. Da sole, sul fork, erano verdi 8 su 9: sono passate nello ZAINO
+(sotto, «La seconda tornata»).
 
 **Le 11 fuori registro** — `lente-mappe`, `misura-immagine`, `memorie`, `tendine`, `fonte-rimossa`,
-`crediti`, `emoji`, `sbircia`, `postilla-zaino`, `postille-vista` sono verdi lanciando la catena
-ZAINO: **entrano in `PROVE_ZAINO`, che diventa 24**. `evidenze-pdf` resta fuori (sopra).
+`crediti`, `emoji`, `sbircia`, `postilla-zaino`, `postille-vista` erano verdi lanciando la catena
+ZAINO: **entrano in `PROVE_ZAINO`**; `evidenze-pdf` entra con i PDF.
 
-Il conto: 24 ZAINO + 44 CORSI + 1 = 69.
+Il conto, a fine giornata: **34 ZAINO + 35 CORSI = 69**, nessuna fuori.
+
+## La seconda tornata: le nove PDF nello ZAINO, e appunti-barra
+
+- **`pdfVisibile(nome)` in `cdp.js`**: prima di `openPdf`, chiede a `srcUrl` se il documento si vede
+  dal contenitore attivo; se no, lo copia in `MATERIALI/PDF/` di quel contenitore — dove lo metterebbe
+  chi studia — e dice di averlo fatto. Se si vede già, non tocca niente: sull'originale, in modalità
+  corso, non cambia nulla. Le nove prove (più `evidenze-pdf`) lo chiamano una volta, prima della prima
+  apertura. **`cartellaMateriale(sub)`** è la stessa idea per chi FABBRICA un media: `prova-album`
+  scriveva il suo video in `Media/` alla radice, e nella catena ZAINO «il video si carica: null».
+- **`prova-pdf` misurava la sidebar dei corsi** (`#toc` largo più di 180) per dire che il CSS di
+  pdf.js non usciva dal suo riquadro: sul fork quell'indice è nascosto, e la prova diceva «riscritto»
+  di un elemento che non c'è. Ora usa una **sonda**: un `div.messageBar` dentro `#pdfPane` prende lo
+  stile del viewer (così si sa che il sensore sente), lo stesso fuori no. ⚠️ Le variabili dei blocchi
+  `:root` del viewer non servono da sensore: nello scoped CSS sono riscritte `:is(#pdfPane, #pdfPane2)`
+  ma **annidate** nel guscio, quindi non combaciano con niente — misurato: vuote anche dentro.
+- **`prova-appunti-barra` azzerava `studia.banco`, la chiave MORTA** (guida §8): credeva di partire dal
+  banco di fabbrica e al reload ereditava la disposizione salvata da un'altra prova sotto la chiave
+  viva (`bancoChiave()` → `studia.banco.c.<id>`): un blocco, la mappa su una riga (39 px), gli appunti
+  su due (71 px). Ora toglie la chiave viva, e pretende che le due barre stiano **nello stesso
+  riquadro** (larghezza uguale) prima di confrontarne le righe: se il banco le separasse, il rosso
+  parlerebbe del banco, non del vestito.
+- **`prova-evidenze-pdf`**: la selezione col mouse rilasciava a `right-2` dello span; in un riquadro
+  da 480 px la riga esce dal pannello e il `mouseup` cade sul bordo, dove il gestore della barra vede
+  `#pdfPane` senza `.textLayer` e non la apre — la selezione riusciva, la barra no. Tre stesure: i
+  rettangoli della finestra, poi quelli di `#pdfHost` (e sull'originale, con lo zoom ereditato —
+  pagina larga 1190 px in un riquadro da 588 — non restava nessuna riga), infine **la domanda al
+  browser**: un capo del gesto vale se `elementFromPoint` ci trova il layer di testo, e lo si cerca
+  camminando dai bordi visibili verso l'interno. Prima di misurare il documento torna a `page-width`
+  (lo zoom si eredita), la barra si aspetta invece di fotografarla, e quando nessuna riga si lascia
+  prendere la prova stampa il **setaccio** (span, larghi, lunghi, colpibili, riquadro, pagina) e
+  **che cosa c'è sotto il mouse** al rilascio.
+- Un rosso uscito solo al terzo giro, di **stato ereditato**: `prova-pdf` misurava il
+  `mix-blend-mode` sulla tela della PRIMA `.page` del DOM, che pdf.js smonta quando è fuori vista —
+  in un riquadro stretto ne tiene meno, e leggeva `null` in tutte e quattro le tinte; ora misura su
+  una pagina che la tela ce l'ha. E la sezione «Appunta» di `evidenze-pdf` dice se manca la
+  selezione invece di morire in un `TypeError` su `null.origine`.
+- **`STUDIA_SORGENTE=<cartella>`** nel runner lancia l'app di un'altra cartella con le prove di
+  questa: è così che «verde in tutte e due le app» si misura senza toccare l'altro repo.
+
+Misurato con i file definitivi: ZAINO **34 su 34 sul fork** (756 controlli) e **34 su 34
+sull'originale** (754), CORSI **35 su 35 sull'originale** (1035), `npm test` verde (58 file). Le
+catene ZAINO sono state lanciate sei volte per app nel corso della sera: ogni rosso ha prodotto una
+causa e una riga di diagnostica che resta nella prova, mai un'attesa più lunga.
 
 ## Che cosa resta aperto
 
-- ⚠️ **`prova-appunti-barra` è rossa in ogni catena ZAINO di oggi (3 su 3) e verde da sola e nella
-  suite intera.** Misura che la barra degli appunti non abbia più righe di quella della mappa: nella
-  catena eredita un banco a **un** blocco (mappa 39 px, 1 riga; appunti 71 px, 2 righe), altrove due
-  blocchi (74 px, 2 righe). È un controllo sullo stato ereditato. Da decidere se la promessa vale
-  anche a tutta larghezza — allora è un difetto del vestito degli appunti — o se la prova deve
-  prepararsi il banco; il registro ZAINO è 23 su 24 finché non si decide.
-- Le **9 prove dei PDF** possono entrare nello ZAINO mettendo il PDF dentro lo zaino che usano.
-- Il ramo `registri-zaino-corsi` dell'app originale ha ancora i registri di ieri (15 e 43): i 44
-  nel nuovo ordine sono stati **misurati** lì (44 su 44) ma non scritti — quel repo non l'ho toccato.
+- Il ramo `registri-zaino-corsi` dell'app originale ha ancora i registri di ieri (15 e 43) e le prove
+  di ieri: i 34 e i 35 nel nuovo ordine sono stati **misurati** lì con le prove di QUESTO repo
+  (`STUDIA_SORGENTE`), ma né i registri né i nove file di prova sono stati scritti là — quel repo non
+  l'ho toccato. Portarli è un lavoro di copia, da fare con le due suite verdi anche lì.
+- Il guscio del CSS di pdf.js: i sette blocchi `:root` riscritti e annidati non combaciano con niente
+  (le variabili del viewer non arrivano). L'app funziona perché pdf.js scrive le sue misure inline;
+  è un difetto latente di `bin/pdfjs-css.js`, non pagato ancora.
 
 ## Per provare a mano
 

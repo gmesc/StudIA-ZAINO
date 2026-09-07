@@ -103,6 +103,15 @@ if [ -n "${STUDIA_APP:-}" ]; then
   [ -x "$ESEGUIBILE" ] || { echo "✗ non è un pacchetto eseguibile: $ESEGUIBILE"; exit 1; }
   echo "  si prova il PACCHETTO: $STUDIA_APP"
   "$ESEGUIBILE" --user-data-dir="$DATI" --remote-debugging-port="$PORTA" > "$LAVORO/app.log" 2>&1 &
+elif [ -n "${STUDIA_SORGENTE:-}" ]; then
+  # Le prove di QUESTA cartella contro il sorgente di un'ALTRA — l'app originale in
+  # `~/Claude/StudIA/StudIA`. È così che si misura «verde in tutte e due le app» per una prova
+  # appena cambiata qui, senza toccare l'altro repo: gli stessi file di prova, un'altra app.
+  #
+  #   STUDIA_SORGENTE=~/Claude/StudIA/StudIA STUDIA_SUITE=zaino ./test/cdp/con-vault-di-prova.sh
+  [ -f "$STUDIA_SORGENTE/package.json" ] || { echo "✗ non è la cartella di un'app: $STUDIA_SORGENTE"; exit 1; }
+  echo "  si prova il SORGENTE di un'altra cartella: $STUDIA_SORGENTE"
+  ./node_modules/.bin/electron "$STUDIA_SORGENTE" --user-data-dir="$DATI" --remote-debugging-port="$PORTA" > "$LAVORO/app.log" 2>&1 &
 else
   ./node_modules/.bin/electron . --user-data-dir="$DATI" --remote-debugging-port="$PORTA" > "$LAVORO/app.log" 2>&1 &
 fi
@@ -160,19 +169,29 @@ esac
 # ⚠️ E un verde si guarda in faccia. `prova-wikilink` stava qui perché usciva con codice 0, ma
 # sul fork esce così RINUNCIANDO («corso ai-literacy-anthropic assente: niente da provare»):
 # zero controlli. Un verde per rinuncia non prova niente — è passata fra i CORSI, dove sta il
-# corso che le serve. Dal 7 settembre 2026 il registro è 24: i 14 di prima più i 10 che
-# stavano fuori da tutti e due gli elenchi, misurati verdi LANCIANDO QUESTA CATENA (23 su 24,
-# 465 controlli). La rossa è `prova-appunti-barra`, che qui eredita un banco a UN blocco (la
-# barra della mappa fa 1 riga, 39 px, quella degli appunti 2, 71 px) mentre da sola o nella
-# suite intera ne eredita due (74 px, 2 righe) e passa: misura lo stato ereditato, non il
-# vestito degli appunti. Si sistema nella prova, non togliendola dal registro.
+# corso che le serve.
+#
+# Dal 7 settembre 2026 il registro è 34, e la storia dei venti in più è in due pezzi:
+#   · dieci stavano fuori da tutti e due gli elenchi per mancanza di misura, ed erano verdi
+#     lanciando questa catena;
+#   · dieci stavano fra i CORSI senza chiedere nessun corso: chiedevano un PDF che sta in
+#     `Fonti/` alla radice del vault, e che il contenitore attivo NASCONDE se ha `MATERIALI/`
+#     (`cartelle()` in lib/materiali.js si confina lì dentro). Adesso ognuna, prima di aprirlo,
+#     passa da `pdfVisibile()` in cdp.js: se il documento non si vede, lo mette in
+#     `MATERIALI/PDF/` del contenitore attivo — dove lo metterebbe chi studia.
+# ⚠️ E `prova-appunti-barra` azzerava il banco con la chiave MORTA (`studia.banco`): al reload
+# ereditava la disposizione salvata da un'altra prova — un blocco, la mappa su una riga —
+# e cadeva in ogni catena ZAINO passando da sola. Ora toglie la chiave viva (`bancoChiave()`).
 PROVE_ZAINO=(
   prova-stampa.js prova-banco-avvio.js prova-banco-ripristino.js prova-banco-griglia.js
-  prova-media-punto.js prova-appunto-riga.js prova-topbar-stile.js prova-tbar.js
-  prova-appunti-barra.js prova-appunti-md.js prova-callout-bolla.js prova-riquadri-stili.js
-  prova-maniglia-indice.js prova-lente-mappe.js prova-misura-immagine.js prova-memorie.js
-  prova-tendine.js prova-fonte-rimossa.js prova-ocr-zaino.js prova-crediti.js prova-emoji.js
-  prova-sbircia.js prova-postilla-zaino.js prova-postille-vista.js)
+  prova-media-punto.js prova-appunto-riga.js prova-mappa-pallino.js prova-topbar-stile.js
+  prova-tbar.js prova-appunti-barra.js prova-appunti-md.js prova-callout-bolla.js
+  prova-riquadri-stili.js prova-maniglia-indice.js prova-pdf.js prova-pagina-campo.js
+  prova-righello.js prova-voce-pagina.js prova-ricerca-pannellino.js prova-lente-mappe.js
+  prova-testolayer.js prova-album.js prova-album-trascina.js prova-misura-immagine.js
+  prova-memorie.js prova-tendine.js prova-evidenze-pdf.js prova-fonte-rimossa.js
+  prova-ocr-zaino.js prova-crediti.js prova-emoji.js prova-sbircia.js prova-postilla-zaino.js
+  prova-postille-vista.js)
 
 # `PROVE_CORSI` sono le prove che chiedono CORSI, LEZIONI, CAPITOLI o QUIZ. Su questo fork
 # non possono passare, ed è giusto così: la pipeline è stata rimossa. Servono a chi rimette
@@ -183,24 +202,19 @@ PROVE_ZAINO=(
 # ⚠️ NON è «tutto il resto» dedotto per esclusione: sono quelle che, con lo STESSO vault e lo
 # STESSO runner, falliscono qui e passano sull'app originale (`~/Claude/StudIA/StudIA`, base
 # 2644b1a), dove la suite intera è 69 su 69 verdi con 1786 controlli. Il vault ce li ha, i
-# corsi: è il fork che non li espone. Sull'originale questi 44, in quest'ordine, sono verdi
-# 44 su 44 (misurato il 7 settembre 2026, 1289 controlli).
+# corsi: è il fork che non li espone.
 #
-# ⚠️ Ma non sono «corsi» tutte allo stesso modo, e il PERCHÉ di ciascuna sta nell'handoff del
-# 7 settembre 2026: 14 vogliono un capitolo, 11 un corso o la commutazione ai corsi, 5 il
-# registro Generata/Mie delle mappe, 2 il quiz, 3 la scheda Corsi delle Impostazioni — e 9
-# vogliono soltanto un PDF che sta in `Fonti/` alla radice del vault e che lo zaino attivo,
-# se ha `MATERIALI/`, NASCONDE (`lib/materiali.js`, `cartelle()`): da sole, sul fork, 8 su 9
-# sono verdi. Fuori da tutti e due i registri resta `prova-evidenze-pdf`, per lo stesso motivo.
+# ⚠️ Il PERCHÉ di ciascuna sta nell'handoff del 7 settembre 2026, ed è misurato, non dedotto
+# dal nome: 14 vogliono un capitolo, 11 un corso o la commutazione ai corsi, 5 il registro
+# Generata/Mie delle mappe, 2 il quiz, 3 la scheda Corsi delle Impostazioni. Le nove che
+# volevano soltanto un PDF alla radice del vault sono passate nello ZAINO (vedi sopra).
 
 PROVE_CORSI=(
   prova-b1.js prova-b2.js prova-banco-contenuto.js prova-menu.js
   prova-selezione-menu.js prova-note.js prova-keyword.js prova-mappe-ui.js
-  prova-mappa-trascina.js prova-mappa-pallino.js prova-l1.js prova-l2.js
-  prova-l3l4.js prova-topbar.js prova-wikilink.js prova-identita-capitoli.js prova-pdf.js
-  prova-pagina-campo.js prova-righello.js prova-voce-pagina.js prova-ricerca-pannellino.js
-  prova-lente-punto.js prova-confronto.js prova-testolayer.js prova-album.js
-  prova-album-trascina.js prova-foto.js prova-modo.js prova-tasti-frecce.js
+  prova-mappa-trascina.js prova-l1.js prova-l2.js prova-l3l4.js
+  prova-topbar.js prova-wikilink.js prova-identita-capitoli.js prova-lente-punto.js
+  prova-confronto.js prova-foto.js prova-modo.js prova-tasti-frecce.js
   prova-zaino.js prova-fonti.js prova-import.js prova-player.js
   prova-media-nonapre.js prova-ripasso.js prova-ripasso-vista.js prova-impostazioni-token.js
   prova-onboarding-token.js prova-primo-avvio.js prova-atlante.js prova-evidenziatore.js

@@ -27,7 +27,7 @@
  *   ./test/cdp/con-vault-di-prova.sh prova-ricerca-pannellino.js
  */
 const S = require('path').join(__dirname, 'cdp.js');
-const { collega, val, pausa, partiPulito, apriStrumento } = require(S);
+const { collega, val, pausa, partiPulito, apriStrumento, pdfVisibile } = require(S);
 
 let ko = 0;
 function ok(n, atteso, avuto) {
@@ -98,6 +98,7 @@ const MISURA = `(()=>{
   await collega();
   await partiPulito();
   await apriStrumento('fonte');
+  await pdfVisibile(PDF);
   await val(`openPdf(${JSON.stringify(PDF)}, 1, 'Piano di studio'), 1`);
   await finoA('!!PDFJS.doc', 20000);
   await val("pdfFindApri(), 1");

@@ -19,7 +19,7 @@
  *   ./test/cdp/con-vault-di-prova.sh prova-voce-pagina.js
  */
 const S = require('path').join(__dirname, 'cdp.js');
-const { collega, val, pausa, partiPulito, apriStrumento, clicca } = require(S);
+const { collega, val, pausa, partiPulito, apriStrumento, clicca, pdfVisibile } = require(S);
 
 let ko = 0;
 function ok(n, atteso, avuto) {
@@ -45,6 +45,7 @@ async function finoA(expr, quanto) {
   await collega();
   await partiPulito();
   await apriStrumento('fonte');
+  await pdfVisibile(PDF);
   await val(`openPdf(${JSON.stringify(PDF)}, 1, 'Piano di studio'), 1`);
   await finoA('!!PDFJS.doc');
   await finoA(`(()=>{ const h=document.getElementById('pdfHost'); if(!h) return 0;

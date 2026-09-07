@@ -13,7 +13,7 @@
  *   ./test/cdp/con-vault-di-prova.sh prova-pdf.js
  */
 const S = require('path').join(__dirname, 'cdp.js');
-const { collega, val, invia, pausa, partiPulito, apriStrumento, clicca } = require(S);
+const { collega, val, invia, pausa, partiPulito, apriStrumento, clicca, pdfVisibile } = require(S);
 
 let ko = 0;
 function ok(n, atteso, avuto) {
@@ -46,6 +46,7 @@ async function finoA(expr, quanto) {
   await apriStrumento('fonte');
 
   sezione('Il documento si apre');
+  await pdfVisibile(PDF);
   const avvio = Date.now();
   await val(`openPdf(${JSON.stringify(PDF)}, 3, 'Piano di studio'), 1`);
   const doc = await finoA('(PDFJS.doc && PDFJS.doc.numPages) || 0');
@@ -143,7 +144,12 @@ async function finoA(expr, quanto) {
   for (const t of ['nessuna', 'crema', 'azzurro', 'grigio']) {
     await val(`document.documentElement.dataset.tinta=${JSON.stringify(t)}, 1`);
     await pausa(120);
-    tinte[t] = await val(`(()=>{ const p=document.querySelector('#pdfFrame .page');
+    /* ⚠️ Non la PRIMA .page del DOM: pdf.js smonta la tela delle pagine fuori vista, e in un
+       riquadro stretto ne tiene meno — la pagina 1 restava senza canvas e il blend leggeva
+       null in tutte e quattro le tinte (catena ZAINO del 7 settembre 2026). Si misura su
+       una pagina che la tela ce l'ha: la regola CSS vale per tutte allo stesso modo. */
+    tinte[t] = await val(`(()=>{ const p=[...document.querySelectorAll('#pdfFrame .page')].find(x=>x.querySelector('canvas'))
+        || document.querySelector('#pdfFrame .page');
       if(!p) return null; const c=p.querySelector('canvas');
       return { fondo:getComputedStyle(p).backgroundColor,
                blend:c?getComputedStyle(c).mixBlendMode:null }; })()`);
@@ -173,14 +179,22 @@ async function finoA(expr, quanto) {
   await val("document.documentElement.dataset.tinta='nessuna', localStorage.removeItem('studia.pdf.tinta'), tintaAggiorna(), 1");
 
   sezione('Il CSS di pdf.js resta nel suo riquadro');
-  /* Il foglio del viewer ha una sua `.sidebar` e 46 variabili in `:root`:
-     incapsulato male, riscriverebbe l'indice dei capitoli dell'app. */
-  const side = await val(`(()=>{ const t=document.querySelector('#toc') || document.querySelector('aside');
-    if(!t) return null; const s=getComputedStyle(t);
-    return { larghezza:Math.round(t.getBoundingClientRect().width), posizione:s.position }; })()`);
-  console.log('   sidebar dell\'app: ' + JSON.stringify(side));
-  ok('la sidebar dell\'app non è stata riscritta da pdf.js', true,
-    !!side && side.larghezza > 180 && side.posizione !== 'relative');
+  /* Il foglio del viewer (`pdf_viewer.scoped.css`) è incapsulato sotto `#pdfPane`: fuori dal
+     guscio le sue classi non devono vestire niente, o riscriverebbe l'indice dei capitoli
+     dell'app, che ha una classe omonima. Si misura con una SONDA: un elemento con una classe
+     del viewer (`.messageBar`, che porta una variabile sua) messo dentro `#pdfPane` prende lo
+     stile — così si sa che il sensore sente — e lo stesso elemento fuori non lo prende.
+     ⚠️ Prima si misurava l'indice dei capitoli (`#toc`, largo più di 180): sul fork quell'indice
+     non c'è, e la prova diceva «riscritto» di un elemento nascosto. E i blocchi `:root` del
+     viewer, riscritti come `:is(#pdfPane, #pdfPane2)` ma ANNIDATI nel guscio, non combaciano
+     con niente: le variabili di quei blocchi non si possono usare come sensore. */
+  const guscio = await val(`(()=>{ const sonda=(dove)=>{ const d=document.createElement('div');
+      d.className='messageBar'; dove.appendChild(d);
+      const v=(getComputedStyle(d).getPropertyValue('--closing-button-icon')||'').trim(); d.remove(); return v!==''; };
+    return { dentro: sonda(document.querySelector('#pdfPane')), fuori: sonda(document.body) }; })()`);
+  console.log('   una classe del viewer prende il suo stile: dentro ' + guscio.dentro + ' · fuori ' + guscio.fuori);
+  ok('dentro il riquadro il viewer veste le sue classi', true, guscio.dentro);
+  ok('fuori dal riquadro no: il CSS di pdf.js non esce', false, guscio.fuori);
 
   sezione('Riaprire lo stesso documento non lo ricarica');
   const seqPrima = await val('PDFJS.seq');

@@ -18,7 +18,7 @@
 const path = require('path');
 const fs = require('fs');
 const S = path.join(__dirname, 'cdp.js');
-const { collega, val, invia, clicca, pausa, partiPulito, apriStrumento } = require(S);
+const { collega, val, invia, clicca, pausa, partiPulito, apriStrumento, pdfVisibile } = require(S);
 
 let ko = 0;
 function ok(n, atteso, avuto) {
@@ -61,13 +61,40 @@ const DIPINTE = `(()=>{ if(!window.CSS || !CSS.highlights) return null;
 async function selezionaUnaRiga(indice) {
   const riga = await val(`(()=>{ const p=document.querySelector('#pdfFrame .page[data-page-number="${PAGINA}"]');
     if(!p) return null; const t=p.querySelector('.textLayer'); if(!t) return null;
-    const sp=[...t.querySelectorAll('span')].filter(s=>{ const r=s.getBoundingClientRect();
-      return r.width>90 && r.top>0 && r.bottom<innerHeight && s.textContent.trim().length>25; });
-    if(!sp.length) return null;
-    const s=sp[Math.min(${indice}, sp.length-1)], r=s.getBoundingClientRect();
-    return { testo:s.textContent, x1:Math.round(r.left+2), x2:Math.round(r.right-2),
-             y:Math.round(r.top+r.height/2) }; })()`);
-  if (!riga) return null;
+    /* ⚠️ Il rilascio del mouse deve cadere DENTRO il riquadro del documento, anche a destra: in
+       un banco a due blocchi la pagina è più larga del riquadro, e una riga che ne esce porta il
+       rilascio sul bordo del pannello — lì il gestore della barra vede #pdfPane senza .textLayer
+       e non la apre. La selezione riusciva, la barra no (catena ZAINO del 7 settembre 2026). */
+    /* ⚠️ I due capi del gesto valgono solo se il browser, chiesto «chi c'è sotto il puntatore»,
+       risponde IL LAYER DI TESTO: è l'unico criterio che regge qualunque riquadro, zoom, scroll o
+       barra che copra la riga. Prima si ragionava sui rettangoli — della finestra, poi del riquadro
+       #pdfHost — e ogni geometria diversa (banco a due blocchi, indice dei corsi, zoom 1,65) trovava
+       il modo di farlo mentire: il rilascio finiva sul bordo del pannello e la barra non si apriva,
+       oppure non restava nessuna riga candidata. La domanda giusta è la stessa del righello. */
+    const colpisce=(x,y)=>{ const el=document.elementFromPoint(x,y); return !!el && el.closest('.textLayer')===t; };
+    const capi=(r)=>{ const y=Math.round(r.top+r.height/2); let x1, x2;
+      /* si cammina dai due bordi VISIBILI della riga verso l'interno, a passi di 16 px, finché
+         il puntatore non cade sul testo: regge una riga più larga del riquadro da entrambi i lati */
+      for(let x=Math.round(Math.max(r.left+2, 2)); x<Math.min(r.right-60, innerWidth); x+=16){ if(colpisce(x,y)){ x1=x; break; } }
+      if(x1===undefined) return null;
+      for(let x=Math.round(Math.min(r.right-2, innerWidth-2)); x>x1+60; x-=16){ if(colpisce(x,y)){ x2=x; break; } }
+      return x2===undefined ? null : { x1, x2, y }; };
+    const tutti=[...t.querySelectorAll('span')];
+    const sp=tutti.filter(s=>{ const r=s.getBoundingClientRect(); return r.width>90 && s.textContent.trim().length>25 && !!capi(r); });
+    /* ⚠️ Il SETACCIO: quando non resta niente, si dice quanti span cadono a ogni condizione, con il
+       riquadro e la pagina. Un «niente selezione» nudo non distingue una pagina non disegnata da
+       una scrollata fuori da una coperta (è la lezione di prova-righello). */
+    if(!sp.length){ const pr=p.getBoundingClientRect(), h=(document.getElementById('pdfHost')||p).getBoundingClientRect();
+      return { setaccio:{ span:tutti.length, larghi:tutti.filter(s=>s.getBoundingClientRect().width>90).length,
+        lunghi:tutti.filter(s=>s.textContent.trim().length>25).length,
+        colpibili:tutti.filter(s=>!!capi(s.getBoundingClientRect())).length,
+        riquadro:[Math.round(h.left),Math.round(h.top),Math.round(h.right),Math.round(h.bottom)],
+        pagina:[Math.round(pr.left),Math.round(pr.top),Math.round(pr.right),Math.round(pr.bottom)] } }; }
+    const s=sp[Math.min(${indice}, sp.length-1)], c=capi(s.getBoundingClientRect());
+    const el=document.elementFromPoint(c.x2, c.y);
+    return { testo:s.textContent, x1:c.x1, x2:c.x2, y:c.y,
+             sotto: el ? (el.id || el.className || el.tagName) : null }; })()`);
+  if (!riga || riga.setaccio) { console.log('   nessuna riga da selezionare: ' + JSON.stringify(riga && riga.setaccio)); return null; }
   await val('getSelection().removeAllRanges(), 1');
   await invia('Input.dispatchMouseEvent', { type: 'mousePressed', x: riga.x1, y: riga.y, button: 'left', clickCount: 1 });
   await invia('Input.dispatchMouseEvent', { type: 'mouseMoved', x: Math.round((riga.x1 + riga.x2) / 2), y: riga.y, button: 'left', buttons: 1 });
@@ -86,10 +113,19 @@ async function selezionaUnaRiga(indice) {
 
   sezione('Si apre un documento in un corso');
   await apriStrumento('fonte');
+  await pdfVisibile(PDF);
   await val(`openPdf(${JSON.stringify(PDF)}, ${PAGINA}, 'Piano di studio'), 1`);
   await finoA(`(PDFJS.doc && PDFJS.doc.numPages) || 0`, 25000);
   await finoA(`(()=>{ const p=document.querySelector('#pdfFrame .page[data-page-number="${PAGINA}"]');
     const t=p && p.querySelector('.textLayer'); return t && t.firstChild ? 1 : 0; })()`, 25000);
+  /* ⚠️ Lo ZOOM si eredita dalla prova prima: sull'originale la pagina arrivava larga 1190 px in un
+     riquadro da 588, e ai due capi fissi non si lasciava prendere nessuna riga. Si riporta il
+     documento alla larghezza del riquadro prima di misurare — come fa chi lo apre per leggerlo —
+     e si aspetta il layer di testo, che a ogni cambio di scala viene ricostruito. */
+  await val(`(()=>{ try{ PDFJS.viewer.currentScaleValue='page-width'; pdfZoomAggiorna(); }catch(e){} return 1; })()`);
+  await pausa(600);
+  await finoA(`(()=>{ const p=document.querySelector('#pdfFrame .page[data-page-number="${PAGINA}"]');
+    const t=p && p.querySelector('.textLayer'); return t && t.firstChild ? 1 : 0; })()`, 15000);
   const corso = await val('corsoAttivo()');
   ok('c\'è un corso attivo su cui salvare', true, !!corso);
   /* Si parte pulito: le prove girano tutte contro la stessa istanza, e
@@ -116,6 +152,7 @@ async function selezionaUnaRiga(indice) {
     selezione:(getSelection().rangeCount && !getSelection().isCollapsed)
       ? getSelection().getRangeAt(0).toString().slice(0,40) : '' }))()`);
   console.log('   stato: ' + JSON.stringify(stato));
+  console.log('   sotto il mouse al rilascio: ' + JSON.stringify(riga && riga.sotto));
   const scelto = await val(`(()=>{ const s=getSelection();
     return (s.rangeCount && !s.isCollapsed) ? s.getRangeAt(0).toString() : ''; })()`);
   ok('il mouse ha selezionato del testo', true, scelto.trim().length > 10);
@@ -123,7 +160,9 @@ async function selezionaUnaRiga(indice) {
     await val(`(()=>{ const s=selezioneAttiva(); return s && s.sup ? s.sup.tipo : null; })()`));
   ok('con la pagina giusta', PAGINA,
     await val(`(()=>{ const s=selezioneAttiva(); return s && s.sup ? s.sup.pagina : null; })()`));
-  ok('la barra flottante compare', true, await val(`selBarraAperta()`));
+  /* La barra si apre DOPO il rilascio del mouse, non nello stesso istante: si aspetta che
+     compaia invece di fotografare il primo millisecondo (rossa una volta su tre catene). */
+  ok('la barra flottante compare', true, !!(await finoA('selBarraAperta()', 3000)));
 
   sezione('Si evidenzia, e finisce su disco con il suo indirizzo');
   const colore = '#a16207';
@@ -269,10 +308,13 @@ async function selezionaUnaRiga(indice) {
   /* ⚠️ Il callout «Dal capitolo» dice una cosa che in uno zaino non esiste, e un
      riquadro attorno a ogni frase presa da un PDF trasforma un quaderno in una
      pila di scatole. Il rimando invece resta: è la grammatica di sempre. */
-  await selezionaUnaRiga(4);
-  const appuntato = await val(`(()=>{ const s=selezioneAttiva(); if(!s) return null;
+  const rigaApp = await selezionaUnaRiga(4);
+  /* Senza selezione la vecchia stesura moriva in un TypeError su `null.origine`, che non dice
+     se manca la riga o la selezione: qui lo si dice, e il resto della sezione resta rosso. */
+  const appuntato = (await val(`(()=>{ const s=selezioneAttiva(); if(!s) return null;
     const o=origineDaRange(s.range);
-    return { origine:o, md:frammentoAppuntato(s.range.toString(), curCtx(), o) }; })()`);
+    return { origine:o, md:frammentoAppuntato(s.range.toString(), curCtx(), o) }; })()`)) || { origine: null, md: '' };
+  ok('c\'è una riga da appuntare, e la selezione è attiva', true, !!rigaApp && !!appuntato.origine);
   ok('l\'origine della selezione è il documento', 'pdf', appuntato.origine && appuntato.origine.tipo);
   ok('con la sua pagina', PAGINA, appuntato.origine && appuntato.origine.pagina);
   console.log('   ' + JSON.stringify(appuntato.md.slice(0, 120)));

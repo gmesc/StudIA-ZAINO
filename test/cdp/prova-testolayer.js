@@ -25,7 +25,7 @@
  *   ./test/cdp/con-vault-di-prova.sh prova-testolayer.js
  */
 const S = require('path').join(__dirname, 'cdp.js');
-const { collega, val, invia, pausa, partiPulito, apriStrumento } = require(S);
+const { collega, val, invia, pausa, partiPulito, apriStrumento, pdfVisibile } = require(S);
 
 let ko = 0;
 function ok(n, atteso, avuto) {
@@ -63,6 +63,7 @@ async function clickXY(x, y, quanti) {
   await apriStrumento('fonte');
 
   sezione('Il documento si apre alla pagina voluta');
+  await pdfVisibile(PDF);
   await val(`openPdf(${JSON.stringify(PDF)}, ${PAGINA}, 'Piano di studio'), 1`);
   const pagine = await finoA('(PDFJS.doc && PDFJS.doc.numPages) || 0');
   ok('il documento è caricato', true, pagine > 0);

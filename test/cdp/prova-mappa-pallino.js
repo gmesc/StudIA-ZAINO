@@ -17,7 +17,7 @@
  */
 const path = require('path');
 const S = path.join(__dirname, 'cdp.js');
-const { collega, val, invia, pausa, partiPulito, apriStrumento } = require(S);
+const { collega, val, invia, pausa, partiPulito, apriStrumento, pdfVisibile } = require(S);
 
 let ko = 0;
 function ok(n, atteso, avuto) {
@@ -68,6 +68,7 @@ async function selezionaUnaRiga() {
 
   sezione('Un documento aperto, e una frase selezionata col mouse');
   await apriStrumento('fonte');
+  await pdfVisibile(PDF);
   await val(`openPdf(${JSON.stringify(PDF)}, ${PAGINA}, 'Piano di studio'), 1`);
   await finoA(`(PDFJS.doc && PDFJS.doc.numPages) || 0`, 25000);
   await finoA(`(()=>{ const p=document.querySelector('#pdfFrame .page[data-page-number="${PAGINA}"]');

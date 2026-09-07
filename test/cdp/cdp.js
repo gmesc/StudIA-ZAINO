@@ -209,5 +209,52 @@ function mediaConFfmpeg(percorso) {
   } catch (e) { return ''; }
 }
 
+/**
+ * Il PDF che una prova vuole aprire deve essere VISIBILE dal contenitore attivo.
+ *
+ * ⚠️ `srcUrl` passa da `cartelle()` (lib/materiali.js), che mette in testa il contenitore
+ * attivo e, se quello ha `MATERIALI/`, SI FERMA LÌ: `Fonti/` alla radice del vault non si
+ * guarda più. Sull'app originale le prove «tornano ai corsi», e il corso nella copia magra
+ * non ha `MATERIALI/`; sul fork non c'è dove tornare, e `prova-media-punto` lascia attivo uno
+ * zaino che l'ha. Nove prove dei PDF stavano fra i CORSI per questo — e nessuna chiede un corso
+ * (misurato il 7 settembre 2026: da sole, sul fork, 8 su 9 verdi).
+ *
+ * Se il documento non si vede, lo si mette DOVE l'app lo cercherebbe — `MATERIALI/PDF/` del
+ * contenitore attivo, che è anche il posto in cui lo mette chi studia. Se si vede già, niente:
+ * così sull'originale, in modalità corso, non cambia nulla.
+ */
+async function pdfVisibile(nome) {
+  const url = await val(`window.vault.srcUrl(${JSON.stringify(nome)}, (typeof corsoAttivo==='function' && corsoAttivo())||'')`);
+  if (url) return url;
+  const fs = require('fs'), path = require('path');
+  const vault = await val('window.vault.path');
+  const sorgente = path.join(vault, 'Fonti', nome);
+  if (!fs.existsSync(sorgente)) throw new Error('pdfVisibile: ' + nome + ' non sta in Fonti/ della copia di prova');
+  const dir = await cartellaMateriale('Fonti');
+  fs.copyFileSync(sorgente, path.join(dir, nome));
+  console.log('   il documento non si vedeva dal contenitore attivo: messo in ' + path.relative(vault, dir));
+  return await val(`window.vault.srcUrl(${JSON.stringify(nome)}, corsoAttivo())`);
+}
+
+/**
+ * La cartella in cui SCRIVERE un materiale nuovo (`sub` = 'Fonti' | 'Media') perché il
+ * contenitore attivo lo veda: dentro `MATERIALI/` del contenitore se ne ha una — è lì che
+ * `cartelle()` si confina — altrimenti la cartella storica alla radice del vault. Le prove
+ * che fabbricano un media (`prova-album` col suo video) passano di qui, per lo stesso motivo
+ * per cui i PDF passano da `pdfVisibile`.
+ */
+async function cartellaMateriale(sub) {
+  const fs = require('fs'), path = require('path');
+  const vault = await val('window.vault.path');
+  const c = await val(`(typeof corsoAttivo==='function' && corsoAttivo())||''`);
+  const corsi = require(path.join(__dirname, '..', '..', 'lib', 'corsi.js'));
+  const mat = require(path.join(__dirname, '..', '..', 'lib', 'materiali.js'));
+  const dir = (c && mat.haMateriali(vault, c))
+    ? path.join(corsi.cartella(vault, c), mat.CARTELLA, mat.nomeInCorso(sub))
+    : path.join(vault, sub);
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
 module.exports = { collega, invia, val, clicca, pausa, apriStrumento, partiPulito, partiVuoto,
-  wavDiProva, mediaConFfmpeg, ws: () => ws };
+  wavDiProva, mediaConFfmpeg, pdfVisibile, cartellaMateriale, ws: () => ws };

@@ -168,9 +168,9 @@ in silenzio.
 ```bash
 npm test                                   # unità: la catena di test/ (58 file al 6 set)
 STUDIA_SUITE=zaino \
-  ./test/cdp/con-vault-di-prova.sh         # 24 · quelle che su QUESTO fork possono passare
+  ./test/cdp/con-vault-di-prova.sh         # 34 · quelle che su QUESTO fork possono passare
 STUDIA_SUITE=corsi \
-  ./test/cdp/con-vault-di-prova.sh         # 44 · quelle che i corsi li richiedono (qui rosse)
+  ./test/cdp/con-vault-di-prova.sh         # 35 · quelle che i corsi li richiedono (qui rosse)
 npm run test:ui                            # le prove della CHAT sull'app viva (registro a sé)
 ./test/cdp/con-vault-di-prova.sh <nome>    # una sola — è così che si lavora
 ./test/cdp/con-vault-di-prova.sh           # tutte e 69: qui 43 rosse, e va bene così (vedi sotto)
@@ -210,16 +210,22 @@ stessa config: è il fork che non li espone.
 Per questo il runner ha **tre registri**, e i primi due sono quelli che si lanciano davvero:
 
 ```bash
-STUDIA_SUITE=zaino ./test/cdp/con-vault-di-prova.sh   # 24 · il criterio (a) di un merge QUI
-STUDIA_SUITE=corsi ./test/cdp/con-vault-di-prova.sh   # 44 · ciò che dovrà tornare verde con i corsi
+STUDIA_SUITE=zaino ./test/cdp/con-vault-di-prova.sh   # 34 · il criterio (a) di un merge QUI
+STUDIA_SUITE=corsi ./test/cdp/con-vault-di-prova.sh   # 35 · ciò che dovrà tornare verde con i corsi
 ```
 
-`PROVE_ZAINO` è **24** dal 7 settembre 2026 (23 verdi qui; la rossa, `prova-appunti-barra`, eredita
-il banco a un blocco — vedi l'handoff di quel giorno); `PROVE_CORSI` è **44**, verde 44 su 44
-sull'originale (1289 controlli), e qui è rosso per costruzione — ma **non tutte allo stesso modo**:
-la classificazione, motivo per motivo, sta nell'handoff del 7 settembre. Nove di quelle 44 vogliono
-soltanto un PDF che sta in `Fonti/` alla radice del vault e che lo zaino attivo, se ha `MATERIALI/`,
-nasconde (`cartelle()` in `lib/materiali.js` si CONFINA dentro il contenitore che ne ha una).
+`PROVE_ZAINO` è **34** dal 7 settembre 2026, verde 34 su 34 **in tutte e due le app** (le stesse
+prove contro l'app originale: `STUDIA_SORGENTE=~/Claude/StudIA/StudIA`); `PROVE_CORSI` è **35**,
+verde 35 su 35 sull'originale (1035 controlli), e qui è rosso per costruzione — ma **non tutte allo
+stesso modo**: la classificazione, motivo per motivo, sta nell'handoff del 7 settembre.
+
+⚠️ **Un materiale alla radice del vault non si vede se il contenitore attivo ha `MATERIALI/`.**
+`cartelle()` in `lib/materiali.js` mette in testa il contenitore attivo e, se quello ne ha una, si
+CONFINA lì dentro: `Fonti/` e `Media/` alla radice non si guardano più. Nove prove dei PDF stavano fra
+i CORSI per questo, senza chiedere nessun corso: sull'originale «tornano ai corsi» e il corso della
+copia magra non ha `MATERIALI/`; sul fork non c'è dove tornare. Una prova che apre un documento passa
+da `pdfVisibile()` (cdp.js), e una che fabbrica un media scrive in `cartellaMateriale()`: dove l'app
+guarda per primo, che è anche dove lo metterebbe chi studia.
 
 ⚠️ **Un registro è una CATENA, non un insieme**, e questa è la trappola che è costata tre corse:
 1. sceglierlo fra le prove «verdi nella suite intera» non basta — quattro delle prime 19 di
@@ -429,6 +435,13 @@ Le più costose, distillate dagli handoff. Ogni ⚠️ è stato pagato almeno un
   blocchi vuol dire riquadri più bassi — chi calcola un bersaglio su un layout e ci clicca con un
   altro accusa l'app per colpa propria. ⚠️ E la chiave è `bancoChiave()` →
   `studia.banco.c.<contenitore>`: `studia.banco` è la chiave di modalità, **morta dal 13 agosto**.
+  Pagata di nuovo il 7 settembre 2026: `prova-appunti-barra` azzerava la chiave morta, credeva di
+  partire dal banco di fabbrica e al reload ereditava un blocco solo — rossa in ogni catena ZAINO,
+  verde da sola. E un gesto col mouse su una riga di testo **chiede al browser dove cade** ogni suo
+  capo (`elementFromPoint` deve rispondere il layer di testo): una riga più larga del riquadro — per
+  lo zoom ereditato, o per un banco a due blocchi — porta il `mouseup` sul bordo, dove la barra della
+  selezione non si apre. I rettangoli, della finestra o del riquadro, hanno mentito due volte
+  (`prova-evidenze-pdf`, 7 settembre 2026).
 - **Un rosso invisibile si fa PARLARE aggiungendo la domanda giusta**, non rilanciando: davanti a un
   doppio click che «non seleziona», la domanda che ha risolto in un colpo è stata *chi c'è sotto il
   puntatore* (`document.elementFromPoint`). La diagnostica poi RESTA nella prova, perché quel rosso

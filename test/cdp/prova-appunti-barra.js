@@ -43,7 +43,14 @@ const righe = (sel) => val(`(()=>{const t=document.querySelector(${JSON.stringif
 
 (async () => {
   await collega(); await partiPulito();
-  await val('localStorage.removeItem("studia.banco"), 1');
+  /* ⚠️ Il banco di fabbrica si ottiene togliendo la chiave VIVA della disposizione — quella
+     che `bancoChiave()` calcola per il contenitore attivo, `studia.banco.c.<id>` — non
+     `studia.banco`, che è la chiave di modalità morta dal 13 agosto (guida §8). Con quella
+     morta la prova CREDEVA di partire da zero e invece, al reload, ereditava la disposizione
+     salvata da un'altra prova: un banco a un blocco, la mappa su una riga sola (39 px) e gli
+     appunti su due (71 px). Rossa in ogni catena ZAINO del 7 settembre 2026, verde da sola. */
+  await val(`(()=>{ const k=bancoChiave();
+    ['studia.banco','studia.banco.zaino',k,k+'.zoom'].forEach(x=>localStorage.removeItem(x)); return 1; })()`);
   await val('location.reload(), 1');
   await pausa(1800); await collega(); await pausa(600);
 
@@ -65,6 +72,9 @@ const righe = (sel) => val(`(()=>{const t=document.querySelector(${JSON.stringif
   ok('stessa altezza minima', mappa.minH, barra.minH);
   ok('stesso fondo', mappa.fondo, barra.fondo);
   ok('niente angoli tondi (EasyMDE ne mette 4px)', '0px', barra.raggio);
+  /* La parità di righe ha senso solo a parità di larghezza: se le due barre finissero in
+     riquadri diversi, il rosso sotto parlerebbe del banco e non del vestito degli appunti. */
+  ok('nello stesso riquadro: le due barre sono larghe uguali', mappa.largo, barra.largo);
   ok('non usa più righe della mappa', true, righeNote <= righeMappa);
   ok('e quindi non è più alta', true, barra.h <= mappa.h + 2);
 

@@ -16,7 +16,7 @@
  *   ./test/cdp/con-vault-di-prova.sh prova-pagina-campo.js
  */
 const S = require('path').join(__dirname, 'cdp.js');
-const { collega, val, invia, pausa, partiPulito, apriStrumento, clicca } = require(S);
+const { collega, val, invia, pausa, partiPulito, apriStrumento, clicca, pdfVisibile } = require(S);
 
 let ko = 0;
 function ok(n, atteso, avuto) {
@@ -55,6 +55,7 @@ const BARRA = `(()=>{ const b=document.querySelector('#pdfPane .tbar.pdfbar');
   await collega();
   await partiPulito();
   await apriStrumento('fonte');
+  await pdfVisibile(PDF);
   await val(`openPdf(${JSON.stringify(PDF)}, 5, 'Piano di studio'), 1`);
   await finoA('!!PDFJS.doc');
   await pausa(400);
