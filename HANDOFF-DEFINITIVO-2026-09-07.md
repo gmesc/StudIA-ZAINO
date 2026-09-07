@@ -217,6 +217,19 @@ sull'originale** (754), CORSI **35 su 35 sull'originale** (1035), `npm test` ver
 catene ZAINO sono state lanciate sei volte per app nel corso della sera: ogni rosso ha prodotto una
 causa e una riga di diagnostica che resta nella prova, mai un'attesa più lunga.
 
+## Il sito: la guida e la presentazione per insegnai.ch
+
+`node bin/sito.js` costruisce `dist/sito/`: `index.html` è la presentazione (→ `/studia-zaino/`),
+`guida/` è la guida dell'app resa autonoma (→ `/studia-zaino/guida/`). La guida NON è una seconda
+copia: è `App/guida-zaino/` — la stessa che l'app apre dal «?» — con dentro il marchio e il font
+OpenMoji che stavano in `App/assets/`, e il marchio in testata che porta a `../`. Gli screenshot si
+rigenerano prima, sull'app viva e su un vault di prova: `bash bin/guida-zaino.sh` (il 7 settembre
+ne sono cambiati 48 su 125, perché quelli della chat erano di prima del suo vestito). Il generatore
+si ferma se una `<img>` delle due pagine non esiste. La presentazione (`sito/index.html`,
+`sito/presentazione.css`) usa gli stessi token della guida e le sue immagini (`guida/img/…`); il
+download rimanda a `https://github.com/gmesc/studia-zaino/releases`. Verificate nel browser a 1280
+e a 375 px: nessuna immagine rotta, nessuno scorrimento orizzontale, indice e lightbox della guida.
+
 ## Che cosa resta aperto
 
 - Il ramo `registri-zaino-corsi` dell'app originale ha ancora i registri di ieri (15 e 43) e le prove
