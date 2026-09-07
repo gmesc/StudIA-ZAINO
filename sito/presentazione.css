@@ -93,6 +93,14 @@ section.hero{ border-top:0; padding-top:3.5rem; }
 /* ---- figure: bordo 1px, niente raggio, didascalia in maiuscoletto ---- */
 figure{ margin:0; }
 figure img{ border:1px solid var(--line); background:var(--panel); }
+/* ---- la cornice a proporzione fissa: gli screenshot sono quelli della guida, alti quanto il loro
+   contenuto (da 0,6 a 7 di rapporto); in una griglia lascerebbero buchi. Qui ogni figura riempie la
+   stessa scatola 3:2 e l'immagine si ritaglia (object-fit) attorno a un punto di fuoco che si sceglie
+   per immagine con --fuoco (top left per le barre, top per i pannelli alti, center per le mappe).
+   L'hero resta a misura naturale: è l'unica che si guarda intera. ---- */
+.pilastro figure img, .griglia figure img, .affianco figure img{
+  width:100%; aspect-ratio:3/2; object-fit:cover; object-position:var(--fuoco, top left);
+}
 figcaption{ font-size:13px; line-height:1.45; color:var(--muted); padding:.5rem 0 0; }
 figcaption b{ color:var(--ink); }
 .fig-rilievo img{ box-shadow:var(--sh-3d); }
