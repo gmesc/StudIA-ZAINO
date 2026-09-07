@@ -140,6 +140,8 @@ figcaption b{ color:var(--ink); }
 .callout{ background:color-mix(in srgb, var(--teal) 8%, var(--panel)); border-left:4px solid var(--teal); padding:.9rem 1.1rem; margin:1.2rem 0; max-width:none; }
 .callout.giallo{ background:color-mix(in srgb, var(--yellow) 9%, var(--panel)); border-left-color:var(--yellow); }
 .callout.blu{ background:color-mix(in srgb, var(--blue) 7%, var(--panel)); border-left-color:var(--blue); }
+.callout.largo{ padding:1.3rem 1.5rem; }
+.callout.largo p{ max-width:none; font-size:clamp(17px,1.6vw,20px); line-height:1.6; }
 .callout .ch{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.14em; color:var(--muted); margin-bottom:.3rem; }
 .callout p{ margin:.3rem 0; }
 

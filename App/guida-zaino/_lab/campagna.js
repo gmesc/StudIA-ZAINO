@@ -443,6 +443,12 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
     const mm = await L.rect('#mapMenu'); await L.puntatore(nr.x + nr.w / 2, nr.y + nr.h / 2);
     await L.scatta('69-menu-nodo', { clip: { x: Math.min(nr.x, mm.x) - 30, y: Math.min(nr.y, mm.y) - 30, width: Math.max(nr.x + nr.w, mm.x + mm.w) - Math.min(nr.x, mm.x) + 60, height: Math.max(nr.y + nr.h, mm.y + mm.h) - Math.min(nr.y, mm.y) + 60 }, scala: 2 });
     await L.pulito();
+    /* ⚠️ Il mouse VERO va portato fuori dalla mappa prima di scattare. La mappa accende la
+       parentela del nodo sotto il puntatore e spegne il resto (opacity .18, `data-evid`): il
+       mouse era rimasto su un altro nodo dai passi prima, e «perielio», che non gli è parente,
+       usciva trasparente e appena leggibile. Non era una dissolvenza: un'attesa non bastava. */
+    await L.invia('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 8, y: 8 }); await L.pausa(400);
+    await L.val(`mappaSeleziona(${JSON.stringify(nk)})`); await L.pausa(400);
     await L.scatta('69b-nodo-con-fonte', { clip: { x: nr.x - 30, y: nr.y - 30, width: nr.w + 60, height: nr.h + 60 }, scala: 4 });
     const sv = await L.rect('#mappaSvg');
     await L.val(`mapMenuApri(${sv.x + sv.w - 300}, ${sv.y + 80}, {tipo:'vuoto', id:null})`); await L.pausa(500);
