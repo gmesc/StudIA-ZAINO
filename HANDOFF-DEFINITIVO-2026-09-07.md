@@ -90,11 +90,12 @@ richiesta esplicita. ⚠️ Il primo tentativo l'aveva fermato il classificatore
 (rizzo-pii), dichiara fidato solo quel remote. Il push si fa solo quando lo chiede l'utente, e le
 due strade per non farlo bloccare (regola `Bash(git push *)` in `.claude/settings.local.json`, o
 una riga in `autoMode.environment` che nomina questo repo) stanno nella chat di quel giorno.
-Quel che resta è la **Release** `v1.1.0` con i due installer come allegati: GitHub rifiuta file
-sopra i 100 MB dentro il repo, gli allegati delle Releases arrivano a 2 GB, e il sito punta già a
-`…/releases/latest`. Da una sessione Claude non si carica: niente `gh`, e il caricamento via Chrome
-ha un tetto di 10 MB per file. Si fa dalla pagina Releases (trascinando i due file di `dist/`) o con
-`gh release create v1.1.0 <dmg> <exe>` dopo `brew install gh && gh auth login`.
+La **Release `v1.1.0`** è pubblicata (`gh release create`, dopo `gh auth login` fatto dall'utente):
+`StudIA-ZAINO-1.1.0-arm64.dmg` (231 MB) e `StudIA-ZAINO-1.1.0-setup-x64.exe` (168 MB), e
+`…/releases/latest` ci arriva — il bottone «Scarica» del sito funziona. ⚠️ GitHub trasforma gli
+spazi del nome di un allegato in punti: il dmg dello script (`StudIA - ZAINO-…`) era diventato
+`StudIA.-.ZAINO-…`, ed è stato ricaricato col nome pulito. Il nome senza spazi va messo in
+`bin/notarizza-mac.sh`, accanto alla firma del dmg: sono le due righe che gli mancano.
 
 A ogni versione: `npm run notarizza`, `npm run dist:win`, poi la Release nuova con i due file.
 
