@@ -65,11 +65,32 @@ blocco `<style>` del monolite, il markup è letto da `ui.js`, il tema scuro è e
 la generazione **si ferma** se lì dentro finisse una regola di componente). Il file prodotto sta
 fuori da git.
 
-## Il pacchetto
+## I pacchetti (rifatti la mattina del 7, dopo il merge di tutto)
 
-`dist/StudIA - ZAINO-1.1.0-arm64.dmg` — **notarizzato**: `status: Accepted`,
-`source=Notarized Developer ID`, ticket cucito all'app *e* al dmg, verificato rimontandolo. Si
-apre col doppio click, senza «Apri comunque», anche senza rete.
+`main` = `a5e27f2`: dentro ci sono i registri, il guscio del CSS di pdf.js corretto, la guida con
+gli screenshot rigenerati e il sito. Sul codice unito: `npm test` verde, ZAINO 34/34 (759).
+
+- `dist/StudIA - ZAINO-1.1.0-arm64.dmg` (231 MB) — **notarizzato**: app e dmg `status: Accepted`,
+  ticket cuciti a tutti e due; rimontato, l'app dentro è `accepted · source=Notarized Developer
+  ID`. ⚠️ Il dmg in sé non porta una firma propria (`codesign -dv` → «not signed at all»): lo script
+  lo notarizza e lo cuce ma non lo firma, e `spctl -t open --context context:primary-signature` sul
+  file dice «rejected». Non cambia l'apertura col doppio click — la controprova è sull'app — ma
+  firmare anche il dmg prima di notarizzarlo è la riga che manca a `bin/notarizza-mac.sh`.
+- `dist/StudIA-ZAINO-1.1.0-setup-x64.exe` (168 MB) — NSIS x64, `PE32 executable (GUI) … Nullsoft
+  Installer`; lista bianca rispettata, stessi file dell'app del dmg (6255 in `node_modules`, uguali).
+  **Non firmato** (niente Authenticode: SmartScreen avvisa) e **non eseguito**: da qui si misura che
+  sia valido e completo, non che parta.
+- Tutti e due contengono la guida rigenerata e il guscio corretto (misurato dentro i bundle: stesso
+  md5 dello screenshot della chat, 7 blocchi `&`, `color-scheme` tolto).
+
+**GitHub.** Il repo `gmesc/studia-zaino` esiste ed è vuoto. Il piano: `origin` sul fork, push di
+`main` e del tag `v1.1.0`, e una **Release** `v1.1.0` con i due installer come allegati (GitHub
+rifiuta file sopra i 100 MB dentro il repo; gli allegati delle Releases arrivano a 2 GB). Il sito
+punta già a `…/releases/latest`. ⚠️ Il push non è partito da una sessione Claude: il classificatore
+dei permessi lo blocca, ed è la cosa giusta — pubblicare codice si decide a mano. I comandi stanno
+nel messaggio di chiusura di quella sessione e sono tre righe.
+
+A ogni versione: `npm run notarizza`, `npm run dist:win`, poi la Release nuova con i due file.
 
 ⚠️ Gli script adesso buttano il dmg che electron-builder fa per conto suo: ne restavano **due**
 quasi omonimi, e il non notarizzato aveva il nome più pulito — cioè era quello che uno spedisce.
