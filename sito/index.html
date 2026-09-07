@@ -10,7 +10,7 @@
 <meta property="og:description" content="Leggi e studi sui PDF, prendi appunti e disegni mappe con testi e immagini, e chiedi al tutor AI. Tutto nella stessa app.">
 <meta property="og:image" content="https://www.insegnai.ch/studia-zaino/guida/img/12-pdf-aperto.png">
 <link rel="icon" href="guida/img/1F392.svg" type="image/svg+xml">
-<link rel="stylesheet" href="presentazione.css?v=2026090701">
+<link rel="stylesheet" href="presentazione.css?v=2026090801">
 </head>
 <body>
 <a class="skip" href="#inizio">Salta al contenuto</a>
@@ -23,6 +23,8 @@
     <a class="tbtn" href="#scarica">Scarica</a>
     <span class="tbsep"></span>
     <a class="tbtn" href="guida/">Guida</a>
+    <span class="tbsep"></span>
+    <a class="tbtn" href="https://insegnai.ch/">insegnai.ch</a>
     <span class="tbsep"></span>
     <button class="tbtn" id="temaBtn" type="button" aria-label="Cambia tema chiaro o scuro">☀️ / 🌙</button>
   </nav>
@@ -251,6 +253,18 @@
   StudIA - ZAINO · settembre 2026 · <a href="https://github.com/gmesc/StudIA-ZAINO">codice su GitHub</a> · <a href="mailto:giacomo@insegnai.ch">giacomo@insegnai.ch</a> · icona e marchio: <a href="https://openmoji.org/library/emoji-1F392/">OpenMoji backpack (1F392)</a>, CC BY-SA 4.0 · emoji OpenMoji
 </footer>
 
+<nav class="dotnav" aria-label="Capitoli della pagina">
+  <a href="#inizio"><span>Inizio</span></a>
+  <a href="#tre"><span>Che cosa fa</span></a>
+  <a href="#lettura"><span>Leggere</span></a>
+  <a href="#appunti"><span>Scrivere</span></a>
+  <a href="#tutor"><span>Il tutor AI</span></a>
+  <a href="#come"><span>Come funziona</span></a>
+  <a href="#per-chi"><span>Per chi è</span></a>
+  <a href="#non-fa"><span>Che cosa non fa</span></a>
+  <a href="#scarica"><span>Scarica</span></a>
+</nav>
+
 <script>
 (function(){
   var root=document.documentElement, KEY='studia-zaino-sito-tema';
@@ -261,6 +275,26 @@
     var nuovo = scuro ? 'chiaro' : 'scuro';
     root.setAttribute('data-theme', nuovo);
     try{ localStorage.setItem(KEY, nuovo); }catch(e){}
+  });
+})();
+
+/* ---- dot-nav: scrollspy ---- */
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.dotnav a'));
+  if (!links.length || !('IntersectionObserver' in window)) return;
+  var byId = {};
+  links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var attivo = null;
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (!e.isIntersecting) return;
+      var a = byId[e.target.id]; if (!a) return;
+      if (attivo) attivo.removeAttribute('aria-current');
+      a.setAttribute('aria-current', 'true'); attivo = a;
+    });
+  }, { rootMargin: '-40% 0px -55% 0px' });
+  Object.keys(byId).forEach(function(id){
+    var sec = document.getElementById(id); if (sec) io.observe(sec);
   });
 })();
 </script>

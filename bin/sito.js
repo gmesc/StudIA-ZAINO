@@ -26,7 +26,8 @@ const SITO = path.join(RADICE, 'sito');
    sito (es. ~/Claude/insegnai.ch/studia-zaino), che può contenere altro: non si svuota la radice,
    si riscrivono i nostri file e si rifà soltanto `guida/`, che è tutta nostra. */
 const USCITA = process.env.SITO_USCITA ? path.resolve(process.env.SITO_USCITA) : path.join(RADICE, 'dist', 'sito');
-const OGGI = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+// data E ora: chi rifà il sito due volte nello stesso giorno deve vedere il CSS nuovo, non quello in cache
+const OGGI = new Date().toISOString().slice(0, 16).replace(/[-T:]/g, '');
 const URL_SITO = 'https://www.insegnai.ch/studia-zaino/';
 
 function copia(da, a) {

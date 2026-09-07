@@ -34,7 +34,7 @@ html[data-theme="scuro"]{
   }
 }
 *{ box-sizing:border-box; }
-html{ scroll-behavior:smooth; }
+html{ scroll-behavior:smooth; scroll-padding-top:calc(var(--topbar-h) + 16px); }
 body{
   margin:0; background:var(--bg); color:var(--ink);
   font-family:var(--font-text),var(--emoji-font),sans-serif;
@@ -171,3 +171,29 @@ kbd{ font:600 .85em/1 var(--font-text),var(--emoji-font),sans-serif; border:1px 
 footer{ border-top:1px solid var(--line); padding:1.4rem 0 2rem; font-size:12px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); max-width:var(--maxw); margin:0 auto; padding-left:clamp(1rem,4vw,2.5rem); padding-right:clamp(1rem,4vw,2.5rem); }
 footer a{ color:inherit; }
 @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } html{ scroll-behavior:auto; } }
+
+/* ---- dot-nav: puntini laterali con chip in hover ---- */
+.dotnav{
+  position:fixed; right:14px; top:50%; transform:translateY(-50%); z-index:35;
+  display:flex; flex-direction:column; gap:10px;
+}
+.dotnav a{
+  display:flex; align-items:center; justify-content:flex-end; gap:8px;
+  padding:2px; text-decoration:none; outline-offset:2px;
+}
+.dotnav a::after{
+  content:""; flex:none; width:9px; height:9px; border-radius:50%;
+  border:2px solid var(--muted); background:transparent;
+  transition:background var(--speed), border-color var(--speed), transform var(--speed);
+}
+.dotnav a span{
+  font:600 12px/1 var(--font-text); color:var(--ink); white-space:nowrap;
+  background:var(--panel); border:1px solid var(--line); border-radius:999px;
+  padding:5px 10px; box-shadow:var(--sh-3d);
+  opacity:0; transform:translateX(6px); pointer-events:none;
+  transition:opacity var(--speed), transform var(--speed);
+}
+.dotnav a:hover::after, .dotnav a:focus-visible::after{ border-color:var(--primary); transform:scale(1.25); }
+.dotnav a:hover span, .dotnav a:focus-visible span{ opacity:1; transform:none; }
+.dotnav a[aria-current]::after{ background:var(--primary); border-color:var(--teal-strong); transform:scale(1.15); }
+@media (max-width:1240px){ .dotnav{ display:none; } }
