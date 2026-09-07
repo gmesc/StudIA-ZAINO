@@ -41,6 +41,9 @@
         <a class="cta" href="#scarica">Scarica per Mac e Windows</a>
         <a class="cta sec" href="guida/">Leggi la guida</a>
       </div>
+      <div class="cta-riga">
+        <button class="cta sec" id="videoBtn" type="button">▶ Guarda la video intro (1′19″)</button>
+      </div>
       <p class="nota">Gratuita e open source. I tuoi file restano sul tuo computer. Il tutor AI usa la chiave del provider che scegli tu.</p>
     </div>
     <figure class="fig-rilievo">
@@ -249,6 +252,13 @@
 
 </main>
 
+<dialog id="videoDialog" aria-label="Video di presentazione di StudIA - ZAINO">
+  <button class="tbtn videoChiudi" id="videoChiudi" type="button" aria-label="Chiudi il video">✕</button>
+  <video id="videoIntro" controls preload="metadata" playsinline src="video/StudIA-ZAINO-intro.mp4">
+    Il tuo browser non riproduce questo video: <a href="video/StudIA-ZAINO-intro.mp4">scaricalo</a>.
+  </video>
+</dialog>
+
 <footer>
   StudIA - ZAINO · settembre 2026 · <a href="https://github.com/gmesc/StudIA-ZAINO">codice su GitHub</a> · <a href="mailto:giacomo@insegnai.ch">giacomo@insegnai.ch</a> · icona e marchio: <a href="https://openmoji.org/library/emoji-1F392/">OpenMoji backpack (1F392)</a>, CC BY-SA 4.0 · emoji OpenMoji
 </footer>
@@ -276,6 +286,17 @@
     root.setAttribute('data-theme', nuovo);
     try{ localStorage.setItem(KEY, nuovo); }catch(e){}
   });
+})();
+
+/* ---- video intro: si apre sopra la pagina, parte, e chiudendo si ferma ---- */
+(function(){
+  var d=document.getElementById('videoDialog'), v=document.getElementById('videoIntro'), b=document.getElementById('videoBtn');
+  if(!d||!v||!b||!d.showModal) return;
+  b.addEventListener('click', function(){ d.showModal(); v.play().catch(function(){}); });
+  function chiudi(){ v.pause(); d.close(); }
+  document.getElementById('videoChiudi').addEventListener('click', chiudi);
+  d.addEventListener('click', function(e){ if(e.target===d) chiudi(); });   // click sul velo
+  d.addEventListener('close', function(){ v.pause(); });
 })();
 
 /* ---- dot-nav: scrollspy ---- */

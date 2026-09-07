@@ -167,6 +167,13 @@ kbd{ font:600 .85em/1 var(--font-text),var(--emoji-font),sans-serif; border:1px 
 .chip{ display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; padding:.35em .6em; background:color-mix(in srgb, var(--blue) 15%, var(--panel)); color:var(--blue-strong); margin:.15rem .25rem .15rem 0; }
 .chip.teal{ background:color-mix(in srgb, var(--teal) 16%, var(--panel)); color:var(--teal-strong); }
 
+/* ---- il video intro: una finestra sopra la pagina, angoli vivi, velo scuro ---- */
+#videoDialog{ border:1px solid var(--line); background:var(--panel); padding:0; max-width:min(96vw, 1200px); box-shadow:var(--sh-3d); }
+#videoDialog::backdrop{ background:rgba(15,17,21,.72); }
+#videoDialog video{ display:block; width:min(96vw, 1200px); max-height:86vh; background:#000; }
+.videoChiudi{ position:absolute; top:.35rem; right:.35rem; background:var(--panel); border:1px solid var(--line); z-index:1; }
+.cta-riga + .cta-riga{ margin-top:0; }
+
 /* ---- il piede ---- */
 footer{ border-top:1px solid var(--line); padding:1.4rem 0 2rem; font-size:12px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); max-width:var(--maxw); margin:0 auto; padding-left:clamp(1rem,4vw,2.5rem); padding-right:clamp(1rem,4vw,2.5rem); }
 footer a{ color:inherit; }

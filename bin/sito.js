@@ -74,6 +74,8 @@ function presentazione() {
   html = html.replace(/presentazione\.css\?v=\d+/, 'presentazione.css?v=' + OGGI);
   fs.writeFileSync(path.join(USCITA, 'index.html'), html);
   copia(path.join(SITO, 'presentazione.css'), path.join(USCITA, 'presentazione.css'));
+  // il video intro (sito/video/, versionato: 5,5 MB) viaggia con la pagina
+  if (fs.existsSync(path.join(SITO, 'video'))) copiaCartella(path.join(SITO, 'video'), path.join(USCITA, 'video'));
 }
 
 /** Ogni <img src> e ogni url() locale delle due pagine deve esistere nell'uscita: un'immagine rotta sul sito non la vede nessuno prima del lettore. */
