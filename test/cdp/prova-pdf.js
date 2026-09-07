@@ -185,9 +185,7 @@ async function finoA(expr, quanto) {
      del viewer (`.messageBar`, che porta una variabile sua) messo dentro `#pdfPane` prende lo
      stile — così si sa che il sensore sente — e lo stesso elemento fuori non lo prende.
      ⚠️ Prima si misurava l'indice dei capitoli (`#toc`, largo più di 180): sul fork quell'indice
-     non c'è, e la prova diceva «riscritto» di un elemento nascosto. E i blocchi `:root` del
-     viewer, riscritti come `:is(#pdfPane, #pdfPane2)` ma ANNIDATI nel guscio, non combaciano
-     con niente: le variabili di quei blocchi non si possono usare come sensore. */
+     non c'è, e la prova diceva «riscritto» di un elemento nascosto. */
   const guscio = await val(`(()=>{ const sonda=(dove)=>{ const d=document.createElement('div');
       d.className='messageBar'; dove.appendChild(d);
       const v=(getComputedStyle(d).getPropertyValue('--closing-button-icon')||'').trim(); d.remove(); return v!==''; };
@@ -195,6 +193,23 @@ async function finoA(expr, quanto) {
   console.log('   una classe del viewer prende il suo stile: dentro ' + guscio.dentro + ' · fuori ' + guscio.fuori);
   ok('dentro il riquadro il viewer veste le sue classi', true, guscio.dentro);
   ok('fuori dal riquadro no: il CSS di pdf.js non esce', false, guscio.fuori);
+  /* ⚠️ E le variabili dei blocchi `:root` del viewer NASCONO sul riquadro. Fino al 7 settembre 2026
+     `bin/pdfjs-css.js` le riscriveva `#pdfPane` ma annidate sotto il guscio — `#pdfPane #pdfPane`,
+     cioè niente — ed erano vuote anche dentro; nessuno se n'era accorto perché vestono cose che
+     l'app non usa. Ora sono `&`, il guscio stesso: qui si misura che ci siano dentro e non fuori. */
+  const radice = await val(`(()=>{ const v='--xfa-focus-outline';
+    return { dentro:(getComputedStyle(document.querySelector('#pdfPane')).getPropertyValue(v)||'').trim(),
+             fuori:(getComputedStyle(document.documentElement).getPropertyValue(v)||'').trim() }; })()`);
+  console.log('   variabile di :root del viewer: ' + JSON.stringify(radice));
+  ok('le variabili di :root del viewer nascono sul riquadro', 'auto', radice.dentro);
+  ok('e non sulla radice dell\'app', '', radice.fuori);
+  /* ⚠️ Ma NON `color-scheme`: il viewer lo dichiara `light dark` per il suo documento, e un riquadro
+     che segue il sistema mentre l'app non lo fa si ritrova la barra di scorrimento scura su un Mac in
+     modalità scura (misurato: grigio 249 → 47). Il tema lo decide StudIA: il generatore lo toglie. */
+  const schemi = await val(`(()=>({ riquadro:getComputedStyle(document.querySelector('#pdfPane')).colorScheme,
+    app:getComputedStyle(document.documentElement).colorScheme }))()`);
+  console.log('   color-scheme: ' + JSON.stringify(schemi));
+  ok('il riquadro non impone un suo color-scheme: segue l\'app', schemi.app, schemi.riquadro);
 
   sezione('Riaprire lo stesso documento non lo ricarica');
   const seqPrima = await val('PDFJS.seq');

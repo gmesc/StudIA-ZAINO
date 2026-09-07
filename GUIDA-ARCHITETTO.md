@@ -376,6 +376,15 @@ Le più costose, distillate dagli handoff. Ogni ⚠️ è stato pagato almeno un
   `${arch}`, e la build Intel provava a sovrascrivere il dmg dell'altra architettura, morendo
   dentro `hdiutil` con un errore che parlava d'altro. La stessa forma della lista bianca: qualcosa
   che *sembra* generico e invece nomina un caso solo.
+- **Un selettore annidato senza `&` è relativo al genitore**: dentro `#pdfPane { … }` un `#pdfPane
+  { … }` significa `#pdfPane #pdfPane`, cioè niente. `bin/pdfjs-css.js` riscriveva così i sette
+  `:root` del viewer di pdf.js, e le sue 46 variabili erano vuote anche dentro il riquadro senza che
+  nessuno se ne accorgesse — vestono cose che l'app non usa. La forma giusta è `& { … }`, il guscio
+  stesso; e un CSS generato si MISURA sull'app viva (`getComputedStyle(...).getPropertyValue`), non
+  si legge — e si GUARDA: facendo arrivare quei blocchi è arrivato anche il loro `color-scheme:
+  light dark`, e su un Mac scuro la barra di scorrimento del riquadro è diventata scura in un'app
+  chiara; le variabili e i rettangoli erano identici, lo screenshot no. Il tema lo decide l'app: il
+  generatore toglie `color-scheme` dai blocchi ricollocati (7 settembre 2026).
 - **Quello che si genera si genera**, e la ricetta si versiona al posto del prodotto: crediti,
   icona (`.png`/`.icns`/`.ico`), tavolozza delle emoji. Un binario rigenerabile messo in git e poi
   ritoccato a mano è la trappola ④ in forma di file: fra sei mesi nessuno sa più da quale sorgente

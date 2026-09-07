@@ -223,9 +223,37 @@ causa e una riga di diagnostica che resta nella prova, mai un'attesa più lunga.
   di ieri: i 34 e i 35 nel nuovo ordine sono stati **misurati** lì con le prove di QUESTO repo
   (`STUDIA_SORGENTE`), ma né i registri né i nove file di prova sono stati scritti là — quel repo non
   l'ho toccato. Portarli è un lavoro di copia, da fare con le due suite verdi anche lì.
-- Il guscio del CSS di pdf.js: i sette blocchi `:root` riscritti e annidati non combaciano con niente
-  (le variabili del viewer non arrivano). L'app funziona perché pdf.js scrive le sue misure inline;
-  è un difetto latente di `bin/pdfjs-css.js`, non pagato ancora.
+- ~~Il guscio del CSS di pdf.js: i sette `:root` riscritti e annidati non arrivano al viewer.~~
+  **Chiuso** (sotto, «Il guscio del CSS di pdf.js»).
+
+## Il guscio del CSS di pdf.js: i sette `:root` rinascono sul riquadro
+
+`bin/pdfjs-css.js` avvolge `pdf_viewer.css` in `:is(#pdfPane, #pdfPane2) { … }` e riscriveva i
+sette blocchi `:root` come `:is(#pdfPane, #pdfPane2)` — ma li lasciava DENTRO l'involucro, e nel
+nesting un selettore senza `&` è relativo al genitore: «un `#pdfPane` dentro un `#pdfPane`», cioè
+niente. Le 46 variabili del viewer erano vuote anche dentro il riquadro, e nessuno se n'era
+accorto perché vestono cose che l'app non usa (editor di annotazioni, firme, XFA, alto contrasto)
+e i margini delle pagine li governa `removePageBorders` (`.removePageBorders .page` vince sulle
+variabili). Il commento dell'app in `StudIA.html` accanto a `removePageBorders` lo raccontava come
+un fatto («quel bordo non c'è mai stato»): adesso racconta il perché vero.
+
+Il rimedio è una parola nel generatore: i blocchi diventano **`&`**, il guscio stesso — la forma
+che il nesting prevede per «questo elemento», valida anche dentro un `@media` annidato. Rigenerato
+con `node bin/pdfjs-css.js`. Misurato sull'app viva prima e dopo, stessa pagina aperta:
+`--xfa-focus-outline` da vuota ad `auto`, `--page-margin` da vuota a `1px auto -8px`, e la
+geometria delle pagine **identica** (rettangolo, margine `0 … 10px`, bordo `none`, distanza fra
+pagine 830 px, padding del viewer 0) — cambia solo il ritardo dell'icona di caricamento, da 0 a
+400 ms come pdf.js vuole. `prova-pdf` ora misura che la variabile valga `auto` dentro `#pdfPane` e
+nulla sulla radice dell'app: prima di rigenerare quel controllo è rosso, dopo verde.
+
+⚠️ **E lo screenshot ha detto una cosa che i numeri non dicevano.** Fuori dalla striscia della barra
+di scorrimento zero pixel diversi; dentro, la barra era diventata **scura** (grigio 249 → 47). Nel
+blocco `:root` della riga 6130 c'è `color-scheme: light dark`: con `&` arrivava a `#pdfPane`, e su
+un Mac in modalità scura il riquadro seguiva il sistema mentre l'app — che `color-scheme` non lo
+dichiara — restava chiara. Il tema lo decide StudIA, non il viewer: il generatore adesso **toglie**
+`color-scheme` dai blocchi ricollocati (trasformazione 3, contata nel file generato), e `prova-pdf`
+misura che il riquadro abbia lo stesso `color-scheme` della radice dell'app. Una regola generata si
+misura sull'app viva E si guarda: la sonda coi rettangoli e le variabili era verde, la foto no.
 
 ## Per provare a mano
 

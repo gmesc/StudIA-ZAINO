@@ -27,8 +27,20 @@
  *     massicciamente per conto suo;
  *  2. i blocchi `:root` NON si annidano: `#pdfPane :root` non corrisponde a
  *     niente, e perderebbe tutte e 46 le variabili del viewer (bordi, margini,
- *     cursori: tutto rotto). Diventano `#pdfPane` a loro volta, così le
- *     variabili nascono dove servono invece che sulla radice del documento.
+ *     cursori). Diventano `&`, cioè il guscio stesso: così le variabili nascono
+ *     su `#pdfPane` invece che sulla radice del documento.
+ *     ⚠️ La prima stesura li riscriveva `#pdfPane` — ma DENTRO il guscio, e un
+ *     selettore annidato senza `&` è relativo al genitore: `#pdfPane #pdfPane`,
+ *     cioè niente. Misurato il 7 settembre 2026: le variabili erano vuote anche
+ *     dentro il riquadro, e nessuno se n'era accorto perché quei blocchi vestono
+ *     cose che l'app non usa (editor di annotazioni, firme, XFA, alto contrasto)
+ *     e i margini delle pagine li governa `removePageBorders`. Un `& { }` è la
+ *     forma che il nesting prevede per «questo stesso elemento», anche dentro un
+ *     `@media` annidato.
+ *  3. da quei blocchi si TOGLIE `color-scheme`: il viewer lo dichiara `light dark`
+ *     per il suo documento, ma qui il tema lo decide StudIA, e un riquadro che
+ *     segue il sistema mentre l'app non lo fa cambia colore alla sua barra di
+ *     scorrimento (misurato su un Mac in modalità scura: da 249 a 47 di grigio).
  */
 
 const fs = require('fs');
@@ -41,6 +53,8 @@ const USCITA = path.join(__dirname, '..', 'App', 'assets', 'pdfjs', 'pdf_viewer.
    ZERO — misurato: `_getVisiblePages()` vuota, nessun rendering, nessun
    errore da nessuna parte. Chi aggiunge un terzo riquadro lo aggiunge QUI. */
 const GUSCIO = ':is(#pdfPane, #pdfPane2)';
+/* Il selettore con cui rinascono i blocchi `:root` DENTRO il guscio: «il guscio stesso». */
+const RADICE = '&';
 
 /**
  * Trova i blocchi `:root { … }` di PRIMO livello e ne riscrive il selettore.
@@ -50,8 +64,19 @@ const GUSCIO = ':is(#pdfPane, #pdfPane2)';
  * ricorsiva chiuderebbe il blocco alla prima graffa che incontra — lasciando
  * fuori metà dichiarazioni e dentro un pezzo di sintassi rotta.
  */
+/** L'indice della graffa che CHIUDE il blocco aperto in `apertura` (l'indice di `{`), saltando i commenti. */
+function chiusuraDi(css, apertura) {
+  let depth = 0;
+  for (let k = apertura; k < css.length; k++) {
+    if (css.startsWith('/*', k)) { k = css.indexOf('*/', k + 2) + 1; continue; }
+    if (css[k] === '{') depth++;
+    else if (css[k] === '}' && --depth === 0) return k;
+  }
+  return -1;
+}
+
 function riscriviRoot(css) {
-  let out = '', i = 0, quanti = 0;
+  let out = '', i = 0, quanti = 0, schemi = 0;
   while (i < css.length) {
     const j = css.indexOf(':root', i);
     if (j < 0) { out += css.slice(i); break; }
@@ -61,16 +86,20 @@ function riscriviRoot(css) {
     const prima = css.slice(Math.max(0, j - 1), j);
     const attaccato = /[\w.#\-[\]:)]/.test(prima) || /[\w:([]/.test(dopo);
     if (attaccato) { out += css.slice(i, j + 5); i = j + 5; continue; }
-    out += css.slice(i, j) + GUSCIO;
+    // il blocco intero, per togliergli `color-scheme` (trasformazione 3)
+    const apre = css.indexOf('{', j + 5), chiude = chiusuraDi(css, apre);
+    let blocco = css.slice(apre, chiude + 1);
+    blocco = blocco.replace(/^[ \t]*color-scheme:[^;]*;[ \t]*\n/mg, () => { schemi++; return ''; });
+    out += css.slice(i, j) + RADICE + blocco;
     quanti++;
-    i = j + 5;
+    i = chiude + 1;
   }
-  return { css: out, quanti };
+  return { css: out, quanti, schemi };
 }
 
 function main() {
   const grezzo = fs.readFileSync(SORGENTE, 'utf8');
-  const { css, quanti } = riscriviRoot(grezzo);
+  const { css, quanti, schemi } = riscriviRoot(grezzo);
 
   const testa = [
     '/* GENERATO DA bin/pdfjs-css.js — NON MODIFICARE A MANO.',
@@ -79,8 +108,10 @@ function main() {
     ' * il suo `.sidebar` riscrive l\'indice dei capitoli di StudIA, che ha lo stesso',
     ' * nome di classe e meno fortuna nell\'ordine di caricamento.',
     ' *',
-    ' * I ' + quanti + ' blocchi `:root` sono diventati `' + GUSCIO + '`: annidati non',
-    ' * corrisponderebbero a niente e le variabili del viewer sparirebbero tutte.',
+    ' * I ' + quanti + ' blocchi `:root` sono diventati `' + RADICE + '` — il guscio stesso: riscritti',
+    ' * come `' + GUSCIO + '` ma annidati corrispondevano a niente, e le variabili del',
+    ' * viewer non arrivavano (misurato il 7 settembre 2026). Da quei blocchi è tolto',
+    ' * `color-scheme` (' + schemi + '): il tema lo decide StudIA, non il viewer.',
     ' *',
     ' * Si rigenera con:  node bin/pdfjs-css.js',
     ' */',
@@ -93,8 +124,8 @@ function main() {
 
   const kb = (n) => Math.round(n / 1024) + ' KB';
   console.log('pdf_viewer.css  ' + kb(grezzo.length) + '  →  pdf_viewer.scoped.css  ' + kb(fuori.length));
-  console.log('blocchi :root riscritti come ' + GUSCIO + ': ' + quanti);
+  console.log('blocchi :root riscritti come ' + RADICE + ' (il guscio stesso): ' + quanti + ' · color-scheme tolti: ' + schemi);
 }
 
 if (require.main === module) main();
-module.exports = { riscriviRoot, SORGENTE, USCITA, GUSCIO };
+module.exports = { riscriviRoot, chiusuraDi, SORGENTE, USCITA, GUSCIO, RADICE };

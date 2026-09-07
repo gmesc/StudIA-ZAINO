@@ -6060,11 +6060,14 @@ function pdfjsAvvia(){
          bianco, tutti a DESTRA perché senza `margin:auto` la pagina sta a
          sinistra — e adesso è 465, con a destra soltanto la barra.
          Il nome dell'opzione parla di bordi perché di norma toglie anche il
-         `border:9px solid transparent` di `.page`: qui non toglie niente,
-         perché quel bordo non c'è mai stato — le variabili che lo dichiarano
-         (`--page-border`, `--page-margin`) nascono in un blocco che
-         `bin/pdfjs-css.js` annida sotto il guscio, e `#pdfPane #pdfPane` non
-         corrisponde a niente. Ciò che cambia davvero, oltre alla larghezza, è
+         `border:9px solid transparent` di `.page`: qui lo toglie la sua regola
+         `.removePageBorders .page` (`border:none`), che vince sulle variabili
+         del viewer (`--page-border`, `--page-margin`). ⚠️ Fino al 7 settembre
+         2026 quelle variabili non arrivavano affatto: `bin/pdfjs-css.js` le
+         riscriveva `#pdfPane` ma annidate sotto il guscio, e `#pdfPane #pdfPane`
+         non corrisponde a niente; adesso nascono su `#pdfPane` con `&`, e la
+         geometria delle pagine non cambia perché la governa questa opzione.
+         Ciò che cambia davvero, oltre alla larghezza, è
          che la regola `.removePageBorders .page` porta con sé `margin:0 auto
          10px`: le pagine si staccano di dieci pixel invece di toccarsi. */
       removePageBorders:true,

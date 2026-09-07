@@ -4,8 +4,10 @@
  * il suo `.sidebar` riscrive l'indice dei capitoli di StudIA, che ha lo stesso
  * nome di classe e meno fortuna nell'ordine di caricamento.
  *
- * I 7 blocchi `:root` sono diventati `:is(#pdfPane, #pdfPane2)`: annidati non
- * corrisponderebbero a niente e le variabili del viewer sparirebbero tutte.
+ * I 7 blocchi `:root` sono diventati `&` — il guscio stesso: riscritti
+ * come `:is(#pdfPane, #pdfPane2)` ma annidati corrispondevano a niente, e le variabili del
+ * viewer non arrivavano (misurato il 7 settembre 2026). Da quei blocchi è tolto
+ * `color-scheme` (1): il tema lo decide StudIA, non il viewer.
  *
  * Si rigenera con:  node bin/pdfjs-css.js
  */
@@ -1244,13 +1246,13 @@
   }
 }
 
-:is(#pdfPane, #pdfPane2){
+&{
   --xfa-unfocused-field-background:url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
   --xfa-focus-outline:auto;
 }
 
 @media screen and (forced-colors: active){
-  :is(#pdfPane, #pdfPane2){
+  &{
     --xfa-focus-outline:2px solid CanvasText;
   }
   .xfaLayer *:required{
@@ -1878,7 +1880,7 @@
   }
 }
 
-:is(#pdfPane, #pdfPane2){
+&{
   --clear-signature-button-icon:url(images/editor-toolbar-delete.svg);
   --signature-bg:light-dark(#f9f9fb, #2b2a33);
   --signature-hover-bg:light-dark(#f0f0f4, var(--signature-bg));
@@ -3372,7 +3374,7 @@
   }
 }
 
-:is(#pdfPane, #pdfPane2){
+&{
   --editor-toolbar-vert-offset:6px;
   --outline-width:2px;
   --outline-color:#0060df;
@@ -3434,13 +3436,13 @@
 }
 
 @media (min-resolution: 1.1dppx){
-  :is(#pdfPane, #pdfPane2){
+  &{
     --editorFreeText-editing-cursor:url(images/cursor-editorFreeText.svg) 0 16, text;
   }
 }
 
 @media screen and (forced-colors: active){
-  :is(#pdfPane, #pdfPane2){
+  &{
     --outline-color:CanvasText;
     --outline-around-color:ButtonFace;
     --resizer-bg-color:ButtonText;
@@ -6139,8 +6141,7 @@ button.hasPopupMenu{
   }
 }
 
-:is(#pdfPane, #pdfPane2){
-  color-scheme:light dark;
+&{
 
   --viewer-container-height:0;
   --pdfViewer-padding-bottom:0;
