@@ -83,12 +83,18 @@ gli screenshot rigenerati e il sito. Sul codice unito: `npm test` verde, ZAINO 3
 - Tutti e due contengono la guida rigenerata e il guscio corretto (misurato dentro i bundle: stesso
   md5 dello screenshot della chat, 7 blocchi `&`, `color-scheme` tolto).
 
-**GitHub.** Il repo `gmesc/studia-zaino` esiste ed è vuoto. Il piano: `origin` sul fork, push di
-`main` e del tag `v1.1.0`, e una **Release** `v1.1.0` con i due installer come allegati (GitHub
-rifiuta file sopra i 100 MB dentro il repo; gli allegati delle Releases arrivano a 2 GB). Il sito
-punta già a `…/releases/latest`. ⚠️ Il push non è partito da una sessione Claude: il classificatore
-dei permessi lo blocca, ed è la cosa giusta — pubblicare codice si decide a mano. I comandi stanno
-nel messaggio di chiusura di quella sessione e sono tre righe.
+**GitHub.** Il fork ha il suo repo: `origin` = `git@github.com:gmesc/StudIA-ZAINO.git` (l'`upstream`
+resta la cartella dell'app originale). `main` e il tag `v1.1.0` sono stati spinti il 7 settembre, su
+richiesta esplicita. ⚠️ Il primo tentativo l'aveva fermato il classificatore dei permessi: in
+`~/.claude/settings.json` la sezione `autoMode.environment`, scritta per un altro progetto
+(rizzo-pii), dichiara fidato solo quel remote. Il push si fa solo quando lo chiede l'utente, e le
+due strade per non farlo bloccare (regola `Bash(git push *)` in `.claude/settings.local.json`, o
+una riga in `autoMode.environment` che nomina questo repo) stanno nella chat di quel giorno.
+Quel che resta è la **Release** `v1.1.0` con i due installer come allegati: GitHub rifiuta file
+sopra i 100 MB dentro il repo, gli allegati delle Releases arrivano a 2 GB, e il sito punta già a
+`…/releases/latest`. Da una sessione Claude non si carica: niente `gh`, e il caricamento via Chrome
+ha un tetto di 10 MB per file. Si fa dalla pagina Releases (trascinando i due file di `dist/`) o con
+`gh release create v1.1.0 <dmg> <exe>` dopo `brew install gh && gh auth login`.
 
 A ogni versione: `npm run notarizza`, `npm run dist:win`, poi la Release nuova con i due file.
 
