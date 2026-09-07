@@ -11,7 +11,8 @@
  * fuori dalla cartella, in `App/assets/`). Una seconda copia da mantenere a mano
  * divergerebbe al primo ritocco: questo script è la ricetta, `dist/sito/` il prodotto.
  *
- *     node bin/sito.js            costruisce e verifica (ogni <img> deve esistere)
+ *     node bin/sito.js            costruisce in dist/sito/ e verifica (ogni <img> deve esistere)
+ *     SITO_USCITA=~/Claude/insegnai.ch/studia-zaino node bin/sito.js     scrive nella cartella del sito
  *
  * Gli screenshot si rigenerano prima, sull'app viva: `bash bin/guida-zaino.sh`.
  */
@@ -21,7 +22,10 @@ const path = require('path');
 const RADICE = path.join(__dirname, '..');
 const GUIDA = path.join(RADICE, 'App', 'guida-zaino');
 const SITO = path.join(RADICE, 'sito');
-const USCITA = path.join(RADICE, 'dist', 'sito');
+/* Dove scrivere. Di norma `dist/sito/`; con SITO_USCITA si scrive DIRETTAMENTE nella cartella del
+   sito (es. ~/Claude/insegnai.ch/studia-zaino), che può contenere altro: non si svuota la radice,
+   si riscrivono i nostri file e si rifà soltanto `guida/`, che è tutta nostra. */
+const USCITA = process.env.SITO_USCITA ? path.resolve(process.env.SITO_USCITA) : path.join(RADICE, 'dist', 'sito');
 const OGGI = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 const URL_SITO = 'https://www.insegnai.ch/studia-zaino/';
 
@@ -99,12 +103,14 @@ function peso(dir) {
 }
 
 function main() {
-  if (fs.existsSync(USCITA)) fs.rmSync(USCITA, { recursive: true });   // solo la NOSTRA uscita, sotto dist/
+  // si rifà solo `guida/` (tutta nostra); la radice può ospitare altro e non si tocca
+  fs.rmSync(path.join(USCITA, 'guida'), { recursive: true, force: true });
+  fs.mkdirSync(USCITA, { recursive: true });
   const immagini = guida();
   presentazione();
   const problemi = verifica();
   if (problemi.length) { console.error('✗ riferimenti rotti:\n  ' + problemi.join('\n  ')); process.exit(1); }
-  console.log('dist/sito/  ·  guida con ' + immagini + ' immagini  ·  ' + Math.round(peso(USCITA) / 1024 / 1024) + ' MB  ·  v=' + OGGI);
+  console.log(path.relative(process.cwd(), USCITA) + '/  ·  guida con ' + immagini + ' immagini  ·  ' + Math.round(peso(USCITA) / 1024 / 1024) + ' MB  ·  v=' + OGGI);
 }
 
 if (require.main === module) main();
