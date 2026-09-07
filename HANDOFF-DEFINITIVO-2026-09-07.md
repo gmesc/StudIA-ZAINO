@@ -258,6 +258,15 @@ si ferma se una `<img>` delle due pagine non esiste. La presentazione (`sito/ind
 download rimanda a `https://github.com/gmesc/StudIA-ZAINO/releases`. Verificate nel browser a 1280
 e a 375 px: nessuna immagine rotta, nessuno scorrimento orizzontale, indice e lightbox della guida.
 
+**La ricetta parte da sola.** `bin/hooks/post-commit`: a ogni commit che tocca `sito/`,
+`App/guida-zaino/`, `bin/sito.js`, il marchio o il font, lancia `node bin/sito.js` con
+`SITO_USCITA=~/Claude/insegnai.ch/studia-zaino` (se la cartella c'è; altrimenti solo `dist/sito/`).
+Un post-commit non ferma il commit: se fallisce lo dice. ⚠️ Git non versiona gli hook, la cartella
+sì: in ogni copia del repo si attiva UNA volta con `git config core.hooksPath bin/hooks` (fatto su
+questo Mac il 7 settembre). Quel che resta a mano è caricare la cartella sul sito, e rigenerare gli
+screenshot quando cambia l'interfaccia (`bash bin/guida-zaino.sh`): quello apre Electron per minuti,
+non è cosa da hook.
+
 ## Che cosa resta aperto
 
 - Il ramo `registri-zaino-corsi` dell'app originale ha ancora i registri di ieri (15 e 43) e le prove

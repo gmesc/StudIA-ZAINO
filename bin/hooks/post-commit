@@ -1,0 +1,22 @@
+#!/bin/bash
+# Dopo ogni commit che tocca il SITO — presentazione, guida dell'app, suoi screenshot, generatore —
+# la ricetta parte da sola: `node bin/sito.js` scrive in ~/Claude/insegnai.ch/studia-zaino (se la
+# cartella esiste) e in dist/sito/. Così i file da caricare sul sito sono sempre quelli dell'ultimo
+# commit, senza che nessuno debba ricordarsi di rifarli.
+#
+# Si attiva UNA volta per copia del repo (git non versiona gli hook, questa cartella sì):
+#     git config core.hooksPath bin/hooks
+#
+# Un post-commit non può fermare il commit, e non deve: se qualcosa va storto lo dice e basta.
+set -u
+cd "$(git rev-parse --show-toplevel)" || exit 0
+TOCCATI="$(git diff-tree --no-commit-id --name-only -r HEAD 2>/dev/null)"
+printf '%s\n' "$TOCCATI" | grep -qE '^(sito/|App/guida-zaino/|bin/sito\.js$|App/assets/1F392\.svg$|App/assets/fonts/)' || exit 0
+command -v node >/dev/null 2>&1 || { echo "  sito: manca node, ricetta non lanciata"; exit 0; }
+SITO="$HOME/Claude/insegnai.ch/studia-zaino"
+if [ -d "$SITO" ]; then
+  SITO_USCITA="$SITO" node bin/sito.js || echo "  ✗ sito: la ricetta è fallita (vedi sopra) — il commit resta"
+else
+  node bin/sito.js || echo "  ✗ sito: la ricetta è fallita (vedi sopra) — il commit resta"
+  echo "  sito: $SITO non c'è, scritto solo in dist/sito/"
+fi
