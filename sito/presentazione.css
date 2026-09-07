@@ -108,14 +108,23 @@ figcaption b{ color:var(--ink); }
 /* ---- i tre pilastri ---- */
 .pilastri{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1.2rem; margin-top:1.4rem; }
 @media (max-width:900px){ .pilastri{ grid-template-columns:1fr; } }
-.pilastro{ background:var(--panel); border:1px solid var(--line); padding:1.2rem; display:flex; flex-direction:column; gap:.7rem; border-top:4px solid var(--teal); }
+.pilastro{ background:var(--panel); border:1px solid var(--line); padding:0 0 1.2rem; display:flex; flex-direction:column; gap:.7rem; border-top:4px solid var(--teal); }
+.pilastro > *:not(figure){ margin-left:1.2rem; margin-right:1.2rem; }
+/* l'immagine apre la card, a tutta larghezza e un po' più alta della cornice 3:2: è lei che si guarda */
+.pilastro figure{ margin:0 0 .4rem; order:-1; }
+.pilastro figure img{ aspect-ratio:4/3; border-width:0 0 1px; }
+.pilastro figcaption{ padding:.4rem 1.2rem 0; }
+.pilastro details{ border-top:1px solid var(--line-weak); padding-top:.5rem; }
+.pilastro summary{ cursor:pointer; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--teal-strong); list-style:none; }
+.pilastro summary::before{ content:"+ "; }
+.pilastro details[open] summary::before{ content:"− "; }
+.pilastro details ul{ margin-top:.5rem; }
 .pilastro.giallo{ border-top-color:var(--yellow); }
 .pilastro.blu{ border-top-color:var(--blue); }
 .pilastro .num{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.16em; color:var(--muted); }
 .pilastro h3{ font-size:1.25rem; }
 .pilastro ul{ margin:0; padding-left:1.1rem; }
 .pilastro li{ margin:.2rem 0; }
-.pilastro figure{ margin-top:auto; }
 .pilastro .icona{ font-size:30px; line-height:1; }
 
 /* ---- griglie di immagini ---- */
