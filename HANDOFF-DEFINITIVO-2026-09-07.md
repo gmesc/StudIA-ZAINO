@@ -248,7 +248,7 @@ rigenerano prima, sull'app viva e su un vault di prova: `bash bin/guida-zaino.sh
 ne sono cambiati 48 su 125, perché quelli della chat erano di prima del suo vestito). Il generatore
 si ferma se una `<img>` delle due pagine non esiste. La presentazione (`sito/index.html`,
 `sito/presentazione.css`) usa gli stessi token della guida e le sue immagini (`guida/img/…`); il
-download rimanda a `https://github.com/gmesc/studia-zaino/releases`. Verificate nel browser a 1280
+download rimanda a `https://github.com/gmesc/StudIA-ZAINO/releases`. Verificate nel browser a 1280
 e a 375 px: nessuna immagine rotta, nessuno scorrimento orizzontale, indice e lightbox della guida.
 
 ## Che cosa resta aperto
