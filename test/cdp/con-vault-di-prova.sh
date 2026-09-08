@@ -184,7 +184,8 @@ esac
 # e cadeva in ogni catena ZAINO passando da sola. Ora toglie la chiave viva (`bancoChiave()`).
 PROVE_ZAINO=(
   prova-stampa.js prova-banco-avvio.js prova-banco-ripristino.js prova-banco-griglia.js
-  prova-media-punto.js prova-appunto-riga.js prova-mappa-pallino.js prova-topbar-stile.js
+  prova-media-punto.js prova-vocabolario-zaino.js prova-appunto-riga.js prova-mappa-pallino.js
+  prova-topbar-stile.js
   prova-tbar.js prova-appunti-barra.js prova-appunti-md.js prova-callout-bolla.js
   prova-riquadri-stili.js prova-maniglia-indice.js prova-pdf.js prova-pagina-campo.js
   prova-righello.js prova-voce-pagina.js prova-ricerca-pannellino.js prova-lente-mappe.js
@@ -223,7 +224,7 @@ PROVE_CORSI=(
 if [ $# -gt 0 ]; then PROVE=("$@");
 elif [ "${STUDIA_SUITE:-}" = "zaino" ]; then PROVE=("${PROVE_ZAINO[@]}");
 elif [ "${STUDIA_SUITE:-}" = "corsi" ]; then PROVE=("${PROVE_CORSI[@]}");
-else PROVE=(prova-b1.js prova-stampa.js prova-b2.js prova-banco-avvio.js prova-banco-contenuto.js prova-banco-ripristino.js prova-banco-griglia.js prova-media-punto.js prova-menu.js prova-selezione-menu.js prova-note.js prova-appunto-riga.js prova-keyword.js prova-mappe-ui.js prova-mappa-trascina.js prova-mappa-pallino.js prova-l1.js prova-l2.js prova-l3l4.js prova-topbar.js prova-topbar-stile.js prova-tbar.js prova-appunti-barra.js prova-appunti-md.js prova-callout-bolla.js prova-riquadri-stili.js prova-maniglia-indice.js prova-wikilink.js prova-identita-capitoli.js prova-pdf.js prova-pagina-campo.js prova-righello.js prova-voce-pagina.js prova-ricerca-pannellino.js prova-lente-punto.js prova-lente-mappe.js prova-confronto.js prova-testolayer.js prova-album.js prova-album-trascina.js prova-foto.js prova-misura-immagine.js prova-memorie.js prova-tendine.js prova-modo.js prova-tasti-frecce.js prova-zaino.js prova-evidenze-pdf.js prova-fonti.js prova-fonte-rimossa.js prova-import.js prova-ocr-zaino.js prova-player.js prova-media-nonapre.js prova-ripasso.js prova-ripasso-vista.js prova-crediti.js prova-impostazioni-token.js prova-onboarding-token.js prova-primo-avvio.js prova-atlante.js prova-emoji.js prova-evidenziatore.js prova-evidenza-appunto.js prova-sbircia.js prova-postilla.js prova-postilla-zaino.js prova-postille-vista.js prova-strati.js); fi
+else PROVE=(prova-b1.js prova-stampa.js prova-b2.js prova-banco-avvio.js prova-banco-contenuto.js prova-banco-ripristino.js prova-banco-griglia.js prova-media-punto.js prova-vocabolario-zaino.js prova-menu.js prova-selezione-menu.js prova-note.js prova-appunto-riga.js prova-keyword.js prova-mappe-ui.js prova-mappa-trascina.js prova-mappa-pallino.js prova-l1.js prova-l2.js prova-l3l4.js prova-topbar.js prova-topbar-stile.js prova-tbar.js prova-appunti-barra.js prova-appunti-md.js prova-callout-bolla.js prova-riquadri-stili.js prova-maniglia-indice.js prova-wikilink.js prova-identita-capitoli.js prova-pdf.js prova-pagina-campo.js prova-righello.js prova-voce-pagina.js prova-ricerca-pannellino.js prova-lente-punto.js prova-lente-mappe.js prova-confronto.js prova-testolayer.js prova-album.js prova-album-trascina.js prova-foto.js prova-misura-immagine.js prova-memorie.js prova-tendine.js prova-modo.js prova-tasti-frecce.js prova-zaino.js prova-evidenze-pdf.js prova-fonti.js prova-fonte-rimossa.js prova-import.js prova-ocr-zaino.js prova-player.js prova-media-nonapre.js prova-ripasso.js prova-ripasso-vista.js prova-crediti.js prova-impostazioni-token.js prova-onboarding-token.js prova-primo-avvio.js prova-atlante.js prova-emoji.js prova-evidenziatore.js prova-evidenza-appunto.js prova-sbircia.js prova-postilla.js prova-postilla-zaino.js prova-postille-vista.js prova-strati.js); fi
 
 KO=0
 ROSSE=()

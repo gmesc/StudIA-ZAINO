@@ -197,11 +197,11 @@ sezione('Rinominare uno zaino: il titolo e la cartella');
      contenitori con un id solo. */
   Z.crea(VAULT, 'Chimica', QUANDO);
   check('un nome già preso è rifiutato',
-    { error: 'esiste già un corso o uno zaino con questo nome' },
+    { error: 'esiste già una cartella con questo nome' },
     Z.rinomina(VAULT, 'storia-romana-antica', 'Chimica'));
   fs.mkdirSync(path.join(VAULT, 'Corsi', 'fisica'), { recursive: true });
   check('anche se il nome è di un CORSO',
-    { error: 'esiste già un corso o uno zaino con questo nome' },
+    { error: 'esiste già una cartella con questo nome' },
     Z.rinomina(VAULT, 'storia-romana-antica', 'Fisica'));
   check('un nome vuoto è rifiutato', { error: 'dai un nome allo zaino' },
     Z.rinomina(VAULT, 'storia-romana-antica', '   '));

@@ -18576,7 +18576,11 @@ function mappaRidisegna(){
   if(!g || !g.nodi.length){
     svg.innerHTML=''; svg.removeAttribute('viewBox');
     if(vuota){ vuota.hidden=false;
-      vuota.textContent = mappaMie() ? mappaTestoVuotoMie()
+      /* ⚠️ La domanda è `mappaGenerateQui()`, la stessa che decide il registro: dove le mappe
+         generate non esistono, il vuoto è sempre quello delle mappe TUE. Senza questa condizione
+         un registro rimasto su «generata» per un istante scriveva «scegli un corso e una lezione»
+         a chi un corso non ce l'ha e non può averlo. */
+      vuota.textContent = (mappaMie() || !mappaGenerateQui()) ? mappaTestoVuotoMie()
                         : LESSON ? 'Questo capitolo non ha titoli di sezione né punti chiave: non c’è ancora niente da mappare.'
                                  : 'Nessuna lezione aperta: scegli un corso e una lezione per vederne la mappa.'; }
     $('#mMisure') && ($('#mMisure').textContent='');
@@ -18653,6 +18657,10 @@ function mappaTestoVuotoMie(){
   if(MAPPA.elencoErrore) return 'Non riesco a leggere le tue mappe: '+MAPPA.elencoErrore;
   if(MAPPA.mia.file) return 'Questa mappa non ha ancora nodi.';
   if(MAPPA.elenco.length) return 'Scegli una delle tue mappe dal menu qui sopra.';
+  /* ⚠️ Il consiglio deve nominare cose che esistono QUI. Dove non ci sono mappe generate non
+     c'è nemmeno il registro «Generata», e mandare l'utente a premere «Modifica una copia» lo
+     manda a cercare un bottone che non c'è. La domanda è la stessa del registro. */
+  if(!mappaGenerateQui()) return 'Non hai ancora mappe in questo zaino. Premi «+» per crearne una.';
   return 'Non hai ancora mappe in questo corso. «+» ne crea una, oppure torna su «Generata» e premi «Modifica una copia» per partire da quella calcolata dal capitolo.';
 }
 

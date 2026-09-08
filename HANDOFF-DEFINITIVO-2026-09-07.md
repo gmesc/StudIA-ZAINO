@@ -303,11 +303,34 @@ Verificato: `npm test` verde, ZAINO **34 su 34** (759 controlli), 116 immagini t
 nessuna ancora interna rotta, indice di 13 voci, lightbox, nessuno scorrimento orizzontale a 1280 e
 a 375 px.
 
-⚠️ **Restano tre messaggi dell'app che nominano i corsi** e che l'utente può leggere: «esiste già un
-corso o uno zaino con questo nome» (`lib/zaini.js`, due volte), «materiali del corso»
-(`App/StudIA.html`, due volte), «Nessuna lezione aperta». La guida non li cita: descrive il
-comportamento. Cambiarli è un lavoro a sé — il primo deve restare vero anche quando il nome è
-occupato da una cartella di `Corsi/`, che qui non si vede.
+### E i messaggi dell'app, la sera dell'8
+
+Dei tre segnalati, **due erano commenti** nel codice («materiali del corso») e **uno si adattava già**
+da solo: il rimando orfano dice «…non è fra i materiali di questo zaino». Guardare invece di
+ricordare ha spostato il lavoro dove serviva davvero:
+
+- ⚠️ **«esiste già un corso o uno zaino con questo nome»** → **«esiste già una cartella con questo
+  nome»** (`lib/zaini.js`, creazione e rinomina). Il controllo guarda DUE radici, `Zaini/` e
+  `Corsi/`: promettere «uno zaino» manderebbe a cercarlo in un elenco dove non c'è. La frase nuova
+  dice il fatto — sul disco quel nome è preso — e resta vera in tutti e due i casi. `test/zaini.js`
+  la segue (54 controlli).
+- ⚠️ **Il vuoto della mappa.** Il testo che l'utente legge davvero diceva «Non hai ancora mappe in
+  questo **corso**. «+» ne crea una, oppure torna su **«Generata»** e premi «Modifica una copia» per
+  partire da quella calcolata dal **capitolo**». Tre cose che qui non esistono, e un bottone da
+  cercare invano. Adesso, dove le mappe generate non ci sono, dice «Non hai ancora mappe in questo
+  zaino. Premi «+» per crearne una.» Stessa domanda del registro (`mappaGenerateQui()`), non una
+  condizione nuova. Chiuso anche il testo dell'altro ramo («Nessuna lezione aperta»), irraggiungibile
+  ma pronto a uscire.
+
+**La guardia:** `test/cdp/prova-vocabolario-zaino.js`, nei due registri (ZAINO diventa **35**, la
+suite intera **70**). Non prova le parole esatte, che cambiano: prova che le parole **vietate** —
+corso, corsi, lezione, lezioni, capitolo, capitoli — non compaiano nel vuoto della mappa e nel
+rifiuto di un nome già preso. Vista rossa tutte e due le volte, rimettendo i messaggi di prima.
+
+⚠️ E la prova ha pagato subito la trappola di sempre: passava da sola e cadeva in catena, perché
+ereditava una mappa aperta e il riquadro del vuoto non compare con un grafo a schermo. Adesso chiude
+la mappa prima di misurare. (L'id di quel riquadro è `mVuota`, non `mappaVuota`: la prima sonda lo
+trovava per un selettore di riserva, e il selettore di riserva nascondeva l'errore.)
 
 ## Che cosa resta aperto
 
