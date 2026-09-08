@@ -433,7 +433,7 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
     await bloccoLargo('C');
     const mb = await L.rect('#mappaView .mtoolbar');
     await L.banda(mb, { altezza: 36 });
-    await L.numeri([{ sel: '#mRegistro', n: 1, dove: 'b' }, { sel: '#mappaView .tendina.piccola', n: 2, dove: 'b' }, { sel: '#mNuova', n: 3, dove: 'b' }, { sel: '#mRinomina', n: 4, dove: 'b' }, { sel: '#mCestino', n: 5, dove: 'b' }, { sel: '#mMemorie', n: 6, dove: 'b' }, { sel: '#mOrient', n: 7, dove: 'b' }, { sel: '#mVista', n: 8, dove: 'b' }, { sel: '#mStampa', n: 9, dove: 'b' }, { sel: '#mPdf', n: 10, dove: 'b' }, { sel: '#mAdatta', n: 11, dove: 'b' }, { sel: '#mChiudi', n: 12, dove: 'b' }], { filo: mb.y + mb.h + 6 });
+    await L.numeri([{ sel: '#mappaView .tendina.piccola', n: 1, dove: 'b' }, { sel: '#mNuova', n: 2, dove: 'b' }, { sel: '#mRinomina', n: 3, dove: 'b' }, { sel: '#mCestino', n: 4, dove: 'b' }, { sel: '#mMemorie', n: 5, dove: 'b' }, { sel: '#mOrient', n: 6, dove: 'b' }, { sel: '#mVista', n: 7, dove: 'b' }, { sel: '#mStampa', n: 8, dove: 'b' }, { sel: '#mPdf', n: 9, dove: 'b' }, { sel: '#mAdatta', n: 10, dove: 'b' }, { sel: '#mChiudi', n: 11, dove: 'b' }]);   /* ⚠️ Niente #mRegistro: il registro «Generata / Mie» qui non esiste, e numerarlo lasciava lo scatto senza il numero 1. */
     await L.scatta('68-mappabar-numerata', { clip: { x: mb.x, y: mb.y - 2, width: mb.w, height: mb.h + 38 }, scala: 3 });
     await L.overlayPulisci();
     const nk = await L.val(`MAPPA.mia.grafo.nodi.find(n=>n.testo==='perielio').id`);

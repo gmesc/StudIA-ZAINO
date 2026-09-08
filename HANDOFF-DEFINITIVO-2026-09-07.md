@@ -269,6 +269,46 @@ questo Mac il 7 settembre). Quel che resta a mano è caricare la cartella sul si
 screenshot quando cambia l'interfaccia (`bash bin/guida-zaino.sh`): quello apre Electron per minuti,
 non è cosa da hook.
 
+## La guida riscritta in lingua controllata — 8 settembre
+
+`App/guida-zaino/index.html` è stata riscritta da cima a fondo. Due richieste, tutte e due misurate.
+
+**1. Niente corsi, lezioni, capitoli, mappe generate.** Erano nominati in 9 punti: il riquadro
+d'apertura, il nome dello zaino, il contesto del tutor, il registro «Generata / Mie» della mappa
+(due capitoli), i tasti, l'elenco finale e il glossario. Restano soltanto la parola «capitolo» per
+i capitoli DI QUESTA GUIDA e il nome di file `97-ocr-in-corso.png`.
+
+**2. Lingua controllata, sul modello ASD-STE100.** Le undici regole stanno in un commento in testa
+al file, dove le legge chi modifica: frasi corte, una informazione per frase, presente indicativo,
+voce attiva, soggetto esplicito, una parola per una cosa, niente metafore, niente incisi fra
+lineette, ⚠️ prima dell'istruzione, prima il positivo, sequenze in elenco numerato. Il glossario del
+capitolo 13 fissa i venti termini e ha una voce per ognuno. Misurato sul testo reso: **1203 frasi,
+media 7,8 parole a frase, 4 sopra le 30 parole** (e quelle quattro sono elenchi che il contatore
+concatena, non frasi).
+
+⚠️ **Tre errori veri trovati riscrivendo**, e chiusi:
+- la guida diceva **nove** strumenti dove sono **otto** (`bancoStrumentiOfferti` toglie `capitolo`
+  e `flashcard`: restano Fonti, Player, Appunti, Mappa, Parole chiave, Ritagli, Album Foto, Postille);
+- diceva che il titolo di uno zaino **non si può cambiare**, e due capitoli dopo spiegava come si
+  cambia;
+- diceva che un documento **si rinomina** dalla barra, mentre il comando non esiste.
+
+⚠️ **E un difetto dell'app**, chiuso: nella barra della mappa l'etichetta «Motore» restava accesa
+accanto alle cinque memorie e dava loro il nome di un'altra cosa. `#mMotore` si nascondeva, la sua
+etichetta no. È l'**etichetta orfana**, parente della barretta orfana del §5bis. Adesso segue il suo
+gruppo. Lo scatto `68-mappabar-numerata` era numerato **da 2 a 12**, perché la campagna numerava un
+registro che qui non esiste: adesso è 1-11 e combacia con la legenda.
+
+Verificato: `npm test` verde, ZAINO **34 su 34** (759 controlli), 116 immagini tutte presenti,
+nessuna ancora interna rotta, indice di 13 voci, lightbox, nessuno scorrimento orizzontale a 1280 e
+a 375 px.
+
+⚠️ **Restano tre messaggi dell'app che nominano i corsi** e che l'utente può leggere: «esiste già un
+corso o uno zaino con questo nome» (`lib/zaini.js`, due volte), «materiali del corso»
+(`App/StudIA.html`, due volte), «Nessuna lezione aperta». La guida non li cita: descrive il
+comportamento. Cambiarli è un lavoro a sé — il primo deve restare vero anche quando il nome è
+occupato da una cartella di `Corsi/`, che qui non si vede.
+
 ## Che cosa resta aperto
 
 - Il ramo `registri-zaino-corsi` dell'app originale ha ancora i registri di ieri (15 e 43) e le prove

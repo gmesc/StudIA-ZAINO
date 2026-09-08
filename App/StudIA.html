@@ -19478,7 +19478,7 @@ function mappaRidimensionaImmagine(id, verso){
 /** Disegna i cinque bottoni. Uno slot vuoto SI VEDE che è vuoto: quattro pieni
  *  e uno libero non devono obbligare a indovinare quale sia. */
 function mappaMemorieDisegna(){
-  var box=$('#mMemorie'), mot=$('#mMotore');
+  var box=$('#mMemorie'), mot=$('#mMotore'), lab=$('#mMotoreLab');
   if(!box) return;
   var mie=mappaMie();
   /* Su una mappa tua il motore è un mezzo e la disposizione è il fine: la barra
@@ -19486,6 +19486,11 @@ function mappaMemorieDisegna(){
      tela. Sulla mappa generata è il contrario — lì non c'è niente da salvare. */
   box.hidden=!mie;
   if(mot) mot.hidden=!!mie;
+  /* ⚠️ L'etichetta segue il suo gruppo. Da sola restava accesa sopra le cinque
+     memorie e le dava il nome di un'altra cosa: la barra diceva «Motore» e
+     mostrava le disposizioni salvate. È l'etichetta orfana, il parente della
+     barretta orfana del §5bis. */
+  if(lab) lab.hidden=!!mie;
   if(!mie){ box.innerHTML=''; return; }
   var l=mappaMemorie();
   box.innerHTML=l.map(function(m,i){
@@ -21404,7 +21409,7 @@ window.addEventListener('keydown', function(e){
     <button class="mbtn" id="mRinomina" type="button" hidden title="Rinomina questa mappa" aria-label="Rinomina questa mappa">&#9998;</button>
     <button class="mbtn" id="mCestino" type="button" hidden title="Elimina questa mappa" aria-label="Elimina questa mappa">&#128465;</button>
     <span class="msep" aria-hidden="true"></span>
-    <span class="metichetta">Motore</span>
+    <span class="metichetta" id="mMotoreLab">Motore</span>
     <span class="mseg" id="mMotore" role="group" aria-label="Motore di disposizione">
       <button type="button" data-motore="albero" aria-pressed="true" title="Albero: la gerarchia pura">Albero</button>
       <button type="button" data-motore="dag" aria-pressed="false" title="DAG: livelli, con gli archi che saltano">DAG</button>
