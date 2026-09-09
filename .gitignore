@@ -46,7 +46,22 @@ graphify-out/
 
 /node_modules
 
-# Il mockup d'approvazione si GENERA dal codice vero (`node docs/mockup-chat/genera.js`):
-# versionarlo vorrebbe dire un diff da 250 KB a ogni ritocco del CSS, e una copia
-# che invecchia in silenzio accanto al file che la produce.
-docs/mockup-chat/index.html
+# I documenti di lavoro e di sviluppo restano sul computer di chi scrive l'app,
+# non nel repository pubblico: sono note personali, non servono a chi compila o
+# legge il codice. Stanno ancora tutti su disco, semplicemente git non li segue.
+CLAUDE.md
+GUIDA-ARCHITETTO.md
+HANDOFF.md
+HANDOFF-PACCHETTO-QUADERNO.md
+HANDOFF-DEFINITIVO-*.md
+PIANO-*.md
+APP-STORE.md
+ARCHITETTURA-LEZIONI.md
+RINOMINA-GLOSSARIO.md
+docs/mockup-chat/
+
+# Il sito (sorgenti e ricetta di pubblicazione) vive fuori dal repository:
+# riguarda insegnai.ch, non l'applicazione.
+sito/
+bin/sito.js
+bin/hooks/

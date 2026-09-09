@@ -52,6 +52,6 @@ Le operazioni su disco validano zaino e identificatori, rifiutano collegamenti s
 
 ## Verifica
 
-Eseguire `npm run test:ui` per le prove sull'app viva: `prova-chat-zaino.js` (i gesti) e `prova-chat-stile.js` (il vestito). La seconda misura nei due temi che la chat non abbia angoli tondi, che ogni comando stia su una delle due altezze del sistema (`--tb-h` in barra, `--ctl-h` altrove), che l'ombra sia `--sh-3d` e solo su ciò che galleggia, che ogni stack di font tenga `--emoji-font` prima del generico e che la testa della finestra sia la `.tbar` dell'app con la sua grammatica. Il mockup d'approvazione, generato dal codice vero, sta in `docs/mockup-chat/` (`node docs/mockup-chat/genera.js`).
+Eseguire `npm run test:ui` per le prove sull'app viva: `prova-chat-zaino.js` (i gesti) e `prova-chat-stile.js` (il vestito). La seconda misura nei due temi che la chat non abbia angoli tondi, che ogni comando stia su una delle due altezze del sistema (`--tb-h` in barra, `--ctl-h` altrove), che l'ombra sia `--sh-3d` e solo su ciò che galleggia, che ogni stack di font tenga `--emoji-font` prima del generico e che la testa della finestra sia la `.tbar` dell'app con la sua grammatica.
 
 Eseguire inoltre `node test/chat-profili.js` e `node test/chat.js`. I test usano provider e Wikipedia simulati, un PDF reale generato localmente e vault temporanei. Verificano aggiornamento del contesto, adattamenti del profilo, ruoli, fonti, persistenza, errori, annullamento, concorrenza, isolamento e rifiuto dei collegamenti simbolici. Non richiedono chiavi API.
