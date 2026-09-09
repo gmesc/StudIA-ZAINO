@@ -9,13 +9,17 @@
   ],
   "app": {
     "nome": "StudIA - ZAINO",
-    "versione": "1.1.0",
-    "licenza": "MIT",
+    "versione": "1.2.0",
+    "licenza": "GPL-3.0-or-later",
     "copyright": "Copyright (c) 2026 Giacomo Meschini",
     "contatto": "giacomo@insegnai.ch",
-    "nota": "StudIA - ZAINO è distribuita con licenza MIT. Il software di terze parti elencato qui resta di chi lo ha scritto, con la propria licenza: l'elenco che segue è l'attribuzione richiesta da quelle licenze, e va conservato in ogni copia dell'app."
+    "nota": "StudIA - ZAINO è software libero, distribuito con licenza GNU General Public License, versione 3 o successiva. Puoi usarlo, studiarlo, modificarlo e ridistribuirlo. Il codice sorgente completo sta su https://github.com/gmesc/StudIA-ZAINO e il testo della licenza è nel file LICENSE, dentro l'app. Il software di terze parti elencato qui resta di chi lo ha scritto, con la propria licenza: l'elenco che segue è l'attribuzione richiesta da quelle licenze, e va conservato in ogni copia dell'app."
   },
   "obblighi": [
+    {
+      "titolo": "Il codice sorgente",
+      "testo": "La GPLv3 chiede che chi riceve il programma possa avere anche il suo codice sorgente. Il sorgente di StudIA - ZAINO è pubblico su https://github.com/gmesc/StudIA-ZAINO, e ogni versione pubblicata ha lì il suo tag. Chi ridistribuisce l'app, anche modificata, deve fare la stessa cosa: consegnare il sorgente con la stessa licenza."
+    },
     {
       "titolo": "Attribuzione e testo delle licenze",
       "testo": "MIT, BSD e Apache-2.0 chiedono che l'avviso di copyright e il testo della licenza accompagnino ogni copia del software, anche in forma binaria. Questa schermata assolve a quell'obbligo: il testo integrale di ogni licenza è incluso nell'app e si può esportare in un file NOTICE.txt."

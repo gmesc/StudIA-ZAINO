@@ -1,3 +1,23 @@
+/*
+ * StudIA - ZAINO — studiare sui propri materiali: documenti, appunti, mappe e un tutor AI.
+ * Copyright (C) 2026 Giacomo Meschini
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * ⚠️ Il testo che vale è quello inglese, nel file LICENSE. In breve: questo programma
+ * è software libero; puoi usarlo, studiarlo, modificarlo e ridistribuirlo, e chi
+ * riceve una copia — anche modificata — deve poter avere il codice sorgente con la
+ * stessa libertà. Il sorgente sta su https://github.com/gmesc/StudIA-ZAINO
+ */
 const { app, BrowserWindow, shell, ipcMain, dialog, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');

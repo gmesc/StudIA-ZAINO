@@ -1,9 +1,9 @@
 {
   "name": "studia-zaino",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "StudIA - ZAINO: documenti, appunti e tutor AI personali",
   "author": "Giacomo Meschini <giacomo@insegnai.ch>",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -36,6 +36,7 @@
       "App/**/*",
       "!App/guida-zaino/_lab/**",
       "package.json",
+      "LICENSE",
       "!App/wizard.js",
       "!App/composer.js"
     ],

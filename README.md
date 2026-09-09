@@ -54,6 +54,10 @@ Le prove includono un PDF reale, aggiornamento del contesto, persistenza e riape
 
 `npm run dist:mac` crea il pacchetto macOS; `npm run dist:win` quello Windows. Identità, nome e nomi degli installer sono propri del fork. L'eventuale firma/notarizzazione del progetto originale non si trasferisce al fork.
 
-Il codice mantiene la licenza MIT di StudIA. Icona e marchio usano [OpenMoji backpack (1F392)](https://openmoji.org/library/emoji-1F392/), con attribuzione e licenza CC BY-SA 4.0; i crediti delle dipendenze sono disponibili nell'app.
+StudIA - ZAINO è **software libero**, distribuito con licenza **GNU General Public License v3 o successiva** (`GPL-3.0-or-later`): il testo integrale è nel file [`LICENSE`](LICENSE). Puoi usarlo, studiarlo, modificarlo e ridistribuirlo; chi riceve una copia, anche modificata, deve poter avere il codice sorgente con la stessa libertà.
+
+⚠️ Fino alla versione 1.1.1 compresa il codice è stato pubblicato con licenza MIT, e quelle copie restano MIT: una licenza già data non si ritira. Il cambio vale da qui in avanti.
+
+Icona e marchio usano [OpenMoji backpack (1F392)](https://openmoji.org/library/emoji-1F392/), con attribuzione e licenza CC BY-SA 4.0; i crediti delle dipendenze sono disponibili nell'app.
 
 La guida completa del fork è in `App/guida-zaino/index.html`. Gli screenshot si rigenerano su un vault temporaneo con `bash bin/guida-zaino.sh`. `npm run icona` rigenera solo le icone in `build/`, senza modificare i pacchetti in `dist/`.
