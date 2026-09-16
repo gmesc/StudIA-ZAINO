@@ -18,7 +18,7 @@ Ad ogni invio vengono riletti gli appunti e i materiali attuali dello zaino: agg
 
 I PDF vengono letti localmente con il PDF.js già incluso nell’app, anche se non sono mai stati aperti. Non si avviano OCR, trascrizioni o pipeline di corsi e non si generano indici persistenti. Le pagine senza testo vengono segnalate. Sono inclusi anche file UTF-8 `.txt`, `.text`, `.md`, `.markdown`, `.csv` e `.tsv` in `MATERIALI` e `APPUNTI`; cartelle di indici e trascrizioni vengono escluse.
 
-La selezione usa i termini della domanda, senza embeddings. I passaggi includono nome del file e, per i PDF, numero di pagina. A parità di rilevanza la selezione distribuisce i passaggi tra le fonti. Gli avvisi della chat dichiarano fonti illeggibili e limiti raggiunti.
+La selezione usa i termini della domanda, senza embeddings. I passaggi includono nome del file e, per i PDF, numero di pagina. A parità di rilevanza la selezione distribuisce i passaggi tra le fonti. Sotto la risposta il riquadro «Fonti» elenca soltanto le fonti che il testo cita (citation esatta, URL o nome del file con la pagina vicina); se non ne cita nessuna lo dichiara con «Nessuna fonte citata». Il JSON e la copia Markdown conservano invece tutte le fonti inviate. Gli avvisi della chat dichiarano fonti illeggibili e limiti raggiunti.
 
 | Limite | Valore |
 | --- | --- |

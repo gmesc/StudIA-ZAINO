@@ -17,6 +17,27 @@
       return url.protocol === 'https:' && !url.username && !url.password ? url.href : '';
     } catch (_) { return ''; }
   }
+  // Il riquadro «Fonti» mostra solo ciò che la risposta cita davvero: i passaggi
+  // inviati al modello sono molti di più, ed elencarli tutti faceva credere che
+  // la risposta si reggesse su fonti che non ha mai nominato.
+  // ponytail: riconoscimento testuale; un intervallo «pp. 3-5» conta solo p. 3.
+  function citedSources(text, sources) {
+    const norm = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+    const body = norm(text);
+    return (sources || []).filter(source => {
+      const inner = norm(source.citation).replace(/^\[|\]$/g, '').trim();
+      if (inner && body.includes(inner)) return true;
+      if (source.url && body.includes(norm(source.url))) return true;
+      const name = norm(String(source.file || '').split('/').pop()).trim();
+      if (!name) return false;
+      for (let i = body.indexOf(name); i >= 0; i = body.indexOf(name, i + 1)) {
+        if (!source.page) return true;
+        // La pagina deve seguire il nome da vicino: «p. 3», «pag. 3», «pagina 3».
+        if (new RegExp('^[^\\n]{0,12}?\\bp(?:ag(?:ina)?)?\\.? ?' + source.page + '(?!\\d)').test(body.slice(i + name.length))) return true;
+      }
+      return false;
+    });
+  }
   function sourceLabel(source) {
     const name = source.file || source.title || '';
     const citation = source.citation || '';
@@ -314,12 +335,15 @@
       } catch (error) { status('zchatAIStatus', errorText(error), true); }
       finally { keyBusy = false; drawConfig(); }
     });
-    function drawSources(parent, context) {
+    function drawSources(parent, context, text) {
       if (!context) return;
-      const sources = context.sources || [], warnings = context.warnings || [];
-      if (!sources.length && !warnings.length) return;
+      const sent = context.sources || [], sources = citedSources(text, sent), warnings = context.warnings || [];
+      if (!sources.length && !warnings.length && !sent.length) return;
       const details = el('details', undefined, 'zchat-sources');
-      details.appendChild(el('summary', sources.length ? 'Fonti · ' + sources.length + (warnings.length ? ' · Note' : '') : 'Note sulla risposta'));
+      // Se il modello non cita niente lo si dice: tacere il riquadro nasconderebbe
+      // che la risposta non poggia su nessuna fonte riconoscibile.
+      details.appendChild(el('summary', sources.length ? 'Fonti · ' + sources.length + (warnings.length ? ' · Note' : '') : sent.length ? 'Nessuna fonte citata' + (warnings.length ? ' · Note' : '') : 'Note sulla risposta'));
+      if (!sources.length && sent.length) details.appendChild(el('p', 'La risposta non cita nessuno dei ' + sent.length + ' file o pagine ricevuti dallo zaino. Controllala sui documenti.', 'zchat-hint'));
       if (sources.length) {
         const list = el('ul');
         sources.forEach(source => {
@@ -425,7 +449,7 @@
         }
         article.appendChild(body);
         if (message.status === 'error' || message.status === 'cancelled') article.appendChild(el('p', message.error || 'Risposta interrotta. Puoi inviare di nuovo il messaggio.', 'zchat-hint zchat-error'));
-        drawSources(article, message.context);
+        drawSources(article, message.context, message.content);
         if (message.role === 'assistant' && speechText(message)) {
           const actions = el('div', undefined, 'zchat-message-actions');
           actions.appendChild(messageButton('⧉', 'Copia risposta', 'zchat-copy', message, async () => {
@@ -651,5 +675,5 @@
     }
     drawMessages(); start();
   }
-  return { init, safeLink, sourceLabel, datedTitle, speechText, notesSaved, copyFormatting };
+  return { init, safeLink, citedSources, sourceLabel, datedTitle, speechText, notesSaved, copyFormatting };
 }));

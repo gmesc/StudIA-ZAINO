@@ -1,6 +1,6 @@
 'use strict';
 const assert = require('node:assert/strict');
-const { safeLink, sourceLabel, datedTitle, speechText, notesSaved, copyFormatting } = require('../App/assets/chat/ui');
+const { safeLink, citedSources, sourceLabel, datedTitle, speechText, notesSaved, copyFormatting } = require('../App/assets/chat/ui');
 
 // I riferimenti ricevuti da un modello o da un file non aprono URL eseguibili.
 for (const url of ['javascript:alert(1)', 'data:text/html,<script>1</script>', 'file:///etc/passwd', 'http://example.com', '//example.com', 'https://user:password@example.com', '', null]) {
@@ -11,6 +11,18 @@ assert.equal(safeLink('https://platform.openai.com/api-keys'), 'https://platform
 assert.equal(sourceLabel({file: 'Biologia.pdf', page: 3, citation: '[F1]'}), '[F1] · Biologia.pdf · pagina 3');
 assert.equal(sourceLabel({file: 'Biologia.pdf', page: 3, citation: '[Biologia.pdf, p. 3]'}), '[Biologia.pdf, p. 3]');
 assert.equal(sourceLabel({}), 'Fonte');
+// Il riquadro «Fonti» elenca solo i file e le pagine che la risposta nomina.
+const inviate = [
+  {file: 'MATERIALI/Biologia.pdf', page: 3, citation: '[MATERIALI/Biologia.pdf, p. 3]'},
+  {file: 'MATERIALI/Biologia.pdf', page: 30, citation: '[MATERIALI/Biologia.pdf, p. 30]'},
+  {file: 'APPUNTI/cellula.md', citation: '[APPUNTI/cellula.md]'},
+  {file: 'Wikipedia: Mitosi', citation: '[Wikipedia: Mitosi]', url: 'https://it.wikipedia.org/wiki/Mitosi'}];
+const citate = (testo) => citedSources(testo, inviate).map(s => s.citation);
+assert.deepEqual(citate('Vedi [MATERIALI/Biologia.pdf, p. 3].'), ['[MATERIALI/Biologia.pdf, p. 3]']);
+assert.deepEqual(citate('Come dice Biologia.pdf (pag. 30) e cellula.md.'), ['[MATERIALI/Biologia.pdf, p. 30]', '[APPUNTI/cellula.md]']);
+assert.deepEqual(citate('Fonte: https://it.wikipedia.org/wiki/Mitosi'), ['[Wikipedia: Mitosi]']);
+assert.deepEqual(citate('Una risposta senza riferimenti a Biologia.'), []);
+assert.deepEqual(citedSources('qualcosa', undefined), []);
 // Il nome iniziale resta datato anche quando la prima domanda contiene dati privati.
 const quando = new Date(2026, 8, 6, 16, 7);
 assert.equal(datedTitle(quando), 'Chat del 06/09/2026, 16:07');
