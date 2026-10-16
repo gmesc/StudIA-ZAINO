@@ -33,6 +33,14 @@ async function assegna(sezione,file,id){
   await click('#znavGruppiPop [data-znav-destinazione='+q(id)+']');await stabile();
   assert.equal(await c.val('document.activeElement.dataset.file'),file);
 }
+async function altreInvariate(sezione, prima, azione){
+  const dopo=await c.val('ZNAV.gruppi');
+  for(const altra of Object.keys(prima).filter(s=>s!==sezione)){
+    assert.deepEqual(dopo[altra],prima[altra],azione+' in '+sezione+' non modifica '+altra);
+    assert.deepEqual(await c.val(`Array.from(document.querySelectorAll(${q(base(altra)+' .zs-nome')}),e=>e.textContent)`),
+      prima[altra].gruppi.map(g=>g.nome),'anche i gruppi visibili in '+altra+' restano invariati');
+  }
+}
 async function trascina(da,a,dopo=true){
   await stabile();
   await c.val(`(()=>{window.__znavDrag=[];if(!window.__znavDragOsserva){window.__znavDragOsserva=true;['dragstart','dragover','drop','dragend'].forEach(t=>document.addEventListener(t,e=>window.__znavDrag.push({tipo:t,x:e.clientX,y:e.clientY,target:e.target.outerHTML?.slice(0,180),origine:ZNAV.trascinamento}),true));}})()`);
@@ -102,9 +110,11 @@ async function pulisci(){
   try{
     assert.equal(await c.val(`getComputedStyle(document.getElementById('sidebarTitolo')).display`),'none');
     for(const sezione of ['fonti','appunti','media','mappe']){
+      const altre=await c.val('ZNAV.gruppi');
       const files=(await stato(sezione)).liberi;assert.equal(files.length,2);
       const altezza=await c.val(`document.querySelector(${q(item(sezione,files[0]))}).getBoundingClientRect().height`);
       const uno=await crea(sezione,'Lezioni <base>'),due=await crea(sezione,'Ripasso');
+      await altreInvariate(sezione,altre,'Creare gruppi');
       assert.equal(await c.val(`document.querySelector(${q(item(sezione,files[0]))}).getBoundingClientRect().height`),altezza,'organizzare non aumenta l’altezza di una riga semplice');
       assert(await c.val(`(()=>{
         const e=document.querySelector(${q(item(sezione,files[0]))}),b=e.querySelector('.zs-assegna'),s=getComputedStyle(b);
@@ -132,6 +142,7 @@ async function pulisci(){
       assert.deepEqual((await stato(sezione)).gruppi[0].files,[files[0]]);
       assert.equal((await stato(sezione)).gruppi[0].chiuso,false,'caduta nel gruppo chiuso rende visibile il risultato');
       await click(gruppo(sezione,due)+' [data-znav="rinomina"]');await nome('Da ripassare');
+      await altreInvariate(sezione,altre,'Rinominare un gruppo');
       await click(item(sezione,files[0])+' .zs-assegna');
       await tasto('Escape','Escape',27);
       assert.equal(await c.val(`document.querySelector('#znavGruppiPop').hasAttribute('open')`),false);
@@ -142,7 +153,12 @@ async function pulisci(){
       assert.equal(await c.val(`document.querySelector('#znavGruppiPop').hasAttribute('open')`),false);
       await click(gruppo(sezione,uno)+' [data-znav="toggle"]');
       assert.equal(await c.val(`document.querySelector(${q(item(sezione,files[1]))}).getBoundingClientRect().height`),0);
-      console.log('  ok  '+sezione+': gruppi trascinabili, caduta nei chiusi, menu da tastiera e chiusura');
+      await click(gruppo(sezione,uno)+' [data-znav="elimina"]');await stabile();
+      assert.equal((await stato(sezione)).gruppi.some(g=>g.id===uno),false);
+      assert.deepEqual((await stato(sezione)).liberi.slice().sort(),files.slice().sort(),'sciogliere il gruppo conserva le voci');
+      assert.equal(await c.val(`document.querySelector(${q(item(sezione,files[1]))}).getBoundingClientRect().height>0`),true);
+      await altreInvariate(sezione,altre,'Eliminare un gruppo');
+      console.log('  ok  '+sezione+': gruppi trascinabili, menu e creazione/rinomina/eliminazione indipendenti dalle altre tre sezioni');
     }
     const salvato=await c.val('ZNAV.gruppi');
     assert.deepEqual(JSON.parse(fs.readFileSync(registri[0],'utf8')),{versione:3,fonti:salvato.fonti,media:salvato.media});

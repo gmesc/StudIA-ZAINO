@@ -92,6 +92,36 @@ for(const file of files)for(const dest of files)for(const dopo of [true,false]){
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), 'zaino-gruppi-'));
 const fuori = fs.mkdtempSync(path.join(os.tmpdir(), 'zaino-gruppi-fuori-'));
 try {
+  // Matrice completa: stesso nome e stesso id nelle quattro sezioni, anche con file assegnati.
+  const iso = zaini.crea(vault, 'Indipendenza').id, root = path.join(vault, 'Zaini', iso);
+  fs.writeFileSync(path.join(root,'MATERIALI/PDF/01 Fonte.pdf'),'fonte');
+  fs.mkdirSync(path.join(root,'MATERIALI/Audio'),{recursive:true});
+  fs.writeFileSync(path.join(root,'MATERIALI/Audio/01 Media.wav'),'media');
+  appunti.save(vault,iso,null,{title:'Nota'},'Testo');
+  mappe.salva(vault,iso,null,{titolo:'Mappa',nodi:[],archi:[]});
+  const sezioni = ['fonti','media','appunti','mappe'];
+  const leggiTutte = () => Object.fromEntries(sezioni.map(s => [s,archivio.leggi(vault,iso,s).stato]));
+  for (const azione of ['crea','rinomina','elimina']) {
+    for (const sezione of sezioni) {
+      const prima = leggiTutte(), stato = prima[sezione];
+      const nuovo = azione === 'crea' ? G.sposta(G.crea(stato,'comune','Lezioni'),stato.liberi[0],'comune') :
+        azione === 'rinomina' ? G.rinomina(stato,'comune','Ripasso') : G.elimina(stato,'comune');
+      uguali(archivio.salva(vault,iso,nuovo,sezione).error,'');
+      const dopo = leggiTutte();
+      uguali(dopo[sezione],nuovo);
+      uguali(tutti(dopo[sezione]).sort(),tutti(prima[sezione]).sort());
+      for (const altra of sezioni.filter(s => s !== sezione)) {
+        assert.deepEqual(dopo[altra],prima[altra],azione+' in '+sezione+' non deve modificare '+altra);
+        controlli++;
+      }
+    }
+  }
+  // Riaprire la libreria rilegge gli stessi registri, senza dipendere dallo stato in memoria.
+  const finale = leggiTutte();
+  delete require.cache[require.resolve('../lib/gruppi-fonti')];
+  const riaperto = require('../lib/gruppi-fonti');
+  for (const sezione of sezioni) uguali(riaperto.leggi(vault,iso,sezione).stato,finale[sezione]);
+
   const id = zaini.crea(vault, 'Gruppi').id;
   const altro = zaini.crea(vault, 'Altro').id;
   const dir = path.join(vault, 'Zaini', id, 'MATERIALI');
