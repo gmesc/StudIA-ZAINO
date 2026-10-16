@@ -397,6 +397,9 @@ ipcMain.handle('course:list', () => {
  */
 const zainiLib = require('./lib/zaini');
 ipcMain.handle('zaino:list', () => zainiLib.elenco(vaultDir()));
+const gruppiFontiLib = require('./lib/gruppi-fonti');
+ipcMain.handle('zaino:gruppi-leggi', (e, { corso } = {}) => gruppiFontiLib.leggi(vaultDir(), corso));
+ipcMain.handle('zaino:gruppi-salva', (e, { corso, stato } = {}) => gruppiFontiLib.salva(vaultDir(), corso, stato));
 /* Eliminare uno zaino: la cartella intera nel Cestino di sistema, mai `rm`.
    È il gesto più grosso dell'app — dentro ci sono anche appunti e mappe — e
    la conferma con i conti la fa il renderer, che li sa dire. */

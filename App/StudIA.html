@@ -53,6 +53,7 @@
      moduli della mappa — i test lo richiedono da Node. -->
 <script src="assets/banco/forme.js"></script>
 <script src="assets/banco/materiali.js"></script>
+<script src="assets/fonti/gruppi.js"></script>
 <!-- Evidenze: ritrovare un pezzo di testo dopo che la pipeline ha rifatto
      l'HTML. Conosce SOLO stringhe e indici — il ponte col DOM (quale nodo di
      testo, quale offset) sta qui nel renderer, perché un modulo che importasse
@@ -780,6 +781,20 @@
   .znav button.attivo{ border-left-color:var(--teal); background:var(--hover); font-weight:700; }
   .znav .zs-vuoto{ padding:.5rem 1rem .7rem .8rem; color:var(--muted); font-size:12px; line-height:1.45; }
   .znav .zs-no{ color:var(--no-ink); }
+  .znav .zs-tit .zs-azioni{ margin-left:auto; display:flex; }
+  .znav .zs-azioni button{ width:auto; flex:0 0 auto; border:0; text-align:center; padding:0 .35rem; }
+  .znav .zs-azioni button:disabled{ opacity:.35; cursor:default; }
+  .znav button:focus-visible, .znav select:focus-visible{ outline:2px solid var(--focus); outline-offset:-2px; }
+  .znav .zs-gruppo{ margin:.35rem 0; }
+  .znav .zs-gruppo-testa{ display:flex; align-items:center; }
+  .znav .zs-gruppo-testa > button{ min-width:0; display:flex; align-items:center; gap:.35rem; font-weight:700; }
+  .znav .zs-gruppo-testa .zs-nome{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .znav .zs-gruppo-testa .zs-azioni{ display:flex; flex:0 0 auto; }
+  .znav .zs-gruppo ul{ margin-left:.7rem; }
+  .znav .zs-gruppo [hidden]{ display:none!important; }
+  .znav .zs-file-azioni{ display:flex; align-items:center; padding:0 .6rem .3rem .8rem; gap:.2rem; }
+  .znav .zs-file-azioni select{ min-width:0; width:100%; height:var(--tb-h); border:1px solid var(--line); background:var(--panel); color:var(--ink); }
+  .znav .zs-senza{ padding:.4rem .8rem; font-size:11px; color:var(--muted); }
 
   main{ padding:1.9rem clamp(1.3rem,4vw,3rem) 4rem; }
 
@@ -8939,17 +8954,21 @@ function calloutMenuHTML(){
   }).join('') +
   '<button type="button" class="cal-stili">✎ Personalizza i riquadri…</button>';
 }
-function openCalloutMenu(anchorEl){
+function openCalloutMenu(anchorEl, cm){
   var menu=$('#calloutMenu'); if(!menu) return;
   menu.innerHTML=calloutMenuHTML();
   popAt(menu, anchorEl);
+  CALBOLLA.cm=cm || (NOTES.mde && NOTES.mde.codemirror);
 }
-function insertCallout(k){
-  if(!NOTES.mde) return;
-  var d=calloutDef(k), cm=NOTES.mde.codemirror;
-  var sel=cm.getSelection();
-  var corpo=(sel||'Scrivi qui').split('\n').map(function(l){ return '> '+l; }).join('\n');
+function insertCallout(k, cm){
+  cm=cm || (NOTES.mde && NOTES.mde.codemirror);
+  if(!cm) return;
+  var d=calloutDef(k), sel=cm.getSelection(), da=cm.getCursor('from');
+  var corpo=sel.split('\n').map(function(l){ return '> '+l; }).join('\n');
   cm.replaceSelection('> [!'+d.k+'] '+d.label+'\n'+corpo+'\n');
+  /* Il corpo vuoto aspetta la prima parola: il cursore finale di CodeMirror
+     starebbe invece DOPO il riquadro, sulla riga di chiusura. */
+  if(!sel) cm.setCursor({ line:da.line+1, ch:2 });
   cm.focus();
 }
 /* ===== LA BOLLA DEI RIQUADRI ==============================================
@@ -9014,6 +9033,30 @@ function calloutBollaApri(cm){
   };
   cm.getWrapperElement().addEventListener('keydown', CALBOLLA.tasti, true);
 }
+function noteCollegaCallout(cm){
+  /* La bolla dei riquadri: «> » battuto a inizio riga. `inputRead` è l'evento
+     di ciò che è stato BATTUTO o incollato — non di ciò che scrive il programma
+     — ed è per questo che l'Invio dentro un riquadro, che inserisce «> » da sé,
+     non la sveglia (il perché lungo sta sulla testata della bolla). */
+  cm.on('inputRead', function(cm, ev){
+    /* ⚠️ Qualunque cosa entri nel testo mentre la bolla è aperta la manda via, e
+       non è un doppione del tasto premuto: incollare, dettare e i metodi di
+       inserimento delle lingue che non si battono lettera per lettera non
+       emettono un `keydown` per ogni carattere. Chi sta scrivendo ha smesso di
+       scegliere — misurato da una prova che batteva col solo evento `char`. */
+    if(CALBOLLA.attiva) calloutBollaChiudi();
+    if(!ev || ev.origin!=='+input' || (ev.text||[]).join('')!==' ') return;
+    var cur=cm.getCursor();
+    if(cm.getLine(cur.line).slice(0, cur.ch)!=='> ') return;
+    var sopra=cur.line>0 ? (cm.getLine(cur.line-1)||'') : '';
+    if(/^\s*>/.test(sopra)) return;         // qui si sta continuando un riquadro, non aprendone uno
+    calloutBollaApri(cm);
+  });
+  /* Chi sposta il cursore col mouse, o esce dall'editor, ha smesso di scrivere
+     quella riga: la bolla non deve sopravvivergli. */
+  cm.on('mousedown', function(){ calloutBollaChiudi(); });
+  cm.on('blur', function(){ calloutBollaChiudi(); });
+}
 function calloutBollaChiudi(){
   if(CALBOLLA.tasti && CALBOLLA.cm){
     try{ CALBOLLA.cm.getWrapperElement().removeEventListener('keydown', CALBOLLA.tasti, true); }catch(e){}
@@ -9036,7 +9079,7 @@ function calloutInserisci(k){
     cm.replaceRange('', { line:cur.line, ch:0 }, { line:cur.line, ch:cur.ch });
   }
   calloutBollaChiudi();
-  insertCallout(k);
+  insertCallout(k, cm);
 }
 /* riquadri in stile Obsidian:  > [!nota] Titolo  +  righe successive con ">" */
 /**
@@ -10969,9 +11012,111 @@ async function cambiaModo(m){
  * `corsi.cartella()` risolve le due radici: nessuno di quei tre canali sa che
  * gli zaini esistono, ed è la prova che il perno regge.
  */
-var ZNAV={ sezioni:null, carico:false, ancora:false };
+var ZNAV={ sezioni:null, carico:false, ancora:false, organizza:false, gruppi:null, id:'', salva:false };
 
 function znavEsc(s){ return escHtml(s); }
+
+/** I gruppi cambiano la vista, mai i nomi dei file a cui puntano i rimandi. */
+function znavFonti(fonti, errore, erroreGruppi, apertoPdf, apertoMedia){
+  var stato=ZNAV.gruppi || FontiGruppi.normalizza(null,fonti.map(function(f){ return f.name; }));
+  var edit=ZNAV.organizza && !erroreGruppi;
+  function comando(azione, testo, titolo, dati, spento){
+    return '<button type="button" class="tbtn" data-znav="'+azione+'" '+(dati||'')+
+      ' title="'+znavEsc(titolo)+'" aria-label="'+znavEsc(titolo)+'"'+(spento?' disabled':'')+'>'+testo+'</button>';
+  }
+  function lista(files, gruppo){
+    return '<ul>'+files.map(function(file,i){
+      var f=fonti.find(function(x){ return x.name===file; }); if(!f) return '';
+      var media=f.tipo==='media', nome=titoloMateriale(file)||file;
+      var segno=media?((typeof Lettore!=='undefined' && Lettore.tipoDi(file)==='audio')?'♪ ':'▶ '):'';
+      var dati='data-file="'+znavEsc(file)+'" data-gruppo="'+znavEsc(gruppo)+'"';
+      return '<li><button type="button" class="zn-fonte'+(media?' zn-media':'')+
+        ((media?file===apertoMedia:file===apertoPdf)?' attivo':'')+'" data-quale="'+znavEsc(file)+
+        '" title="'+znavEsc(file)+'">'+znavEsc(segno+nome)+'</button>'+
+        (edit?'<div class="zs-file-azioni zs-azioni">'+
+          comando('file-su','↑','Sposta su '+nome,dati,i===0)+
+          comando('file-giu','↓','Sposta giù '+nome,dati,i===files.length-1)+
+          '<select data-znav-gruppo="'+znavEsc(file)+'" aria-label="Gruppo di '+znavEsc(nome)+'">'+
+          '<option value="">Senza gruppo</option>'+stato.gruppi.map(function(g){
+            return '<option value="'+znavEsc(g.id)+'"'+(g.id===gruppo?' selected':'')+'>'+znavEsc(g.nome)+'</option>';
+          }).join('')+'</select></div>':'')+'</li>';
+    }).join('')+'</ul>';
+  }
+  var h='<div class="zs-tit"><span>Fonti</span><span class="zs-n">'+fonti.length+'</span><span class="zs-azioni">'+
+    comando('crea','+','Crea gruppo di fonti','',!!erroreGruppi || !!errore)+
+    '<button type="button" class="tbtn" data-znav="organizza" title="Organizza fonti" aria-label="Organizza fonti" aria-pressed="'+edit+'"'+
+    (erroreGruppi || errore?' disabled':'')+'>'+(edit?'✓':'✎')+'</button></span></div>';
+  if(errore) return h+'<div class="zs-vuoto zs-no">⚠ '+znavEsc(errore)+'</div>';
+  if(erroreGruppi) h+='<div class="zs-vuoto zs-no">Organizzazione non leggibile: '+znavEsc(erroreGruppi)+'</div>';
+  stato.gruppi.forEach(function(g,i){
+    var dati='data-gruppo="'+znavEsc(g.id)+'"';
+    h+='<section class="zs-gruppo" data-gruppo="'+znavEsc(g.id)+'"><div class="zs-gruppo-testa">'+
+      '<button type="button" data-znav="toggle" '+dati+' aria-expanded="'+!g.chiuso+'">'+
+      '<span aria-hidden="true">'+(g.chiuso?'▸':'▾')+'</span><span class="zs-nome">'+znavEsc(g.nome)+'</span><span class="zs-n">'+g.files.length+'</span></button>'+
+      (edit?'<span class="zs-azioni">'+comando('gruppo-su','↑','Sposta su il gruppo '+g.nome,dati,i===0)+
+        comando('gruppo-giu','↓','Sposta giù il gruppo '+g.nome,dati,i===stato.gruppi.length-1)+
+        comando('rinomina','✎','Rinomina il gruppo '+g.nome,dati)+
+        comando('elimina','×','Sciogli il gruppo '+g.nome+' (conserva i documenti)',dati)+'</span>':'')+'</div>'+
+      '<div'+(g.chiuso?' hidden':'')+'>'+(g.files.length?lista(g.files,g.id):'<div class="zs-vuoto">Gruppo vuoto. Usa ✎ per spostare qui le fonti.</div>')+'</div></section>';
+  });
+  if(stato.liberi.length){
+    if(stato.gruppi.length) h+='<div class="zs-senza">Senza gruppo</div>';
+    h+=lista(stato.liberi,'');
+  }else if(!fonti.length && !stato.gruppi.length) h+='<div class="zs-vuoto">Nessun documento in questo zaino.</div>';
+  return h;
+}
+
+async function znavSalva(stato, id){
+  if(ZNAV.salva || id!==zainoAttivo()) return;
+  ZNAV.salva=true;
+  try{
+    var r=await window.vault.zaino.gruppiSalva(id,stato);
+    if(!r || r.error) throw new Error((r&&r.error)||'salvataggio non riuscito');
+  }catch(e){ toast('Organizzazione non salvata: '+e.message,false); }
+  finally{ ZNAV.salva=false; await zainoNavAggiorna(); }
+}
+
+function znavRiprendiFuoco(prima){
+  var voci=Array.from(document.querySelectorAll('#zainoNav button, #zainoNav select'));
+  var stesso=voci.find(function(b){
+    return b.dataset.znav===prima.dataset.znav && b.dataset.gruppo===prima.dataset.gruppo &&
+      b.dataset.file===prima.dataset.file && b.dataset.znavGruppo===prima.dataset.znavGruppo;
+  });
+  if(!stesso || stesso.disabled || !stesso.offsetParent) stesso=voci.find(function(b){
+    return prima.dataset.file ? b.dataset.quale===prima.dataset.file :
+      b.dataset.znav==='toggle' && b.dataset.gruppo===(prima.dataset.znavGruppo?prima.value:prima.dataset.gruppo);
+  });
+  if(!stesso || !stesso.offsetParent) stesso=voci.find(function(b){ return b.dataset.znav==='organizza'; });
+  if(stesso) stesso.focus();
+}
+
+async function znavComando(btn){
+  var azione=btn.dataset.znav, id=zainoAttivo(), s=ZNAV.gruppi;
+  if(ZNAV.salva || ZNAV.carico || ZNAV.id!==id || !s) return;
+  if(azione==='organizza'){
+    ZNAV.organizza=!ZNAV.organizza; await zainoNavAggiorna();
+    if(id===zainoAttivo()) znavRiprendiFuoco(btn);
+    return;
+  }
+  var g=s.gruppi.find(function(x){ return x.id===btn.dataset.gruppo; }), nome, prossimo;
+  if(azione==='crea' || azione==='rinomina'){
+    nome=await askText(azione==='crea'?'Nome del gruppo':'Rinomina gruppo',g?g.nome:'');
+    if(nome==null) return;
+    nome=String(nome).trim(); if(!nome){ toast('Dai un nome al gruppo',false); return; }
+    if(id!==zainoAttivo()) return;
+    prossimo=azione==='crea'?FontiGruppi.crea(s,'g-'+crypto.randomUUID(),nome):FontiGruppi.rinomina(s,g.id,nome);
+    ZNAV.organizza=true;
+  }else if(azione==='toggle' && g) prossimo=FontiGruppi.toggle(s,g.id);
+  else if(azione==='elimina' && g) prossimo=FontiGruppi.elimina(s,g.id);
+  else if((azione==='gruppo-su' || azione==='gruppo-giu') && g)
+    prossimo=FontiGruppi.ordinaGruppo(s,g.id,s.gruppi.indexOf(g)+(azione==='gruppo-su'?-1:1));
+  else if(azione==='file-su' || azione==='file-giu'){
+    var files=g?g.files:s.liberi;
+    prossimo=FontiGruppi.sposta(s,btn.dataset.file,g?g.id:'',files.indexOf(btn.dataset.file)+(azione==='file-su'?-1:1));
+  }
+  if(prossimo) await znavSalva(prossimo,id);
+  if(id===zainoAttivo()) znavRiprendiFuoco(btn);
+}
 
 /** Una sezione: titolo, conto, voci (o la riga che spiega il vuoto). */
 function znavSezione(titolo, voci, vuoto, errore){
@@ -11009,7 +11154,7 @@ async function zainoNavAggiorna(){
      cambio). La richiesta persa si RICORDA, e a fine giro si riparte. */
   if(ZNAV.carico){ ZNAV.ancora=true; return; }
   ZNAV.carico=true;
-  var fonti=[], eFonti='', appunti=[], eAppunti='', mappe=[], eMappe='';
+  var fonti=[], eFonti='', appunti=[], eAppunti='', mappe=[], eMappe='', gruppi=null, eGruppi='';
   try{
     var corpus = await window.vault.corpus.list(id);
     /* Le fonti sono TUTTO ciò che si studia: documenti E media. Un video
@@ -11033,24 +11178,24 @@ async function zainoNavAggiorna(){
     });
     eMappe=m.error||'';
   }catch(e3){ eMappe=(e3&&e3.message)||String(e3); }
+  try{
+    var organizzazione=await window.vault.zaino.gruppiLeggi(id);
+    if(!organizzazione || organizzazione.error) throw new Error((organizzazione&&organizzazione.error)||'lettura non riuscita');
+    gruppi=FontiGruppi.normalizza(organizzazione.stato,fonti.map(function(f){ return f.name; }));
+  }catch(e4){ eGruppi=e4.message||String(e4); }
   ZNAV.carico=false;
+  if(id!==zainoAttivo()){ ZNAV.ancora=false; return zainoNavAggiorna(); }
   if(ZNAV.ancora){ ZNAV.ancora=false; return zainoNavAggiorna(); }
+  ZNAV.id=id; ZNAV.gruppi=gruppi;
 
   var apertoPdf = (typeof ANTEPRIMA!=='undefined' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf') ? ANTEPRIMA.file : '';
   var apertoMedia = (typeof PLAYER!=='undefined' && PLAYER) ? PLAYER.file : '';
-  var apertoNota = (typeof NOTES!=='undefined' && NOTES.cur) ? NOTES.cur.file : '';
+  var noteAttive=noteStatoAttivo();
+  var apertoNota = noteAttive && noteAttive.cur ? noteAttive.cur.file : '';
   var apertaMappa = (typeof MAPPA!=='undefined' && MAPPA && MAPPA.mia) ? MAPPA.mia.file : '';
 
   host.innerHTML =
-    znavSezione('Fonti', fonti.map(function(f){
-      var media=(f.tipo==='media');
-      /* Il segno ▶/♪ dice la famiglia senza una parola: si apre nel player,
-         non nel visualizzatore. */
-      var segno=media ? ((typeof Lettore!=='undefined' && Lettore.tipoDi(f.name)==='audio') ? '♪ ' : '▶ ') : '';
-      return { classe: media ? 'zn-fonte zn-media' : 'zn-fonte', quale:f.name,
-               testo:segno+(titoloMateriale(f.name)||f.name),
-               titolo:f.name, attivo: media ? f.name===apertoMedia : f.name===apertoPdf };
-    }), 'Nessun documento in questo zaino.', eFonti) +
+    znavFonti(fonti,eFonti,eGruppi,apertoPdf,apertoMedia) +
     znavSezione('Appunti', appunti.map(function(n){
       return { classe:'zn-appunto', quale:n.file, testo:noteEtichetta(n), attivo:n.file===apertoNota };
     }), 'Nessun appunto. Si scrivono nel blocco «Appunti».', eAppunti) +
@@ -11276,6 +11421,8 @@ async function zainoCrea(nome){
      pannellini dell'app sono delegati per la stessa ragione. */
   document.addEventListener('click', function(e){
     if(!e.target.closest) return;
+    var gruppo=e.target.closest('#zainoNav [data-znav]');
+    if(gruppo){ znavComando(gruppo); return; }
     var piu=e.target.closest('#zainoNuovo');
     if(piu){
       var pop=document.getElementById('zainoPop');
@@ -11313,8 +11460,7 @@ async function zainoCrea(nome){
     if(f){ openPdf(f.dataset.quale, null, titoloMateriale(f.dataset.quale)||f.dataset.quale);
            zainoNavAggiorna(); return; }
     var a=e.target.closest('.zn-appunto');
-    if(a){ try{ bancoMostra('appunti'); }catch(err){}
-           noteOpen(a.dataset.quale); zainoNavAggiorna(); return; }
+    if(a){ noteApriAttivo(a.dataset.quale); zainoNavAggiorna(); return; }
     var mp=e.target.closest('.zn-mappa');
     if(mp){ zainoApriMappa(mp.dataset.quale); zainoNavAggiorna(); return; }
     var bd=e.target.closest('#pdfDoc');
@@ -11331,6 +11477,13 @@ async function zainoCrea(nome){
       if(typeof zainoNavAggiorna==='function') zainoNavAggiorna();
       return;
     }
+  });
+  document.addEventListener('change',async function(e){
+    var sel=e.target.closest && e.target.closest('#zainoNav [data-znav-gruppo]');
+    if(!sel || ZNAV.salva || ZNAV.carico || !ZNAV.gruppi || ZNAV.id!==zainoAttivo()) return;
+    var id=ZNAV.id;
+    await znavSalva(FontiGruppi.sposta(ZNAV.gruppi,sel.dataset.znavGruppo,sel.value),id);
+    if(id===zainoAttivo()) znavRiprendiFuoco(sel);
   });
   document.addEventListener('keydown', function(e){
     if(e.key!=='Enter') return;
@@ -11812,28 +11965,7 @@ function ensureMde(){
   NOTES.mde.codemirror.setOption('extraKeys', Object.assign({}, NOTES.mde.codemirror.getOption('extraKeys')||{}, {
     'Cmd-Shift-C':function(){ citaCorrente(); }, 'Ctrl-Shift-C':function(){ citaCorrente(); }
   }));
-  /* La bolla dei riquadri: «> » battuto a inizio riga. `inputRead` è l'evento
-     di ciò che è stato BATTUTO o incollato — non di ciò che scrive il programma
-     — ed è per questo che l'Invio dentro un riquadro, che inserisce «> » da sé,
-     non la sveglia (il perché lungo sta sulla testata della bolla). */
-  NOTES.mde.codemirror.on('inputRead', function(cm, ev){
-    /* ⚠️ Qualunque cosa entri nel testo mentre la bolla è aperta la manda via, e
-       non è un doppione del tasto premuto: incollare, dettare e i metodi di
-       inserimento delle lingue che non si battono lettera per lettera non
-       emettono un `keydown` per ogni carattere. Chi sta scrivendo ha smesso di
-       scegliere — misurato da una prova che batteva col solo evento `char`. */
-    if(CALBOLLA.attiva) calloutBollaChiudi();
-    if(!ev || ev.origin!=='+input' || (ev.text||[]).join('')!==' ') return;
-    var cur=cm.getCursor();
-    if(cm.getLine(cur.line).slice(0, cur.ch)!=='> ') return;
-    var sopra=cur.line>0 ? (cm.getLine(cur.line-1)||'') : '';
-    if(/^\s*>/.test(sopra)) return;         // qui si sta continuando un riquadro, non aprendone uno
-    calloutBollaApri(cm);
-  });
-  /* Chi sposta il cursore col mouse, o esce dall'editor, ha smesso di scrivere
-     quella riga: la bolla non deve sopravvivergli. */
-  NOTES.mde.codemirror.on('mousedown', function(){ calloutBollaChiudi(); });
-  NOTES.mde.codemirror.on('blur', function(){ calloutBollaChiudi(); });
+  noteCollegaCallout(NOTES.mde.codemirror);
   /* I comandi dell'appunto entrano nella riga della toolbar, nei due posti che
      la barra della mappa insegna: il gruppo del DOCUMENTO in testa (prima degli
      strumenti di scrittura, come «Generata/Mie» e la tendina stanno prima dei
@@ -12235,17 +12367,14 @@ function figRidimensiona(verso){
   window.addEventListener('keydown', function(e){
     if(!(e.metaKey||e.ctrlKey) || e.altKey || e.shiftKey) return;
     if(String(e.key||'').toLowerCase()!=='j') return;
-    if(e.target.closest && e.target.closest('#notePane2')){
-      if(window.appuntiParalleli && window.appuntiParalleli.stato.mde){ e.preventDefault(); e.stopPropagation(); window.appuntiParalleli.stato.mde.togglePreview(); }
-      return;
-    }
-    if(typeof NOTES==='undefined' || !NOTES || !NOTES.mde) return;
-    var host=document.getElementById('noteHost');
-    if(!host || !host.offsetParent) return;      // l'editor non è a schermo
+    var destinazione=noteStatoAttivo();
+    if(!destinazione || !destinazione.mde) return;
+    var host=document.getElementById(destinazione===NOTES?'noteHost':'noteHost2');
+    if(!host || !host.offsetParent) return;
     e.preventDefault(); e.stopPropagation();
     try{
-      NOTES.mde.togglePreview();
-      if(!host.querySelector('.editor-preview-active')) NOTES.mde.codemirror.focus();
+      destinazione.mde.togglePreview();
+      if(!host.querySelector('.editor-preview-active')) destinazione.mde.codemirror.focus();
     }catch(err){ console.error('anteprima:', err); }
   }, true);
 })();
@@ -12263,7 +12392,9 @@ async function noteInvito(){
   var testo=NOTES.mde.value();
   if(!testo.trim()){ NOTES.invito=false; return; }   // svuotato: l'invito si riarma
   if(NOTES.invito) return;
-  if(testo.trim().split(/\s+/).length<5) return;
+  /* I segni isolati del markdown non sono parole: i due «>» del callout
+     anticipavano il battesimo alla prima lettera del corpo, rubandole il fuoco. */
+  if(testo.trim().split(/\s+/).filter(function(p){ return /[\p{L}\p{N}]/u.test(p); }).length<5) return;
   NOTES.invito=true;
   var esito=await noteChiediNomeEOrigine('APPUNTI');
   if(esito===null){
@@ -12280,6 +12411,13 @@ function noteCaricaCorpo(testo){
   NOTES.caricando=true;
   try{ NOTES.mde.value(testo||''); }
   finally{ NOTES.caricando=false; }
+}
+function noteStatoAttivo(){
+  return window.appuntiParalleli && window.appuntiParalleli.attivo() ? window.appuntiParalleli.stato : NOTES;
+}
+function noteApriAttivo(file){
+  if(window.appuntiParalleli && window.appuntiParalleli.attivo()) return window.appuntiParalleli.open(file);
+  return noteOpen(file);
 }
 function noteOpen(file){
   if(window.appuntiParalleli && window.appuntiParalleli.occupato(file,corsoAttivo())){
@@ -12456,8 +12594,9 @@ async function noteChiediNomeEOrigine(defTitolo){
 }
 /** Crea l'appunto già battezzato e lo apre. Chi lo chiama ha già la finestra
  *  alle spalle: qui solo disco e viste. Torna `true` se è nato davvero. */
-function noteNasce(esito, body, anchor){
-  var ctx=curCtx(); if(!ctx) return false;
+function noteNasce(esito, body, anchor, destinazione, ctx){
+  ctx=ctx||curCtx(); if(!ctx || ctx.courseId!==corsoAttivo()) return false;
+  destinazione=destinazione||NOTES;
   var api=notesApi(); if(!api) return false;
   /* ⚠️ La PAGINA viaggia col documento del contesto: se la finestra ha scelto
      un altro documento (o «personale»), la pagina di quello davanti non
@@ -12469,8 +12608,9 @@ function noteNasce(esito, body, anchor){
              materiale:mat, pagina:pag, anchor:anchor||'' };
   var res=api.save(ctx.courseId, null, meta, body||'');
   if(!res || res.error){ toast('Salvataggio fallito: '+((res&&res.error)||'?'),false); return false; }
-  NOTES.courseId=ctx.courseId;
-  notesReload(); refreshNoteUI(); noteOpen(res.file);
+  notesReload(); refreshNoteUI();
+  if(destinazione===NOTES){ NOTES.courseId=ctx.courseId; noteOpen(res.file); }
+  else window.appuntiParalleli.open(res.file);
   toast('Appunto creato',true);
   return true;
 }
@@ -12478,13 +12618,17 @@ function noteNasce(esito, body, anchor){
    selezione: la regola delle parole chiave si applica DOPO, e deve poter
    distinguere «creato» da «annullato al titolo» — un'evidenza accesa dopo un
    annullamento sarebbe un giallo comparso dal nulla. */
-async function noteNew(anchor, origine, stile, evId){
+async function noteNew(anchor, origine, stile, evId, destinazione){
   var ctx=curCtx(); if(!ctx){ toast('Apri un capitolo del vault per prendere appunti',false); return false; }
   var api=notesApi(); if(!api){ toast('Appunti disponibili solo nell’app',false); return false; }
+  destinazione=destinazione||noteStatoAttivo();
   var esito=await noteChiediNomeEOrigine('APPUNTI');
   if(esito===null) return false;
+  if(ctx.courseId!==corsoAttivo()){
+    toast('Lo zaino è cambiato: appunto non creato. Ripeti il gesto nello zaino desiderato.',false); return false;
+  }
   var body=anchor? frammentoAppuntato(anchor, ctx, origine, stile, evId) : '';
-  return noteNasce(esito, body, anchor);
+  return noteNasce(esito, body, anchor, destinazione, ctx);
 }
 /**
  * Come si presenta, dentro un appunto, un frammento estratto dal capitolo.
@@ -12700,9 +12844,10 @@ async function noteAppend(testo, origine, stile, evId){
   if(!t) return false;
   var ctx=curCtx(); if(!ctx){ toast('Apri un corso o uno zaino per prendere appunti',false); return false; }
   if(!notesApi()){ toast('Appunti disponibili solo nell’app',false); return false; }
-  if(!NOTES.cur || !NOTES.mde){ return noteNew(t, origine, stile, evId); }   // niente di aperto: se ne crea uno
-  noteInserisci(frammentoAppuntato(t, ctx, origine, stile, evId));
-  toast('Appuntato in «'+((NOTES.cur&&NOTES.cur.title)||'appunto')+'»', true);
+  var destinazione=noteStatoAttivo();
+  if(!destinazione.cur || !destinazione.mde){ return noteNew(t, origine, stile, evId, destinazione); }
+  noteInserisci(frammentoAppuntato(t, ctx, origine, stile, evId), destinazione);
+  toast('Appuntato in «'+((destinazione.cur&&destinazione.cur.title)||'appunto')+'»', true);
   return true;
 }
 /**
@@ -12823,15 +12968,16 @@ async function appuntaSelezione(testo, range, stile){
  * testo battuto negli ultimi 1,8 s — quello che l'autosalvataggio non ha ancora
  * scritto — con la copia vecchia del disco.
  */
-function noteInserisci(md){
-  if(!md || !NOTES.cur || !NOTES.mde) return false;
-  openEditor();                                        // se lo split è chiuso, si apre
-  var cm=NOTES.mde.codemirror;
+function noteInserisci(md, destinazione){
+  destinazione=destinazione||noteStatoAttivo();
+  if(!md || !destinazione.cur || !destinazione.mde) return false;
+  if(destinazione===NOTES) openEditor(); else window.appuntiParalleli.focus();
+  var cm=destinazione.mde.codemirror;
   var ultima=cm.lastLine(), coda=cm.getLine(ultima);
   cm.replaceRange((coda.trim()? '\n\n':'') + md, { line:ultima, ch:coda.length });
   cm.setCursor(cm.lastLine(), 0); cm.scrollIntoView(null);
   // il gesto è esplicito, quindi si scrive subito invece di aspettare il debounce
-  noteSave(true);
+  if(destinazione===NOTES) noteSave(true); else window.appuntiParalleli.save(true);
   return true;
 }
 /**
@@ -13293,7 +13439,9 @@ document.addEventListener('scroll', function(){ if(selBarraAperta()) selBarraChi
    click continua ad arrivare, la selezione resta viva. È lo stesso rimedio di
    qualunque barretta che compare sopra un testo selezionato. */
 document.addEventListener('mousedown', function(e){
-  if(e.target.closest && e.target.closest('#selBarra')) e.preventDefault();
+  /* Il menu dei callout deve tenere il fuoco nell'editor: il blur lo
+     chiuderebbe PRIMA del click, cancellando anche la destinazione scelta. */
+  if(e.target.closest && e.target.closest('#selBarra, #calloutMenu button[data-cal]')) e.preventDefault();
 });
 /* Il testo E il suo range: le evidenze hanno bisogno di sapere DOVE, non solo
    che cosa. Il range si tiene finché il menu è aperto — dopo, un `render()`
@@ -14519,12 +14667,12 @@ document.addEventListener('contextmenu', function(e){
 function kwNegliAppunti(ev){
   if(!ev) return;
   if(!notesApi()){ toast('Appunti disponibili solo nell’app', false); return; }
-  var md=kwMarkdown(ev);
-  if(!NOTES.cur || !NOTES.mde){
+  var md=kwMarkdown(ev), destinazione=noteStatoAttivo();
+  if(!destinazione.cur || !destinazione.mde){
     /* Nessun appunto aperto: se ne crea uno, e il titolo lo chiede — è l'unico
        momento in cui la domanda ha senso. */
     noteNew(ev.exact, ev.materiale ? { tipo:'pdf', file:ev.materiale, pagina:ev.pagina } : null,
-            undefined, ev.id);
+            undefined, ev.id, destinazione);
     return;
   }
   if(noteInserisci(md)) toast('«'+ev.exact+'» negli appunti', true);
@@ -15365,7 +15513,7 @@ function evidenzaCancella(range){
 document.addEventListener('keydown',function(e){
   if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='s'){
     e.preventDefault();
-    if(e.target.closest && e.target.closest('#notePane2') && window.appuntiParalleli) window.appuntiParalleli.save(false); else noteSave();
+    if(noteStatoAttivo()===NOTES) noteSave(); else window.appuntiParalleli.save(false);
   }
   /* Cmd+P: si intercetta di proposito. Lasciata al browser stamperebbe la
      pagina intera — barre, tendine, maniglie — cioè l'app fotografata invece

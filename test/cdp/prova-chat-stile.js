@@ -220,7 +220,10 @@ const SUPERFICI = {
   /* Si rimette tutto com'era: tema chiaro e finestra chiusa. */
   await c.val(`document.documentElement.dataset.theme='chiaro'`);
   await c.val(`(()=>{const w=document.getElementById('zchatWindow'); if(w&&!w.hidden) document.getElementById('zchatClose').click(); return 1;})()`);
-  await c.pausa(200);
+  // Chiudere la chat chiede il nome: lasciare il dialogo aperto blocca tutti i click della prova dopo.
+  await aspetta(`document.getElementById('zchatRenameDialog').open`);
+  await c.clicca('#zchatRenameDefault');
+  await aspetta(`document.getElementById('zchatWindow').hidden && !document.getElementById('zchatRenameDialog').open`);
   console.log('');
   if (ko) { console.log('✗ ' + ko + ' promesse rotte'); process.exit(1); }
   console.log('OK: la chat porta il vestito di StudIA — angoli vivi, due altezze, --sh-3d, emoji-font, e una testa che è una .tbar.');

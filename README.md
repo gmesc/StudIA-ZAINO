@@ -41,6 +41,14 @@ Ogni tendina nella testata del banco offre **Appunti** e **Fonti**. Scegli la st
 
 I due appunti si salvano separatamente e vengono salvati prima dell’invio alla chat. Lo stesso appunto non può essere modificato nei due editor contemporaneamente. La seconda fonte permette lettura, selezione/copia, pagina e zoom indipendenti; gli strumenti avanzati di annotazione e ritaglio restano nella prima fonte.
 
+Il riquadro di appunti usato per ultimo riceve le citazioni di **Appunta**, le parole chiave e le aperture dalla sidebar. **⌘/Ctrl+S** salva quel riquadro e **⌘/Ctrl+J** ne cambia l’anteprima. Entrambi gli editor offrono i callout: scrivi `> ` e scegli un tipo, oppure premi 📜; il cursore si posiziona subito nel corpo vuoto, dopo `> `. Il secondo editor conserva una barra ridotta e non dispone ancora dell’anteprima modificabile e di tutti i comandi del primo.
+
+## Organizzare le fonti
+
+Nella sidebar, **+** accanto a **Fonti** crea un gruppo. La freccia accanto al nome lo chiude o riapre. **✎** mostra i comandi per rinominare i gruppi, spostare documenti tra gruppi e ordinare manualmente gruppi e documenti con **↑ / ↓**; **✓** conclude l’organizzazione. Sciogliere un gruppo riporta le sue fonti in **Senza gruppo**, conservando i file.
+
+Gruppi, ordine e apertura sono salvati in `MATERIALI/_gruppi.json` nello zaino. I file PDF mantengono i loro percorsi, così i rimandi esistenti continuano a funzionare; una rinomina conserva l’appartenenza al gruppo.
+
 ## Verifica
 
 ```bash

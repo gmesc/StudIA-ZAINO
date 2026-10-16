@@ -119,8 +119,23 @@ async function scegli(id,value){await c.val(`(()=>{const el=document.getElementB
  const secondo=await c.val(`NOTES.list.find(n=>n.file!==NOTES.cur.file).file`);
  await scegli('noteSelect2',secondo);await aspetta(`appuntiParalleli.stato.cur?.file===${JSON.stringify(secondo)}`);
  assert.equal(await c.val(`document.querySelector('#noteSelect2 option[value='+JSON.stringify(NOTES.cur.file)+']').disabled`),true);
+ // Il focus può passare alla fonte: Appunta conserva l'ultimo editor usato.
+ await c.val('appuntiParalleli.stato.mde.codemirror.focus()');
  await click('#pdfDoc');await aspetta(`!!document.querySelector('#pdfDocPop .pd-voce[data-doc="01 Botanica.pdf"]')`);
  await click('#pdfDocPop .pd-voce[data-doc="01 Botanica.pdf"]');await aspetta(`!!PDFJS.doc && ANTEPRIMA.file==='01 Botanica.pdf'`);
+ assert.equal(await c.val('noteStatoAttivo()===appuntiParalleli.stato'),true);
+ const primoPrima=fs.readFileSync(path.join(nota,primo),'utf8');
+ assert.equal(await c.val("noteInserisci('Citazione destinata al secondo riquadro.')"),true);
+ assert(fs.readFileSync(path.join(nota,secondo),'utf8').includes('Citazione destinata al secondo riquadro.'));
+ assert.equal(fs.readFileSync(path.join(nota,primo),'utf8'),primoPrima);
+ for(let i=0;i<2;i++){
+  await c.invia('Input.dispatchKeyEvent',{type:'keyDown',key:'j',code:'KeyJ',modifiers:4,windowsVirtualKeyCode:74});
+  await c.invia('Input.dispatchKeyEvent',{type:'keyUp',key:'j',code:'KeyJ',modifiers:4,windowsVirtualKeyCode:74});
+  await aspetta(`!!document.querySelector('#noteHost2 .editor-preview-active')===${i===0}`);
+  assert.equal(await c.val(`!!document.querySelector('#noteHost .editor-preview-active')`),false);
+ }
+ assert.equal(await c.val('appuntiParalleli.stato.mde.codemirror.hasFocus()'),true);
+
  await click('#pdf2Doc');await aspetta(`!!document.querySelector('#pdfDocPop .pd-voce[data-fonte2="02 Biologia cellulare.pdf"]')`);
  await click('#pdfDocPop .pd-voce[data-fonte2="02 Biologia cellulare.pdf"]');await aspetta(`!!FONTE2.doc && FONTE2.file==='02 Biologia cellulare.pdf' && !FONTE2.caricando`);
  assert.equal(await c.val('ANTEPRIMA.file'),'01 Botanica.pdf');

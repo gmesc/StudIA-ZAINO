@@ -17,7 +17,15 @@
     }) || '';
   }
   if(root){
-    var s={ courseId:'', cur:null, mde:null, dirty:false, loading:false, timer:null };
+    var s={ courseId:'', cur:null, mde:null, dirty:false, loading:false, timer:null }, ultimo='appunti';
+    // Il focus esce dall'editor quando si seleziona una fonte: la destinazione resta l'ultimo riquadro usato.
+    function registra(e){
+      var pane=e.target && e.target.closest && e.target.closest('#notePane, #notePane2');
+      if(pane) ultimo=pane.id==='notePane2'?'appunti2':'appunti';
+    }
+    function attivo(){ return root.bancoVisibile('appunti2') && (ultimo==='appunti2' || !root.bancoVisibile('appunti')); }
+    root.document.addEventListener('pointerdown',registra,true);
+    root.document.addEventListener('focusin',registra,true);
     function el(id){ return root.document.getElementById(id); }
     function key(id){ return 'studia.banco.c.'+id+'.appunti2'; }
     function memoria(id){ try{ return JSON.parse(root.localStorage.getItem(key(id))||'{}'); }catch(e){ return {}; } }
@@ -64,11 +72,19 @@
       s.mde=new root.EasyMDE({ element:el('noteArea2'), autoDownloadFontAwesome:false,
         spellChecker:false,status:false,autofocus:false,forceSync:true,indentWithTabs:false,tabSize:2,
         sideBySideFullscreen:false,placeholder:'Scegli un appunto oppure premi + per crearne uno.',
-        toolbar:['bold','italic','heading','|','quote','unordered-list','ordered-list','|','link','code','|','preview','side-by-side'],
+        toolbar:['bold','italic','heading','|','quote','unordered-list','ordered-list','|',
+          {name:'callout',title:'Inserisci un riquadro (callout)',className:'ncb-callout',
+            action:function(ed){ root.openCalloutMenu(host.querySelector('.ncb-callout'),ed.codemirror); }},
+          '|','link','code','|','preview','side-by-side',
+          {name:'guida',title:'Come si scrive in StudIA',className:'ncb-guida',action:function(){ root.apriGuida(); }}],
         shortcuts:{ toggleFullScreen:null,togglePreview:null,toggleSideBySide:'F9' },
         previewClass:['editor-preview','md-prev'],
         previewRender:function(md){ return root.renderNoteMd(md); }
       });
+      var cb=host.querySelector('.ncb-callout'); if(cb) cb.innerHTML='&#128220;';
+      var gb=host.querySelector('.ncb-guida'); if(gb) gb.innerHTML='?';
+      var pv=host.querySelector('.preview'); if(pv) pv.title='Anteprima (⌘J)';
+      if(root.noteCollegaCallout) root.noteCollegaCallout(s.mde.codemirror);
       var bar=host.querySelector('.editor-toolbar');
       bar.insertAdjacentHTML('afterbegin','<span class="notectl"><select id="noteSelect2" aria-label="Appunto in questo riquadro"></select><span class="dirty" id="noteDirty2" hidden title="Modifiche non salvate">●</span><button class="ncbtn" id="noteNew2" type="button" title="Nuovo appunto" aria-label="Nuovo appunto">+</button><button class="ncbtn" id="noteSave2" type="button" title="Salva appunto (⌘S)" aria-label="Salva appunto">💾</button><button class="ncbtn" id="noteRen2" type="button" title="Rinomina appunto" aria-label="Rinomina appunto">✎</button></span><i class="tbsep"></i>');
       bar.insertAdjacentHTML('beforeend','<span class="tbspazio"></span><button class="ncbtn" id="noteClose2" type="button" title="Chiudi appunto" aria-label="Chiudi appunto">✕</button>');
@@ -131,13 +147,15 @@
       if(!ok){ try{ ricorda(true); }catch(e){ return false; } }
       clear(); return true;
     }
-    function focus(){ root.bancoMostra('appunti2'); if(s.mde) s.mde.codemirror.focus(); }
+    function focus(){ ultimo='appunti2'; root.bancoMostra('appunti2'); if(s.mde) s.mde.codemirror.focus(); }
     function open(file,opt){
       opt=opt||{};
       var id=root.corsoAttivo(); if(!id || !file) return false;
       if(altro(file,id)){
         avviso('Questo appunto è già aperto nell’altro riquadro. Scegline uno diverso per lavorare in parallelo.');
-        refresh(); if(!opt.ripristina) root.openEditor(); return false;
+        refresh();
+        if(!opt.ripristina){ ultimo='appunti'; root.openEditor(); if(root.NOTES.mde) root.NOTES.mde.codemirror.focus(); }
+        return false;
       }
       if(!flush() || !ensure()) return false;
       var ns; try{ ns=lista(); }catch(e){ avviso('Appunti non leggibili: '+e.message); return false; }
@@ -148,7 +166,7 @@
       carica(bozza?bozza.body:n.body);
       if(bozza){ s.dirty=true; avviso('Recuperata una bozza non salvata nel vault. Premi Salva per riprovare.'); }
       root.apertoScrivi('appunto2',file); refresh(); root.refreshNoteUI();
-      if(!opt.ripristina) root.bancoMostra('appunti2');
+      if(!opt.ripristina){ ultimo='appunti2'; root.bancoMostra('appunti2'); }
       var pos=(m.punti||{})[file];
       requestAnimationFrame(function(){
         if(s.courseId!==id || !s.cur || s.cur.file!==file) return;
@@ -183,7 +201,7 @@
       if(s.mde){ refresh(); s.mde.codemirror.refresh(); }
     }
     root.appuntiParalleli={flush:flush,molla:molla,open:open,save:save,refresh:refresh,layout:layout,
-      occupato:occupato,focus:focus,stato:s};
+      occupato:occupato,focus:focus,attivo:attivo,stato:s};
     root.document.addEventListener('DOMContentLoaded',layout);
   }
   return {tipo:tipo,scegli:scegli};

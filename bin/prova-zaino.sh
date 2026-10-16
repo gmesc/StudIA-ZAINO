@@ -27,10 +27,12 @@ JS
 ./node_modules/.bin/electron test/electron-chat-app.js --user-data-dir="$LAVORO/dati" --remote-debugging-port="$PORTA" > "$LAVORO/app.log" 2>&1 &
 PID_APP=$!
 for _ in $(seq 1 40); do if curl -sf "http://127.0.0.1:$PORTA/json/version" >/dev/null; then break; fi; sleep 0.25; done
-# ⚠️ IL REGISTRO delle prove della chat sull'app viva. Una prova nuova va
+# ⚠️ IL REGISTRO delle prove sullo zaino sintetico (chat, fonti e appunti). Una prova nuova va
 # scritta QUI, o non la lancia nessuno: `con-vault-di-prova.sh` gira sul vault
 # vero copiato e non conosce lo zaino «biologia» che questo script fabbrica.
-PROVE=(prova-chat-zaino.js prova-chat-stile.js)
+PROVE=(prova-chat-zaino.js prova-chat-stile.js prova-gruppi-fonti.js prova-callout-bolla.js)
+# Un sottoinsieme mirato: bash bin/prova-zaino.sh prova-callout-bolla.js
+if [ "$#" -gt 0 ]; then PROVE=("$@"); fi
 KO=0
 for p in "${PROVE[@]}"; do
   echo ""
@@ -39,4 +41,4 @@ for p in "${PROVE[@]}"; do
 done
 if [ "$KO" -ne 0 ]; then cat "$LAVORO/app.log"; echo ""; echo "✗ $KO prove fallite"; exit 1; fi
 echo ""
-echo "✓ le prove della chat sono verdi"
+echo "✓ le prove dello zaino sono verdi"
