@@ -53,7 +53,7 @@ Le linee dei banchi sono sottili e grigie. La vecchia barra verticale di avanzam
 
 Durante l’organizzazione, trascina i blocchi delle voci per riordinarli o spostarli in un altro gruppo; trascina la testata di un gruppo per cambiarne la posizione. Una linea indica il punto di inserimento. Il **chevron a destra della voce**, integrato nella riga senza separatore né altezza aggiuntiva, apre il menu dei gruppi, con la scelta corrente e **Senza gruppo**. Il menu funziona anche con frecce, Invio ed Esc; **Alt+↑/↓** riordina il blocco da tastiera. Sciogliere un gruppo conserva tutte le sue voci.
 
-Ordine, assegnazioni e apertura viaggiano con lo zaino: `MATERIALI/_gruppi.json` conserva separatamente Fonti e Media, `APPUNTI/_gruppi.json` gli Appunti e `MAPPE/_gruppi.json` le Mappe. I gruppi precedenti vengono mantenuti; i documenti restano nei loro percorsi e la rinomina di PDF, appunti e mappe conserva gruppo e posizione.
+Ordine, assegnazioni e apertura viaggiano con lo zaino: `MATERIALI/_gruppi.json` conserva separatamente Fonti e Media, `APPUNTI/_gruppi.json` gli Appunti e `MAPPE/_gruppi.json` le Mappe. I gruppi delle sezioni sono indipendenti, anche quando hanno lo stesso nome. Le copie vuote ereditate dalla vecchia migrazione vengono corrette; i documenti restano nei loro percorsi e la rinomina di PDF, appunti e mappe conserva gruppo e posizione.
 
 ## Verifica
 

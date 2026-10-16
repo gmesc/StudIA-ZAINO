@@ -127,6 +127,57 @@ try {
   appunti.save(vault, altro, '.personale.md', {title:'Importato'}, 'Nota importata');
   uguali(archivio.leggi(vault, altro, 'appunti').stato.liberi, appunti.list(vault, altro).map(n=>n.file));
 
+  // Regressione: copie vuote ereditate in Media, stessi identificatori delle Fonti.
+  const clone = {versione:2,fonti:scelta,media:{versione:1,gruppi:scelta.gruppi.map(g=>({...g,files:[]})),liberi:files.slice(2)}};
+  fs.writeFileSync(registro,JSON.stringify(clone));
+  uguali(archivio.leggi(vault,id,'media').stato.gruppi,[]);
+  uguali(archivio.leggi(vault,id,'fonti').stato,scelta);
+  uguali(JSON.parse(fs.readFileSync(registro,'utf8')),clone);
+
+  // La pulizia è una migrazione, mai una regola per cancellare gruppi vuoti in v3.
+  fs.writeFileSync(registro,JSON.stringify({...clone,versione:3}));
+  uguali(archivio.leggi(vault,id,'media').stato,clone.media);
+  uguali(archivio.salva(vault,id,scelta).error,'');
+  uguali(archivio.leggi(vault,id,'media').stato,clone.media);
+  fs.writeFileSync(registro,JSON.stringify({versione:2,fonti:clone.media,media:clone.media}));
+  uguali(archivio.leggi(vault,id).stato.gruppi.length,1);
+  uguali(archivio.leggi(vault,id,'media').stato.gruppi,[]);
+
+  // Stesso nome ma id autonomo: il gruppo Media vuoto è intenzionale e resta.
+  const autonomo = G.crea(G.normalizza(null,files.slice(2)),'autonomo','Esame');
+  fs.writeFileSync(registro,JSON.stringify({...clone,media:autonomo}));
+  uguali(archivio.leggi(vault,id,'media').stato,autonomo);
+  uguali(archivio.salva(vault,id,scelta).error,'');
+  uguali(JSON.parse(fs.readFileSync(registro,'utf8')).versione,3);
+  uguali(archivio.leggi(vault,id,'media').stato,autonomo);
+  const soloFonti=G.crea(scelta,'solo-fonti','Solo Fonti');
+  uguali(archivio.salva(vault,id,soloFonti).error,'');
+  uguali(archivio.leggi(vault,id,'media').stato,autonomo);
+  uguali(archivio.salva(vault,id,G.rinomina(autonomo,'autonomo','Solo Media'),'media').error,'');
+  uguali(archivio.leggi(vault,id).stato,soloFonti);
+
+  // Anche il clone vuoto in Fonti di un gruppo Media popolato viene recuperato.
+  const soloMedia=G.sposta(G.crea(G.normalizza(null,files.slice(2)),'audio','Audio'),files[2],'audio');
+  const fontiVuoto={versione:1,gruppi:soloMedia.gruppi.map(g=>({...g,files:[]})),liberi:files.slice(0,2)};
+  fs.writeFileSync(registro,JSON.stringify({versione:2,fonti:fontiVuoto,media:soloMedia}));
+  uguali(archivio.leggi(vault,id).stato.gruppi,[]);
+  uguali(archivio.leggi(vault,id,'media').stato,soloMedia);
+
+  // Un gruppo ereditato ma rinominato in una sezione non è più una copia da eliminare.
+  fs.writeFileSync(registro,JSON.stringify({...clone,media:G.rinomina(clone.media,'esame','Rinominato')}));
+  uguali(archivio.leggi(vault,id,'media').stato.gruppi[0].nome,'Rinominato');
+
+  // I vecchi gruppi solo PDF e quelli ancora vuoti appartengono a Fonti.
+  const soloPdf=G.crea(scelta,'vuoto','Da riempire');
+  fs.writeFileSync(registro,JSON.stringify(soloPdf));
+  uguali(archivio.leggi(vault,id,'media').stato.gruppi,[]);
+  uguali(archivio.leggi(vault,id).stato,soloPdf);
+  uguali(archivio.salva(vault,id,soloPdf).error,'');
+  uguali(archivio.leggi(vault,id,'media').stato.gruppi,[]);
+  fs.writeFileSync(registro,JSON.stringify(soloMedia));
+  uguali(archivio.leggi(vault,id).stato.gruppi,[]);
+  uguali(archivio.leggi(vault,id,'media').stato,soloMedia);
+
   // Il vecchio registro misto si separa senza scrivere durante la lettura.
   const storico = G.sposta(G.sposta(G.crea(G.normalizza(null,files.concat('05 Storico.pdf')),'comune','Lezione'),files[0],'comune'),files[2],'comune');
   fs.writeFileSync(registro,JSON.stringify(storico));
@@ -136,6 +187,13 @@ try {
   uguali(JSON.parse(fs.readFileSync(registro,'utf8')),storico);
   uguali(archivio.salva(vault,id,scelta).error,'');
   uguali(archivio.leggi(vault,id,'media').stato,media);
+  // Entrambe le metà del gruppo misto restano autonome dopo la migrazione,
+  // anche svuotando e sciogliendo quella Media (nessuna nuova pulizia in v3).
+  const mediaVuoto=G.sposta(media,files[2],'');
+  uguali(archivio.salva(vault,id,mediaVuoto,'media').error,'');
+  uguali(archivio.leggi(vault,id,'media').stato.gruppi.length,1);
+  uguali(archivio.salva(vault,id,G.elimina(mediaVuoto,'comune'),'media').error,'');
+  uguali(archivio.leggi(vault,id).stato,scelta);
   media=G.rinomina(media,'comune','Registrazioni');
   uguali(archivio.salva(vault,id,media,'media').error,'');
   uguali(archivio.leggi(vault,id).stato,scelta);

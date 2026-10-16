@@ -80,6 +80,16 @@ async function pulisci(){
   const radice=path.join(vault,'Zaini/biologia');
   const registri=[path.join(radice,'MATERIALI/_gruppi.json'),path.join(radice,'APPUNTI/_gruppi.json'),path.join(radice,'MAPPE/_gruppi.json')];
   prima={tema:await c.val('document.documentElement.dataset.theme'),registri:Object.fromEntries(registri.map(f=>[f,fs.existsSync(f)?fs.readFileSync(f,'utf8'):null]))};
+  // Il registro v2 lasciato dalla vecchia migrazione non deve mostrare copie vuote in Media.
+  const primaFonti=await stato('fonti'), g={id:'ereditato',nome:'Solo Fonti',chiuso:true,files:[primaFonti.liberi[0]]};
+  fs.writeFileSync(registri[0],JSON.stringify({versione:2,
+    fonti:{versione:1,gruppi:[g],liberi:primaFonti.liberi.slice(1)},
+    media:{versione:1,gruppi:[{...g,files:[]}],liberi:[]}}));
+  await c.val('zainoNavAggiorna()');await stabile();
+  assert.equal(await c.val(`document.querySelectorAll(${q(base('fonti')+' .zs-gruppo')}).length`),1);
+  assert.equal(await c.val(`document.querySelectorAll(${q(base('media')+' .zs-gruppo')}).length`),0,'nessun gruppo Fonti duplicato in Media');
+  // Si torna alla base per i gesti indipendenti nelle quattro sezioni.
+  if(prima.registri[registri[0]]===null)fs.rmSync(registri[0]);else fs.writeFileSync(registri[0],prima.registri[registri[0]]);
   mediaDir=path.join(radice,'MATERIALI/Audio');fs.mkdirSync(mediaDir,{recursive:true});
   // Due WAV silenziosi, validi anche se un click involontario aprisse il player.
   const wav=Buffer.alloc(16044);wav.write('RIFF');wav.writeUInt32LE(wav.length-8,4);wav.write('WAVEfmt ',8);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(8000,24);wav.writeUInt32LE(16000,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(16000,40);
@@ -135,7 +145,7 @@ async function pulisci(){
       console.log('  ok  '+sezione+': gruppi trascinabili, caduta nei chiusi, menu da tastiera e chiusura');
     }
     const salvato=await c.val('ZNAV.gruppi');
-    assert.deepEqual(JSON.parse(fs.readFileSync(registri[0],'utf8')),{versione:2,fonti:salvato.fonti,media:salvato.media});
+    assert.deepEqual(JSON.parse(fs.readFileSync(registri[0],'utf8')),{versione:3,fonti:salvato.fonti,media:salvato.media});
     assert.deepEqual(JSON.parse(fs.readFileSync(registri[1],'utf8')),salvato.appunti);
     assert.deepEqual(JSON.parse(fs.readFileSync(registri[2],'utf8')),salvato.mappe);
     await c.val(`cambiaZaino('storia',true)`);await aspetta(`ZNAV.id==='storia' && !ZNAV.carico`);
