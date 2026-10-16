@@ -43,15 +43,17 @@ I due appunti si salvano separatamente e vengono salvati prima dell’invio alla
 
 I due editor degli appunti hanno gli stessi comandi: formattazione, callout, emoji, citazioni, materiali, anteprima modificabile, immagini, rinomina con fonte associata, eliminazione, stampa e PDF. Il riquadro usato per ultimo riceve **Appunta**, parole chiave e aperture dalla sidebar; **⌘/Ctrl+S** salva quel riquadro e **⌘/Ctrl+J** ne cambia l’anteprima. Ogni appunto conserva il proprio testo, cursore e salvataggio. Scrivi `> ` e scegli un callout: il cursore si posiziona subito nel corpo vuoto, dopo `> `.
 
-Le testate del Banco mostrano l’ordine dei riquadri e indicano quello **Attivo**. Quando riduci la vista resta prima l’attivo, poi gli altri da sinistra a destra, riga per riga. Nel menu Banco, passando sulle disposizioni o raggiungendole con la tastiera, puoi leggere in anticipo quali contenuti resteranno. Per esempio, con quattro riquadri numerati 1–4 e il 4 attivo, passando a due conserverai i contenuti del **4 e dell’1**, rinumerati nella nuova vista; passando da tre a uno resta solo quello attivo. Gli altri rimangono aperti fuori vista e tornano riallargandola, nell’ordine risultante dagli spostamenti.
+Le testate del Banco mostrano l’ordine dei riquadri e indicano quello attivo con un **pallino verde**. Quando riduci la vista resta prima l’attivo, poi gli altri da sinistra a destra, riga per riga. Nel menu Banco, passando sulle disposizioni o raggiungendole con la tastiera, puoi leggere in anticipo quali contenuti resteranno. Per esempio, con quattro riquadri numerati 1–4 e il 4 attivo, passando a due conserverai i contenuti del **4 e dell’1**, rinumerati nella nuova vista; passando da tre a uno resta solo quello attivo. Gli altri rimangono aperti fuori vista e tornano riallargandola, nell’ordine risultante dagli spostamenti.
+
+Le linee dei banchi sono sottili e grigie. La vecchia barra verticale di avanzamento del capitolo è nascosta nello ZAINO.
 
 ## Organizzare la sidebar
 
-**Fonti**, **Appunti** e **Media** hanno ciascuno i propri gruppi. **+** crea un gruppo; il chevron accanto al suo nome lo chiude o riapre. **✎** attiva l’organizzazione e **✓** la conclude.
+**Fonti**, **Appunti**, **Media** e **Mappe** hanno ciascuno i propri gruppi. **+** crea un gruppo; il chevron accanto al suo nome lo chiude o riapre. **✎** attiva l’organizzazione e **✓** la conclude.
 
-Durante l’organizzazione, trascina i blocchi delle voci per riordinarli o spostarli in un altro gruppo; trascina la testata di un gruppo per cambiarne la posizione. Una linea indica il punto di inserimento. Il solo **chevron a destra della voce** apre il menu dei gruppi, con la scelta corrente e **Senza gruppo**. Il menu funziona anche con frecce, Invio ed Esc; **Alt+↑/↓** riordina il blocco da tastiera. Sciogliere un gruppo conserva tutte le sue voci.
+Durante l’organizzazione, trascina i blocchi delle voci per riordinarli o spostarli in un altro gruppo; trascina la testata di un gruppo per cambiarne la posizione. Una linea indica il punto di inserimento. Il **chevron a destra della voce**, integrato nella riga senza separatore né altezza aggiuntiva, apre il menu dei gruppi, con la scelta corrente e **Senza gruppo**. Il menu funziona anche con frecce, Invio ed Esc; **Alt+↑/↓** riordina il blocco da tastiera. Sciogliere un gruppo conserva tutte le sue voci.
 
-Ordine, assegnazioni e apertura viaggiano con lo zaino: `MATERIALI/_gruppi.json` conserva separatamente Fonti e Media, `APPUNTI/_gruppi.json` gli Appunti. I gruppi precedenti vengono mantenuti; i documenti restano nei loro percorsi e la rinomina di PDF e appunti conserva gruppo e posizione.
+Ordine, assegnazioni e apertura viaggiano con lo zaino: `MATERIALI/_gruppi.json` conserva separatamente Fonti e Media, `APPUNTI/_gruppi.json` gli Appunti e `MAPPE/_gruppi.json` le Mappe. I gruppi precedenti vengono mantenuti; i documenti restano nei loro percorsi e la rinomina di PDF, appunti e mappe conserva gruppo e posizione.
 
 ## Verifica
 

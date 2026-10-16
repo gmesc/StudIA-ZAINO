@@ -2,7 +2,7 @@
  *
  * Sono due riquadri attaccati nell'angolo fra la topbar e la sidebar: alti
  * diverso si vede subito, ed erano 40 contro 33. Adesso li tiene insieme un
- * token solo, `--tb-blocco-h` (il bottone di barra più i suoi tre pixel di
+ * token solo, `--tb-blocco-h` (il bottone di barra più i suoi due pixel di
  * bordi), e questa prova misura che non tornino a divergere — compresi i bordi
  * inferiori, che devono cadere sulla stessa riga di pixel.
  *

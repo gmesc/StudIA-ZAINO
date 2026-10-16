@@ -8,6 +8,7 @@ const G = require('../App/assets/fonti/gruppi');
 const archivio = require('../lib/gruppi-fonti');
 const zaini = require('../lib/zaini');
 const fonti = require('../lib/fonti');
+const mappe = require('../lib/mappe');
 let controlli = 0;
 function uguali(attuale, atteso) { assert.deepEqual(attuale, atteso); controlli++; }
 function vero(valore) { assert.ok(valore); controlli++; }
@@ -161,6 +162,37 @@ try {
   uguali(appunti.list(vault,id).map(n=>n.file).sort(),[nR.file,n2].sort());
   fs.unlinkSync(tmpNote);
   vero(archivio.leggi(vault,id,'../APPUNTI').error);
+
+  // Mappe: registro separato, rinomina nello stesso gruppo e rollback se non si può salvarlo.
+  const m1=mappe.salva(vault,id,null,{titolo:'Prima mappa',nodi:[],archi:[]}).file;
+  const m2=mappe.salva(vault,id,null,{titolo:'Seconda mappa',nodi:[],archi:[]}).file;
+  const mLetto=archivio.leggi(vault,id,'mappe');
+  uguali(mLetto.error,'');
+  uguali(mLetto.stato.liberi,[m1,m2]);
+  let mStato=G.sposta(G.crea(mLetto.stato,'mappe','Concetti'),m1,'mappe');
+  uguali(archivio.salva(vault,id,mStato,'mappe').error,'');
+  const registroMappe=path.join(vault,'Zaini',id,'MAPPE',archivio.FILE);
+  uguali(JSON.parse(fs.readFileSync(registroMappe,'utf8')),mStato);
+  const mR=mappe.rinomina(vault,id,m1,'Mappa rinominata');vero(!mR.error);
+  mStato=G.rinominaFile(mStato,m1,mR.file);
+  uguali(archivio.leggi(vault,id,'mappe').stato,mStato);
+  uguali(archivio.leggi(vault,id,'appunti').stato.gruppi[0].files,[nR.file]);
+  uguali(archivio.leggi(vault,id,'media').stato,media);
+  uguali(archivio.leggi(vault,altro,'mappe').stato.liberi,[]);
+  const mappeBuone=fs.readFileSync(registroMappe,'utf8');
+  const mOriginale=fs.readFileSync(path.join(path.dirname(registroMappe),mR.file),'utf8');
+  fs.writeFileSync(registroMappe,'{rotto');
+  vero(mappe.rinomina(vault,id,mR.file,'Impossibile').error);
+  uguali(fs.readFileSync(registroMappe,'utf8'),'{rotto');
+  fs.writeFileSync(registroMappe,mappeBuone);
+  const tmpMappe=registroMappe+'.tmp-'+process.pid;fs.writeFileSync(tmpMappe,'occupato');
+  vero(mappe.rinomina(vault,id,mR.file,'Ripristinata').error);
+  uguali(fs.readFileSync(path.join(path.dirname(registroMappe),mR.file),'utf8'),mOriginale);
+  uguali(archivio.leggi(vault,id,'mappe').stato,mStato);
+  uguali(mappe.elenco(vault,id).mappe.map(m=>m.file).sort(),[mR.file,m2].sort());
+  fs.unlinkSync(tmpMappe);
+  fs.writeFileSync(path.join(path.dirname(registroMappe),'.nascosta.json'),'{}');
+  uguali(archivio.leggi(vault,id,'mappe').stato,mStato);
 
   const rinomina = fonti.rinomina(vault, id, files[0], 'Fondamenti');
   uguali(rinomina.error, '');

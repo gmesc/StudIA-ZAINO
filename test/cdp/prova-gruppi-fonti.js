@@ -2,7 +2,8 @@
 // Solo vault sintetico: si provano anche i gesti nativi, non soltanto il riordino in memoria.
 const assert=require('assert/strict'), fs=require('fs'), path=require('path'), c=require('./cdp');
 const q=JSON.stringify;
-let prima, vault, mediaDir;
+let prima, vault, mediaDir, mappeDir;
+const mappeProva=[];
 const base=sezione=>'#zainoNav [data-sezione="'+sezione+'"]';
 const stato=sezione=>c.val('ZNAV.gruppi['+q(sezione)+']');
 async function aspetta(expr){
@@ -66,23 +67,40 @@ async function pulisci(){
     if(testo===null)fs.rmSync(file,{force:true});else fs.writeFileSync(file,testo);
   }
   for(const f of ['91 Media prova.wav','92 Media prova.wav'])fs.rmSync(path.join(mediaDir,f),{force:true});
+  for(const f of mappeProva)fs.rmSync(path.join(mappeDir,f),{force:true});
   await c.val(`(async()=>{document.documentElement.dataset.theme=${q(prima.tema)}; ZNAV.organizza={}; await zainoNavAggiorna(); document.getElementById('sidebar').scrollTop=0;})()`);
 }
 (async()=>{
-  await c.collega();await c.partiPulito();await aspetta(`zainoAttivo()==='biologia' && ZNAV.gruppi.fonti && !ZNAV.carico`);
+  await c.collega();
+  // I gesti CDP restano reali anche se un'altra app passa in primo piano durante la prova.
+  // Senza fuoco emulato, il rientro richiama notesReload tra pressione e rilascio del mouse.
+  const fuoco=await c.invia('Emulation.setFocusEmulationEnabled',{enabled:true});assert(!fuoco.error);
+  await c.partiPulito();await aspetta(`zainoAttivo()==='biologia' && ZNAV.gruppi.fonti && !ZNAV.carico`);
   vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
   const radice=path.join(vault,'Zaini/biologia');
-  const registri=[path.join(radice,'MATERIALI/_gruppi.json'),path.join(radice,'APPUNTI/_gruppi.json')];
+  const registri=[path.join(radice,'MATERIALI/_gruppi.json'),path.join(radice,'APPUNTI/_gruppi.json'),path.join(radice,'MAPPE/_gruppi.json')];
   prima={tema:await c.val('document.documentElement.dataset.theme'),registri:Object.fromEntries(registri.map(f=>[f,fs.existsSync(f)?fs.readFileSync(f,'utf8'):null]))};
   mediaDir=path.join(radice,'MATERIALI/Audio');fs.mkdirSync(mediaDir,{recursive:true});
   // Due WAV silenziosi, validi anche se un click involontario aprisse il player.
   const wav=Buffer.alloc(16044);wav.write('RIFF');wav.writeUInt32LE(wav.length-8,4);wav.write('WAVEfmt ',8);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(8000,24);wav.writeUInt32LE(16000,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(16000,40);
   for(const f of ['91 Media prova.wav','92 Media prova.wav'])fs.writeFileSync(path.join(mediaDir,f),wav);
+  mappeDir=path.join(radice,'MAPPE');
+  for(const titolo of ['Prima mappa','Seconda mappa']){
+    const r=require('../../lib/mappe').salva(vault,'biologia',null,{titolo,nodi:[],archi:[]});assert(!r.error);mappeProva.push(r.file);
+  }
   await c.val('zainoNavAggiorna()');await stabile();
   try{
-    for(const sezione of ['fonti','appunti','media']){
+    assert.equal(await c.val(`getComputedStyle(document.getElementById('sidebarTitolo')).display`),'none');
+    for(const sezione of ['fonti','appunti','media','mappe']){
       const files=(await stato(sezione)).liberi;assert.equal(files.length,2);
+      const altezza=await c.val(`document.querySelector(${q(item(sezione,files[0]))}).getBoundingClientRect().height`);
       const uno=await crea(sezione,'Lezioni <base>'),due=await crea(sezione,'Ripasso');
+      assert.equal(await c.val(`document.querySelector(${q(item(sezione,files[0]))}).getBoundingClientRect().height`),altezza,'organizzare non aumenta l’altezza di una riga semplice');
+      assert(await c.val(`(()=>{
+        const e=document.querySelector(${q(item(sezione,files[0]))}),b=e.querySelector('.zs-assegna'),s=getComputedStyle(b);
+        const tit=getComputedStyle(document.querySelector(${q(base(sezione)+' .zs-tit')})),g=getComputedStyle(document.querySelector(${q(gruppo(sezione,uno)+' [data-znav="toggle"]')}));
+        return s.borderLeftWidth==='0px' && s.backgroundColor==='rgba(0, 0, 0, 0)' && b.getBoundingClientRect().height<=e.getBoundingClientRect().height && tit.fontSize==='12px' && g.fontSize==='12px' && g.fontWeight==='700';
+      })()`),'chevron integrato nella riga e gerarchia dei caratteri');
       assert.equal(await c.val(`document.querySelector(${q(gruppo(sezione,uno)+' .zs-nome')}).textContent`),'Lezioni <base>');
       assert.equal(await c.val(`document.querySelectorAll(${q(base(sezione)+' select, '+base(sezione)+' [data-znav="file-su"], '+base(sezione)+' [data-znav="gruppo-su"]')}).length`),0);
       await assegna(sezione,files[0],uno);await assegna(sezione,files[1],uno);
@@ -90,11 +108,11 @@ async function pulisci(){
       await trascina(item(sezione,files[0]),item(sezione,files[1]));
       assert.deepEqual((await stato(sezione)).gruppi[0].files,[files[1],files[0]],'riordino con mouse vero');
       console.log('  ok  '+sezione+': trascinamento nativo delle voci');
-      await c.val(`document.querySelector(${q(item(sezione,files[0])+' .zs-assegna')}).focus()`);
+      await c.val(`(()=>{window.__znavTasti=[];if(!window.__znavOsservaTasti){window.__znavOsservaTasti=true;document.addEventListener('keydown',e=>window.__znavTasti.push({key:e.key,alt:e.altKey,target:e.target.outerHTML?.slice(0,400),carico:ZNAV.carico,salva:ZNAV.salva}),true);}document.querySelector(${q(item(sezione,files[0])+' .zs-assegna')}).focus();})()`);
       for(const [key,code,vk,atteso] of [['ArrowUp','ArrowUp',38,files],['ArrowDown','ArrowDown',40,[files[1],files[0]]]]){
         await c.invia('Input.dispatchKeyEvent',{type:'keyDown',key,code,windowsVirtualKeyCode:vk,modifiers:1});
         await c.invia('Input.dispatchKeyEvent',{type:'keyUp',key,code,windowsVirtualKeyCode:vk,modifiers:1});
-        await stabile();assert.deepEqual((await stato(sezione)).gruppi[0].files,atteso,'riordino alternativo da tastiera');
+        await stabile();assert.deepEqual((await stato(sezione)).gruppi[0].files,atteso,'riordino alternativo da tastiera: '+JSON.stringify(await c.val('window.__znavTasti')));
       }
 
       await trascina(gruppo(sezione,due)+' .zs-gruppo-testa',gruppo(sezione,uno)+' .zs-gruppo-testa',false);
@@ -119,8 +137,9 @@ async function pulisci(){
     const salvato=await c.val('ZNAV.gruppi');
     assert.deepEqual(JSON.parse(fs.readFileSync(registri[0],'utf8')),{versione:2,fonti:salvato.fonti,media:salvato.media});
     assert.deepEqual(JSON.parse(fs.readFileSync(registri[1],'utf8')),salvato.appunti);
+    assert.deepEqual(JSON.parse(fs.readFileSync(registri[2],'utf8')),salvato.mappe);
     await c.val(`cambiaZaino('storia',true)`);await aspetta(`ZNAV.id==='storia' && !ZNAV.carico`);
-    for(const s of ['fonti','appunti','media'])assert.equal((await stato(s)).gruppi.length,0);
+    for(const s of ['fonti','appunti','media','mappe'])assert.equal((await stato(s)).gruppi.length,0);
     await c.val(`cambiaZaino('biologia',true)`);await aspetta(`ZNAV.id==='biologia' && !ZNAV.carico`);
     assert.deepEqual(await c.val('ZNAV.gruppi'),salvato);
     await c.val('location.reload()');await c.pausa(1000);await aspetta(`typeof ZNAV!=='undefined' && ZNAV.id==='biologia' && !ZNAV.carico`);
@@ -135,11 +154,16 @@ async function pulisci(){
     const file=(await stato('appunti')).liberi[0];await click(item('appunti',file)+' .zs-assegna');
     for(const tema of ['chiaro','scuro']){
       await c.val(`document.documentElement.dataset.theme=${q(tema)}`);await c.pausa(100);
+      assert(await c.val(`(()=>{
+        const e=document.createElement('div');e.className='sr-lesson';document.getElementById('searchRes').appendChild(e);
+        const sfondo=getComputedStyle(e).backgroundColor;e.remove();
+        return Array.from(document.querySelectorAll('#zainoNav .zs-tit')).every(t=>getComputedStyle(t).backgroundColor===sfondo);
+      })()`),'le intestazioni condividono lo sfondo della ricerca in entrambi i temi');
       const r=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/studia-zaino-gruppi-'+tema+'.png',Buffer.from(r.result.data,'base64'));
       assert(await c.val(`(()=>{const e=document.getElementById('zainoNav');return e.scrollWidth<=e.clientWidth+1;})()`));
       assert(await c.val(`(()=>{const r=document.getElementById('znavGruppiPop').getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;})()`));
     }
-    console.log('✓ sidebar: tre sezioni, mouse nativo, bubble menu, tastiera, persistenza, migrazione e errori');
-  }catch(e){console.error('Prima della pulizia:',e);const r=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/studia-sidebar-prima-pulizia.png',Buffer.from(r.result.data,'base64'));throw e;}finally{await pulisci();}
+    console.log('✓ sidebar: quattro sezioni, mouse nativo, bubble menu, tastiera, persistenza, migrazione e errori');
+  }catch(e){console.error('Prima della pulizia:',e);const r=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/studia-sidebar-prima-pulizia.png',Buffer.from(r.result.data,'base64'));throw e;}finally{await pulisci();await c.invia('Emulation.setFocusEmulationEnabled',{enabled:false});}
   process.exit(0);
 })().catch(async e=>{console.error(e);try{const r=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/studia-zaino-gruppi-failure.png',Buffer.from(r.result.data,'base64'));}catch(_){}process.exit(1);});

@@ -83,8 +83,19 @@ const strumentiSalvati = () => c.val(`Object.values(bancoStato().blocchi).filter
     await c.clicca('.blocco[data-blocco="D"] .bnumero');
     verifica('il click vero nel quarto riquadro lo attiva', 'D', await c.val('bancoBloccoAttivo()'));
     verifica('anche Appunta segue la testata scelta', 'appunti2', await c.val('noteStatoAttivo().id'));
-    verifica('il badge Attivo compare sul quarto riquadro', true,
+    verifica('il pallino attivo compare sul quarto riquadro', true,
       await c.val(`!document.querySelector('.blocco[data-blocco="D"] .battivo').hidden && document.querySelector('.blocco[data-blocco="D"]').dataset.attivo==='1'`));
+    verifica('il pallino sostituisce il testo ed è accessibile', true, await c.val(`(()=>{
+      const e=document.querySelector('.blocco[data-blocco="D"] .battivo'),s=getComputedStyle(e);
+      return !e.textContent && e.getAttribute('aria-label')==='Riquadro attivo' && s.width==='6px' && s.height==='6px' && s.backgroundColor===s.color;
+    })()`));
+    verifica('separatori sottili grigi, senza sottolineatura attiva', true, await c.val(`(()=>{
+      const linea=getComputedStyle(document.querySelector('.blocco[data-bordo-sx="1"]')).borderLeftColor;
+      return Array.from(document.querySelectorAll('#banco .blocco:not([hidden]) > .bhead')).every(e=>{
+        const s=getComputedStyle(e);return s.borderTopWidth==='1px' && s.borderTopColor===linea && s.boxShadow==='none';
+      });
+    })()`));
+    verifica('la barra di avanzamento dei capitoli è nascosta nello zaino', 'none', await c.val(`getComputedStyle(document.getElementById('navdots')).display`));
     await menu();
     verifica('aprire Banco non ruba l’attivo', 'D', await c.val('bancoBloccoAttivo()'));
     const primaAnteprima = await c.val('JSON.stringify(bancoStato())');
@@ -110,7 +121,7 @@ const strumentiSalvati = () => c.val(`Object.values(bancoStato().blocchi).filter
     verifica('gli altri pannelli rimangono vivi nel magazzino', true,
       await c.val(`!!document.querySelector('#bancoMagazzino > #notePane') && !!document.querySelector('#bancoMagazzino > #pdfPane2')`));
     verifica('l’attivo segue lo strumento nel nuovo primo riquadro', 'A', await c.val('bancoBloccoAttivo()'));
-    verifica('un solo badge è attivo a schermo', 1,
+    verifica('un solo pallino è attivo a schermo', 1,
       await c.val(`Array.from(document.querySelectorAll('#banco .blocco')).filter(b=>!b.hidden && !b.querySelector('.battivo').hidden).length`));
     verifica('tutti gli strumenti restano nello stato', tutti, await strumentiSalvati());
     verifica('nessun pannello o testo di appunto viene ricreato o perso', true, await pannelliIntatti());

@@ -235,10 +235,10 @@
     /* La TESTATA DI BLOCCO è la barra più bassa dell'app: dentro ha una tendina
        sola, e ogni pixel in più lo toglie al contenuto del blocco. La sua
        altezza non è un numero scritto a mano ma il bottone di barra più i suoi
-       tre pixel di bordi (2 sopra, che dicono la famiglia dello strumento, e 1
-       sotto). La usa anche la maniglia dell'indice, che le sta a fianco
+       due pixel di bordi (1 sopra e 1 sotto). La usa anche la maniglia dell'indice,
+       che le sta a fianco
        nell'angolo: due cose adiacenti alte diverso si vedono subito. */
-    --tb-blocco-h:calc(var(--tb-h) + 3px);
+    --tb-blocco-h:calc(var(--tb-h) + 2px);
     --side-w:clamp(240px,19vw,290px); --pane-w:42vw;
     --icon-plus:none; --icon-minus:none; --icon-check:none;
   }
@@ -360,7 +360,8 @@
      grande tiene le fonti, e «Capitolo» sparisce anche dalla tendina degli
      strumenti (vedi `bancoStrumentiOfferti`). */
   html[data-modo="zaino"] #content, html[data-modo="zaino"] main .nav{ display:none!important; }
-  html[data-modo="zaino"] #toc, html[data-modo="zaino"] .sidebar-foot{ display:none!important; }
+  html[data-modo="zaino"] #toc, html[data-modo="zaino"] .sidebar-foot,
+  html[data-modo="zaino"] #sidebarTitolo, html[data-modo="zaino"] #navdots{ display:none!important; }
   /* Il contatore «1 / 8» e la barra di avanzamento contano i CAPITOLI di una
      lezione: in uno zaino non contano niente, e lasciarli accesi vorrebbe dire
      mostrare il progresso di un corso a chi sta leggendo altro. */
@@ -647,19 +648,13 @@
   .blocco[data-blocco="I"]{ grid-area:I; }
   .blocco{ border-left:0; border-top:0; }
   .blocco[data-bordo-sx="1"]{ border-left:1px solid var(--line); }
-  .blocco[data-bordo-alto="1"]{ border-top:1px solid var(--line); }
   .blocco[hidden]{ display:none!important; }
-  /* Il segno che dice di chi è il blocco: fonte o quaderno. Una riga di colore
-     in testa, non un'etichetta — la distinzione la fa già il vault, qui va solo
-     ricordata senza occupare spazio. */
+  /* I separatori restano neutri: il riquadro in uso si riconosce dal pallino. */
   .bhead{ display:flex; align-items:center; justify-content:center; gap:.4rem; padding:0 .5rem; flex:0 0 auto;
-    min-height:calc(var(--tb-blocco-h) - 3px); border-bottom:1px solid var(--line); background:var(--panel);
-    border-top:2px solid transparent; }
-  .blocco[data-fam="fonte"] .bhead{ border-top-color:var(--blue-strong); }
-  .blocco[data-fam="quaderno"] .bhead{ border-top-color:var(--teal-strong); }
+    min-height:var(--tb-blocco-h); border-bottom:1px solid var(--line); background:var(--panel);
+    border-top:1px solid var(--line); }
   .bnumero{ color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums; }
-  .battivo{ font-size:10px; color:var(--teal-strong); font-weight:700; }
-  .blocco[data-attivo="1"] > .bhead{ box-shadow:inset 0 -2px var(--teal-strong); }
+  .battivo{ width:6px; height:6px; flex:0 0 6px; border-radius:50%; color:var(--teal-strong); background:currentColor; }
   /* Stessa ragione della barra della mappa: l'altezza la dà il token, perché
      questo `<select>` è il gemello trasparente del guscio `.tendina.piccola`. */
   .bhead select{ font-size:11px; height:var(--tb-h); max-width:min(60cqw,240px); }
@@ -750,6 +745,7 @@
   main > article, main > .nav{ margin-inline:auto; }
   .sidebar{ border-right:1px solid var(--line); padding:1.6rem 0 3rem; position:sticky; top:var(--topbar-h);
     align-self:start; height:calc(100vh - var(--topbar-h)); overflow:auto; }
+  html[data-modo="zaino"] .sidebar{ padding-top:0; }
   .sidebar h2{ font-size:11px; text-transform:uppercase; letter-spacing:.2em; color:var(--muted); margin:0 1rem 1rem .8rem; }
   .toc{ list-style:none; counter-reset:c; }
   .toc li{ border-bottom:1px solid var(--line-weak); }
@@ -773,9 +769,9 @@
      qui le voci non sono numerate — un documento non è il terzo capitolo di
      niente, e una numerazione direbbe un ordine che non esiste. */
   .znav[hidden]{ display:none!important; }
-  .znav .zs-tit{ display:flex; align-items:baseline; gap:.4rem; margin:1.2rem 1rem .4rem .8rem;
-    font-size:11px; text-transform:uppercase; letter-spacing:.2em; color:var(--muted); }
-  .znav .zs-tit:first-child{ margin-top:0; }
+  .znav .zs-tit{ display:flex; align-items:center; gap:.4rem; margin:0 0 .4rem; padding:.3rem .6rem .3rem .8rem;
+    font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--teal-strong); }
+  .znav .zs-raccolta + .zs-raccolta .zs-tit{ margin-top:.8rem; }
   .znav .zs-n{ font-size:10px; letter-spacing:.06em; color:var(--muted); font-variant-numeric:tabular-nums; }
   .znav ul{ list-style:none; }
   .znav li{ border-bottom:1px solid var(--line-weak); }
@@ -792,15 +788,18 @@
   .znav button:focus-visible, .znav select:focus-visible{ outline:2px solid var(--focus); outline-offset:-2px; }
   .znav .zs-gruppo{ margin:.35rem 0; }
   .znav .zs-gruppo-testa{ display:flex; align-items:center; }
-  .znav .zs-gruppo-testa > button{ min-width:0; display:flex; align-items:center; gap:.35rem; font-weight:700; }
+  .znav .zs-gruppo-testa > button{ min-width:0; display:flex; align-items:center; gap:.35rem; font-size:12px; font-weight:700; }
   .znav .zs-gruppo-testa .zs-nome{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .znav .zs-gruppo-testa .zs-azioni{ display:flex; flex:0 0 auto; }
   .znav .zs-gruppo ul{ margin-left:.7rem; }
   .znav .zs-gruppo [hidden]{ display:none!important; }
-  .znav .zs-item{ display:flex; align-items:center; position:relative; }
+  .znav .zs-item{ display:flex; align-items:stretch; position:relative; }
+  .znav .zs-item:hover, .znav .zs-item:has(> button.attivo){ background:var(--hover); }
+  .znav .zs-item > button:hover, .znav .zs-item > button.attivo{ background:transparent; }
   .znav .zs-item > button:first-child{ flex:1; min-width:0; }
-  .znav .zs-assegna{ width:var(--tb-h); flex:0 0 var(--tb-h); padding:.35rem; text-align:center; border:0; font-size:18px; }
-  .znav [draggable="true"]{ cursor:grab; border:1px solid var(--line); background:var(--panel); margin:.25rem .4rem; }
+  .znav .zs-assegna{ width:var(--tb-h); flex:0 0 var(--tb-h); padding:0 .35rem; min-height:0;
+    display:flex; align-items:center; justify-content:center; border:0; font-size:18px; line-height:1; }
+  .znav [draggable="true"]{ cursor:grab; }
   .znav [draggable="true"] > button{ cursor:grab; }
   .znav [draggable="true"]:focus-visible{ outline:2px solid var(--focus); }
   .znav .zs-trascina{ opacity:.45; }
@@ -1540,9 +1539,10 @@
      anche loro. Il teal è il colore che in tutta l'app vuol dire «questo», e la
      riga sotto lo ripete sottile: due segni deboli invece di uno forte, perché
      il pannello non diventi una bandiera. */
-  #searchRes .sr-lesson{ position:sticky; top:0; z-index:1;
+  .znav .zs-tit, #searchRes .sr-lesson{
     background:color-mix(in srgb, var(--teal) 10%, var(--panel));
-    border-bottom:1px solid color-mix(in srgb, var(--teal) 35%, var(--line));
+    border-bottom:1px solid color-mix(in srgb, var(--teal) 35%, var(--line)); }
+  #searchRes .sr-lesson{ position:sticky; top:0; z-index:1;
     font-size:10px; text-transform:uppercase; letter-spacing:.12em; font-weight:700;
     padding:.3rem .6rem; color:var(--teal-strong); }
   #searchRes .sr-item{ display:block; width:100%; text-align:left; border:0; border-bottom:1px solid var(--line-weak);
@@ -11086,7 +11086,7 @@ function znavComandoHtml(azione, testo, titolo, dati, spento){
     ' title="'+znavEsc(titolo)+'" aria-label="'+znavEsc(titolo)+'"'+(spento?' disabled':'')+'>'+testo+'</button>';
 }
 
-/** Fonti, appunti e media condividono i gesti, conservando registri separati. */
+/** Le quattro raccolte condividono i gesti, conservando registri separati. */
 function znavRaccolta(sezione, titolo, voci, vuoto, errore, erroreGruppi){
   var stato=ZNAV.gruppi[sezione] || FontiGruppi.normalizza(null,voci.map(function(v){ return v.quale; }));
   var edit=!!ZNAV.organizza[sezione] && !erroreGruppi && !errore;
@@ -11235,19 +11235,6 @@ function znavBersaglio(e){
   },true);
 })();
 
-/** Una sezione: titolo, conto, voci (o la riga che spiega il vuoto). */
-function znavSezione(titolo, voci, vuoto, errore){
-  var h='<div class="zs-tit"><span>'+znavEsc(titolo)+'</span>'+
-        (voci.length?'<span class="zs-n">'+voci.length+'</span>':'')+'</div>';
-  if(errore) return h+'<div class="zs-vuoto zs-no">⚠ '+znavEsc(errore)+'</div>';
-  if(!voci.length) return h+'<div class="zs-vuoto">'+znavEsc(vuoto)+'</div>';
-  return h+'<ul>'+voci.map(function(v){
-    return '<li><button type="button" class="'+v.classe+(v.attivo?' attivo':'')+'" '+
-      'data-quale="'+znavEsc(v.quale)+'" title="'+znavEsc(v.titolo||v.testo)+'">'+
-      znavEsc(v.testo)+'</button></li>';
-  }).join('')+'</ul>';
-}
-
 /**
  * Rilegge le sezioni e ridisegna.
  *
@@ -11298,7 +11285,7 @@ async function zainoNavAggiorna(){
     });
     eMappe=m.error||'';
   }catch(e3){ eMappe=(e3&&e3.message)||String(e3); }
-  for(var sezione of ['fonti','appunti','media']){
+  for(var sezione of ['fonti','appunti','media','mappe']){
     try{
       var organizzazione=await window.vault.zaino.gruppiLeggi(id,sezione);
       if(!organizzazione || organizzazione.error) throw new Error((organizzazione&&organizzazione.error)||'lettura non riuscita');
@@ -11331,10 +11318,10 @@ async function zainoNavAggiorna(){
     }), 'Nessun appunto. Si scrivono nel blocco «Appunti».',eAppunti,eGruppi.appunti) +
     znavRaccolta('media','Media',fonti.filter(function(f){return f.tipo==='media';}).map(fonteVoce),
       'Nessun audio o video in questo zaino.',eFonti,eGruppi.media) +
-    znavSezione('Mappe', mappe.map(function(x){
+    znavRaccolta('mappe','Mappe', mappe.map(function(x){
       return { classe:'zn-mappa', quale:x.file, testo:x.titolo||x.file,
                titolo:x.file, attivo:x.file===apertaMappa };
-    }), 'Nessuna mappa. Si disegnano nel blocco «Mappa».', eMappe);
+    }), 'Nessuna mappa. Si disegnano nel blocco «Mappa».', eMappe,eGruppi.mappe);
 }
 
 /** I documenti di un contenitore: una strada sola, per tutti quelli che li
@@ -17738,7 +17725,7 @@ function bancoSegnaAttivo(){
     if(!numero){ numero=document.createElement('span'); numero.className='bnumero'; h.prepend(numero); }
     numero.textContent=n ? String(n) : ''; numero.title='Riquadro '+n+' in ordine di lettura';
     var segno=h.querySelector('.battivo');
-    if(!segno){ segno=document.createElement('span'); segno.className='battivo'; segno.textContent='Attivo';
+    if(!segno){ segno=document.createElement('span'); segno.className='battivo'; segno.setAttribute('role','img'); segno.setAttribute('aria-label','Riquadro attivo');
       segno.title='Riducendo il banco, questo riquadro resta visibile'; h.appendChild(segno); }
     segno.hidden=b!==attivo;
   });
