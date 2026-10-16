@@ -3183,6 +3183,48 @@ async function modelloFinto(o) {
       [Array.isArray(solo.usciti), Array.isArray(BF.cambiaForma(q, 'quattro').usciti),
        Array.isArray(BF.cambiaForma(q, 'pippo').usciti)]);
 
+    // ---- una riduzione scelta dall'utente conserva prima il riquadro attivo
+    check('l’ordine visivo legge per righe, non per lettere', ['A', 'C', 'B', 'D'], BF.blocchiInLettura('quattro'));
+    const ridotto = BF.cambiaForma(q, 'due-col', 'D');
+    check('quattro → due: prima l’attivo e poi il primo in ordine visivo', ['keyword', 'capitolo'],
+      BF.blocchiInLettura(ridotto.forma).map(b => ridotto.blocchi[b]));
+    check('un riquadro spostato resta visibile e non viene annunciato come nascosto', ['appunti', 'mappa'],
+      ridotto.usciti.map(u => u.strumento));
+    check('ridurre non perde neppure gli strumenti nascosti', Object.values(q.blocchi).sort(), Object.values(ridotto.blocchi).sort());
+    check('tre → uno conserva il riquadro attivo', 'mappa',
+      BF.cambiaForma(S({ forma: 'tre-sx', blocchi: q.blocchi }), 'uno', 'C').blocchi.A);
+    check('una forma diversa con lo stesso numero non riordina gli strumenti', q.blocchi,
+      BF.cambiaForma(q, 'tre-col-dx', 'D').blocchi);
+    check('un riquadro vuoto attivo rimane vuoto, senza perdere gli altri',
+      ['', 'capitolo', 'mappa', 'appunti'], (() => {
+        const s = BF.cambiaForma(S({ forma: 'quattro', blocchi: { A: 'capitolo', B: 'appunti', C: 'mappa' } }), 'due-col', 'D');
+        return [s.blocchi.A, s.blocchi.C, s.blocchi.D, s.blocchi.B];
+      })());
+    check('riallargare ritrova tutti gli strumenti dopo il giro su disco', ['capitolo', 'appunti', 'mappa', 'keyword'].sort(),
+      Object.values(BF.cambiaForma(S(JSON.parse(JSON.stringify(ridotto))), 'quattro', 'A').blocchi).filter(Boolean).sort());
+    const guastiRiduzione = [];
+    BF.CHIAVI.forEach(da => BF.CHIAVI.forEach(a => {
+      const prima = BF.blocchiInLettura(da), dopo = BF.blocchiInLettura(a);
+      if(dopo.length >= prima.length) return;
+      prima.forEach(attivo => {
+        const base = S({ forma: da, blocchi: Object.fromEntries(BF.BLOCCHI.map(b => [b, 'strumento-' + b])) });
+        const originale = JSON.stringify(base);
+        const esito = BF.cambiaForma(base, a, attivo);
+        const attesi = [attivo].concat(prima.filter(b => b !== attivo)).slice(0, dopo.length).map(b => base.blocchi[b]);
+        const avuti = dopo.map(b => esito.blocchi[b]);
+        if(JSON.stringify(attesi) !== JSON.stringify(avuti) || new Set(Object.values(esito.blocchi)).size !== 9 || JSON.stringify(base) !== originale)
+          guastiRiduzione.push(da + ' → ' + a + ' con ' + attivo);
+      });
+    }));
+    check('ogni riduzione di fabbrica conserva l’attivo, l’ordine e tutti gli strumenti senza mutare l’origine', [], guastiRiduzione);
+    BF.registraForma('mia-ordine-test', 'Ordine non alfabetico', '"D B" "A C"');
+    check('anche le forme personali seguono le aree visibili, non i nomi dei blocchi', ['mappa', 'keyword'], (() => {
+      const s = BF.cambiaForma(S({ forma: 'mia-ordine-test', blocchi: q.blocchi }), 'due-col', 'C');
+      return [s.blocchi.A, s.blocchi.C];
+    })());
+    BF.dimenticaForma('mia-ordine-test');
+    check('un attivo assente non cambia le assegnazioni', q.blocchi, BF.cambiaForma(q, 'uno', 'I').blocchi);
+
     // ---- purezza: nessuna mossa tocca lo stato che ha ricevuto
     const intatto = JSON.stringify(base);
     BF.assegna(base, 'A', 'mappa'); BF.assegna(base, 'B', ''); BF.cambiaForma(base, 'uno'); S(base);

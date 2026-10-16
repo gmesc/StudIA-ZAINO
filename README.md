@@ -41,7 +41,9 @@ Ogni tendina nella testata del banco offre **Appunti** e **Fonti**. Scegli la st
 
 I due appunti si salvano separatamente e vengono salvati prima dell’invio alla chat. Lo stesso appunto non può essere modificato nei due editor contemporaneamente. La seconda fonte permette lettura, selezione/copia, pagina e zoom indipendenti; gli strumenti avanzati di annotazione e ritaglio restano nella prima fonte.
 
-Il riquadro di appunti usato per ultimo riceve le citazioni di **Appunta**, le parole chiave e le aperture dalla sidebar. **⌘/Ctrl+S** salva quel riquadro e **⌘/Ctrl+J** ne cambia l’anteprima. Entrambi gli editor offrono i callout: scrivi `> ` e scegli un tipo, oppure premi 📜; il cursore si posiziona subito nel corpo vuoto, dopo `> `. Il secondo editor conserva una barra ridotta e non dispone ancora dell’anteprima modificabile e di tutti i comandi del primo.
+I due editor degli appunti hanno gli stessi comandi: formattazione, callout, emoji, citazioni, materiali, anteprima modificabile, immagini, rinomina con fonte associata, eliminazione, stampa e PDF. Il riquadro usato per ultimo riceve **Appunta**, parole chiave e aperture dalla sidebar; **⌘/Ctrl+S** salva quel riquadro e **⌘/Ctrl+J** ne cambia l’anteprima. Ogni appunto conserva il proprio testo, cursore e salvataggio. Scrivi `> ` e scegli un callout: il cursore si posiziona subito nel corpo vuoto, dopo `> `.
+
+Le testate del Banco mostrano l’ordine dei riquadri e indicano quello **Attivo**. Quando riduci la vista resta prima l’attivo, poi gli altri da sinistra a destra, riga per riga. Nel menu Banco, passando sulle disposizioni o raggiungendole con la tastiera, puoi leggere in anticipo quali contenuti resteranno. Per esempio, con quattro riquadri numerati 1–4 e il 4 attivo, passando a due conserverai i contenuti del **4 e dell’1**, rinumerati nella nuova vista; passando da tre a uno resta solo quello attivo. Gli altri rimangono aperti fuori vista e tornano riallargandola, nell’ordine risultante dagli spostamenti.
 
 ## Organizzare le fonti
 

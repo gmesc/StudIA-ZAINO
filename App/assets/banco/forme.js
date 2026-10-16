@@ -222,6 +222,12 @@
     return FORME[forma] ? blocchiNelleAree(FORME[forma].aree) : [];
   }
 
+  /** Ordine di lettura a schermo: prima per righe, da sinistra a destra.
+   *  Le lettere sono identità stabili, non posizioni: in «quattro» C precede B. */
+  function blocchiInLettura(forma) {
+    return celleDiForma(forma).filter(function (b, i, tutte) { return tutte.indexOf(b) === i; });
+  }
+
   /** Se quel blocco esiste in quella forma. È la domanda che il renderer fa a
    *  ogni ridisegno per decidere l'attributo `[hidden]`, quindi sta scritta
    *  qui una volta e non quattro volte lì. */
@@ -473,6 +479,11 @@
    * che cosa è uscito di scena, altrimenti la mappa «sparisce» e l'unico modo
    * di scoprire dov'è finita è riprovare le otto forme a una a una.
    *
+   * Con `attivo`, una riduzione mette prima quel riquadro e poi gli altri
+   * in ordine di lettura. I contenuti si scambiano: quelli fuori scena restano
+   * nello stato e riallargando tornano nelle posizioni risultanti, senza
+   * ripristinare la disposizione precedente alla riduzione.
+   *
    * L'elenco esce come proprietà NON ENUMERABILE `.usciti` — `[{blocco,
    * strumento}]` — come fa `modifica.creaNodo` con `.nuovo`: è
    * un'informazione sull'operazione, non un dato del banco, e su disco sarebbe
@@ -486,19 +497,36 @@
    * Qui, a differenza di `normalizzaStato`, una forma buona ce l'abbiamo già:
    * per un refuso di chi chiama non si rifà il banco all'utente.
    */
-  function cambiaForma(stato, forma) {
+  function cambiaForma(stato, forma, attivo) {
     var s = normalizzaStato(stato);
     if (!FORME[forma] || forma === s.forma) return segna(s, 'usciti', []);
-    var usciti = blocchiDi(s.forma)
-      .filter(function (b) { return s.blocchi[b] && !visibile(forma, b); })
-      .map(function (b) { return { blocco: b, strumento: s.blocchi[b] }; });
+    var prima = normalizzaStato(s);
+    var da = blocchiInLettura(s.forma), a = blocchiInLettura(forma);
+    /* Solo la riduzione esplicita con un riquadro attivo cambia priorità.
+       Zoom e ripristino chiamano senza attivo e conservano le posizioni.
+       Si scambiano identità, anche per i vuoti: niente viene sovrascritto
+       o duplicato, e riallargando si ritrovano tutti gli strumenti. */
+    if (a.length < da.length && da.indexOf(attivo) >= 0) {
+      var ordine = [attivo].concat(da.filter(function (b) { return b !== attivo; }));
+      var origini = BLOCCHI.slice();
+      a.forEach(function (destinazione, i) {
+        var daIndice = origini.indexOf(ordine[i]), aIndice = BLOCCHI.indexOf(destinazione);
+        var origine = BLOCCHI[daIndice], contenuto = s.blocchi[destinazione];
+        s.blocchi[destinazione] = s.blocchi[origine]; s.blocchi[origine] = contenuto;
+        var identita = origini[aIndice]; origini[aIndice] = origini[daIndice]; origini[daIndice] = identita;
+      });
+    }
     s.forma = forma;
+    var visibili = a.map(function (b) { return s.blocchi[b]; });
+    var usciti = blocchiDi(prima.forma)
+      .filter(function (b) { return prima.blocchi[b] && visibili.indexOf(prima.blocchi[b]) < 0; })
+      .map(function (b) { return { blocco: b, strumento: prima.blocchi[b] }; });
     return segna(s, 'usciti', usciti);
   }
 
   return {
     FORME: FORME, CHIAVI: CHIAVI, BLOCCHI: BLOCCHI, DI_FABBRICA: DI_FABBRICA,
-    blocchiDi: blocchiDi, visibile: visibile, righeDi: righeDi, griglia: griglia,
+    blocchiDi: blocchiDi, blocchiInLettura: blocchiInLettura, visibile: visibile, righeDi: righeDi, griglia: griglia,
     usaDivisoreColonna: usaDivisoreColonna, usaDivisoreRiga: usaDivisoreRiga, divisoriDi: divisoriDi,
     guastoNelleAree: guastoNelleAree, frazione: frazione, frazioneDopo: frazioneDopo,
     normalizzaStato: normalizzaStato, bloccoCon: bloccoCon,

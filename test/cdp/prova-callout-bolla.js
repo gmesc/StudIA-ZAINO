@@ -14,7 +14,10 @@
  * ⚠️ Gira contro il vault della config: puntarlo a una COPIA (trappola ⑧).
  *   ./test/cdp/con-vault-di-prova.sh prova-callout-bolla
  */
-const S = require('path').join(__dirname, 'cdp.js');
+const path = require('path');
+const fs = require('fs');
+const appunti = require('../../lib/appunti');
+const S = path.join(__dirname, 'cdp.js');
 const { collega, val, pausa, partiPulito, apriStrumento, invia, clicca } = require(S);
 
 let ko = 0;
@@ -45,8 +48,8 @@ const aperta = () => val(`(()=>{const m=document.querySelector('#calloutMenu');
 const testo = () => val(`NOTES.mde.codemirror.getValue()`);
 /** Svuota l'editor e ci mette il cursore dentro, come farebbe una mano. */
 async function daCapo(iniziale) {
-  await val(`(()=>{ NOTES.caricando=true; NOTES.mde.value(${JSON.stringify(iniziale || '')});
-    NOTES.caricando=false; const cm=NOTES.mde.codemirror;
+  await val(`(()=>{ clearTimeout(NOTES.timer); NOTES.timer=null; NOTES.dirty=false;
+    noteCaricaCorpo(${JSON.stringify(iniziale || '')}, NOTES); const cm=NOTES.mde.codemirror;
     cm.focus(); cm.setCursor({ line:cm.lineCount()-1, ch:cm.getLine(cm.lineCount()-1).length });
     return 1; })()`);
   await pausa(150);
@@ -54,8 +57,41 @@ async function daCapo(iniziale) {
 
 (async () => {
   await collega(); await partiPulito();
-  await apriStrumento('appunti'); await pausa(800);
-  await val(`(()=>{ ensureMde(); openEditor(); return 1; })()`); await pausa(500);
+  // Ogni battuta va in una fixture: una nota lasciata dalla prova prima non è
+  // un foglio di scarto, e l'autosalvataggio continua anche dopo questa prova.
+  const originale = await val(`(()=>{
+    if(!noteFlushStato(NOTES)) throw new Error('L’appunto precedente non si salva');
+    const cm=NOTES.mde && NOTES.mde.codemirror;
+    const chiavi=[bancoChiave(), bancoZoomChiave(), 'studia.aperto',
+      'studia.banco.c.'+corsoAttivo()+'.appunti', 'studia.banco.c.'+corsoAttivo()+'.appunti2'];
+    return { corso:corsoAttivo(), vault:window.vault.path,
+      file:NOTES.cur && NOTES.cur.file, body:NOTES.mde ? NOTES.mde.value() : '',
+      invito:NOTES.invito, preview:!!NOTES.mde?.isPreviewActive(),
+      affiancata:!!NOTES.mde?.isSideBySideActive(),
+      cursor:cm && cm.getCursor(), scroll:cm && cm.getScrollInfo(),
+      banco:JSON.parse(JSON.stringify(bancoStato())), zoom:bancoZoomLeggi(),
+      attivo:BANCO.attivo, ultimo:noteStatoAttivo().id, editor:document.documentElement.dataset.editor||'',
+      memoria:Object.fromEntries(chiavi.map(k=>[k,localStorage.getItem(k)])) };
+  })()`);
+  const fileOriginale = originale.file && path.join(appunti.dir(originale.vault, originale.corso), originale.file);
+  const testoOriginale = fileOriginale ? fs.readFileSync(fileOriginale, 'utf8') : null;
+  let principale = '';
+  try {
+    principale = await val(`(()=>{
+      const r=notesApi().save(${JSON.stringify(originale.corso)},null,
+        {title:'Prova callout principale '+Date.now()},'');
+      if(!r || r.error) throw new Error((r && r.error)||'Appunto di prova non creato');
+      notesReload(); return r.file;
+    })()`);
+    await val(`(()=>{
+      noteSvuota(NOTES); ensureMde(NOTES);
+      if(NOTES.mde.isSideBySideActive()) NOTES.mde.toggleSideBySide();
+      if(NOTES.mde.isPreviewActive()) NOTES.mde.togglePreview();
+      if(!noteOpen(${JSON.stringify(principale)}, NOTES)) throw new Error('Appunto di prova non aperto');
+      return 1;
+    })()`);
+    await apriStrumento('appunti'); await pausa(800);
+    await val(`(()=>{ openEditor(NOTES); return 1; })()`); await pausa(500);
 
   console.log('== Si batte «> » e la bolla compare');
   await daCapo('');
@@ -117,12 +153,8 @@ async function daCapo(iniziale) {
   await daCapo('');
   await scrivi('> ');
   ok('la bolla c\'è', true, await aperta());
-  /* ⚠️ POCHE PAROLE, E NON È UN CASO. Senza un appunto aperto, alla QUINTA
-     parola scatta la finestra di battesimo (`noteInvito`) — che si prende il
-     fuoco e mangia l'Esc della sezione dopo. Da sola la prova passava lo
-     stesso: nella suite il vault arriva con gli appunti delle prove precedenti
-     e lo stato è un altro. Lo stato lasciato da chi viene prima fa parte
-     dell'ingresso, ed è la stessa trappola già pagata con l'evidenziatore. */
+  /* Il battesimo alla quinta parola si verifica separatamente sotto: qui
+     conta che continuare la citazione richiuda il suggerimento. */
   await scrivi('Le parole');
   ok('continuando a scrivere se ne va', false, await aperta());
   ok('e resta la citazione che si stava scrivendo',
@@ -166,6 +198,7 @@ async function daCapo(iniziale) {
   ok('quattro parole attendono; cinque, anche Unicode, chiedono il titolo',
     [0, 1, 1, 0], await val(`(async()=>{
       const cur=NOTES.cur, invito=NOTES.invito, prima=NOTES.mde.value();
+      clearTimeout(NOTES.timer); NOTES.timer=null;
       const chiedi=noteChiediNomeEOrigine, avvisi=toast;
       let chiamate=0; const risultati=[];
       try {
@@ -174,13 +207,13 @@ async function daCapo(iniziale) {
         toast=function(){};
         for(const testo of ['Una frase di quattro', 'Una frase di cinque parole',
           'È già più così perché', '> [!nota] Nota\\n> Subito.\\n']){
-          noteCaricaCorpo(testo); NOTES.invito=false; chiamate=0;
-          await noteInvito(); risultati.push(chiamate);
+          noteCaricaCorpo(testo, NOTES); NOTES.invito=false; chiamate=0;
+          await noteInvito(NOTES); risultati.push(chiamate);
         }
         return risultati;
       } finally {
         noteChiediNomeEOrigine=chiedi; toast=avvisi;
-        NOTES.cur=cur; NOTES.invito=invito; noteCaricaCorpo(prima);
+        NOTES.cur=cur; NOTES.invito=invito; noteCaricaCorpo(prima, NOTES);
       }
     })()`));
 
@@ -210,8 +243,7 @@ async function daCapo(iniziale) {
     const testo2 = () => val(`appuntiParalleli.stato.mde.codemirror.getValue()`);
     const daCapo2 = async () => {
       await val(`(()=>{ const s=appuntiParalleli.stato;
-        clearTimeout(s.timer); s.timer=null; s.dirty=false; s.loading=true;
-        try { s.mde.value(''); } finally { s.loading=false; }
+        clearTimeout(s.timer); s.timer=null; s.dirty=false; noteCaricaCorpo('', s);
         s.mde.codemirror.setCursor({line:0,ch:0}); s.mde.codemirror.focus(); return 1;
       })()`);
       await pausa(100);
@@ -231,7 +263,7 @@ async function daCapo(iniziale) {
     ok('il primo appunto non riceve nessuno dei tre inserimenti', precedente.primo, await testo());
   } finally {
     await val(`(()=>{
-      closePops(); appuntiParalleli.molla(); apertoScrivi('appunto2','');
+      closePops(); noteSvuota(appuntiParalleli.stato); apertoScrivi('appunto2','');
       if(${JSON.stringify(precedente.secondo)}) appuntiParalleli.open(${JSON.stringify(precedente.secondo)}, {ripristina:true});
       BANCO.stato=${JSON.stringify(precedente.banco)};
       bancoSalva(); bancoZoomScrivi(${JSON.stringify(precedente.zoom)}); bancoDisegna();
@@ -241,11 +273,50 @@ async function daCapo(iniziale) {
       NOTES.mde.codemirror.focus(); return 1;
     })()`);
     // La fixture nasce qui, nel vault di prova: la rimozione diretta evita il Cestino vero.
-    if(fixture) require('../../lib/appunti').remove(precedente.vault, precedente.corso, fixture);
+    if(fixture) appunti.remove(precedente.vault, precedente.corso, fixture);
     await val(`(()=>{ notesReload(); refreshNoteUI(); return 1; })()`);
   }
 
-  await daCapo('');
+  } finally {
+    // Scarta soltanto il contenuto della fixture, poi rimette il documento o
+    // la bozza senza nome che c'erano. Nessun setValue vuoto resta da salvare.
+    await val(`(()=>{
+      closePops(); noteSvuota(NOTES); notesReload();
+      if(${JSON.stringify(originale.file)}) {
+        if(!noteOpen(${JSON.stringify(originale.file)}, NOTES, {ripristina:true}))
+          throw new Error('Appunto precedente non ripristinato');
+      } else { noteCaricaCorpo(${JSON.stringify(originale.body)}, NOTES); NOTES.invito=${JSON.stringify(originale.invito)}; }
+      BANCO.stato=${JSON.stringify(originale.banco)}; BANCO.attivo=${JSON.stringify(originale.attivo)};
+      bancoSalva(); bancoZoomScrivi(${JSON.stringify(originale.zoom)}); bancoDisegna();
+      document.documentElement.dataset.editor=${JSON.stringify(originale.editor)};
+      noteAttiva(noteStati().find(s=>s.id===${JSON.stringify(originale.ultimo)})||NOTES);
+      return 1;
+    })()`);
+    // Il ripristino normale ha un callback del cursore: prima lo si lascia
+    // finire, poi si rimette il punto preciso della prova precedente.
+    await pausa(100);
+    await val(`(()=>{
+      if(NOTES.mde){
+        const cm=NOTES.mde.codemirror; NOTES.caricando=true;
+        try {
+          if(${JSON.stringify(originale.cursor)}) cm.setCursor(${JSON.stringify(originale.cursor)});
+          const pos=${JSON.stringify(originale.scroll)}; if(pos) cm.scrollTo(pos.left,pos.top);
+        } finally { NOTES.caricando=false; }
+        if(${originale.preview} && !NOTES.mde.isPreviewActive()) NOTES.mde.togglePreview();
+        if(${originale.affiancata} && !NOTES.mde.isSideBySideActive()) NOTES.mde.toggleSideBySide();
+      }
+      noteAttiva(noteStati().find(s=>s.id===${JSON.stringify(originale.ultimo)})||NOTES);
+      BANCO.attivo=${JSON.stringify(originale.attivo)}; bancoSegnaAttivo();
+      Object.entries(${JSON.stringify(originale.memoria)}).forEach(([k,v])=>{
+        if(v===null) localStorage.removeItem(k); else localStorage.setItem(k,v);
+      });
+      return 1;
+    })()`);
+    if(principale) appunti.remove(originale.vault, originale.corso, principale);
+    await val(`(()=>{ notesReload(); refreshNoteUI(); return 1; })()`);
+    if(fileOriginale) ok('l’appunto precedente resta identico sul disco', testoOriginale, fs.readFileSync(fileOriginale, 'utf8'));
+    ok('nessun autosalvataggio della fixture resta in attesa', false, await val(`!!NOTES.timer || NOTES.dirty`));
+  }
   console.log(ko ? '\n✗ ' + ko + ' controlli falliti' : '\n✓ tutti i controlli passati');
   process.exit(ko ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

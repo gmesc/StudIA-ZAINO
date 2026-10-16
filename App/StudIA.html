@@ -657,6 +657,9 @@
     border-top:2px solid transparent; }
   .blocco[data-fam="fonte"] .bhead{ border-top-color:var(--blue-strong); }
   .blocco[data-fam="quaderno"] .bhead{ border-top-color:var(--teal-strong); }
+  .bnumero{ color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums; }
+  .battivo{ font-size:10px; color:var(--teal-strong); font-weight:700; }
+  .blocco[data-attivo="1"] > .bhead{ box-shadow:inset 0 -2px var(--teal-strong); }
   /* Stessa ragione della barra della mappa: l'altezza la dà il token, perché
      questo `<select>` è il gemello trasparente del guscio `.tendina.piccola`. */
   .bhead select{ font-size:11px; height:var(--tb-h); max-width:min(60cqw,240px); }
@@ -698,7 +701,9 @@
   html[data-bresize="1"]{ cursor:grabbing; user-select:none; }
   /* Il selettore della forma: otto disegnini fatti con una griglia CSS, non
      otto icone da disegnare e tenere allineate. */
-  #bancoPop{ padding:.6rem; }
+  #bancoPop{ padding:.6rem; width:min(296px,92vw); }
+  .bforma-aiuto{ font-size:11px; color:var(--muted); line-height:1.4; margin:.5rem 0 0; }
+  .bforma-anteprima{ font-size:12px; line-height:1.45; margin:.5rem 0 0; overflow-wrap:anywhere; }
   .bforme{ display:grid; grid-template-columns:repeat(4,1fr); gap:.4rem; }
   .bforma{ border:1px solid var(--line); background:var(--panel); cursor:pointer; padding:.35rem;
     display:grid; gap:2px; width:52px; height:40px; }
@@ -5744,7 +5749,7 @@ function testoLeggi(file){
 /** Il gesto: dei testi trascinati sopra la finestra, in modalità zaino. */
 async function testiTrascinati(files){
   var api=(window.vault && window.vault.notes) || null;
-  var id=corsoAttivo();
+  var id=corsoAttivo(), destinazione=noteStatoAttivo();
   if(!api || !id){ toast('Apri uno zaino prima di trascinare i testi', false); return; }
   if(TESTIIMP.inCorso){ toast('Sto ancora importando: un momento', false); return; }
 
@@ -5776,7 +5781,7 @@ async function testiTrascinati(files){
                              : entrati.length+' appunti importati', true);
     /* Il primo si apre: un import che non mostra niente lascia il dubbio che non
        sia successo niente. */
-    try{ noteOpen(entrati[0].file); }catch(e){}
+    try{ if(corsoAttivo()===id) noteOpen(entrati[0].file, destinazione); }catch(e){}
   }
   /* ⚠️ Gli avvisi valgono più degli scarti, qui: l'appunto È entrato, e la cosa
      che l'utente non può indovinare è che cosa NON è arrivato con lui. */
@@ -7333,7 +7338,8 @@ function fotoInsAzzera(){ FOTOINS={ dove:'', foto:'', nodo:'', testo:'' }; }
 
 /** Mette l'immagine dove si è chiesto, e poi offre di ritagliarla. `dove` è
  *  `'appunto'` o `'mappa'`; `punto` è dove è stata lasciata, sulla mappa. */
-function albumInserisci(v, dove, punto, x, y){
+function albumInserisci(v, dove, punto, x, y, destinazione){
+  destinazione=destinazione||noteStatoAttivo();
   if(!v) return false;
   var fatto=false, nodo='', testo='';
   if(dove==='mappa'){
@@ -7341,13 +7347,13 @@ function albumInserisci(v, dove, punto, x, y){
     fatto=!!nodo;
   } else {
     testo=albumMarkdown(v);
-    fatto=noteScriviAlCursore(testo);
+    fatto=noteScriviAlCursore(testo, destinazione);
     if(fatto) toast('Messa nell’appunto', true);
   }
   if(!fatto) return false;
   /* La domanda si fa solo per le foto, e solo se c'è un posto dove aprirle. */
   if(v.origine==='foto' && modoAttivo()==='zaino'){
-    FOTOINS={ dove:dove, foto:v.id, nodo:nodo, testo:testo };
+    FOTOINS={ dove:dove, foto:v.id, nodo:nodo, testo:testo, appunto:noteBersaglio(destinazione) };
     fotoBollaParte(v, x, y);
   }
   return true;
@@ -7365,10 +7371,23 @@ function albumMarkdown(v){
   return '\n![' + LetturaMisura.ripulisci(v.didascalia||'immagine') + '](album:' + v.id + ')\n';
 }
 /** Scrive nel punto in cui sta il cursore. Torna `false` se non c'è un appunto. */
-function noteScriviAlCursore(testo){
-  if(!NOTES.cur || !NOTES.mde){ toast('Apri prima un appunto', false); return false; }
-  NOTES.mde.codemirror.replaceSelection(testo);
-  NOTES.mde.codemirror.focus();
+/** I menu e i dialoghi conservano il documento scelto all'apertura: cambiare
+ * split nel frattempo non deve spostare l'inserimento su un altro appunto. */
+function noteBersaglio(stato){
+  stato=stato||noteStatoAttivo();
+  return { stato:stato, corso:stato.courseId||corsoAttivo(), file:stato.cur&&stato.cur.file||'' };
+}
+function noteBersaglioValido(b){
+  return !!(b && b.stato && !b.stato.eliminando && b.corso===corsoAttivo() &&
+    b.corso===(b.stato.courseId||corsoAttivo()) && b.file===(b.stato.cur&&b.stato.cur.file||''));
+}
+function noteScriviAlCursore(testo, destinazione){
+  var s=destinazione||noteStatoAttivo();
+  if(s.eliminando) return false;
+  if(!s.cur || !s.mde){ toast('Apri prima un appunto', false); return false; }
+  mdbChiudi(true, s);
+  s.mde.codemirror.replaceSelection(testo);
+  s.mde.codemirror.focus();
   return true;
 }
 
@@ -7421,8 +7440,13 @@ function fotoSostituisciInserimento(nuova){
     toast('Sulla mappa è rimasto il ritaglio', true);
     return true;
   }
-  if(!NOTES.cur || !NOTES.mde) return false;
-  var cm=NOTES.mde.codemirror;
+  if(!noteBersaglioValido(stato.appunto)){
+    toast('L’appunto di destinazione è cambiato: il ritaglio resta nei Ritagli', false); return false;
+  }
+  var s=stato.appunto.stato;
+  if(!s.cur || !s.mde) return false;
+  mdbChiudi(true, s);
+  var cm=s.mde.codemirror;
   var testo=cm.getValue();
   var i=testo.indexOf(stato.testo);
   if(i<0){
@@ -7526,7 +7550,7 @@ function albumBolla(voce, x, y){
   }
   m.innerHTML='<div class="ctx-head">Ritaglio salvato</div>'+
     it('album','Mostra nell’album','')+
-    it('appunti','Metti nell’appunto aperto', (NOTES.cur && NOTES.mde)? '' : 'nessun appunto aperto')+
+    it('appunti','Metti nell’appunto aperto', (noteStatoAttivo().cur && noteStatoAttivo().mde)? '' : 'nessun appunto aperto')+
     it('mappa','Metti nella mappa', (typeof mappaMie==='function' && mappaMie())? '' : 'serve una mappa tua aperta')+
     '<div class="ctx-sep"></div>'+
     it('rinomina','Dai una didascalia…','');
@@ -7547,7 +7571,7 @@ function albumMenu(id, x, y){
     it('apri','Apri l’immagine…', modoAttivo()==='zaino' ? '' : 'il visualizzatore vive negli zaini')+
     it('fonte','Alla fonte', v.origine==='foto' ? 'l’hai portata dentro tu'
                              : (v.materiale ? '' : 'non si sa da dove viene'))+
-    it('appunti','Metti nell’appunto aperto', (NOTES.cur && NOTES.mde)? '' : 'nessun appunto aperto')+
+    it('appunti','Metti nell’appunto aperto', (noteStatoAttivo().cur && noteStatoAttivo().mde)? '' : 'nessun appunto aperto')+
     it('mappa','Metti nella mappa', (typeof mappaMie==='function' && mappaMie())? '' : 'serve una mappa tua aperta')+
     '<div class="ctx-sep"></div>'+
     it('rinomina','Rinomina la didascalia','')+
@@ -7863,22 +7887,23 @@ function albumElimina(corso, v){
                               : Array.prototype.indexOf.call(t,'application/x-studia-album')>=0));
   }
   document.addEventListener('dragover', function(e){
-    if(!e.target.closest || !e.target.closest('#notePane') || !albumTrascinato(e)) return;
+    if(!e.target.closest || !e.target.closest('#notePane, #notePane2') || !albumTrascinato(e)) return;
     e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect='copy';
   }, true);
   document.addEventListener('drop', function(e){
-    if(!e.target.closest || !e.target.closest('#notePane') || !albumTrascinato(e)) return;
+    if(!e.target.closest || !e.target.closest('#notePane, #notePane2') || !albumTrascinato(e)) return;
     e.preventDefault(); e.stopPropagation();
     var v=albumVoce(e.dataTransfer.getData('application/x-studia-album'));
     if(!v){ toast('Immagine non trovata nell’album', false); return; }
     /* Il punto in cui si è lasciato: si scrive LÌ, non dove stava il cursore
        prima. Chi trascina sta indicando un posto — se il testo comparisse
        altrove, il gesto avrebbe mentito. */
+    var destinazione=noteStatoDaNodo(e.target)||noteStatoAttivo();
     try{
-      var cm=NOTES.mde && NOTES.mde.codemirror;
+      var cm=destinazione.mde && destinazione.mde.codemirror;
       if(cm && cm.coordsChar) cm.setCursor(cm.coordsChar({ left:e.clientX, top:e.clientY }));
     }catch(err){ /* niente punto: si scrive dove sta il cursore */ }
-    albumInserisci(v, 'appunto', null, e.clientX, e.clientY);
+    albumInserisci(v, 'appunto', null, e.clientX, e.clientY, destinazione);
   }, true);
 })();
 
@@ -8283,7 +8308,7 @@ async function apertoRipristina(){
     if(mio.appunto){
       try{
         if(!(NOTES.list||[]).length || NOTES.listCourse!==id) notesReload();
-        if((NOTES.list||[]).some(function(n){ return n.file===mio.appunto; })) noteOpen(mio.appunto);
+        if((NOTES.list||[]).some(function(n){ return n.file===mio.appunto; })) noteOpen(mio.appunto, NOTES, {ripristina:true});
       }catch(e){ console.error('aperto/appunto:', e); }
     }
     if(mio.appunto2 && window.appuntiParalleli) window.appuntiParalleli.open(mio.appunto2,{ripristina:true});
@@ -8413,18 +8438,20 @@ async function playerScegliApri(ancora){
 async function playerAppunta(){
   if(!playerAperto()){ toast('Apri prima un video o un audio nel player', false); return; }
   playerPausa();
-  var sec=playerSecondo();
-  if(!NOTES.cur || !NOTES.mde){
+  var sec=playerSecondo(), numero=PLAYER.num, destinazione=noteStatoAttivo(), corso=corsoAttivo();
+  if(destinazione.eliminando) return;
+  if(!destinazione.cur || !destinazione.mde){
     /* ⚠️ Si ASPETTA che l'appunto esista: `noteNew` chiede il titolo e apre
        l'editor, e scrivere prima vorrebbe dire lasciare la riga nel buffer di
        nessuno un istante prima che l'appunto nasca. */
-    await noteNew(null, null, '');
-    if(!NOTES.cur || !NOTES.mde) return;      // annullato: niente da scrivere
+    if(!await noteNew(null, null, '', null, destinazione)) return;
+    if(corsoAttivo()!==corso || !destinazione.cur || !destinazione.mde) return;      // annullato: niente da scrivere
   }
-  var cm=NOTES.mde.codemirror;
-  cm.replaceSelection(Lettore.rigaAppunto({ secondo:sec, numero:PLAYER.num, testo:cm.getSelection() }));
+  mdbChiudi(true, destinazione);
+  var cm=destinazione.mde.codemirror;
+  cm.replaceSelection(Lettore.rigaAppunto({ secondo:sec, numero:numero, testo:cm.getSelection() }));
   cm.focus();
-  if(!PLAYER.num) toast('Minuto segnato. ⚠️ Questo materiale non ha un numero: il rimando non si è potuto scrivere', false);
+  if(!numero) toast('Minuto segnato. ⚠️ Questo materiale non ha un numero: il rimando non si è potuto scrivere', false);
 }
 
 /**
@@ -8449,7 +8476,7 @@ function scriveraDaTastiera(el){
 }
 window.addEventListener('keydown', function(e){
   var mod = e.metaKey || e.ctrlKey;
-  if(mod && e.shiftKey && (e.key==='c' || e.key==='C')){
+  if(!e.defaultPrevented && mod && e.shiftKey && (e.key==='c' || e.key==='C')){
     e.preventDefault(); playerAppunta(); return;
   }
   if(mod || e.altKey) return;                     // le scorciatoie del sistema restano del sistema
@@ -8623,7 +8650,7 @@ function closePdf(){ document.documentElement.dataset.pdf='';
      funzione. */
   document.addEventListener('keydown',function(e){
     if(e.key!=='Escape') return;
-    var a=document.activeElement; if(a && a.closest && a.closest('#notePane')) return; // non chiudere mentre si scrive
+    var a=document.activeElement; if(a && a.closest && a.closest('#notePane, #notePane2')) return; // non chiudere mentre si scrive
     /* ⚠️ SE LA LENTE È APERTA, LO STRATO PIÙ INTERNO È LEI: qui non si tocca
        niente. Il suo gestore di Esc sta in fondo al file e chiude l'elenco dei
        risultati, ma è sul DOCUMENTO come questo — e fra gestori sullo stesso
@@ -8697,7 +8724,7 @@ function closePdf(){ document.documentElement.dataset.pdf='';
       document.documentElement.dataset.splitresize='';
       try{ h.releasePointerCapture(e.pointerId); }catch(_){}
       h.removeEventListener('pointermove',move); h.removeEventListener('pointerup',up); h.removeEventListener('pointercancel',up);
-      if(NOTES.mde) NOTES.mde.codemirror.refresh();
+      noteStati().forEach(function(s){ if(s.mde) s.mde.codemirror.refresh(); });
     }
     h.addEventListener('pointermove',move); h.addEventListener('pointerup',up); h.addEventListener('pointercancel',up);
   });
@@ -8713,7 +8740,27 @@ var VAULT_META={};            // idLezione -> {courseId, lessonTitle, chapters:[
 /* courseId = corso dell'appunto APERTO (non del capitolo che stai leggendo:
    se cambi capitolo o corso con l'editor aperto, il salvataggio deve tornare
    dov'è nato l'appunto). listCourse/listError descrivono l'ultima lettura. */
-var NOTES={ list:[], cur:null, mde:null, dirty:false, timer:null, courseId:null, listCourse:null, listError:'', caricando:false };
+/* Ogni riquadro possiede il proprio editor; l'elenco sul disco è condiviso.
+   NOTES resta il nome storico della prima istanza, non una precedenza nei comandi. */
+function noteCreaStato(id, suffisso){
+  return { id:id, suffisso:suffisso, cur:null, mde:null, dirty:false, timer:null,
+    courseId:null, caricando:false, invito:false, versione:0 };
+}
+var NOTES=Object.assign(noteCreaStato('appunti',''), { list:[], listCourse:null, listError:'' });
+var NOTE_ISTANZE=[NOTES,noteCreaStato('appunti2','2')], NOTE_ULTIMO=NOTES;
+function noteStati(){ return NOTE_ISTANZE; }
+function noteHost(s){ return document.getElementById('noteHost'+(s||noteStatoAttivo()).suffisso); }
+function noteEl(id,s){ return document.getElementById(id+(s||noteStatoAttivo()).suffisso); }
+function noteStatoDaNodo(nodo){
+  var pane=nodo && nodo.closest && nodo.closest('#notePane,#notePane2');
+  return pane ? (pane.id==='notePane2' ? NOTE_ISTANZE[1] : NOTES) : null;
+}
+function noteAttiva(s){ if(s) NOTE_ULTIMO=s; }
+(function(){
+  function registra(e){ var s=noteStatoDaNodo(e.target); if(s) noteAttiva(s); }
+  document.addEventListener('pointerdown',registra,true);
+  document.addEventListener('focusin',registra,true);
+})();
 
 /**
  * La tendina in più della modale, costruita quando serve e spenta quando no.
@@ -8934,7 +8981,7 @@ function riquadriTinta(k, quale){
 }
 /** Dove un riquadro si vede: l'anteprima dell'editor e «I miei appunti». */
 function riquadriRidisegna(){
-  try{ noteAnteprimaRidisegna(); }catch(e){}
+  try{ noteStati().forEach(function(s){ noteAnteprimaRidisegna(s); }); }catch(e){}
   var box=document.getElementById('myNotesBox');
   if(box){ try{ box.innerHTML=myNotesInner(); }catch(e){} }
 }
@@ -8958,10 +9005,10 @@ function openCalloutMenu(anchorEl, cm){
   var menu=$('#calloutMenu'); if(!menu) return;
   menu.innerHTML=calloutMenuHTML();
   popAt(menu, anchorEl);
-  CALBOLLA.cm=cm || (NOTES.mde && NOTES.mde.codemirror);
+  CALBOLLA.cm=cm || (noteStatoAttivo().mde && noteStatoAttivo().mde.codemirror);
 }
 function insertCallout(k, cm){
-  cm=cm || (NOTES.mde && NOTES.mde.codemirror);
+  cm=cm || (noteStatoAttivo().mde && noteStatoAttivo().mde.codemirror);
   if(!cm) return;
   var d=calloutDef(k), sel=cm.getSelection(), da=cm.getCursor('from');
   var corpo=sel.split('\n').map(function(l){ return '> '+l; }).join('\n');
@@ -9073,7 +9120,7 @@ function calloutBollaChiudi(){
  * due funzioni (invariante 6), e il 📜 non sa nemmeno che la bolla esiste.
  */
 function calloutInserisci(k){
-  var bolla=CALBOLLA.attiva, cm=CALBOLLA.cm || (NOTES.mde && NOTES.mde.codemirror);
+  var bolla=CALBOLLA.attiva, cm=CALBOLLA.cm || (noteStatoAttivo().mde && noteStatoAttivo().mde.codemirror);
   if(bolla && cm){
     var cur=cm.getCursor();
     cm.replaceRange('', { line:cur.line, ch:0 }, { line:cur.line, ch:cur.ch });
@@ -9217,7 +9264,8 @@ function openEmojiPop(anchorEl, dove){
   var pop=$('#emojiPop'); if(!pop) return;
   var s=$('#emojiSearch'); if(s) s.value='';
   emojiRender('');
-  EMOJI_A=(typeof dove==='function') ? dove : null;
+  var bersaglio=noteBersaglio();
+  EMOJI_A=(typeof dove==='function') ? dove : function(ch){ if(noteBersaglioValido(bersaglio)) insertEmoji(ch, bersaglio.stato); };
   popAt(pop, anchorEl);
   setTimeout(function(){ if(s) s.focus(); },20);
 }
@@ -9230,10 +9278,13 @@ function emojiScelta(ch){
   if(dove){ dove(ch); return; }
   insertEmoji(ch);
 }
-function insertEmoji(ch){
-  if(!NOTES.mde) return;
-  NOTES.mde.codemirror.replaceSelection(ch);
-  NOTES.mde.codemirror.focus();
+function insertEmoji(ch, destinazione){
+  var s=destinazione||noteStatoAttivo();
+  if(s.eliminando) return false;
+  if(!s.mde) return;
+  mdbChiudi(true, s);
+  s.mde.codemirror.replaceSelection(ch);
+  s.mde.codemirror.focus();
 }
 /**
  * Posa un pannellino accanto a ciò che lo apre.
@@ -9496,14 +9547,16 @@ function stampaFoglio(opt){
  *  stampa, il salvataggio in PDF e (domani) un'anteprima — e se ognuna si
  *  ricostruisse il contenuto da sé, il PDF e la carta comincerebbero a dire due
  *  cose diverse al primo ritocco. */
-function foglioAppunto(){
-  if(!NOTES.cur || !NOTES.mde){ toast('Nessun appunto aperto da stampare', false); return null; }
-  var corpo=NOTES.mde.value()||'';
+function foglioAppunto(destinazione){
+  var s=destinazione||noteStatoAttivo();
+  mdbChiudi(true, s);
+  if(!s.cur || !s.mde){ toast('Nessun appunto aperto da stampare', false); return null; }
+  var corpo=s.mde.value()||'';
   var html=''; try{ html=renderNoteMd(corpo); }catch(e){ html='<pre>'+escHtml(corpo)+'</pre>'; }
-  return { titolo:NOTES.cur.title||NOTES.cur.file||'Appunto',
-           dove:noteDove(NOTES.cur)||'', html:html };
+  return { titolo:s.cur.title||s.cur.file||'Appunto',
+           dove:noteDove(s.cur)||'', html:html };
 }
-function stampaAppunto(){ var f=foglioAppunto(); if(f) stampaFoglio(f); }
+function stampaAppunto(destinazione){ var f=foglioAppunto(destinazione); if(f) stampaFoglio(f); }
 
 /** La mappa che si sta guardando, disegnata di nuovo per la carta.
  *
@@ -9579,14 +9632,15 @@ function documentoStampabile(){
 
 /** Scrive il PDF di ciò che si sta guardando. `opzioni.percorso` salta il
  *  dialogo (lo usano le prove). */
-async function salvaPdf(che, opzioni){
+async function salvaPdf(che, opzioni, destinazione){
+  if(opzioni && noteStati().indexOf(opzioni)>=0){ destinazione=opzioni; opzioni=null; }
   opzioni=opzioni||{};
   var api=(window.vault && window.vault.stampa) || null;
   if(!api){ toast('Il salvataggio in PDF è disponibile solo nell’app', false); return null; }
   /* `opzioni.foglio` è la deroga per chi il contenuto ce l'ha già: le prove, e
      un domani un'anteprima. Senza, una prova dovrebbe aprire un appunto vero
      per misurare il pezzo che sta misurando — la scrittura del file. */
-  var foglio = opzioni.foglio || ((che==='mappa') ? foglioMappa() : foglioAppunto());
+  var foglio = opzioni.foglio || ((che==='mappa') ? foglioMappa() : foglioAppunto(destinazione));
   if(!foglio) return null;                    // il perché l'ha già detto chi costruisce il foglio
   var tipo=stampaPrepara(foglio);
   var doc=documentoStampabile();
@@ -9635,11 +9689,11 @@ function mappaTemaCarta(){
  *  cose, comanda il fuoco — chi ha appena scritto in un appunto si aspetta di
  *  stampare quello, non la mappa che gli sta accanto. */
 function stampaCorrente(){
-  var dentroAppunti = document.activeElement && document.activeElement.closest &&
-                      document.activeElement.closest('#notePane, .CodeMirror, .editor-toolbar');
-  if(dentroAppunti && NOTES.cur) return stampaAppunto();
+  var s=noteStatoDaNodo(document.activeElement);
+  if(s && s.cur) return stampaAppunto(s);
   if(mappaAperta() && MAPPA.res) return stampaMappa();
-  if(NOTES.cur) return stampaAppunto();
+  s=noteStatoAttivo();
+  if(s.cur) return stampaAppunto(s);
   toast('Apri un appunto o una mappa per stamparli', false);
 }
 
@@ -10038,11 +10092,14 @@ function leggiMinuto(testo){
 function secondoCorrente(){ return (typeof playerSecondo==='function') ? playerSecondo() : 0; }
 
 /** Scrive nell'editor, usando l'eventuale selezione come etichetta del link. */
-function inserisciLink(etichetta, schema){
+function inserisciLink(etichetta, schema, destinazione){
+  var s=destinazione||noteStatoAttivo();
+  if(s.eliminando) return false;
+  mdbChiudi(true, s);
   // l'editor esiste anche senza appunto aperto (openEditor costruisce sempre la
-  // toolbar): senza NOTES.cur il link finirebbe in un buffer di nessuno e si perderebbe
-  if(!NOTES.cur || !NOTES.mde){ toast('Apri prima un appunto',false); return false; }
-  var cm=NOTES.mde.codemirror;
+  // toolbar): senza s.cur il link finirebbe in un buffer di nessuno e si perderebbe
+  if(!s.cur || !s.mde){ toast('Apri prima un appunto',false); return false; }
+  var cm=s.mde.codemirror;
   var sel=cm.getSelection();
   cm.replaceSelection('['+(sel||etichetta)+']('+schema+')');
   cm.focus();
@@ -10061,15 +10118,15 @@ function inserisciLink(etichetta, schema){
    destinata a divergere, e la stringa scritta va RITROVATA per sostituirla. */
 
 /** Link al video a un dato secondo. */
-function citaVideo(num, sec, etichetta){
+function citaVideo(num, sec, etichetta, destinazione){
   if(!num){ toast('Questo materiale non ha un numero: rinominalo con «NN » davanti',false); return; }
-  return inserisciLink(etichetta||etichettaMinuto(sec), RimandiSintassi.scriviVideo(num, sec));
+  return inserisciLink(etichetta||etichettaMinuto(sec), RimandiSintassi.scriviVideo(num, sec), destinazione);
 }
 /** Link al PDF a una data pagina. */
-function citaPdf(num, pagina, etichetta){
+function citaPdf(num, pagina, etichetta, destinazione){
   if(!num){ toast('Questo materiale non ha un numero: rinominalo con «NN » davanti',false); return; }
   var p=Math.max(1,parseInt(pagina,10)||1);
-  return inserisciLink(etichetta||('p. '+p), RimandiSintassi.scriviPdf(num, p));
+  return inserisciLink(etichetta||('p. '+p), RimandiSintassi.scriviPdf(num, p), destinazione);
 }
 
 /** 🔖 — cita esattamente ciò che si sta guardando. */
@@ -10081,14 +10138,15 @@ function citaPdf(num, pagina, etichetta){
  * ✎ nel player (⌘⇧C), che cita sempre e solo il media — un tasto per cosa,
  * invece di un tasto che cambia mestiere a seconda di dove hai cliccato prima.
  */
-function citaCorrente(){
+function citaCorrente(destinazione){
+  destinazione=destinazione||noteStatoAttivo();
   if(ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file){
-    if(citaPdf(ANTEPRIMA.num, ANTEPRIMA.page)) toast('Citata la pagina '+ANTEPRIMA.page,true);
+    if(citaPdf(ANTEPRIMA.num, ANTEPRIMA.page, null, destinazione)) toast('Citata la pagina '+ANTEPRIMA.page,true);
     return;
   }
   if(typeof playerAperto==='function' && playerAperto()){
     var sec=secondoCorrente();
-    if(citaVideo(PLAYER.num, sec)) toast('Citato il minuto '+etichettaMinuto(sec),true);
+    if(citaVideo(PLAYER.num, sec, null, destinazione)) toast('Citato il minuto '+etichettaMinuto(sec),true);
     return;
   }
   toast('Apri prima un documento o un media',false);
@@ -11717,7 +11775,8 @@ function disegnaMateriali(){
   grid.innerHTML=html;
 }
 
-function apriMateriali(anchorEl){
+function apriMateriali(anchorEl, destinazione){
+  MATERIALI.destinazione=noteBersaglio(destinazione);
   var pop=$('#matPop'); if(!pop) return;
   var s=$('#matCerca'); if(s) s.value=''; MATERIALI.filtro='';
   $('#matLista').innerHTML='<div class="ep-empty">Carico l’elenco…</div>';
@@ -11727,12 +11786,14 @@ function apriMateriali(anchorEl){
 
 /** Scelto un materiale: chiede minuto o pagina, prefillati con l'anteprima se combacia. */
 function scegliMateriale(nome, tipo, num){
+  var bersaglio=MATERIALI.destinazione||noteBersaglio();
   closePops();
   if(tipo==='pdf'){
     var pDef = (ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file===nome) ? ANTEPRIMA.page : 1;
     askText('Pagina di «'+nome+'»', String(pDef)).then(function(v){
       if(v===null) return;
-      citaPdf(num, v);
+    if(!noteBersaglioValido(bersaglio)){ toast('L’appunto di destinazione è cambiato', false); return; }
+      citaPdf(num, v, null, bersaglio.stato);
     });
     return;
   }
@@ -11740,9 +11801,10 @@ function scegliMateriale(nome, tipo, num){
   var sDef = (typeof playerAperto==='function' && playerAperto() && PLAYER.file===nome) ? secondoCorrente() : 0;
   askText('Minuto di «'+nome+'» (m:ss oppure secondi)', etichettaMinuto(sDef)).then(function(v){
     if(v===null) return;
+    if(!noteBersaglioValido(bersaglio)){ toast('L’appunto di destinazione è cambiato', false); return; }
     var sec=leggiMinuto(v);
     if(sec===null){ toast('Minuto non riconosciuto: usa 14:10 oppure 850',false); return; }
-    citaVideo(num, sec);
+    citaVideo(num, sec, null, bersaglio.stato);
   });
 }
 
@@ -11822,198 +11884,160 @@ function notesReload(){
   var api=notesApi(), m=curMeta();
   if(!api || !m){ NOTES.list=[]; NOTES.listCourse=null; NOTES.listError=''; return; }
   var res;
-  try{
-    res = api.leggi ? (api.leggi(m.courseId)||{}) : { notes:(api.list(m.courseId)||[]), error:'' };
-  }catch(e){ res={ notes:[], error:e.message }; }
+  try{ res=api.leggi ? (api.leggi(m.courseId)||{}) : { notes:(api.list(m.courseId)||[]), error:'' }; }
+  catch(e){ res={notes:[],error:e.message}; }
   var lista=Array.isArray(res.notes)?res.notes:[], err=res.error||'';
-  // una lettura fallita non deve svuotare l'elenco: si tiene l'ultimo buono
-  if(err && !lista.length && NOTES.list.length && NOTES.listCourse===m.courseId){
-    NOTES.listError=err; console.error('appunti/list:', err); return;
+  if(!(err && !lista.length && NOTES.list.length && NOTES.listCourse===m.courseId)){
+    NOTES.list=lista; NOTES.listCourse=m.courseId;
   }
-  NOTES.list=lista; NOTES.listCourse=m.courseId; NOTES.listError=err;
-  if(window.appuntiParalleli) window.appuntiParalleli.refresh();
-  /* ⚠️ La lente cerca anche negli appunti, e il suo indice è una COPIA fatta al
-     momento: senza questa riga un appunto appena scritto non si troverebbe
-     finché non cambia contenitore — e chi cerca concluderebbe di non averlo mai
-     scritto. Questo è l'unico punto in cui l'elenco cambia, quindi è l'unico
-     posto in cui l'indice va dichiarato vecchio. */
+  NOTES.listError=err;
+  noteResync(); refreshNoteUI();
   SEARCH.docs=null;
-  /* Nello zaino gli appunti sono anche una sezione della sidebar: se cambia
-     l'elenco e lei non lo sa, un appunto appena creato non compare finché non
-     si cambia zaino. */
   if(modoAttivo()==='zaino'){ try{ zainoNavAggiorna(); }catch(e){} }
-  if(err) console.error('appunti/list:', err);
+  if(err) console.error('appunti/list:',err);
 }
-// dopo una ricarica l'oggetto in NOTES.cur è quello vecchio: lo si riaggancia a
-// quello fresco, altrimenti l'appunto aperto risulta "orfano" e la tendina lo
-// mostra fuori posto anche quando è tutto a posto.
-function noteResync(){
-  if(!NOTES.cur || NOTES.dirty) return;
-  if(NOTES.listCourse && NOTES.courseId && NOTES.listCourse!==NOTES.courseId) return;
-  var fresh=NOTES.list.filter(function(x){ return x.file===NOTES.cur.file; })[0];
-  if(fresh) NOTES.cur=fresh;
+function noteResync(s){
+  if(!s){ noteStati().forEach(noteResync); return; }
+  if(!s.cur || s.dirty || (NOTES.listCourse && s.courseId && NOTES.listCourse!==s.courseId)) return;
+  var fresh=NOTES.list.find(function(n){ return n.file===s.cur.file; });
+  if(fresh) s.cur=Object.assign({},fresh);
 }
 function notesOfChapter(){
   var ctx=curCtx(); if(!ctx) return [];
-  return NOTES.list.filter(function(n){ return noteInChapter(n, ctx); });
+  return NOTES.list.filter(function(n){ return noteInChapter(n,ctx); });
 }
-// salva subito quello che c'è in canna: prima di cambiare capitolo, lezione,
-// appunto, o di chiudere/ricaricare la finestra
+function noteMemoria(s,corso){
+  var key='studia.banco.c.'+(corso||s.courseId)+'.'+s.id;
+  try{ return JSON.parse(localStorage.getItem(key)||'{}')||{}; }catch(e){ return {}; }
+}
+function noteRicorda(s,bozza){
+  if(!s.cur || !s.mde || !s.courseId) return;
+  var m=noteMemoria(s), cm=s.mde.codemirror, pos=cm.getScrollInfo();
+  m.punti=m.punti||{};
+  m.punti[s.cur.file]={cursor:cm.getCursor(),top:pos.top,left:pos.left};
+  if(bozza) m.bozza={file:s.cur.file,meta:noteMeta(s.cur),body:s.mde.value()};
+  else if(!s.dirty && m.bozza && m.bozza.file===s.cur.file) delete m.bozza;
+  localStorage.setItem('studia.banco.c.'+s.courseId+'.'+s.id,JSON.stringify(m));
+}
+function noteOccupato(file,corso,escluso){
+  return noteStati().find(function(s){ return s!==escluso && s.cur && s.cur.file===file && s.courseId===corso; })||null;
+}
+function noteFlushStato(s){
+  if(s.eliminando) return false;
+  mdbChiudi(true,s);
+  clearTimeout(s.timer); s.timer=null;
+  if(s.dirty && !noteSave(true,s)) return false;
+  try{ noteRicorda(s,false); }catch(e){ toast('Posizione dell’appunto non salvata: '+e.message,false); }
+  return true;
+}
 function noteFlush(){
-  if(window.appuntiParalleli) window.appuntiParalleli.flush();
-  /* ⚠️ Il segno della riga si scrive SEMPRE, anche quando il testo non è
-     cambiato: leggere un appunto senza toccarlo è il caso più comune che
-     esista, ed è esattamente quello in cui il segno serve. Sta prima
-     dell'uscita anticipata qui sotto, che riguarda il TESTO. */
-  try{ rigaFlush(); }catch(e){ console.error('riga:', e); }
-  if(typeof NOTES==='undefined' || !NOTES || !NOTES.cur || !NOTES.dirty) return;
-  clearTimeout(NOTES.timer); NOTES.timer=null;
-  try{ noteSave(true); }catch(e){ console.error('appunti/flush:', e); }
+  var ok=true;
+  noteStati().forEach(function(s){ if(!noteFlushStato(s)) ok=false; });
+  try{ rigaFlush(); }catch(e){ console.error('riga:',e); }
+  return ok;
 }
-/**
- * Molla gli appunti: il contenitore sta cambiando sotto. Prima si scrive
- * quello che è in canna, poi si svuota TUTTO — l'appunto aperto, l'elenco,
- * l'editor. ⚠️ Prima restava tutto: l'editor di uno zaino mostrava l'appunto
- * dello zaino di prima, col distintivo «altrove» a scusarlo — e la tendina
- * elencava un quaderno che qui non esiste (misurato il 13 agosto).
- */
+function noteChiudiPopup(s){
+  if(s.mde && typeof CALBOLLA!=='undefined' && CALBOLLA.cm===s.mde.codemirror){
+    calloutBollaChiudi(); CALBOLLA.cm=null;
+  }
+  if(typeof FIGMENU!=='undefined' && FIGMENU.stato===s) figMenuChiudi();
+}
+function noteSvuota(s){
+  noteChiudiPopup(s);
+  mdbChiudi(false,s);
+  clearTimeout(s.timer); s.timer=null;
+  s.versione++; s.cur=null; s.dirty=false; s.courseId=null; s.invito=false;
+  noteCaricaCorpo('',s);
+  refreshNoteUI(s);
+}
 function noteMolla(){
-  noteFlush();
-  if(NOTES.dirty) return false;
-  if(window.appuntiParalleli && !window.appuntiParalleli.molla()) return false;
-  NOTES.cur=null; NOTES.dirty=false; NOTES.courseId=null;
+  if(!noteFlush()) return false;
+  if(noteStati().some(function(s){ return !s.cur && s.mde && s.mde.value().trim(); })){
+    toast('C’è un appunto senza nome: dagli un nome con «+» prima di cambiare zaino.',false); return false;
+  }
+  noteStati().forEach(noteSvuota);
   NOTES.list=[]; NOTES.listCourse=null; NOTES.listError='';
-  NOTES.invito=false;
-  try{ noteCaricaCorpo(''); }catch(e){}
-  var d=$('#noteDirty'); if(d) d.hidden=true;
-  try{ refreshNoteUI(); }catch(e){}
+  refreshNoteUI();
+  return true;
 }
 function editorOpen(){ return document.documentElement.dataset.editor==='1'; }
-function openEditor(){
-  ensureMde();                 // la toolbar (che ospita i comandi) deve esserci sempre
-  try{ refreshNoteUI(); }catch(e){}
+function openEditor(s){
+  s=s||noteStatoAttivo();
+  ensureMde(s); refreshNoteUI(s); noteAttiva(s);
   document.documentElement.dataset.editor='1';
-  try{ bancoMostra('appunti'); }catch(e){}
-  if(NOTES.mde) setTimeout(function(){ NOTES.mde.codemirror.refresh(); },60);
+  try{ bancoMostra(s.id); }catch(e){}
+  if(s.mde) setTimeout(function(){ s.mde.codemirror.refresh(); },60);
 }
-function closeEditor(){
-  if(NOTES.dirty) noteSave(true);
-  document.documentElement.dataset.editor='';
-  if(document.documentElement.dataset.pdf!=='1') document.documentElement.dataset.dock='';
+function closeEditor(s){
+  s=s||noteStatoAttivo();
+  if(!noteFlushStato(s)) return false;
+  noteChiudiPopup(s);
+  try{ bancoTogli(s.id); }catch(e){}
+  if(!noteStati().some(function(n){ return bancoVisibile(n.id); })) document.documentElement.dataset.editor='';
+  refreshNoteUI();
+  return true;
 }
-function ensureMde(){
-  if(NOTES.mde) return NOTES.mde;
+function ensureMde(s){
+  s=s||noteStatoAttivo();
+  if(s.mde) return s.mde;
   if(typeof EasyMDE==='undefined'){ toast('Editor non caricato (EasyMDE mancante)',false); return null; }
-  var host=$('#noteHost'); host.innerHTML='<textarea id="noteArea"></textarea>';
-  NOTES.mde=new EasyMDE({
-    element:document.getElementById('noteArea'),
-    autoDownloadFontAwesome:false, spellChecker:false, status:false,
-    autofocus:false, forceSync:true, indentWithTabs:false, tabSize:2,
-    /* ⚠️ L'AFFIANCATA RESTA DENTRO IL SUO BLOCCO. Di fabbrica EasyMDE, premendo
-       ◫, chiama anche `toggleFullScreen`: l'editor si prende tutta la finestra,
-       la sidebar sparisce sotto — e la maniglia, che è `position:fixed`, resta
-       inchiodata dov'era, accanto a una sidebar che non si vede più. Ma il
-       fullscreen è un'idea di un'altra app: qui l'editor è uno STRUMENTO dentro
-       un blocco del banco, e il banco è il modello. `sideBySideFullscreen:false`
-       divide in due il blocco e lascia il resto della finestra dov'è. */
-    sideBySideFullscreen:false,
+  var host=noteHost(s); if(!host) return null;
+  host.innerHTML='<textarea id="noteArea'+s.suffisso+'" aria-label="Appunto in questo riquadro"></textarea>';
+  s.mde=new EasyMDE({
+    element:noteEl('noteArea',s),autoDownloadFontAwesome:false,spellChecker:false,status:false,
+    autofocus:false,forceSync:true,indentWithTabs:false,tabSize:2,sideBySideFullscreen:false,
     placeholder:'Scrivi qui il tuo appunto…',
     toolbar:['bold','italic','heading','|','quote','unordered-list','ordered-list','|',
-      { name:'callout', title:'Inserisci un riquadro (callout)', className:'ncb-callout',
-        action:function(ed){ openCalloutMenu(host.querySelector('.ncb-callout')); } },
-      { name:'emoji', title:'Inserisci un\'emoji (OpenMoji)', className:'ncb-emoji',
-        action:function(ed){ openEmojiPop(host.querySelector('.ncb-emoji')); } },
+      {name:'callout',title:'Inserisci un riquadro (callout)',className:'ncb-callout',
+       action:function(ed){ openCalloutMenu(host.querySelector('.ncb-callout'),ed.codemirror); }},
+      {name:'emoji',title:'Inserisci un’emoji (OpenMoji)',className:'ncb-emoji',
+       action:function(ed){ var versione=s.versione; openEmojiPop(host.querySelector('.ncb-emoji'),function(ch){
+         if(s.versione!==versione) return;
+         ed.codemirror.replaceSelection(ch); ed.codemirror.focus();
+       }); }},
       '|',
-      /* ⚠️ Il tasto sta NEL suggerimento, come per l'anteprima: il comando c'è
-         da sempre (`Cmd-Shift-C` fra gli `extraKeys`, qui sotto) ma il bottone
-         non lo nominava, e una scorciatoia che non si dice non la usa nessuno.
-         Trovato dalla prova che confronta la guida con la barra, non a occhio. */
-      { name:'cita', title:'Cita il punto che stai guardando (⌘⇧C)', className:'ncb-cita',
-        action:function(){ citaCorrente(); } },
-      { name:'materiali', title:'Cita un materiale di questo contenitore', className:'ncb-mat',
-        action:function(){ apriMateriali(host.querySelector('.ncb-mat')); } },
+      {name:'cita',title:'Cita il punto che stai guardando (⌘⇧C)',className:'ncb-cita',action:function(){ citaCorrente(s); }},
+      {name:'materiali',title:'Cita un materiale di questo contenitore',className:'ncb-mat',action:function(){ apriMateriali(host.querySelector('.ncb-mat'),s); }},
       '|','link','code','|','preview','side-by-side',
-      { name:'guida', title:'Come si scrive in StudIA', className:'ncb-guida',
-        action:function(){ apriGuida(); } }],
-    /* ⚠️ L'anteprima NON è più una scorciatoia di EasyMDE, ed è il motivo per cui
-       qui c'è `null`. Le sue scorciatoie vivono nel keymap di CodeMirror, e in
-       anteprima CodeMirror è NASCOSTO: il tasto accendeva la vista e poi non la
-       spegneva più, perché non arrivava più a nessuno. ⌘J lo possiede l'app, con
-       un gestore sulla finestra che lo vede in tutti e due gli stati (poco più
-       sotto, accanto a `ensureMde`).
-       Resta ⌘J e non ⌘P — di fabbrica in EasyMDE — perché quel tasto rubava la
-       stampa: chi premeva ⌘P per stampare l'appunto si vedeva commutare
-       l'anteprima. ⌘J è l'unica lettera libera fra il keymap di CodeMirror
-       (A D Z Y S F G U), le scorciatoie di EasyMDE (B I H K L E P) e le nostre
-       (F P S Z), senza contare quelle che il sistema si tiene. */
-    shortcuts:{ toggleSideBySide:'F9', togglePreview:null },
+      {name:'guida',title:'Come si scrive in StudIA',className:'ncb-guida',action:function(){ apriGuida(); }}],
+    shortcuts:{toggleFullScreen:null,toggleSideBySide:'F9',togglePreview:null},
     previewClass:['editor-preview','md-prev'],
-    /* `mappa:true` SOLO qui: è l'anteprima dell'editor, l'unica vista in cui i
-       blocchi si possono riaprire e riscrivere. */
-    previewRender:function(plain){ try{ return renderNoteMd(plain, { mappa:true }); }catch(e){ return escHtml(plain); } }
+    previewRender:function(plain){ try{ return renderNoteMd(plain,{mappa:true}); }catch(e){ return escHtml(plain); } }
   });
-  // le due voci custom non hanno icona Font Awesome: gliene diamo una testuale/emoji
-  /* 📜 la pergamena (OpenMoji 1F4DC) al posto delle tre righe ☰: quel segno in
-     tutte le interfacce vuol dire «menu», e qui apre invece i riquadri — chi lo
-     vedeva si aspettava un elenco di comandi, non una cornice attorno al testo. */
-  var cb=host.querySelector('.ncb-callout'); if(cb) cb.innerHTML='&#128220;';
-  var eb=host.querySelector('.ncb-emoji'); if(eb) eb.innerHTML='&#128512;';
-  var gb=host.querySelector('.ncb-guida'); if(gb) gb.innerHTML='?';
-  var cb2=host.querySelector('.ncb-cita'); if(cb2) cb2.innerHTML='&#128278;';
-  var mb=host.querySelector('.ncb-mat'); if(mb) mb.innerHTML='&#128206;';
-  // scorciatoia: cita il punto corrente senza staccare le mani dalla tastiera
-  NOTES.mde.codemirror.setOption('extraKeys', Object.assign({}, NOTES.mde.codemirror.getOption('extraKeys')||{}, {
-    'Cmd-Shift-C':function(){ citaCorrente(); }, 'Ctrl-Shift-C':function(){ citaCorrente(); }
+  var cm=s.mde.codemirror;
+  // L'azione di EasyMDE può ricreare l'anteprima: raccogliere prima il blocco in scrittura.
+  host.addEventListener('click',function(e){
+    if(e.target.closest && e.target.closest('.editor-toolbar')) mdbChiudi(true,s);
+  },true);
+  [['.ncb-callout','📜'],['.ncb-emoji','😀'],['.ncb-guida','?'],['.ncb-cita','🔖'],['.ncb-mat','📎']].forEach(function(p){
+    var b=host.querySelector(p[0]); if(b) b.textContent=p[1];
+  });
+  var tb=host.querySelector('.editor-toolbar');
+  ['noteCtlTpl','noteCtlFineTpl'].forEach(function(id,i){
+    var tpl=document.getElementById(id); if(!tb || !tpl) return;
+    var frammento=tpl.content.cloneNode(true);
+    frammento.querySelectorAll('[id]').forEach(function(el){ el.id+=s.suffisso; });
+    if(i===0) tb.insertBefore(frammento,tb.firstChild); else tb.appendChild(frammento);
+  });
+  noteCollegaCallout(cm);
+  cm.setOption('extraKeys',Object.assign({},cm.getOption('extraKeys')||{}, {
+    'Cmd-Shift-C':function(){ citaCorrente(s); },'Ctrl-Shift-C':function(){ citaCorrente(s); },
+    'Cmd-S':function(){ noteSave(false,s); },'Ctrl-S':function(){ noteSave(false,s); }
   }));
-  noteCollegaCallout(NOTES.mde.codemirror);
-  /* I comandi dell'appunto entrano nella riga della toolbar, nei due posti che
-     la barra della mappa insegna: il gruppo del DOCUMENTO in testa (prima degli
-     strumenti di scrittura, come «Generata/Mie» e la tendina stanno prima dei
-     motori), stampa e chiudi in coda dietro lo spazio elastico. Una riga sola. */
-  var tb=host.querySelector('.editor-toolbar'), tpl=document.getElementById('noteCtlTpl');
-  var tplFine=document.getElementById('noteCtlFineTpl');
-  if(tb && tpl && !tb.querySelector('.notectl')){
-    tb.insertBefore(tpl.content.cloneNode(true), tb.firstChild);
-    if(tplFine) tb.appendChild(tplFine.content.cloneNode(true));
-  }
-  NOTES.mde.codemirror.on('change',function(){
-    // caricare un corpo nell'editor emette 'change' come se avesse scritto l'utente:
-    // senza la sentinella, aprire un appunto lo marcherebbe subito da salvare
-    if(NOTES.caricando) return;
-    /* ⚠️ Senza un appunto aperto il testo battuto non appartiene a NESSUNO:
-       nessun autosave lo raccoglierà, e nessuno lo diceva. Alla quinta parola
-       si apre la finestra di battesimo, col testo già in corpo. */
-    if(!NOTES.cur){ noteInvito(); return; }
-    NOTES.dirty=true; var d=$('#noteDirty'); if(d) d.hidden=false;
-    clearTimeout(NOTES.timer); NOTES.timer=setTimeout(function(){ noteSave(true); },1800); // autosave
+  cm.on('change',function(){
+    if(s.caricando) return;
+    if(!s.cur){ noteInvito(s); return; }
+    s.dirty=true; var d=noteEl('noteDirty',s); if(d) d.hidden=false;
+    clearTimeout(s.timer); s.timer=setTimeout(function(){ noteSave(true,s); },1800);
   });
-  /* ⚠️ Dov'è il cursore ADESSO: è il segno di lettura dell'appunto (Q1).
-     `cursorActivity` scatta a ogni freccia e a ogni click, quindi la scrittura
-     va col RESPIRO — come il segno d'ascolto, che a scriverlo a ogni secondo
-     riscriverebbe il vault trenta volte al minuto.
-     ⚠️ E si tace mentre si CARICA: `noteCaricaCorpo` muove il cursore per
-     conto suo, e senza questa sentinella aprire un appunto scriverebbe subito
-     il segno «riga 0» sopra quello vero — cioè lo perderebbe proprio nel
-     momento in cui serve. */
-  NOTES.mde.codemirror.on('cursorActivity', function(){
-    if(NOTES.caricando || !NOTES.cur) return;
-    try{ rigaSegna(); }catch(e){ console.error('riga:', e); }
+  cm.on('cursorActivity',function(){
+    if(s.caricando || !s.cur) return;
+    try{ rigaSegna(s); }catch(e){ console.error('riga:',e); }
   });
-  NOTES.mde.codemirror.setOption('extraKeys', Object.assign({}, NOTES.mde.codemirror.getOption('extraKeys')||{}, {
-    'Cmd-S':function(){ noteSave(); }, 'Ctrl-S':function(){ noteSave(); }
-  }));
-  /* ⚠️ I suggerimenti della barra li scrive EasyMDE, ADESSO, e nella sua lingua
-     («Bold (Cmd-B)»): la spazzata di partenza è passata prima che esistessero.
-     Chi fabbrica markup che nomina dei tasti lo ridà a questa funzione — è la
-     stessa regola, applicata una seconda volta, non una seconda regola. */
-  /* Il suggerimento dell'anteprima lo scriviamo noi: da quando ⌘J non è più una
-     scorciatoia di EasyMDE, la sua etichetta non nomina più nessun tasto — e un
-     comando con una scorciatoia che non dice è una scorciatoia che nessuno usa.
-     Va PRIMA della spazzata, che è ciò che traduce ⌘ in Ctrl fuori dal Mac. */
-  var pv=host.querySelector('.editor-toolbar button.preview');
-  if(pv) pv.title='Anteprima (⌘J)';
+  var pv=host.querySelector('.editor-toolbar button.preview'); if(pv) pv.title='Anteprima (⌘J)';
   try{ tastiNelDom(host); }catch(e){}
-  return NOTES.mde;
+  refreshNoteUI(s);
+  return s.mde;
 }
 /* ===== SCRIVERE DENTRO L'ANTEPRIMA ========================================
  *
@@ -12035,14 +12059,17 @@ function ensureMde(){
  * passo per modifica, il cursore di chi stava scrivendo a sinistra non salta, e
  * un errore qui può rovinare un blocco, mai l'appunto.
  */
-function mdbChiudi(salva){
-  var t=document.querySelector('#noteHost .mdb-edit'); if(!t) return false;
+function mdbChiudi(salva,s){
+  s=s||noteStatoAttivo();
+  var host=noteHost(s); if(!host) return false;
+  var t=host.querySelector('.mdb-edit'); if(!t) return false;
   var box=t.closest('.mdb'); if(!box) return false;
   var da=parseInt(box.getAttribute('data-da'),10), a=parseInt(box.getAttribute('data-a'),10);
   var testo=t.value;
   box.removeAttribute('data-edit');
-  if(salva && NOTES.mde && !isNaN(da) && !isNaN(a)){
-    var cm=NOTES.mde.codemirror, righe=cm.lineCount();
+  t.remove();
+  if(salva && s.mde && !isNaN(da) && !isNaN(a)){
+    var cm=s.mde.codemirror, righe=cm.lineCount();
     if(a<righe){
       var vecchio=cm.getRange({line:da,ch:0},{line:a,ch:cm.getLine(a).length});
       if(testo!==vecchio) cm.replaceRange(testo, {line:da,ch:0}, {line:a,ch:cm.getLine(a).length});
@@ -12051,16 +12078,17 @@ function mdbChiudi(salva){
   /* L'anteprima si rifà comunque: in affiancata ci pensa EasyMDE a ogni
      modifica, ma se non c'è stata modifica (o si è annullato) il campo va tolto
      lo stesso, o resterebbe lì a fingere di essere il testo. */
-  noteAnteprimaRidisegna();
+  noteAnteprimaRidisegna(s);
   return true;
 }
 /** Ridisegna il pannello dell'anteprima con il markdown di adesso. */
-function noteAnteprimaRidisegna(){
-  if(!NOTES.mde) return;
-  var host=document.getElementById('noteHost'); if(!host) return;
+function noteAnteprimaRidisegna(s){
+  s=s||noteStatoAttivo();
+  if(!s.mde) return;
+  var host=noteHost(s); if(!host) return;
   var pv=host.querySelector('.editor-preview-active-side, .editor-preview-active');
-  if(!pv) return;
-  try{ pv.innerHTML=renderNoteMd(NOTES.mde.value(), { mappa:true }); }catch(e){}
+  if(!pv || host.querySelector('.mdb-edit')) return;
+  try{ pv.innerHTML=renderNoteMd(s.mde.value(), { mappa:true }); }catch(e){}
 }
 /**
  * Quanti caratteri di testo RESO stanno prima del punto toccato, dentro questo
@@ -12070,8 +12098,9 @@ function noteAnteprimaRidisegna(){
  * giorno non ci fosse, o il punto cadesse fuori dal blocco, si risponde `null`
  * e il cursore torna in fondo come prima — mai un numero indovinato.
  */
-function mdbPuntoCliccato(box, x, y){
-  if(!box || !NOTES.mde || typeof document.caretRangeFromPoint!=='function') return null;
+function mdbPuntoCliccato(box,x,y,s){
+  s=s||noteStatoDaNodo(box)||noteStatoAttivo();
+  if(!box || !s.mde || typeof document.caretRangeFromPoint!=='function') return null;
   var da=parseInt(box.getAttribute('data-da'),10), a=parseInt(box.getAttribute('data-a'),10);
   if(isNaN(da) || isNaN(a)) return null;
   var r;
@@ -12083,7 +12112,7 @@ function mdbPuntoCliccato(box, x, y){
     pre.selectNodeContents(box);
     pre.setEnd(r.startContainer, r.startOffset);
   }catch(e){ return null; }
-  var cm=NOTES.mde.codemirror;
+  var cm=s.mde.codemirror;
   if(a>=cm.lineCount()) return null;
   var sorgente=cm.getRange({line:da,ch:0},{line:a,ch:cm.getLine(a).length});
   return AppuntiScrivibile.posSorgente(sorgente, box.textContent||'', pre.toString().length);
@@ -12096,11 +12125,12 @@ function mdbPuntoCliccato(box, x, y){
  * divergono al primo ritocco — è l'invariante 6, e qui si vedrebbe subito: la
  * scorciatoia aprirebbe un campo senza l'altezza che cresce, o senza Esc.
  */
-function mdbApri(box, pos){
-  if(!box || !NOTES.mde) return false;
+function mdbApri(box,pos,s){
+  s=s||noteStatoDaNodo(box)||noteStatoAttivo();
+  if(!box || !s.mde) return false;
   var da=parseInt(box.getAttribute('data-da'),10), a=parseInt(box.getAttribute('data-a'),10);
   if(isNaN(da) || isNaN(a)) return false;
-  var cm=NOTES.mde.codemirror;
+  var cm=s.mde.codemirror;
   if(a>=cm.lineCount()) return false;
   var sorgente=cm.getRange({line:da,ch:0},{line:a,ch:cm.getLine(a).length});
   box.setAttribute('data-edit','1');
@@ -12114,13 +12144,13 @@ function mdbApri(box, pos){
   var cresci=function(){ t.style.height='auto'; t.style.height=(t.scrollHeight+2)+'px'; };
   t.addEventListener('input', cresci);
   t.addEventListener('keydown', function(ev){
-    if(ev.key==='Escape'){ ev.preventDefault(); ev.stopPropagation(); mdbChiudi(false); }
+    if(ev.key==='Escape'){ ev.preventDefault(); ev.stopPropagation(); mdbChiudi(false,s); }
     /* ⌘Invio chiude e salva: è la scorciatoia che chi scrive in un campo si
        aspetta, e lascia Invio libero di andare a capo dentro il blocco. */
-    else if(ev.key==='Enter' && (ev.metaKey||ev.ctrlKey)){ ev.preventDefault(); ev.stopPropagation(); mdbChiudi(true); }
+    else if(ev.key==='Enter' && (ev.metaKey||ev.ctrlKey)){ ev.preventDefault(); ev.stopPropagation(); mdbChiudi(true,s); }
     /* ↹ tiene e passa al blocco dopo (⇧↹ a quello prima): correggere due
        paragrafi di seguito voleva dire ⌘Invio, mano al mouse, click. */
-    else if(ev.key==='Tab'){ ev.preventDefault(); ev.stopPropagation(); mdbVicino(!ev.shiftKey); }
+    else if(ev.key==='Tab'){ ev.preventDefault(); ev.stopPropagation(); mdbVicino(!ev.shiftKey,s); }
   });
   cresci(); t.focus();
   /* ⚠️ Il cursore dove si è cliccato, non in fondo. Il campo contiene il
@@ -12139,37 +12169,34 @@ function mdbApri(box, pos){
  * al `<div>` vicino darebbe un elemento staccato dal documento, e il campo si
  * aprirebbe su niente senza dire niente.
  */
-function mdbVicino(avanti){
-  var host=document.getElementById('noteHost'); if(!host) return false;
+function mdbVicino(avanti,s){
+  s=s||noteStatoAttivo();
+  var host=noteHost(s); if(!host) return false;
   var aperto=host.querySelector('.mdb[data-edit]'); if(!aperto) return false;
   var prima=[].slice.call(host.querySelectorAll('.mdb'));
   var i=prima.indexOf(aperto);
   if(i<0) return false;
-  mdbChiudi(true);
+  mdbChiudi(true,s);
   var dopo=[].slice.call(host.querySelectorAll('.mdb'));
   var box=dopo[i + (avanti?1:-1)];
   if(!box) return false;
-  return mdbApri(box, 0);
+  return mdbApri(box,0,s);
 }
 (function(){
-  document.addEventListener('click', function(e){
+  document.addEventListener('click',function(e){
     if(!e.target || !e.target.closest) return;
-    var host=document.getElementById('noteHost'); if(!host) return;
-    var box=e.target.closest('#noteHost .mdb');
-    /* Fuori da un blocco (o su un altro blocco) si chiude quello aperto: è la
-       stessa regola del click fuori da un pannellino. */
-    if(!box || box.hasAttribute('data-edit')){
-      if(!e.target.closest('.mdb-edit')) mdbChiudi(true);
-      if(!box) return;
-      if(box.hasAttribute('data-edit')) return;
-    }
-    /* ⚠️ I link e le immagini fanno il LORO mestiere: un rimando cliccato apre
-       il documento alla sua pagina, e una figura apre l'album. Sono i due gesti
-       per cui l'anteprima esiste, e non si perdono per aprire un campo. */
-    if(e.target.closest('a') || e.target.closest('img')) return;
-    /* ⚠️ Il punto toccato si misura PRIMA di svuotare il blocco: dopo, il testo
-       che si stava guardando non c'è più e non c'è più niente da misurare. */
-    mdbApri(box, mdbPuntoCliccato(box, e.clientX, e.clientY));
+    var box=e.target.closest('#noteHost .mdb,#noteHost2 .mdb');
+    var s=noteStatoDaNodo(e.target);
+    var pos=box ? mdbPuntoCliccato(box,e.clientX,e.clientY,s) : null;
+    noteStati().forEach(function(n){
+      var host=noteHost(n), campo=host && host.querySelector('.mdb-edit');
+      if(campo && !campo.contains(e.target)) mdbChiudi(true,n);
+    });
+    if(!box || box.hasAttribute('data-edit') || e.target.closest('a,img')) return;
+    // Chiudere il blocco precedente ricrea i nodi: si ritrova quello cliccato dalle righe.
+    var host=noteHost(s), da=box.getAttribute('data-da');
+    box=host && host.querySelector('.mdb[data-da="'+da+'"]');
+    if(box) mdbApri(box,pos,s);
   });
 })();
 
@@ -12209,8 +12236,9 @@ function figBersaglio(fig){
 
 /** La misura scritta ADESSO per l'immagine su cui è aperto il menu. */
 function figMisuraOra(){
-  if(!NOTES.mde || !FIGMENU.bersaglio) return 0;
-  return LetturaMisura.misuraDi(NOTES.mde.value(), FIGMENU.bersaglio, FIGMENU.occorrenza);
+  var s=FIGMENU.stato; if(!s) return 0;
+  if(!s.mde || !FIGMENU.bersaglio) return 0;
+  return LetturaMisura.misuraDi(s.mde.value(), FIGMENU.bersaglio, FIGMENU.occorrenza);
 }
 
 /**
@@ -12240,8 +12268,9 @@ function figMenuAperto(){ var m=$('#figMenu'); return !!m && m.classList.contain
  * si può governare da qui — e allora il tasto destro non viene intercettato,
  * perché un menu che non compare senza dire niente è peggio del menu di sistema.
  */
-function figMenuApri(fig, x, y){
-  var m=$('#figMenu'); if(!m || !NOTES.mde) return false;
+function figMenuApri(fig,x,y){
+  var s=noteStatoDaNodo(fig); if(!s) return false;
+  var m=$('#figMenu'); if(!m || !s.mde) return false;
   var bersaglio=figBersaglio(fig); if(!bersaglio) return false;
   var box=fig.closest('.mdb'); if(!box) return false;
   var da=parseInt(box.getAttribute('data-da'),10), a=parseInt(box.getAttribute('data-a'),10);
@@ -12255,7 +12284,7 @@ function figMenuApri(fig, x, y){
     return figBersaglio(f)===bersaglio; });
   var i=Array.prototype.indexOf.call(pari, fig);
   if(i<0) return false;
-  FIGMENU={ da:da, a:a, bersaglio:bersaglio, occorrenza:i, fig:fig };
+  FIGMENU={ stato:s, versione:s.versione, da:da, a:a, bersaglio:bersaglio, occorrenza:i, fig:fig };
   m.innerHTML=figMenuHTML();
   albumMenuA(m, x, y);
   return true;
@@ -12287,8 +12316,9 @@ function figMisuraSchermo(){
  * e sporcherebbe la pila dell'annulla per un tasto che non ha fatto nulla.
  */
 function figRidimensiona(verso){
-  if(!NOTES.mde || !FIGMENU.bersaglio) return;
-  var cm=NOTES.mde.codemirror;
+  var s=FIGMENU.stato; if(!s || s.versione!==FIGMENU.versione) return;
+  if(!s.mde || !FIGMENU.bersaglio) return;
+  var cm=s.mde.codemirror;
   if(FIGMENU.a>=cm.lineCount()) return;
   var fine={ line:FIGMENU.a, ch:cm.getLine(FIGMENU.a).length }, inizio={ line:FIGMENU.da, ch:0 };
   var vecchio=cm.getRange(inizio, fine);
@@ -12296,13 +12326,13 @@ function figRidimensiona(verso){
   var nuova = verso==='0' ? 0 : LetturaMisura.passo(ora || figMisuraSchermo(), verso);
   var nuovo=LetturaMisura.cambia(vecchio, FIGMENU.bersaglio, FIGMENU.occorrenza, nuova);
   if(nuovo!==vecchio) cm.replaceRange(nuovo, inizio, fine);
-  noteAnteprimaRidisegna();
+  noteAnteprimaRidisegna(s);
   /* Il menu resta dov'è e si riscrive: la misura giusta la si trova premendo
      tre o quattro volte, e chiuderlo a ogni passo vorrebbe dire riaprirlo per
      ogni ritocco. ⚠️ Il nodo cliccato però è stato buttato via dal ridisegno:
      si ritrova per posizione dentro il blocco, o la misura a schermo del passo
      successivo verrebbe presa da un elemento che non è più nella pagina. */
-  var box=document.querySelector('#noteHost .mdb[data-da="'+FIGMENU.da+'"]');
+  var box=noteHost(s).querySelector('.mdb[data-da="'+FIGMENU.da+'"]');
   if(box){
     var pari=Array.prototype.filter.call(box.querySelectorAll('.figura'), function(f){
       return figBersaglio(f)===FIGMENU.bersaglio; });
@@ -12318,7 +12348,7 @@ function figRidimensiona(verso){
      sistema (copia l'immagine, ispeziona) è meglio di niente. */
   document.addEventListener('contextmenu', function(e){
     if(!e.target || !e.target.closest) return;
-    var fig=e.target.closest('#noteHost .figura'); if(!fig) return;
+    var fig=e.target.closest('#noteHost .figura,#noteHost2 .figura'); if(!fig) return;
     if(figMenuApri(fig, e.clientX, e.clientY)) e.preventDefault();
   });
   document.addEventListener('click', function(e){
@@ -12369,10 +12399,11 @@ function figRidimensiona(verso){
     if(String(e.key||'').toLowerCase()!=='j') return;
     var destinazione=noteStatoAttivo();
     if(!destinazione || !destinazione.mde) return;
-    var host=document.getElementById(destinazione===NOTES?'noteHost':'noteHost2');
+    var host=noteHost(destinazione);
     if(!host || !host.offsetParent) return;
     e.preventDefault(); e.stopPropagation();
     try{
+      mdbChiudi(true,destinazione);
       destinazione.mde.togglePreview();
       if(!host.querySelector('.editor-preview-active')) destinazione.mde.codemirror.focus();
     }catch(err){ console.error('anteprima:', err); }
@@ -12387,71 +12418,79 @@ function figRidimensiona(verso){
  * l'editor torna vuoto (o si passa dal «+», che è la stessa finestra). Un
  * modale che rispunta a ogni parola è una porta che si chiude sulle dita.
  */
-async function noteInvito(){
-  if(!NOTES.mde || NOTES.cur) return;
-  var testo=NOTES.mde.value();
-  if(!testo.trim()){ NOTES.invito=false; return; }   // svuotato: l'invito si riarma
-  if(NOTES.invito) return;
-  /* I segni isolati del markdown non sono parole: i due «>» del callout
-     anticipavano il battesimo alla prima lettera del corpo, rubandole il fuoco. */
-  if(testo.trim().split(/\s+/).filter(function(p){ return /[\p{L}\p{N}]/u.test(p); }).length<5) return;
-  NOTES.invito=true;
+async function noteInvito(s){
+  s=s||noteStatoAttivo();
+  if(!s.mde || s.cur) return;
+  var testo=s.mde.value();
+  if(!testo.trim()){ s.invito=false; return; }
+  if(s.invito || testo.trim().split(/\s+/).filter(function(p){ return /[\p{L}\p{N}]/u.test(p); }).length<5) return;
+  var ctx=curCtx(), versione=s.versione;
+  if(!ctx) return;
+  s.invito=true;
   var esito=await noteChiediNomeEOrigine('APPUNTI');
-  if(esito===null){
-    toast('L’appunto non è ancora salvato: dagli un nome con «+» quando vuoi', false);
-    return;
-  }
-  noteNasce(esito, NOTES.mde.value(), '');
+  if(s.versione!==versione || s.cur || ctx.courseId!==corsoAttivo()) return;
+  if(esito===null){ toast('L’appunto non è ancora salvato: dagli un nome con «+» quando vuoi',false); return; }
+  noteNasce(esito,s.mde.value(),'',s,ctx);
 }
 /* Unico modo di scrivere nell'editor per conto dell'app (apertura di un appunto,
    svuotamento dopo l'eliminazione). Alza la sentinella letta dal gestore 'change'
    così il caricamento non passa per modifica dell'utente. */
-function noteCaricaCorpo(testo){
-  if(!NOTES.mde) return;
-  NOTES.caricando=true;
-  try{ NOTES.mde.value(testo||''); }
-  finally{ NOTES.caricando=false; }
+function noteCaricaCorpo(testo,s){
+  s=s||noteStatoAttivo();
+  if(!s.mde) return;
+  s.caricando=true;
+  try{ s.mde.value(testo||''); }
+  finally{ s.caricando=false; }
 }
 function noteStatoAttivo(){
-  return window.appuntiParalleli && window.appuntiParalleli.attivo() ? window.appuntiParalleli.stato : NOTES;
+  var visibili=noteStati().filter(function(s){ return typeof bancoVisibile==='function' && bancoVisibile(s.id); });
+  return visibili.indexOf(NOTE_ULTIMO)>=0 ? NOTE_ULTIMO : (visibili[0]||NOTE_ULTIMO||NOTES);
 }
 function noteApriAttivo(file){
-  if(window.appuntiParalleli && window.appuntiParalleli.attivo()) return window.appuntiParalleli.open(file);
-  return noteOpen(file);
+  return noteOpen(file,noteStatoAttivo());
 }
-function noteOpen(file){
-  if(window.appuntiParalleli && window.appuntiParalleli.occupato(file,corsoAttivo())){
-    toast('Questo appunto è già aperto nell’altro riquadro. Scegline uno diverso per lavorare in parallelo.', false);
-    refreshNoteUI(); window.appuntiParalleli.focus(); return;
+function noteOpen(file,s,opt){
+  s=s||noteStatoAttivo(); opt=opt||{};
+  var corso=corsoAttivo(); if(!file || !corso) return false;
+  var altro=noteOccupato(file,corso,s);
+  if(altro){
+    toast('Questo appunto è già aperto nell’altro riquadro: continuo da lì.',false);
+    refreshNoteUI();
+    if(!opt.ripristina){ openEditor(altro); if(altro.mde) altro.mde.codemirror.focus(); }
+    return false;
   }
-  var n=NOTES.list.filter(function(x){ return x.file===file; })[0];
-  // non trovato: prima di dire di no, si rilegge la cartella (può averla cambiata
-  // la pipeline, o un'altra finestra, mentre l'elenco in memoria invecchiava)
-  if(!n){ notesReload(); n=NOTES.list.filter(function(x){ return x.file===file; })[0]; }
-  if(!n && NOTES.cur && NOTES.cur.file===file) n=NOTES.cur;   // l'aperto resta apribile
-  if(!n){ try{ refreshNoteUI(); }catch(e){} toast('Appunto non trovato: '+file,false); return; }
-  if(NOTES.cur && NOTES.dirty){
-    noteFlush(); if(NOTES.dirty) return;
-    n=NOTES.list.filter(function(x){ return x.file===file; })[0]||n;
-  }   // il flush può avere aggiornato anche il corpo dell’appunto che si riapre
-  var mde=ensureMde(); if(!mde) return;
-  NOTES.cur=n; NOTES.dirty=false;
-  if(NOTES.listCourse) NOTES.courseId=NOTES.listCourse;
-  else { var m0=curMeta(); if(m0) NOTES.courseId=m0.courseId; }
-  apertoScrivi('appunto', n.file);
-  var d=$('#noteDirty'); if(d) d.hidden=true;
-  noteCaricaCorpo(n.body);
-  openEditor();
-  try{ refreshNoteUI(); }catch(e){}
+  if(!noteFlushStato(s)) return false;
+  if(!opt.creato && !s.cur && s.mde && s.mde.value().trim()){
+    toast('C’è testo senza nome: dagli un nome con «+» prima di aprire un altro appunto.',false); return false;
+  }
+  if(NOTES.listCourse!==corso || !NOTES.list.some(function(n){ return n.file===file; })) notesReload();
+  var n=NOTES.list.find(function(n){ return n.file===file; });
+  if(!n && s.cur && s.cur.file===file && s.courseId===corso) n=s.cur;
+  if(!n){ refreshNoteUI(); toast('Appunto non trovato: '+file,false); return false; }
+  var mde=ensureMde(s); if(!mde) return false;
+  var memoria=noteMemoria(s,corso), bozza=memoria.bozza && memoria.bozza.file===file ? memoria.bozza : null;
+  noteChiudiPopup(s);
+  s.versione++; s.puntoRicerca=false; s.cur=Object.assign({},n,bozza?bozza.meta:{}); s.courseId=corso; s.dirty=false; s.invito=false;
+  noteCaricaCorpo(bozza?bozza.body:n.body,s);
+  if(bozza){ s.dirty=true; toast('Recuperata una bozza non salvata nel vault. Premi Salva per riprovare.',false); }
+  apertoScrivi(s.suffisso?'appunto2':'appunto',file);
+  if(!opt.ripristina) openEditor(s);
+  refreshNoteUI();
+  var versione=s.versione, pos=(memoria.punti||{})[file];
   setTimeout(function(){
-    mde.codemirror.refresh(); mde.codemirror.focus();
-    /* ⚠️ QUI, e non prima: `refresh()` è ciò che dà a CodeMirror le sue
-       misure vere: portare il cursore su una riga di un editor che non sa
-       ancora quanto è alto lo mette dove capita, e lo scorrimento non segue.
-       È la stessa lezione dell'attesa del layer di testo (Q2): si aspetta la
-       condizione, non un numero. */
-    rigaVaiAlSegno(n.file);
+    if(s.versione!==versione || s.courseId!==corso || !s.cur || s.cur.file!==file) return;
+    var cm=mde.codemirror; cm.refresh(); s.caricando=true;
+    try{
+      if(s.puntoRicerca) return;
+      if(pos){
+        cm.setCursor(pos.cursor||{line:0,ch:0}); cm.scrollTo(pos.left||0,pos.top||0);
+        cm.scrollIntoView(cm.getCursor(),120);
+      }
+      else rigaVaiAlSegno(file,s);
+    }finally{ s.caricando=false; }
+    if(!opt.ripristina && noteStatoAttivo()===s) cm.focus();
   },60);
+  return true;
 }
 
 /* ===== IL SEGNO DI LETTURA DEGLI APPUNTI (Q1) ==============================
@@ -12468,7 +12507,7 @@ function noteOpen(file){
  * ⚠️ E la decisione — DOVE si apre davvero, dato quanto è lungo l'appunto
  * adesso — sta in `lib/riga.js` e si prova in Node: qui resta il cablaggio.
  */
-var RIGA={ corso:'', appunti:{}, timer:null, attesa:null };
+var RIGA={ corso:'', appunti:{}, timer:null, attesa:{} };
 
 function rigaApi(){ try{ return (window.vault && window.vault.riga) || null; }catch(e){ return null; } }
 
@@ -12477,6 +12516,7 @@ function rigaCarica(){
   if(!api || !corso){ RIGA.appunti={}; RIGA.corso=''; return Promise.resolve(); }
   return api.leggi(corso).then(function(r){
     r=r||{};
+    if(corso!==corsoAttivo()) return;
     RIGA.appunti=r.appunti||{}; RIGA.corso=corso;
     if(r.error) console.error('riga/leggi:', r.error);
   }).catch(function(e){ console.error('riga/leggi:', e); });
@@ -12490,9 +12530,10 @@ function rigaSegnata(file){
 
 /** Porta l'editor dove si era arrivati. La regola di dove sia «dove» la dice
  *  il modulo: qui si contano le righe di adesso e si esegue. */
-function rigaVaiAlSegno(file){
-  if(!NOTES.mde || typeof AppuntiSegno==='undefined') return;
-  var cm=NOTES.mde.codemirror;
+function rigaVaiAlSegno(file,s){
+  s=s||noteStatoAttivo();
+  if(!s.mde || typeof AppuntiSegno==='undefined') return;
+  var cm=s.mde.codemirror;
   var dove=AppuntiSegno.dove(rigaSegnata(file), cm.lineCount());
   if(!dove) return;                       // la riga 0 è dove si aprirebbe da solo
   try{
@@ -12505,17 +12546,18 @@ function rigaVaiAlSegno(file){
 }
 
 /** Segna la riga del cursore, col respiro. */
-function rigaSegna(){
-  if(!NOTES.cur || !NOTES.mde) return;
-  var api=rigaApi(), corso=NOTES.courseId || corsoAttivo();
+function rigaSegna(s){
+  s=s||noteStatoAttivo();
+  if(!s.cur || !s.mde) return;
+  var api=rigaApi(), corso=s.courseId || corsoAttivo();
   if(!api || !corso) return;
   var n=0;
-  try{ n=NOTES.mde.codemirror.getCursor().line||0; }catch(e){ return; }
-  var file=NOTES.cur.file;
+  try{ n=s.mde.codemirror.getCursor().line||0; }catch(e){ return; }
+  var file=s.cur.file;
   /* La copia in memoria si aggiorna SUBITO: è lei che l'app legge, e aspettare
      il disco vorrebbe dire riaprire l'appunto al segno di prima. */
   RIGA.appunti[file]={ riga:n, quando:new Date().toISOString() };
-  RIGA.attesa={ corso:corso, file:file, riga:n };
+  RIGA.attesa[corso+'\n'+file]={corso:corso,file:file,riga:n};
   clearTimeout(RIGA.timer);
   RIGA.timer=setTimeout(rigaFlush, 900);
 }
@@ -12524,11 +12566,14 @@ function rigaSegna(){
  *  dell'app: un segno che vive solo in memoria è un segno che non c'è. */
 function rigaFlush(){
   var att=RIGA.attesa, api=rigaApi();
-  clearTimeout(RIGA.timer); RIGA.timer=null; RIGA.attesa=null;
-  if(!att || !api) return;
-  api.segna(att.corso, att.file, att.riga).then(function(r){
-    if(r && r.error) console.error('riga/segna:', r.error);
-  }).catch(function(e){ console.error('riga/segna:', e); });
+  clearTimeout(RIGA.timer); RIGA.timer=null; RIGA.attesa={};
+  if(!api) return;
+  Object.keys(att).forEach(function(k){
+    var punto=att[k];
+    Promise.resolve(api.segna(punto.corso,punto.file,punto.riga)).then(function(r){
+      if(r && r.error) console.error('riga/segna:',r.error);
+    }).catch(function(e){ console.error('riga/segna:',e); });
+  });
 }
 /**
  * Porta il cursore dell'editor sulla prima occorrenza di quello che si è
@@ -12547,18 +12592,21 @@ function rigaFlush(){
  * invece di indovinare un numero di millisecondi. È la stessa lezione della
  * lente sul PDF (Q2.1), sull'altra metà del banco.
  */
-function noteVaiAlPunto(q){
+function noteVaiAlPunto(q,s){
+  s=s||noteStatoAttivo();
   if(typeof RicercaIndice==='undefined' || typeof FontiAttesa==='undefined') return;
+  var versione=s.versione;
   var chiesto=RicercaIndice.interpreta(q||'');
   if(!chiesto || !chiesto.testo) return;
   FontiAttesa.attendi(function(){
-    return !!(NOTES.mde && NOTES.mde.codemirror && NOTES.mde.codemirror.getValue());
+    return !!(s.mde && s.mde.codemirror && s.mde.codemirror.getValue());
   }, { tetto:6000 }).then(function(esito){
-    if(!esito.pronto) return;
+    if(!esito.pronto || s.versione!==versione) return;
     try{
-      var cm=NOTES.mde.codemirror;
+      var cm=s.mde.codemirror;
       var p=RicercaIndice.punto(cm.getValue(), chiesto);
       if(!p) return;                 // niente occorrenza: si resta dov'è
+      s.puntoRicerca=true;
       var da=cm.posFromIndex(p.da), a=cm.posFromIndex(p.a);
       cm.setSelection(da, a);
       /* Non appiccicata al bordo ma con un po' di testo sopra: una riga sul
@@ -12596,7 +12644,8 @@ async function noteChiediNomeEOrigine(defTitolo){
  *  alle spalle: qui solo disco e viste. Torna `true` se è nato davvero. */
 function noteNasce(esito, body, anchor, destinazione, ctx){
   ctx=ctx||curCtx(); if(!ctx || ctx.courseId!==corsoAttivo()) return false;
-  destinazione=destinazione||NOTES;
+  destinazione=destinazione||noteStatoAttivo();
+  if(!noteFlushStato(destinazione)) return false;
   var api=notesApi(); if(!api) return false;
   /* ⚠️ La PAGINA viaggia col documento del contesto: se la finestra ha scelto
      un altro documento (o «personale»), la pagina di quello davanti non
@@ -12609,10 +12658,9 @@ function noteNasce(esito, body, anchor, destinazione, ctx){
   var res=api.save(ctx.courseId, null, meta, body||'');
   if(!res || res.error){ toast('Salvataggio fallito: '+((res&&res.error)||'?'),false); return false; }
   notesReload(); refreshNoteUI();
-  if(destinazione===NOTES){ NOTES.courseId=ctx.courseId; noteOpen(res.file); }
-  else window.appuntiParalleli.open(res.file);
-  toast('Appunto creato',true);
-  return true;
+  var aperto=noteOpen(res.file,destinazione,{creato:true});
+  if(aperto) toast('Appunto creato',true);
+  return aperto;
 }
 /* ⚠️ Torna `true` solo se l'appunto è nato davvero. Serve a chi appunta una
    selezione: la regola delle parole chiave si applica DOPO, e deve poter
@@ -12622,12 +12670,15 @@ async function noteNew(anchor, origine, stile, evId, destinazione){
   var ctx=curCtx(); if(!ctx){ toast('Apri un capitolo del vault per prendere appunti',false); return false; }
   var api=notesApi(); if(!api){ toast('Appunti disponibili solo nell’app',false); return false; }
   destinazione=destinazione||noteStatoAttivo();
+  if(!noteFlushStato(destinazione)) return false;
+  var versione=destinazione.versione;
   var esito=await noteChiediNomeEOrigine('APPUNTI');
   if(esito===null) return false;
-  if(ctx.courseId!==corsoAttivo()){
-    toast('Lo zaino è cambiato: appunto non creato. Ripeti il gesto nello zaino desiderato.',false); return false;
+  if(ctx.courseId!==corsoAttivo() || destinazione.versione!==versione){
+    toast('Lo zaino o l’appunto è cambiato: appunto non creato. Ripeti il gesto nello zaino desiderato.',false); return false;
   }
-  var body=anchor? frammentoAppuntato(anchor, ctx, origine, stile, evId) : '';
+  var body=!destinazione.cur && destinazione.mde ? destinazione.mde.value() : '';
+  if(anchor) body+=(body ? '\n\n' : '')+frammentoAppuntato(anchor,ctx,origine,stile,evId);
   return noteNasce(esito, body, anchor, destinazione, ctx);
 }
 /**
@@ -12970,14 +13021,15 @@ async function appuntaSelezione(testo, range, stile){
  */
 function noteInserisci(md, destinazione){
   destinazione=destinazione||noteStatoAttivo();
-  if(!md || !destinazione.cur || !destinazione.mde) return false;
-  if(destinazione===NOTES) openEditor(); else window.appuntiParalleli.focus();
+  if(!md || destinazione.eliminando || !destinazione.cur || !destinazione.mde) return false;
+  mdbChiudi(true,destinazione);
+  openEditor(destinazione);
   var cm=destinazione.mde.codemirror;
   var ultima=cm.lastLine(), coda=cm.getLine(ultima);
   cm.replaceRange((coda.trim()? '\n\n':'') + md, { line:ultima, ch:coda.length });
   cm.setCursor(cm.lastLine(), 0); cm.scrollIntoView(null);
   // il gesto è esplicito, quindi si scrive subito invece di aspettare il debounce
-  if(destinazione===NOTES) noteSave(true); else window.appuntiParalleli.save(true);
+  noteSave(true,destinazione);
   return true;
 }
 /**
@@ -12997,62 +13049,61 @@ function noteMeta(n){
    'materiale','pagina','anchor','creato'].forEach(function(k){ meta[k]=(n && n[k])||''; });
   return meta;
 }
-function noteSave(silent){
-  if(!NOTES.cur || !NOTES.mde) return;
-  var api=notesApi(); if(!api) return;
-  var m=curMeta();
-  // si salva nel corso dell'appunto, non in quello che stai leggendo adesso:
-  // altrimenti cambiando corso con l'editor aperto l'appunto finisce altrove
-  var pid=NOTES.courseId || (m?m.courseId:null);
-  if(!pid){ if(!silent) toast('Nessun corso aperto: appunto non salvato',false); return; }
-  clearTimeout(NOTES.timer); NOTES.timer=null;
-  var body=NOTES.mde.value();
-  var meta=noteMeta(NOTES.cur);
-  /* ⚠️ SVUOTARE UN APPUNTO È UN GESTO, NON UN INCIDENTE.
-     Il 26 agosto 2026 un appunto è stato trovato col frontmatter intatto e il
-     corpo vuoto: il file c'era, il lavoro no. La causa non è stata riprodotta,
-     e proprio per questo la rete sta in `lib/appunti.js` — l'unico punto da cui
-     passano tutte le scritture — invece che nel gesto che si sospetta.
-     Qui si dichiara soltanto QUANDO è lecito: un salvataggio automatico
-     (`silent`) non può svuotare niente; uno esplicito — ⌘S, il bottone — sì,
-     perché lì c'è una mano che ha appena cancellato il testo apposta. */
-  var res;
-  try{ res=api.save(pid, NOTES.cur.file, meta, body, { svuota: !silent }); }
-  catch(err){ console.error('appunti/save:',err); toast('Salvataggio fallito: '+err.message,false); return; }
+function noteSave(silent,s){
+  s=s||noteStatoAttivo();
+  if(s.eliminando) return false;
+  mdbChiudi(true,s);
+  if(!s.cur || !s.mde) return true;
+  var api=notesApi(), pid=s.courseId;
+  if(!api || !pid){ toast('Nessun contenitore aperto: appunto non salvato',false); return false; }
+  clearTimeout(s.timer); s.timer=null;
+  var body=s.mde.value(), res;
+  try{ res=api.save(pid,s.cur.file,noteMeta(s.cur),body,{svuota:!silent}); }
+  catch(e){ res={error:e.message}; }
   if(!res || res.error){
-    console.error('appunti/save:',res&&res.error);
-    /* ⚠️ Il rifiuto si DICE anche quando il salvataggio era silenzioso: «non ho
-       salvato» e «ho salvato» sono due fatti diversi, e questo è esattamente il
-       caso in cui tacere farebbe credere che il lavoro sia al sicuro. */
-    toast('Salvataggio fallito: '+((res&&res.error)||'errore sconosciuto'),false);
-    return;
+    s.dirty=true;
+    try{ noteRicorda(s,true); toast('Appunto non salvato nel vault: '+((res&&res.error)||'errore sconosciuto')+'. La bozza resta conservata in questa app.',false); }
+    catch(e){ toast('Salvataggio fallito. Tieni aperto questo riquadro e copia il testo: '+e.message,false); }
+    refreshNoteUI(s); return false;
   }
-  if(res.file) NOTES.cur.file=res.file;
-  NOTES.cur.body=body; NOTES.dirty=false;
-  var d=$('#noteDirty'); if(d) d.hidden=true;
-  notesReload(); noteResync(); refreshNoteUI(); refreshMyNotes();
+  s.cur.file=res.file||s.cur.file; s.cur.body=body; s.dirty=false;
+  try{ noteRicorda(s,false); }catch(e){ console.error('appunti/posizione:',e); }
+  notesReload(); refreshMyNotes();
   if(!silent) toast('Appunto salvato',true);
+  return true;
 }
-function noteDelete(){
-  if(!NOTES.cur) return;
-  var api=notesApi(); if(!api) return;
-  var m=curMeta();
-  var pid=NOTES.courseId || (m?m.courseId:null); if(!pid) return;
-  if(!window.confirm('Eliminare l’appunto «'+noteEtichetta(NOTES.cur)+'»? Va nel Cestino di sistema.')) return;
-  // quello che era in canna non si scrive più: si sta togliendo il bersaglio,
-  // e il salvataggio automatico lo riscriverebbe mezzo secondo dopo
-  clearTimeout(NOTES.timer); NOTES.timer=null;
-  var eliminando=api.remove(pid, NOTES.cur.file);
-  NOTES.cur=null; NOTES.dirty=false; NOTES.invito=false;
-  apertoScrivi('appunto','');
-  noteCaricaCorpo('');
-  /* `remove` passa dal Cestino di sistema, che è asincrono: l'elenco si
-     ricarica DOPO la risposta, o mostrerebbe ancora l'appunto appena tolto. */
-  Promise.resolve(eliminando).then(function(ok){
-    notesReload(); refreshNoteUI(); refreshMyNotes();
-    if(ok) toast('Appunto nel Cestino di sistema',true);
-    else toast('Appunto non eliminato',false);
-  });
+async function noteDelete(s){
+  s=s||noteStatoAttivo();
+  if(!s.cur || s.eliminando) return false;
+  var api=notesApi(), pid=s.courseId; if(!api || !pid) return false;
+  if(!window.confirm('Eliminare l’appunto «'+noteEtichetta(s.cur)+'»? Va nel Cestino di sistema.')) return false;
+  mdbChiudi(true,s);
+  var file=s.cur.file, versione=s.versione;
+  clearTimeout(s.timer); s.timer=null;
+  // Il Cestino risponde in modo asincrono: un autosave nel frattempo ricreerebbe il file.
+  s.eliminando=true; noteChiudiPopup(s);
+  var host=noteHost(s), inerte=host && host.inert;
+  if(host) host.inert=true;
+  var cm=s.mde && s.mde.codemirror, solaLettura=cm && cm.getOption('readOnly');
+  if(cm) cm.setOption('readOnly',true);
+  var ok=false;
+  try{ ok=await api.remove(pid,file); }catch(e){ console.error('appunti/remove:',e); }
+  finally{ s.eliminando=false; if(cm) cm.setOption('readOnly',solaLettura||false); if(host) host.inert=inerte||false; }
+  if(!ok){
+    if(s.versione===versione && s.dirty){
+      clearTimeout(s.timer); s.timer=setTimeout(function(){ noteSave(true,s); },1800);
+    }
+    toast('Appunto non eliminato',false); return false;
+  }
+  if(s.versione===versione && s.cur && s.cur.file===file && s.courseId===pid){
+    s.dirty=false;
+    var m=noteMemoria(s); if(m.bozza && m.bozza.file===file) delete m.bozza;
+    if(m.punti) delete m.punti[file];
+    try{ localStorage.setItem('studia.banco.c.'+pid+'.'+s.id,JSON.stringify(m)); }catch(e){}
+    apertoScrivi(s.suffisso?'appunto2':'appunto',''); noteSvuota(s);
+  }
+  notesReload(); refreshMyNotes(); toast('Appunto nel Cestino di sistema',true);
+  return true;
 }
 /**
  * Le voci della tendina «documento» della rinomina, nello zaino.
@@ -13095,31 +13146,35 @@ function docVoci(lista, corrente){
  * viaggiano insieme perché sono un gesto solo per chi studia: «questo appunto
  * si chiama così e viene di lì».
  */
-async function noteRename(){
-  if(!NOTES.cur){ toast('Nessun appunto aperto da rinominare', false); return; }
+async function noteRename(s){
+  s=s||noteStatoAttivo();
+  if(!s.cur){ toast('Nessun appunto aperto da rinominare', false); return; }
   var api=notesApi(); if(!api){ toast('Appunti disponibili solo nell’app', false); return; }
   if(typeof api.rename!=='function'){ toast('Rinomina non disponibile in questa versione', false); return; }
-  var m=curMeta(), pid=NOTES.courseId || (m?m.courseId:null);
+  var m=curMeta(), pid=s.courseId || (m?m.courseId:null);
   if(!pid){ toast('Nessun corso aperto', false); return; }
-  var vecchio=NOTES.cur.title||'';
+  var file=s.cur.file, versione=s.versione;
+  var vecchio=s.cur.title||'';
   /* Nello zaino la finestra chiede una cosa in più: da quale documento nasce
      l'appunto. È il campo che nei corsi non ha senso — là il legame col
      capitolo lo decide dove stavi leggendo, e spostarlo a mano vorrebbe dire
      mentire su dove la frase è stata presa. */
   var zaino = modoAttivo()==='zaino';
-  var matVecchio = String(NOTES.cur.materiale||'');
+  var matVecchio = String(s.cur.materiale||'');
   var campo = zaino
     ? { etichetta:'Nasce dal documento', valore:matVecchio,
         voci:docVoci(await documentiPdf(pid), matVecchio) }
     : null;
+  if(s.versione!==versione || !s.cur || s.cur.file!==file || s.courseId!==pid || corsoAttivo()!==pid) return;
   var r0=await askText('Nuovo titolo dell’appunto', vecchio, campo);
-  if(r0===null) return;
+  if(r0===null || s.versione!==versione || !s.cur || s.cur.file!==file || s.courseId!==pid || corsoAttivo()!==pid) return;
   var t=(zaino ? r0.testo : r0);
   var matNuovo = zaino ? String(r0.scelta||'') : matVecchio;
   t=(t||'').trim();
   if(!t){ toast('Il titolo non può essere vuoto', false); return; }
   if(t===vecchio && matNuovo===matVecchio) return;
-  noteFlush();
+  if(!noteFlushStato(s)) return;
+  rigaFlush();
   /* Il documento si cambia PRIMA della rinomina, e con un salvataggio vero:
      `api.rename` ricopia il frontmatter che trova su disco, quindi un campo
      cambiato solo in memoria verrebbe sovrascritto dalla copia vecchia.
@@ -13127,44 +13182,51 @@ async function noteRename(){
      e tenerla vorrebbe dire mandare il lettore a una pagina che con questo
      appunto non c'entra niente. */
   if(zaino && matNuovo!==matVecchio){
-    var pagVecchia=NOTES.cur.pagina||'';
-    NOTES.cur.materiale=matNuovo; NOTES.cur.pagina='';
-    var corpo=(NOTES.mde ? NOTES.mde.value() : (NOTES.cur.body||''));
+    var pagVecchia=s.cur.pagina||'';
+    s.cur.materiale=matNuovo; s.cur.pagina='';
+    var corpo=(s.mde ? s.mde.value() : (s.cur.body||''));
     var rm;
-    try{ rm=api.save(pid, NOTES.cur.file, noteMeta(NOTES.cur), corpo); }
+    try{ rm=api.save(pid, s.cur.file, noteMeta(s.cur), corpo); }
     catch(err2){ rm={ error:err2.message }; }
     if(!rm || rm.error){
       // in memoria resta la verità del disco: un riferimento cambiato a metà
       // è peggio di uno non cambiato, perché sembra fatto
-      NOTES.cur.materiale=matVecchio; NOTES.cur.pagina=pagVecchia;
+      s.cur.materiale=matVecchio; s.cur.pagina=pagVecchia;
       console.error('appunti/save:',rm&&rm.error);
       toast('Documento non cambiato: '+((rm&&rm.error)||'errore sconosciuto'), false); return;
     }
-    NOTES.cur.body=corpo;
+    s.cur.body=corpo;
   }
   if(t===vecchio){
-    notesReload(); noteResync(); refreshNoteUI(); refreshMyNotes();
-    toast('Appunto: nasce da «'+noteMateriale(NOTES.cur)+'»', true);
+    notesReload(); noteResync(s); refreshNoteUI(); refreshMyNotes();
+    toast('Appunto: nasce da «'+noteMateriale(s.cur)+'»', true);
     return;
   }
   var res;
-  try{ res=api.rename(pid, NOTES.cur.file, t); }
+  try{ res=api.rename(pid, s.cur.file, t); }
   catch(err){ console.error('appunti/rename:',err); toast('Appunto non rinominato: '+err.message, false); return; }
   if(!res || res.error){ console.error('appunti/rename:',res&&res.error); toast('Appunto non rinominato: '+((res&&res.error)||'errore sconosciuto'), false); return; }
-  if(res.file) NOTES.cur.file=res.file;
-  NOTES.cur.title=(res.nota&&res.nota.title)||t;
-  apertoScrivi('appunto', NOTES.cur.file);   // il segno segue il file rinominato
-  notesReload(); noteResync(); refreshNoteUI(); refreshMyNotes();
-  toast('Appunto rinominato: «'+NOTES.cur.title+'»', true);
+  if(res.file) s.cur.file=res.file;
+  var memoria=noteMemoria(s);
+  if(s.cur.file!==file && memoria.punti && memoria.punti[file]){ memoria.punti[s.cur.file]=memoria.punti[file]; delete memoria.punti[file]; }
+  if(memoria.bozza && memoria.bozza.file===file) delete memoria.bozza;
+  try{ localStorage.setItem('studia.banco.c.'+pid+'.'+s.id,JSON.stringify(memoria)); }catch(e){}
+  if(s.cur.file!==file && RIGA.appunti[file]){ RIGA.appunti[s.cur.file]=RIGA.appunti[file]; delete RIGA.appunti[file]; }
+  s.cur.title=(res.nota&&res.nota.title)||t;
+  apertoScrivi(s.suffisso?'appunto2':'appunto',s.cur.file);   // il segno segue il file rinominato
+  notesReload(); noteResync(s); refreshNoteUI(); refreshMyNotes();
+  toast('Appunto rinominato: «'+s.cur.title+'»', true);
 }
-function noteOpt(n, altrove){
-  var occupato=window.appuntiParalleli && window.appuntiParalleli.occupato(n.file,corsoAttivo());
+function noteOpt(n,altrove,s){
+  s=s||noteStatoAttivo();
+  var occupato=noteOccupato(n.file,corsoAttivo(),s);
   return '<option value="'+escHtml(n.file)+'"'+(occupato?' disabled':'')+'>'+escHtml(altrove?noteEtichettaAltrove(n):noteEtichetta(n))+(occupato?' · aperto nell’altro riquadro':'')+'</option>';
 }
-function refreshNoteUI(){
-  if(window.appuntiParalleli) window.appuntiParalleli.refresh();
+function refreshNoteUI(s){
+  if(!s){ noteStati().forEach(refreshNoteUI); return; }
+
   setTimeout(function(){ try{ barreSeparatori(); }catch(e){} }, 0);
-  var sel=$('#noteSelect'); if(!sel) return;
+  var sel=noteEl('noteSelect',s); if(!sel) return;
   /* La tendina degli appunti nasce dentro un `<template>` e arriva nel DOM solo
      quando `ensureMde` costruisce la barra: si avvolge qui, che è il primo posto
      in cui esiste di sicuro. */
@@ -13175,7 +13237,7 @@ function refreshNoteUI(){
      schermo, cioè occupava un bottone per annunciare un vuoto. */
   tendinaViva(sel, { piccola:true, fissa:'Quaderno' });
   var ctx=curCtx();
-  var g=noteGroups(NOTES.list, ctx, NOTES.cur);
+  var g=noteGroups(NOTES.list, ctx, s.cur);
   /* Nello zaino «qui» non vuol dire «questo capitolo» ma «questo documento» —
      e quando non c'è nessun PDF aperto vuol dire «gli appunti personali», cioè
      quelli nati da zero. Le parole seguono la cosa: una tendina che nello zaino
@@ -13192,20 +13254,22 @@ function refreshNoteUI(){
             : g.qui.length ? pienoEt
             : (g.altrove.length ? vuotoEt : 'nessun appunto');
   var html='<option value="">'+escHtml(testa)+'</option>';
-  if(g.qui.length) html+='<optgroup label="'+escHtml(quiEt)+'">'+g.qui.map(function(n){ return noteOpt(n,false); }).join('')+'</optgroup>';
-  if(g.altrove.length) html+='<optgroup label="'+escHtml(altroveEt)+' ('+g.altrove.length+')">'+g.altrove.map(function(n){ return noteOpt(n,true); }).join('')+'</optgroup>';
-  if(g.orfano) html+='<optgroup label="Aperto adesso">'+noteOpt(g.orfano,true)+'</optgroup>';
+  if(g.qui.length) html+='<optgroup label="'+escHtml(quiEt)+'">'+g.qui.map(function(n){ return noteOpt(n,false,s); }).join('')+'</optgroup>';
+  if(g.altrove.length) html+='<optgroup label="'+escHtml(altroveEt)+' ('+g.altrove.length+')">'+g.altrove.map(function(n){ return noteOpt(n,true,s); }).join('')+'</optgroup>';
+  if(g.orfano) html+='<optgroup label="Aperto adesso">'+noteOpt(g.orfano,true,s)+'</optgroup>';
   sel.innerHTML=html;
-  if(NOTES.cur && NOTES.cur.file){
-    sel.value=NOTES.cur.file;
-    if(sel.value!==NOTES.cur.file) sel.selectedIndex=0;   // rete: mai una tendina vuota
-    sel.title=noteEtichettaAltrove(NOTES.cur)+'\n'+NOTES.cur.file;
+  if(s.cur && s.cur.file){
+    sel.value=s.cur.file;
+    if(sel.value!==s.cur.file) sel.selectedIndex=0;   // rete: mai una tendina vuota
+    sel.title=noteEtichettaAltrove(s.cur)+'\n'+s.cur.file;
   }else{
     sel.value=''; sel.title=NOTES.listError ? ('Lettura degli appunti fallita: '+NOTES.listError)
               : (zaino ? 'Appunti di questo zaino' : 'Appunti di questo capitolo');
   }
   // dove sta l'appunto aperto, quando non è di quello che stai leggendo
-  var w=$('#noteWhere');
+  var d=noteEl('noteDirty',s); if(d) d.hidden=!s.dirty;
+  ['noteSave','noteRen','noteDel','noteStampa','notePdf'].forEach(function(id){ var b=noteEl(id,s); if(b) b.disabled=!s.cur; });
+  var w=noteEl('noteWhere',s);
   if(w){
     /* ⚠️ Nello ZAINO non esistono capitoli: il chip restava acceso a dire
        «↪ altro capitolo» rispetto a un capitolo che non c'è, e un avviso che
@@ -13216,11 +13280,11 @@ function refreshNoteUI(){
        confronta i documenti — quindi il chip si spegne quando l'appunto e il
        PDF aperto sono d'accordo, PERSONALI compresi (nessun PDF aperto e
        nessun documento nell'appunto: sono lo stesso posto, il vuoto). */
-    var fuori = NOTES.cur && !(ctx && noteInChapter(NOTES.cur, ctx));
+    var fuori = s.cur && !(ctx && noteInChapter(s.cur, ctx));
     w.hidden=!fuori;
     if(fuori){
-      w.textContent = zaino ? ('↪ '+noteMateriale(NOTES.cur)) : '↪ altro capitolo';
-      w.title='Stai scrivendo su «'+noteEtichetta(NOTES.cur)+'» ('+(noteDove(NOTES.cur)||'altro capitolo')+'), non sul '+(zaino?'documento':'capitolo')+' aperto.';
+      w.textContent = zaino ? ('↪ '+noteMateriale(s.cur)) : '↪ altro capitolo';
+      w.title='Stai scrivendo su «'+noteEtichetta(s.cur)+'» ('+(noteDove(s.cur)||'altro capitolo')+'), non sul '+(zaino?'documento':'capitolo')+' aperto.';
     }
   }
 }
@@ -13271,19 +13335,21 @@ document.addEventListener('click',function(e){
      cui era stato premuto — cambiavi idea e dovevi riselezionare la frase. */
   if(!(e.target.closest && (e.target.closest('.popmenu')||e.target.closest('.ncb-callout')||e.target.closest('.ncb-emoji')||e.target.closest('.ncb-mat')||e.target.closest('#mVista')||e.target.closest('#bancoBtn')||e.target.closest('#mappaSvg .mfonte')||e.target.closest('#searchBtn')||e.target.closest('#searchRes')||e.target.closest('#zainoNuovo')||e.target.closest('#pdfDoc')||e.target.closest('.ctx-cita')))) closePops();
   var a=e.target.closest && e.target.closest('.myotes a[data-note]');
-  if(a){ e.preventDefault(); noteOpen(a.getAttribute('data-note')); return; }
+  if(a){ e.preventDefault(); noteApriAttivo(a.getAttribute('data-note')); return; }
   if(e.target.closest && e.target.closest('#addNoteBtn')){ noteNew(''); return; }
-  if(e.target.closest && e.target.closest('#noteNew')){ noteNew(''); return; }
-  if(e.target.closest && e.target.closest('#noteSave')){ noteSave(); return; }
-  if(e.target.closest && e.target.closest('#noteRen')){ noteRename(); return; }
-  if(e.target.closest && e.target.closest('#noteStampa')){ stampaAppunto(); return; }
-  if(e.target.closest && e.target.closest('#notePdf')){ salvaPdf('appunto'); return; }
-  if(e.target.closest && e.target.closest('#noteDel')){ noteDelete(); return; }
-  if(e.target.closest && e.target.closest('#noteClose')){ closeEditor(); return; }
+  var ns=noteStatoDaNodo(e.target), comando=e.target.closest && e.target.closest('.ncbtn');
+  if(ns && comando){
+    var id=comando.id.replace(/2$/,'');
+    if(id==='noteNew'){ noteNew('',null,null,null,ns); return; }
+    if(id==='noteSave'){ noteSave(false,ns); return; }
+    if(id==='noteRen'){ noteRename(ns); return; }
+    if(id==='noteStampa'){ stampaAppunto(ns); return; }
+    if(id==='notePdf'){ salvaPdf('appunto',ns); return; }
+    if(id==='noteDel'){ noteDelete(ns); return; }
+    if(id==='noteClose'){ closeEditor(ns); return; }
+  }
   if(e.target.closest && (e.target.closest('#guidaClose') || e.target===document.getElementById('guidaModal'))){ chiudiGuida(); return; }
   if(e.target.closest && e.target.closest('.ncb-guida')){ apriGuida(); return; }
-  if(e.target.closest && e.target.closest('.ncb-cita')){ citaCorrente(); return; }
-  if(e.target.closest && e.target.closest('.ncb-mat')){ apriMateriali(e.target.closest('.ncb-mat')); return; }
   var mv=e.target.closest && e.target.closest('.mat-voce');
   if(mv){ scegliMateriale(mv.getAttribute('data-mat'), mv.getAttribute('data-tipo'), mv.getAttribute('data-num')); return; }
   if(e.target.closest && e.target.closest('#pdfPrev')){ vaiAPagina(ANTEPRIMA.page-1); return; }
@@ -13322,17 +13388,17 @@ document.addEventListener('click',function(e){
   if(e.target.closest && e.target.closest('#editorBtn')){
     if(editorOpen()) closeEditor();
     else { ensureMde(); notesReload(); noteResync(); openEditor();
-      var mine=notesOfChapter(); if(mine.length && !NOTES.cur) noteOpen(mine[0].file); }
+      var mine=notesOfChapter(); if(mine.length && !noteStatoAttivo().cur) noteOpen(mine[0].file); }
     return;
   }
 });
 document.addEventListener('change',function(e){
-  if(e.target && e.target.id==='noteSelect'){
-    var v=e.target.value;
-    if(v) noteOpen(v);
+  if(e.target && /^noteSelect2?$/.test(e.target.id)){
+    var s=noteStatoDaNodo(e.target), v=e.target.value;
+    if(v) noteOpen(v,s);
     // scelta la riga di intestazione: si rimette in mostra l'appunto aperto,
     // invece di lasciare la tendina che mente su che cosa stai scrivendo
-    else if(NOTES.cur) e.target.value=NOTES.cur.file;
+    else if(s && s.cur) e.target.value=s.cur.file;
   }
 });
 document.addEventListener('input',function(e){ if(e.target && e.target.id==='emojiSearch') emojiRender(e.target.value); });
@@ -13406,7 +13472,7 @@ document.addEventListener('mouseup',function(e){
      (lì non c'è testo da evidenziare), il layer di testo no — e chi decide se
      una selezione è buona è `selezioneAttiva()`, in un posto solo. */
   if(e.target.closest && (e.target.closest('#selBarra')||e.target.closest('#selMenu')||
-                          e.target.closest('#notePane')||
+                          e.target.closest('#notePane, #notePane2')||
                           /* nel CONFRONTO niente barra: le sue voci (evidenzia,
                              appunta, keyword) sono ancorate alla Fonte, e qui
                              citerebbero il documento sbagliato */
@@ -14311,7 +14377,7 @@ function evidenzeDisegna(){
  * citazione. Qui si ridisegna e basta.
  */
 function evidenzeNegliAppunti(){
-  try{ if(typeof noteAnteprimaRidisegna==='function') noteAnteprimaRidisegna(); }catch(e){}
+  try{ noteStati().forEach(function(s){ noteAnteprimaRidisegna(s); }); }catch(e){}
   /* E il riquadro «I miei appunti» dentro il capitolo, che è l'altra vista in
      cui un appunto si legge senza aprirlo. */
   try{ if(typeof refreshMyNotes==='function') refreshMyNotes(); }catch(e){}
@@ -15769,9 +15835,11 @@ function searchGoto(r,q){
      ti seleziona un'altra parola è peggio di uno che non seleziona niente: la
      prima volta ti fidi, la seconda no. */
   if(r.d.appunto){
-    try{ bancoMostra('appunti'); }catch(e){}
-    noteOpen(r.d.appunto);
-    noteVaiAlPunto(q);
+    var destinazione=noteStatoAttivo();
+    noteOpen(r.d.appunto, destinazione);
+    /* Se era già aperto altrove, noteOpen porta il fuoco a quell’istanza. */
+    destinazione=noteStati().find(function(s){ return s.cur && s.cur.file===r.d.appunto && s.courseId===corsoAttivo(); });
+    if(destinazione) noteVaiAlPunto(q, destinazione);
     return;
   }
   /* Un NODO DI MAPPA: si apre la mappa e si METTE A FUOCO quel nodo.
@@ -17444,7 +17512,7 @@ try{
    il codice che li chiama passano tutti per lo stesso punto.
    ========================================================================= */
 
-var BANCO = { stato:null, magazzino:null };
+var BANCO = { stato:null, magazzino:null, attivo:'' };
 
 function bancoPronto(){ return typeof BancoForme!=='undefined'; }
 
@@ -17533,6 +17601,7 @@ function bancoPredefinito(){
            blocchi:{ A:'capitolo', B:'fonte', C:'appunti', D:'keyword' } };
 }
 function bancoCarica(){
+  BANCO.attivo='';
   var grezzo=null;
   try{ grezzo=JSON.parse(localStorage.getItem(bancoChiave())||'null'); }catch(e){}
   BANCO.stato=BancoForme.normalizzaStato(grezzo||bancoPredefinito());
@@ -17579,6 +17648,34 @@ function bancoBloccoDi(strumento){
   return (b && bancoBlocchiVisibili().indexOf(b)>=0) ? b : '';
 }
 function bancoVisibile(strumento){ return !!bancoBloccoDi(strumento); }
+
+/** L'ultimo riquadro usato resta riconoscibile anche mentre il focus è nel
+ *  menu Banco. All'avvio si parte dal primo in ordine di lettura. */
+function bancoBloccoAttivo(){
+  var v=BancoForme.blocchiInLettura(bancoStato().forma);
+  return v.indexOf(BANCO.attivo)>=0 ? BANCO.attivo : (v[0]||'');
+}
+function bancoAttivaBlocco(b){
+  if(!bancoPronto() || bancoBlocchiVisibili().indexOf(b)<0) return;
+  BANCO.attivo=b; bancoSegnaAttivo();
+  var appunto=noteStati().find(function(s){ return s.id===bancoStrumentoIn(b); });
+  if(appunto) noteAttiva(appunto);
+}
+function bancoSegnaAttivo(){
+  var v=BancoForme.blocchiInLettura(bancoStato().forma), attivo=bancoBloccoAttivo();
+  document.querySelectorAll('#banco .blocco').forEach(function(el){
+    var b=el.dataset.blocco, n=v.indexOf(b)+1, h=el.querySelector('.bhead');
+    el.dataset.attivo=b===attivo ? '1' : '0';
+    if(!h) return;
+    var numero=h.querySelector('.bnumero');
+    if(!numero){ numero=document.createElement('span'); numero.className='bnumero'; h.prepend(numero); }
+    numero.textContent=n ? String(n) : ''; numero.title='Riquadro '+n+' in ordine di lettura';
+    var segno=h.querySelector('.battivo');
+    if(!segno){ segno=document.createElement('span'); segno.className='battivo'; segno.textContent='Attivo';
+      segno.title='Riducendo il banco, questo riquadro resta visibile'; h.appendChild(segno); }
+    segno.hidden=b!==attivo;
+  });
+}
 
 /* ---- il magazzino: dove aspettano gli strumenti che non sono a schermo ----
    ⚠️ Non si distruggono e non si ricreano: `#notePane` ha dentro CodeMirror con
@@ -17778,6 +17875,7 @@ function bancoDisegna(){
   bancoApplicaForma();
   bancoApplicaFrazioni();
   bancoMonta();
+  bancoSegnaAttivo();
   bancoDichiaraStrumenti();
   bancoAggiornaTestate();
   bancoAggiornaVuoti();
@@ -17818,7 +17916,7 @@ function bancoSincronizzaMappa(){
 function bancoDopoLayout(){
   try{ if(window.appuntiParalleli) window.appuntiParalleli.layout(); }catch(e){ console.error('banco/appunti2:', e); }
   try{ if(FONTE2.viewer && FONTE2.doc && bancoVisibile('fonte2')){ fonte2Riadatta(); FONTE2.viewer.update(); } }catch(e){}
-  try{ if(NOTES && NOTES.mde) NOTES.mde.codemirror.refresh(); }catch(e){}
+  try{ noteStati().forEach(function(s){ if(s.mde) s.mde.codemirror.refresh(); }); }catch(e){}
   try{ if(typeof MAPPA!=='undefined' && MAPPA && mappaAperta()) mappaRidisegna(); }catch(e){}
   try{ if(typeof positionPanelToggle==='function') positionPanelToggle(); }catch(e){}
   /* L'elenco delle parole chiave si ridisegna quando lo strumento entra in un
@@ -17857,7 +17955,7 @@ function bancoDopoLayout(){
      cieco: lo strumento che serve a cominciare non compariva finché non avevi
      già cominciato. */
   try{ if(typeof ensureMde==='function' && bancoVisibile('appunti')){
-    ensureMde(); refreshNoteUI();
+    ensureMde(NOTES); refreshNoteUI(NOTES);
   } }catch(e){ console.error('banco/appunti:', e); }
   /* ⚠️ Il visualizzatore dei documenti va SVEGLIATO quando il suo blocco torna
      a schermo o cambia larghezza, e il motivo è misurato: pdf.js decide che
@@ -17879,16 +17977,14 @@ function bancoForma(f){
      ritorno dall'ingrandimento parla di una disposizione più vecchia di questa
      scelta, e riportarcisi sarebbe una sorpresa, non un ritorno. */
   bancoZoomScrivi(null);
-  var nuovo=BancoForme.cambiaForma(bancoStato(), f);
-  var usciti=(nuovo.usciti||[]).map(function(u){
-    var st=bancoStrumento(u.strumento);
-    return st ? st.nome : u.strumento;
-  });
+  var attivo=bancoBloccoAttivo(), strumentoAttivo=bancoStrumentoIn(attivo);
+  var prima=bancoStato(), nuovo=BancoForme.cambiaForma(prima, f, attivo);
+  var riduzione=BancoForme.blocchiDi(f).length<BancoForme.blocchiDi(prima.forma).length;
+  var usciti=(nuovo.usciti||[]).map(function(u){ return bancoNomeStrumento(u.strumento); });
   BANCO.stato=nuovo;
+  BANCO.attivo=riduzione ? BancoForme.blocchiInLettura(f)[0] : (BancoForme.bloccoCon(nuovo,strumentoAttivo)||attivo);
   bancoSalva(); bancoDisegna();
-  // gli strumenti usciti di scena non si perdono: restano nello stato, e
-  // tornano appena la forma li rimette a schermo. Ma va detto, o sembrano persi
-  if(usciti.length) toast('Fuori dal banco: '+usciti.join(' · ')+' — tornano cambiando forma', true);
+  if(usciti.length) toast('Restano aperti fuori dal banco: '+usciti.join(' · ')+' — riappaiono riallargando la vista', true);
 }
 function bancoAssegnaDaMenu(blocco, tipo){
   var id=BancoMateriali.scegli(bancoStato().blocchi,bancoBlocchiVisibili(),blocco,tipo);
@@ -17995,7 +18091,9 @@ function bancoZoomTorna(){
   var prima=bancoZoomLeggi();
   if(!prima) return;
   bancoZoomScrivi(null);
+  var strumento=bancoStrumentoIn(bancoBloccoAttivo());
   BANCO.stato=BancoForme.normalizzaStato(prima);
+  BANCO.attivo=BancoForme.bloccoCon(BANCO.stato,strumento)||'';
   bancoSalva(); bancoDisegna();
 }
 /**
@@ -18042,6 +18140,28 @@ function bancoCorpoDi(strumento){
 
 /* ---- il selettore della forma: otto disegnini, fatti con la stessa griglia -- */
 
+function bancoNomeStrumento(id){
+  var st=bancoStrumento(id), pane=bancoElemento(id), nome=st ? st.nome : (id||'Vuoto');
+  // Il documento è già nominato nella sua barra, anche negli editor aggiuntivi.
+  var selettore=pane && pane.querySelector('.notectl select');
+  var titolo=selettore && selettore.selectedOptions && selettore.selectedOptions[0];
+  var documento=pane && pane.querySelector('#pdfDoc, #pdf2Doc');
+  var dettaglio=titolo && selettore.value ? titolo.textContent : (documento ? documento.textContent.replace(/\s*[▾▼]\s*$/, '').trim() : '');
+  return nome+(dettaglio && dettaglio!=='Documenti' ? ' · '+dettaglio : '');
+}
+function bancoAnteprimaForma(f){
+  var prima=bancoStato(), nuovo=BancoForme.cambiaForma(prima, f, bancoBloccoAttivo());
+  var ordine=BancoForme.blocchiInLettura(prima.forma);
+  var voci=BancoForme.blocchiInLettura(nuovo.forma).map(function(b){
+    var id=nuovo.blocchi[b], origine=BancoForme.bloccoCon(prima,id), n=ordine.indexOf(origine)+1;
+    return (n ? n+' · ' : '')+bancoNomeStrumento(id);
+  });
+  return (voci.length<ordine.length ? 'Restano: ' : 'Si vedranno: ')+voci.join('; ');
+}
+function bancoMostraAnteprima(f){
+  var el=document.getElementById('bFormaAnteprima');
+  if(el && BancoForme.FORME[f]) el.textContent=bancoAnteprimaForma(f);
+}
 function bancoDisegnaForme(){
   var host=document.getElementById('bForme'); if(!host||!bancoPronto()) return;
   var attuale=bancoStato().forma;
@@ -18051,8 +18171,8 @@ function bancoDisegnaForme(){
     var g=BancoForme.griglia(f);
     var b=document.createElement('button');
     b.type='button'; b.className='bforma'; b.dataset.forma=f;
-    b.title=dati.nome + (dati.personale ? ' — tasto destro per eliminarla' : '');
-    b.setAttribute('aria-label', dati.nome);
+    b.title=dati.nome+' — '+bancoAnteprimaForma(f) + (dati.personale ? ' — tasto destro per eliminarla' : '');
+    b.setAttribute('aria-label', b.title);
     b.setAttribute('aria-pressed', String(f===attuale));
     b.style.gridTemplateAreas=dati.aree;
     /* Le colonne della MINIATURA sono quelle della forma: una miniatura a tre
@@ -18070,6 +18190,7 @@ function bancoDisegnaForme(){
   piu.title='Disegna una forma tua'; piu.setAttribute('aria-label','Disegna una forma tua');
   piu.textContent='+';
   host.appendChild(piu);
+  bancoMostraAnteprima(attuale);
 }
 
 /* ---- IL PITTORE: una forma disegnata su una griglia 3×3 -------------------
@@ -18187,6 +18308,18 @@ function pittoreElimina(chiave){
 
 /* ---- eventi ---- */
 
+['pointerdown','focusin'].forEach(function(tipo){
+  document.addEventListener(tipo,function(e){
+    var b=e.target.closest && e.target.closest('#banco .blocco');
+    if(b) bancoAttivaBlocco(b.dataset.blocco);
+  },true);
+});
+['pointerover','focusin'].forEach(function(tipo){
+  document.addEventListener(tipo,function(e){
+    var b=e.target.closest && e.target.closest('#bForme .bforma[data-forma]');
+    if(b) bancoMostraAnteprima(b.dataset.forma);
+  });
+});
 document.addEventListener('click', function(e){
   if(!e.target.closest) return;
   if(e.target.closest('#bancoBtn')){
@@ -21437,7 +21570,7 @@ window.addEventListener('keydown', function(e){
   </template>
 </section>
 </aside>
-<section id="notePane2" aria-label="Secondo editor degli appunti"><div id="noteHost2"></div></section>
+<section id="notePane2" aria-label="Editor degli appunti"><div id="noteHost2"></div></section>
 <!-- L'elenco delle parole chiave: uno strumento del banco come gli altri, e per
      questo qui a livello di pagina. La barra ha ricerca e ordinamento; i chip
      si trascinano negli appunti e sulla mappa. -->
@@ -21645,6 +21778,8 @@ window.addEventListener('keydown', function(e){
      finirebbe sotto la topbar. Stessa ragione di #mappaPop e #mapMenu. -->
 <div id="bancoPop" class="popmenu" role="dialog" aria-label="Disposizione dei blocchi">
   <div class="bforme" id="bForme"></div>
+  <p class="bforma-anteprima" id="bFormaAnteprima" aria-live="polite"></p>
+  <p class="bforma-aiuto">Riducendo: prima il riquadro attivo, poi gli altri in ordine di lettura. Gli altri restano aperti e tornano riallargando la vista.</p>
 </div>
 <!-- Il pittore delle forme: una griglia 3×3 su cui si trascina, e ogni
      rettangolo diventa un blocco. Le regole le applica BancoForme, la stessa

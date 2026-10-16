@@ -43,7 +43,7 @@ const CORPO = Array.from({ length: 60 }, (x, i) => 'riga numero ' + i).join('\n'
     const r=api.save(corsoAttivo(), null, { title:'Appunto lungo' }, ${JSON.stringify(CORPO)});
     notesReload(); return r.file||''; })()`);
   ok('l\'appunto c\'è', true, !!file);
-  await val(`noteOpen(${JSON.stringify(file)}), 1`);
+  await val(`noteOpen(${JSON.stringify(file)}, NOTES), 1`);
   await finoA(`(NOTES.cur && NOTES.cur.file===${JSON.stringify(file)}) ? 1 : 0`, 10000);
   await pausa(400);
   /* ⚠️ 61 e non 60: `appunti.serialize` chiude il file con un a capo, e
@@ -58,9 +58,10 @@ const CORPO = Array.from({ length: 60 }, (x, i) => 'riga numero ' + i).join('\n'
   {
     await val(`(()=>{ NOTES.mde.codemirror.setCursor({ line:40, ch:0 }); return 1; })()`);
     /* Il segno va col RESPIRO: scriverlo a ogni freccia riscriverebbe il vault
-       trenta volte al minuto. Qui si aspetta che arrivi sul disco. */
+       trenta volte al minuto. Si aspetta la riga richiesta: un valore precedente
+       già sul disco non conferma che il salvataggio differito sia terminato. */
     const sulDisco = await finoA(`(async()=>{ const r=await window.vault.riga.leggi(corsoAttivo());
-      const v=(r.appunti||{})[${JSON.stringify(file)}]; return v ? v.riga : 0; })()`, 8000);
+      const v=(r.appunti||{})[${JSON.stringify(file)}]; return v && v.riga===40 ? v.riga : 0; })()`, 8000);
     ok('la riga finisce nel vault', 40, sulDisco);
     /* ⚠️ Nel VAULT, non nel localStorage: è un fatto del contenuto, e passando
        lo zaino a un altro computer viaggia con lui. La linea è quella del
@@ -75,9 +76,9 @@ const CORPO = Array.from({ length: 60 }, (x, i) => 'riga numero ' + i).join('\n'
        l'editor a ricaricare il corpo da capo. */
     const altro = await val(`(()=>{ const r=window.vault.notes.save(corsoAttivo(), null,
       { title:'Un altro' }, 'poche righe\\nqui'); notesReload(); return r.file||''; })()`);
-    await val('noteOpen(' + JSON.stringify(altro) + '), 1');
+    await val('noteOpen(' + JSON.stringify(altro) + ', NOTES), 1');
     await pausa(600);
-    await val(`noteOpen(${JSON.stringify(file)}), 1`);
+    await val(`noteOpen(${JSON.stringify(file)}, NOTES), 1`);
     await finoA(`(NOTES.cur && NOTES.cur.file===${JSON.stringify(file)}) ? 1 : 0`, 10000);
     await pausa(500);
     ok('il cursore è tornato alla riga 40', 40, await val(`NOTES.mde.codemirror.getCursor().line`));
@@ -96,8 +97,10 @@ const CORPO = Array.from({ length: 60 }, (x, i) => 'riga numero ' + i).join('\n'
        cancellato ieri sera. Il segno resta a 40, ma le righe sono 5. */
     await val(`(()=>{ window.vault.notes.save(corsoAttivo(), ${JSON.stringify(file)},
       { title:'Appunto lungo' }, 'a\\nb\\nc\\nd\\ne'); notesReload(); return 1; })()`);
-    await val(`(()=>{ NOTES.cur=null; return 1; })()`);
-    await val(`noteOpen(${JSON.stringify(file)}), 1`);
+    // Si chiude anche il buffer: azzerare soltanto cur simulava una bozza
+    // senza nome, che l’apertura di un altro file deve giustamente proteggere.
+    await val(`(()=>{ noteSvuota(NOTES); return 1; })()`);
+    await val(`noteOpen(${JSON.stringify(file)}, NOTES), 1`);
     await finoA(`(NOTES.cur && NOTES.cur.file===${JSON.stringify(file)}) ? 1 : 0`, 10000);
     await pausa(500);
     const righe = await val(`NOTES.mde.codemirror.lineCount()`);
@@ -117,16 +120,20 @@ const CORPO = Array.from({ length: 60 }, (x, i) => 'riga numero ' + i).join('\n'
   {
     const nuovo = await val(`(()=>{ const r=window.vault.notes.save(corsoAttivo(), null,
       { title:'Mai letto' }, 'uno\\ndue\\ntre'); notesReload(); return r.file||''; })()`);
-    await val(`(()=>{ NOTES.cur=null; return 1; })()`);
-    await val('noteOpen(' + JSON.stringify(nuovo) + '), 1');
+    await val(`(()=>{ noteSvuota(NOTES); return 1; })()`);
+    await val('noteOpen(' + JSON.stringify(nuovo) + ', NOTES), 1');
     await pausa(600);
     ok('si apre in cima, come ha sempre fatto', 0, await val(`NOTES.mde.codemirror.getCursor().line`));
   }
 
   /* si lascia il contenitore com'era */
-  await val(`(async()=>{ const api=window.vault.notes; const l=api.list(corsoAttivo())||[];
+  await val(`(async()=>{
+    // La chiusura cancella anche il timer e il buffer: non lasciare una bozza
+    // senza nome, né un autosalvataggio capace di ricreare le fixture rimosse.
+    noteSvuota(NOTES);
+    const api=window.vault.notes; const l=api.list(corsoAttivo())||[];
     for(const n of l){ if(/Appunto lungo|Un altro|Mai letto/.test(n.title||'')) await api.remove(corsoAttivo(), n.file); }
-    NOTES.cur=null; notesReload(); return 1; })()`);
+    notesReload(); return 1; })()`);
   console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati'));
   process.exit(ko ? 1 : 0);
 })().catch((e) => { console.log('✗ ' + (e && e.message ? e.message : e)); process.exit(1); });
