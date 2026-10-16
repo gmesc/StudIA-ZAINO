@@ -589,8 +589,8 @@ const vaultApi = {
      album dello zaino NON passano da qui: usano i loro canali di sempre con
      l'id dello zaino al posto di quello del corso. */
   zaino: {
-    gruppiLeggi: (corso) => ipcRenderer.invoke('zaino:gruppi-leggi', { corso }),
-    gruppiSalva: (corso, stato) => ipcRenderer.invoke('zaino:gruppi-salva', { corso, stato }),
+    gruppiLeggi: (corso, sezione) => ipcRenderer.invoke('zaino:gruppi-leggi', { corso, sezione }),
+    gruppiSalva: (corso, stato, sezione) => ipcRenderer.invoke('zaino:gruppi-salva', { corso, stato, sezione }),
     list: () => ipcRenderer.invoke('zaino:list'),
     create: (nome) => ipcRenderer.invoke('zaino:create', { nome }),
     /* Torna `{ id, title, spostato }`: `id` è quello NUOVO — quando il titolo

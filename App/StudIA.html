@@ -797,8 +797,17 @@
   .znav .zs-gruppo-testa .zs-azioni{ display:flex; flex:0 0 auto; }
   .znav .zs-gruppo ul{ margin-left:.7rem; }
   .znav .zs-gruppo [hidden]{ display:none!important; }
-  .znav .zs-file-azioni{ display:flex; align-items:center; padding:0 .6rem .3rem .8rem; gap:.2rem; }
-  .znav .zs-file-azioni select{ min-width:0; width:100%; height:var(--tb-h); border:1px solid var(--line); background:var(--panel); color:var(--ink); }
+  .znav .zs-item{ display:flex; align-items:center; position:relative; }
+  .znav .zs-item > button:first-child{ flex:1; min-width:0; }
+  .znav .zs-assegna{ width:var(--tb-h); flex:0 0 var(--tb-h); padding:.35rem; text-align:center; border:0; font-size:18px; }
+  .znav [draggable="true"]{ cursor:grab; border:1px solid var(--line); background:var(--panel); margin:.25rem .4rem; }
+  .znav [draggable="true"] > button{ cursor:grab; }
+  .znav [draggable="true"]:focus-visible{ outline:2px solid var(--focus); }
+  .znav .zs-trascina{ opacity:.45; }
+  .znav [data-caduta="prima"]{ box-shadow:0 -3px 0 var(--teal); }
+  .znav [data-caduta="dopo"]{ box-shadow:0 3px 0 var(--teal); }
+  .znav [data-caduta="dentro"]{ outline:2px solid var(--teal); outline-offset:-2px; background:var(--hover); }
+  .znav .zs-liberi{ min-height:12px; }
   .znav .zs-senza{ padding:.4rem .8rem; font-size:11px; color:var(--muted); }
 
   main{ padding:1.9rem clamp(1.3rem,4vw,3rem) 4rem; }
@@ -1493,12 +1502,12 @@
   /* ⚠️ Un solo vestito per i due pannellini che scelgono un materiale — i
      documenti e i media. Sono la stessa cosa vista da due strumenti, e due
      fogli di stile per la stessa lista divergono al primo ritocco. */
-  #pdfDocPop, #plMediaPop, #pdfSommarioPop{ padding:.3rem; width:min(360px,92vw); max-height:60vh; overflow:auto; }
-  #pdfDocPop .pd-voce, #plMediaPop .pd-voce, #pdfSommarioPop .pd-voce{ display:block; width:100%; text-align:left; border:0; background:transparent;
+  #znavGruppiPop, #pdfDocPop, #plMediaPop, #pdfSommarioPop{ padding:.3rem; width:min(360px,92vw); max-height:60vh; overflow:auto; }
+  #znavGruppiPop .pd-voce, #pdfDocPop .pd-voce, #plMediaPop .pd-voce, #pdfSommarioPop .pd-voce{ display:block; width:100%; text-align:left; border:0; background:transparent;
     color:var(--ink); cursor:pointer; padding:.5rem .6rem; font-size:13px; font-family:inherit;
     border-bottom:1px solid var(--line-weak); overflow-wrap:anywhere; }
   #pdfDocPop .pd-voce:last-child, #plMediaPop .pd-voce:last-child{ border-bottom:0; }
-  #pdfDocPop .pd-voce:hover, #plMediaPop .pd-voce:hover{ background:var(--hover); }
+  #znavGruppiPop .pd-voce:hover, #pdfDocPop .pd-voce:hover, #plMediaPop .pd-voce:hover{ background:var(--hover); }
   #pdfDocPop .pd-voce.attivo, #plMediaPop .pd-voce.attivo{ font-weight:700; border-left:3px solid var(--teal); }
   #pdfDocPop .pd-vuoto, #plMediaPop .pd-vuoto{ padding:.6rem; font-size:12px; color:var(--muted); }
   /* ⚠️ Il bottone del livello tiene la LARGHEZZA DEL CASO PEGGIORE, non quella
@@ -3114,8 +3123,7 @@
   <nav class="sidebar" id="sidebar" aria-label="Indice dei capitoli">
     <h2 id="sidebarTitolo">Capitoli</h2>
     <ul class="toc" id="toc"></ul>
-    <!-- La sidebar dello ZAINO: tre sezioni, e sono le tre cose che uno zaino
-         contiene — le fonti caricate, gli appunti scritti, le mappe disegnate.
+    <!-- La sidebar dello ZAINO: documenti, appunti, media e mappe.
          La riempie `zainoNavAggiorna()`. -->
     <div class="znav" id="zainoNav" hidden></div>
     <!-- ⚠️ Qui c'era «Azzera avanzamento». Un gesto irreversibile non sta in
@@ -9390,7 +9398,7 @@ function closePops(){
      vista da un altro lato: togliergli `open` lo farebbe sparire lasciando il
      colore acceso sulla pagina — cioè ricreerebbe esattamente lo stato invisibile
      che si è appena finito di togliere, per un click sul «+» dello zoom. */
-  ['#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#zainoPop','#pdfDocPop','#pdfSommarioPop','#plMediaPop','#pittorePop','#stratiPop']
+  ['#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#zainoPop','#pdfDocPop','#pdfSommarioPop','#plMediaPop','#pittorePop','#stratiPop','#znavGruppiPop']
     .forEach(function(s){ var e=$(s); if(e) e.removeAttribute('open'); });
   /* ⚠️ Il menu della selezione e la sua barra non si chiudono togliendo un
      attributo: hanno uno stato in una CLASSE (`open`, `aperta`) e due funzioni
@@ -9419,6 +9427,8 @@ function closePops(){
      stato proprio: qui l'attributo si TOGLIE invece di metterlo a «false»,
      perché fuori dall'apertura quel bottone non promette niente. */
   document.querySelectorAll('.helpbtn[aria-expanded]').forEach(function(b){ b.removeAttribute('aria-expanded'); });
+  document.querySelectorAll('#zainoNav .zs-assegna[aria-expanded]').forEach(function(b){ b.setAttribute('aria-expanded','false'); });
+  if(typeof ZNAV!=='undefined') ZNAV.scelta=null;
   var zn=$('#zainoNuovo'); if(zn) zn.setAttribute('aria-expanded','false');
   var pd=$('#pdfDoc'); if(pd) pd.setAttribute('aria-expanded','false');
   var pm=$('#plScegli'); if(pm) pm.setAttribute('aria-expanded','false');
@@ -11060,8 +11070,7 @@ async function cambiaModo(m){
 
 /* ===================== LA SIDEBAR DELLO ZAINO =====================
  *
- * Tre sezioni, e sono le tre cose che uno zaino contiene: le fonti caricate,
- * gli appunti scritti, le mappe disegnate. Niente numerazione — un documento
+ * Quattro sezioni: documenti, appunti, media e mappe. Niente numerazione — un documento
  * non è il terzo capitolo di niente.
  *
  * ⚠️ I dati arrivano dai canali di SEMPRE (`corpus.list`, `notes.leggi`,
@@ -11070,111 +11079,161 @@ async function cambiaModo(m){
  * `corsi.cartella()` risolve le due radici: nessuno di quei tre canali sa che
  * gli zaini esistono, ed è la prova che il perno regge.
  */
-var ZNAV={ sezioni:null, carico:false, ancora:false, organizza:false, gruppi:null, id:'', salva:false };
-
+var ZNAV={ carico:false, ancora:false, organizza:{}, gruppi:{}, id:'', salva:false, trascinamento:null, scelta:null };
 function znavEsc(s){ return escHtml(s); }
+function znavComandoHtml(azione, testo, titolo, dati, spento){
+  return '<button type="button" class="tbtn" data-znav="'+azione+'" '+(dati||'')+
+    ' title="'+znavEsc(titolo)+'" aria-label="'+znavEsc(titolo)+'"'+(spento?' disabled':'')+'>'+testo+'</button>';
+}
 
-/** I gruppi cambiano la vista, mai i nomi dei file a cui puntano i rimandi. */
-function znavFonti(fonti, errore, erroreGruppi, apertoPdf, apertoMedia){
-  var stato=ZNAV.gruppi || FontiGruppi.normalizza(null,fonti.map(function(f){ return f.name; }));
-  var edit=ZNAV.organizza && !erroreGruppi;
-  function comando(azione, testo, titolo, dati, spento){
-    return '<button type="button" class="tbtn" data-znav="'+azione+'" '+(dati||'')+
-      ' title="'+znavEsc(titolo)+'" aria-label="'+znavEsc(titolo)+'"'+(spento?' disabled':'')+'>'+testo+'</button>';
-  }
+/** Fonti, appunti e media condividono i gesti, conservando registri separati. */
+function znavRaccolta(sezione, titolo, voci, vuoto, errore, erroreGruppi){
+  var stato=ZNAV.gruppi[sezione] || FontiGruppi.normalizza(null,voci.map(function(v){ return v.quale; }));
+  var edit=!!ZNAV.organizza[sezione] && !erroreGruppi && !errore;
   function lista(files, gruppo){
-    return '<ul>'+files.map(function(file,i){
-      var f=fonti.find(function(x){ return x.name===file; }); if(!f) return '';
-      var media=f.tipo==='media', nome=titoloMateriale(file)||file;
-      var segno=media?((typeof Lettore!=='undefined' && Lettore.tipoDi(file)==='audio')?'♪ ':'▶ '):'';
+    return '<ul>'+files.map(function(file){
+      var v=voci.find(function(x){ return x.quale===file; }); if(!v) return '';
       var dati='data-file="'+znavEsc(file)+'" data-gruppo="'+znavEsc(gruppo)+'"';
-      return '<li><button type="button" class="zn-fonte'+(media?' zn-media':'')+
-        ((media?file===apertoMedia:file===apertoPdf)?' attivo':'')+'" data-quale="'+znavEsc(file)+
-        '" title="'+znavEsc(file)+'">'+znavEsc(segno+nome)+'</button>'+
-        (edit?'<div class="zs-file-azioni zs-azioni">'+
-          comando('file-su','↑','Sposta su '+nome,dati,i===0)+
-          comando('file-giu','↓','Sposta giù '+nome,dati,i===files.length-1)+
-          '<select data-znav-gruppo="'+znavEsc(file)+'" aria-label="Gruppo di '+znavEsc(nome)+'">'+
-          '<option value="">Senza gruppo</option>'+stato.gruppi.map(function(g){
-            return '<option value="'+znavEsc(g.id)+'"'+(g.id===gruppo?' selected':'')+'>'+znavEsc(g.nome)+'</option>';
-          }).join('')+'</select></div>':'')+'</li>';
+      return '<li class="zs-item" '+dati+(edit?' draggable="true" tabindex="0" title="Trascina per spostare · Alt+↑/↓ per riordinare"':'')+'>'+
+        '<button type="button" class="'+v.classe+(v.attivo?' attivo':'')+'" data-quale="'+znavEsc(file)+'" title="'+znavEsc(v.titolo||v.testo)+'">'+znavEsc(v.testo)+'</button>'+
+        (edit?'<button type="button" class="zs-assegna" data-znav="assegna" '+dati+' aria-haspopup="menu" aria-expanded="false" aria-controls="znavGruppiPop" aria-label="Scegli gruppo per '+znavEsc(v.testo)+'" title="Scegli gruppo"><span aria-hidden="true">⌄</span></button>':'')+'</li>';
     }).join('')+'</ul>';
   }
-  var h='<div class="zs-tit"><span>Fonti</span><span class="zs-n">'+fonti.length+'</span><span class="zs-azioni">'+
-    comando('crea','+','Crea gruppo di fonti','',!!erroreGruppi || !!errore)+
-    '<button type="button" class="tbtn" data-znav="organizza" title="Organizza fonti" aria-label="Organizza fonti" aria-pressed="'+edit+'"'+
-    (erroreGruppi || errore?' disabled':'')+'>'+(edit?'✓':'✎')+'</button></span></div>';
-  if(errore) return h+'<div class="zs-vuoto zs-no">⚠ '+znavEsc(errore)+'</div>';
+  var h='<section class="zs-raccolta" data-sezione="'+sezione+'"><div class="zs-tit"><span>'+titolo+'</span><span class="zs-n">'+voci.length+'</span><span class="zs-azioni">'+
+    znavComandoHtml('crea','+','Crea gruppo di '+titolo.toLowerCase(),'',!!erroreGruppi||!!errore)+
+    '<button type="button" class="tbtn" data-znav="organizza" title="Organizza '+titolo.toLowerCase()+'" aria-label="Organizza '+titolo.toLowerCase()+'" aria-pressed="'+edit+'"'+(erroreGruppi||errore?' disabled':'')+'>'+(edit?'✓':'✎')+'</button></span></div>';
+  if(errore) return h+'<div class="zs-vuoto zs-no">⚠ '+znavEsc(errore)+'</div></section>';
   if(erroreGruppi) h+='<div class="zs-vuoto zs-no">Organizzazione non leggibile: '+znavEsc(erroreGruppi)+'</div>';
-  stato.gruppi.forEach(function(g,i){
+  stato.gruppi.forEach(function(g){
     var dati='data-gruppo="'+znavEsc(g.id)+'"';
-    h+='<section class="zs-gruppo" data-gruppo="'+znavEsc(g.id)+'"><div class="zs-gruppo-testa">'+
-      '<button type="button" data-znav="toggle" '+dati+' aria-expanded="'+!g.chiuso+'">'+
-      '<span aria-hidden="true">'+(g.chiuso?'▸':'▾')+'</span><span class="zs-nome">'+znavEsc(g.nome)+'</span><span class="zs-n">'+g.files.length+'</span></button>'+
-      (edit?'<span class="zs-azioni">'+comando('gruppo-su','↑','Sposta su il gruppo '+g.nome,dati,i===0)+
-        comando('gruppo-giu','↓','Sposta giù il gruppo '+g.nome,dati,i===stato.gruppi.length-1)+
-        comando('rinomina','✎','Rinomina il gruppo '+g.nome,dati)+
-        comando('elimina','×','Sciogli il gruppo '+g.nome+' (conserva i documenti)',dati)+'</span>':'')+'</div>'+
-      '<div'+(g.chiuso?' hidden':'')+'>'+(g.files.length?lista(g.files,g.id):'<div class="zs-vuoto">Gruppo vuoto. Usa ✎ per spostare qui le fonti.</div>')+'</div></section>';
+    h+='<section class="zs-gruppo" '+dati+'><div class="zs-gruppo-testa" '+dati+(edit?' draggable="true" tabindex="0" title="Trascina il gruppo · Alt+↑/↓ per riordinare"':'')+'>'+
+      '<button type="button" data-znav="toggle" '+dati+' aria-expanded="'+!g.chiuso+'"'+(erroreGruppi?' disabled':'')+'><span aria-hidden="true">'+(g.chiuso?'▸':'▾')+'</span><span class="zs-nome">'+znavEsc(g.nome)+'</span><span class="zs-n">'+g.files.length+'</span></button>'+
+      (edit?'<span class="zs-azioni">'+znavComandoHtml('rinomina','✎','Rinomina il gruppo '+g.nome,dati)+znavComandoHtml('elimina','×','Sciogli il gruppo '+g.nome+' (conserva le voci)',dati)+'</span>':'')+'</div>'+
+      '<div'+(g.chiuso?' hidden':'')+'>'+(g.files.length?lista(g.files,g.id):'<div class="zs-vuoto">'+(edit?'Trascina qui una voce.':'Gruppo vuoto.')+'</div>')+'</div></section>';
   });
-  if(stato.liberi.length){
-    if(stato.gruppi.length) h+='<div class="zs-senza">Senza gruppo</div>';
-    h+=lista(stato.liberi,'');
-  }else if(!fonti.length && !stato.gruppi.length) h+='<div class="zs-vuoto">Nessun documento in questo zaino.</div>';
-  return h;
+  h+='<div class="zs-liberi" data-gruppo="">';
+  if(stato.gruppi.length) h+='<div class="zs-senza">Senza gruppo</div>';
+  h+=lista(stato.liberi,'');
+  if(!voci.length && !stato.gruppi.length) h+='<div class="zs-vuoto">'+znavEsc(vuoto)+'</div>';
+  return h+'</div></section>';
 }
-
-async function znavSalva(stato, id){
-  if(ZNAV.salva || id!==zainoAttivo()) return;
-  ZNAV.salva=true;
+async function znavSalva(stato, id, sezione){
+  if(ZNAV.salva || id!==zainoAttivo()) return false;
+  ZNAV.salva=true; var ok=false;
   try{
-    var r=await window.vault.zaino.gruppiSalva(id,stato);
+    var r=await window.vault.zaino.gruppiSalva(id,stato,sezione);
     if(!r || r.error) throw new Error((r&&r.error)||'salvataggio non riuscito');
+    ok=true;
   }catch(e){ toast('Organizzazione non salvata: '+e.message,false); }
   finally{ ZNAV.salva=false; await zainoNavAggiorna(); }
+  return ok;
 }
-
-function znavRiprendiFuoco(prima){
-  var voci=Array.from(document.querySelectorAll('#zainoNav button, #zainoNav select'));
-  var stesso=voci.find(function(b){
-    return b.dataset.znav===prima.dataset.znav && b.dataset.gruppo===prima.dataset.gruppo &&
-      b.dataset.file===prima.dataset.file && b.dataset.znavGruppo===prima.dataset.znavGruppo;
-  });
-  if(!stesso || stesso.disabled || !stesso.offsetParent) stesso=voci.find(function(b){
-    return prima.dataset.file ? b.dataset.quale===prima.dataset.file :
-      b.dataset.znav==='toggle' && b.dataset.gruppo===(prima.dataset.znavGruppo?prima.value:prima.dataset.gruppo);
-  });
+function znavSezioneDi(el){ return (el.closest('[data-sezione]')||{}).dataset?.sezione; }
+function znavRiprendiFuoco(prima, sezione){
+  var host=document.querySelector('#zainoNav [data-sezione="'+sezione+'"]'); if(!host) return;
+  var voci=Array.from(host.querySelectorAll('button'));
+  var stesso=voci.find(function(b){ return b.dataset.znav===prima.dataset.znav &&
+    (prima.dataset.file ? b.dataset.file===prima.dataset.file : b.dataset.gruppo===prima.dataset.gruppo); });
+  if(!stesso || !stesso.offsetParent) stesso=voci.find(function(b){ return prima.dataset.file && b.dataset.quale===prima.dataset.file; });
   if(!stesso || !stesso.offsetParent) stesso=voci.find(function(b){ return b.dataset.znav==='organizza'; });
   if(stesso) stesso.focus();
 }
-
+function znavMenuGruppi(btn, sezione){
+  var pop=$('#znavGruppiPop'), s=ZNAV.gruppi[sezione];
+  if(pop.hasAttribute('open') && ZNAV.scelta?.ancora===btn){ closePops(); return; }
+  pop.innerHTML=[{id:'',nome:'Senza gruppo'}].concat(s.gruppi).map(function(g){
+    return '<button type="button" class="pd-voce" role="menuitemradio" aria-checked="'+(g.id===btn.dataset.gruppo)+'" data-znav-destinazione="'+znavEsc(g.id)+'">'+(g.id===btn.dataset.gruppo?'✓ ':'')+znavEsc(g.nome)+'</button>';
+  }).join('');
+  popAt(pop,btn); ZNAV.scelta={id:ZNAV.id,sezione:sezione,file:btn.dataset.file,ancora:btn};
+  btn.setAttribute('aria-expanded','true');
+  (pop.querySelector('[aria-checked="true"]')||pop.querySelector('button')).focus();
+}
 async function znavComando(btn){
-  var azione=btn.dataset.znav, id=zainoAttivo(), s=ZNAV.gruppi;
-  if(ZNAV.salva || ZNAV.carico || ZNAV.id!==id || !s) return;
+  var azione=btn.dataset.znav, sezione=znavSezioneDi(btn), id=zainoAttivo(), s=ZNAV.gruppi[sezione];
+  if(ZNAV.salva || ZNAV.carico || ZNAV.id!==id || !s || btn.disabled) return;
+  if(azione==='assegna'){ znavMenuGruppi(btn,sezione); return; }
   if(azione==='organizza'){
-    ZNAV.organizza=!ZNAV.organizza; await zainoNavAggiorna();
-    if(id===zainoAttivo()) znavRiprendiFuoco(btn);
-    return;
+    ZNAV.organizza[sezione]=!ZNAV.organizza[sezione]; await zainoNavAggiorna();
+    if(id===zainoAttivo()) znavRiprendiFuoco(btn,sezione); return;
   }
-  var g=s.gruppi.find(function(x){ return x.id===btn.dataset.gruppo; }), nome, prossimo;
+  var g=s.gruppi.find(function(x){ return x.id===btn.dataset.gruppo; }), prossimo;
   if(azione==='crea' || azione==='rinomina'){
-    nome=await askText(azione==='crea'?'Nome del gruppo':'Rinomina gruppo',g?g.nome:'');
-    if(nome==null) return;
+    var nome=await askText(azione==='crea'?'Nome del gruppo':'Rinomina gruppo',g?g.nome:'');
+    if(nome==null || id!==zainoAttivo()) return;
     nome=String(nome).trim(); if(!nome){ toast('Dai un nome al gruppo',false); return; }
-    if(id!==zainoAttivo()) return;
-    prossimo=azione==='crea'?FontiGruppi.crea(s,'g-'+crypto.randomUUID(),nome):FontiGruppi.rinomina(s,g.id,nome);
-    ZNAV.organizza=true;
+    s=ZNAV.gruppi[sezione]; if(!s || ZNAV.salva) return;
+    prossimo=azione==='crea'?FontiGruppi.crea(s,'g-'+crypto.randomUUID(),nome):FontiGruppi.rinomina(s,btn.dataset.gruppo,nome);
+    ZNAV.organizza[sezione]=true;
   }else if(azione==='toggle' && g) prossimo=FontiGruppi.toggle(s,g.id);
   else if(azione==='elimina' && g) prossimo=FontiGruppi.elimina(s,g.id);
-  else if((azione==='gruppo-su' || azione==='gruppo-giu') && g)
-    prossimo=FontiGruppi.ordinaGruppo(s,g.id,s.gruppi.indexOf(g)+(azione==='gruppo-su'?-1:1));
-  else if(azione==='file-su' || azione==='file-giu'){
-    var files=g?g.files:s.liberi;
-    prossimo=FontiGruppi.sposta(s,btn.dataset.file,g?g.id:'',files.indexOf(btn.dataset.file)+(azione==='file-su'?-1:1));
-  }
-  if(prossimo) await znavSalva(prossimo,id);
-  if(id===zainoAttivo()) znavRiprendiFuoco(btn);
+  if(prossimo) await znavSalva(prossimo,id,sezione);
+  if(id===zainoAttivo()) znavRiprendiFuoco(btn,sezione);
 }
+function znavTracciaVia(){ document.querySelectorAll('#zainoNav [data-caduta]').forEach(function(e){ delete e.dataset.caduta; }); }
+function znavTrascinaFine(){ znavTracciaVia(); document.querySelectorAll('#zainoNav .zs-trascina').forEach(function(e){ e.classList.remove('zs-trascina'); }); ZNAV.trascinamento=null; }
+function znavBersaglio(e){
+  var d=ZNAV.trascinamento, el=e.target.closest && e.target.closest('.zs-item, .zs-gruppo-testa, .zs-gruppo, .zs-liberi');
+  if(!d || !el || znavSezioneDi(el)!==d.sezione || d.id!==zainoAttivo() || ZNAV.salva || ZNAV.carico) return null;
+  if(!d.file){ el=el.closest('.zs-gruppo')?.querySelector('.zs-gruppo-testa'); if(!el) return null; }
+  var r=el.getBoundingClientRect(), dopo=e.clientY>r.top+r.height/2;
+  return {el:el,file:el.dataset.file,gruppo:el.dataset.gruppo||'',dopo:dopo};
+}
+(function(){
+  document.addEventListener('dragstart',function(e){
+    var el=e.target.closest && e.target.closest('#zainoNav [draggable="true"]'); if(!el) return;
+    var sezione=znavSezioneDi(el);
+    if(ZNAV.salva || ZNAV.carico || !ZNAV.gruppi[sezione]){ e.preventDefault(); return; }
+    closePops(); ZNAV.trascinamento={id:ZNAV.id,sezione:sezione,file:el.dataset.file,gruppo:el.dataset.gruppo};
+    e.dataTransfer.setData('application/x-zaino-sidebar','voce'); e.dataTransfer.effectAllowed='move';
+    el.classList.add('zs-trascina');
+  });
+  document.addEventListener('dragover',function(e){
+    if(!ZNAV.trascinamento) return;
+    e.preventDefault(); e.stopPropagation(); znavTracciaVia();
+    var b=znavBersaglio(e); e.dataTransfer.dropEffect=b?'move':'none'; if(!b) return;
+    b.el.dataset.caduta=ZNAV.trascinamento.file&&!b.file?'dentro':(b.dopo?'dopo':'prima');
+    var nav=$('#sidebar'), r=nav.getBoundingClientRect();
+    if(e.clientY<r.top+35) nav.scrollTop-=18; else if(e.clientY>r.bottom-35) nav.scrollTop+=18;
+  },true);
+  document.addEventListener('drop',async function(e){
+    var d=ZNAV.trascinamento; if(!d) return;
+    e.preventDefault(); e.stopPropagation(); var b=znavBersaglio(e); znavTrascinaFine(); if(!b) return;
+    var s=FontiGruppi.trascina(ZNAV.gruppi[d.sezione],d,b);
+    var g=s.gruppi.find(function(g){ return g.id===b.gruppo; });
+    if(d.file && g?.chiuso) s=FontiGruppi.toggle(s,g.id);
+    await znavSalva(s,d.id,d.sezione);
+  },true);
+  document.addEventListener('dragend',function(){
+    znavTrascinaFine();
+    if(ZNAV.ancora && !ZNAV.salva){ ZNAV.ancora=false; zainoNavAggiorna(); }
+  });
+  document.addEventListener('click',async function(e){
+    var btn=e.target.closest && e.target.closest('#znavGruppiPop [data-znav-destinazione]'); if(!btn) return;
+    var scelta=ZNAV.scelta; closePops();
+    if(!scelta || scelta.id!==zainoAttivo() || ZNAV.salva || ZNAV.carico) return;
+    var s=ZNAV.gruppi[scelta.sezione]; if(!s) return;
+    await znavSalva(FontiGruppi.sposta(s,scelta.file,btn.dataset.znavDestinazione),scelta.id,scelta.sezione);
+    if(scelta.id===zainoAttivo()) znavRiprendiFuoco(scelta.ancora,scelta.sezione);
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.target.closest && e.target.closest('#znavGruppiPop')){
+      var voci=Array.from($('#znavGruppiPop').querySelectorAll('button')), i=voci.indexOf(document.activeElement);
+      if(e.key==='Escape'){ e.preventDefault(); e.stopImmediatePropagation(); var a=ZNAV.scelta?.ancora; closePops(); if(a?.isConnected)a.focus(); return; }
+      if(['ArrowDown','ArrowUp','Home','End'].includes(e.key)){
+        e.preventDefault(); e.stopImmediatePropagation();
+        i=e.key==='Home'?0:e.key==='End'?voci.length-1:(i+(e.key==='ArrowDown'?1:-1)+voci.length)%voci.length; voci[i].focus();
+      }
+      return;
+    }
+    var el=e.target.closest && e.target.closest('#zainoNav [draggable="true"]');
+    if(!el || !e.altKey || !['ArrowUp','ArrowDown'].includes(e.key) || ZNAV.salva || ZNAV.carico) return;
+    e.preventDefault(); var sezione=znavSezioneDi(el), s=ZNAV.gruppi[sezione], gid=el.dataset.gruppo, file=el.dataset.file;
+    var g=s.gruppi.find(function(g){ return g.id===gid; }), lista=file?(g?g.files:s.liberi):s.gruppi.map(function(g){return g.id;});
+    var i=lista.indexOf(file||gid), j=i+(e.key==='ArrowDown'?1:-1); if(j<0||j>=lista.length)return;
+    var b=file?{file:lista[j],gruppo:gid,dopo:j>i}:{gruppo:lista[j],dopo:j>i};
+    znavSalva(FontiGruppi.trascina(s,{file:file,gruppo:gid},b),ZNAV.id,sezione).then(function(){znavRiprendiFuoco({dataset:{file:file,gruppo:gid,znav:file?'assegna':'toggle'}},sezione);});
+  },true);
+})();
 
 /** Una sezione: titolo, conto, voci (o la riga che spiega il vuoto). */
 function znavSezione(titolo, voci, vuoto, errore){
@@ -11190,7 +11249,7 @@ function znavSezione(titolo, voci, vuoto, errore){
 }
 
 /**
- * Rilegge le tre sezioni e ridisegna.
+ * Rilegge le sezioni e ridisegna.
  *
  * ⚠️ Una lettura che non riesce NON diventa «niente»: la sezione lo dice. È la
  * stessa regola già scritta per la cache delle scalette e per `album.usi()` —
@@ -11206,13 +11265,16 @@ async function zainoNavAggiorna(){
     host.innerHTML='<div class="zs-vuoto">Nessuno zaino. Creane uno con il «+» accanto alla tendina.</div>';
     return;
   }
+  // Un autosalvataggio dell'appunto può aggiornare la sidebar mentre si trascina:
+  // il DOM del gesto resta fermo fino al rilascio; un cambio zaino invece lo invalida subito.
+  if(ZNAV.trascinamento && ZNAV.id===id){ ZNAV.ancora=true; return; }
   /* ⚠️ Due letture in volo scriverebbero l'una sull'altra — ma SCARTARE la
      seconda non basta: se arriva mentre la prima legge lo zaino di prima, la
      sidebar resta a quello (misurato: [1,0,0] di un altro zaino dopo il
      cambio). La richiesta persa si RICORDA, e a fine giro si riparte. */
   if(ZNAV.carico){ ZNAV.ancora=true; return; }
   ZNAV.carico=true;
-  var fonti=[], eFonti='', appunti=[], eAppunti='', mappe=[], eMappe='', gruppi=null, eGruppi='';
+  var fonti=[], eFonti='', appunti=[], eAppunti='', mappe=[], eMappe='', gruppi={}, eGruppi={};
   try{
     var corpus = await window.vault.corpus.list(id);
     /* Le fonti sono TUTTO ciò che si studia: documenti E media. Un video
@@ -11236,14 +11298,18 @@ async function zainoNavAggiorna(){
     });
     eMappe=m.error||'';
   }catch(e3){ eMappe=(e3&&e3.message)||String(e3); }
-  try{
-    var organizzazione=await window.vault.zaino.gruppiLeggi(id);
-    if(!organizzazione || organizzazione.error) throw new Error((organizzazione&&organizzazione.error)||'lettura non riuscita');
-    gruppi=FontiGruppi.normalizza(organizzazione.stato,fonti.map(function(f){ return f.name; }));
-  }catch(e4){ eGruppi=e4.message||String(e4); }
+  for(var sezione of ['fonti','appunti','media']){
+    try{
+      var organizzazione=await window.vault.zaino.gruppiLeggi(id,sezione);
+      if(!organizzazione || organizzazione.error) throw new Error((organizzazione&&organizzazione.error)||'lettura non riuscita');
+      gruppi[sezione]=organizzazione.stato;
+    }catch(e4){ eGruppi[sezione]=e4.message||String(e4); }
+  }
   ZNAV.carico=false;
   if(id!==zainoAttivo()){ ZNAV.ancora=false; return zainoNavAggiorna(); }
   if(ZNAV.ancora){ ZNAV.ancora=false; return zainoNavAggiorna(); }
+  znavTrascinaFine();
+  if($('#znavGruppiPop')?.hasAttribute('open')) closePops();
   ZNAV.id=id; ZNAV.gruppi=gruppi;
 
   var apertoPdf = (typeof ANTEPRIMA!=='undefined' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf') ? ANTEPRIMA.file : '';
@@ -11252,11 +11318,19 @@ async function zainoNavAggiorna(){
   var apertoNota = noteAttive && noteAttive.cur ? noteAttive.cur.file : '';
   var apertaMappa = (typeof MAPPA!=='undefined' && MAPPA && MAPPA.mia) ? MAPPA.mia.file : '';
 
+  function fonteVoce(f){
+    var media=f.tipo==='media', segno=media?(Lettore.tipoDi(f.name)==='audio'?'♪ ':'▶ '):'';
+    return {classe:media?'zn-fonte zn-media':'zn-fonte', quale:f.name, titolo:f.name,
+      testo:segno+(titoloMateriale(f.name)||f.name), attivo:f.name===(media?apertoMedia:apertoPdf)};
+  }
   host.innerHTML =
-    znavFonti(fonti,eFonti,eGruppi,apertoPdf,apertoMedia) +
-    znavSezione('Appunti', appunti.map(function(n){
+    znavRaccolta('fonti','Fonti',fonti.filter(function(f){return f.tipo==='pdf';}).map(fonteVoce),
+      'Nessun documento in questo zaino.',eFonti,eGruppi.fonti) +
+    znavRaccolta('appunti','Appunti',appunti.map(function(n){
       return { classe:'zn-appunto', quale:n.file, testo:noteEtichetta(n), attivo:n.file===apertoNota };
-    }), 'Nessun appunto. Si scrivono nel blocco «Appunti».', eAppunti) +
+    }), 'Nessun appunto. Si scrivono nel blocco «Appunti».',eAppunti,eGruppi.appunti) +
+    znavRaccolta('media','Media',fonti.filter(function(f){return f.tipo==='media';}).map(fonteVoce),
+      'Nessun audio o video in questo zaino.',eFonti,eGruppi.media) +
     znavSezione('Mappe', mappe.map(function(x){
       return { classe:'zn-mappa', quale:x.file, testo:x.titolo||x.file,
                titolo:x.file, attivo:x.file===apertaMappa };
@@ -11535,13 +11609,6 @@ async function zainoCrea(nome){
       if(typeof zainoNavAggiorna==='function') zainoNavAggiorna();
       return;
     }
-  });
-  document.addEventListener('change',async function(e){
-    var sel=e.target.closest && e.target.closest('#zainoNav [data-znav-gruppo]');
-    if(!sel || ZNAV.salva || ZNAV.carico || !ZNAV.gruppi || ZNAV.id!==zainoAttivo()) return;
-    var id=ZNAV.id;
-    await znavSalva(FontiGruppi.sposta(ZNAV.gruppi,sel.dataset.znavGruppo,sel.value),id);
-    if(id===zainoAttivo()) znavRiprendiFuoco(sel);
   });
   document.addEventListener('keydown', function(e){
     if(e.key!=='Enter') return;
@@ -13333,7 +13400,7 @@ document.addEventListener('click',function(e){
      lo si usa. `closePops()` chiude anche il menu della selezione, quindi
      senza questa eccezione il 🔗 si spegneva e si portava via la superficie da
      cui era stato premuto — cambiavi idea e dovevi riselezionare la frase. */
-  if(!(e.target.closest && (e.target.closest('.popmenu')||e.target.closest('.ncb-callout')||e.target.closest('.ncb-emoji')||e.target.closest('.ncb-mat')||e.target.closest('#mVista')||e.target.closest('#bancoBtn')||e.target.closest('#mappaSvg .mfonte')||e.target.closest('#searchBtn')||e.target.closest('#searchRes')||e.target.closest('#zainoNuovo')||e.target.closest('#pdfDoc')||e.target.closest('.ctx-cita')))) closePops();
+  if(!(e.target.closest && (e.target.closest('.popmenu')||e.target.closest('.ncb-callout')||e.target.closest('.ncb-emoji')||e.target.closest('.ncb-mat')||e.target.closest('#mVista')||e.target.closest('#bancoBtn')||e.target.closest('#mappaSvg .mfonte')||e.target.closest('#searchBtn')||e.target.closest('#searchRes')||e.target.closest('#zainoNuovo')||e.target.closest('#pdfDoc')||e.target.closest('.ctx-cita')||e.target.closest('.zs-assegna')))) closePops();
   var a=e.target.closest && e.target.closest('.myotes a[data-note]');
   if(a){ e.preventDefault(); noteApriAttivo(a.getAttribute('data-note')); return; }
   if(e.target.closest && e.target.closest('#addNoteBtn')){ noteNew(''); return; }
@@ -21794,6 +21861,7 @@ window.addEventListener('keydown', function(e){
 </div>
 <!-- Creare uno zaino: un campo e un bottone, aperti dal «+» accanto alla
      tendina che li elenca. -->
+<div id="znavGruppiPop" class="popmenu" role="menu" aria-label="Assegna a un gruppo"></div>
 <div id="pdfDocPop" class="popmenu" role="menu" aria-label="Documenti dello zaino"></div>
 <!-- Il sommario che il PDF si porta dentro: compare sotto il campo della pagina,
      e solo se il documento ce l'ha. Non lo costruisce l'app — l'ha scritto chi

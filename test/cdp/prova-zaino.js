@@ -63,7 +63,7 @@ const ZAINO = 'zaino-di-prova';
   await pausa(600);
   const vuota = await val(SIDEBAR);
   ok('la sidebar dello zaino è a schermo', true, !!vuota && vuota.visibile);
-  ok('e ha le tre sezioni, in quest\'ordine', ['Fonti', 'Appunti', 'Mappe'], vuota.sezioni);
+  ok('e ha le quattro sezioni, in quest\'ordine', ['Fonti', 'Appunti', 'Media', 'Mappe'], vuota.sezioni);
   ok('nessuna voce, per ora', [0, 0, 0],
     [vuota.fonti.length, vuota.appunti.length, vuota.mappe.length]);
   /* ⚠️ Tre sezioni vuote senza una riga di spiegazione sono indistinguibili da

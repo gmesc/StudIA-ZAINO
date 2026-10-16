@@ -18,6 +18,7 @@ function congela(v) {
 }
 function tutti(s) { return s.gruppi.flatMap((g) => g.files).concat(s.liberi); }
 
+const appunti = require('../lib/appunti');
 const files = ['01 Teoria.pdf', '02 Esercizi.pdf', '03 Lezione.mp4', '04 Audio.opus'];
 const partenza = congela({ versione: 1, gruppi: [
   { id: 'teoria', nome: '  Teoria  ', chiuso: true, files: [files[0], files[0], 'scomparso.pdf'] },
@@ -71,6 +72,22 @@ for (let i = 0; i < 80; i++) {
   uguali(tutti(s).slice().sort(), files.slice().sort());
 }
 
+// Il puntatore può cadere prima/dopo un item, sul gruppo chiuso o fra i liberi.
+let drag=G.normalizza({gruppi:[{id:'a',nome:'A',files:files.slice(0,3)},{id:'b',nome:'B',files:[]}],liberi:[files[3]]},files);
+drag=congela(drag);
+uguali(G.trascina(drag,{file:files[0]},{file:files[2],gruppo:'a',dopo:true}).gruppi[0].files,[files[1],files[2],files[0]]);
+uguali(G.trascina(drag,{file:files[2]},{file:files[0],gruppo:'a'}).gruppi[0].files,[files[2],files[0],files[1]]);
+uguali(G.trascina(drag,{file:files[0]},{gruppo:'b'}).gruppi[1].files,[files[0]]);
+uguali(G.trascina(drag,{file:files[0]},{gruppo:''}).liberi,[files[3],files[0]]);
+uguali(G.trascina(drag,{file:files[0]},{gruppo:'a',file:files[0],dopo:true}),drag);
+uguali(G.trascina(drag,{file:files[0]},{gruppo:'assente'}),drag);
+uguali(G.trascina(drag,{gruppo:'a'},{gruppo:'b',dopo:true}).gruppi.map(g=>g.id),['b','a']);
+uguali(G.trascina(drag,{gruppo:'b'},{gruppo:'a'}).gruppi.map(g=>g.id),['b','a']);
+for(const file of files)for(const dest of files)for(const dopo of [true,false]){
+  const gid=dest===files[3]?'':'a';
+  uguali(tutti(G.trascina(drag,{file},{gruppo:gid,file:dest,dopo})).sort(),files.slice().sort());
+}
+
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), 'zaino-gruppi-'));
 const fuori = fs.mkdtempSync(path.join(os.tmpdir(), 'zaino-gruppi-fuori-'));
 try {
@@ -94,7 +111,7 @@ try {
 
   const nuovo = archivio.leggi(vault, id);
   uguali(nuovo.error, '');
-  uguali(nuovo.stato.liberi, files.concat('05 Storico.pdf'));
+  uguali(nuovo.stato.liberi, files.slice(0,2).concat('05 Storico.pdf'));
   uguali(fs.existsSync(registro), false);
   let scelta = G.crea(nuovo.stato, 'esame', 'Esame');
   scelta = G.sposta(scelta, files[0], 'esame');
@@ -102,9 +119,48 @@ try {
   const salvato = archivio.salva(vault, id, scelta);
   uguali(salvato, { stato: scelta, error: '' });
   uguali(archivio.leggi(vault, id), salvato);
-  uguali(JSON.parse(fs.readFileSync(registro, 'utf8')), scelta);
+  uguali(JSON.parse(fs.readFileSync(registro, 'utf8')).fonti, scelta);
+  uguali(archivio.leggi(vault,id,'media').stato.liberi, files.slice(2));
   uguali(fs.readdirSync(dir).filter((n) => n.startsWith(archivio.FILE)), [archivio.FILE]);
   uguali(archivio.leggi(vault, altro).stato.liberi, ['99 Altro.pdf']);
+  appunti.save(vault, altro, '.personale.md', {title:'Importato'}, 'Nota importata');
+  uguali(archivio.leggi(vault, altro, 'appunti').stato.liberi, appunti.list(vault, altro).map(n=>n.file));
+
+  // Il vecchio registro misto si separa senza scrivere durante la lettura.
+  const storico = G.sposta(G.sposta(G.crea(G.normalizza(null,files.concat('05 Storico.pdf')),'comune','Lezione'),files[0],'comune'),files[2],'comune');
+  fs.writeFileSync(registro,JSON.stringify(storico));
+  uguali(archivio.leggi(vault,id).stato.gruppi[0].files,[files[0]]);
+  let media = archivio.leggi(vault,id,'media').stato;
+  uguali(media.gruppi[0].files,[files[2]]);
+  uguali(JSON.parse(fs.readFileSync(registro,'utf8')),storico);
+  uguali(archivio.salva(vault,id,scelta).error,'');
+  uguali(archivio.leggi(vault,id,'media').stato,media);
+  media=G.rinomina(media,'comune','Registrazioni');
+  uguali(archivio.salva(vault,id,media,'media').error,'');
+  uguali(archivio.leggi(vault,id).stato,scelta);
+  const n1=appunti.save(vault,id,null,{title:'Primo'},'Testo da conservare').file;
+  const n2=appunti.save(vault,id,null,{title:'Secondo'},'Altra nota').file;
+  const notePrima=G.sposta(G.crea(archivio.leggi(vault,id,'appunti').stato,'note','Ripasso'),n1,'note');
+  uguali(archivio.salva(vault,id,notePrima,'appunti').error,'');
+  const nR=appunti.rinomina(vault,id,n1,'Rinominato');
+  vero(!nR.error);
+  uguali(archivio.leggi(vault,id,'appunti').stato.gruppi[0].files,[nR.file]);
+  uguali(archivio.leggi(vault,id).stato,scelta);
+  const registroNote=path.join(vault,'Zaini',id,'APPUNTI',archivio.FILE);
+  const noteBuone=fs.readFileSync(registroNote,'utf8');
+  fs.writeFileSync(registroNote,'{rotto');
+  vero(appunti.rinomina(vault,id,nR.file,'Impossibile').error);
+  uguali(fs.readFileSync(registroNote,'utf8'),'{rotto');
+  vero(appunti.apri(vault,id,nR.file).nota.body.includes('Testo da conservare'));
+  fs.writeFileSync(registroNote,noteBuone);
+  const tmpNote=registroNote+'.tmp-'+process.pid;
+  fs.writeFileSync(tmpNote,'occupato');
+  vero(appunti.rinomina(vault,id,nR.file,'Ripristinato').error);
+  uguali(archivio.leggi(vault,id,'appunti').stato.gruppi[0].files,[nR.file]);
+  vero(appunti.apri(vault,id,nR.file).nota.body.includes('Testo da conservare'));
+  uguali(appunti.list(vault,id).map(n=>n.file).sort(),[nR.file,n2].sort());
+  fs.unlinkSync(tmpNote);
+  vero(archivio.leggi(vault,id,'../APPUNTI').error);
 
   const rinomina = fonti.rinomina(vault, id, files[0], 'Fondamenti');
   uguali(rinomina.error, '');
@@ -118,7 +174,7 @@ try {
   creaFile('PDF', '06 Nuovo.pdf');
   fs.unlinkSync(path.join(dir, 'PDF', files[1]));
   const aggiornato = archivio.salva(vault, id, scelta);
-  uguali(tutti(aggiornato.stato).slice().sort(), files.filter((f) => f !== files[1]).concat('05 Storico.pdf', '06 Nuovo.pdf').sort());
+  uguali(tutti(aggiornato.stato).slice().sort(), files.slice(0,2).filter((f) => f !== files[1]).concat('05 Storico.pdf', '06 Nuovo.pdf').sort());
   const prima = fs.readFileSync(registro, 'utf8');
   vero(archivio.salva(vault, id, { versione: 2, gruppi: [], liberi: [] }).error);
   uguali(fs.readFileSync(registro, 'utf8'), prima);

@@ -85,6 +85,26 @@
     return s;
   }
 
+  // Il bersaglio descrive ciò che si vede, non un indice calcolato prima di togliere l'origine.
+  function trascina(stato, origine, bersaglio) {
+    var s = copia(stato), o = origine || {}, b = bersaglio || {};
+    if (o.file) {
+      if (o.file === b.file) return s;
+      var g = gruppo(s, b.gruppo), files = g ? g.files : s.liberi;
+      if (b.gruppo && !g) return s;
+      files = files.filter(function (f) { return f !== o.file; });
+      var i = b.file ? files.indexOf(b.file) : files.length;
+      if (i < 0) return s;
+      return sposta(s, o.file, b.gruppo || '', i + (b.file && b.dopo ? 1 : 0));
+    }
+    if (o.gruppo && b.gruppo && o.gruppo !== b.gruppo) {
+      var altri = s.gruppi.filter(function (g) { return g.id !== o.gruppo; });
+      var indice = altri.findIndex(function (g) { return g.id === b.gruppo; });
+      if (indice >= 0) return ordinaGruppo(s, o.gruppo, indice + (b.dopo ? 1 : 0));
+    }
+    return s;
+  }
+
   return { normalizza: normalizza, crea: crea, rinomina: rinomina, elimina: elimina,
-    sposta: sposta, ordinaGruppo: ordinaGruppo, toggle: toggle, rinominaFile: rinominaFile };
+    sposta: sposta, ordinaGruppo: ordinaGruppo, toggle: toggle, rinominaFile: rinominaFile, trascina: trascina };
 }));

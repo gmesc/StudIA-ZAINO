@@ -45,11 +45,13 @@ I due editor degli appunti hanno gli stessi comandi: formattazione, callout, emo
 
 Le testate del Banco mostrano l’ordine dei riquadri e indicano quello **Attivo**. Quando riduci la vista resta prima l’attivo, poi gli altri da sinistra a destra, riga per riga. Nel menu Banco, passando sulle disposizioni o raggiungendole con la tastiera, puoi leggere in anticipo quali contenuti resteranno. Per esempio, con quattro riquadri numerati 1–4 e il 4 attivo, passando a due conserverai i contenuti del **4 e dell’1**, rinumerati nella nuova vista; passando da tre a uno resta solo quello attivo. Gli altri rimangono aperti fuori vista e tornano riallargandola, nell’ordine risultante dagli spostamenti.
 
-## Organizzare le fonti
+## Organizzare la sidebar
 
-Nella sidebar, **+** accanto a **Fonti** crea un gruppo. La freccia accanto al nome lo chiude o riapre. **✎** mostra i comandi per rinominare i gruppi, spostare documenti tra gruppi e ordinare manualmente gruppi e documenti con **↑ / ↓**; **✓** conclude l’organizzazione. Sciogliere un gruppo riporta le sue fonti in **Senza gruppo**, conservando i file.
+**Fonti**, **Appunti** e **Media** hanno ciascuno i propri gruppi. **+** crea un gruppo; il chevron accanto al suo nome lo chiude o riapre. **✎** attiva l’organizzazione e **✓** la conclude.
 
-Gruppi, ordine e apertura sono salvati in `MATERIALI/_gruppi.json` nello zaino. I file PDF mantengono i loro percorsi, così i rimandi esistenti continuano a funzionare; una rinomina conserva l’appartenenza al gruppo.
+Durante l’organizzazione, trascina i blocchi delle voci per riordinarli o spostarli in un altro gruppo; trascina la testata di un gruppo per cambiarne la posizione. Una linea indica il punto di inserimento. Il solo **chevron a destra della voce** apre il menu dei gruppi, con la scelta corrente e **Senza gruppo**. Il menu funziona anche con frecce, Invio ed Esc; **Alt+↑/↓** riordina il blocco da tastiera. Sciogliere un gruppo conserva tutte le sue voci.
+
+Ordine, assegnazioni e apertura viaggiano con lo zaino: `MATERIALI/_gruppi.json` conserva separatamente Fonti e Media, `APPUNTI/_gruppi.json` gli Appunti. I gruppi precedenti vengono mantenuti; i documenti restano nei loro percorsi e la rinomina di PDF e appunti conserva gruppo e posizione.
 
 ## Verifica
 
