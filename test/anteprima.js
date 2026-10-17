@@ -56,7 +56,8 @@ sezione('Un DOCUMENTO: il titolo, la pagina, e le righe attorno');
   const c = A.contenuto(R.leggi('pdf:03#p=7'), PIENI);
   check('il tipo', 'pdf', c.tipo);
   check('il titolo leggibile, non il numero', 'Dispensa DSA', c.titolo);
-  check('e dove porta', 'p. 7', c.dove);
+  check('e dove porta', 'Pagina 7', c.dove);
+  check('dichiara che il brano è l’anteprima della pagina', 'Anteprima della pagina', c.etichettaTesto);
   check('col testo della pagina', true, /memoria di lavoro/.test(c.testo));
   check('la bolla si apre', false, c.vuoto);
 
@@ -64,12 +65,28 @@ sezione('Un DOCUMENTO: il titolo, la pagina, e le righe attorno');
      documento non ancora indicizzato non deve far sparire l'anteprima, o chi
      passa sopra non capisce se il rimando è rotto o solo silenzioso. */
   const senza = A.contenuto(R.leggi('pdf:03#p=7'), { titoloMateriale: PIENI.titoloMateriale });
-  check('senza indice resta il titolo e la pagina', ['Dispensa DSA', 'p. 7'], [senza.titolo, senza.dove]);
+  check('senza indice resta il titolo e la pagina', ['Dispensa DSA', 'Pagina 7'], [senza.titolo, senza.dove]);
   check('e la bolla si apre lo stesso', false, senza.vuoto);
   /* Senza nemmeno il titolo si ripiega sul numero, che è ciò che il rimando
      dice: meglio «Documento 03» che una bolla muta. */
   check('senza titolo si ripiega sul numero', 'Documento 03',
     A.contenuto(R.leggi('pdf:03#p=7'), {}).titolo);
+}
+
+sezione('Il documento distingue posizione e testo della pagina');
+{
+  const dati = Object.assign({}, PIENI, {
+    documento: () => ({ pagine: 80 })
+  });
+  const c = A.contenuto(R.leggi('pdf:03#p=7'), dati);
+  check('la posizione comprende il totale del documento', 'Pagina 7/80', c.dove);
+  check('i metadati non diventano parte dell’estratto', PIENI.testoPagina('03', 7), c.testo);
+  for (const meta of [{}, { pagine: 0 }, { pagine: 6 }, { pagine: 80.5 }, { pagine: 'errore' }]) {
+    const x = A.contenuto(R.leggi('pdf:03#p=7'), { documento: () => meta });
+    check('nessun totale inventato o minore della destinazione: ' + JSON.stringify(meta), 'Pagina 7', x.dove);
+  }
+  check('un errore nei metadati lascia visibile il riferimento', 'Pagina 7',
+    A.contenuto(R.leggi('pdf:03#p=7'), { documento: () => { throw new Error('indice non disponibile'); } }).dove);
 }
 
 sezione('Un MEDIA: il titolo e il minuto, e nessuna finta anteprima');
@@ -159,7 +176,7 @@ sezione('I dati si fanno PASSARE: senza, non si solleva');
   /* ⚠️ Il modulo non va a prendere niente da sé — è la regola di `suMac(nav)`.
      Qui si prova che senza dati non salta nulla: è la condizione di chi apre
      un appunto prima che gli indici siano caricati. */
-  check('senza nessun dato, il documento dice ancora dove porta', 'p. 7',
+  check('senza nessun dato, il documento dice ancora dove porta', 'Pagina 7',
     A.contenuto(R.leggi('pdf:03#p=7'), null).dove);
   check('e un fornitore che solleva non fa saltare la bolla', 'Documento 03',
     A.contenuto(R.leggi('pdf:03#p=7'), { titoloMateriale: () => { throw new Error('rotto'); } }).titolo);

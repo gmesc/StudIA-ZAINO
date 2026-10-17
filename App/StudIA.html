@@ -2273,8 +2273,13 @@
      cambia solo ciò che deve cambiare — la posizione, che è fissa e calcolata
      dal renderer invece che ancorata a un `sup`. */
   .rimbolla{ position:fixed; left:0; top:0; bottom:auto; transform:none;
-    opacity:1; pointer-events:none; max-width:340px; z-index:210; }
+    opacity:1; pointer-events:none; max-width:min(420px, calc(100vw - 16px));
+    box-sizing:border-box; overflow-wrap:anywhere; z-index:210; }
   .rimbolla[hidden]{ display:none; }
+  .rimbolla .nt-head{ display:flex; flex-wrap:wrap; align-items:baseline; gap:.2rem .75rem; }
+  .rimbolla .nt-head .nt-doc{ flex:1 1 12rem; }
+  .rimbolla .nt-head .nt-loc{ margin:0; white-space:nowrap; }
+  .rimbolla .nt-hint{ margin-top:.6rem; padding-top:.5rem; border-top:1px solid var(--line); }
   .rimbolla .nt-txt{ display:block; font-weight:400; margin-top:.3rem; line-height:1.4; }
   .rimbolla .nt-nota{ display:block; font-size:11px; font-style:italic; color:var(--muted);
     font-weight:400; margin-top:.3rem; }
@@ -14856,6 +14861,12 @@ function rimandoDaLink(a){
 function sbirciaDati(){
   return {
     titoloMateriale: function(file){ return titoloMateriale(file)||file||''; },
+    documento: function(file){
+      var d=(FONTI.indici||[]).filter(function(x){ return x.pdf===file; })[0];
+      // Se l'indice manca, il visualizzatore conosce il totale del solo PDF aperto.
+      var aperto=ANTEPRIMA.file===file && PDFJS.doc;
+      return { pagine:(d && d.npages) || (aperto && aperto.numPages) || null };
+    },
     testoPagina: function(file, pag){
       var d=(FONTI.indici||[]).filter(function(x){ return x.pdf===file; })[0];
       if(!d) return '';
@@ -14898,8 +14909,13 @@ function sbirciaApri(a){
   if(!c || c.vuoto){ sbirciaChiudi(); return; }
 
   var h='';
-  if(c.titolo) h+='<span class="nt-doc">'+escHtml(c.titolo)+'</span>';
-  if(c.dove)   h+='<span class="nt-loc">'+escHtml(c.dove)+'</span>';
+  if(c.titolo || c.dove){
+    h+='<span class="nt-head">';
+    if(c.titolo) h+='<span class="nt-doc">'+escHtml(c.titolo)+'</span>';
+    if(c.dove) h+='<span class="nt-loc">'+escHtml(c.dove)+'</span>';
+    h+='</span>';
+  }
+  if(c.etichettaTesto && c.testo) h+='<span class="nt-hint">'+escHtml(c.etichettaTesto)+'</span>';
   if(c.tipo==='album' && c.immagine){
     h+='<img class="nt-img" src="'+escHtml(c.immagine)+'" alt="">';
   }

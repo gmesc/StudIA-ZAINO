@@ -68,11 +68,12 @@
    *
    *   dati.titoloMateriale(numeroOfile) → il titolo leggibile, o ''
    *   dati.testoPagina(numero, pagina)  → il testo di quella pagina, o ''
+   *   dati.documento(numeroOfile) → { pagine }, se noto
    *   dati.evidenza(id)   → { exact, prefix, suffix, colore, nota }, o null
    *   dati.immagine(id)   → { didascalia, src }, o null
    *   dati.capitolo(id)   → { titolo, lezione }, o null
    *
-   * Torna `{ tipo, titolo, dove, testo, colore, immagine, nota, vuoto }`, dove
+   * Torna `{ tipo, titolo, dove, etichettaTesto, testo, colore, immagine, nota, vuoto }`, dove
    * `vuoto` dice che non si è potuto sapere niente — e allora chi chiama NON
    * apre la bolla: una bolla che si apre per dire «non lo so» è peggio di
    * nessuna bolla, perché ruba il testo sotto senza dare niente in cambio.
@@ -89,7 +90,10 @@
     if (rim.tipo === 'pdf') {
       var tit = str(chiedi(d.titoloMateriale, rim.numero)) || ('Documento ' + str(rim.numero));
       var testo = attorno(str(chiedi(d.testoPagina, rim.numero, rim.pagina)));
-      return { tipo: 'pdf', titolo: tit, dove: 'p. ' + rim.pagina, testo: testo,
+      var doc = chiedi(d.documento, rim.numero) || {}, totale = Number(doc.pagine);
+      return { tipo: 'pdf', titolo: tit,
+        dove: 'Pagina ' + rim.pagina + (Number.isInteger(totale) && totale > 0 && totale >= rim.pagina ? '/' + totale : ''),
+        etichettaTesto: 'Anteprima della pagina', testo: testo,
         vuoto: false };
     }
 

@@ -131,6 +131,13 @@ sezione('L\'indice per pagina: la forma che la ricerca sa leggere');
   check('la ricerca lo trova', 1, letti.documenti.length);
   check('col nome del documento', nome, letti.documenti[0].pdf);
   check('e le pagine che hanno testo', [1, 2], letti.documenti[0].pagine.map((p) => p.page));
+  check('il totale delle pagine arriva al renderer', 2, letti.documenti[0].npages);
+  // Il totale non è il numero di pagine cercabili: anche una pagina vuota conta.
+  scritto.pages.push({ page: 3, text: '' }); scritto.npages = 3;
+  fs.writeFileSync(F.percorsoIndice(VAULT, ZAINO, nome), JSON.stringify(scritto));
+  const conVuota = F.leggiIndici(VAULT, ZAINO).documenti[0];
+  check('la pagina vuota conta nel totale, senza entrare nella ricerca', [3, 2],
+    [conVuota.npages, conVuota.pagine.length]);
 }
 
 sezione('Un indice rotto non spegne la ricerca');
