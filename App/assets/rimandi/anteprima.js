@@ -100,7 +100,7 @@
    *   dati.immagine(id)   → { didascalia, src }, o null
    *   dati.capitolo(id)   → { titolo, lezione }, o null
    *
-   * Torna `{ tipo, titolo, dove, etichettaTesto, testo, colore, immagine, nota, vuoto }`, dove
+   * Torna `{ tipo, titolo, dove, testo, colore, immagine, nota, vuoto }`, dove
    * `vuoto` dice che non si è potuto sapere niente — e allora chi chiama NON
    * apre la bolla: una bolla che si apre per dire «non lo so» è peggio di
    * nessuna bolla, perché ruba il testo sotto senza dare niente in cambio.
@@ -120,7 +120,7 @@
       var testo = attorno(senzaTestata(str(chiedi(d.testoPagina, rim.numero, rim.pagina)), rim.pagina, doc, tit));
       return { tipo: 'pdf', titolo: tit,
         dove: 'Pagina ' + rim.pagina + (Number.isInteger(totale) && totale > 0 && totale >= rim.pagina ? '/' + totale : ''),
-        etichettaTesto: 'Anteprima della pagina', testo: testo,
+        testo: testo,
         vuoto: false };
     }
 

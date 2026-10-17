@@ -2279,7 +2279,7 @@
   .rimbolla .nt-head{ display:flex; flex-wrap:wrap; align-items:baseline; gap:.2rem .75rem; }
   .rimbolla .nt-head .nt-doc{ flex:1 1 12rem; }
   .rimbolla .nt-head .nt-loc{ margin:0; white-space:nowrap; }
-  .rimbolla .nt-hint{ margin-top:.6rem; padding-top:.5rem; border-top:1px solid var(--line); }
+  .rimbolla .nt-head + .nt-txt{ margin-top:.6rem; padding-top:.5rem; border-top:1px solid var(--line); }
   .rimbolla .nt-txt{ display:block; font-weight:400; margin-top:.3rem; line-height:1.4; }
   .rimbolla .nt-nota{ display:block; font-size:11px; font-style:italic; color:var(--muted);
     font-weight:400; margin-top:.3rem; }
@@ -13593,8 +13593,8 @@ function selMenuChiudi(){ var m=$('#selMenu'); if(m) m.classList.remove('open');
  * La selezione su cui si può agire: dentro il capitolo **o** dentro il layer di
  * testo di un documento.
  *
- * ⚠️ `range.toString()`, mai `getSelection().toString()`: la seconda restituisce
- * il testo come lo IMPONE il CSS, quindi MAIUSCOLO dove c'è `text-transform`.
+ * ⚠️ Si legge il testo del DOM, mai `getSelection().toString()`: la seconda
+ * restituisce il testo come lo IMPONE il CSS, quindi MAIUSCOLO dove c'è `text-transform`.
  * Misurato il 9 agosto: le parole chiave si salvavano urlate e non si
  * ritrovavano più nel testo.
  */
@@ -13611,8 +13611,21 @@ function selezioneAttiva(){
     var rit=document.getElementById('pdfRitaglia');
     if(rit && rit.getAttribute('aria-pressed')==='true') return null;
   }
-  var testo=r.toString().trim();
+  var testo=sup.tipo==='pdf' ? testoSelezionePdf(r) : r.toString().trim();
   return testo ? { range:r, testo:testo, sup:sup } : null;
+}
+/** Ponte DOM per Appunta, Copia e selezione→mappa. pdf.js separa le righe con
+ *  BR, che Range.toString() ignora: «uno» e «e quattro» diventavano «unoe quattro».
+ *  Si lavora sulla COPIA del range, così restano intatti layer e ancoraggi delle
+ *  evidenze. Gli span adiacenti non aggiungono separatori: possono essere due
+ *  parti della stessa parola. La normalizzazione per gli appunti resta in
+ *  frammentoAppuntato; qui si conservano gli a capo, anche per Copia. */
+function testoSelezionePdf(range){
+  var frammento=range.cloneContents();
+  frammento.querySelectorAll('br').forEach(function(br){
+    br.replaceWith(document.createTextNode('\n'));
+  });
+  return frammento.textContent.trim();
 }
 /* Il nome di prima, per chi lo chiamava: la domanda è la stessa, la risposta
    comprende adesso anche il documento. */
@@ -14916,7 +14929,6 @@ function sbirciaApri(a){
     if(c.dove) h+='<span class="nt-loc">'+escHtml(c.dove)+'</span>';
     h+='</span>';
   }
-  if(c.etichettaTesto && c.testo) h+='<span class="nt-hint">'+escHtml(c.etichettaTesto)+'</span>';
   if(c.tipo==='album' && c.immagine){
     h+='<img class="nt-img" src="'+escHtml(c.immagine)+'" alt="">';
   }

@@ -57,7 +57,7 @@ sezione('Un DOCUMENTO: il titolo, la pagina, e le righe attorno');
   check('il tipo', 'pdf', c.tipo);
   check('il titolo leggibile, non il numero', 'Dispensa DSA', c.titolo);
   check('e dove porta', 'Pagina 7', c.dove);
-  check('dichiara che il brano è l’anteprima della pagina', 'Anteprima della pagina', c.etichettaTesto);
+  check('il brano non ha un titoletto aggiuntivo', undefined, c.etichettaTesto);
   check('col testo della pagina', true, /memoria di lavoro/.test(c.testo));
   check('la bolla si apre', false, c.vuoto);
 

@@ -164,6 +164,54 @@ async function selezionaUnaRiga(indice) {
      compaia invece di fotografare il primo millisecondo (rossa una volta su tre catene). */
   ok('la barra flottante compare', true, !!(await finoA('selBarraAperta()', 3000)));
 
+  sezione('Gli a capo del PDF non saldano le parole trasferite');
+  /* La fixture usa la stessa struttura di pdf.js: span e BR, senza spazi nei
+     nodi ai bordi della riga. Non si modifica il layer originale né il vault. */
+  const spazi = await val(`(async()=>{
+    const layer=document.querySelector('#pdfFrame .page[data-page-number="${PAGINA}"] .textLayer');
+    const prova=document.createElement('span');
+    prova.style.textTransform='uppercase';
+    prova.innerHTML='<span>Una frase.</span><br><span>Un</span><span>o e quattro giorni.</span><br><span>Questo resta.</span>';
+    layer.appendChild(prova);
+    const originale=prova.innerHTML;
+    const spans=prova.querySelectorAll('span'), sel=getSelection();
+    const prima=sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
+    const clip=Object.getOwnPropertyDescriptor(navigator,'clipboard');
+    const cita=APPUNTA.cita;
+    try{
+      APPUNTA.cita=true;
+      const r=document.createRange();r.selectNodeContents(prova);
+      sel.removeAllRanges();sel.addRange(r);
+      const s=selezioneAttiva();
+      let copiato='';
+      Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async t=>{copiato=t;}}});
+      selAzione('copia',s.testo,s.range);
+      const md=frammentoAppuntato(s.testo,curCtx(),origineDaRange(s.range),'');
+      r.setStart(spans[0].firstChild,4);r.setEnd(spans[2].firstChild,9);
+      sel.removeAllRanges();sel.addRange(r);
+      const parziale=selezioneAttiva().testo;
+      sel.setBaseAndExtent(spans[2].firstChild,9,spans[0].firstChild,4);
+      const indietro=selezioneAttiva().testo;
+      r.setStart(spans[2].firstChild,2);r.setEnd(spans[2].firstChild,10);
+      sel.removeAllRanges();sel.addRange(r);
+      return {testo:s.testo,copiato,md,parziale,indietro,singola:selezioneAttiva().testo,
+        originaleIntatto:prova.innerHTML===originale};
+    }finally{
+      APPUNTA.cita=cita;
+      if(clip)Object.defineProperty(navigator,'clipboard',clip);else delete navigator.clipboard;
+      sel.removeAllRanges();if(prima)sel.addRange(prima);prova.remove();
+    }
+  })()`);
+  const righe='Una frase.\nUno e quattro giorni.\nQuesto resta.';
+  ok('rispetta BR e maiuscole originali, senza spezzare Uno fra due span', righe, spazi.testo);
+  ok('Copia riceve il testo con gli a capo', righe, spazi.copiato);
+  ok('Appunta conserva gli spazi prima della citazione', true,
+    spazi.md.startsWith('Una frase. Uno e quattro giorni. Questo resta. — '));
+  ok('la selezione parziale rispetta entrambi i capi', 'frase.\nUno e quatt', spazi.parziale);
+  ok('anche una selezione all’indietro', spazi.parziale, spazi.indietro);
+  ok('nessun separatore aggiunto dentro una riga', 'e quattr', spazi.singola);
+  ok('il layer originale resta intatto per le evidenze', true, spazi.originaleIntatto);
+
   sezione('Si evidenzia, e finisce su disco con il suo indirizzo');
   const colore = '#a16207';
   await val(`(()=>{ const s=selezioneAttiva(); evidenzia(s.range, ${JSON.stringify(colore)}); return 1; })()`);
@@ -313,7 +361,7 @@ async function selezionaUnaRiga(indice) {
      se manca la riga o la selezione: qui lo si dice, e il resto della sezione resta rosso. */
   const appuntato = (await val(`(()=>{ const s=selezioneAttiva(); if(!s) return null;
     const o=origineDaRange(s.range);
-    return { origine:o, md:frammentoAppuntato(s.range.toString(), curCtx(), o) }; })()`)) || { origine: null, md: '' };
+    return { origine:o, md:frammentoAppuntato(s.testo, curCtx(), o) }; })()`)) || { origine: null, md: '' };
   ok('c\'è una riga da appuntare, e la selezione è attiva', true, !!rigaApp && !!appuntato.origine);
   ok('l\'origine della selezione è il documento', 'pdf', appuntato.origine && appuntato.origine.tipo);
   ok('con la sua pagina', PAGINA, appuntato.origine && appuntato.origine.pagina);
