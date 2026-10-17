@@ -20024,6 +20024,12 @@ function mappaRinomina(id){
   var tela=document.querySelector('.mtela'); var c=mappaCampo();
   if(!rect||!tela||!c) return;
   var r=rect.getBoundingClientRect(), t=tela.getBoundingClientRect();
+  // Il solo zoom non basta: anche il viewBox adatta la mappa al riquadro.
+  var matrice=rect.getScreenCTM();
+  var tipo=MappaDisegna.tipografiaNodo(nodo, {
+    fsNodo:MAPPA.vista.fsNodo, font:getComputedStyle(document.body).fontFamily
+  }, matrice ? Math.hypot(matrice.c, matrice.d) : 1);
+  c.style.font=tipo.peso+' '+tipo.fs+'px '+tipo.font;
   c.hidden=false;
   c.style.left=Math.round(r.left-t.left)+'px';
   c.style.top=Math.round(r.top-t.top)+'px';
@@ -20062,6 +20068,7 @@ function mappaArcoEtichetta(da, a){
   if(!pt||!tela||!c) return;
   var t=tela.getBoundingClientRect();
   mappaDatalist(); c.setAttribute('list','mVerbi');
+  c.style.font=''; // lo stesso campo può provenire da un nodo ingrandito
   c.hidden=false;
   c.style.width='150px'; c.style.height='24px';
   c.style.left=Math.round(pt.x-t.left-75)+'px';

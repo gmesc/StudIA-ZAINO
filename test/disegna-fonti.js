@@ -261,5 +261,25 @@ sezione('Mappe — nel Percorso anche i legami in filigrana dicono il loro verbo
     (alb.match(/<text(?![^>]*pointer-events="none")[^>]*>(precede|richiede)/g) || []).length);
 }
 
+sezione('Mappe — la tipografia del nodo vale anche per la casella di scrittura');
+{
+  check('un nodo vuoto ha già lo stile del testo futuro',
+    {font:'Helvetica Neue, Helvetica, Arial, sans-serif',fs:12,peso:500},
+    DIS.tipografiaNodo({testo:''}));
+  check('dimensione scelta e scala effettiva si combinano',
+    {font:'Georgia',fs:30,peso:700},
+    DIS.tipografiaNodo({genere:'radice'},{font:'Georgia',fsNodo:20},1.5));
+  check('una mappa ridotta riduce anche il testo durante la modifica', 6,
+    DIS.tipografiaNodo({}, {}, 0.5).fs);
+  check('senza una trasformazione utilizzabile si conserva il corpo del nodo', [18,18,18],
+    [0,NaN,Infinity].map(s=>DIS.tipografiaNodo({}, {fsNodo:18}, s).fs));
+  const mk=disegna({nodi:[{id:'r',testo:'Radice',genere:'radice'},
+    {id:'f',testo:'Figlio'}],archi:[{da:'r',a:'f'}]}, {fsNodo:18,font:'Georgia'});
+  check('il disegno usa la stessa famiglia, dimensione e peso',
+    [['Georgia','18','700'],['Georgia','18','500']],
+    ['r','f'].map(id=>{const t=testi(card(mk,id))[0];
+      return ['font-family','font-size','font-weight'].map(k=>attr(t,k));}));
+}
+
 console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');
 process.exit(ko ? 1 : 0);

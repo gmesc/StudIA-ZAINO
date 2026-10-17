@@ -47,6 +47,17 @@
   }
   function n1(v) { return Math.round(v * 10) / 10; }
 
+  /* La casella HTML e la scritta SVG condividono lo stile anche quando il
+     nodo è ancora vuoto. La scala ricevuta comprende viewBox e zoom. */
+  function tipografiaNodo(nodo, opt, scala) {
+    opt = opt || {};
+    scala = +scala;
+    if (!isFinite(scala) || scala <= 0) scala = 1;
+    return { font: opt.font || 'Helvetica Neue, Helvetica, Arial, sans-serif',
+      fs: (+opt.fsNodo || 12) * scala,
+      peso: nodo && nodo.genere === 'radice' ? 700 : 500 };
+  }
+
   function colore(nodo, gruppi) {
     var g = nodo && nodo.gruppo != null ? nodo.gruppo : 0;
     if (!g) return gruppi[0];
@@ -369,8 +380,9 @@
     opt = opt || {};
     var tema = Object.assign({}, TEMA, opt.tema || {});
     var gruppi = (opt.gruppi && opt.gruppi.length) ? opt.gruppi : GRUPPI;
-    var font = opt.font || 'Helvetica Neue, Helvetica, Arial, sans-serif';
-    var fsNodo = +opt.fsNodo || 12, fsRel = +opt.fsRel || 10;
+    var tipo = tipografiaNodo(null, opt);
+    var font = tipo.font;
+    var fsNodo = tipo.fs, fsRel = +opt.fsRel || 10;
     var margine = opt.margine == null ? 44 : +opt.margine;
     var o = res.opt, W = o.w, H = o.h;
     var perId = {};
@@ -616,7 +628,7 @@
       ls.forEach(function (riga, i) {
         g.push('<text x="' + n1(p.x) + '" y="' + n1(y0 + i * fsNodo * 1.25) + '" text-anchor="middle" ' +
           'dominant-baseline="middle" font-family="' + esc(font) + '" font-size="' + fsNodo + '" ' +
-          'font-weight="' + (nodo.genere === 'radice' ? 700 : 500) + '" fill="' + tema.ink + '">' + esc(riga) + '</text>');
+          'font-weight="' + tipografiaNodo(nodo, opt).peso + '" fill="' + tema.ink + '">' + esc(riga) + '</text>');
       });
       g.push('</g>');
       out.push(g.join(''));
@@ -724,6 +736,7 @@
   }
 
   return { svg: svg, righe: righe, esc: esc, colore: colore, coloreNodo: coloreNodo,
+           tipografiaNodo: tipografiaNodo,
            fontiDi: fontiDi, immagineDi: immagineDi, riquadroImmagine: riquadroImmagine,
            SEGNAPOSTO: SEGNAPOSTO,
            versoDeiFigli: versoDeiFigli, versoDellaPorta: versoDellaPorta, sulBordo: sulBordo,

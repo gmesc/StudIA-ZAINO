@@ -129,6 +129,60 @@ async function selezionaUnaRiga() {
     ok('ma nasce «utente», senza pallino', ['utente', false], [nudo.origine, nudo.haRimando]);
   }
 
+  sezione('Il testo resta della stessa dimensione entrando e uscendo dal nodo');
+  {
+    const prima = await val(`JSON.stringify({vista:MAPPA.vista, z:MAPPA.z})`);
+    await val(`(()=>{ MAPPA.mia.grafo={nodi:[
+      {id:'r',testo:'Strategie di studio',genere:'radice',origine:'utente'},
+      {id:'f',testo:'Recupero attivo',origine:'utente'}],
+      archi:[{da:'r',a:'f',rel:'comprendono'}]};
+      MAPPA.chiusi={}; MAPPA.vista.motore='albero'; MAPPA.vista.profondita=0;
+      mappaRidisegna(); return 1; })()`);
+    for (const [id, zoom, fs, riquadro] of [['f',1,12,'0 0 250 100'], ['f',2,12], ['r',0.6,20]]) {
+      const misura = await val(`(()=>{ MAPPA.vista.fsNodo=${fs};
+        MAPPA.z={k:${zoom},x:0,y:0}; mappaRidisegna();
+        ${riquadro ? "document.getElementById('mappaSvg').setAttribute('viewBox','"+riquadro+"');" : ''}
+        const t=document.querySelector('#mappaSvg .mnodo[data-id="${id}"] text');
+        const stile=getComputedStyle(t), matrice=t.getScreenCTM();
+        const atteso=parseFloat(stile.fontSize)*Math.hypot(matrice.c,matrice.d);
+        mappaRinomina('${id}'); const campo=document.getElementById('mCampo');
+        const scritto=getComputedStyle(campo);
+        const r={atteso,effettivo:parseFloat(scritto.fontSize),
+          famiglia:stile.fontFamily===scritto.fontFamily,peso:stile.fontWeight===scritto.fontWeight};
+        mappaRinominaChiudi(false); return r; })()`);
+      ok('dimensione coerente: nodo '+id+', zoom '+zoom+', carattere '+fs,
+        true, Math.abs(misura.atteso-misura.effettivo)<0.05);
+      ok('famiglia e peso coerenti: nodo '+id+', zoom '+zoom, [true,true],
+        [misura.famiglia,misura.peso]);
+      if (Math.abs(misura.atteso-misura.effettivo)>=0.05)
+        console.log('      pixel a schermo: '+JSON.stringify(misura));
+    }
+    ok('annullare la modifica conserva il testo', 'Recupero attivo',
+      await val(`MAPPA.mia.grafo.nodi.find(n=>n.id==='f').testo`));
+
+    // Un nodo vuoto non contiene ancora un elemento SVG text da cui copiare lo stile.
+    await val(`(()=>{ MAPPA.z={k:1.6,x:0,y:0}; mappaRidisegna();
+      MAPPA.sel='r'; mappaFiglio(); return 1; })()`);
+    const nuovo = await val(`(()=>{ const c=document.getElementById('mCampo');
+      return {id:MAPPA.rinomina.id,fs:parseFloat(getComputedStyle(c).fontSize),
+        senzaTesto:!document.querySelector('#mappaSvg .mnodo[data-id="'+MAPPA.rinomina.id+'"] text')}; })()`);
+    ok('la prova parte davvero da un nodo nuovo vuoto', true, nuovo.senzaTesto);
+    await invia('Input.insertText', {text:'Rilettura'});
+    await invia('Input.dispatchKeyEvent', {type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+    await invia('Input.dispatchKeyEvent', {type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+    const dopo = await val(`(()=>{ const t=document.querySelector('#mappaSvg .mnodo[data-id="${nuovo.id}"] text');
+      const m=t.getScreenCTM(); return {testo:t.textContent,
+        fs:parseFloat(getComputedStyle(t).fontSize)*Math.hypot(m.c,m.d)}; })()`);
+    ok('Invio conferma il testo scritto', 'Rilettura', dopo.testo);
+    ok('anche il nodo nuovo conserva la dimensione dopo Invio', true, Math.abs(nuovo.fs-dopo.fs)<0.05);
+    await val(`mappaArcoEtichetta('r','f'),1`);
+    ok('il campo riusato per un legame non eredita il carattere ingrandito del nodo', 12,
+      await val(`parseFloat(getComputedStyle(document.getElementById('mCampo')).fontSize)`));
+    await val(`(()=>{ mappaRinominaChiudi(false); const p=JSON.parse(${JSON.stringify(prima)});
+      MAPPA.vista=p.vista; MAPPA.z=p.z; clearTimeout(MAPPA.mia.timer);
+      MAPPA.mia.sporca=false; MAPPA.mia.vistaSporca=false; return 1; })()`);
+  }
+
   /* Si lascia la mappa com'era: le prove girano contro la stessa istanza. */
   await val(`(()=>{ MAPPA.mia.grafo={ nodi:[], archi:[] }; MAPPA.mia.file=''; mappaRidisegna(); return 1; })()`);
   console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati'));
