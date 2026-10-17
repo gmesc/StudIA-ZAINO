@@ -59,6 +59,33 @@
     return (sp > max * 0.6 ? taglio.slice(0, sp) : taglio) + '…';
   }
 
+  /** pdf.js può estrarre testata e piè di pagina PRIMA del corpo. Nel popup
+   *  non si ripetono, ma l'indice originale resta intatto per ricerca e citazioni.
+   *  ponytail: solo il prefisso comune alle pagine indicizzate, almeno tre;
+   *  per impaginazioni diverse servirebbero le coordinate, non tagli indovinati. */
+  function senzaTestata(testo, pagina, documento, titolo) {
+    var parole = str(testo).trim().split(/\s+/);
+    var campioni = (Array.isArray(documento.testi) ? documento.testi : []).filter(function(p){
+      return p && Number.isInteger(p.page) && p.page > 0 && str(p.text).trim();
+    }).map(function(p){ return { page:p.page, parole:str(p.text).trim().split(/\s+/, 64) }; });
+    if(new Set(campioni.map(function(p){ return p.page; })).size < 3) return testo;
+    function numero(parola, n){
+      var m=/^(\d+)(?:\/(\d+))?$/.exec(parola || '');
+      return !!m && +m[1]===n && (!m[2] || +m[2]===Number(documento.pagine));
+    }
+    var taglio=0, comuni=0;
+    for(var i=0;i<Math.min(parole.length,64);i++){
+      var numerata=numero(parole[i],pagina) && campioni.every(function(p){ return numero(p.parole[i],p.page); });
+      if(!numerata && !campioni.every(function(p){ return p.parole[i]===parole[i]; })) break;
+      comuni=i+1;
+      // Ci fermiamo all'ultimo contatore, senza mangiare una frase comune del corpo.
+      if(numerata && i>=2 && /[A-Za-zÀ-ž]/.test(parole.slice(0,i).join(' '))) taglio=i+1;
+    }
+    var nomi=str(titolo).trim().split(/\s+/);
+    if(nomi.length<=comuni && nomi.every(function(p,i){ return p===parole[i]; })) taglio=Math.max(taglio,nomi.length);
+    return taglio ? parole.slice(taglio).join(' ') : testo;
+  }
+
   /**
    * Il contenuto della bolla.
    *
@@ -68,7 +95,7 @@
    *
    *   dati.titoloMateriale(numeroOfile) → il titolo leggibile, o ''
    *   dati.testoPagina(numero, pagina)  → il testo di quella pagina, o ''
-   *   dati.documento(numeroOfile) → { pagine }, se noto
+   *   dati.documento(numeroOfile) → { pagine, testi:[{page,text}] }, se noto
    *   dati.evidenza(id)   → { exact, prefix, suffix, colore, nota }, o null
    *   dati.immagine(id)   → { didascalia, src }, o null
    *   dati.capitolo(id)   → { titolo, lezione }, o null
@@ -89,8 +116,8 @@
 
     if (rim.tipo === 'pdf') {
       var tit = str(chiedi(d.titoloMateriale, rim.numero)) || ('Documento ' + str(rim.numero));
-      var testo = attorno(str(chiedi(d.testoPagina, rim.numero, rim.pagina)));
       var doc = chiedi(d.documento, rim.numero) || {}, totale = Number(doc.pagine);
+      var testo = attorno(senzaTestata(str(chiedi(d.testoPagina, rim.numero, rim.pagina)), rim.pagina, doc, tit));
       return { tipo: 'pdf', titolo: tit,
         dove: 'Pagina ' + rim.pagina + (Number.isInteger(totale) && totale > 0 && totale >= rim.pagina ? '/' + totale : ''),
         etichettaTesto: 'Anteprima della pagina', testo: testo,

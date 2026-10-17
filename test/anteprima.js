@@ -89,6 +89,42 @@ sezione('Il documento distingue posizione e testo della pagina');
     A.contenuto(R.leggi('pdf:03#p=7'), { documento: () => { throw new Error('indice non disponibile'); } }).dove);
 }
 
+sezione('L’anteprima non ripete la testata e la numerazione estratte dal PDF');
+{
+  const corpi = [
+    'OBIETTIVO E PAROLE DA DISTINGUERE Dalla lettura a una risposta tua.',
+    'LA FONTE È VISIBILE O CHIUSA? Rileggere e recuperare. Il recupero attivo consiste nel richiamare un contenuto.',
+    'QUANDO CONTROLLI CAMBIA LA DOMANDA Subito e dopo un intervallo. Una prestazione immediata descrive quello che riesci a fare vicino al momento dello studio.'
+  ];
+  const testi = corpi.map((text, i) => ({ page:i+1,
+    text:'STUDIA / DEMO ESAME 0'+(i+1)+' / 03 Materiale originale con assistenza AI - 17 ottobre 2026 '+(i+1)+' '+text }));
+  const prima = JSON.stringify(testi);
+  function bolla(pagine, pagina, titolo) {
+    return A.contenuto({ tipo:'pdf', numero:'01', pagina }, {
+      titoloMateriale: () => titolo || 'Memoria e strategie di studio',
+      documento: () => ({ pagine:pagine.length, testi:pagine }),
+      testoPagina: () => pagine.find(p => p.page === pagina).text
+    });
+  }
+  for (let i=0;i<corpi.length;i++) {
+    check('pagina '+(i+1)+': solo titolo di sezione e contenuto', corpi[i], bolla(testi,i+1).testo);
+  }
+  check('il testo originale rimane disponibile per ricerca e citazioni', prima, JSON.stringify(testi));
+  const titolati = corpi.map((text,i) => ({page:i+1,text:'Dispensa sulla memoria '+text}));
+  check('il titolo ripetuto è già nell’intestazione del popup', corpi[1], bolla(titolati,2,'Dispensa sulla memoria').testo);
+  const compatti = corpi.map((text,i) => ({page:i+1,text:'Manuale di studio '+(i+1)+'/3 '+text}));
+  check('anche la numerazione compatta non si ripete', corpi[2], bolla(compatti,3).testo);
+  const comuni = corpi.map((text,i) => ({page:i+1,text:'La memoria richiede attenzione. Nel 2026 '+text}));
+  check('una frase comune e una data non diventano una testata per somiglianza', comuni[2].text, bolla(comuni,3).testo);
+  const conFrase = corpi.map((text,i) => ({page:i+1,text:'Manuale di studio '+(i+1)+'/3 La memoria richiede attenzione. '+text}));
+  check('il taglio si ferma alla numerazione, conservando la frase comune del corpo',
+    'La memoria richiede attenzione. '+corpi[1], bolla(conFrase,2).testo);
+  check('senza pagine di confronto non si indovina dove comincia il contenuto',
+    A.attorno(testi[0].text), bolla(testi.slice(0,1),1).testo);
+  const primaVuota=[{page:1,text:''}].concat(testi.slice(1));
+  check('pochi riscontri non autorizzano a tagliare', A.attorno(testi[2].text), bolla(primaVuota,3).testo);
+}
+
 sezione('Un MEDIA: il titolo e il minuto, e nessuna finta anteprima');
 {
   const c = A.contenuto(R.leggi('video:05#t=160'), PIENI);

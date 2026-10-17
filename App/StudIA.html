@@ -14865,7 +14865,8 @@ function sbirciaDati(){
       var d=(FONTI.indici||[]).filter(function(x){ return x.pdf===file; })[0];
       // Se l'indice manca, il visualizzatore conosce il totale del solo PDF aperto.
       var aperto=ANTEPRIMA.file===file && PDFJS.doc;
-      return { pagine:(d && d.npages) || (aperto && aperto.numPages) || null };
+      return { pagine:(d && d.npages) || (aperto && aperto.numPages) || null,
+               testi:d && d.pagine };
     },
     testoPagina: function(file, pag){
       var d=(FONTI.indici||[]).filter(function(x){ return x.pdf===file; })[0];
