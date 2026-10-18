@@ -103,9 +103,11 @@ async function foto(nome){
     r.selectNodeContents(el);evidenzaCancella(r);
   })()`);
   assert.equal(await c.val(`EVIDENZE.elenco.some(e=>e.exact===${q(selezionato)})`),false);
-  assert.deepStrictEqual(await c.val(segnoEstratto),primaDellaGomma,
-    'cancellare sulla fonte conserva negli appunti il colore e il tratto');
-  console.log('  ok  la gomma toglie la keyword ma conserva il colore negli appunti');
+  assert.equal(await c.val(segnoEstratto),null,
+    'cancellare sulla fonte toglie dagli appunti anche il segno colorato o grigio');
+  assert((await c.val(`document.querySelector('#noteHost .editor-preview-active').textContent`)).includes(selezionato),
+    'il testo citato resta leggibile');
+  console.log('  ok  la gomma toglie keyword e colore, conservando il testo negli appunti');
 
   const misure=await c.val(`['#noteHost .ncb-undo','#noteHost .ncb-redo','#mAnnulla','#mRipeti'].map(sel=>{
     const e=document.querySelector(sel),r=e.getBoundingClientRect(),s=getComputedStyle(e);
@@ -121,8 +123,9 @@ async function foto(nome){
   await c.val(`bancoMostra('appunti');noteOpen(${q(file)},NOTES)`);
   await attendi(`typeof NOTES!=='undefined' && NOTES.cur?.file===${q(file)} && !!NOTES.mde`);
   if(!await c.val('NOTES.mde.isPreviewActive()'))await click('#noteHost .preview');
-  assert.deepStrictEqual(await c.val(segnoEstratto),primaDellaGomma,
-    'il colore resta anche riaprendo l’appunto');
+  assert.equal(await c.val(segnoEstratto),null,
+    'il colore resta assente anche riaprendo l’appunto');
+  assert((await c.val(`document.querySelector('#noteHost .editor-preview-active').textContent`)).includes(selezionato));
   console.log('✓ cronologia e citazioni verificate');
 })().catch(async e=>{console.error(e);process.exitCode=1;try{await foto('studia-cronologia-citazioni-failure');}catch(_){}})
 .finally(async()=>{

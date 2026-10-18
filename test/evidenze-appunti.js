@@ -85,58 +85,19 @@ sezione('⚠️ Nel markdown il colore NON c\'è: c\'è la citazione');
   check('senza che nel markdown sia cambiato niente', true, prima !== dopo);
 }
 
-sezione('Un riferimento senza alcun dato resta neutro');
+sezione('Cancellando l’evidenza, il testo resta senza alcun segno');
 {
   const h = P._mdInline('[==una frase tolta dall’elenco==](ev:000011112222)');
-  check('il testo c\'è tutto', true, h.indexOf('una frase tolta dall’elenco') > 0);
-  check('si dichiara orfana', true, /class="evid evorfana"/.test(h));
+  check('il testo c\'è tutto', true, h.indexOf('una frase tolta dall’elenco') >= 0);
+  check('torna testo senza alcun segno', 'una frase tolta dall’elenco', h);
   /* ⚠️ Niente ancora: porterebbe a un posto che l'indice non sa più dire, e un
      link che non porta da nessuna parte è peggio di nessun link. */
   check('e non ha un\'ancora che non porta da nessuna parte', false, /evlink/.test(h));
-  check('il perché si legge passandoci sopra', true, /title="Questa parola chiave/.test(h));
+  check('non resta una sottolineatura grigia', false, /<mark|evorfana/.test(h));
 
   const senzaGancio = MUTO._mdInline('[==in Node non esiste un indice==](ev:9f2c1a4b7e01)');
-  check('senza gancio si degrada allo stesso modo', true, /evorfana/.test(senzaGancio));
-  check('e il testo non si perde mai', true, senzaGancio.indexOf('in Node non esiste un indice') > 0);
-}
-
-sezione('La gomma sulla fonte conserva l’ultimo aspetto della citazione, anche riaprendo');
-{
-  const fs=require('fs'),os=require('os'),E=require('../lib/evidenze');
-  const vault=fs.mkdtempSync(path.join(os.tmpdir(),'studia-colore-citato-'));
-  try {
-    const corso='prova', voce={exact:'memoria',capitoloId:'c1',colore:'#fdf14d',tratto:'sotto',nota:'personale'};
-    const id=E.aggiungi(vault,corso,voce).evidenza.id;
-    const md='[==memoria==](ev:'+id+')';
-    const parser=CAP.crea({evidenza:chiave=>{
-      const d=E.leggi(vault,corso),v=d.evidenze.find(e=>e.id===chiave);
-      const s=(d.stiliRimossi||[]).find(e=>e.id===chiave);
-      return v || (s ? {...s,rimossa:true} : null);
-    }});
-    E.colora(vault,corso,id,'#ff8ad0'); E.tratta(vault,corso,id,'overlay');
-    E.rimuovi(vault,corso,id);
-    const d=E.leggi(vault,corso),h=parser.mdToHtml(md,true);
-    check('la parola non torna nell’elenco',0,d.evidenze.length);
-    check('rimangono solo id, ultimo colore e tratto',
-      [{id,colore:'#ff8ad0',tratto:'overlay'}],d.stiliRimossi);
-    check('il parser conserva il colore dopo la rilettura da disco',true,h.includes('--ev:#ff8ad0'));
-    check('e conserva il fondo pieno',true,h.includes('data-tratto="overlay"'));
-    check('non applica la classe grigia',false,h.includes('evorfana'));
-    check('non inventa un link al segno cancellato',false,h.includes('evlink'));
-    check('lo stile non si mescola con un altro zaino',0,(E.leggi(vault,'altro').stiliRimossi||[]).length);
-    E.aggiungi(vault,corso,{exact:'altro',capitoloId:'c1'});
-    check('un salvataggio successivo conserva lo stile rimosso',d.stiliRimossi,E.leggi(vault,corso).stiliRimossi);
-    E.aggiungi(vault,corso,{...voce,colore:'#6fdcff'});
-    check('risegnando lo stesso punto prevale il nuovo colore',true,parser.mdToHtml(md,true).includes('--ev:#6fdcff'));
-    check('e non resta una seconda copia del vecchio stile',[],E.leggi(vault,corso).stiliRimossi);
-    E.salva(vault,corso,[]);
-    check('anche la cancellazione in blocco conserva l’aspetto',true,parser.mdToHtml(md,true).includes('--ev:#6fdcff'));
-    const strato=E.creaStrato(vault,corso,'Seconda lettura').strato;
-    const e=E.aggiungi(vault,corso,{...voce,strato:strato.id}).evidenza;
-    E.rimuoviStrato(vault,corso,strato.id,'via');
-    check('anche togliendo una lettura si conserva il colore',true,
-      E.leggi(vault,corso).stiliRimossi.some(s=>s.id===e.id&&s.colore==='#fdf14d'));
-  } finally {fs.rmSync(vault,{recursive:true,force:true});}
+  check('senza gancio resta testo normale', 'in Node non esiste un indice', senzaGancio);
+  check('e il testo non si perde mai', true, senzaGancio.indexOf('in Node non esiste un indice') >= 0);
 }
 
 sezione('Un\'evidenza senza colore non scrive una variabile vuota');
@@ -216,10 +177,8 @@ sezione('La POSTILLA si eredita, come il colore');
     /class="evlink"[^>]*title="Torna dove l/.test(senza));
   check('e il segno senza postilla non ha title', false, /<mark[^>]*title=/.test(senza));
 
-  /* Un riferimento privo anche dello stile conservato resta neutro:
-     la postilla di un'altra evidenza non deve colorarlo. */
-  check('l\'orfana non è cambiata', true,
-    /evorfana/.test(P._mdInline('[==sparita==](ev:000000000000)')));
+  check('la postilla non lascia segni su un riferimento cancellato', 'sparita',
+    P._mdInline('[==sparita==](ev:000000000000)'));
 }
 
 console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti  (' + (ok + ko) + ' controlli)'

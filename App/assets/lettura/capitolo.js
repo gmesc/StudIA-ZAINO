@@ -21,14 +21,13 @@
      pdfNum()        la mappa NN → file dei DOCUMENTI del contenitore aperto
      corsoAttivo()   quale contenitore è aperto (serve solo alle immagini
                      dell'album, che vivono dentro di lui)
-     evidenza(id)    `{colore, tratto, nota}`, oppure `{colore, tratto, rimossa:true}`
-                     per il solo aspetto conservato dopo la gomma, oppure null.
+     evidenza(id)    colore, tratto e postilla di un'evidenza → `{colore, tratto, nota}` o null.
                      ⚠️ È un gancio e non un dato SCRITTO nel markdown: il
                      colore vive in un posto solo (`APPUNTI/_evidenze.json`), e
                      un appunto che ne portasse una copia mostrerebbe il colore
                      di ieri il giorno dopo averlo cambiato — la trappola ④ in
                      forma di file. Chi non lo passa (Node, le prove, un vault
-                     chiuso) ottiene un segno neutro col testo intatto, non un
+                     chiuso) ottiene testo normale, non un
                      errore: un'evidenza tolta non deve portarsi via la frase.
 
    ⚠️ Sono ganci e non variabili perché la risposta CAMBIA nel tempo: durante
@@ -316,9 +315,8 @@
    * differenza fra citare e ricopiare — ricolorando una parola chiave, gli
    * appunti che la citano cambiano perché non c'è niente da aggiornare.
    *
-   * Dopo la gomma il gancio può restituire il solo aspetto con `rimossa:true`:
-   * il colore resta, il link all'evidenza no. Senza neppure quell'aspetto
-   * (vecchie cancellazioni o indice mancante) il segno è neutro e lo dichiara.
+   * Cancellando il segno sulla fonte, anche l'appunto torna senza colore e
+   * sottolineatura. Il testo resta, senza un link all'evidenza cancellata.
    */
   /* ⚠️ Il testo arriva GIÀ passato dall'escape — `_mdInline` lo fa sulla riga
      intera, prima di qualunque regola — e ripassarlo qui darebbe `&amp;amp;` su
@@ -326,7 +324,7 @@
   function evidenzaHtml(testo, id){
     var t=String(testo==null?'':testo);
     var v=(typeof g.evidenza==='function') ? g.evidenza(id) : null;
-    if(!v) return '<mark class="evid evorfana" title="Questa parola chiave non è più nell\'elenco">'+t+'</mark>';
+    if(!v) return t;
     /* Il colore finisce in un attributo di stile: si ripulisce come lo ripulisce
        `lib/evidenze.js` prima di scriverlo su disco. Due porte, la stessa
        guardia — quella là difende il file, questa difende la pagina. */
@@ -342,7 +340,6 @@
     var segno='<mark class="evid" data-tratto="'+tratto+'"'+(col?' style="--ev:'+col+'"':'')+
       (nota?' data-postilla="1" title="'+g.esc(nota)+'"':'')+'>'+t+'</mark>';
     var rim=Rimandi.scriviEv(id);
-    if(v.rimossa) return segno.replace('<mark ', '<mark title="Evidenziatura cancellata dalla fonte; colore conservato nell’appunto" ');
     if(!rim) return segno;
     /* ⚠️ Il `title` del link NON deve coprire quello del segno: quando c'è una
        postilla, è lei la cosa da leggere passandoci sopra — dove porta il link

@@ -45,7 +45,7 @@ I due editor degli appunti hanno gli stessi comandi: formattazione, callout, emo
 
 **Appunta** riconosce le frasi che iniziano con maiuscola e terminano con `.`, `?` o `!`: le inserisce come blocchi citazione con una linea sottile e il rimando alla fonte. I frammenti entrano fra virgolette e in corsivo. È una regola pratica: nei PDF le righe non identificano con certezza i paragrafi. I callout scelti manualmente continuano a prevalere; il simbolo **¶** nella riga di Appunta riattiva la scelta automatica. **Quote** permette di formattare un blocco nell’editor.
 
-**Cancella evidenziatura** toglie il segno dalla fonte e la parola dalle keyword, conservando negli appunti l’ultimo colore e il tratto applicati. Finché l’evidenza esiste, le citazioni seguono i suoi cambiamenti; dopo la cancellazione ne conservano l’aspetto anche alla riapertura. Per le evidenze cancellate con versioni precedenti, il colore non era conservato.
+**Cancella evidenziatura** toglie il segno dalla fonte e la parola dalle keyword. Anche negli appunti scompaiono colore e sottolineatura: restano il testo citato e il rimando alla pagina.
 
 Le toolbar di Appunti e Mappe includono **Annulla/Ripeti**. Ogni editor usa la propria cronologia; nella mappa si recuperano anche le disposizioni e la vista conservate dal gesto. Una modifica dopo Annulla abbandona i passi da ripetere. Le cronologie sono della sessione del documento e si azzerano quando si apre un altro file; non sostituiscono le versioni salvate degli appunti.
 

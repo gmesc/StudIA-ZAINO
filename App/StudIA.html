@@ -206,8 +206,8 @@
        dipingono con la CSS Custom Highlight API (regole generate da
        `evidenzeStile`), l'appunto con un `<mark>` vero. Tre segni che devono
        somigliarsi non si somigliano per buona volontà: leggono lo stesso
-       numero. Il grigio è il ripiego per un rimando di cui non è disponibile
-       nemmeno lo stile conservato alla cancellazione. */
+       numero. E il colore di ripiego è quello di una parola chiave che non c'è
+       più — grigio, cioè «era segnata, non lo è più». */
     --ev-spessore:0.22em; --ev-stacco:0.14em; --ev-orfana:#c9c6c2;
     /* Il giallo di un `==testo==` scritto a mano, che non cita nessuna evidenza
        e quindi non ha un colore da chiedere a nessuno. ⚠️ È il PRIMO preset di
@@ -2847,8 +2847,8 @@
      su tema scuro un inchiostro chiaro dietro un testo chiaro sparisce. */
   mark.evid[data-tratto="overlay"]{ text-decoration:none;
     background:var(--ev, var(--ev-nudo)); color:#111; }
-  /* Un riferimento senza dati, anche di stile: il testo resta leggibile e il
-     cursore dice che c'è una spiegazione. La gomma ora conserva lo stile. */
+  /* Una parola chiave tolta dall'elenco: il testo resta, il colore no. Il grigio
+     dice «era segnata», il cursore dice che c'è una spiegazione. */
   mark.evid.evorfana{ text-decoration-color:var(--ev-orfana); background:transparent;
     color:inherit; cursor:help; }
   /* L'ancora attorno al segno non deve vedersi: il segno È il link. */
@@ -14263,14 +14263,12 @@ function rangeDaOffset(m, inizio, fine){
 
 function evidenzeCarica(){
   var api=evidenzeApi(), corso=corsoAttivo();
-  EVIDENZE.stiliRimossi=[];
   if(!api || !corso){ EVIDENZE.elenco=[]; EVIDENZE.strati=[]; EVIDENZE.corso=''; evidenzeBottoni(); return; }
   var r=api.leggi(corso);
   // `error` si guarda PRIMA di `length`: «non ce n'è» e «non si legge» sono
   // due cose diverse, e dirle uguali nasconde un guasto di permessi
   if(r && r.error){ console.error('evidenze:', r.error); EVIDENZE.elenco=[]; EVIDENZE.strati=[]; EVIDENZE.corso=corso; evidenzeBottoni(); return; }
   EVIDENZE.elenco=(r && r.evidenze) || []; EVIDENZE.strati=(r && r.strati) || []; EVIDENZE.corso=corso;
-  EVIDENZE.stiliRimossi=(r && r.stiliRimossi) || [];
   /* ⚠️ Gli interruttori si rifanno QUI, e non solo quando si dipinge.
      `evidenzeDisegna()` gira quando c'è qualcosa da accendere — un capitolo
      aperto, una pagina a schermo — mentre questa funzione gira ogni volta che
@@ -14452,8 +14450,8 @@ function evidenzeDisegna(){
      `if(!quante) return` — e sembrava innocua: senza intervalli non ci sono
      highlight da creare. Ma «zero evidenze a schermo» è ANCHE il momento in cui
      se ne toglie l'ultima, cioè proprio quando gli appunti che la citavano
-     devono aggiornarsi. Dopo la gomma conservano il colore, ma non il link
-     all'evidenza rimossa. Il ridisegno serve anche quando l'elenco è vuoto.
+     devono scolorirsi. Misurato il 18 agosto: ricolorare aggiornava l'appunto,
+     TOGLIERE no — il segno restava colorato finché non si riapriva l'anteprima.
      Il ciclo qui sotto su un elenco vuoto non fa niente da sé: è la coda che
      doveva girare comunque. */
   ordine.forEach(function(k,i){
@@ -14532,8 +14530,8 @@ function kwMarkdown(e){
      ⚠️ Prende il posto del rimando alla pagina, e non si affiancano: dove porta
      lo sa già l'evidenza (è ciò che fa «Vai» nel suo menu), e due link sulla
      stessa parola sarebbero due promesse per un gesto solo. Il prezzo, detto:
-     togliendo la parola chiave dall'elenco l'appunto conserva testo e aspetto,
-     ma perde il collegamento al segno cancellato. */
+     togliendo la parola chiave dall'elenco l'appunto conserva il testo e perde
+     la pagina — chi la toglie sta dicendo che quel segno non gli serve più. */
   var rimEv=RimandiSintassi.scriviEv(e.id);
   if(rimEv) return RimandiSintassi.link('=='+e.exact+'==', rimEv);
   /* Senza un id — una voce arrivata da chissà dove — si ripiega sulla
@@ -15076,7 +15074,7 @@ document.addEventListener('click', function(e){
     var api=evidenzeApi(); if(!api) return;
     var r=api.rimuovi(corsoAttivo(), ev.id);
     if(r && r.error){ toast('Non tolta: '+r.error, false); return; }
-    evidenzeCarica(); evidenzeDisegna(); toast('Parola chiave tolta', true);
+    EVIDENZE.elenco=r.evidenze; evidenzeDisegna(); toast('Parola chiave tolta', true);
   }
 });
 document.addEventListener('change', function(e){
@@ -15363,7 +15361,7 @@ async function stratoVia(id){
   var r=api.rimuoviStrato(corsoAttivo(), id, scelta);
   if(r.error){ toast('Non tolta: '+r.error, false); return; }
   EVIDENZE.strati=r.strati;
-  evidenzeCarica();
+  var l=api.leggi(corsoAttivo()); EVIDENZE.elenco=(l && l.evidenze)||[];
   if(evStratoAttivo()===id) evStratoAttivoScegli('');
   evidenzeDisegna(); stratiPopDisegna();
   toast(r.spostate
@@ -15691,7 +15689,7 @@ function evidenzaCancella(range){
   if(!v){ toast('Qui non c’è una parola chiave',false); return; }
   var r=api.rimuovi(corsoAttivo(), v.id);
   if(r && r.error){ toast('Non rimossa: '+r.error,false); return; }
-  evidenzeCarica();
+  EVIDENZE.elenco=r.evidenze;
   evidenzeDisegna();
   toast(r.tolte? 'Parola chiave tolta' : 'Non c’era più', !!r.tolte);
 }
@@ -16245,10 +16243,6 @@ var LETTURA_CAP = LetturaCapitolo.crea({
   evidenza: function (id) {
     if (!corsoAttivo()) return null;
     var v = kwDaId(id);
-    if(!v){
-      var stile=(EVIDENZE.stiliRimossi||[]).find(function(s){ return s.id===id; });
-      return stile ? Object.assign({rimossa:true},stile) : null;
-    }
     /* La POSTILLA viaggia con colore e tratto, e per la stessa ragione: nel
        markdown c'è l'indirizzo, non il dato — quindi correggerla cambia anche
        gli appunti che la citano, senza toccarne uno. */
