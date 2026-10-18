@@ -11,11 +11,17 @@ Il comando avvia il runtime Electron dei test con dati e vault sintetici in
 Non usa chiavi o servizi AI reali e non modifica `dist`. Alla fine chiude soltanto
 il processo avviato; conserva il laboratorio temporaneo e i log per ispezionarli.
 
+- `barre.js`: numerazione condivisa delle toolbar Appunti e Mappa, con controllo
+  che tutti i pulsanti stiano su una sola riga.
 - `campagna.js`: rigenera gli stati degli strumenti con i materiali in `materiali/`.
 - `fork.js`: acquisisce chat, cronologia, rinomina, profili, provider e quattro pannelli.
   Le risposte AI e il modello sono simulati e dichiarati nelle didascalie della guida.
+- `novita.js`: acquisisce ricerca locale, indice, stima delle schede, raccoglitore,
+  domanda e riscontro del Ripasso, gruppi, riduzione del Banco e fonti della chat.
+  Il modello locale non viene scaricato; le risposte AI sono simulate.
 - `verifica.js`: acquisisce la rinomina dello zaino e controlla immagini, indice,
-  ingrandimento e impaginazione desktop/mobile della guida.
+  ingrandimento, collegamenti interni, numerazione e impaginazione desktop/mobile
+  della guida nei due temi. Controlla anche la chiusura dell’indice mobile.
 - `lab.js`: screenshot tramite CDP, ritagli, indicatori e ricostruzione dei soli menu
   nativi non catturabili, usando le etichette dell'app. I dialoghi ricostruiti usano
   lo zaino OpenMoji. Questa convenzione è dichiarata anche nella guida.

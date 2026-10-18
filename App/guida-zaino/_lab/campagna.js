@@ -312,12 +312,7 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
   /* ── 7. appunti ── */
   await passo('50 notebar numerata', async () => {
     await bloccoLargo('C');
-    const nb = await L.rect('#noteHost .editor-toolbar');
-    await L.banda(nb, { altezza: 36 });
-    const sels = ['#noteHost .notectl .tendina', '#noteNew', '#noteSave', '#noteRen', '#noteDel', '.editor-toolbar button.bold', '.editor-toolbar button.italic', '.editor-toolbar button.heading', '.editor-toolbar button.quote', '.editor-toolbar button.unordered-list', '.editor-toolbar button.ordered-list', '.editor-toolbar button.ncb-callout', '.editor-toolbar button.ncb-emoji', '.editor-toolbar button.ncb-cita', '.editor-toolbar button.ncb-mat', '.editor-toolbar button.link', '.editor-toolbar button.code', '.editor-toolbar button.preview', '.editor-toolbar button.side-by-side', '.editor-toolbar button.ncb-guida', '#noteStampa', '#notePdf', '#noteClose'];
-    await L.numeri(sels.map((s, i) => ({ sel: s, n: i + 1, dove: 'b' })), { filo: nb.y + nb.h + 6 });
-    await L.scatta('50-notebar-numerata', { clip: { x: nb.x, y: nb.y - 2, width: nb.w, height: nb.h + 38 }, scala: 3 });
-    await L.overlayPulisci();
+    await require('./barre').appunti(L);
     await bloccoTorna();
   });
   await passo('51-53 nuovo appunto, chip, tendina', async () => {
@@ -431,11 +426,7 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
     await L.val(`mappaSeleziona(null); mappaAdatta && mappaAdatta()`); await L.pausa(600);
     await L.scatta('67-mappa-con-nodi', { sel: '#mappaView', scala: 2 });
     await bloccoLargo('C');
-    const mb = await L.rect('#mappaView .mtoolbar');
-    await L.banda(mb, { altezza: 36 });
-    await L.numeri([{ sel: '#mappaView .tendina.piccola', n: 1, dove: 'b' }, { sel: '#mNuova', n: 2, dove: 'b' }, { sel: '#mRinomina', n: 3, dove: 'b' }, { sel: '#mCestino', n: 4, dove: 'b' }, { sel: '#mMemorie', n: 5, dove: 'b' }, { sel: '#mOrient', n: 6, dove: 'b' }, { sel: '#mVista', n: 7, dove: 'b' }, { sel: '#mStampa', n: 8, dove: 'b' }, { sel: '#mPdf', n: 9, dove: 'b' }, { sel: '#mAdatta', n: 10, dove: 'b' }, { sel: '#mChiudi', n: 11, dove: 'b' }]);   /* ⚠️ Niente #mRegistro: il registro «Generata / Mie» qui non esiste, e numerarlo lasciava lo scatto senza il numero 1. */
-    await L.scatta('68-mappabar-numerata', { clip: { x: mb.x, y: mb.y - 2, width: mb.w, height: mb.h + 38 }, scala: 3 });
-    await L.overlayPulisci();
+    await require('./barre').mappa(L);
     const nk = await L.val(`MAPPA.mia.grafo.nodi.find(n=>n.testo==='perielio').id`);
     await L.val(`mappaSeleziona(${JSON.stringify(nk)})`); await L.pausa(300);
     const nr = await L.rect(`#mappaSvg .mnodo[data-id="${nk}"]`);

@@ -20,8 +20,9 @@
   if (mb) mb.addEventListener('click', function(){
     root.setAttribute('data-nav', root.getAttribute('data-nav') === 'open' ? '' : 'open');
   });
-  document.querySelectorAll('.toc a').forEach(function(a){
-    a.addEventListener('click', function(){ root.setAttribute('data-nav', ''); });
+  /* L'indice nasce più sotto: la delega comprende anche i collegamenti creati dopo. */
+  document.getElementById('toc').addEventListener('click', function(e){
+    if (e.target.closest('a')) root.setAttribute('data-nav', '');
   });
 
   /* ---- indice: costruito dai titoli, con scrollspy ---- */

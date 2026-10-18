@@ -80,4 +80,4 @@ StudIA - ZAINO è **software libero**, distribuito con licenza **GNU General Pub
 
 Icona e marchio usano [OpenMoji backpack (1F392)](https://openmoji.org/library/emoji-1F392/), con attribuzione e licenza CC BY-SA 4.0; i crediti delle dipendenze sono disponibili nell'app.
 
-La guida completa del fork è in `App/guida-zaino/index.html`. Gli screenshot si rigenerano su un vault temporaneo con `bash bin/guida-zaino.sh`. `npm run icona` rigenera solo le icone in `build/`, senza modificare i pacchetti in `dist/`.
+La guida completa del fork è in `App/guida-zaino/index.html`: include percorsi passo per passo per Cerca e studia, schede AI, Ripasso, fonti della chat, gruppi e strumenti del Banco. Gli screenshot si rigenerano su un vault temporaneo con `bash bin/guida-zaino.sh`. `npm run icona` rigenera solo le icone in `build/`, senza modificare i pacchetti in `dist/`.

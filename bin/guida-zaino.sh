@@ -18,4 +18,5 @@ for _ in $(seq 1 60); do if curl -sf "http://127.0.0.1:$PORTA/json/version" >/de
 printf 'Laboratorio isolato: %s\n' "$LAVORO"
 GUIDA_VAULT="$LAVORO/vault" STUDIA_PORTA="$PORTA" node App/guida-zaino/_lab/campagna.js
 GUIDA_VAULT="$LAVORO/vault" STUDIA_PORTA="$PORTA" node App/guida-zaino/_lab/fork.js
+GUIDA_VAULT="$LAVORO/vault" STUDIA_PORTA="$PORTA" node App/guida-zaino/_lab/novita.js
 GUIDA_VAULT="$LAVORO/vault" STUDIA_PORTA="$PORTA" node App/guida-zaino/_lab/verifica.js
