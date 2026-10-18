@@ -7,11 +7,11 @@
  function crea(){
   const host=document.getElementById('studioPane');if(!host||host.children.length)return;
   const state={zaino:null,scope:{mode:'all',sourceIds:[],wikipedia:false},sources:[]},api=window.vault.rag;
-  host.innerHTML=`<div class="tbar" id="zragToolbar" role="toolbar" aria-label="Ricerca e fonti"><span class="tbsep"></span><button class="tbtn" id="zragOpenReview" type="button">Ripasso</button></div><div id="zragScopeHost"></div>
+  host.innerHTML=`<div class="tbar" id="zragToolbar" role="toolbar" aria-label="Ricerca e fonti"><span class="tbsep"></span><button class="tbtn" id="zragOpenReview" type="button" title="Apre lo split Ripasso: scegli le fonti e allenati con domande e risposte.">Apri Ripasso</button></div><div id="zragScopeHost"></div>
    <div id="zstudio" class="zstudio zstudio-banco"><h2>Cerca e studia le fonti</h2>
    <p class="zchat-hint">Trova passaggi per significato nelle fonti selezionate. L’indice e la ricerca funzionano sul dispositivo; sintesi e domande usano il provider AI configurato.</p>
    <form id="zragForm" class="zstudio-actions"><label class="zchat-sr" for="zragQuery">Cerca nei materiali per parole o significato</label><input class="ctl-input" id="zragQuery" placeholder="Che cosa vuoi trovare?" maxlength="12000"><button class="tbtn acc" type="submit">Cerca</button></form>
-   <details id="zragIndexOptions"><summary>Indice sul dispositivo</summary><p class="zchat-hint">Indicizza le fonti prima della prima ricerca per significato. I passaggi già pronti vengono riutilizzati.</p>
+   <details id="zragIndexOptions" class="zstudio-section"><summary>Indice sul dispositivo</summary><p class="zchat-hint">Prepara le fonti selezionate per trovarne i passaggi per significato, anche usando parole diverse. Esegui «Indicizza» la prima volta e dopo aver aggiunto o modificato materiali: i passaggi già pronti vengono riutilizzati. «Ricostruisci indice» serve a rifare da zero l’indice di ricerca; appunti, schede e ripassi restano conservati. Tutto avviene sul dispositivo.</p>
    <div class="tbar zstudio-actions"><button class="tbtn" id="zragInstall" type="button">Scarica modello · 346 MB</button><button class="tbtn" id="zragIndex" type="button">Indicizza sul dispositivo</button><button class="tbtn" id="zragReset" type="button">Ricostruisci indice</button></div></details>
    <button class="tbtn" id="zragCancel" type="button" hidden>Interrompi</button><p id="zragStatus" role="status" class="zchat-hint"></p>
    <div id="zragResults" class="zstudio-results"></div></div>`;

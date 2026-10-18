@@ -14,8 +14,16 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden`);assert((await c.val(`document.getElementById('zschedeEstimateText').textContent`)).includes('token'));
  await click('#zschedeGenerate');await wait(`document.querySelectorAll('#zschedeResult article').length===1`);
  assert.equal(await c.val(`document.querySelector('#zschedeResult strong').textContent`),'Energia cellulare');
+ assert.deepEqual(await c.val(`[...document.querySelectorAll('#zschedeResult .zstudio-card-text strong')].map(e=>e.textContent)`),['Concetti:','Prerequisiti:','Esempi:']);
  await click('#zschedeResult>button');await wait(`document.getElementById('zragStatus').textContent.includes('conservata')`);
  assert(fs.readdirSync(path.join(vault,'Zaini','biologia','APPUNTI')).some(f=>f.startsWith('Scheda AI')));
+ const note=await c.val(`({title:noteStatoAttivo().cur.title,body:noteStatoAttivo().mde.value()})`);assert(note.title.startsWith('Sintesi — '));assert(note.body.startsWith('### '+note.title+'\n'));assert(note.body.includes('**Prerequisiti:**'));
+ assert.equal(await c.val(`document.getElementById('zragOpenReview').textContent`),'Apri Ripasso');
+ for(const theme of ['chiaro','scuro']){
+  await c.val(`document.documentElement.dataset.theme=${JSON.stringify(theme)}`);
+  assert(await c.val(`['zragIndexOptions','zschede'].every(id=>{const s=getComputedStyle(document.querySelector('#'+id+'>summary'));return s.backgroundColor!=='rgba(0, 0, 0, 0)' && parseFloat(s.fontWeight)>=600;})`));
+ }
+ await c.val(`document.documentElement.dataset.theme='chiaro'`);
  await c.val(`document.getElementById('zchatWindow').hidden=true;bancoMostra('flashcard')`);await wait(`bancoVisibile('flashcard')`);
  assert.equal(await c.val(`document.getElementById('zinterroga').tagName`),'SECTION');
  assert.equal(await c.val(`document.getElementById('zstudyCancel').hidden`),true);

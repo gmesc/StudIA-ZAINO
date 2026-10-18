@@ -88,7 +88,7 @@ async function pulisci() {
       preview:!!s.mde?.isPreviewActive(),affiancata:!!s.mde?.isSideBySideActive()}))};})()`);
   try {
     const file = await c.val(`(()=>{const file=[0,1].map(i=>{
-      const r=notesApi().save(corsoAttivo(),null,{title:${q(prefisso)}+' '+(i+1)},'Testo iniziale '+(i+1)+'.');
+      const r=notesApi().save(corsoAttivo(),null,{title:${q(prefisso)}+' '+(i+1)},'Testo iniziale '+(i+1)+${q('.\n\n- '+'Una voce lunga che va a capo senza perdere il rientro. '.repeat(10)+'\n- Seconda voce.\n\n1. Primo passo.\n2. Secondo passo.')});
       if(!r||r.error)throw new Error(r&&r.error||'Creazione fallita');return r.file;});
       notesReload();bancoForma('due-col');bancoAssegna('A','appunti');bancoAssegna('C','appunti2');
       noteOpen(file[0],NOTES);appuntiParalleli.open(file[1]);
@@ -104,6 +104,16 @@ async function pulisci() {
     assert.deepEqual(await c.val(`${q(comandi)}.map(id=>[!!document.getElementById(id),!!document.getElementById(id+'2')])`),
       comandi.map(()=>[true,true]), 'anche i comandi del documento sono presenti in entrambi');
     console.log('  ok  toolbar e comandi del documento identici');
+
+    for(const i of [0,1])for(const mode of ['preview','side']){
+      await c.val(`__pariStati()[${i}].mde.${mode==='preview'?'togglePreview':'toggleSideBySide'}()`);
+      await aspetta(`!!document.querySelector('${i?'#noteHost2':'#noteHost'} .${mode==='preview'?'editor-preview-active':'editor-preview-active-side'} ul')`);
+      const lists=await c.val(`(()=>{const p=document.querySelector('${i?'#noteHost2':'#noteHost'} .${mode==='preview'?'editor-preview-active':'editor-preview-active-side'}');return [...p.querySelectorAll('ul,ol')].map(e=>({tag:e.tagName,padding:parseFloat(getComputedStyle(e).paddingInlineStart),font:parseFloat(getComputedStyle(e).fontSize),inset:e.firstElementChild.getBoundingClientRect().left-p.getBoundingClientRect().left,wrap:e.firstElementChild.getBoundingClientRect().height>parseFloat(getComputedStyle(e).lineHeight)*2}));})()`);
+      assert(lists.some(x=>x.tag==='UL'&&x.wrap),'La voce lunga va davvero a capo');assert(lists.some(x=>x.tag==='OL'));
+      for(const e of lists){assert(e.padding>=e.font*1.5,JSON.stringify({i,mode,...e}));assert(e.inset>=e.font*1.5,JSON.stringify({i,mode,...e}));}
+      await c.val(`__pariStati()[${i}].mde.${mode==='preview'?'togglePreview':'toggleSideBySide'}()`);
+    }
+    console.log('  ok  pallini, numeri e righe a capo rientrano nelle due anteprime di entrambi gli editor');
 
     for (const i of [0,1]) {
       const altro = await corpo(1-i), testo = '\nScrittura separata ' + (i+1) + '.';

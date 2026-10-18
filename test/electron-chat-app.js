@@ -10,7 +10,7 @@ provider.rispondi = async ({messages,signal,system}) => {
   const ultimo=messages.at(-1).content;
   registra('chat-requests.jsonl', { messages, system });
   let strutturata;try{strutturata=JSON.parse(messages[0].content);}catch(_){}
-  if(strutturata?.porzioni)return {text:JSON.stringify({items:[{title:'Energia cellulare',text:'La fonte descrive energia e cellule.',refs:[strutturata.porzioni[0].chunkId]}]})};
+  if(strutturata?.porzioni)return {text:JSON.stringify({items:[{title:'Energia cellulare',text:'La fonte descrive energia e cellule.\n- Concetti: energia.\n- Prerequisiti: cellule.\nEsempi: ATP.',refs:[strutturata.porzioni[0].chunkId]}]})};
   if(strutturata?.proofs && strutturata.topic)return {text:JSON.stringify({question:'Quale processo converte la luce?',answer:'La fotosintesi.',rubric:['Nomina la fotosintesi.'],hint:'Pensa alle piante.',refs:[strutturata.proofs[0].chunkId]})};
   if(strutturata?.expected)return {text:JSON.stringify({correct:['Hai nominato la fotosintesi.'],missing:[],contradictory:[],summary:'Il tentativo è coerente con la fonte.',assessable:true})};
   if(ultimo.startsWith('Risposta lenta')) await new Promise((resolve,reject)=>{

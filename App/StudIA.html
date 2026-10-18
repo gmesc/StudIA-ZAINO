@@ -1392,6 +1392,11 @@
   :is(#noteHost,#noteHost2) .cm-s-easymde .cm-header{ color:var(--teal-strong); }
   :is(#noteHost,#noteHost2) .cm-s-easymde .cm-link, :is(#noteHost,#noteHost2) .cm-s-easymde .cm-url{ color:var(--blue-strong); }
   :is(#noteHost,#noteHost2) .editor-preview, :is(#noteHost,#noteHost2) .editor-preview-side{ background:var(--panel); color:var(--ink); }
+  /* Il reset globale azzera il rientro nativo: senza spazio i marcatori esterni
+     finiscono tagliati dal riquadro, anche quando il testo va a capo. */
+  :is(#noteHost,#noteHost2) :is(.editor-preview,.editor-preview-side) :is(ul,ol){ padding-inline-start:2em; margin-block:.6em; }
+  /* I riquadri hanno già marcatori propri, disegnati dentro il testo. */
+  :is(#noteHost,#noteHost2) :is(.editor-preview,.editor-preview-side) .uc-body :is(ul,ol){ padding-inline-start:0; }
   .noteempty{ padding:1.4rem 1rem; color:var(--muted); font-size:13px; line-height:1.6; }
   /* blocco "I miei appunti" iniettato nel capitolo dal reader */
   .myotes{ margin:2rem 0; padding:1rem 1.1rem; background:color-mix(in srgb, var(--yellow) 9%, var(--panel)); }
@@ -22583,6 +22588,7 @@ window.addEventListener('keydown', function(e){
   <div class="ib-file" id="ibFile"></div>
 </div>
 <script src="assets/chat/fonti-scelta.js"></script>
+<script src="assets/chat/schede-testo.js"></script>
 <script src="assets/chat/schede-ripasso.js"></script>
 <script src="assets/chat/studio.js"></script>
 <script src="assets/chat/citazioni.js"></script>

@@ -6,7 +6,7 @@
   const action=fn=>studio.action(fn,'zstudyStatus'),status=(text,error)=>studio.status(text,error,'zstudyStatus'),riferimento=s=>studio.riferimento(s,'zstudyStatus');
   const reviewState={zaino:state.zaino,scope:{mode:'all',sourceIds:[],wikipedia:false},sources:[]};
   const extra=el('div');extra.innerHTML=`
-   <details id="zschede"><summary>Schede delle fonti</summary>
+   <details id="zschede" class="zstudio-section"><summary>Schede delle fonti</summary>
     <label>Fonte<select id="zschedeSource"></select></label><label>Scheda<select id="zschedePreset"></select></label>
     <div class="zstudio-actions"><button class="tbtn" id="zschedeRead" type="button">Apri scheda</button><button class="tbtn" id="zschedeEstimate" type="button">Prepara analisi</button></div>
     <p id="zschedeEstimateText" class="zchat-hint"></p><button class="tbtn" id="zschedeGenerate" type="button" hidden>Analizza con il mio provider</button>
@@ -37,7 +37,9 @@
   function drawCard(c,st){
    const target=$('zschedeResult');target.replaceChildren();if(!c){target.append(el('p','Nessuna scheda disponibile.'));return;}
    target.append(el('p',(st==='changed'?'Fonte modificata. ':st==='removed'?'Fonte rimossa. ':'')+'Copertura: '+c.covered+'/'+c.total+' passaggi'+(c.partial?' · analisi parziale':'')+' · '+c.provider+' / '+c.model));
-   for(const item of c.items){const row=el('article');row.append(el('strong',item.title),el('p',item.text));for(const id of item.refs){const s=c.sources.find(s=>s.chunkId===id);if(s)row.append(studio.riferimento(s));}
+   for(const item of c.items){const row=el('article'),body=el('div',undefined,'zstudio-card-text'),template=document.createElement('template');
+    template.innerHTML=window.LetturaCapitolo.crea().mdToHtml(window.ZainoSchedeTesto.etichette(item.text),true);
+    body.append(window.ZainoChatUI.copyFormatting(template.content,document));row.append(el('strong',item.title),body);for(const id of item.refs){const s=c.sources.find(s=>s.chunkId===id);if(s)row.append(studio.riferimento(s));}
     if(c.preset==='domande')row.append(button('Interrogami su questa',()=>{$('zstudyTopic').value=item.title;picker.set({mode:'selected',sourceIds:[c.sourceId],wikipedia:false});window.bancoMostra('flashcard');start();}));target.append(row);}
    target.append(button('Conserva una copia negli appunti',()=>studio.action(async current=>{const r=await call('copyCard',state.zaino,c.sourceId,c.preset);if(current()){window.notesReload();window.refreshMyNotes();window.noteApriAttivo(r.file);studio.status(r.duplicate?'Copia già presente negli appunti.':'Copia personale conservata.');}})));
   }

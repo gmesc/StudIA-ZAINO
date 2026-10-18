@@ -46,6 +46,10 @@ Le citazioni nella risposta sono numeri in apice cliccabili. L’elenco **Fonti 
 
 Ricerca e Ripasso hanno ciascuno un selettore **Fonti** nella propria toolbar: tutto lo zaino oppure più fonti scelte con cerchi e pallino verde. Le scelte sono conservate per strumento, vault e zaino e non modificano l’ambito della chat. Nel Ripasso filtrano sia le nuove domande sia l’elenco delle domande conservate; una domanda che usa più fonti compare quando tutte sono ammesse. Il menu **Riprendi** sostituisce i grandi pulsanti che ripetevano il testo della domanda. La sezione generale non è collassabile; restano espandibili indizio, fonti, soluzione e tentativi precedenti. **Interrompi** compare soltanto durante un’operazione.
 
+**Apri Ripasso** è una scorciatoia che porta allo split omonimo, senza generare domande. Le intestazioni verdi distinguono **Indice sul dispositivo** e **Schede delle fonti**. L’indice prepara le fonti selezionate alla ricerca per significato: va aggiornato dopo aggiunte o modifiche, riutilizzando i passaggi già pronti. Ricostruirlo riparte dalla cache della ricerca e conserva schede, appunti e ripassi.
+
+La copia di una scheda usa come titolo il tipo e il nome del file, per esempio **Sintesi — 01 Energia nelle cellule.pdf**, sia nei metadati sia nel corpo dell’appunto. Le etichette introduttive, come **Concetti:** e **Prerequisiti:**, sono in grassetto nella scheda e nella copia. Il nome tecnico del file conserva l’identificatore per evitare doppioni; le copie già modificate dall’utente non vengono riscritte. Gli elenchi puntati e numerati hanno un rientro dedicato nelle anteprime dei due editor, comprese le viste affiancate.
+
 ## Ruoli e adattamenti
 
 **Tutor socratico** guida con una domanda e indizi progressivi, chiedendo un tentativo prima della soluzione. **Spiegamelo** spiega e può integrare Wikipedia. **Chiedimelo** propone una domanda alla volta, aspetta la risposta e dà un riscontro prima di proseguire.
