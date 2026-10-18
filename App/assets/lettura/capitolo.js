@@ -351,6 +351,10 @@
     return '<a href="#" class="evlink" data-ev="'+g.esc(id)+'"'+dove+'>'+segno+'</a>';
   }
   function _mdInline(s, nota){ s=g.esc(s);
+    // Gli estratti sono testo letterale: \* e \[ non devono diventare enfasi o link.
+    s=s.replace(/\\(\\|`|\*|\[|\]|#|_|!|\||&gt;)/g,function(m,c){
+      return c==='&gt;' ? c : '&#'+c.charCodeAt(0)+';';
+    });
     /* ⚠️ La figura si riconosce PRIMA del rimando normale: la regex dei link
        matcha anche la parte `[…](…)` che sta dopo il punto esclamativo, e
        lascerebbe un «!» orfano davanti a un link che non è più una figura. */

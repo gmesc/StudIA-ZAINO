@@ -36,6 +36,25 @@ function nonContiene(nome, ago, pagliaio) {
 }
 const appunto = (md) => C.mdToHtml(md, true);
 const capitolo = (md) => C.mdToHtml(md, false);
+const Citazione = require('../App/assets/appunti/citazione');
+console.log('— Appunta: frase intera e frammento —');
+for(const t of ['Una frase completa.', 'È una domanda?', '«Attenzione!»', '(Questa è completa.)'])
+  check('blocco: '+t,true,Citazione.blocco(t));
+for(const t of ['alcune parole', 'Parte senza la fine', 'Mario incontrò il dott.', 'Una frase interrotta…', 'Una frase interrotta...', 'A.'])
+  check('frammento: '+t,false,Citazione.blocco(t));
+check('un paragrafo confermato dalla fonte può non avere punto',true,Citazione.blocco('testo senza punto',true));
+check('un a capo PDF non prova che sia un paragrafo',false,Citazione.blocco('alcune parole\nsu due righe'));
+const rimando='[Dispensa, p. 2](pdf:01#p=2)';
+const citato=Citazione.componi(Citazione.letterale('Una frase.'),rimando,true);
+contiene('il blocco è reso come citazione','<blockquote>',appunto(citato));
+contiene('il rimando resta cliccabile','data-page="2"',appunto(citato));
+contiene('il frammento ha virgolette e corsivo','«<em>alcune parole</em>»',
+  appunto(Citazione.componi('alcune parole',rimando,false)));
+const simboli=appunto(Citazione.componi(Citazione.letterale('*dato* [termine](url) <tag>'),'',false));
+contiene('i simboli della fonte restano letterali','&#42;dato&#42;',simboli);
+nonContiene('il frammento non crea un link dalla fonte','<a ',simboli);
+nonContiene('il testo della fonte non diventa HTML','<tag>',simboli);
+contiene('il cursore può proseguire fuori dalla citazione','</blockquote>\n<p>Spiegazione mia</p>',appunto(citato+'Spiegazione mia'));
 
 console.log('— citazioni —');
 check('una riga', '<blockquote><p>citazione</p></blockquote>', appunto('> citazione'));

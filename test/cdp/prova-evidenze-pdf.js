@@ -206,7 +206,7 @@ async function selezionaUnaRiga(indice) {
   ok('rispetta BR e maiuscole originali, senza spezzare Uno fra due span', righe, spazi.testo);
   ok('Copia riceve il testo con gli a capo', righe, spazi.copiato);
   ok('Appunta conserva gli spazi prima della citazione', true,
-    spazi.md.startsWith('Una frase. Uno e quattro giorni. Questo resta. — '));
+    spazi.md.startsWith('> Una frase. Uno e quattro giorni. Questo resta.\n> — '));
   ok('la selezione parziale rispetta entrambi i capi', 'frase.\nUno e quatt', spazi.parziale);
   ok('anche una selezione all’indietro', spazi.parziale, spazi.indietro);
   ok('nessun separatore aggiunto dentro una riga', 'e quattr', spazi.singola);
@@ -367,7 +367,8 @@ async function selezionaUnaRiga(indice) {
   ok('con la sua pagina', PAGINA, appuntato.origine && appuntato.origine.pagina);
   console.log('   ' + JSON.stringify(appuntato.md.slice(0, 120)));
   ok('niente riquadro', false, /^>\s*\[!/.test(appuntato.md));
-  ok('e nemmeno una riga citata', false, appuntato.md.indexOf('\n> ') >= 0);
+  ok('la selezione è riconoscibile come citazione', true,
+    appuntato.md.startsWith('> ') || appuntato.md.startsWith('«*'));
   ok('c\'è il testo', true, appuntato.md.indexOf(scelto.trim().slice(0, 20)) >= 0 ||
     appuntato.md.length > 30);
   /* Il rimando c'è quando il materiale ha un numero; qui il documento viene dal

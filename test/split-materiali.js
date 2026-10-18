@@ -29,6 +29,7 @@ function harness(){
   function elemento(id){
     if(!elementi.has(id)){
       const el={id,value:'',innerHTML:'',textContent:'',hidden:false,offsetParent:true,options:[],style:{},
+        setAttribute(k,v){this[k]=v;},getAttribute(k){return this[k];},
         addEventListener(){},appendChild(o){this.options.push(o);},insertBefore(){},
         querySelector(sel){
           if(sel==='.mdb-edit')return this.campo||null;
@@ -48,6 +49,7 @@ function harness(){
       this.body='';const eventi={},opzioni={};
       const index=p=>this.body.split('\n').slice(0,p.line).reduce((n,r)=>n+r.length+1,0)+p.ch;
       const cm=this.codemirror={on(t,f){eventi[t]=f;},setOption(k,v){opzioni[k]=v;},getOption:k=>opzioni[k],
+        historySize:()=>({undo:0,redo:0}),clearHistory(){},
         getCursor(){return cm.cursor||{line:0,ch:0};},getScrollInfo(){return {top:cm.top||0,left:cm.left||0};},
         setCursor(p,ch){cm.cursor=typeof p==='number'?{line:p,ch:ch||0}:p;if(eventi.cursorActivity)eventi.cursorActivity();},
         scrollTo(x,y){cm.left=x;cm.top=y;},focus(){cm.focalizzato=true;},refresh(){},
@@ -77,7 +79,7 @@ function harness(){
     corsoAttivo:()=>corso,curMeta:()=>({courseId:corso}),modoAttivo:()=>'zaino',
     curCtx:()=>({courseId:corso,materiale:'',pagina:''}),notesApi:()=>api,
     bancoVisibile:id=>visibili.includes(id),bancoMostra:id=>aperti.push(id),bancoTogli:id=>{visibili=visibili.filter(x=>x!==id);},
-    toast:t=>messaggi.push(t),tendinaViva(){},tastiNelDom(){},barreSeparatori(){},zainoNavAggiorna(){},SEARCH:{},
+    toast:t=>messaggi.push(t),tendinaViva(){},tasti:String,tastiNelDom(){},barreSeparatori(){},zainoNavAggiorna(){},SEARCH:{},
     renderNoteMd:t=>t,escHtml:String,noteEtichetta:n=>n.title,noteEtichettaAltrove:n=>n.title,noteMateriale:n=>n.materiale||'',
     noteGroups:ns=>({qui:ns,altrove:[]}),noteInChapter:()=>true,PERSONALE:'Personale',
     noteCollegaCallout(){},openCalloutMenu(){},citaCorrente(){},apriMateriali(){},apriGuida(){},

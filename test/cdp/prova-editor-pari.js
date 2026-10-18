@@ -113,6 +113,21 @@ async function pulisci() {
     }
     console.log('  ok  tastiera e salvataggio scrivono nei due file distinti');
 
+    for (const i of [0,1]) {
+      const host=i?'#noteHost2':'#noteHost', altro=await corpo(1-i), prima=await corpo(i);
+      await c.val(`__pariStati()[${i}].mde.codemirror.clearHistory()`);
+      await scrivi(i,'\nPasso da annullare.');
+      await click(host+' .ncb-undo');
+      assert.equal(await corpo(i),prima,'Annulla toglie la scrittura dal suo editor');
+      assert.equal(await corpo(1-i),altro,'Annulla lascia intatto l’altro appunto');
+      await click(host+' .ncb-redo');
+      assert.equal(await corpo(i),prima+'\nPasso da annullare.','Ripeti rimette il testo');
+      await click(host+' .ncb-undo'); await scrivi(i,'\nStrada nuova.');
+      assert.equal(await c.val(`document.querySelector(${q(host+' .ncb-redo')}).getAttribute('aria-disabled')`),'true');
+      await salva(i);
+    }
+    console.log('  ok  Undo/Redo indipendenti nei due appunti e futuro azzerato da una nuova scrittura');
+
     const primo = await corpo(0);
     await scrivi(1, '\n');await click('#noteHost2 .ncb-emoji');
     await aspetta(`!!document.querySelector('#emojiPop[open] #emojiGrid button')`);
@@ -144,6 +159,10 @@ async function pulisci() {
     assert.equal(await corpo(0), primo);
     assert((await c.val(`document.querySelector('#noteHost2 .editor-preview-active').textContent`)).includes('Paragrafo modificato'));
     await salva(1);assert(disco(file[1]).includes('Paragrafo modificato nella seconda anteprima.'));
+    await click('#noteHost2 .ncb-undo');
+    assert(!(await c.val(`document.querySelector('#noteHost2 .editor-preview-active').textContent`)).includes('Paragrafo modificato'));
+    await click('#noteHost2 .ncb-redo');
+    assert((await c.val(`document.querySelector('#noteHost2 .editor-preview-active').textContent`)).includes('Paragrafo modificato'));
     await click('#noteHost2 .preview');
     console.log('  ok  l’anteprima del secondo editor modifica e salva il suo markdown');
 
@@ -156,6 +175,7 @@ async function pulisci() {
         s.dispatchEvent(new Event('change',{bubbles:true}));__pariStati()[${1-i}].mde.codemirror.focus();})()`);
       await click('#umOk');
       await aspetta(`__pariStati()[${i}].cur?.title===${q(titolo)}`);
+      assert.deepEqual(await c.val(`__pariStati()[${i}].mde.codemirror.historySize()`),{undo:0,redo:0},'il nuovo appunto non eredita la cronologia precedente');
       assert.equal(await aperto(1-i), altro, 'il dialogo Nuovo non sostituisce l’altro appunto');
       assert.equal(await c.val(`__pariStati()[${i}].cur.materiale`), '02 Biologia cellulare.pdf');
       const nuovo = await aperto(i), testo = 'Appunto nato nel riquadro ' + (i+1) + '.';

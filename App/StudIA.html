@@ -99,6 +99,7 @@
 <script src="assets/ripasso/sorgenti.js"></script>
 <script src="assets/appunti/elenco.js"></script>
 <script src="assets/appunti/scrivibile.js"></script>
+<script src="assets/appunti/citazione.js"></script>
 <script src="assets/onboarding/avvio.js"></script>
 <!-- Dati, non codice: le icone in base64 e la tavolozza delle emoji. Stanno
      prima dell'inline perché il renderer le legge appena parte. -->
@@ -446,6 +447,8 @@
      spiegare perché non fanno niente — un bottone `disabled` non lo emette. */
   .tbtn:disabled, .mtoolbar .mbtn:disabled,
   .tbtn[aria-disabled="true"], .mtoolbar .mbtn[aria-disabled="true"]{ opacity:.45; cursor:not-allowed; }
+  /* Le frecce usano un glifo testuale: il fallback OpenMoji le rendeva minuscole. */
+  .tb-cronologia{ font-family:Arial,sans-serif; font-size:calc(var(--tb-fs) * 1.5); line-height:1; letter-spacing:0; }
   /* La barretta che separa due gruppi di comandi. Una sola classe per tutte le
      barre: `.msep` resta come alias di quella della mappa, che la usava già. */
   .tbsep, .mtoolbar .msep{ width:1px; height:16px; flex:0 0 auto;
@@ -1677,7 +1680,7 @@
   :is(:is(#noteHost,#noteHost2) .editor-preview, :is(#noteHost,#noteHost2) .editor-preview-side, .uc-body,
       .myotes .nt-body, table.guida .g-out, #stampaFoglio .st-corpo) blockquote{
     margin:.7rem 0; padding:.1rem 0 .1rem .8rem; border-left:2px solid var(--line);
-    color:var(--muted); font-style:italic;
+    color:var(--ink); font-style:normal;
   }
   :is(:is(#noteHost,#noteHost2) .editor-preview, :is(#noteHost,#noteHost2) .editor-preview-side, .uc-body,
       .myotes .nt-body, table.guida .g-out, #stampaFoglio .st-corpo) blockquote>*:first-child{ margin-top:0; }
@@ -12046,7 +12049,10 @@ function ensureMde(s){
     element:noteEl('noteArea',s),autoDownloadFontAwesome:false,spellChecker:false,status:false,
     autofocus:false,forceSync:true,indentWithTabs:false,tabSize:2,sideBySideFullscreen:false,
     placeholder:'Scrivi qui il tuo appunto…',
-    toolbar:['bold','italic','heading','|','quote','unordered-list','ordered-list','|',
+    toolbar:[
+      {name:'annulla',title:'Annulla (⌘Z)',className:'ncb-undo tbtn no-disable',action:function(){ noteCronologia(s,false); }},
+      {name:'ripeti',title:'Ripeti (⌘⇧Z)',className:'ncb-redo tbtn no-disable',action:function(){ noteCronologia(s,true); }},
+      '|','bold','italic','heading','|','quote','unordered-list','ordered-list','|',
       {name:'callout',title:'Inserisci un riquadro (callout)',className:'ncb-callout',
        action:function(ed){ openCalloutMenu(host.querySelector('.ncb-callout'),ed.codemirror); }},
       {name:'emoji',title:'Inserisci un’emoji (OpenMoji)',className:'ncb-emoji',
@@ -12068,8 +12074,10 @@ function ensureMde(s){
   host.addEventListener('click',function(e){
     if(e.target.closest && e.target.closest('.editor-toolbar')) mdbChiudi(true,s);
   },true);
-  [['.ncb-callout','📜'],['.ncb-emoji','😀'],['.ncb-guida','?'],['.ncb-cita','🔖'],['.ncb-mat','📎']].forEach(function(p){
-    var b=host.querySelector(p[0]); if(b) b.textContent=p[1];
+  [['.ncb-undo','↶︎'],['.ncb-redo','↷︎'],['.ncb-callout','📜'],['.ncb-emoji','😀'],['.ncb-guida','?'],['.ncb-cita','🔖'],['.ncb-mat','📎']].forEach(function(p){
+    var b=host.querySelector(p[0]); if(!b) return;
+    if(p[0]==='.ncb-undo'||p[0]==='.ncb-redo') b.innerHTML='<span class="tb-cronologia" aria-hidden="true">'+p[1]+'</span>';
+    else b.textContent=p[1];
   });
   var tb=host.querySelector('.editor-toolbar');
   ['noteCtlTpl','noteCtlFineTpl'].forEach(function(id,i){
@@ -12079,6 +12087,7 @@ function ensureMde(s){
     if(i===0) tb.insertBefore(frammento,tb.firstChild); else tb.appendChild(frammento);
   });
   noteCollegaCallout(cm);
+  cm.on('changes',function(){ noteCronologiaComandi(s); });
   cm.setOption('extraKeys',Object.assign({},cm.getOption('extraKeys')||{}, {
     'Cmd-Shift-C':function(){ citaCorrente(s); },'Ctrl-Shift-C':function(){ citaCorrente(s); },
     'Cmd-S':function(){ noteSave(false,s); },'Ctrl-S':function(){ noteSave(false,s); }
@@ -12096,7 +12105,26 @@ function ensureMde(s){
   var pv=host.querySelector('.editor-toolbar button.preview'); if(pv) pv.title='Anteprima (⌘J)';
   try{ tastiNelDom(host); }catch(e){}
   refreshNoteUI(s);
+  noteCronologiaComandi(s);
   return s.mde;
+}
+function noteCronologiaComandi(s){
+  if(!s.mde) return;
+  var h=s.mde.codemirror.historySize(), host=noteHost(s);
+  [['undo','Annulla','⌘Z'],['redo','Ripeti','⌘⇧Z']].forEach(function(v){
+    var b=host.querySelector('.ncb-'+v[0]); if(!b) return;
+    b.setAttribute('aria-disabled',String(!h[v[0]]));
+    b.title=tasti((h[v[0]] ? v[1] : 'Niente da '+(v[0]==='undo'?'annullare':'ripetere'))+' ('+v[2]+')');
+    b.setAttribute('aria-label',v[1]+' nell’appunto');
+  });
+}
+function noteCronologia(s,ripeti){
+  if(!s.mde) return;
+  mdbChiudi(true,s); noteAttiva(s);
+  var cm=s.mde.codemirror, az=ripeti?'redo':'undo';
+  if(!cm.historySize()[az]){ toast('Niente da '+(ripeti?'ripetere':'annullare'),false); return; }
+  cm[az](); noteAnteprimaRidisegna(s); noteCronologiaComandi(s);
+  if(!s.mde.isPreviewActive()) cm.focus();
 }
 /* ===== SCRIVERE DENTRO L'ANTEPRIMA ========================================
  *
@@ -12498,8 +12526,9 @@ function noteCaricaCorpo(testo,s){
   s=s||noteStatoAttivo();
   if(!s.mde) return;
   s.caricando=true;
-  try{ s.mde.value(testo||''); }
+  try{ s.mde.value(testo||''); s.mde.codemirror.clearHistory(); }
   finally{ s.caricando=false; }
+  noteCronologiaComandi(s);
 }
 function noteStatoAttivo(){
   var visibili=noteStati().filter(function(s){ return typeof bancoVisibile==='function' && bancoVisibile(s.id); });
@@ -12761,6 +12790,8 @@ async function noteNew(anchor, origine, stile, evId, destinazione){
 function frammentoAppuntato(testo, ctx, origine, stile, evId){
   var t=String(testo==null?'':testo).replace(/\s+/g,' ').trim();
   if(!t) return '';
+  var intero=AppuntiCitazione.blocco(t,origine && origine.paragrafoIntero);
+  t=AppuntiCitazione.letterale(t);
   /* ⚠️ Il segno avvolge il testo e non tocca il rimando: `[==frase==](ev:…)` e
      `— [p. 7](pdf:03#p=7)` restano due cose distinte. Il primo dice COM'È
      segnato, il secondo DA DOVE viene, e fonderli darebbe un solo link che
@@ -12797,7 +12828,7 @@ function frammentoAppuntato(testo, ctx, origine, stile, evId){
     var testa=daPdf ? 'Dal documento' : 'Dal capitolo';
     return '> [!'+def.k+'] '+testa+'\n> '+t+(rimando ? ('\n> — '+rimando) : '')+'\n\n';
   }
-  return t+(rimando ? (' — '+rimando) : '')+'\n\n';
+  return AppuntiCitazione.componi(t,rimando,intero);
 }
 /* ===== CON CHE COSA SI APPUNTA ============================================
  *
@@ -12812,9 +12843,8 @@ function frammentoAppuntato(testo, ctx, origine, stile, evId){
  * solo per «questa frase, così» — chiedere prima lo stile e poi la frase
  * sarebbe un passaggio in più per la stessa intenzione.
  *
- * Finché non si sceglie, decide l'ORIGINE: da un documento senza riquadro (un
- * callout «Dal capitolo» su una frase presa da un PDF direbbe una cosa falsa),
- * da un capitolo la nota. Dopo la prima scelta comanda quella, ed è ricordata.
+ * Senza un riquadro scelto esplicitamente, Appunta distingue frasi e frammenti
+ * con AppuntiCitazione. La scelta manuale di un callout resta ricordata.
  */
 /* ⚠️ E ACCANTO ALLO STILE C'È LA CITAZIONE, che è una domanda diversa:
  * lo stile dice CON CHE CORNICE, la citazione se il frammento si porta dietro
@@ -12853,7 +12883,7 @@ function appuntaCitaScegli(v){
 function appuntaStileAttivo(origine){
   var s=appuntaStileScelto();
   if(s!==null) return s;
-  return (origine && origine.tipo==='pdf') ? '' : 'nota';
+  return '';
 }
 /** La riga dei riquadri, per il menu e per la barra: la stessa in tutte e due. */
 /**
@@ -12887,8 +12917,8 @@ function appuntaRiga(origine, spento){
   var attivo=appuntaStileAttivo(origine);
   var h='<div class="ctx-cals" role="group" aria-label="Come appuntare">';
   h+='<button class="ctx-cal" type="button" data-app="" aria-pressed="'+(attivo===''?'true':'false')+'"'+
-     (spento?' disabled':'')+' title="Appunta senza riquadro: testo e rimando"'+
-     ' aria-label="Appunta senza riquadro">\u00B6</button>';
+     (spento?' disabled':'')+' title="Appunta: citazione a blocco per le frasi, virgolette e corsivo per i frammenti"'+
+     ' aria-label="Appunta con citazione automatica">\u00B6</button>';
   CALLOUTS.forEach(function(c){
     h+='<button class="ctx-cal" type="button" data-app="'+escHtml(c.k)+'"'+
        ' aria-pressed="'+(attivo===c.k?'true':'false')+'"'+(spento?' disabled':'')+
@@ -12939,7 +12969,11 @@ function evidenzaCapitolo(e){
 function origineDaRange(range){
   var sup=range ? evSupDaRange(range) : null;
   if(sup && sup.tipo==='pdf') return { tipo:'pdf', file:sup.file, pagina:sup.pagina };
-  return null;
+  var nodo=range && range.commonAncestorContainer;
+  var el=nodo && (nodo.nodeType===1?nodo:nodo.parentElement);
+  var p=el && el.closest && el.closest('p');
+  var normalizza=function(t){ return String(t||'').replace(/\s+/g,' ').trim(); };
+  return p && normalizza(range.toString())===normalizza(p.textContent) ? {paragrafoIntero:true} : null;
 }
 /**
  * Accoda un frammento all'appunto APERTO, che è il gesto che mancava: finora
@@ -18929,6 +18963,7 @@ function mappaGrafo(){
 }
 
 function mappaRidisegna(){
+  mappaCronologiaComandi();
   var svg=$('#mappaSvg'), vuota=$('#mVuota');
   if(!svg||!mappaPronta()) return;
   mappaAmbiti();
@@ -19106,6 +19141,7 @@ function mappaApriMia(file){
       return mappaCaricaElenco().then(function(){ mappaAmbiti(); mappaRidisegna(); });
     }
     var m=r.mappa;
+    MAPPA.pila=MappaModifica.pila(20); // La cronologia appartiene al documento appena aperto.
     MAPPA.mia={ file:m.file||file, titolo:m.titolo||'', corso:p,
                 doc:m, grafo:{ titolo:m.titolo, nodi:m.nodi||[], archi:m.archi||[] },
                 sporca:false, vistaSporca:false, timer:null, seq:MAPPA.mia.seq||0, rev:0 };
@@ -19497,6 +19533,7 @@ function mappaLevaEtichetta(k, val){
   return String(val);
 }
 function mappaSincronizzaComandi(){
+  mappaCronologiaComandi();
   /* Le tendine diventano bottoni la prima volta che si passa di qui: la barra
      della mappa esiste da subito, ma il suo elenco no. */
   try{ tendinaViva($('#mAmbito'), { piccola:true, fissa:'Mappe' }); }catch(e){}
@@ -19982,10 +20019,22 @@ function mappaMemoriaAzione(az, i){
 
 /** ⌘Z, con l'etichetta di ciò che ha annullato: senza, l'unico modo di sapere
  *  che cosa è tornato indietro è cercarlo a schermo. */
-function mappaAnnulla(){
-  if(!mappaMie() || !MAPPA.pila) return;
-  var r=MappaModifica.annulla(MAPPA.pila);
-  if(!r){ toast('Niente da annullare', false); return; }
+function mappaCronologiaComandi(){
+  [['mAnnulla','Annulla','⌘Z',MappaModifica.daAnnullare],['mRipeti','Ripeti','⌘⇧Z',MappaModifica.daRifare]].forEach(function(v){
+    var b=document.getElementById(v[0]); if(!b) return;
+    var az=mappaMie() && MAPPA.mia.grafo ? v[3](MAPPA.pila) : '';
+    b.hidden=!mappaMie(); b.setAttribute('aria-disabled',String(!az));
+    b.title=tasti((az ? v[1]+': '+az : 'Niente da '+(v[0]==='mAnnulla'?'annullare':'ripetere'))+' ('+v[2]+')');
+  });
+}
+function mappaAnnulla(){ mappaCronologia(false); }
+function mappaRipeti(){ mappaCronologia(true); }
+function mappaCronologia(ripeti){
+  if(!mappaMie() || !MAPPA.mia.grafo) return;
+  if(MAPPA.rinomina) mappaRinominaChiudi(true);
+  var r=MappaModifica[ripeti?'rifai':'annulla'](MAPPA.pila,MAPPA.mia.grafo,
+    {vista:mappaVistaVersoFile(),memorie:mappaMemorie()});
+  if(!r){ toast('Niente da '+(ripeti?'ripetere':'annullare'), false); return; }
   MAPPA.mia.grafo=r.grafo;
   MAPPA.sel=null;
   /* La vista c'è solo se l'operazione annullata la toccava: assente vuol dire
@@ -19997,7 +20046,7 @@ function mappaAnnulla(){
   mappaSincronizzaComandi();
   mappaTocca();
   mappaRidisegna();
-  toast('Annullato: '+(r.etichetta||'ultima modifica'), true);
+  toast((ripeti?'Ripetuto: ':'Annullato: ')+(r.etichetta||'ultima modifica'), true);
 }
 
 /* ---- rinominare: una casella HTML sopra la card ---- */
@@ -20704,6 +20753,8 @@ document.addEventListener('click', function(e){
   if(e.target.closest('#mStampa')){ stampaMappa(); return; }
   if(e.target.closest('#mPdf')){ salvaPdf('mappa'); return; }
   if(e.target.closest('#mCestino')){ mappaEliminaMappa(); return; }
+  if(e.target.closest('#mAnnulla')){ mappaAnnulla(); return; }
+  if(e.target.closest('#mRipeti')){ mappaRipeti(); return; }
   var bm=e.target.closest('#mMotore button[data-motore]');
   if(bm){ mappaMotore(bm.getAttribute('data-motore')); return; }
   var bmem=e.target.closest('#mMemorie button[data-mem]');
@@ -21001,8 +21052,9 @@ document.addEventListener('keydown', function(e){
   if(!mappaAperta() || !mappaMie() || MAPPA.rinomina) return;
   var t=e.target;
   if(t && t.closest && t.closest('input, select, textarea, [contenteditable="true"], .CodeMirror')) return;
-  if(e.metaKey && e.key.toLowerCase()==='z' || e.ctrlKey && e.key.toLowerCase()==='z'){
-    e.preventDefault(); mappaAnnulla(); return;
+  if((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase()==='z'){
+    if(t && t.closest && t.closest('#noteHost,#noteHost2')) return;
+    e.preventDefault(); if(e.shiftKey) mappaRipeti(); else mappaAnnulla(); return;
   }
   if(!MAPPA.sel) return;
   if(e.key==='Tab'){ e.preventDefault(); mappaFiglio(); return; }
@@ -21800,6 +21852,9 @@ window.addEventListener('keydown', function(e){
     <span class="msep" aria-hidden="true"></span>
     <button class="mbtn" id="mRinomina" type="button" hidden title="Rinomina questa mappa" aria-label="Rinomina questa mappa">&#9998;</button>
     <button class="mbtn" id="mCestino" type="button" hidden title="Elimina questa mappa" aria-label="Elimina questa mappa">&#128465;</button>
+    <span class="msep" aria-hidden="true"></span>
+    <button class="mbtn" id="mAnnulla" type="button" aria-disabled="true" title="Annulla (⌘Z)" aria-label="Annulla nella mappa"><span class="tb-cronologia" aria-hidden="true">↶︎</span></button>
+    <button class="mbtn" id="mRipeti" type="button" aria-disabled="true" title="Ripeti (⌘⇧Z)" aria-label="Ripeti nella mappa"><span class="tb-cronologia" aria-hidden="true">↷︎</span></button>
     <span class="msep" aria-hidden="true"></span>
     <span class="metichetta" id="mMotoreLab">Motore</span>
     <span class="mseg" id="mMotore" role="group" aria-label="Motore di disposizione">

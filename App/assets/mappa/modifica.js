@@ -628,7 +628,7 @@
    *            ricorda più che cosa stava annullando.
    */
   function pila(max) {
-    return { max: Math.max(1, +max || TETTO), stati: [] };
+    return { max: Math.max(1, +max || TETTO), stati: [], futuri: [] };
   }
 
   /**
@@ -653,9 +653,8 @@
      cambia sotto. */
   function annullabile(p, etichettaAzione, g, extra) {
     if (!p || !p.stati) return p;
-    var voce = { etichetta: String(etichettaAzione == null ? '' : etichettaAzione), grafo: copia(g) };
-    if (extra && typeof extra === 'object') { try { voce.extra = JSON.parse(JSON.stringify(extra)); } catch (e) {} }
-    p.stati.push(voce);
+    p.futuri = []; // Una nuova modifica apre una strada diversa da quella annullata.
+    p.stati.push(fotografia(etichettaAzione, g, extra));
     while (p.stati.length > p.max) p.stati.shift();   // il più vecchio se ne va per primo
     return p;
   }
@@ -668,12 +667,31 @@
    *          `extra` c'è solo se chi ha messo lo stato l'aveva dato: assente vuol
    *          dire «questa operazione toccava il solo grafo», non «stato vuoto».
    */
-  function annulla(p) {
-    if (!p || !p.stati || !p.stati.length) return null;
-    var s = p.stati.pop();
-    var out = { grafo: s.grafo, etichetta: s.etichetta };
-    if (s.extra) out.extra = s.extra;
-    return out;
+  function fotografia(etichetta, g, extra) {
+    var s = { etichetta: String(etichetta == null ? '' : etichetta), grafo: copia(g) };
+    if (extra && typeof extra === 'object') s.extra = JSON.parse(JSON.stringify(extra));
+    return s;
+  }
+
+  // Il chiamante passa lo stato corrente: il ritorno non dipende dal DOM né dal disco.
+  function passo(p, da, a, g, extra) {
+    if (!p || !p[da] || !p[da].length) return null;
+    var s = p[da].pop();
+    if (g) {
+      if (!p[a]) p[a] = [];
+      p[a].push(fotografia(s.etichetta, g, extra));
+      while (p[a].length > p.max) p[a].shift();
+    }
+    return s;
+  }
+  function annulla(p, g, extra) {
+    return passo(p, 'stati', 'futuri', g, extra);
+  }
+  function rifai(p, g, extra) {
+    return passo(p, 'futuri', 'stati', g, extra);
+  }
+  function daRifare(p) {
+    return p && p.futuri && p.futuri.length ? p.futuri[p.futuri.length - 1].etichetta : '';
   }
 
   /** Che cosa annullerebbe il prossimo ⌘Z, per scriverlo nel menu. `''` se la
@@ -685,6 +703,7 @@
 
   function svuota(p) {
     if (p && p.stati) p.stati.length = 0;
+    if (p && p.futuri) p.futuri.length = 0;
     return p;
   }
 
@@ -707,7 +726,7 @@
     etichetta: etichetta, direzione: direzione,
     colora: colora, sposta: sposta,
     fissato: fissato, libera: libera, liberaTutte: liberaTutte,
-    pila: pila, annullabile: annullabile, annulla: annulla,
-    daAnnullare: daAnnullare, svuota: svuota, descriviAzione: descriviAzione
+    pila: pila, annullabile: annullabile, annulla: annulla, rifai: rifai,
+    daAnnullare: daAnnullare, daRifare: daRifare, svuota: svuota, descriviAzione: descriviAzione
   };
 }));

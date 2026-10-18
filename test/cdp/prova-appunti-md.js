@@ -101,7 +101,7 @@ const rendi = (md) => val(`renderNoteMd(${JSON.stringify(md)})`);
     const out={ filo:q.borderLeftWidth, corsivo:q.fontStyle, scorre:p.overflowX, aCapo:p.whiteSpace };
     d.remove(); return out; })()`);
   ok('la citazione porta il suo filo a sinistra', '2px', stili.filo);
-  ok('…ed è in corsivo', 'italic', stili.corsivo);
+  ok('…e il blocco resta in tondo, il corsivo distingue i frammenti', 'normal', stili.corsivo);
   ok('il codice scorre invece di allargare la pagina', 'auto', stili.scorre);
   ok('…e non va a capo dove capita', 'pre', stili.aCapo);
 
