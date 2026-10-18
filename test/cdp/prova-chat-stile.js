@@ -72,21 +72,25 @@ const RILEVA = `((selettori) => {
   const sh3d = getComputedStyle(sonda).boxShadow;
   sonda.remove();
   /* Ciò che galleggia PUÒ avere l'ombra: è la sola eccezione, ed è chiusa. */
-  const flottanti = '.zchat-window, .zchat-rename';
+  const flottanti = '.zchat-window, .zchat-rename, .zchat-source-tip';
   const guasti = [];
   const nome = el => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (el.className && typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\\s+/).join('.') : '');
   document.querySelectorAll(selettori).forEach(el => {
     const r = el.getBoundingClientRect();
     if (!r.width && !r.height) return;
     const s = getComputedStyle(el);
-    if (s.borderTopLeftRadius !== '0px' || s.borderBottomRightRadius !== '0px')
+    const selettoreFonte = el.matches('.zchat-source-picker input[type="checkbox"]');
+    const rimando = el.matches('.zchat-citation');
+    // I selettori circolari e i numeri in apice hanno la misura del testo:
+    // scelta esplicita dell’utente, non comandi della toolbar.
+    if (!selettoreFonte && (s.borderTopLeftRadius !== '0px' || s.borderBottomRightRadius !== '0px'))
       guasti.push('ANGOLO ' + nome(el) + ' ' + s.borderTopLeftRadius);
     const interattivo = ['button','input','select','textarea'].includes(el.tagName.toLowerCase());
     /* Una textarea cresce con quello che ci si scrive: quello che deve stare
        in famiglia è il MINIMO dichiarato. Se non è dichiarato si misura
        l'altezza vera — così una textarea senza "min-height" resta un rosso. */
     const alto = el.tagName.toLowerCase() === 'textarea' ? (parseFloat(s.minHeight) || r.height) : r.height;
-    if (interattivo && !famiglie.some(f => Math.abs(alto - f) <= 1.2))
+    if (interattivo && !selettoreFonte && !rimando && !famiglie.some(f => Math.abs(alto - f) <= 1.2))
       guasti.push('ALTEZZA ' + nome(el) + ' ' + Math.round(alto * 10) / 10 + 'px');
     if (s.boxShadow !== 'none') {
       if (!el.matches(flottanti)) guasti.push('OMBRA A RIPOSO ' + nome(el));

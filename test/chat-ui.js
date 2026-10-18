@@ -23,6 +23,18 @@ assert.deepEqual(citate('Come dice Biologia.pdf (pag. 30) e cellula.md.'), ['[MA
 assert.deepEqual(citate('Fonte: https://it.wikipedia.org/wiki/Mitosi'), ['[Wikipedia: Mitosi]']);
 assert.deepEqual(citate('Una risposta senza riferimenti a Biologia.'), []);
 assert.deepEqual(citedSources('qualcosa', undefined), []);
+// Gemini può ripetere l’etichetta completa al posto dell’alias: è sempre la
+// pagina ricevuta dal backend, anche quando il modello la mette fra backtick.
+const pagineRag = [1, 2].map(page => ({sourceId:'fonte-energia', revision:'versione',
+  file:'MATERIALI/PDF/01 Energia nelle cellule.pdf', page, citation:'[S'+page+']',
+  label:'[MATERIALI/PDF/01 Energia nelle cellule.pdf, p. '+page+']'}));
+assert.deepEqual(citedSources('L’ATP trasferisce energia `[MATERIALI/PDF/01 Energia nelle cellule.pdf, p. 1]`. I mitocondri partecipano alla respirazione `[MATERIALI/PDF/01 Energia nelle cellule.pdf, p. 2]`.', pagineRag).map(s=>s.citation), ['[S1]','[S2]']);
+const citazioni = require('../App/assets/chat/citazioni');
+assert.equal(citazioni.normalizza('ATP `'+pagineRag[0].label+'` e [S2].',pagineRag),'ATP [S1] e [S2].');
+assert.equal(citazioni.numerata('Prima [S2], poi [S1], ancora [S2].',pagineRag),'Prima ¹, poi ², ancora ¹.');
+assert.deepEqual(citedSources('Pagina sbagliata [MATERIALI/PDF/01 Energia nelle cellule.pdf, p. 10], alias inventato [S10] e nome in prosa Energia nelle cellule.pdf.',pagineRag),[]);
+assert.equal(citazioni.normalizza('[S1] [S10]',pagineRag),'[S1] [S10]');
+assert.equal(citazioni.numerata('[S1] [S3]',[...pagineRag,{...pagineRag[0],citation:'[S3]'}]),'¹ ¹','due passaggi della stessa pagina condividono la nota');
 // Il nome iniziale resta datato anche quando la prima domanda contiene dati privati.
 const quando = new Date(2026, 8, 6, 16, 7);
 assert.equal(datedTitle(quando), 'Chat del 06/09/2026, 16:07');

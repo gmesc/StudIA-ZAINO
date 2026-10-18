@@ -16,9 +16,9 @@ La chat usa esclusivamente lo zaino aperto. Il bottone nella barra superiore apr
 
 Ad ogni invio vengono riletti gli appunti e i materiali attuali dello zaino: aggiunte, modifiche e rimozioni entrano quindi nella richiesta successiva. Il contenuto inviato al provider comprende la domanda, una parte della cronologia, le preferenze del profilo e una selezione di documenti/appunti. Prima dell’invio vengono salvati entrambi gli editor aperti; se il salvataggio fallisce, l’invio viene bloccato conservando la domanda.
 
-I PDF vengono letti localmente con il PDF.js già incluso nell’app, anche se non sono mai stati aperti. Non si avviano OCR, trascrizioni o pipeline di corsi e non si generano indici persistenti. Le pagine senza testo vengono segnalate. Sono inclusi anche file UTF-8 `.txt`, `.text`, `.md`, `.markdown`, `.csv` e `.tsv` in `MATERIALI` e `APPUNTI`; cartelle di indici e trascrizioni vengono escluse.
+I PDF vengono letti localmente con il PDF.js già incluso nell’app, anche se non sono mai stati aperti. Non si avviano OCR, trascrizioni o pipeline di corsi. Le pagine senza testo vengono segnalate. Sono inclusi anche file UTF-8 `.txt`, `.text`, `.md`, `.markdown`, `.csv` e `.tsv` in `MATERIALI` e `APPUNTI`; cartelle di indici e trascrizioni vengono escluse. Estratti e vettori ricostruibili sono conservati nella cache locale dello zaino.
 
-La selezione usa i termini della domanda, senza embeddings. I passaggi includono nome del file e, per i PDF, numero di pagina. A parità di rilevanza la selezione distribuisce i passaggi tra le fonti. Sotto la risposta il riquadro «Fonti» elenca soltanto le fonti che il testo cita (citation esatta, URL o nome del file con la pagina vicina); se non ne cita nessuna lo dichiara con «Nessuna fonte citata». Il JSON e la copia Markdown conservano invece tutte le fonti inviate. Gli avvisi della chat dichiarano fonti illeggibili e limiti raggiunti.
+La selezione combina termini della domanda e similarità semantica quando il modello e l’indice locale sono pronti; altrimenti usa il recupero lessicale e lo dichiara. Il filtro delle fonti precede estrazione e ricerca. I passaggi includono nome del file e, per i PDF, numero di pagina. Sotto la risposta sono elencate soltanto le fonti effettivamente citate; se non ne riconosce nessuna lo dichiara con «Nessuna fonte citata». Il JSON e la copia Markdown conservano invece tutte le fonti inviate. Gli avvisi dichiarano fonti illeggibili, copertura semantica e limiti raggiunti.
 
 | Limite | Valore |
 | --- | --- |
@@ -36,6 +36,14 @@ La selezione usa i termini della domanda, senza embeddings. I passaggi includono
 
 Il chatbot riceve una selezione, non l’intero zaino. Una domanda con termini o riferimenti più precisi migliora la ricerca nei materiali lunghi. I messaggi già presenti nella cronologia possono parlare di materiali successivamente rimossi: il prompt richiede di usare il contesto più recente per stabilire quali fonti siano ancora disponibili.
 
+## Fonti, citazioni e studio
+
+Il bottone con l’icona elenco nella toolbar della chat apre **Fonti selezionate**: il contatore mostra quante fonti sono ammesse oppure «Tutte». Il suggerimento al passaggio del mouse spiega la scelta. I selettori sono cerchi con un pallino verde; mantengono il comportamento di checkbox per selezionare più documenti. Wikipedia richiede il consenso nello stesso pannello.
+
+Le citazioni nella risposta sono numeri in apice cliccabili. L’elenco **Fonti citate** rimane visibile sotto il testo, in ordine di prima citazione e senza duplicare la stessa pagina. Numeri ed elenco aprono la fonte verificando identità e revisione. Il riconoscimento condiviso accetta sia gli alias interni sia l’etichetta completa inviata al modello, anche fra backtick: funziona anche nelle risposte già salvate. Nomi, pagine e alias inventati non acquistano un collegamento. La copia negli appunti conserva i numeri e l’elenco con i rimandi PDF.
+
+**Cerca e studia le fonti** contiene la ricerca locale per parole/significato, le schede (sintesi, concetti, prerequisiti, domande, argomenti e prove) e l’accesso a interrogazione/ripasso. **Indicizza sul dispositivo** prepara la ricerca semantica; senza indice rimane disponibile il recupero lessicale. Indice e ricerca non chiamano il provider. Schede, domande e riscontro sul tentativo usano il provider della chat. Le note sul recupero sono espandibili e distinte dall’elenco delle fonti citate.
+
 ## Ruoli e adattamenti
 
 **Tutor socratico** guida con una domanda e indizi progressivi, chiedendo un tentativo prima della soluzione. **Spiegamelo** spiega e può integrare Wikipedia. **Chiedimelo** propone una domanda alla volta, aspetta la risposta e dà un riscontro prima di proseguire.
@@ -52,6 +60,6 @@ Le operazioni su disco validano zaino e identificatori, rifiutano collegamenti s
 
 ## Verifica
 
-Eseguire `npm run test:ui` per le prove sull'app viva: `prova-chat-zaino.js` (i gesti) e `prova-chat-stile.js` (il vestito). La seconda misura nei due temi che la chat non abbia angoli tondi, che ogni comando stia su una delle due altezze del sistema (`--tb-h` in barra, `--ctl-h` altrove), che l'ombra sia `--sh-3d` e solo su ciò che galleggia, che ogni stack di font tenga `--emoji-font` prima del generico e che la testa della finestra sia la `.tbar` dell'app con la sua grammatica.
+Eseguire `npm run test:ui` per la suite dello zaino sintetico, inclusi `prova-chat-zaino.js` (i gesti), `prova-chat-stile.js` (il vestito) e `prova-chat-fonti.js` (citazioni complete, apici, elenco, pagine e selettori). La prova di stile misura nei due temi gli angoli vivi delle superfici, le due altezze dei comandi (`--tb-h` in barra, `--ctl-h` altrove), l’ombra `--sh-3d` solo sugli elementi flottanti, gli stack di font e la grammatica `.tbar`. I selettori circolari e i rimandi testuali seguono le proprie misure. Il modello reale si abilita con `STUDIA_RAG_MODEL`; il runner si rifiuta di riusare una porta occupata.
 
 Eseguire inoltre `node test/chat-profili.js` e `node test/chat.js`. I test usano provider e Wikipedia simulati, un PDF reale generato localmente e vault temporanei. Verificano aggiornamento del contesto, adattamenti del profilo, ruoli, fonti, persistenza, errori, annullamento, concorrenza, isolamento e rifiuto dei collegamenti simbolici. Non richiedono chiavi API.

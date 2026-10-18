@@ -44,7 +44,7 @@ async function scegli(id,value){await c.val(`(()=>{const el=document.getElementB
  assert.equal((await c.val('window.vault.chat.settings()')).model,'modello-locale-di-prova');
  await click('#settingsClose');await click('#chatBtn');
  await aspetta(`!document.getElementById('zchatInput').disabled`);
- assert.equal(await c.val(`document.querySelectorAll('#zchatHandle button').length`),4);
+ assert.deepEqual(await c.val(`[...document.querySelectorAll('#zchatHandle button')].map(e=>e.id)`),['zchatNew','zchatScopeButton','zchatSettings','zchatCollapse','zchatClose']);
  assert.equal(await c.val(`document.querySelectorAll('#zchatHandle select').length`),1);
  assert.equal(await c.val(`document.querySelectorAll('#zchatProfile,#zchatProvider,#zchatModel,#zchatSession').length`),0);
  const dataDir=path.join(path.dirname(vault),'dati');

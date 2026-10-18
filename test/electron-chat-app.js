@@ -18,7 +18,7 @@ provider.rispondi = async ({messages,signal,system}) => {
     const cancel=()=>{clearTimeout(timer);reject(new Error('Risposta interrotta.'));};
     if(signal.aborted)cancel();else signal.addEventListener('abort',cancel,{once:true});
   });
-  if(ultimo.startsWith('Prova citazione')) return {text:'Il passaggio citato è [S1]. Alias inventato [S999].'};
+  if(ultimo.startsWith('Prova citazione')) return {text:'Il passaggio citato è `[MATERIALI/PDF/01 Botanica.pdf, p. 1]`. Seconda pagina `[MATERIALI/PDF/01 Botanica.pdf, p. 2]`. Alias inventato [S999].'};
   return {text:'La **fotosintesi** permette alle piante di trasformare la luce solare in energia chimica. La clorofilla assorbe energia luminosa.\n\nQuale parte di questo passaggio vuoi approfondire?'};
 };
 // Il click TTS attraversa il ponte reale; l'adattatore produce audio silenzioso

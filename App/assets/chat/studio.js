@@ -5,7 +5,8 @@
   const api=window.vault.rag;
   const box=document.createElement('details');box.id='zstudio';box.className='zchat-scope zstudio';
   box.innerHTML=`<summary>Cerca e studia le fonti</summary>
-   <p class="zchat-hint">La ricerca avviene sul dispositivo, sulle fonti selezionate sopra. Dopo il download del modello funziona anche senza rete.</p>
+   <p class="zchat-hint"><strong>Trova un passaggio per significato.</strong> Premi «Indicizza sul dispositivo», poi scrivi ciò che cerchi: la ricerca usa le fonti scelte con l’icona elenco nella toolbar e funziona anche senza rete.</p>
+   <p class="zchat-hint"><strong>Studia i materiali.</strong> Qui sotto puoi creare sintesi, concetti e domande, oppure aprire interrogazione e ripasso. Queste attività usano il tuo provider AI.</p>
    <div class="zstudio-actions"><button class="tbtn" id="zragInstall" type="button">Scarica modello · 346 MB</button><button class="tbtn" id="zragIndex" type="button">Indicizza sul dispositivo</button><button class="tbtn" id="zragCancel" type="button">Interrompi</button><button class="tbtn" id="zragReset" type="button">Ricostruisci indice</button></div>
    <p id="zragStatus" role="status" class="zchat-hint"></p>
    <form id="zragForm" class="zstudio-actions"><label for="zragQuery" class="zchat-sr">Cerca nei materiali per parole o significato</label><input class="ctl-input" id="zragQuery" placeholder="Cerca nei materiali…" maxlength="12000"><button class="tbtn" type="submit">Cerca</button></form>

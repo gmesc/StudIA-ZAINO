@@ -11,34 +11,14 @@
   }
 }(typeof window !== 'undefined' ? window : this, function () {
   'use strict';
+  const citations = typeof module === 'object' && module.exports ? require('./citazioni') : window.ZainoCitazioni;
   function safeLink(value) {
     try {
       const url = new URL(String(value || ''));
       return url.protocol === 'https:' && !url.username && !url.password ? url.href : '';
     } catch (_) { return ''; }
   }
-  // Il riquadro «Fonti» mostra solo ciò che la risposta cita davvero: i passaggi
-  // inviati al modello sono molti di più, ed elencarli tutti faceva credere che
-  // la risposta si reggesse su fonti che non ha mai nominato.
-  // ponytail: riconoscimento testuale; un intervallo «pp. 3-5» conta solo p. 3.
-  function citedSources(text, sources) {
-    const norm = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
-    const body = norm(text);
-    return (sources || []).filter(source => {
-      if (source.sourceId) return String(text || '').includes(source.citation);
-      const inner = norm(source.citation).replace(/^\[|\]$/g, '').trim();
-      if (inner && body.includes(inner)) return true;
-      if (source.url && body.includes(norm(source.url))) return true;
-      const name = norm(String(source.file || '').split('/').pop()).trim();
-      if (!name) return false;
-      for (let i = body.indexOf(name); i >= 0; i = body.indexOf(name, i + 1)) {
-        if (!source.page) return true;
-        // La pagina deve seguire il nome da vicino: «p. 3», «pag. 3», «pagina 3».
-        if (new RegExp('^[^\\n]{0,12}?\\bp(?:ag(?:ina)?)?\\.? ?' + source.page + '(?!\\d)').test(body.slice(i + name.length))) return true;
-      }
-      return false;
-    });
-  }
+  const citedSources = citations.citate;
   function sourceLabel(source) {
     const name = source.file || source.title || '';
     const citation = source.citation || '';
@@ -51,7 +31,7 @@
   }
   function speechText(message) {
     // Si legge soltanto la risposta mostrata, mai metadati o ragionamento del provider.
-    return message?.role === 'assistant' ? String(message.content || '').trim() : '';
+    return message?.role === 'assistant' ? citations.numerata(message.content,message.context?.sources).trim() : '';
   }
   function notesSaved(first, second, flushed) {
     return flushed !== false && !first?.dirty && !second?.dirty;
@@ -159,17 +139,24 @@
         <label class="zchat-role-label"><span class="zchat-sr">Ruolo del tutor</span><select id="zchatRole"><option value="socratico">Socratico</option><option value="spiegamelo">Spiegamelo</option><option value="chiedimelo">Chiedimelo</option></select></label>
         <i class="tbsep" aria-hidden="true"></i>
         <button class="tbtn" type="button" id="zchatNew" aria-label="Nuova conversazione" title="Nuova conversazione">+</button>
+        <span class="zchat-source-tool">
+          <button class="tbtn" type="button" id="zchatScopeButton" aria-label="Scegli le fonti della chat" aria-expanded="false" aria-controls="zchatScope" aria-describedby="zchatScopeTip">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12"/><circle cx="3.5" cy="6" r=".7"/><circle cx="3.5" cy="12" r=".7"/><circle cx="3.5" cy="18" r=".7"/></svg>
+            <span id="zchatScopeCount" aria-hidden="true">Tutte</span>
+          </button>
+          <span id="zchatScopeTip" class="zchat-source-tip" role="tooltip">Scegli i PDF e gli appunti che il tutor può usare in questa conversazione.</span>
+        </span>
         <span class="tbspazio"></span>
         <button class="tbtn" type="button" id="zchatSettings" aria-label="Impostazioni AI" title="Impostazioni AI">⚙</button>
         <button class="tbtn" type="button" id="zchatCollapse" aria-label="Collassa la chat" aria-expanded="true" title="Collassa la chat">−</button>
         <button class="tbtn" type="button" id="zchatClose" aria-label="Chiudi la chat" title="Chiudi la chat">×</button>
       </div>
-      <details id="zchatScope" class="zchat-scope"><summary id="zchatScopeTitle">Fonti: tutto lo zaino</summary>
+      <section id="zchatScope" class="zchat-scope zchat-source-picker" aria-labelledby="zchatScopeTitle" hidden><strong id="zchatScopeTitle">Fonti: tutto lo zaino</strong>
         <label><input id="zchatScopeAll" type="checkbox" checked> Tutto lo zaino</label>
         <div id="zchatScopeList" class="zchat-scope-list"></div>
         <label><input id="zchatScopeWiki" type="checkbox" checked> Consenti Wikipedia in Spiegamelo</label>
         <p id="zchatScopeStatus" class="zchat-hint" role="status"></p>
-      </details>
+      </section>
       <div id="zchatMessages" class="zchat-messages" role="log" aria-label="Messaggi" aria-live="polite" aria-relevant="additions"></div>
       <form id="zchatForm" class="zchat-composer">
         <p id="zchatStatus" class="zchat-hint" role="status" aria-live="polite"></p>
@@ -184,6 +171,8 @@
       $('zchatScopeAll').checked = state.scope.mode === 'all';
       $('zchatScopeWiki').checked = state.scope.wikipedia;
       $('zchatScopeTitle').textContent = state.scope.mode === 'all' ? 'Fonti: tutto lo zaino' : 'Fonti selezionate: ' + state.scope.sourceIds.length;
+      $('zchatScopeCount').textContent = state.scope.mode === 'all' ? 'Tutte' : state.scope.sourceIds.length;
+      $('zchatScopeButton').setAttribute('aria-label', $('zchatScopeTitle').textContent + '. Scegli le fonti della chat');
       const list = $('zchatScopeList'); list.replaceChildren();
       state.sources.forEach(source => {
         const label = el('label'), check = el('input'); check.type = 'checkbox'; check.dataset.sourceId = source.id;
@@ -193,7 +182,8 @@
           state.scope.sourceIds = Array.from(list.querySelectorAll('input:checked')).map(c => c.dataset.sourceId);
           saveScope();
         });
-        label.append(check, document.createTextNode(source.file)); list.append(label);
+        const name = el('span',source.file.split('/').pop()); name.title = source.file;
+        label.append(check,name); list.append(label);
       });
       $('zchatScopeAll').disabled = $('zchatScopeWiki').disabled = state.sending || state.scopeSaving;
     }
@@ -216,6 +206,11 @@
       state.scope = { mode: $('zchatScopeAll').checked ? 'all' : 'selected', sourceIds: [], wikipedia: false }; saveScope();
     });
     $('zchatScopeWiki').addEventListener('change', () => { state.scope.wikipedia = $('zchatScopeWiki').checked; saveScope(); });
+    function showScope(open) {
+      $('zchatScope').hidden = !open;
+      $('zchatScopeButton').setAttribute('aria-expanded',String(open));
+    }
+    $('zchatScopeButton').addEventListener('click', () => showScope($('zchatScope').hidden));
     async function openCitation(message, source) {
       const zaino = state.zaino, epoch = state.epoch, id = state.session?.id;
       try {
@@ -228,24 +223,34 @@
         if (target.kind === 'pdf') window.openPdf?.(target.file.split('/').pop(), result.page || 1, target.file.split('/').pop());
         else if (target.kind === 'appunto') { window.noteApriAttivo?.(target.file.slice('APPUNTI/'.length)); }
         else { status('zchatStatus', target.file + ': ' + result.quote); return; }
-        status('zchatStatus', result.quote ? 'Passaggio citato: ' + result.quote : 'Fonte aperta.');
+        status('zchatStatus', 'Fonte aperta: ' + target.file.split('/').pop() + (result.page ? ' · p. '+result.page : '') + '.');
       } catch (error) { if (current(epoch, zaino)) status('zchatStatus', errorText(error), true); }
     }
-    function citationButton(message, source) {
-      const button = el('button', source.citation, 'tbtn zchat-citation'); button.type = 'button';
+    function citationButton(message, source, number) {
+      const button = el('button', number || source.citation, number ? 'zchat-citation zchat-citation-inline' : 'tbtn zchat-citation'); button.type = 'button';
       button.title = sourceLabel(source) + (source.quote ? ' — ' + source.quote : '');
       button.setAttribute('aria-label', 'Apri ' + sourceLabel(source));
       button.addEventListener('click', () => openCitation(message, source)); return button;
     }
     function linkCitations(body, message) {
-      const sources = citedSources(message.content, message.context?.sources).filter(s => s.sourceId);
+      const sources = citedSources(message.content, message.context?.sources);
       const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT), nodes = [];
       while (walker.nextNode()) nodes.push(walker.currentNode);
       for (const node of nodes) {
-        const parts = node.nodeValue.split(/(\[S\d+\])/g);
-        if (parts.length === 1) continue;
+        const refs = citations.analizza(node.nodeValue,message.context?.sources).occorrenze;
+        if (!refs.length) continue;
         const fragment = document.createDocumentFragment();
-        for (const part of parts) { const source = sources.find(s => s.citation === part); fragment.append(source ? citationButton(message, source) : document.createTextNode(part)); }
+        let from = 0;
+        for (const ref of refs) {
+          fragment.append(document.createTextNode(node.nodeValue.slice(from,ref.start)));
+          const sup = el('sup',undefined,'zchat-citation-ref'), number = sources.findIndex(s=>citations.chiave(s)===citations.chiave(ref.source))+1;
+          if (ref.source.sourceId) sup.append(citationButton(message,sources[number-1],number));
+          else if (safeLink(ref.source.url)) {
+            const a=el('a',number,'zchat-citation-inline');a.href=safeLink(ref.source.url);a.target='_blank';a.rel='noopener noreferrer';a.title=sourceLabel(ref.source);sup.append(a);
+          } else { sup.textContent=number;sup.title=sourceLabel(ref.source); }
+          fragment.append(sup);from=ref.end;
+        }
+        fragment.append(document.createTextNode(node.nodeValue.slice(from)));
         node.replaceWith(fragment);
       }
     }
@@ -417,22 +422,25 @@
       if (!context) return;
       const sent = context.sources || [], sources = citedSources(text, sent), warnings = context.warnings || [];
       if (!sources.length && !warnings.length && !sent.length) return;
-      const details = el('details', undefined, 'zchat-sources');
+      const details = el('section', undefined, 'zchat-sources');
       // Se il modello non cita niente lo si dice: tacere il riquadro nasconderebbe
       // che la risposta non poggia su nessuna fonte riconoscibile.
-      details.appendChild(el('summary', sources.length ? 'Fonti · ' + sources.length + (warnings.length ? ' · Note' : '') : sent.length ? 'Nessuna fonte citata' + (warnings.length ? ' · Note' : '') : 'Note sulla risposta'));
+      details.appendChild(el('h4', sources.length ? 'Fonti citate' : sent.length ? 'Nessuna fonte citata' : 'Note sulla risposta'));
       if (!sources.length && sent.length) details.appendChild(el('p', 'La risposta non cita nessuno dei ' + sent.length + ' file o pagine ricevuti dallo zaino. Controllala sui documenti.', 'zchat-hint'));
       if (sources.length) {
-        const list = el('ul');
+        const list = el('ol');
         sources.forEach(source => {
           const li = el('li'); const href = safeLink(source.url);
-          if (href) { const a = el('a', sourceLabel(source)); a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; li.appendChild(a); }
-          else if (source.sourceId) { const button = citationButton(message, source); button.textContent = sourceLabel(source); li.appendChild(button); }
+          const label = (source.file || source.title || 'Fonte').split('/').pop() + (source.page ? ' · p. ' + source.page : '');
+          if (href) { const a = el('a', label); a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; li.appendChild(a); }
+          else if (source.sourceId) { const button = citationButton(message, source); button.textContent = label; li.appendChild(button); }
           else li.textContent = sourceLabel(source);
           list.appendChild(li);
         }); details.appendChild(list);
       }
-      if (warnings.length) details.appendChild(el('p', warnings.join('\n'), 'zchat-hint zchat-context-warning'));
+      if (warnings.length) {
+        const notes = el('details'); notes.append(el('summary','Note sul recupero delle fonti'),el('p',warnings.join('\n'),'zchat-hint zchat-context-warning')); details.append(notes);
+      }
       parent.appendChild(details);
     }
     function messageButton(text, label, className, message, action) {
@@ -518,15 +526,16 @@
         if (!['user','assistant'].includes(message.role)) return;
         const article = el('article', undefined, 'zchat-message zchat-message-' + message.role);
         article.setAttribute('aria-label', message.role === 'user' ? 'Tu' : 'Tutor AI');
-        const body = el('div', message.content || '', 'zchat-message-text');
+        const content = message.role === 'assistant' ? citations.normalizza(message.content,message.context?.sources) : message.content;
+        const body = el('div', content || '', 'zchat-message-text');
         if (message.role === 'assistant' && markdown) {
           try {
             const template = document.createElement('template');
-            template.innerHTML = markdown.mdToHtml(String(message.content || ''), true);
+            template.innerHTML = markdown.mdToHtml(String(content || ''), true);
             body.replaceChildren(copyFormatting(template.content, document)); body.classList.add('zchat-markdown');
           } catch (_) { /* Un testo non formattabile rimane leggibile per intero. */ }
         }
-        linkCitations(body, message); article.appendChild(body);
+        if(message.role === 'assistant')linkCitations(body, message); article.appendChild(body);
         if (message.status === 'error' || message.status === 'cancelled') article.appendChild(el('p', message.error || 'Risposta interrotta. Puoi inviare di nuovo il messaggio.', 'zchat-hint zchat-error'));
         drawSources(article, message.context, message.content, message);
         if (message.role === 'assistant' && speechText(message)) {
@@ -718,7 +727,7 @@
     });
     function setCollapsed(collapsed) {
       panel.classList.toggle('is-collapsed', collapsed);
-      $('zchatScope').hidden = collapsed; if(studio)studio.box.hidden=collapsed; $('zchatMessages').hidden = collapsed; $('zchatForm').hidden = collapsed;
+      if(collapsed)showScope(false); $('zchatScopeButton').hidden = collapsed; if(studio)studio.box.hidden=collapsed; $('zchatMessages').hidden = collapsed; $('zchatForm').hidden = collapsed;
       const button = $('zchatCollapse'); button.textContent = collapsed ? '□' : '−'; button.setAttribute('aria-expanded', String(!collapsed));
       button.title = collapsed ? 'Espandi la chat' : 'Collassa la chat'; button.setAttribute('aria-label', button.title);
       if (!collapsed) { const rect = panel.getBoundingClientRect(); move(rect.left, rect.top); resizeInput(); $('zchatInput').focus(); }
@@ -735,6 +744,7 @@
     $('zchatCollapse').addEventListener('click', () => setCollapsed(!panel.classList.contains('is-collapsed')));
     $('zchatSettings').addEventListener('click', () => { $('settingsBtn')?.click(); const tab = document.querySelector('.set-tab[data-tab="ai"]'); if (tab) tab.click(); });
     document.addEventListener('keydown', event => {
+      if(event.key === 'Escape' && !$('zchatScope').hidden && panel.contains(document.activeElement)) {event.preventDefault();event.stopPropagation();showScope(false);$('zchatScopeButton').focus();return;}
       if (event.key === 'Escape' && !renameDialog.open && !panel.hidden && panel.contains(document.activeElement) && document.documentElement.dataset.settings !== '1') { event.preventDefault(); event.stopPropagation(); close(); }
     }, true);
     window.addEventListener('beforeunload', stopSpeech);

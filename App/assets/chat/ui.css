@@ -40,6 +40,14 @@
    `.tbar select`. */
 .zchat-head #zchatRole { width:auto; max-width:100%; background:transparent; border-color:transparent; cursor:pointer; }
 .zchat-role-label { min-width:0; }
+.zchat-source-tool { position:relative; display:inline-flex; flex:none; }
+#zchatScopeButton { display:inline-flex; align-items:center; gap:.35em; }
+#zchatScopeButton svg { width:1.25em; height:1.25em; flex:none; }
+#zchatScopeButton[aria-expanded="true"] { color:var(--teal-strong); background:var(--hover); }
+#zchatScopeCount { font-size:.85em; }
+.zchat-source-tip { position:absolute; top:calc(100% + 6px); left:0; z-index:2; width:min(240px,55vw); padding:.5rem .65rem; background:var(--panel); color:var(--ink); border:1px solid var(--line); box-shadow:var(--sh-3d); font-size:11px; line-height:1.5; text-transform:none; letter-spacing:normal; font-weight:400; pointer-events:none; opacity:0; visibility:hidden; }
+.zchat-source-tool:has(#zchatScopeButton:hover) .zchat-source-tip,.zchat-source-tool:has(#zchatScopeButton:focus-visible) .zchat-source-tip { opacity:1; visibility:visible; }
+.zchat-head { position:relative; z-index:2; }
 
 /* ── I messaggi ───────────────────────────────────────────────────────────── */
 .zchat-messages { flex:1; min-height:60px; overflow:auto; padding:20px 16px; overscroll-behavior:contain; scroll-behavior:smooth; }
@@ -83,7 +91,9 @@
 .zchat-message-actions .tbtn[aria-pressed="true"] { color:var(--teal-strong); }
 .zchat-sources { margin-top:8px; font-size:11px; line-height:1.6; color:var(--muted); }
 .zchat-sources summary { cursor:pointer; }
-.zchat-sources ul { margin:6px 0 0; padding-left:18px; }
+.zchat-sources h4 { font-size:inherit; font-weight:650; color:var(--ink); margin:0; }
+.zchat-sources ol { margin:6px 0; padding-left:1.8em; }
+.zchat-sources ol::marker { color:var(--teal-strong); }
 .zchat-sources li { overflow-wrap:anywhere; margin-top:4px; }
 .zchat-sources a,.zchat-settings a { color:var(--teal-strong); text-underline-offset:3px; }
 .zchat-thinking { color:var(--muted); font-size:12px; margin:8px 0; }
@@ -142,10 +152,23 @@
 .zchat-scope { flex:none; border-bottom:1px solid var(--line); padding:8px 12px; font-size:12px; }
 .zchat-scope summary { cursor:pointer; color:var(--teal-strong); }
 .zchat-scope label { display:flex; align-items:center; gap:8px; overflow-wrap:anywhere; margin:6px 0; }
-.zchat-scope input[type=checkbox] { flex:none; width:var(--tb-h); height:var(--tb-h); accent-color:var(--teal); }
-.zchat-scope-list { max-height:150px; overflow:auto; }
+.zchat-source-picker { max-height:40vh; overflow:auto; }
+.zchat-source-picker>strong { display:block; margin-bottom:.5em; color:var(--teal-strong); font-weight:600; }
+/* Sono checkbox per scegliere più fonti, con il segno circolare richiesto:
+   la loro misura segue il testo, non l’altezza dei comandi di toolbar. */
+.zchat-source-picker input[type=checkbox] { appearance:none; -webkit-appearance:none; flex:none; display:inline-grid; place-content:center; width:1.1em; height:1.1em; min-width:0; min-height:0; padding:0; margin:0; border:1px solid var(--muted); border-radius:50%; background:transparent; color:var(--teal-strong); cursor:pointer; }
+.zchat-source-picker input[type=checkbox]::before { content:""; width:.55em; height:.55em; border-radius:50%; background:currentColor; transform:scale(0); }
+.zchat-source-picker input[type=checkbox]:checked::before { transform:scale(1); }
+.zchat-source-picker input[type=checkbox]:checked { border-color:currentColor; }
+.zchat-source-picker input[type=checkbox]:disabled { opacity:.45; cursor:default; }
+.zchat-source-picker input[type=checkbox]:focus-visible { outline:2px solid var(--teal-strong); outline-offset:3px; }
+.zchat-scope-list { max-height:12em; overflow:auto; }
 .zchat-citation { color:var(--teal-strong); max-width:100%; vertical-align:baseline; }
-.zchat-sources .zchat-citation { overflow:hidden; text-overflow:ellipsis; }
+.zchat-sources .zchat-citation { display:inline; min-width:0; min-height:0; height:auto; padding:0; text-align:left; white-space:normal; text-transform:none; letter-spacing:normal; font:inherit; text-decoration:underline; text-underline-offset:3px; }
+.zchat-citation-ref { vertical-align:super; font-size:.75em; line-height:0; }
+.zchat-citation-inline { display:inline; min-width:0; min-height:0; padding:0 .15em; border:0; background:transparent; color:var(--teal-strong); font:inherit; cursor:pointer; text-decoration:none; }
+.zchat-citation-inline:hover { text-decoration:underline; }
+.zchat-citation-inline:focus-visible { outline:2px solid var(--teal-strong); outline-offset:2px; }
 .zstudio { max-height:55vh; overflow:auto; }
 .zstudio-actions { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:8px 0; }
 .zstudio-actions input { flex:1; min-width:120px; color:var(--ink); background:var(--bg); border:1px solid var(--line); }
