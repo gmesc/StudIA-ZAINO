@@ -21,7 +21,8 @@
      pdfNum()        la mappa NN → file dei DOCUMENTI del contenitore aperto
      corsoAttivo()   quale contenitore è aperto (serve solo alle immagini
                      dell'album, che vivono dentro di lui)
-     evidenza(id)    colore, tratto e postilla di un'evidenza → `{colore, tratto, nota}` o null.
+     evidenza(id)    `{colore, tratto, nota}`, oppure `{colore, tratto, rimossa:true}`
+                     per il solo aspetto conservato dopo la gomma, oppure null.
                      ⚠️ È un gancio e non un dato SCRITTO nel markdown: il
                      colore vive in un posto solo (`APPUNTI/_evidenze.json`), e
                      un appunto che ne portasse una copia mostrerebbe il colore
@@ -315,10 +316,9 @@
    * differenza fra citare e ricopiare — ricolorando una parola chiave, gli
    * appunti che la citano cambiano perché non c'è niente da aggiornare.
    *
-   * ⚠️ Senza evidenza il segno resta, e resta MUTO: niente link (porterebbe a
-   * un posto che l'indice non sa più dire) e niente colore, ma il testo c'è
-   * tutto e il `title` dice perché è scolorito. È la regola dell'invariante 4 —
-   * quello che sparisce si dice — applicata a una riga di testo.
+   * Dopo la gomma il gancio può restituire il solo aspetto con `rimossa:true`:
+   * il colore resta, il link all'evidenza no. Senza neppure quell'aspetto
+   * (vecchie cancellazioni o indice mancante) il segno è neutro e lo dichiara.
    */
   /* ⚠️ Il testo arriva GIÀ passato dall'escape — `_mdInline` lo fa sulla riga
      intera, prima di qualunque regola — e ripassarlo qui darebbe `&amp;amp;` su
@@ -342,6 +342,7 @@
     var segno='<mark class="evid" data-tratto="'+tratto+'"'+(col?' style="--ev:'+col+'"':'')+
       (nota?' data-postilla="1" title="'+g.esc(nota)+'"':'')+'>'+t+'</mark>';
     var rim=Rimandi.scriviEv(id);
+    if(v.rimossa) return segno.replace('<mark ', '<mark title="Evidenziatura cancellata dalla fonte; colore conservato nell’appunto" ');
     if(!rim) return segno;
     /* ⚠️ Il `title` del link NON deve coprire quello del segno: quando c'è una
        postilla, è lei la cosa da leggere passandoci sopra — dove porta il link

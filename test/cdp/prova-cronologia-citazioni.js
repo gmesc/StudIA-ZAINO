@@ -89,6 +89,24 @@ async function foto(nome){
   await c.val(`bancoForma('due-col');bancoAssegna('A','appunti');bancoAssegna('C','mappa')`);
   console.log('  ok  il bottone Appunta del PDF inserisce il frammento con fonte e segno');
 
+  const segnoEstratto=`(()=>{
+    const m=[...document.querySelectorAll('#noteHost mark.evid')].find(e=>e.textContent===${q(selezionato)});
+    if(!m)return null;const s=getComputedStyle(m);
+    return {colore:s.textDecorationColor,fondo:s.backgroundColor,tratto:m.dataset.tratto};
+  })()`;
+  await c.val(`kwRicolora(EVIDENZE.elenco.find(e=>e.exact===${q(selezionato)}).id,'#ff8ad0')`);
+  const primaDellaGomma=await c.val(segnoEstratto);
+  assert(primaDellaGomma,'il segno appuntato è visibile prima della cancellazione');
+  assert.equal(primaDellaGomma.colore,'rgb(255, 138, 208)','segue il colore aggiornato sulla fonte');
+  await c.val(`(()=>{
+    const el=document.querySelector('#pdfPane .textLayer span'),r=document.createRange();
+    r.selectNodeContents(el);evidenzaCancella(r);
+  })()`);
+  assert.equal(await c.val(`EVIDENZE.elenco.some(e=>e.exact===${q(selezionato)})`),false);
+  assert.deepStrictEqual(await c.val(segnoEstratto),primaDellaGomma,
+    'cancellare sulla fonte conserva negli appunti il colore e il tratto');
+  console.log('  ok  la gomma toglie la keyword ma conserva il colore negli appunti');
+
   const misure=await c.val(`['#noteHost .ncb-undo','#noteHost .ncb-redo','#mAnnulla','#mRipeti'].map(sel=>{
     const e=document.querySelector(sel),r=e.getBoundingClientRect(),s=getComputedStyle(e);
     return {h:r.height,w:r.width,bordo:s.borderTopWidth,icona:e.textContent.trim(),label:e.getAttribute('aria-label')};})`);
@@ -97,6 +115,14 @@ async function foto(nome){
   await foto('studia-cronologia-citazioni');
   console.log('  ok  frecce coerenti per dimensioni, icone ed etichette accessibili');
   await c.val(`noteFlush();mappaFlush()`);
+  const file=await c.val('NOTES.cur.file');
+  await c.val('location.reload()');
+  await attendi(`typeof noteOpen==='function' && zainoAttivo()==='biologia'`);
+  await c.val(`bancoMostra('appunti');noteOpen(${q(file)},NOTES)`);
+  await attendi(`typeof NOTES!=='undefined' && NOTES.cur?.file===${q(file)} && !!NOTES.mde`);
+  if(!await c.val('NOTES.mde.isPreviewActive()'))await click('#noteHost .preview');
+  assert.deepStrictEqual(await c.val(segnoEstratto),primaDellaGomma,
+    'il colore resta anche riaprendo l’appunto');
   console.log('✓ cronologia e citazioni verificate');
 })().catch(async e=>{console.error(e);process.exitCode=1;try{await foto('studia-cronologia-citazioni-failure');}catch(_){}})
 .finally(async()=>{

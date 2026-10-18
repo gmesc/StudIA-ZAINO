@@ -164,14 +164,14 @@ const SEGNO = `(()=>{
   ok('con lo spessore che viene dalla variabile, non da «auto»', false,
     !seg3 || seg3.spessore === 'auto');
 
-  sezione('Togliendo la parola chiave, il testo resta e il colore no');
+  sezione('Togliendo la parola chiave, testo e colore restano');
   await val(`(()=>{ const r=window.vault.evidenze.rimuovi(corsoAttivo(), ${JSON.stringify(idScritto)});
-    EVIDENZE.elenco=r.evidenze; evidenzeDisegna(); return 1; })()`);
+    evidenzeCarica(); evidenzeDisegna(); return 1; })()`);
   await pausa(600);
   const seg4 = await finoA(`(()=>{ const m=document.querySelector('#noteHost mark.evid');
-    return (m && m.classList.contains('evorfana')) ? { testo:m.textContent,
-      link:!!m.closest('a.evlink') } : null; })()`, 8000);
-  ok('il segno si dichiara orfano', true, !!seg4);
+    return (m && !m.closest('a.evlink')) ? { testo:m.textContent,
+      link:false, riga:getComputedStyle(m).textDecorationColor } : null; })()`, 8000);
+  ok('il segno conserva la sottolineatura colorata', seg3 && seg3.riga, seg4 && seg4.riga);
   ok('il testo è ancora tutto lì', true, !!seg4 && preso.indexOf(seg4.testo.trim()) >= 0);
   ok('e non promette più un salto che non può fare', false, seg4 && seg4.link);
   ok('nell\'appunto il testo non è stato toccato', md, await val('NOTES.mde.codemirror.getValue()'));
