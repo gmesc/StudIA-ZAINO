@@ -27,7 +27,7 @@
                      un appunto che ne portasse una copia mostrerebbe il colore
                      di ieri il giorno dopo averlo cambiato — la trappola ④ in
                      forma di file. Chi non lo passa (Node, le prove, un vault
-                     chiuso) ottiene un segno neutro col testo intatto, non un
+                     chiuso) ottiene testo normale, non un
                      errore: un'evidenza tolta non deve portarsi via la frase.
 
    ⚠️ Sono ganci e non variabili perché la risposta CAMBIA nel tempo: durante
@@ -315,10 +315,8 @@
    * differenza fra citare e ricopiare — ricolorando una parola chiave, gli
    * appunti che la citano cambiano perché non c'è niente da aggiornare.
    *
-   * ⚠️ Senza evidenza il segno resta, e resta MUTO: niente link (porterebbe a
-   * un posto che l'indice non sa più dire) e niente colore, ma il testo c'è
-   * tutto e il `title` dice perché è scolorito. È la regola dell'invariante 4 —
-   * quello che sparisce si dice — applicata a una riga di testo.
+   * Cancellando il segno sulla fonte, anche l'appunto torna senza colore e
+   * sottolineatura. Il testo resta, senza un link all'evidenza cancellata.
    */
   /* ⚠️ Il testo arriva GIÀ passato dall'escape — `_mdInline` lo fa sulla riga
      intera, prima di qualunque regola — e ripassarlo qui darebbe `&amp;amp;` su
@@ -326,7 +324,7 @@
   function evidenzaHtml(testo, id){
     var t=String(testo==null?'':testo);
     var v=(typeof g.evidenza==='function') ? g.evidenza(id) : null;
-    if(!v) return '<mark class="evid evorfana" title="Questa parola chiave non è più nell\'elenco">'+t+'</mark>';
+    if(!v) return t;
     /* Il colore finisce in un attributo di stile: si ripulisce come lo ripulisce
        `lib/evidenze.js` prima di scriverlo su disco. Due porte, la stessa
        guardia — quella là difende il file, questa difende la pagina. */
@@ -351,6 +349,10 @@
     return '<a href="#" class="evlink" data-ev="'+g.esc(id)+'"'+dove+'>'+segno+'</a>';
   }
   function _mdInline(s, nota){ s=g.esc(s);
+    // Gli estratti sono testo letterale: \* e \[ non devono diventare enfasi o link.
+    s=s.replace(/\\(\\|`|\*|\[|\]|#|_|!|\||&gt;)/g,function(m,c){
+      return c==='&gt;' ? c : '&#'+c.charCodeAt(0)+';';
+    });
     /* ⚠️ La figura si riconosce PRIMA del rimando normale: la regex dei link
        matcha anche la parte `[…](…)` che sta dopo il punto esclamativo, e
        lascerebbe un «!» orfano davanti a un link che non è più una figura. */

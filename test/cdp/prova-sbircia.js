@@ -42,6 +42,9 @@ async function sopra(sel) {
   await val('location.reload(), 1'); await pausa(2500);
   await collega(); await pausa(800);
   await partiPulito();
+  // Il mouse della prova precedente può trovarsi dove comparirà il rimando:
+  // lo si porta fuori prima di misurare il tempo di attesa dell'hover.
+  await invia('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 1, y: 1 });
   await apriStrumento('appunti');
   await finoA(`(typeof corsoAttivo==='function' && corsoAttivo()) ? 1 : 0`, 15000);
 

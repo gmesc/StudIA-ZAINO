@@ -623,6 +623,34 @@ sezione('pila degli annullamenti');
   check('svuota azzera', ['', null], [M.daAnnullare(M.svuota(p4)), M.annulla(p4)]);
 }
 
+sezione('Annulla e Ripeti conservano grafo, vista e disposizioni');
+check('Ripeti è disponibile', 'function', typeof M.rifai);
+if (typeof M.rifai === 'function') {
+  const p = M.pila(3), g0 = base(), g1 = M.eliminaNodo(g0, 'n2');
+  const ex0 = { vista: { orient: 'td' }, memorie: [null] };
+  const ex1 = { vista: { orient: 'lr' }, memorie: [{ nome: 'Disposizione' }] };
+  M.annullabile(p, 'Elimina Economia', g0, ex0);
+  const prima = M.annulla(p, g1, ex1);
+  check('annulla riporta anche la vista', ex0, prima.extra);
+  check('il titolo di Ripeti descrive il gesto', 'Elimina Economia', M.daRifare(p));
+  g1.nodi[0].testo = 'Non deve entrare nella copia'; ex1.vista.orient = 'td';
+  const dopo = M.rifai(p, prima.grafo, prima.extra);
+  check('ripeti recupera il grafo esatto', M.eliminaNodo(g0, 'n2'), dopo.grafo);
+  check('ripeti recupera vista e memorie senza riferimenti condivisi',
+    { vista: { orient: 'lr' }, memorie: [{ nome: 'Disposizione' }] }, dopo.extra);
+  check('si può annullare di nuovo', g0, M.annulla(p, dopo.grafo, dopo.extra).grafo);
+  M.annullabile(p, 'Nuova strada', g0);
+  check('una nuova modifica abbandona il futuro', ['', null], [M.daRifare(p), M.rifai(p, g0)]);
+  M.annulla(p, g0); M.svuota(p);
+  check('cambiare documento svuota entrambe le direzioni', [null, null], [M.annulla(p, g0), M.rifai(p, g0)]);
+  const multi = M.pila(2);
+  M.annullabile(multi, 'Primo', g0); M.annullabile(multi, 'Secondo', g1);
+  let r = M.annulla(multi, g0); r = M.annulla(multi, r.grafo);
+  check('ripete in ordine dal più vecchio', 'Primo', M.rifai(multi, r.grafo).etichetta);
+  check('poi il secondo', 'Secondo', M.rifai(multi, g1).etichetta);
+  check('nessun altro passo futuro', null, M.rifai(multi, g0));
+}
+
 sezione('descriviAzione');
 {
   const g = base();

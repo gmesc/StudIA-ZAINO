@@ -33,6 +33,13 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await click('#zschedeResult>button');await wait(`document.getElementById('zragStatus').textContent.includes('conservata')`);
  assert(fs.readdirSync(path.join(vault,'Zaini','biologia','APPUNTI')).some(f=>f.startsWith('Scheda AI')));
  const note=await c.val(`({title:noteStatoAttivo().cur.title,body:noteStatoAttivo().mde.value()})`);assert(note.title.startsWith('Sintesi — '));assert(note.body.startsWith('### '+note.title+'\n'));assert(note.body.includes('**Prerequisiti:**'));
+ // Integrazione: la copia RAG usa anche la cronologia aggiunta dalla demo.
+ const copied=await c.val(`noteStatoAttivo().mde.value()`);
+ await c.val(`(()=>{const cm=noteStatoAttivo().mde.codemirror;cm.replaceRange(' Verifica cronologia RAG.',{line:cm.lastLine(),ch:cm.getLine(cm.lastLine()).length},undefined,'prova-merge');})()`);
+ assert((await c.val(`noteStatoAttivo().mde.value()`)).endsWith('Verifica cronologia RAG.'));
+ await c.val(`noteHost(noteStatoAttivo()).querySelector('.ncb-undo').click()`);assert.equal(await c.val(`noteStatoAttivo().mde.value()`),copied);
+ await c.val(`noteHost(noteStatoAttivo()).querySelector('.ncb-redo').click()`);assert((await c.val(`noteStatoAttivo().mde.value()`)).endsWith('Verifica cronologia RAG.'));
+ await c.val(`noteHost(noteStatoAttivo()).querySelector('.ncb-undo').click()`);assert.equal(await c.val(`noteStatoAttivo().mde.value()`),copied);
  assert.equal(await c.val(`document.getElementById('zragOpenReview').textContent`),'Apri Ripasso');
  for(const theme of ['chiaro','scuro']){
   await c.val(`document.documentElement.dataset.theme=${JSON.stringify(theme)}`);

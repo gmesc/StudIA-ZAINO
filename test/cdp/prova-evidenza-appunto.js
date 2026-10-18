@@ -169,9 +169,10 @@ const SEGNO = `(()=>{
     EVIDENZE.elenco=r.evidenze; evidenzeDisegna(); return 1; })()`);
   await pausa(600);
   const seg4 = await finoA(`(()=>{ const m=document.querySelector('#noteHost mark.evid');
-    return (m && m.classList.contains('evorfana')) ? { testo:m.textContent,
-      link:!!m.closest('a.evlink') } : null; })()`, 8000);
-  ok('il segno si dichiara orfano', true, !!seg4);
+    const p=document.querySelector('#noteHost .editor-preview-active');
+    return (!m && p && p.textContent.includes(${JSON.stringify(preso)})) ? { testo:${JSON.stringify(preso)},
+      link:!!p.querySelector('a.evlink') } : null; })()`, 8000);
+  ok('il testo torna senza evidenziatura o riga grigia', true, !!seg4);
   ok('il testo è ancora tutto lì', true, !!seg4 && preso.indexOf(seg4.testo.trim()) >= 0);
   ok('e non promette più un salto che non può fare', false, seg4 && seg4.link);
   ok('nell\'appunto il testo non è stato toccato', md, await val('NOTES.mde.codemirror.getValue()'));

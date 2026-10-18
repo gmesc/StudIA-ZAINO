@@ -43,6 +43,12 @@ I due appunti si salvano separatamente e vengono salvati prima dell’invio alla
 
 I due editor degli appunti hanno gli stessi comandi: formattazione, callout, emoji, citazioni, materiali, anteprima modificabile, immagini, rinomina con fonte associata, eliminazione, stampa e PDF. Il riquadro usato per ultimo riceve **Appunta**, parole chiave e aperture dalla sidebar; **⌘/Ctrl+S** salva quel riquadro e **⌘/Ctrl+J** ne cambia l’anteprima. Ogni appunto conserva il proprio testo, cursore e salvataggio. Scrivi `> ` e scegli un callout: il cursore si posiziona subito nel corpo vuoto, dopo `> `.
 
+**Appunta** riconosce le frasi che iniziano con maiuscola e terminano con `.`, `?` o `!`: le inserisce come blocchi citazione con una linea sottile e il rimando alla fonte. I frammenti entrano fra virgolette e in corsivo. È una regola pratica: nei PDF le righe non identificano con certezza i paragrafi. I callout scelti manualmente continuano a prevalere; il simbolo **¶** nella riga di Appunta riattiva la scelta automatica. **Quote** permette di formattare un blocco nell’editor.
+
+**Cancella evidenziatura** toglie il segno dalla fonte e la parola dalle keyword. Anche negli appunti scompaiono colore e sottolineatura: restano il testo citato e il rimando alla pagina.
+
+Le toolbar di Appunti e Mappe includono **Annulla/Ripeti**. Ogni editor usa la propria cronologia; nella mappa si recuperano anche le disposizioni e la vista conservate dal gesto. Una modifica dopo Annulla abbandona i passi da ripetere. Le cronologie sono della sessione del documento e si azzerano quando si apre un altro file; non sostituiscono le versioni salvate degli appunti.
+
 Le testate del Banco mostrano l’ordine dei riquadri e indicano quello attivo con un **pallino verde**. Quando riduci la vista resta prima l’attivo, poi gli altri da sinistra a destra, riga per riga. Nel menu Banco, passando sulle disposizioni o raggiungendole con la tastiera, puoi leggere in anticipo quali contenuti resteranno. Per esempio, con quattro riquadri numerati 1–4 e il 4 attivo, passando a due conserverai i contenuti del **4 e dell’1**, rinumerati nella nuova vista; passando da tre a uno resta solo quello attivo. Gli altri rimangono aperti fuori vista e tornano riallargandola, nell’ordine risultante dagli spostamenti.
 
 Le linee dei banchi sono sottili e grigie. La vecchia barra verticale di avanzamento del capitolo è nascosta nello ZAINO.

@@ -228,8 +228,8 @@
          suo mestiere, che è essere un blocco */
       '  ' + S + ' .st-corpo blockquote, ' + S + ' .st-corpo .ucallout {',
       '     margin:.8em 0; padding:.45em .8em; break-inside:avoid; page-break-inside:avoid; }',
-      '  ' + S + ' .st-corpo blockquote { border-left:3px solid ' + COL.filo + ';',
-      '     background:' + COL.riquadro + '; }',
+      '  ' + S + ' .st-corpo blockquote { border-left:2px solid ' + COL.filo + ';',
+      '     background:transparent; font-style:normal; }',
       /* ⚠️ Il riquadro dell'appunto TIENE IL SUO COLORE. La prima stesura di
          questa regola dipingeva `.ucallout` come una citazione qualunque —
          filo grigio, fondo grigio — e sul PDF del 14 agosto i quattro riquadri

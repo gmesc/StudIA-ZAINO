@@ -54,6 +54,8 @@ Le sezioni **Fonti, Appunti, Media e Mappe** della sidebar si espandono o si chi
 
 La copia di una scheda usa come titolo il tipo e il nome del file, per esempio **Sintesi — 01 Energia nelle cellule.pdf**, sia nei metadati sia nel corpo dell’appunto. Le etichette introduttive, come **Concetti:** e **Prerequisiti:**, sono in grassetto nella scheda e nella copia. Il nome tecnico del file conserva l’identificatore per evitare doppioni; le copie già modificate dall’utente non vengono riscritte. Gli elenchi puntati e numerati hanno un rientro dedicato nelle anteprime dei due editor, comprese le viste affiancate.
 
+Le copie RAG usano i normali editor degli appunti, compresi **Annulla/Ripeti** nelle toolbar e in anteprima. La cronologia appartiene al documento aperto; annullare o ripetere una modifica personale non rigenera la scheda e non chiama il provider. **Appunta** mantiene il proprio formato per citazioni a blocco e frammenti. Eliminando un’evidenziatura dalla fonte, la citazione negli appunti conserva testo e rimando alla pagina, senza colore o sottolineatura dell’evidenza cancellata.
+
 ## Ruoli e adattamenti
 
 **Tutor socratico** guida con una domanda e indizi progressivi, chiedendo un tentativo prima della soluzione. **Spiegamelo** spiega e può integrare Wikipedia. **Chiedimelo** propone una domanda alla volta, aspetta la risposta e dà un riscontro prima di proseguire.
