@@ -187,7 +187,13 @@
 .zstudio summary { font-size:calc(var(--fs) * .82); cursor:pointer; }
 .zstudio-section>summary { padding:.5em var(--tb-pad-x); background:color-mix(in srgb,var(--teal) 16%,var(--panel)); color:var(--teal-strong); font-weight:var(--tb-peso); }
 .zstudio-section>summary:hover { background:color-mix(in srgb,var(--teal) 26%,var(--panel)); }
+.zstudio-index-state progress { display:block; width:100%; height:.4rem; accent-color:var(--teal-strong); margin:.4rem 0; }
+.zstudio-index-state .zchat-hint { margin:.5em 0; }
 .zstudio-card-text :is(ul,ol) { padding-inline-start:2em; margin-block:.6em; }
+.zstudio-collection { max-height:32vh; overflow:auto; }
+.zstudio-collection article { border-bottom:1px solid var(--line); padding:.3rem 0; }
+.zstudio-collection .zstudio-card-open { display:block; max-width:100%; text-transform:none; letter-spacing:normal; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; color:var(--teal-strong); }
+.zstudio-collection p { margin:0; padding-inline:var(--tb-pad-x); }
 .zstudio label { display:flex; flex-direction:column; gap:.35rem; margin:.7rem 0; font-size:var(--tb-fs); font-weight:var(--tb-peso); }
 .zstudio input,.zstudio select,.zstudio textarea { width:100%; max-width:100%; min-width:0; box-sizing:border-box; padding-inline:var(--tb-pad-x); background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:0; font-family:var(--font-text),var(--emoji-font),sans-serif; font-size:calc(var(--fs) * .82); text-transform:none; letter-spacing:normal; }
 .zstudio input,.zstudio select { height:var(--ctl-h); }

@@ -110,6 +110,13 @@ async function pulisci(){
   try{
     assert.equal(await c.val(`getComputedStyle(document.getElementById('sidebarTitolo')).display`),'none');
     for(const sezione of ['fonti','appunti','media','mappe']){
+      const toggle=base(sezione)+' .zs-collapse';
+      await click(toggle);assert.equal(await c.val(`document.getElementById('zs-corpo-${sezione}').hidden`),true);
+      await c.val('zainoNavAggiorna()');await stabile();assert.equal(await c.val(`document.querySelector(${q(toggle)}).getAttribute('aria-expanded')`),'false');
+      await click(toggle);assert.equal(await c.val(`document.getElementById('zs-corpo-${sezione}').hidden`),false);
+      const gap=await c.val(`(()=>{const s=document.querySelector(${q(base(sezione))}),head=s.querySelector('.zs-tit'),first=s.querySelector('.zs-corpo .zs-item');return first.getBoundingClientRect().top-head.getBoundingClientRect().bottom;})()`);assert(Math.abs(gap)<1,'Nessuno spazio tra titolo e primo elemento: '+sezione+' '+gap);
+    }
+    for(const sezione of ['fonti','appunti','media','mappe']){
       const altre=await c.val('ZNAV.gruppi');
       const files=(await stato(sezione)).liberi;assert.equal(files.length,2);
       const altezza=await c.val(`document.querySelector(${q(item(sezione,files[0]))}).getBoundingClientRect().height`);
@@ -151,6 +158,7 @@ async function pulisci(){
       assert.deepEqual((await stato(sezione)).liberi,[files[0]],'menu usabile da tastiera');
       await click(item(sezione,files[0])+' .zs-assegna');await click(base(sezione)+' .zs-tit');
       assert.equal(await c.val(`document.querySelector('#znavGruppiPop').hasAttribute('open')`),false);
+      assert.equal(await c.val(`document.getElementById('zs-corpo-${sezione}').hidden`),true);await click(base(sezione)+' .zs-collapse');
       await click(gruppo(sezione,uno)+' [data-znav="toggle"]');
       assert.equal(await c.val(`document.querySelector(${q(item(sezione,files[1]))}).getBoundingClientRect().height`),0);
       await click(gruppo(sezione,uno)+' [data-znav="elimina"]');await stabile();

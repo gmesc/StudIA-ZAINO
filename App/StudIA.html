@@ -769,7 +769,7 @@
      qui le voci non sono numerate — un documento non è il terzo capitolo di
      niente, e una numerazione direbbe un ordine che non esiste. */
   .znav[hidden]{ display:none!important; }
-  .znav .zs-tit{ display:flex; align-items:center; gap:.4rem; margin:0 0 .4rem; padding:.3rem .6rem .3rem .8rem;
+  .znav .zs-tit{ display:flex; align-items:center; gap:.4rem; margin:0; padding:.3rem .6rem .3rem .8rem;
     font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--teal-strong); }
   .znav .zs-raccolta + .zs-raccolta .zs-tit{ margin-top:.8rem; }
   .znav .zs-n{ font-size:10px; letter-spacing:.06em; color:var(--muted); font-variant-numeric:tabular-nums; }
@@ -785,6 +785,9 @@
   .znav .zs-tit .zs-azioni{ margin-left:auto; display:flex; }
   .znav .zs-azioni button{ width:auto; flex:0 0 auto; border:0; text-align:center; padding:0 .35rem; }
   .znav .zs-azioni button:disabled{ opacity:.35; cursor:default; }
+  .znav .zs-tit .zs-collapse{ display:flex; align-items:center; gap:.4rem; flex:1; min-width:0; padding:0; border:0; height:var(--tb-h); color:inherit; font:inherit; text-transform:inherit; letter-spacing:inherit; }
+  .znav .zs-corpo[hidden]{ display:none!important; }
+  .znav .zs-corpo>.zs-gruppo:first-child{ margin-top:0; }
   .znav button:focus-visible, .znav select:focus-visible{ outline:2px solid var(--focus); outline-offset:-2px; }
   .znav .zs-gruppo{ margin:.35rem 0; }
   .znav .zs-gruppo-testa{ display:flex; align-items:center; }
@@ -11102,6 +11105,7 @@ function znavComandoHtml(azione, testo, titolo, dati, spento){
 
 /** Le quattro raccolte condividono i gesti, conservando registri separati. */
 function znavRaccolta(sezione, titolo, voci, vuoto, errore, erroreGruppi){
+  var chiusa=false;try{chiusa=localStorage.getItem('studia-zaino.sezione.'+window.vault.path+'.'+zainoAttivo()+'.'+sezione)==='chiusa';}catch(_){}
   var stato=ZNAV.gruppi[sezione] || FontiGruppi.normalizza(null,voci.map(function(v){ return v.quale; }));
   var edit=!!ZNAV.organizza[sezione] && !erroreGruppi && !errore;
   function lista(files, gruppo){
@@ -11113,10 +11117,10 @@ function znavRaccolta(sezione, titolo, voci, vuoto, errore, erroreGruppi){
         (edit?'<button type="button" class="zs-assegna" data-znav="assegna" '+dati+' aria-haspopup="menu" aria-expanded="false" aria-controls="znavGruppiPop" aria-label="Scegli gruppo per '+znavEsc(v.testo)+'" title="Scegli gruppo"><span aria-hidden="true">⌄</span></button>':'')+'</li>';
     }).join('')+'</ul>';
   }
-  var h='<section class="zs-raccolta" data-sezione="'+sezione+'"><div class="zs-tit"><span>'+titolo+'</span><span class="zs-n">'+voci.length+'</span><span class="zs-azioni">'+
+  var h='<section class="zs-raccolta" data-sezione="'+sezione+'"><div class="zs-tit"><button type="button" class="zs-collapse" data-znav="sezione" aria-expanded="'+!chiusa+'" aria-controls="zs-corpo-'+sezione+'"><span aria-hidden="true">'+(chiusa?'▸':'▾')+'</span><span>'+titolo+'</span><span class="zs-n">'+voci.length+'</span></button><span class="zs-azioni">'+
     znavComandoHtml('crea','+','Crea gruppo di '+titolo.toLowerCase(),'',!!erroreGruppi||!!errore)+
-    '<button type="button" class="tbtn" data-znav="organizza" title="Organizza '+titolo.toLowerCase()+'" aria-label="Organizza '+titolo.toLowerCase()+'" aria-pressed="'+edit+'"'+(erroreGruppi||errore?' disabled':'')+'>'+(edit?'✓':'✎')+'</button></span></div>';
-  if(errore) return h+'<div class="zs-vuoto zs-no">⚠ '+znavEsc(errore)+'</div></section>';
+    '<button type="button" class="tbtn" data-znav="organizza" title="Organizza '+titolo.toLowerCase()+'" aria-label="Organizza '+titolo.toLowerCase()+'" aria-pressed="'+edit+'"'+(erroreGruppi||errore?' disabled':'')+'>'+(edit?'✓':'✎')+'</button></span></div><div class="zs-corpo" id="zs-corpo-'+sezione+'"'+(chiusa?' hidden':'')+'>';
+  if(errore) return h+'<div class="zs-vuoto zs-no">⚠ '+znavEsc(errore)+'</div></div></section>';
   if(erroreGruppi) h+='<div class="zs-vuoto zs-no">Organizzazione non leggibile: '+znavEsc(erroreGruppi)+'</div>';
   stato.gruppi.forEach(function(g){
     var dati='data-gruppo="'+znavEsc(g.id)+'"';
@@ -11129,7 +11133,7 @@ function znavRaccolta(sezione, titolo, voci, vuoto, errore, erroreGruppi){
   if(stato.gruppi.length) h+='<div class="zs-senza">Senza gruppo</div>';
   h+=lista(stato.liberi,'');
   if(!voci.length && !stato.gruppi.length) h+='<div class="zs-vuoto">'+znavEsc(vuoto)+'</div>';
-  return h+'</div></section>';
+  return h+'</div></div></section>';
 }
 async function znavSalva(stato, id, sezione){
   if(ZNAV.salva || id!==zainoAttivo()) return false;
@@ -11164,7 +11168,16 @@ function znavMenuGruppi(btn, sezione){
 }
 async function znavComando(btn){
   var azione=btn.dataset.znav, sezione=znavSezioneDi(btn), id=zainoAttivo(), s=ZNAV.gruppi[sezione];
+  if(azione==='sezione'){
+    var corpo=document.getElementById('zs-corpo-'+sezione);if(!corpo)return;
+    corpo.hidden=!corpo.hidden;btn.setAttribute('aria-expanded',String(!corpo.hidden));btn.firstElementChild.textContent=corpo.hidden?'▸':'▾';
+    try{localStorage.setItem('studia-zaino.sezione.'+window.vault.path+'.'+id+'.'+sezione,corpo.hidden?'chiusa':'aperta');}catch(_){}
+    return;
+  }
   if(ZNAV.salva || ZNAV.carico || ZNAV.id!==id || !s || btn.disabled) return;
+  if(['organizza','crea'].includes(azione)){
+    var toggle=btn.closest('.zs-raccolta').querySelector('.zs-collapse');if(toggle.getAttribute('aria-expanded')==='false')await znavComando(toggle);
+  }
   if(azione==='assegna'){ znavMenuGruppi(btn,sezione); return; }
   if(azione==='organizza'){
     ZNAV.organizza[sezione]=!ZNAV.organizza[sezione]; await zainoNavAggiorna();

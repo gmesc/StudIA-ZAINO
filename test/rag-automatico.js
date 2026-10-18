@@ -1,0 +1,29 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{EventEmitter}=require('node:events');
+const A=require('../lib/rag-automatico'),R=require('../lib/rag');
+const root=fs.mkdtempSync(path.join(os.tmpdir(),'rag-auto-')),dir=path.join(root,'Zaini','test');
+let auto;
+async function wait(fn){for(let n=0;n<200;n++){if(fn())return;await new Promise(r=>setTimeout(r,10));}throw Error('Stato non raggiunto: '+JSON.stringify(auto?.state()));}
+(async()=>{
+ fs.mkdirSync(path.join(dir,'MATERIALI'),{recursive:true});fs.mkdirSync(path.join(dir,'APPUNTI'));fs.writeFileSync(path.join(dir,'_zaino.md'),'# Test');
+ fs.writeFileSync(path.join(dir,'MATERIALI','bio.txt'),'Le cellule usano ATP.');
+ let ready=false,changed,closed=false,gate=null;const calls=[],states=[];
+ const runtime={ready:()=>ready,embed:async(text,{signal})=>{calls.push(text);if(gate)await gate(signal);return {vector:[1,...Array(767).fill(0)]};}};
+ auto=A.crea({vault:root,zaino:'test',runtime,delay:15,onState:s=>states.push(s),watch:(_p,_opts,fn)=>{changed=fn;const w=new EventEmitter();w.close=()=>{closed=true;};return w;}});
+ await wait(()=>auto.state().phase==='waiting-model');assert.equal(calls.length,0);
+ ready=true;auto.request(true);await wait(()=>auto.state().phase==='ready');assert.equal(calls.length,1);assert(states.some(s=>s.phase==='indexing'&&s.done===0));assert(states.some(s=>s.done===1&&s.total===1));
+ const first=auto.state().updatedAt;
+ fs.writeFileSync(path.join(dir,'APPUNTI','appunto.md'),'Un nuovo appunto sulla fotosintesi.');changed('rename','APPUNTI/appunto.md');changed('change','APPUNTI/appunto.md');
+ await wait(()=>auto.state().phase==='ready'&&auto.state().updatedAt!==first);assert.equal(calls.length,2);assert.equal(auto.state().reused,1);
+ assert(!A.rilevante('_lavorazione/rag/vettori/x.json'));assert(!A.rilevante('APPUNTI/_versioni/copia.md'));assert(!A.rilevante('APPUNTI/.temp.md'));assert(A.rilevante('MATERIALI/PDF/01.pdf'));assert(A.rilevante('APPUNTI'));
+ const count=calls.length;changed('change','_lavorazione/rag/vettori/x.json');await new Promise(r=>setTimeout(r,40));assert.equal(calls.length,count);
+ let release,entered=false;gate=()=>{entered=true;gate=null;return new Promise(r=>{release=r;});};
+ fs.writeFileSync(path.join(dir,'MATERIALI','bio.txt'),'Prima modifica.');changed('change','MATERIALI/bio.txt');await wait(()=>entered);
+ fs.writeFileSync(path.join(dir,'MATERIALI','bio.txt'),'Seconda modifica durante il lavoro.');changed('change','MATERIALI/bio.txt');release();
+ await wait(()=>auto.state().phase==='ready'&&calls.includes('Seconda modifica durante il lavoro.'));
+ const search=await R.cerca(root,'test','modifica',{runtime});assert.equal(search.indexed,2);
+ await auto.pause();fs.writeFileSync(path.join(dir,'MATERIALI','bio.txt'),'Terza modifica in pausa.');changed('change','MATERIALI/bio.txt');assert.equal(auto.state().phase,'paused');auto.resume();await wait(()=>auto.state().phase==='ready'&&calls.includes('Terza modifica in pausa.'));
+ fs.unlinkSync(path.join(dir,'APPUNTI','appunto.md'));changed('rename','APPUNTI/appunto.md');await wait(()=>auto.state().phase==='ready'&&auto.state().total===1);
+ auto.request();await auto.close();assert(closed);const stopped=calls.length;changed('change','MATERIALI/bio.txt');await new Promise(r=>setTimeout(r,40));assert.equal(calls.length,stopped);
+ console.log('rag-automatico: modello opzionale, aggiunte e modifiche, debounce, cache riusata, progresso, cambi durante il lavoro, pausa e chiusura OK');
+})().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{await auto?.close();fs.rmSync(root,{recursive:true,force:true});});

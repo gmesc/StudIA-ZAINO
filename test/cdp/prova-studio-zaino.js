@@ -9,11 +9,14 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await c.val(`window.vault.chat.setKey({provider:'openai',value:'chiave-finta-della-prova'})`);await c.val(`window.vault.chat.saveSettings({provider:'openai',model:'modello-locale-di-prova'})`);
  await c.val('location.reload()');await c.pausa(800);await c.collega();await wait(`!!document.getElementById('zstudio')`);
  await c.val(`bancoMostra('studio')`);await wait(`bancoVisibile('studio')`);assert.equal(await c.val(`!!document.querySelector('#zchatWindow #zstudio')`),false);await set('zragQuery','energia');await c.val(`document.getElementById('zragForm').requestSubmit()`);
- await wait(`document.querySelectorAll('#zragResults article').length>0`);assert((await c.val(`document.getElementById('zragStatus').textContent`)).includes('lessicale'));
+ await wait(`document.querySelectorAll('#zragResults article').length>0`);assert(/Ricerca (lessicale|ibrida)/.test(await c.val(`document.getElementById('zragStatus').textContent`)));
  await c.val(`document.getElementById('zschede').open=true`);await wait(`document.getElementById('zschedePreset').options.length===5`);
  await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden`);assert((await c.val(`document.getElementById('zschedeEstimateText').textContent`)).includes('token'));
  await click('#zschedeGenerate');await wait(`document.querySelectorAll('#zschedeResult article').length===1`);
  assert.equal(await c.val(`document.querySelector('#zschedeResult strong').textContent`),'Energia cellulare');
+ await wait(`document.querySelectorAll('#zschedeCollection article').length===1 && !document.getElementById('zschedeRefresh').disabled`);
+ await set('zschedeFilter','inesistente');assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),0);await set('zschedeFilter','Sintesi');
+ await c.val(`document.getElementById('zschedeResult').replaceChildren()`);await click('#zschedeCollection button');await wait(`!!document.querySelector('#zschedeResult article')`);
  assert.deepEqual(await c.val(`[...document.querySelectorAll('#zschedeResult .zstudio-card-text strong')].map(e=>e.textContent)`),['Concetti:','Prerequisiti:','Esempi:']);
  await click('#zschedeResult>button');await wait(`document.getElementById('zragStatus').textContent.includes('conservata')`);
  assert(fs.readdirSync(path.join(vault,'Zaini','biologia','APPUNTI')).some(f=>f.startsWith('Scheda AI')));

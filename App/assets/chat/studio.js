@@ -9,20 +9,30 @@
   const state={zaino:null,scope:{mode:'all',sourceIds:[],wikipedia:false},sources:[]},api=window.vault.rag;
   host.innerHTML=`<div class="tbar" id="zragToolbar" role="toolbar" aria-label="Ricerca e fonti"><span class="tbsep"></span><button class="tbtn" id="zragOpenReview" type="button" title="Apre lo split Ripasso: scegli le fonti e allenati con domande e risposte.">Apri Ripasso</button></div><div id="zragScopeHost"></div>
    <div id="zstudio" class="zstudio zstudio-banco"><h2>Cerca e studia le fonti</h2>
-   <p class="zchat-hint">Trova passaggi per significato nelle fonti selezionate. L’indice e la ricerca funzionano sul dispositivo; sintesi e domande usano il provider AI configurato.</p>
+   <p class="zchat-hint">Cerca nei documenti e negli appunti selezionati, usando l’indice locale. Le schede generate si consultano nella sezione Schede; sintesi e domande usano il provider AI configurato.</p>
    <form id="zragForm" class="zstudio-actions"><label class="zchat-sr" for="zragQuery">Cerca nei materiali per parole o significato</label><input class="ctl-input" id="zragQuery" placeholder="Che cosa vuoi trovare?" maxlength="12000"><button class="tbtn acc" type="submit">Cerca</button></form>
-   <details id="zragIndexOptions" class="zstudio-section"><summary>Indice sul dispositivo</summary><p class="zchat-hint">Prepara le fonti selezionate per trovarne i passaggi per significato, anche usando parole diverse. Esegui «Indicizza» la prima volta e dopo aver aggiunto o modificato materiali: i passaggi già pronti vengono riutilizzati. «Ricostruisci indice» serve a rifare da zero l’indice di ricerca; appunti, schede e ripassi restano conservati. Tutto avviene sul dispositivo.</p>
-   <div class="tbar zstudio-actions"><button class="tbtn" id="zragInstall" type="button">Scarica modello · 346 MB</button><button class="tbtn" id="zragIndex" type="button">Indicizza sul dispositivo</button><button class="tbtn" id="zragReset" type="button">Ricostruisci indice</button></div></details>
+   <div class="zstudio-index-state"><p id="zragAutoStatus" role="status" class="zchat-hint"></p><progress id="zragAutoProgress" aria-label="Avanzamento indicizzazione automatica" hidden></progress></div>
+   <details id="zragIndexOptions" class="zstudio-section"><summary>Indice sul dispositivo</summary><p class="zchat-hint">L’indice si aggiorna automaticamente dopo aggiunte e modifiche salvate, anche fuori dall’app, finché questo zaino è aperto. Prepara tutte le fonti leggibili dello zaino sul dispositivo; la ricerca usa solo quelle selezionate. I passaggi invariati vengono riutilizzati. «Ricostruisci indice» rifà l’indice di ricerca conservando appunti, schede e ripassi.</p>
+   <div class="tbar zstudio-actions"><button class="tbtn" id="zragInstall" type="button">Scarica modello · 346 MB</button><button class="tbtn" id="zragIndex" type="button">Aggiorna ora</button><button class="tbtn" id="zragReset" type="button">Ricostruisci indice</button></div></details>
    <button class="tbtn" id="zragCancel" type="button" hidden>Interrompi</button><p id="zragStatus" role="status" class="zchat-hint"></p>
    <div id="zragResults" class="zstudio-results"></div></div>`;
   const box=document.getElementById('zstudio'),$=id=>document.getElementById(id),el=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;};
   let busy=false,epoch=0,study;
   function status(text,error,id='zragStatus'){const e=$(id);if(e){e.textContent=text||'';e.classList.toggle('zchat-error',!!error);}}
+  function autoState(s){
+   if(!s||s.zaino!==state.zaino)return;
+   const progress=$('zragAutoProgress'),active=['queued','extracting','indexing'].includes(s.phase);
+   progress.hidden=!active;progress.max=Math.max(1,s.total||0);
+   if(s.phase==='indexing'&&s.total)progress.value=s.done;else progress.removeAttribute('value');
+   const messages={queued:'Indice automatico: aggiornamento in attesa…',extracting:'Indice automatico: lettura dei materiali…',indexing:'Indicizzazione automatica: '+s.done+'/'+s.total+' passaggi'+(s.file?' · '+s.file.split('/').pop():''),ready:'Indice aggiornato · '+s.total+' passaggi · '+s.reused+' riutilizzati.',warning:'Indice aggiornato con avvisi · '+s.done+'/'+s.total+' passaggi.',error:'Indice automatico da controllare.',paused:'Indice automatico: aggiornamento manuale in corso.', 'waiting-model':'Per l’indice automatico, scarica il modello in «Indice sul dispositivo». La ricerca per parole è già disponibile.'};
+   $('zragAutoStatus').textContent=(messages[s.phase]||'')+(s.warnings?.length?' '+s.warnings.join(' '):'');
+   $('zragAutoStatus').classList.toggle('zchat-error',s.phase==='error');
+  }
   async function call(name,...args){const r=await api[name](...args);if(!r?.ok)throw Error(r?.error || 'Operazione non riuscita.');return r;}
   async function stato(){const r=await call('state');$('zragInstall').hidden=r.ready;$('zragIndex').disabled=!r.ready || busy;$('zragReset').disabled=busy;
    if(r.download && r.progress)status('Download: '+Math.round(100*r.progress.bytes/r.progress.total)+'%');
    else if(r.busy && r.job)status('Indicizzazione: '+r.job.done+'/'+r.job.total+' passaggi · '+r.job.file);
-   return r;}
+   autoState(r.auto);return r;}
   async function action(fn,area='zragStatus'){
    if(busy){status('Attendi il termine dell’operazione in corso.',false,area);return;}if(!state.zaino){status('Apri uno zaino.',true,area);return;}
    const run=epoch,z=state.zaino;busy=true;
@@ -40,8 +50,9 @@
   }
   function riferimento(source,area='zragStatus'){const b=el('button',source.file.split('/').pop()+(source.page?' · p. '+source.page:''),'tbtn zchat-citation');b.type='button';b.title=source.file;b.onclick=()=>apri(source).catch(e=>status(e.message,true,area));return b;}
   const picker=window.ZainoSceltaFonti.crea({prefix:'zragScope',bar:$('zragToolbar'),host:$('zragScopeHost'),state,onChange(){epoch++;api.cancel();$('zragResults').replaceChildren();study?.scopeChanged();status('Fonti della ricerca aggiornate.');}});
+  api.onAuto(autoState);
   $('zragOpenReview').onclick=()=>{window.bancoMostra('flashcard');study.refresh().catch(e=>status(e.message,true,'zstudyStatus'));};
-  $('zragInstall').onclick=()=>action(async current=>{status('Download del modello locale…');await call('install');if(current())status('Modello installato. Puoi indicizzare le fonti.');});
+  $('zragInstall').onclick=()=>action(async current=>{status('Download del modello locale…');await call('install');if(current())status('Modello installato. L’indice si aggiorna automaticamente.');});
   $('zragIndex').onclick=()=>action(async current=>{if(!window.noteFlush())throw Error('Salva prima gli appunti aperti.');const r=await call('index',state.zaino,state.scope);if(current())status('Indicizzazione: '+r.done+'/'+r.total+' passaggi, '+r.reused+' già pronti. '+r.warnings.join(' '));});
   $('zragCancel').onclick=()=>call('cancel').catch(e=>status(e.message,true));
   $('zragReset').onclick=()=>action(async current=>{await call('reset',state.zaino);const r=await call('index',state.zaino,state.scope);if(current())status('Indice ricostruito: '+r.done+'/'+r.total+' passaggi. '+r.warnings.join(' '));});
@@ -58,7 +69,8 @@
   async function sync(){
    const z=window.zainoAttivo?.();if(z===state.zaino)return;
    epoch++;api.cancel();state.zaino=z;study.reset();$('zragResults').replaceChildren();$('zragQuery').value='';status('');
-   await picker.sync();await study.sync();await stato();
+   $('zragAutoStatus').textContent='';$('zragAutoProgress').hidden=true;
+   autoState((await call('watch',z)).auto);await picker.sync();await study.sync();await stato();
   }
   window.addEventListener('studia:zaino-changed',()=>sync().catch(e=>status(e.message,true)));
   window.zainoRipasso={refresh:async()=>{try{await sync();if(state.zaino)await study.refresh();}catch(e){status(e.message,true,'zstudyStatus');}}};
