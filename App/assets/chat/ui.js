@@ -25,6 +25,7 @@
     const norm = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
     const body = norm(text);
     return (sources || []).filter(source => {
+      if (source.sourceId) return String(text || '').includes(source.citation);
       const inner = norm(source.citation).replace(/^\[|\]$/g, '').trim();
       if (inner && body.includes(inner)) return true;
       if (source.url && body.includes(norm(source.url))) return true;
@@ -79,6 +80,7 @@
     const state = { zaino: null, session: null, sessions: [], profiles: [], activeId: '', catalog: [], keys: {},
       settings: { provider: '', model: '' }, modelCache: {}, sending: false, loading: false, epoch: 0, readEpoch: 0,
       configEpoch: 0, pending: '', drafts: new Map(), ready: false, returnFocus: null,
+      scope: { mode: 'all', sourceIds: [], wikipedia: true }, sources: [], scopeSaving: false,
       sendPromise: null, cancelSending: false, finishing: false, naming: null, speechToken: 0, speaking: '', audio: null };
     const descriptions = {
       socratico: 'Ti accompagna nel ragionamento con una domanda alla volta e piccoli indizi.',
@@ -162,6 +164,12 @@
         <button class="tbtn" type="button" id="zchatCollapse" aria-label="Collassa la chat" aria-expanded="true" title="Collassa la chat">−</button>
         <button class="tbtn" type="button" id="zchatClose" aria-label="Chiudi la chat" title="Chiudi la chat">×</button>
       </div>
+      <details id="zchatScope" class="zchat-scope"><summary id="zchatScopeTitle">Fonti: tutto lo zaino</summary>
+        <label><input id="zchatScopeAll" type="checkbox" checked> Tutto lo zaino</label>
+        <div id="zchatScopeList" class="zchat-scope-list"></div>
+        <label><input id="zchatScopeWiki" type="checkbox" checked> Consenti Wikipedia in Spiegamelo</label>
+        <p id="zchatScopeStatus" class="zchat-hint" role="status"></p>
+      </details>
       <div id="zchatMessages" class="zchat-messages" role="log" aria-label="Messaggi" aria-live="polite" aria-relevant="additions"></div>
       <form id="zchatForm" class="zchat-composer">
         <p id="zchatStatus" class="zchat-hint" role="status" aria-live="polite"></p>
@@ -172,6 +180,76 @@
         </div>
       </form>`;
     document.body.appendChild(panel);
+    function drawScope() {
+      $('zchatScopeAll').checked = state.scope.mode === 'all';
+      $('zchatScopeWiki').checked = state.scope.wikipedia;
+      $('zchatScopeTitle').textContent = state.scope.mode === 'all' ? 'Fonti: tutto lo zaino' : 'Fonti selezionate: ' + state.scope.sourceIds.length;
+      const list = $('zchatScopeList'); list.replaceChildren();
+      state.sources.forEach(source => {
+        const label = el('label'), check = el('input'); check.type = 'checkbox'; check.dataset.sourceId = source.id;
+        check.checked = state.scope.mode === 'all' || state.scope.sourceIds.includes(source.id);
+        check.disabled = state.scope.mode === 'all' || state.sending || state.scopeSaving;
+        check.addEventListener('change', () => {
+          state.scope.sourceIds = Array.from(list.querySelectorAll('input:checked')).map(c => c.dataset.sourceId);
+          saveScope();
+        });
+        label.append(check, document.createTextNode(source.file)); list.append(label);
+      });
+      $('zchatScopeAll').disabled = $('zchatScopeWiki').disabled = state.sending || state.scopeSaving;
+    }
+    async function loadSources() {
+      const zaino = state.zaino, epoch = state.epoch;
+      if (!zaino) { state.sources = []; drawScope(); return; }
+      try { const result = await call('sources', zaino); if (current(epoch, zaino)) { state.sources = result.sources; drawScope(); status('zchatScopeStatus', (result.warnings || []).join('\n')); } }
+      catch (error) { if (current(epoch, zaino)) status('zchatScopeStatus', errorText(error), true); }
+    }
+    async function saveScope() {
+      const zaino = state.zaino, epoch = state.epoch, id = state.session?.id;
+      state.scopeSaving = true; studio?.scopeChanged(); drawScope(); updateControls();
+      try {
+        if (id) { const result = await call('scope', zaino, id, state.scope); if (current(epoch, zaino) && state.session?.id === id) state.session = result.session; }
+        if (current(epoch, zaino)) status('zchatScopeStatus', state.scope.mode === 'selected' && !state.scope.sourceIds.length ? 'Nessuna fonte selezionata: il tutor non riceverà documenti.' : 'Ambito della conversazione conservato.');
+      } catch (error) { if (current(epoch, zaino)) status('zchatScopeStatus', errorText(error), true); }
+      finally { if (current(epoch, zaino)) { state.scopeSaving = false; drawScope(); updateControls(); } }
+    }
+    $('zchatScopeAll').addEventListener('change', () => {
+      state.scope = { mode: $('zchatScopeAll').checked ? 'all' : 'selected', sourceIds: [], wikipedia: false }; saveScope();
+    });
+    $('zchatScopeWiki').addEventListener('change', () => { state.scope.wikipedia = $('zchatScopeWiki').checked; saveScope(); });
+    async function openCitation(message, source) {
+      const zaino = state.zaino, epoch = state.epoch, id = state.session?.id;
+      try {
+        const result = await call('citation', zaino, id, message.id, source.citation);
+        if (!current(epoch, zaino) || state.session?.id !== id) return;
+        if (result.status !== 'available') {
+          status('zchatStatus', (result.status === 'changed' ? 'Fonte aggiornata: la risposta cita la versione precedente.' : result.status === 'removed' ? 'Fonte non più disponibile.' : 'Citazione storica senza identità verificabile.') + (result.quote ? ' Estratto: ' + result.quote : ''), true); return;
+        }
+        const target = result.source;
+        if (target.kind === 'pdf') window.openPdf?.(target.file.split('/').pop(), result.page || 1, target.file.split('/').pop());
+        else if (target.kind === 'appunto') { window.noteApriAttivo?.(target.file.slice('APPUNTI/'.length)); }
+        else { status('zchatStatus', target.file + ': ' + result.quote); return; }
+        status('zchatStatus', result.quote ? 'Passaggio citato: ' + result.quote : 'Fonte aperta.');
+      } catch (error) { if (current(epoch, zaino)) status('zchatStatus', errorText(error), true); }
+    }
+    function citationButton(message, source) {
+      const button = el('button', source.citation, 'tbtn zchat-citation'); button.type = 'button';
+      button.title = sourceLabel(source) + (source.quote ? ' — ' + source.quote : '');
+      button.setAttribute('aria-label', 'Apri ' + sourceLabel(source));
+      button.addEventListener('click', () => openCitation(message, source)); return button;
+    }
+    function linkCitations(body, message) {
+      const sources = citedSources(message.content, message.context?.sources).filter(s => s.sourceId);
+      const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT), nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      for (const node of nodes) {
+        const parts = node.nodeValue.split(/(\[S\d+\])/g);
+        if (parts.length === 1) continue;
+        const fragment = document.createDocumentFragment();
+        for (const part of parts) { const source = sources.find(s => s.citation === part); fragment.append(source ? citationButton(message, source) : document.createTextNode(part)); }
+        node.replaceWith(fragment);
+      }
+    }
+
     const renameDialog = el('dialog', undefined, 'zchat-rename'); renameDialog.id = 'zchatRenameDialog';
     renameDialog.setAttribute('aria-labelledby', 'zchatRenameTitle'); renameDialog.setAttribute('aria-describedby', 'zchatRenameNote');
     renameDialog.innerHTML = `<form id="zchatRenameForm"><h2 id="zchatRenameTitle">Dai un nome alla conversazione</h2><p id="zchatRenameNote">La chat è già salvata nello zaino.</p><label for="zchatRenameInput">Nome</label><input id="zchatRenameInput" class="ctl-input" type="text" maxlength="160" required><div class="zchat-rename-actions"><button class="tbtn" type="button" id="zchatRenameDefault">Mantieni data</button><button class="tbtn acc" type="submit" id="zchatRenameSave">Salva nome</button></div></form>`;
@@ -335,7 +413,7 @@
       } catch (error) { status('zchatAIStatus', errorText(error), true); }
       finally { keyBusy = false; drawConfig(); }
     });
-    function drawSources(parent, context, text) {
+    function drawSources(parent, context, text, message) {
       if (!context) return;
       const sent = context.sources || [], sources = citedSources(text, sent), warnings = context.warnings || [];
       if (!sources.length && !warnings.length && !sent.length) return;
@@ -349,6 +427,7 @@
         sources.forEach(source => {
           const li = el('li'); const href = safeLink(source.url);
           if (href) { const a = el('a', sourceLabel(source)); a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; li.appendChild(a); }
+          else if (source.sourceId) { const button = citationButton(message, source); button.textContent = sourceLabel(source); li.appendChild(button); }
           else li.textContent = sourceLabel(source);
           list.appendChild(li);
         }); details.appendChild(list);
@@ -447,14 +526,26 @@
             body.replaceChildren(copyFormatting(template.content, document)); body.classList.add('zchat-markdown');
           } catch (_) { /* Un testo non formattabile rimane leggibile per intero. */ }
         }
-        article.appendChild(body);
+        linkCitations(body, message); article.appendChild(body);
         if (message.status === 'error' || message.status === 'cancelled') article.appendChild(el('p', message.error || 'Risposta interrotta. Puoi inviare di nuovo il messaggio.', 'zchat-hint zchat-error'));
-        drawSources(article, message.context, message.content);
+        drawSources(article, message.context, message.content, message);
         if (message.role === 'assistant' && speechText(message)) {
           const actions = el('div', undefined, 'zchat-message-actions');
           actions.appendChild(messageButton('⧉', 'Copia risposta', 'zchat-copy', message, async () => {
             try { await navigator.clipboard.writeText(speechText(message)); status('zchatStatus', 'Risposta copiata.'); }
             catch (error) { status('zchatStatus', 'Impossibile copiare la risposta: ' + errorText(error), true); }
+          }));
+          actions.appendChild(messageButton('＋', 'Aggiungi agli appunti', 'zchat-note', message, () => {
+            const menu=el('div',undefined,'zchat-message-actions');
+            for(const [nuovo,label] of [[false,'Appunto attivo'],[true,'Nuovo appunto']]){
+              const button=el('button',label,'tbtn');button.type='button';
+              button.addEventListener('click',()=>{try{
+                const r=window.noteSalvaRispostaAI(state.zaino,state.session.id,message.id,nuovo);
+                status('zchatStatus',r.duplicate?'Risposta già presente in questo appunto.':'Risposta conservata negli appunti.');menu.remove();loadSources();
+              }catch(error){status('zchatStatus',errorText(error),true);}});menu.append(button);
+            }
+            const old=article.querySelector('.zchat-note-target');if(old)old.remove();
+            menu.classList.add('zchat-note-target');article.append(menu);
           }));
           actions.appendChild(messageButton('▷', 'Leggi la risposta', 'zchat-speak', message, () => speak(message)));
           const branch = messageButton('↗︎', 'Nuova conversazione da qui', 'zchat-branch', message, () => branchSession(message.id));
@@ -469,10 +560,12 @@
     }
     function resizeInput() { const input = $('zchatInput'); input.style.height = 'auto'; input.style.height = Math.min(128, input.scrollHeight) + 'px'; }
     function updateControls() {
-      const busy = state.sending || state.loading || state.finishing;
+      const busy = state.sending || state.loading || state.finishing || state.scopeSaving || state.studying;
+      $('zchatScopeAll').disabled=$('zchatScopeWiki').disabled=busy;
+      $('zchatScopeList').querySelectorAll('input').forEach(c=>{c.disabled=busy || state.scope.mode==='all';});
       $('zchatRole').disabled = !state.zaino || busy;
       $('zchatRole').title = descriptions[$('zchatRole').value];
-      $('zchatNew').disabled = !state.zaino || state.loading || state.finishing;
+      $('zchatNew').disabled = !state.zaino || state.loading || state.finishing || state.studying;
       ['zchatSettingsProvider','zchatSettingsModel'].forEach(id => { $(id).disabled = state.sending || !state.ready; });
       $('zchatInput').disabled = !state.zaino || state.sending || state.loading || state.finishing || !api;
       const validModel = (state.modelCache[state.settings.provider] || []).some(model => model.id === state.settings.model);
@@ -487,6 +580,7 @@
     function restoreSession(session) {
       stopSpeech(); state.session = session;
       if (session) $('zchatRole').value = session.role || 'socratico';
+      state.scope = session?.scope || { mode: 'all', sourceIds: [], wikipedia: true }; drawScope();
       drawMessages(); updateControls();
     }
     async function loadSessions() {
@@ -517,11 +611,12 @@
       if (state.zaino) state.drafts.set(state.zaino, $('zchatInput').value || state.pending);
       dismissNaming(null); stopSpeech();
       const wasSending = state.sending; const epoch = ++state.epoch; ++state.readEpoch; state.cancelSending = true;
-      state.zaino = zaino; state.session = null; state.sessions = []; state.pending = ''; state.sending = false; state.loading = false;
+      state.zaino = zaino; state.session = null; state.sessions = []; state.pending = ''; state.sending = false; state.loading = false; state.scopeSaving = false; studio?.reset();
+      state.scope = { mode: 'all', sourceIds: [], wikipedia: true }; state.sources = []; drawScope();
       $('zchatInput').value = state.drafts.get(zaino) || ''; resizeInput(); drawMessages(); updateControls(); status('zchatStatus', '');
       if (wasSending) { state.loading = true; updateControls(); try { await call('cancel'); } catch (_) {} }
       if (!current(epoch, zaino)) return;
-      await loadSessions();
+      await loadSessions(); await loadSources();
     }
     async function resumeSession(id) {
       if (state.loading || state.finishing || state.sending) return;
@@ -586,7 +681,7 @@
       if (state.zaino !== currentZaino()) { await syncZaino(); return; }
       updateControls(); if ($('zchatSend').disabled) return;
       const zaino = state.zaino; const epoch = ++state.epoch;
-      const request = { text: $('zchatInput').value.trim(), role: $('zchatRole').value, profileId: state.activeId, provider: state.settings.provider, model: state.settings.model };
+      const request = { scope: structuredClone(state.scope), text: $('zchatInput').value.trim(), role: $('zchatRole').value, profileId: state.activeId, provider: state.settings.provider, model: state.settings.model };
       state.sending = true; state.cancelSending = false; updateControls();
       try {
         if (typeof window.noteFlush === 'function') await window.noteFlush();
@@ -595,7 +690,7 @@
         if (!current(epoch, zaino) || state.cancelSending) return;
         state.pending = request.text; $('zchatInput').value = ''; resizeInput(); status('zchatStatus', ''); drawMessages();
         if (!state.session) {
-          const created = await call('create', zaino, { role: request.role, profileId: request.profileId });
+          const created = await call('create', zaino, { role: request.role, profileId: request.profileId, scope: request.scope });
           if (!current(epoch, zaino)) return;
           state.session = created.session; rememberSession(created.session);
         }
@@ -623,7 +718,7 @@
     });
     function setCollapsed(collapsed) {
       panel.classList.toggle('is-collapsed', collapsed);
-      $('zchatMessages').hidden = collapsed; $('zchatForm').hidden = collapsed;
+      $('zchatScope').hidden = collapsed; if(studio)studio.box.hidden=collapsed; $('zchatMessages').hidden = collapsed; $('zchatForm').hidden = collapsed;
       const button = $('zchatCollapse'); button.textContent = collapsed ? '□' : '−'; button.setAttribute('aria-expanded', String(!collapsed));
       button.title = collapsed ? 'Espandi la chat' : 'Collassa la chat'; button.setAttribute('aria-label', button.title);
       if (!collapsed) { const rect = panel.getBoundingClientRect(); move(rect.left, rect.top); resizeInput(); $('zchatInput').focus(); }
@@ -632,7 +727,7 @@
     function open() {
       state.returnFocus = document.activeElement; panel.hidden = false; setCollapsed(false); toggle.setAttribute('aria-expanded', 'true');
       const oldZaino = state.zaino;
-      syncZaino().then(async () => { if (oldZaino === state.zaino && !state.session) await loadSessions(); if (!panel.hidden) $('zchatInput').focus(); });
+      syncZaino().then(async () => { if (oldZaino === state.zaino && !state.session) await loadSessions(); await loadSources(); if (!panel.hidden) $('zchatInput').focus(); });
       if (!state.zaino) $('zchatHandle').focus();
     }
     toggle.addEventListener('click', () => panel.hidden ? open() : panel.classList.contains('is-collapsed') ? setCollapsed(false) : close());
@@ -673,6 +768,7 @@
       } catch (error) { status('zchatStatus', errorText(error), true); status('zchatAIStatus', errorText(error), true); }
       finally { updateControls(); }
     }
+    const studio=window.ZainoStudio?.crea({host:panel,state,refreshSources:loadSources,busyChanged:updateControls});
     drawMessages(); start();
   }
   return { init, safeLink, citedSources, sourceLabel, datedTitle, speechText, notesSaved, copyFormatting };

@@ -387,7 +387,7 @@
       if(rif && rif.tipo==='video'){ var f=g.mediaNum()[rif.numero]||'';
         return '<a href="#" class="vlink" data-file="'+g.esc(f)+'" data-t="'+rif.t+'" data-label="'+txt+'">'+txt+'</a>'; }
       if(rif && rif.tipo==='pdf'){ var pf=g.pdfNum()[rif.numero]||'';
-        return '<a href="#" class="plink" data-file="'+g.esc(pf)+'" data-page="'+rif.pagina+'" data-label="'+txt+'">'+txt+'</a>'; }
+        return '<a href="#" class="plink"'+(rif.sourceId?' data-source-id="'+rif.sourceId+'" data-source-revision="'+rif.revision+'"':'')+' data-file="'+g.esc(pf)+'" data-page="'+rif.pagina+'" data-label="'+txt+'">'+txt+'</a>'; }
       /* Rimando a un CAPITOLO preciso, che è cosa diversa dal wiki-link: `[[…]]`
          arriva alla lezione e `loadLesson` riparte dal primo capitolo, quindi non
          sa dire «quel punto lì». Serviva perché ogni frammento che si estrae dal

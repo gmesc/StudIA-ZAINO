@@ -1,0 +1,27 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const PK=require('../lib/pacchetto');
+const C=require('../lib/chat'),A=require('../lib/appunti'),R=require('../lib/risposte-ai'),P=require('../lib/chat-profili');
+const S=require('../App/assets/rimandi/sintassi'),L=require('../App/assets/lettura/capitolo');
+const root=fs.mkdtempSync(path.join(os.tmpdir(),'risposte-ai-')),z='biologia';
+(async()=>{
+ fs.mkdirSync(path.join(root,'Zaini',z),{recursive:true});fs.writeFileSync(path.join(root,'Zaini',z,'_zaino.md'),'# Biologia');
+ for(const name of ['CHAT/*','RIPASSO/*','_fonti-ai.json']){assert(PK.esclusioni(z,{appunti:false}).includes(z+'/'+name));assert(!PK.esclusioni(z,{appunti:true}).includes(z+'/'+name));}
+ const session=C.crea(root,z),msg={id:'answer-1',role:'assistant',content:'Testo **utile** [S1] ![trappola](https://evil.test/x) <script>boom</script>',provider:'test',model:'finto',createdAt:'2026-10-18',context:{sources:[{sourceId:'fonte-1',revision:'a'.repeat(64),citation:'[S1]',file:'MATERIALI/01 Fonte.pdf',kind:'pdf',page:2,quote:'Il passaggio originale.'}]}};
+ session.messages.push(msg);P.scriviAtomico(root,['Zaini',z,'CHAT',session.id+'.json'],JSON.stringify(session));
+ const saved=R.salva(root,z,session.id,msg.id);const p=path.join(root,'Zaini',z,'APPUNTI',saved.file);
+ assert(fs.readFileSync(p,'utf8').includes('versione citata'));
+ assert(saved.body.includes('&s=fonte-1&r='));
+ assert(!saved.body.includes('<script>'));assert(!saved.body.includes('https://evil'));
+ assert.equal(R.salva(root,z,session.id,msg.id).duplicate,true);
+ const url=S.scriviPdf(1,2,msg.context.sources[0]);assert.equal(S.leggi(url).sourceId,'fonte-1');assert.equal(S.leggi(url.replace(/&/g,'&amp;')).revision,'a'.repeat(64));
+ assert(L.crea().mdToHtml('[fonte]('+url+')').includes('data-source-id="fonte-1"'));
+ const target=A.save(root,z,null,{title:'Personale'},'\nTesto scritto da me.');
+ const append=R.salva(root,z,session.id,msg.id,{file:target.file,expectedBody:'\nTesto scritto da me.'});
+ assert(append.body.startsWith('\nTesto scritto da me.\n\n'));assert.equal(R.salva(root,z,session.id,msg.id,{file:target.file,expectedBody:'stale'}).duplicate,true);
+ const other=A.save(root,z,null,{title:'Concorrenza'},'Modifica esterna.');
+ assert.throws(()=>R.salva(root,z,session.id,msg.id,{file:other.file,expectedBody:'Versione vecchia.'}),/cambiato/);
+ assert.throws(()=>R.salva(root,z,session.id,msg.id,{file:'../fuori.md',expectedBody:''}),/non valido/);
+ C.elimina(root,z,session.id);assert(fs.readFileSync(p,'utf8').includes('Il passaggio originale.'));
+ console.log('risposte-ai: copia indipendente, riferimenti, doppio invio, concorrenza e testo sicuro OK');
+})().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>fs.rmSync(root,{recursive:true,force:true}));

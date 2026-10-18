@@ -79,10 +79,12 @@
 
   /** La pagina di un documento. Le pagine si contano da 1: `#p=0` non esiste, e
    *  un rimando che ci finisse aprirebbe il documento senza saltare. */
-  function scriviPdf(numero, pagina) {
+  function scriviPdf(numero, pagina, fonte) {
     const n = nn(numero); if (!n) return '';
     const p = parseInt(pagina, 10);
-    return 'pdf:' + n + (p > 0 ? '#p=' + p : '');
+    const base = 'pdf:' + n + (p > 0 ? '#p=' + p : '');
+    return fonte && /^[a-zA-Z0-9_-]{1,100}$/.test(fonte.sourceId) && /^[0-9a-f]{64}$/.test(fonte.revision)
+      ? base + '&s=' + fonte.sourceId + '&r=' + fonte.revision : base;
   }
 
   function scriviCap(capitoloId) {
@@ -116,6 +118,9 @@
   function leggi(url) {
     const s = String(url == null ? '' : url).trim();
     let m;
+    // I rimandi AI conservano la revisione: il numero da solo non autorizza l'apertura.
+    const snap = /^(pdf:\d+(?:#p=\d+)?)(?:&amp;|&)s=([a-zA-Z0-9_-]{1,100})(?:&amp;|&)r=([0-9a-f]{64})$/.exec(s);
+    if (snap) return Object.assign(leggi(snap[1]), { sourceId:snap[2], revision:snap[3] });
     if ((m = RE.video.exec(s))) return { tipo: 'video', numero: nn(m[1]), t: parseInt(m[2], 10) };
     if ((m = RE.pdf.exec(s))) return { tipo: 'pdf', numero: nn(m[1]), pagina: parseInt(m[2], 10) };
     if ((m = RE.pdfSenzaPagina.exec(s))) return { tipo: 'pdf', numero: nn(m[1]), pagina: 1 };

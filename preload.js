@@ -784,4 +784,6 @@ const vaultApi = {
 };
 require('./lib/zaino-only').proteggiPreload(vaultApi, vaultPath);
 vaultApi.chat = require('./lib/chat-ipc').ponte(ipcRenderer);
+vaultApi.rag = require('./lib/rag-ipc').ponte(ipcRenderer);
+vaultApi.studio = require('./lib/studio-ipc').ponte(ipcRenderer);
 contextBridge.exposeInMainWorld('vault', vaultApi);

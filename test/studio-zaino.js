@@ -1,0 +1,22 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const F=require('../lib/fonti-ai'),S=require('../lib/schede-zaino'),I=require('../lib/interrogazione'),R=require('../lib/rag');
+const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(root,'Zaini','test');
+(async()=>{
+ fs.mkdirSync(path.join(d,'MATERIALI'),{recursive:true});fs.writeFileSync(path.join(d,'_zaino.md'),'# Test');fs.writeFileSync(path.join(d,'MATERIALI','bio.txt'),'I mitocondri producono ATP. La respirazione cellulare fornisce energia.');
+ const source=F.sincronizza(root,'test').sources[0],scope={mode:'selected',sourceIds:[source.id],wikipedia:false};
+ let calls=0;
+ const opts={provider:'openai',model:'finto',chiama:async req=>{calls++;const data=JSON.parse(req.messages[0].content);if(data.porzioni)return {text:JSON.stringify({items:[{title:'Mitocondri',text:'Producono ATP.',refs:[data.porzioni[0].chunkId]}]})};if(data.proofs && data.topic)return {text:JSON.stringify({question:'Quale organello produce ATP?',answer:'I mitocondri.',rubric:['Identifica i mitocondri.'],hint:'Pensa alla respirazione cellulare.',refs:[data.proofs[0].chunkId]})};assert.equal(data.question,'Quale organello produce ATP?');assert(data.proofs[0].text.includes('mitocondri'));return {text:JSON.stringify({correct:['Hai indicato i mitocondri.'],missing:[],contradictory:[],summary:'La risposta è coerente con il materiale.',assessable:true})};}};
+ for(const preset of Object.keys(S.PRESET)){const card=await S.genera(root,'test',source.id,preset,opts);assert(card.items[0].refs.length);assert.equal(S.leggi(root,'test',source.id,preset).status,'current');}
+ const copy=S.copia(root,'test',source.id,'sintesi');fs.appendFileSync(path.join(d,'APPUNTI',copy.file),'\nModifica personale');assert(S.copia(root,'test',source.id,'sintesi').duplicate);assert(fs.readFileSync(path.join(d,'APPUNTI',copy.file),'utf8').includes('Modifica personale'));
+ const q=await I.avvia(root,'test',{scope,topic:'ATP'},opts);assert(!Object.hasOwn(q,'answer'),'la soluzione non va al renderer prima del tentativo');assert.equal(I.stato(root,'test',scope).active.id,q.id);
+ let answered=await I.rispondi(root,'test',q.id,{attemptId:'attempt-one',text:'I mitocondri.'},opts);assert.equal(answered.answer,'I mitocondri.');assert(answered.attempts[0].feedback.assessable);
+ const n=calls;await I.rispondi(root,'test',q.id,{attemptId:'attempt-one',text:'I mitocondri.'},opts);assert.equal(calls,n);assert.equal(I.leggi(root,'test',q.id).attempts.length,1);
+ I.conserva(root,'test',q.id);const good=I.esito(root,'test',q.id,'attempt-one','buono');assert.equal(good.storia.length,1);assert.equal(good.anteprima.find(x=>x.esito==='facile').minuti,1440,'correggere lo stesso tentativo non simula una seconda ripetizione');I.esito(root,'test',q.id,'attempt-one','facile');const changed=I.leggi(root,'test',q.id);assert.equal(changed.attempts[0].corrections.length,2);assert.equal(I.storia(changed).length,1);assert.equal(I.storia(changed)[0].esito,'facile');
+ R.ricostruisci(root,'test');assert.equal(S.leggi(root,'test',source.id,'sintesi').status,'current');assert.equal(I.leggi(root,'test',q.id).attempts.length,1);assert.equal(I.stato(root,'test',scope).counts.total,1);
+ fs.writeFileSync(path.join(d,source.file),'Contenuto sostituito.');
+ answered=await I.rispondi(root,'test',q.id,{attemptId:'attempt-two',text:'Un altro tentativo.'},opts);assert.equal(answered.attempts.at(-1).feedback.assessable,false);assert.equal(calls,n);
+ const empty=I.stato(root,'test',{mode:'selected',sourceIds:[],wikipedia:false});assert.equal(empty.questions.length,0);
+ let invalid=0;await assert.rejects(S.genera(root,'test',source.id,'sintesi',{...opts,chiama:async()=>{invalid++;return {text:'{"items":[{"title":"Falso","text":"Inventato","refs":["inesistente"]}]}'};}}),/due tentativi/);assert.equal(invalid,2);
+ console.log('studio-zaino: cinque preset, prove vincolate, copia personale, soluzione nascosta, ripresa, idempotenza, correzioni e fonti obsolete OK');
+})().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>fs.rmSync(root,{recursive:true,force:true}));

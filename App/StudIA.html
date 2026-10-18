@@ -3360,6 +3360,7 @@ async function ripassoRegistra(cap, q, esito){
  * silenzio è l'unica cosa peggiore di perdere.
  */
 async function ripassoPota(){
+  if(modoAttivo()==='zaino') return; // Le carte autonome conservano sempre la storia.
   var api=ripassoApi(), corso=corsoAttivo();
   if(!api || !corso || !Object.keys(RIPASSO.carte).length) return;
   var vive=ripassoDomandeVive('corso');
@@ -3466,6 +3467,7 @@ async function ripassoConStoria(vive){
 }
 
 async function ripassoCostruisci(){
+  if(modoAttivo()==='zaino' && window.zainoRipasso){ await window.zainoRipasso.refresh(); return; }
   var api=ripassoApi();
   var vive=ripassoDomandeVive(RIP.ambito);
   RIP.chiave=corsoAttivo()+'|'+RIP.ambito+'|'+((LESSON&&LESSON.id)||'')+'|'+state.current;
@@ -3557,6 +3559,7 @@ function ripassoContoDisegna(){
 /** Ricalcola i conteggi del corso aperto. Un giro solo sul main per l'intero
  *  corso: la coda della vista è un sottoinsieme di questi stessi dati. */
 async function ripassoContoAggiorna(){
+  if(modoAttivo()==='zaino' && window.zainoRipasso){ await window.zainoRipasso.refresh(); return; }
   var api=ripassoApi(), corso=corsoAttivo();
   if(!api || !corso){ RIPCONTO={ mai:0, attesa:0, oggi:0, totale:0, corso:'' }; ripassoContoDisegna(); return; }
   try{
@@ -3614,6 +3617,7 @@ function ripassoStatoCarta(c){
 }
 
 function ripassoVistaDisegna(){
+  if(modoAttivo()==='zaino' && window.zainoRipasso) return;
   var host=document.getElementById('ripCorpo'); if(!host) return;
   var pie=document.getElementById('ripPie');
   var sel=document.getElementById('ripAmbito'); if(sel && sel.value!==RIP.ambito) sel.value=RIP.ambito;
@@ -13078,6 +13082,29 @@ async function appuntaSelezione(testo, range, stile){
  * testo battuto negli ultimi 1,8 s — quello che l'autosalvataggio non ha ancora
  * scritto — con la copia vecchia del disco.
  */
+function noteSalvaRispostaAI(zaino, sessionId, messageId, nuovo){
+  var b=noteBersaglio(), s=b.stato;
+  if(!nuovo && (!b.file || !s.mde || !noteBersaglioValido(b))) throw new Error('Apri un appunto di destinazione.');
+  if(!nuovo){
+    var disco=notesApi().leggi(b.corso), notaDisco=(disco.notes||[]).find(function(n){return n.file===b.file;});
+    var normalizza=function(t){return String(t||'').replace(/^\n+/,'').trimEnd();};
+    if(disco.error || !notaDisco || normalizza(notaDisco.body)!==normalizza(s.cur.body)) throw new Error('Appunto cambiato sul disco: riaprilo prima di aggiungere la risposta.');
+  }
+  if(!noteFlush() || !appuntiParalleli.flush()) throw new Error('Salva prima gli appunti aperti.');
+  var prima=!nuovo?s.mde.value():null;
+  var r=window.vault.chat.saveAnswer(zaino,sessionId,messageId,nuovo?{}:{file:b.file,expectedBody:prima});
+  if(!r || !r.ok) throw new Error(r && r.error || 'Appunto non salvato.');
+  if(nuovo){notesReload();refreshMyNotes();noteApriAttivo(r.file);}
+  else if(!r.duplicate && noteBersaglioValido(b)){
+    var cm=s.mde.codemirror, cursor=cm.getCursor(), scroll=cm.getScrollInfo();
+    s.caricando=true;
+    try{var n=cm.lastLine();cm.replaceRange(r.appended,{line:n,ch:cm.getLine(n).length});}
+    finally{s.caricando=false;}
+    s.cur.body=cm.getValue();s.dirty=false;clearTimeout(s.timer);s.timer=null;
+    cm.setCursor(cursor);cm.scrollTo(scroll.left,scroll.top);noteRicorda(s,false);notesReload();refreshMyNotes();
+  }
+  return r;
+}
 function noteInserisci(md, destinazione){
   destinazione=destinazione||noteStatoAttivo();
   if(!md || destinazione.eliminando || !destinazione.cur || !destinazione.mde) return false;
@@ -13720,6 +13747,7 @@ function selMenuHTML(sel){
     righeColore+
     voce('cancella','Cancella evidenziatura', sopra? '' : 'qui non ce n’è')+
     '<div class="ctx-sep"></div>'+
+    (modoAttivo()==='zaino'?voce('interrogami','Interrogami su questo',''):'')+
     voce('copia','Copia','');
 }
 function selMenuApri(x, y, sel){
@@ -13763,6 +13791,7 @@ document.addEventListener('contextmenu', function(e){
  * una delle due dimentica di fare un pezzo.
  */
 function selAzione(az, testo, range){
+  if(az==='interrogami'){var sup=evSupDaRange(range);window.zainoInterrogami?.({text:testo,file:sup && sup.tipo==='pdf'?ANTEPRIMA.file:''});return;}
   if(az==='copia'){
     if(!navigator.clipboard){ toast('Copia non disponibile',false); return; }
     navigator.clipboard.writeText(testo).then(function(){ toast('Copiato',true); },
@@ -14853,6 +14882,7 @@ var SBIRCIA={ timer:null, su:null };
  *  risolto. `null` se quel link non è un rimando dell'app. */
 function rimandoDaLink(a){
   if(!a || !a.classList) return null;
+  if(a.dataset.sourceId) return null; // Prima va verificata la revisione; mai mostrare una pagina sostituita.
   if(a.classList.contains('plink') && !a.classList.contains('figlink')){
     return { tipo:'pdf', numero:a.getAttribute('data-file'),
              pagina:parseInt(a.getAttribute('data-page'),10)||1 };
@@ -16293,6 +16323,14 @@ document.addEventListener('click', function(e){
   e.preventDefault();
   if(a.classList.contains('vlink')){ openVideo(a.getAttribute('data-file'), parseInt(a.getAttribute('data-t'),10), a.getAttribute('data-label')); }
   else if(a.classList.contains('plink')){ var pf=a.getAttribute('data-file');
+    if(a.dataset.sourceId){
+      var z=zainoAttivo();
+      window.vault.chat.resolveSource(z,{sourceId:a.dataset.sourceId,revision:a.dataset.sourceRevision,page:parseInt(a.dataset.page,10)||1}).then(function(r){
+        if(z!==zainoAttivo()) return;
+        if(!r.ok || r.status!=='available'){toast(r.error || (r.status==='changed'?'La fonte è cambiata: il rimando conserva la versione precedente.':'Fonte non più disponibile.'),false);return;}
+        openPdf(r.source.file.split('/').pop(),r.page,a.getAttribute('data-label'));
+      }).catch(function(e){toast(e.message,false);}); return;
+    }
     /* ⚠️ `_pdfNum()[NN]||''` lascia il link con `data-file` vuoto quando il
        materiale non c'è, e `openPdf` usciva alla prima riga: click che non
        faceva NIENTE, per sempre, senza un segno. La figura lo dice già
@@ -17688,8 +17726,8 @@ function bancoCarica(){
   var grezzo=null;
   try{ grezzo=JSON.parse(localStorage.getItem(bancoChiave())||'null'); }catch(e){}
   BANCO.stato=BancoForme.normalizzaStato(grezzo||bancoPredefinito());
-  /* ⚠️ Rete per una disposizione dello zaino salvata quando «Capitolo» o
-     «Ripasso» erano ancora in elenco: uno strumento che la tendina non offre
+  /* ⚠️ Rete per una disposizione dello zaino salvata quando «Capitolo»
+     era ancora in elenco: uno strumento che la tendina non offre
      più resterebbe montato e irraggiungibile — a schermo il capitolo di un
      corso (o un ripasso strutturalmente vuoto), e nessun modo di toglierlo se
      non svuotando il `localStorage`. */
@@ -17697,7 +17735,6 @@ function bancoCarica(){
     var b=BANCO.stato.blocchi||{};
     Object.keys(b).forEach(function(k){
       if(b[k]==='capitolo') b[k]='fonte';
-      if(b[k]==='flashcard') b[k]='album';
     });
     BANCO.stato=BancoForme.normalizzaStato(BANCO.stato);
   }
@@ -17897,11 +17934,8 @@ function bancoStrumentiOfferti(){
     Object.keys(reg).forEach(function(id){ if(id!=='foto' && id!=='fonte2' && id!=='appunti2') out[id]=reg[id]; });
     return out;
   }
-  /* Nello zaino non si offrono né «Capitolo» né «Ripasso»: i capitoli sono di
-     una lezione, e le carte del ripasso nascono dal quiz e dal glossario dei
-     capitoli — in uno zaino non c'è né l'uno né l'altro, e una voce che apre
-     un riquadro strutturalmente vuoto è una promessa falsa (13 agosto). */
-  Object.keys(reg).forEach(function(id){ if(id!=='capitolo' && id!=='flashcard' && id!=='fonte2' && id!=='appunti2') out[id]=reg[id]; });
+  /* Il Ripasso dello zaino usa domande autonome: non richiede capitoli fittizi. */
+  Object.keys(reg).forEach(function(id){ if(id!=='capitolo' && id!=='fonte2' && id!=='appunti2') out[id]=reg[id]; });
   return out;
 }
 function bancoAggiornaTestate(){
@@ -20499,6 +20533,7 @@ function mapMenuApri(x, y, b){
     /* Due voci diverse perché sono due gesti diversi: con una fonte sola si va,
        con più fonti si sceglie. La bolla è la stessa che apre il pallino sul
        nodo — due strade, una porta. */
+    if(modoAttivo()==='zaino') h+=voce('interrogami','Interrogami su questo');
     var nf=mappaFontiDi(d).length;
     if(nf>1) h+=voce('fonti','Fonti… ('+nf+')');
     else if(d.rimando || nf || d.capitolo!=null) h+=voce('fonte','Vai alla fonte');
@@ -20960,6 +20995,7 @@ document.addEventListener('click', function(e){
     case 'rinomina':     mapMenuChiudi(); mappaRinomina(id); return;
     case 'figlio':       mapMenuChiudi(); mappaSeleziona(id); mappaFiglio(); return;
     case 'fratello':     mapMenuChiudi(); mappaSeleziona(id); mappaFratello(); return;
+    case 'interrogami': mapMenuChiudi(); var nd=MAPPA.nodi[id]||{}; window.zainoInterrogami?.({text:nd.testo||'',rimando:nd.rimando||''}); return;
     case 'collega':      mapMenuChiudi(); mappaCollegaDa(id); return;
     case 'libera':       mapMenuChiudi(); mappaLibera(id); return;
     case 'fonte':        mapMenuChiudi(); mappaVaiAllaFonte(MAPPA.nodi[id]); return;
@@ -22392,7 +22428,7 @@ window.addEventListener('keydown', function(e){
         </div>
         <!-- L'opzione NON sta nel vassoio dei comandi: è ciò che l'esportazione
              porta con sé, non un comando da premere. -->
-        <label class="pkg-opt" style="margin-top:.5rem;"><input type="checkbox" id="projExportAppunti"> includi i miei appunti</label>
+        <label class="pkg-opt" style="margin-top:.5rem;"><input type="checkbox" id="projExportAppunti"> includi appunti, chat, ripasso e ritagli personali</label>
         <div class="pkg-prog" id="projExportProg" hidden><span class="pkg-bar"><i></i></span><span class="pkg-msg"></span></div>
         <p class="set-note">L'esportazione fa <b>un file solo</b> (<code>.studia.zip</code>) con dentro tutto ci&ograve; che serve a leggere il corso altrove: capitoli, video, audio, PDF, pagine salvate, trascrizioni e indici. Chi lo riceve usa &laquo;Importa corso&raquo; e ce l'ha completo, senza bisogno della tua cartella dei file. Restano fuori i file di lavorazione e, se non spunti la casella, i tuoi appunti.</p>
 
@@ -22544,6 +22580,8 @@ window.addEventListener('keydown', function(e){
   <div class="ib-track"><i id="ibFill"></i></div>
   <div class="ib-file" id="ibFile"></div>
 </div>
+<script src="assets/chat/schede-ripasso.js"></script>
+<script src="assets/chat/studio.js"></script>
 <script src="assets/chat/ui.js"></script>
 </body>
 </html>

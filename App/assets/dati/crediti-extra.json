@@ -253,6 +253,17 @@
       "copyright": "DeepSeek",
       "url": "https://platform.deepseek.com/",
       "avviso": "Il provider riceve la richiesta e i passaggi selezionati dello zaino."
+    },
+    {
+      "nome": "EmbeddingGemma 2 — encoder testo ONNX q8",
+      "categoria": "modello",
+      "versione": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+      "ruolo": "ricerca semantica locale, download opzionale verificato da manifest",
+      "licenza": "Apache-2.0",
+      "copyright": "Google LLC; conversione ONNX onnx-community",
+      "url": "https://huggingface.co/onnx-community/embeddinggemma-2-ONNX",
+      "licenzaFile": "apache-2.0.txt",
+      "avviso": "Solo encoder testuale; tokenizer e pesi vengono scaricati su richiesta. Nessun documento dello zaino è inviato per gli embeddings."
     }
   ]
 }

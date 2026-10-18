@@ -1,0 +1,23 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const F=require('../lib/fonti-ai'),R=require('../lib/rag');
+const root=fs.mkdtempSync(path.join(os.tmpdir(),'zaino-rag-')),d=path.join(root,'Zaini','test');
+(async()=>{
+ fs.mkdirSync(path.join(d,'MATERIALI'),{recursive:true});fs.writeFileSync(path.join(d,'_zaino.md'),'# Test');
+ fs.writeFileSync(path.join(d,'MATERIALI','uno.txt'),'I mitocondri producono ATP.');fs.writeFileSync(path.join(d,'MATERIALI','due.txt'),'La rivoluzione del 1789.');
+ const inventory=F.sincronizza(root,'test').sources,one=inventory.find(s=>s.file.endsWith('uno.txt')),two=inventory.find(s=>s.id!==one.id);
+ const calls=[],runtime={ready:()=>true,embed:async(t,o)=>{calls.push(t);const v=Array(768).fill(0);v[t.includes('1789')?1:0]=1;return {vector:v};}};
+ let opts={runtime,scope:{mode:'selected',sourceIds:[one.id],wikipedia:false}};
+ const first=await R.indicizza(root,'test',opts);assert.equal(first.total,1);assert(!calls.some(t=>t.includes('1789')));
+ assert.equal((await R.indicizza(root,'test',opts)).reused,1);assert.equal(calls.length,1);
+ await R.indicizza(root,'test',{runtime});
+ const search=await R.cerca(root,'test','Come ottengono energia le cellule?',{runtime});assert.equal(search.mode,'ibrida');assert.equal(search.chunks[0].sourceId,one.id);
+ const context=await R.recupera(root,'test','energia',opts);assert(context.sources.every(c=>c.sourceId===one.id));
+ const empty=await R.cerca(root,'test','energia',{runtime,scope:{mode:'selected',sourceIds:[],wikipedia:false}});assert.equal(empty.chunks.length,0);
+ fs.writeFileSync(path.join(d,one.file),'La fonte è stata completamente cambiata.');
+ const changed=await R.cerca(root,'test','energia',opts);assert.equal(changed.indexed,0);assert(changed.warnings.some(w=>w.includes('0/1')));
+ const ctrl=new AbortController();ctrl.abort();await assert.rejects(R.indicizza(root,'test',{...opts,signal:ctrl.signal}));
+ fs.mkdirSync(path.join(d,'RIPASSO'));fs.writeFileSync(path.join(d,'RIPASSO','personale.json'),'{}');R.ricostruisci(root,'test');assert(fs.existsSync(path.join(d,'RIPASSO','personale.json')));assert(fs.existsSync(path.join(d,'_fonti-ai.json')));
+ const ranked=R.classifica([{chunkId:'a',text:'Le cellule studiate',file:'A',position:0},{chunkId:'b',text:'Altro',file:'B',position:0}],'cellula');assert.equal(ranked[0].chunkId,'a');assert(ranked[0].score>0);
+ console.log('rag: ranking ibrido, esclusioni, cache incrementale, invalidazione, annullamento e dati personali OK');
+})().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>fs.rmSync(root,{recursive:true,force:true}));

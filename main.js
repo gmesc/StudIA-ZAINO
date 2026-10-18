@@ -2228,4 +2228,6 @@ ipcMain.handle('mappe:semina', (e, { corso, grafo, meta } = {}) => {
   return mappeLib.semina(d.v, corso, grafo || {}, meta || {});
 });
 
-require('./lib/chat-ipc').registra({ ipcMain, app, vaultDir, readCfg, writeCfg, readKey, keysStatus });
+const ragLocale=require('./lib/rag-ipc').registra({ipcMain,app,vaultDir});
+require('./lib/studio-ipc').registra({ipcMain,app,vaultDir,readCfg,readKey,recupera:ragLocale.recupera});
+require('./lib/chat-ipc').registra({ recupera:ragLocale.recupera, ipcMain, app, vaultDir, readCfg, writeCfg, readKey, keysStatus });

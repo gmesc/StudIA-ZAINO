@@ -137,3 +137,25 @@
 .zchat-window button:disabled,.zchat-settings button:disabled { opacity:.5; cursor:default; }
 @media (max-width:600px) { .zchat-window { right:8px; top:64px; width:calc(100vw - 16px); max-height:calc(100vh - 72px); } }
 @media (prefers-reduced-motion:reduce) { .zchat-messages { scroll-behavior:auto; } }
+
+/* Il perimetro è visibile senza sottrarre spazio ai messaggi quando chiuso. */
+.zchat-scope { flex:none; border-bottom:1px solid var(--line); padding:8px 12px; font-size:12px; }
+.zchat-scope summary { cursor:pointer; color:var(--teal-strong); }
+.zchat-scope label { display:flex; align-items:center; gap:8px; overflow-wrap:anywhere; margin:6px 0; }
+.zchat-scope input[type=checkbox] { flex:none; width:var(--tb-h); height:var(--tb-h); accent-color:var(--teal); }
+.zchat-scope-list { max-height:150px; overflow:auto; }
+.zchat-citation { color:var(--teal-strong); max-width:100%; vertical-align:baseline; }
+.zchat-sources .zchat-citation { overflow:hidden; text-overflow:ellipsis; }
+.zstudio { max-height:55vh; overflow:auto; }
+.zstudio-actions { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:8px 0; }
+.zstudio-actions input { flex:1; min-width:120px; color:var(--ink); background:var(--bg); border:1px solid var(--line); }
+.zstudio-results article { border-top:1px solid var(--line); padding:8px 0; }
+.zstudio-results p { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.5; }
+.zstudio details { margin-top:10px; }
+.zstudio label { flex-wrap:wrap; }
+.zstudio label select,.zstudio label input { max-width:100%; flex:1; height:var(--ctl-h); background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:0; }
+.zstudio textarea { width:100%; box-sizing:border-box; padding:8px; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:0; font:inherit; }
+.zstudio-banco { max-height:none; height:100%; overflow:auto; padding:12px; box-sizing:border-box; }
+.zstudio-banco #zinterroga>summary { font-weight:600; cursor:pointer; }
+.zstudio-banco label { display:flex; align-items:center; gap:8px; margin:8px 0; }
+.zstudio-banco #zstudyTopic { min-width:100px; width:100%; }

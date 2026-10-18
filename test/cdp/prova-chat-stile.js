@@ -165,9 +165,9 @@ const SUPERFICI = {
   await aspetta(`!document.getElementById('zchatSend').disabled`, PERCHE_SPENTO, 25000);
   await c.clicca('#zchatSend');
   await aspetta(`document.querySelectorAll('.zchat-message-assistant').length > ${prima}`);
-  /* La risposta porta con sé markdown, fonti e i tre comandi: sono i pezzi che
+  /* La risposta porta con sé markdown, fonti e i quattro comandi: sono i pezzi che
      un audit senza conversazione non vede mai. */
-  ok('l ultima risposta ha i suoi tre comandi', 3,
+  ok('l ultima risposta ha i suoi quattro comandi', 4,
     await c.val(`[...document.querySelectorAll('.zchat-message-actions')].at(-1).querySelectorAll('.tbtn').length`));
 
   for (const tema of temi) {
