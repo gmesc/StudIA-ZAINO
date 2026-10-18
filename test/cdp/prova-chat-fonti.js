@@ -15,8 +15,8 @@ const click=sel=>c.val(`document.querySelector(${JSON.stringify(sel)}).click()`)
  await click('#zchatScopeAll');await aspetta(`!document.getElementById('zchatScopeAll').disabled`);
  const sources=(await c.val(`window.vault.chat.sources('biologia')`)).sources;
  const pdf=sources.find(s=>s.file.endsWith('/01 Botanica.pdf'));assert(pdf);
- await click(`[data-source-id="${pdf.id}"]`);await aspetta(`!document.getElementById('zchatScopeAll').disabled`);
- const picker=await c.val(`(()=>{const e=document.querySelector('[data-source-id="${pdf.id}"]'),s=getComputedStyle(e);return {width:parseFloat(s.width),height:parseFloat(s.height),radius:s.borderRadius,selected:getComputedStyle(e,'::before').transform,number:document.getElementById('zchatScopeCount').textContent};})()`);
+ await click(`#zchatScope [data-source-id="${pdf.id}"]`);await aspetta(`!document.getElementById('zchatScopeAll').disabled`);
+ const picker=await c.val(`(()=>{const e=document.querySelector('#zchatScope [data-source-id="${pdf.id}"]'),s=getComputedStyle(e);return {width:parseFloat(s.width),height:parseFloat(s.height),radius:s.borderRadius,selected:getComputedStyle(e,'::before').transform,number:document.getElementById('zchatScopeCount').textContent};})()`);
  assert.equal(picker.width,picker.height);assert(picker.width<24);assert.equal(picker.radius,'50%');assert.equal(picker.selected,'matrix(1, 0, 0, 1, 0, 0)');assert.equal(picker.number,'1');
  await c.clicca('#zchatScopeButton');assert.equal(await c.val(`document.getElementById('zchatScope').hidden`),true);
  await c.val(`document.getElementById('zchatInput').value='Prova citazione botanica';document.getElementById('zchatInput').dispatchEvent(new Event('input',{bubbles:true}))`);await click('#zchatSend');
@@ -42,6 +42,11 @@ const click=sel=>c.val(`document.querySelector(${JSON.stringify(sel)}).click()`)
  const text=fs.readFileSync(path.join(v,'Zaini','biologia','APPUNTI',f),'utf8');
  assert(text.includes('La mia bozza fresca.'));assert(text.includes('&s='+pdf.id));
  assert((await c.val('noteStatoAttivo().mde.value()')).includes('Il passaggio citato'));
+ await c.val(`noteStatoAttivo().mde.togglePreview()`);
+ await aspetta(`!!document.querySelector('#noteHost a.plink[data-source-id]')`);
+ assert.equal(await c.val(`document.querySelector('#noteHost a.plink[data-source-id]').textContent`),'¹');
+ await click('#noteHost a.plink[data-source-id]');await aspetta(`ANTEPRIMA.page===1`);
+ await c.val(`noteStatoAttivo().mde.togglePreview()`);
  await click('.zchat-note');await click('.zchat-note-target button');
  assert.equal(fs.readFileSync(path.join(v,'Zaini','biologia','APPUNTI',f),'utf8'),text);
  // Una modifica esterna non viene cancellata dal flush dell'editor prima dell'append.

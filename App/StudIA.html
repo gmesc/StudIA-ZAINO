@@ -17679,6 +17679,7 @@ function bancoStrumenti(){
        scritta nelle disposizioni già salvate, e cambiarla svuoterebbe il blocco
        a chi l'aveva scelto. Il nome in tendina dice che cosa si fa. */
     flashcard: { nome:'Ripasso',         famiglia:'quaderno', sel:'#ripassoPane' },
+    studio:    { nome:'Cerca e studia',  famiglia:'fonte',    sel:'#studioPane' },
     /* Le POSTILLE: il perche' delle proprie sottolineature, tutte insieme.
        Sta nella famiglia del quaderno perche' e' roba scritta dall'utente, come
        le parole chiave — ed e' il posto in cui una postilla si RILEGGE senza
@@ -17931,7 +17932,7 @@ function bancoStrumentiOfferti(){
        governa la pipeline. Una voce che apre un riquadro in cui non si può
        far entrare niente è la stessa promessa falsa del «Capitolo» in uno
        zaino, al contrario. */
-    Object.keys(reg).forEach(function(id){ if(id!=='foto' && id!=='fonte2' && id!=='appunti2') out[id]=reg[id]; });
+    Object.keys(reg).forEach(function(id){ if(id!=='foto' && id!=='studio' && id!=='fonte2' && id!=='appunti2') out[id]=reg[id]; });
     return out;
   }
   /* Il Ripasso dello zaino usa domande autonome: non richiede capitoli fittizi. */
@@ -21781,6 +21782,7 @@ window.addEventListener('keydown', function(e){
      quattro esiti coi tempi previsti sopra. È uno strumento del banco come gli
      appunti e la mappa — sta a livello di pagina e `bancoMonta` lo sposta nel
      blocco che lo ospita, così si può ripassare TENENDO IL CAPITOLO ACCANTO. -->
+<section id="studioPane" aria-label="Cerca e studia le fonti"></section>
 <section id="ripassoPane" aria-label="Ripasso">
   <div class="tbar ripbar">
     <select id="ripAmbito" aria-label="Che cosa ripassare">
@@ -22580,6 +22582,7 @@ window.addEventListener('keydown', function(e){
   <div class="ib-track"><i id="ibFill"></i></div>
   <div class="ib-file" id="ibFile"></div>
 </div>
+<script src="assets/chat/fonti-scelta.js"></script>
 <script src="assets/chat/schede-ripasso.js"></script>
 <script src="assets/chat/studio.js"></script>
 <script src="assets/chat/citazioni.js"></script>

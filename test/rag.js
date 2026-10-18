@@ -4,7 +4,7 @@ const F=require('../lib/fonti-ai'),R=require('../lib/rag');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'zaino-rag-')),d=path.join(root,'Zaini','test');
 (async()=>{
  fs.mkdirSync(path.join(d,'MATERIALI'),{recursive:true});fs.writeFileSync(path.join(d,'_zaino.md'),'# Test');
- fs.writeFileSync(path.join(d,'MATERIALI','uno.txt'),'I mitocondri producono ATP.');fs.writeFileSync(path.join(d,'MATERIALI','due.txt'),'La rivoluzione del 1789.');
+ fs.writeFileSync(path.join(d,'MATERIALI','uno.txt'),'I mitocondri producono ATP. '.repeat(40));fs.writeFileSync(path.join(d,'MATERIALI','due.txt'),'La rivoluzione del 1789.');
  const inventory=F.sincronizza(root,'test').sources,one=inventory.find(s=>s.file.endsWith('uno.txt')),two=inventory.find(s=>s.id!==one.id);
  const calls=[],runtime={ready:()=>true,embed:async(t,o)=>{calls.push(t);const v=Array(768).fill(0);v[t.includes('1789')?1:0]=1;return {vector:v};}};
  let opts={runtime,scope:{mode:'selected',sourceIds:[one.id],wikipedia:false}};
@@ -13,6 +13,7 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'zaino-rag-')),d=path.join(root,
  await R.indicizza(root,'test',{runtime});
  const search=await R.cerca(root,'test','Come ottengono energia le cellule?',{runtime});assert.equal(search.mode,'ibrida');assert.equal(search.chunks[0].sourceId,one.id);
  const context=await R.recupera(root,'test','energia',opts);assert(context.sources.every(c=>c.sourceId===one.id));
+ assert.equal(context.sources[0].quote,context.excerpts[0].text);assert.equal(context.sources[0].quoteComplete,true);
  const empty=await R.cerca(root,'test','energia',{runtime,scope:{mode:'selected',sourceIds:[],wikipedia:false}});assert.equal(empty.chunks.length,0);
  fs.writeFileSync(path.join(d,one.file),'La fonte è stata completamente cambiata.');
  const changed=await R.cerca(root,'test','energia',opts);assert.equal(changed.indexed,0);assert(changed.warnings.some(w=>w.includes('0/1')));

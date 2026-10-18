@@ -195,7 +195,7 @@
     }
     async function saveScope() {
       const zaino = state.zaino, epoch = state.epoch, id = state.session?.id;
-      state.scopeSaving = true; studio?.scopeChanged(); drawScope(); updateControls();
+      state.scopeSaving = true; drawScope(); updateControls();
       try {
         if (id) { const result = await call('scope', zaino, id, state.scope); if (current(epoch, zaino) && state.session?.id === id) state.session = result.session; }
         if (current(epoch, zaino)) status('zchatScopeStatus', state.scope.mode === 'selected' && !state.scope.sourceIds.length ? 'Nessuna fonte selezionata: il tutor non riceverà documenti.' : 'Ambito della conversazione conservato.');
@@ -620,7 +620,7 @@
       if (state.zaino) state.drafts.set(state.zaino, $('zchatInput').value || state.pending);
       dismissNaming(null); stopSpeech();
       const wasSending = state.sending; const epoch = ++state.epoch; ++state.readEpoch; state.cancelSending = true;
-      state.zaino = zaino; state.session = null; state.sessions = []; state.pending = ''; state.sending = false; state.loading = false; state.scopeSaving = false; studio?.reset();
+      state.zaino = zaino; state.session = null; state.sessions = []; state.pending = ''; state.sending = false; state.loading = false; state.scopeSaving = false;
       state.scope = { mode: 'all', sourceIds: [], wikipedia: true }; state.sources = []; drawScope();
       $('zchatInput').value = state.drafts.get(zaino) || ''; resizeInput(); drawMessages(); updateControls(); status('zchatStatus', '');
       if (wasSending) { state.loading = true; updateControls(); try { await call('cancel'); } catch (_) {} }
@@ -727,7 +727,7 @@
     });
     function setCollapsed(collapsed) {
       panel.classList.toggle('is-collapsed', collapsed);
-      if(collapsed)showScope(false); $('zchatScopeButton').hidden = collapsed; if(studio)studio.box.hidden=collapsed; $('zchatMessages').hidden = collapsed; $('zchatForm').hidden = collapsed;
+      if(collapsed)showScope(false); $('zchatScopeButton').hidden = collapsed; $('zchatMessages').hidden = collapsed; $('zchatForm').hidden = collapsed;
       const button = $('zchatCollapse'); button.textContent = collapsed ? '□' : '−'; button.setAttribute('aria-expanded', String(!collapsed));
       button.title = collapsed ? 'Espandi la chat' : 'Collassa la chat'; button.setAttribute('aria-label', button.title);
       if (!collapsed) { const rect = panel.getBoundingClientRect(); move(rect.left, rect.top); resizeInput(); $('zchatInput').focus(); }
@@ -778,7 +778,6 @@
       } catch (error) { status('zchatStatus', errorText(error), true); status('zchatAIStatus', errorText(error), true); }
       finally { updateControls(); }
     }
-    const studio=window.ZainoStudio?.crea({host:panel,state,refreshSources:loadSources,busyChanged:updateControls});
     drawMessages(); start();
   }
   return { init, safeLink, citedSources, sourceLabel, datedTitle, speechText, notesSaved, copyFormatting };

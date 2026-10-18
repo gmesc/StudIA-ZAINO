@@ -2,6 +2,10 @@
 const assert = require('node:assert/strict');
 const { safeLink, citedSources, sourceLabel, datedTitle, speechText, notesSaved, copyFormatting } = require('../App/assets/chat/ui');
 
+const scelta=require('../App/assets/chat/fonti-scelta');
+assert.deepEqual(scelta.normalizza({mode:'selected',sourceIds:['a','a','b'],wikipedia:true}),{mode:'selected',sourceIds:['a','b'],wikipedia:false});
+assert.deepEqual(scelta.normalizza({mode:'selected',sourceIds:'rotto'}),{mode:'selected',sourceIds:[],wikipedia:false});
+
 // I riferimenti ricevuti da un modello o da un file non aprono URL eseguibili.
 for (const url of ['javascript:alert(1)', 'data:text/html,<script>1</script>', 'file:///etc/passwd', 'http://example.com', '//example.com', 'https://user:password@example.com', '', null]) {
   assert.equal(safeLink(url), '', 'URL non ammesso: ' + url);
