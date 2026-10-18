@@ -18,6 +18,18 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await set('zschedeFilter','inesistente');assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),0);await set('zschedeFilter','Sintesi');
  await c.val(`document.getElementById('zschedeResult').replaceChildren()`);await click('#zschedeCollection button');await wait(`!!document.querySelector('#zschedeResult article')`);
  assert.deepEqual(await c.val(`[...document.querySelectorAll('#zschedeResult .zstudio-card-text strong')].map(e=>e.textContent)`),['Concetti:','Prerequisiti:','Esempi:']);
+ // Una modifica esterna aggiorna il raccoglitore aperto; la stima non rigenera.
+ const cached=(await c.val(`window.vault.studio.cards('biologia')`)).cards[0];
+ const sourceFile=path.join(vault,'Zaini/biologia',cached.file),original=fs.readFileSync(sourceFile),cacheFile=path.join(vault,'Zaini/biologia/_lavorazione/rag/schede',cached.sourceId+'-'+cached.preset+'.json'),before=fs.readFileSync(cacheFile,'utf8');
+ try{
+  fs.appendFileSync(sourceFile,'\nNuovo paragrafo di prova: energia conservata nei legami chimici.\n');
+  await wait(`document.getElementById('zschedeCollection').textContent.includes('Fonte modificata')`);
+  await click('#zschedeCollection .zstudio-card-regenerate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);
+  assert.equal(fs.readFileSync(cacheFile,'utf8'),before,'Mostrare la stima non deve chiamare il provider o modificare la scheda');
+  assert((await c.val(`document.getElementById('zschedeEstimateText').textContent`)).includes(cached.file));
+  await click('#zschedeGenerate');await wait(`!document.getElementById('zschedeRefresh').disabled && document.getElementById('zschedeCollection').textContent.includes('Aggiornata') && !document.getElementById('zschedeCollection').textContent.includes('Fonte modificata')`);
+  assert.notEqual(fs.readFileSync(cacheFile,'utf8'),before,'La conferma rigenera la scheda');
+ }finally{fs.writeFileSync(sourceFile,original);}
  await click('#zschedeResult>button');await wait(`document.getElementById('zragStatus').textContent.includes('conservata')`);
  assert(fs.readdirSync(path.join(vault,'Zaini','biologia','APPUNTI')).some(f=>f.startsWith('Scheda AI')));
  const note=await c.val(`({title:noteStatoAttivo().cur.title,body:noteStatoAttivo().mde.value()})`);assert(note.title.startsWith('Sintesi — '));assert(note.body.startsWith('### '+note.title+'\n'));assert(note.body.includes('**Prerequisiti:**'));
