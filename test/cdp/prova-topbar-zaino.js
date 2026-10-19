@@ -24,7 +24,7 @@ const scegli=val=>c.val(`(()=>{const s=document.getElementById('zainoSelect');s.
   await c.clicca('#themeToggle');
   assert.equal(await c.val(`document.getElementById('themeToggle').getAttribute('aria-label')`),tema==='chiaro'?'Passa al tema chiaro':'Passa al tema scuro');
  }
- assert.deepEqual(await c.val(`['searchBtn','bancoBtn','chatBtn'].map(id=>{const b=document.getElementById(id),r=b.querySelector('svg').getBoundingClientRect();return [b.textContent.trim(),Math.round(r.width*10)/10,Math.round(r.height*10)/10,!!b.getAttribute('aria-label')];})`),[['',24.2,24.2,true],['',24.2,24.2,true],['',24.2,24.2,true]]);
+ assert.deepEqual(await c.val(`['searchBtn','bancoBtn','chatBtn','settingsBtn'].map(id=>{const b=document.getElementById(id),r=b.querySelector('svg').getBoundingClientRect();return [b.textContent.trim(),Math.round(r.width*10)/10,Math.round(r.height*10)/10,!!b.getAttribute('aria-label')];})`),[['',23,23,true],['',23,23,true],['',23,23,true],['',23,23,true]]);
  await c.clicca('#bancoBtn');assert.equal(await c.val(`!!document.querySelector('#bancoPop[open]')`),true);await c.val('closePops()');
  await c.clicca('#chatBtn');await wait(`!document.getElementById('zchatWindow').hidden`);await c.clicca('#zchatCollapse');
  for(const width of [1470,800,390]){
