@@ -1,0 +1,23 @@
+'use strict';
+const L=require('./lab'),fs=require('fs'),assert=require('assert');
+const seleziona=v=>L.val(`(()=>{const s=document.getElementById('zainoSelect');s.value=${JSON.stringify(v)};s.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+(async()=>{
+ await L.collega();const vault=process.env.GUIDA_VAULT;
+ assert(vault && fs.realpathSync(vault).startsWith('/private/tmp/studia-guida-'));assert.equal(await L.val('window.vault.path'),vault);
+ await L.finoA(`!!document.getElementById('chatBtn')`,10000);
+ await L.invia('Emulation.setDeviceMetricsOverride',{width:1470,height:956,deviceScaleFactor:2,mobile:false});
+ await L.val(`document.documentElement.dataset.theme='chiaro';`);await L.pulito();
+ await L.scatta('01-logo-commutatore',{clip:{x:0,y:0,width:450,height:60},scala:3});
+ await L.scatta('03-sidebar-vuota',{sel:'#zainoNav',scala:2});await L.scatta('03b-zaino-senza-zaini');
+ await seleziona('__nuovo__');await L.pausa(250);
+ const r=await L.rect('#zainoPop'),clip={x:0,y:0,width:Math.max(470,r.x+r.w+20),height:r.y+r.h+16};
+ await L.scatta('04-pop-crea-zaino',{clip,scala:3});
+ await L.val(`document.getElementById('zainoNome').value='Sistema solare'`);await L.scatta('05-pop-nome-scritto',{clip,scala:3});
+ await L.clicca('#zainoCrea');await L.finoA(`zainoAttivo()==='sistema-solare'`,8000);await L.pausa(700);await L.scatta('06-zaino-appena-creato');
+ await L.pausa(4000);await L.scatta('188-topbar-fork',{sel:'header.topbar',scala:3});
+ const tb=await L.rect('header.topbar');await L.banda({x:0,y:tb.h,w:1470,h:0},{altezza:34});
+ await L.numeri(['#zainoSelect','#searchBtn','#bancoBtn','#chatBtn','#settingsBtn','#themeToggle'].map((sel,i)=>({sel,n:i+1,dove:'b'})),{filo:tb.h+5});
+ await L.scatta('02-topbar-zaino',{clip:{x:0,y:0,width:1470,height:tb.h+36},scala:3});await L.overlayPulisci();
+ await L.val(`document.documentElement.dataset.theme='scuro'`);await L.scatta('49-tema-scuro');
+ console.log('Guida: aggiornate le schermate dei nuovi comandi della topbar.');process.exit(0);
+})().catch(e=>{console.error(e);process.exit(1);});

@@ -233,6 +233,7 @@
     --tbig-fs:calc(var(--tb-fs) * var(--tb-piu));
     --tbig-bar-h:calc(var(--tb-bar-h) * var(--tb-piu));
     --tbig-oi:22px;
+    --topbar-action-oi:calc(var(--tbig-oi) * 1.1);
     /* La TESTATA DI BLOCCO è la barra più bassa dell'app: dentro ha una tendina
        sola, e ogni pixel in più lo toglie al contenuto del blocco. La sua
        altezza non è un numero scritto a mano ma il bottone di barra più i suoi
@@ -311,9 +312,9 @@
      il movimento — il cappello si solleva al passaggio del mouse — più un
      battito lento la PRIMA volta, finché non lo si è usato. */
   .brand{ font-size:var(--tbig-fs); font-weight:700; letter-spacing:.16em; text-transform:uppercase;
-    margin-right:auto;   /* ⚠️ è questo che tiene il logo a sinistra e il resto a destra */
+    margin-right:auto; min-width:0; flex:1;
     height:var(--tbig-h); display:flex; align-items:center; gap:.5rem;
-    background:none; border:0; padding:0; color:inherit; cursor:pointer;
+    background:none; border:0; padding:0; color:inherit; cursor:default;
     font-family:var(--font-text),var(--emoji-font),sans-serif; }
   /* Lo zaino del logo è l'unica immagine grande rimasta in barra: è il marchio,
      non un comando, e rimpicciolirlo come le altre lo farebbe sparire. */
@@ -335,17 +336,9 @@
      mezzo. Adesso lo dice il fondo che si accende sotto il puntatore, come
      nelle barre degli split, e le uniche linee rimaste sono le barrette fra un
      gruppo e l'altro — che invece dicono qualcosa. */
-  .topbar .iconbtn:hover, .topbar .chiptoggle:hover, .topbar .tendina:hover,
-  .topbar .chipgroup:hover{ box-shadow:none; }
-  .topbar .iconbtn, .topbar .chiptoggle, .topbar .tendina, .topbar .chipgroup{
+  .topbar .iconbtn:hover, .topbar .chiptoggle:hover, .topbar .tendina:hover{ box-shadow:none; }
+  .topbar .iconbtn, .topbar .chiptoggle, .topbar .tendina{
     background:transparent; border:0; border-radius:0; }
-  /* A−/A+ e sole/luna: due gruppi segmentati come «Generata / Mie» della mappa.
-     Niente pillola, niente linea interna: stanno attaccati, e quello attivo si
-     accende — che è come li distingue la barra del markdown. */
-  .topbar .chipgroup{ height:var(--tb-h); box-sizing:border-box; overflow:visible; }
-  .topbar .chipgroup button{ padding:0 var(--tb-pad-x); font-size:var(--tb-fs);
-    font-weight:var(--tb-peso); letter-spacing:var(--tb-track); text-transform:uppercase; }
-  .topbar .chipgroup button + button{ border-left:0; }
   /* La tendina resta una tendina — l'etichetta fissa e il ▾ — ma nuda: il guscio
      non è più una scatola, è un bottone della barra come gli altri. */
   .topbar .tendina{ position:relative; gap:.35rem; }
@@ -367,7 +360,7 @@
      lezione: in uno zaino non contano niente, e lasciarli accesi vorrebbe dire
      mostrare il progresso di un corso a chi sta leggendo altro. */
   html[data-modo="zaino"] #chapCounter, html[data-modo="zaino"] #cprog{ display:none!important; }
-  /* Il pannellino che crea uno zaino, aperto dal «+» accanto alla tendina. */
+  /* Il pannellino che crea uno zaino, aperto dalla voce «+» nel menu degli zaini. */
   #zainoPop{ padding:.7rem; width:min(340px,92vw); }
   #zainoPop .zp-lab{ display:block; font-size:10px; text-transform:uppercase; letter-spacing:.12em;
     color:var(--muted); margin-bottom:.35rem; }
@@ -555,15 +548,22 @@
      nasconde niente e il bottone resta lì, cliccabile. Nel foglio ci sono già
      dieci rimedi scritti uno per uno su singoli #id — questo vale per tutti. */
   .iconbtn[hidden]{ display:none!important; }
-  /* toggle Sole/Luna a forma di chip */
-  .chiptoggle{ display:inline-flex; align-items:center; gap:.35rem; padding:0 .7rem; border:1px solid var(--line);
-    border-radius:999px; background:var(--panel); cursor:pointer; transition:box-shadow var(--speed),background var(--speed); }
-  .chiptoggle:hover{ background:var(--hover); box-shadow:var(--sh-3d); }
-  .chiptoggle .i-sun,.chiptoggle .i-moon{ display:inline-flex; align-items:center; }
-  .chiptoggle .i-moon .oi{ opacity:.28; transition:opacity var(--speed); }
-  .chiptoggle .i-sun .oi{ opacity:1; transition:opacity var(--speed); }
-  html[data-theme="scuro"] .chiptoggle .i-sun .oi{ opacity:.28; }
-  html[data-theme="scuro"] .chiptoggle .i-moon .oi{ opacity:1; }
+  /* Il simbolo mostra il tema che si può attivare. */
+  .chiptoggle{ display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
+  .chiptoggle .i-sun{ display:none; }
+  .chiptoggle .i-moon{ display:inline-flex; }
+  html[data-theme="scuro"] .chiptoggle .i-sun{ display:inline-flex; }
+  html[data-theme="scuro"] .chiptoggle .i-moon{ display:none; }
+  .topbar .topbar-action-icon{ width:var(--topbar-action-oi); height:var(--topbar-action-oi); flex:none; }
+  .brand > .oi-lg{ flex:none; }
+  .brand .zainorow{ min-width:0; }
+  .brand .tendina{ min-width:0; font:inherit; letter-spacing:inherit; padding-inline:0; }
+  .brand .tlab{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .topbar .controls{ flex:none; }
+  @media(max-width:600px){
+    .topbar{ padding-inline:.5rem; flex-wrap:wrap; }
+    .brand{ flex-basis:100%; }
+  }
   /* ---- Le tendine della topbar: l'etichetta è la funzione ----
      Un `<select>` nativo non sa mostrare una scritta diversa dall'opzione
      scelta. Qui resta lui a comandare — il suo `value` è quello che tutta l'app
@@ -586,14 +586,6 @@
      segue. (`:has` c'è in questo Chromium dalla 105; qui siamo alla 142.) */
   .tendina:has(select[hidden]){ display:none; }
   .tendina:has(select:disabled){ opacity:.45; }
-  /* A− / A+ : un chip solo, delle misure di quello chiaro/scuro */
-  .chipgroup{ display:inline-flex; align-items:center; height:var(--ctl-h); box-sizing:border-box;
-    border:1px solid var(--line); border-radius:999px; background:var(--panel); overflow:hidden; }
-  .chipgroup button{ height:100%; border:0; background:transparent; color:var(--ink); cursor:pointer;
-    padding:0 .7rem; font-size:13px; font-weight:700; font-family:inherit;
-    transition:background var(--speed); }
-  .chipgroup button:hover{ background:var(--hover); }
-  .chipgroup button + button{ border-left:1px solid var(--line); }
   /* toggle per nascondere la sidebar (fantasma), sull'angolo topbar/sidebar */
   /* ⚠️ Quadrata e alta quanto la TESTATA DI BLOCCO che le sta a fianco, non
      quanto i controlli grandi. Erano 40 contro 33: sette pixel di scalino
@@ -3061,7 +3053,7 @@
 <link rel="stylesheet" href="assets/chat/ui.css">
 <style>
 [data-tab="corsi"], [data-pane="corsi"], .topbar .lessonrow, #newLessonBtn, #videoBtn, #ingestBtn, #primoAvvio, #profiloSetup, #wizard, #composerModal, #mediaModal, #ingestBar { display:none!important; }
-#modoBtn{pointer-events:none;animation:none!important;}
+#modoBtn img{animation:none!important;}
 #modoBtn::after{display:none!important;}
 </style>
 </head>
@@ -3069,8 +3061,12 @@
 <a class="skip" href="#content">Vai al contenuto</a>
 
 <header class="topbar tbar-lg">
-  <!-- Il fork conserva il nodo del marchio per il cablaggio condiviso; lo zaino è la sua unica modalità. -->
-  <button class="brand" id="modoBtn" type="button" aria-pressed="true" title="StudIA - ZAINO"><img class="oi oi-lg" src="assets/1F392.svg" alt="" aria-hidden="true"><span>StudIA - ZAINO</span></button>
+  <div class="brand" id="modoBtn">
+    <img class="oi oi-lg" src="assets/1F392.svg" alt="" aria-hidden="true"><span>STUDIA</span>
+    <span class="zainorow">
+      <span class="tendina" id="zainoScegli"><span class="tlab" id="zainoEtichetta">ZAINO</span><select id="zainoSelect" aria-label="Seleziona lo zaino personale"></select></span>
+    </span>
+  </div>
   <div class="controls">
     <!-- Corso e variante stanno PRIMA della lezione: si legge da sinistra a destra
          come si restringe il campo — corso → variante → lezione. -->
@@ -3089,29 +3085,17 @@
       <span class="tendina"><span class="tlab">Percorso</span><select id="variantSelect" aria-label="Variante del percorso" disabled><option value="">— nessuna variante —</option></select></span>
       <span class="tendina"><span class="tlab">Lezione</span><select id="lessonSelect" aria-label="Lezione attiva"></select></span>
     </span>
-    <!-- La fila della modalità ZAINO: una tendina sola, perché lì non c'è
-         niente da restringere — si sceglie la materia e si legge. Sta accanto
-         alla fila dei corsi e non al suo posto: sono due file che si alternano,
-         e sostituire i nodi vorrebbe dire ricostruire la tendina ogni volta. -->
-    <span class="zainorow">
-      <span class="tendina"><span class="tlab">Zaino</span><select id="zainoSelect" aria-label="Zaino attivo"></select></span>
-      <!-- Il «+» sta accanto alla tendina che elenca: creare e scegliere sono
-           lo stesso gesto a un attimo di distanza, e chi arriva con la prima
-           materia non deve cercare dove si comincia. -->
-      <button class="iconbtn" id="zainoNuovo" type="button" aria-haspopup="dialog" aria-expanded="false"
-              title="Crea uno zaino nuovo" aria-label="Crea uno zaino nuovo">+</button>
-    </span>
     <!-- ⚠️ Le barrette (`.tbsep`) sono le uniche linee rimaste in testata, e
          dicono dove cambia il mestiere: scegliere che cosa studiare · agire su
          quello che si studia · governare la vista. Quelle che restano orfane
          perché il comando accanto è nascosto le spegne `barreSeparatori()`. -->
     <i class="tbsep" aria-hidden="true"></i>
-    <button class="iconbtn" id="searchBtn" type="button" title="Cerca nel corso (Cmd+F)" aria-label="Cerca nel corso" aria-haspopup="dialog">&#128269;</button>
+    <button class="iconbtn" id="searchBtn" type="button" title="Cerca nel corso (Cmd+F)" aria-label="Cerca nel corso" aria-haspopup="dialog"><svg class="topbar-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg></button>
     <button class="iconbtn" id="newLessonBtn" type="button" hidden title="Crea un nuovo corso di studio">+ Nuovo corso</button>
     <!-- ⚠️ «Appunti» e «Mappe» non stanno più qui: sono STRUMENTI del banco, e
          ogni blocco ha già la sua tendina per sceglierli (`select.bsel`). Due
          porte per la stessa stanza, di cui una in una barra che non ci stava. -->
-    <button class="iconbtn" id="bancoBtn" type="button" title="Come dividere lo schermo" aria-label="Disposizione dei blocchi" aria-haspopup="dialog">&#9707; Banco</button>
+    <button class="iconbtn" id="bancoBtn" type="button" title="Banco · come dividere lo schermo" aria-label="Banco: disposizione dei blocchi" aria-haspopup="dialog"><svg class="topbar-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3.5 3.5h17v17h-17zM12 3.5v17"/></svg></button>
     <!-- P3.6: quante carte aspettano OGGI. Sta in testata e non dentro lo
          strumento di ripasso perché la domanda a cui risponde è «devo aprirlo?»:
          un contatore che si vede solo dopo aver aperto non la risponde. Nasce
@@ -3124,12 +3108,6 @@
     <button class="iconbtn" id="settingsBtn" type="button" hidden aria-label="Impostazioni e chiavi API" title="Impostazioni · chiavi API e costi">⚙</button>
     <i class="tbsep" aria-hidden="true"></i>
     <button class="chiptoggle" id="themeToggle" aria-label="Cambia tema chiaro o scuro"><span class="i-sun"><img class="oi" src="data:image/svg+xml;base64,PHN2ZyBpZD0iZW1vamkiIHZpZXdCb3g9IjAgMCA3MiA3MiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBpZD0iY29sb3IiPjxwb2x5Z29uIGZpbGw9IiNGQ0VBMkIiIHN0cm9rZT0ibm9uZSIgcG9pbnRzPSI2NiwzNiA1NS4zMjM1LDQxLjE4MTYgNjEuOTgxOSw1MS4wMDYzIDUwLjE0MTgsNTAuMTQyNCA1MS4wMDU2LDYxLjk4MjMgNDEuMTgxMyw1NS4zMjM2IDM2LDY2IDMwLjgxODQsNTUuMzIzNSAyMC45OTM3LDYxLjk4MTkgMjEuODU3Niw1MC4xNDE4IDEwLjAxNzcsNTEuMDA1NiAxNi42NzY0LDQxLjE4MTMgNiwzNiAxNi42NzY1LDMwLjgxODQgMTAuMDE4MSwyMC45OTM3IDIxLjg1ODIsMjEuODU3NiAyMC45OTQ0LDEwLjAxNzcgMzAuODE4NywxNi42NzY0IDM2LDYgNDEuMTgxNiwxNi42NzY1IDUxLjAwNjMsMTAuMDE4MSA1MC4xNDI0LDIxLjg1ODIgNjEuOTgyMywyMC45OTQ0IDU1LjMyMzYsMzAuODE4NyIvPjwvZz48ZyBpZD0iaGFpciIvPjxnIGlkPSJza2luIi8+PGcgaWQ9InNraW4tc2hhZG93Ii8+PGcgaWQ9ImxpbmUiPjxjaXJjbGUgY3g9IjM2IiBjeT0iMzUuOTUiIHI9IjE5LjgyNzYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIHN0cm9rZS13aWR0aD0iMiIvPjxwb2x5Z29uIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIHN0cm9rZS13aWR0aD0iMiIgcG9pbnRzPSI2NiwzNiA1NS4zMjM1LDQxLjE4MTYgNjEuOTgxOSw1MS4wMDYzIDUwLjE0MTgsNTAuMTQyNCA1MS4wMDU2LDYxLjk4MjMgNDEuMTgxMyw1NS4zMjM2IDM2LDY2IDMwLjgxODQsNTUuMzIzNSAyMC45OTM3LDYxLjk4MTkgMjEuODU3Niw1MC4xNDE4IDEwLjAxNzcsNTEuMDA1NiAxNi42NzY0LDQxLjE4MTMgNiwzNiAxNi42NzY1LDMwLjgxODQgMTAuMDE4MSwyMC45OTM3IDIxLjg1ODIsMjEuODU3NiAyMC45OTQ0LDEwLjAxNzcgMzAuODE4NywxNi42NzY0IDM2LDYgNDEuMTgxNiwxNi42NzY1IDUxLjAwNjMsMTAuMDE4MSA1MC4xNDI0LDIxLjg1ODIgNjEuOTgyMywyMC45OTQ0IDU1LjMyMzYsMzAuODE4NyIvPjwvZz48L3N2Zz4=" alt="" aria-hidden="true"></span><span class="i-moon"><img class="oi" src="data:image/svg+xml;base64,PHN2ZyBpZD0iZW1vamkiIHZpZXdCb3g9IjAgMCA3MiA3MiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBpZD0iY29sb3IiPjxwYXRoIGZpbGw9IiNGQ0VBMkIiIHN0cm9rZT0ibm9uZSIgZD0iTTcuMzYzNCw0Mi40MDk1YzQuNTUyNSw2LjE3MDMsMTEuODc0LDEwLjE3MjYsMjAuMTMwMywxMC4xNzI2YzEzLjgwNzEsMCwyNS0xMS4xOTI5LDI1LTI1IGMwLTguNTIyNi00LjI2NDYtMTYuMDQ5Mi0xMC43NzYzLTIwLjU2MjFjMTMuMDM4MywyLjgzODUsMjIuNzgxMiwxNC40NDI2LDIyLjc4MTIsMjguMzMxN2MwLDE2LjAxNjMtMTIuOTgzNywyOS0yOSwyOSBDMjEuOTEwOSw2NC4zNTE3LDEwLjUwOTcsNTUuMDIyOSw3LjM2MzQsNDIuNDA5NXoiLz48cGF0aCBmaWxsPSIjRjFCMzFDIiBzdHJva2U9Im5vbmUiIGQ9Ik00NS44MzczLDkuMjEwOGM4LjI1LDQuMjUsMTYuMTk0NiwxMS44NzI0LDE2LjE5NDYsMjQuNjc0MmMwLDE1LjQ0OTQtMTIuNTI0MiwyNy45NzM1LTI3Ljk3MzUsMjcuOTczNSBjLTkuMjQzMSwwLTE5Ljc1MjQtNC44MzUzLTI0LjI5NC0xNS41NDM2YzAsMCw0LjM4MDUsMTguNjU2OCwyNS43MTg5LDE4LjY2NWMxOS4zMjcsMC4wMDc0LDI4LjA0MTktMjAuNjIxOCwyOC4wNDE5LTIwLjYyMTggQzcwLjAzMywxMi4zODE1LDQ1LjgzNzMsOS4yMTA4LDQ1LjgzNzMsOS4yMTA4eiIvPjwvZz48ZyBpZD0iaGFpciIvPjxnIGlkPSJza2luIi8+PGcgaWQ9InNraW4tc2hhZG93Ii8+PGcgaWQ9ImxpbmUiPjxwYXRoIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIHN0cm9rZS13aWR0aD0iMiIgZD0iTTcuMzYzNCw0Mi40MDk1YzQuNTUyNSw2LjE3MDMsMTEuODc0LDEwLjE3MjYsMjAuMTMwMywxMC4xNzI2YzEzLjgwNzEsMCwyNS0xMS4xOTI5LDI1LTI1IGMwLTguNTIyNi00LjI2NDYtMTYuMDQ5Mi0xMC43NzYzLTIwLjU2MjFjMTMuMDM4MywyLjgzODUsMjIuNzgxMiwxNC40NDI2LDIyLjc4MTIsMjguMzMxN2MwLDE2LjAxNjMtMTIuOTgzNywyOS0yOSwyOSBDMjEuOTEwOSw2NC4zNTE3LDEwLjUwOTcsNTUuMDIyOSw3LjM2MzQsNDIuNDA5NXoiLz48L2c+PC9zdmc+" alt="" aria-hidden="true"></span></button>
-    <!-- A− e A+ sono due stati di una stessa scala, come sole e luna: la stessa
-         idea vuole la stessa forma, quindi lo stesso chip. -->
-    <span class="chipgroup" role="group" aria-label="Dimensione del testo">
-      <button id="fsMinus" type="button" aria-label="Riduci dimensione testo">A−</button>
-      <button id="fsPlus" type="button" aria-label="Aumenta dimensione testo">A+</button>
-    </span>
   </div>
 </header>
 <button class="paneltoggle" id="menuBtn" aria-label="Mostra o nascondi l'indice"><img class="oi" src="data:image/svg+xml;base64,PHN2ZyBpZD0iZW1vamkiIHZpZXdCb3g9IjAgMCA3MiA3MiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBpZD0iY29sb3IiPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Im0xMy45OTUzLDUxLjM3N2MtLjk2MjMtMi4wNjksMy40MDI4LTYuMjIzOSw2LjAxNy0xMi4wODIyLDEuMTI2OC0yLjUyNTEsMS4yMjk1LTQuNzA2OS43MzgtNi4zODQtMS4yODI2LTIuNTY5Ny0yLjM1NjQtMy42Mi0zLjQxNzQtNi4xMjI1LS44NDQxLTEuOTkxLDguMTc0LS4yODk3LDguMzkyNy0uMzc2NS44ODUzLS43ODYxLDMuMjY0NC05LjU1NCw1LjQyNjgtMTIuMjQwMi45ODc0LTEuMjI2NiwzLjM5Ni0yLjY0MTUsNS43ODA4LTIuNTAxMywyLjAxODIuMTE4Nyw0LjEwMTIsMS4zMDEzLDQuOTYwMywyLjM3NDcsMi4xNzEsMi43MTI1LDQuNzEzOSwxMi4yMDYzLDUuNDMwOCwxMi4zNTQ0LDEuOTMwMi4zOTg4LDcuOTY4NC0xLjg5NzQsOC4zMjEuNDExOS4wNzcxLjUwNTMtMS45MjAxLDUuNzc0Ni0yLjI0MzksNi4xMTQ3LS41NjkyLDEuMzQ4LTEuMTY1MywzLjM3MjUtLjMxNjQsNS40Nzk5LDEuMjEzNSwzLjAxMjMsNi4wNTUsOC41ODU2LDYuMDU0NCwxNC4wMjM5LDAsLjE5MjUtLjkyNjMsNS41MTk0LTcuNjkwNywzLjY0NzQtLjE1MTEtLjA0MTgtLjE4NC0uMTM4My0uMjY3OC0uMjAxOC0xLjU0MDgtMS4xNjkxLTQuNzEzMS0xLjc3NDgtNy42MS0uOTE4NC0zLjQxNjcsMS4wMS0yLjgxMTIsMi45NzgxLTYuOTU0LDQuNzIzNS0xLjA4MzUuNDU2NS0zLjExMTMsMS4yODMyLTUuNzczMSwxLjA0OTYtLjcxNTItLjA2MjgtMi43Nzg4LS4yNjc1LTQuODExNS0xLjYwNTktMi45MTU2LTEuOTE5OC0yLjM2MDctMy45Mjg5LTQuNzg3OS01LjcwMTEtMy4yMTUzLTIuMzQ3OC02LjU1MjMtLjU0ODEtNy4yNDkxLTIuMDQ2MVoiLz48ZWxsaXBzZSBjeD0iMzkuODk3OSIgY3k9IjIzLjIxMjIiIHJ4PSIxLjcwNzQiIHJ5PSIzLjE4NzIiIGZpbGw9IiMzZjNmM2YiLz48ZWxsaXBzZSBjeD0iMzYuNTE5MyIgY3k9IjMwLjM0MTEiIHJ4PSIxLjc3NDIiIHJ5PSIyLjEyNTQiIGZpbGw9IiMzZjNmM2YiLz48cGF0aCBmaWxsPSIjZDBjZmNlIiBkPSJtNDAuMTIxMiw1Ni42NzY3Yy43MTUyLS4wNjI3LDMuNTIwNS0yLjUyMDQsNS40NDgyLTIuMzY3NCwzLjQ3OTkuMjc2MSw5LjAwMzQsMy40NjMsMTEuNDMwNiwxLjY5MDcsMy4yMTUyLTIuMzQ3NiwxLjI2NzgtMy4wOTYxLDEuOTY0Ni00LjU5NDIuOTYyMy0yLjA2OS0zLjQwMjgtNi4yMjM5LTYuMDE3LTEyLjA4MjItMS4xMjY4LTIuNTI1MS0xLjIyOTUtNC43MDY5LS43MzgtNi4zODQsMS4yODI2LTIuNTY5NywyLjM1NjQtMy42MiwzLjQxNzQtNi4xMjI1Ljg0NDEtMS45OTEtOC4xNzQtLjI4OTctOC4zOTI3LS4zNzY1LS44ODUzLS43ODYxLTEuOTI0Ni0zLjkyMTYtMy40NDgzLTcuNzExMiIvPjxlbGxpcHNlIGN4PSIzMy4xMDA3IiBjeT0iMjMuMjEyMiIgcng9IjEuNzA3NCIgcnk9IjMuMTg3MiIgZmlsbD0iIzNmM2YzZiIvPjwvZz48ZyBpZD0ibGluZSI+PGVsbGlwc2UgY3g9IjM5Ljg3NzgiIGN5PSIyMy4yMTIyIiByeD0iMS43MDc0IiByeT0iMy4xODcyIiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iMiIgZD0ibTEzLjk3NTMsNTEuMzc3Yy0uOTYyMy0yLjA2OSwzLjQwMjgtNi4yMjM5LDYuMDE3LTEyLjA4MjIsMS4xMjY4LTIuNTI1MSwxLjIyOTUtNC43MDY5LjczOC02LjM4NC0xLjI4MjYtMi41Njk3LTIuMzU2NC0zLjYyLTMuNDE3NC02LjEyMjUtLjg0NDEtMS45OTEsOC4xNzQtLjI4OTcsOC4zOTI3LS4zNzY1Ljg4NTMtLjc4NjEsMy4yNjQ0LTkuNTU0LDUuNDI2OC0xMi4yNDAyLjk4NzQtMS4yMjY2LDMuMzk2LTIuNjQxNSw1Ljc4MDgtMi41MDEzLDIuMDE4Mi4xMTg3LDQuMTAxMiwxLjMwMTMsNC45NjAzLDIuMzc0NywyLjE3MSwyLjcxMjUsNC43MTM5LDEyLjIwNjMsNS40MzA4LDEyLjM1NDQsMS45MzAyLjM5ODgsNy45Njg0LTEuODk3NCw4LjMyMS40MTE5LjA3NzEuNTA1My0xLjkyMDEsNS43NzQ2LTIuMjQzOSw2LjExNDctLjU2OTIsMS4zNDgtMS4xNjUzLDMuMzcyNS0uMzE2NCw1LjQ3OTksMS4yMTM1LDMuMDEyMyw2LjA1NSw4LjU4NTYsNi4wNTQ0LDE0LjAyMzksMCwuMTkyNS0uOTI2Myw1LjUxOTQtNy42OTA3LDMuNjQ3NC0uMTUxMS0uMDQxOC00Ljk4MDktMS45NzY2LTcuODc3OC0xLjEyMDItMy40MTY3LDEuMDEtMi44MTEyLDIuOTc4MS02Ljk1NCw0LjcyMzUtMS4wODM1LjQ1NjUtMy4xMTEzLDEuMjgzMi01Ljc3MzEsMS4wNDk2LS43MTUyLS4wNjI4LTIuNzc4OC0uMjY3NS00LjgxMTUtMS42MDU5LTIuOTE1Ni0xLjkxOTgtMi4zNjA3LTMuOTI4OS00Ljc4NzktNS43MDExLTMuMjE1NC0yLjM0NzgtNi41NTI0LS41NDgxLTcuMjQ5MS0yLjA0NjFaIi8+PGVsbGlwc2UgY3g9IjM2LjQ5OTMiIGN5PSIzMC4zNDExIiByeD0iMS43NzQyIiByeT0iMi4xMjU0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIi8+PGVsbGlwc2UgY3g9IjMzLjA4MDYiIGN5PSIyMy4yMTIyIiByeD0iMS43MDc0IiByeT0iMy4xODcyIiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9nPjwvc3ZnPg==" alt="" aria-hidden="true"></button>
@@ -4549,22 +4527,15 @@ const root=document.documentElement;
 function stanzaScrivi(chiave, valore){
   try{ if(valore==null) localStorage.removeItem(chiave); else localStorage.setItem(chiave, String(valore)); }catch(e){}
 }
+function temaEtichetta(){
+  var b=$('#themeToggle'), testo=root.dataset.theme==='scuro' ? 'Passa al tema chiaro' : 'Passa al tema scuro';
+  b.setAttribute('aria-label', testo); b.title=testo;
+}
+temaEtichetta();
 $('#themeToggle').addEventListener('click',()=>{
   var t=AspettoStanza.altroTema(root.dataset.theme);
-  root.dataset.theme=t; stanzaScrivi('studia.tema', t);
+  root.dataset.theme=t; stanzaScrivi('studia.tema', t); temaEtichetta();
 });
-function corpoPasso(su){
-  var ora=root.style.getPropertyValue('--fs');
-  var n=AspettoStanza.passo(ora ? parseFloat(ora) : null, su);
-  /* `null` vuol dire «si è già al capo»: non si scrive niente, invece di
-     riscrivere lo stesso valore. È la lezione di `fonti/zoom.js`, dove un clamp
-     cieco faceva RIMPICCIOLIRE premendo «+». */
-  if(n===null) return;
-  root.style.setProperty('--fs', AspettoStanza.stile(n));
-  stanzaScrivi('studia.fs', n);
-}
-$('#fsPlus').addEventListener('click',()=>corpoPasso(true));
-$('#fsMinus').addEventListener('click',()=>corpoPasso(false));
 /* opzioni 'alta leggibilita' e 'meno animazioni' rimosse dalla UI */
 
 /* ---- Navigazione mobile ---- */
@@ -9449,7 +9420,6 @@ function closePops(){
   document.querySelectorAll('.helpbtn[aria-expanded]').forEach(function(b){ b.removeAttribute('aria-expanded'); });
   document.querySelectorAll('#zainoNav .zs-assegna[aria-expanded]').forEach(function(b){ b.setAttribute('aria-expanded','false'); });
   if(typeof ZNAV!=='undefined') ZNAV.scelta=null;
-  var zn=$('#zainoNuovo'); if(zn) zn.setAttribute('aria-expanded','false');
   var pd=$('#pdfDoc'); if(pd) pd.setAttribute('aria-expanded','false');
   var pm=$('#plScegli'); if(pm) pm.setAttribute('aria-expanded','false');
   /* I risultati della ricerca sono un secondo riquadro, fuori dal pannellino
@@ -10942,6 +10912,10 @@ function modoAggiorna(){
   try{ ricercaEtichette(); }catch(e){ console.error('lente/etichette:', e); }
   var sel=document.getElementById('zainoSelect');
   if(sel && sel.value!==(MODO.zaino||'')) sel.value = MODO.zaino || '';
+  var scelto=(MODO.zaini||[]).find(function(z){ return z.id===MODO.zaino; });
+  var etichetta=document.getElementById('zainoEtichetta');
+  if(etichetta) etichetta.textContent='ZAINO' + (scelto ? ' ' + scelto.title : '');
+  if(sel) sel.title=scelto ? 'Zaino aperto: ' + scelto.title + ' · Cambia o crea zaino' : 'Scegli o crea uno zaino';
   /* La sidebar dello zaino si riempie da sé: chiamarla qui vuol dire che ogni
      porta che cambia modalità o zaino la aggiorna, senza doverselo ricordare. */
   try{ zainoNavAggiorna(); }catch(e){ console.error('zaino/sidebar:', e); }
@@ -10984,7 +10958,11 @@ async function zainiAggiorna(){
       o.textContent=z.title + (z.documenti ? ' · ' + z.documenti + (z.documenti===1?' documento':' documenti') : '');
       sel.appendChild(o);
     });
-    sel.disabled = !lista.length;
+    if(!lista.length){
+      var vuoto=document.createElement('option'); vuoto.value=''; vuoto.textContent='Scegli uno zaino'; vuoto.disabled=true; sel.appendChild(vuoto);
+    }
+    var nuovo=document.createElement('option'); nuovo.value='__nuovo__'; nuovo.textContent='+ Crea uno zaino nuovo'; sel.appendChild(nuovo);
+    sel.disabled = false;
   }
   /* Lo zaino attivo deve esistere: se è stato cancellato da fuori si prende il
      primo, e se non ce n'è nessuno si resta senza — la card di creazione è già
@@ -11279,7 +11257,7 @@ async function zainoNavAggiorna(){
   host.hidden=false;
   var id=zainoAttivo();
   if(!id){
-    host.innerHTML='<div class="zs-vuoto">Nessuno zaino. Creane uno con il «+» accanto alla tendina.</div>';
+    host.innerHTML='<div class="zs-vuoto">Nessuno zaino. Apri il menu ZAINO in alto e scegli «+ Crea uno zaino nuovo».</div>';
     return;
   }
   // Un autosalvataggio dell'appunto può aggiornare la sidebar mentre si trascina:
@@ -11403,7 +11381,7 @@ async function setZainiDisegna(){
   var lista=[];
   try{ lista=await window.vault.zaino.list()||[]; }
   catch(e){ host.innerHTML='<div class="set-note">⚠ Non riesco a leggere gli zaini: '+escHtml((e&&e.message)||String(e))+'</div>'; return; }
-  if(!lista.length){ host.innerHTML='<div class="set-note">Nessuno zaino. Si creano con il «+» in barra, in modalità Zaino.</div>'; return; }
+  if(!lista.length){ host.innerHTML='<div class="set-note">Nessuno zaino. Apri il menu ZAINO in alto e scegli «+ Crea uno zaino nuovo».</div>'; return; }
   host.innerHTML=lista.map(function(z){
     var conto=z.documenti ? (z.documenti+(z.documenti===1?' documento':' documenti')) : 'vuoto';
     var nome=escHtml(z.title||z.id);
@@ -11526,12 +11504,7 @@ function zainoApriMappa(file){
 function zainoPopApri(ancora){
   var pop=document.getElementById('zainoPop'); if(!pop) return;
   var stato=document.getElementById('zainoStato'); if(stato){ stato.textContent=''; stato.className='zp-stato'; }
-  /* Ancorato al «+», che è la sua porta: un pannellino che compare ogni volta
-     in un posto diverso si cerca ogni volta. */
-  var piu=document.getElementById('zainoNuovo');
-  var visibile = piu && piu.getBoundingClientRect().height>0;
-  popAt(pop, visibile ? piu : (ancora||null));
-  if(piu) piu.setAttribute('aria-expanded','true');
+  popAt(pop, ancora || document.getElementById('zainoScegli'));
   var campo=document.getElementById('zainoNome');
   if(campo){ campo.value=''; campo.focus(); }
 }
@@ -11552,16 +11525,18 @@ async function zainoCrea(nome){
   /* Il pannellino ha finito il suo mestiere: lasciarlo aperto con dentro il
      nome appena usato inviterebbe a creare due volte la stessa materia. */
   try{ closePops(); }catch(e){}
-  var piu=document.getElementById('zainoNuovo'); if(piu) piu.setAttribute('aria-expanded','false');
   toast('Zaino creato: ' + n, true);
   return r.id;
 }
 
 (function(){
   var b=document.getElementById('modoBtn');
-  if(b) b.addEventListener('click', function(){ modoUsato(); cambiaModo(modoAttivo()==='zaino' ? 'corso' : 'zaino'); });
+  if(b && b.tagName==='BUTTON') b.addEventListener('click', function(){ modoUsato(); cambiaModo(modoAttivo()==='zaino' ? 'corso' : 'zaino'); });
   var sel=document.getElementById('zainoSelect');
-  if(sel) sel.addEventListener('change', function(e){ cambiaZaino(e.target.value); });
+  if(sel) sel.addEventListener('change', function(e){
+    if(e.target.value==='__nuovo__'){ sel.value=MODO.zaino||''; zainoPopApri(sel); }
+    else cambiaZaino(e.target.value);
+  });
   /* ⚠️ I comandi del pannellino si ascoltano per DELEGA, non sull'elemento.
      Non è una preferenza di stile: `#zainoPop` sta in fondo al documento, dopo
      questo script, quindi qui `getElementById` torna `null` e un listener
@@ -11572,12 +11547,6 @@ async function zainoCrea(nome){
     if(!e.target.closest) return;
     var gruppo=e.target.closest('#zainoNav [data-znav]');
     if(gruppo){ znavComando(gruppo); return; }
-    var piu=e.target.closest('#zainoNuovo');
-    if(piu){
-      var pop=document.getElementById('zainoPop');
-      if(pop && pop.hasAttribute('open')) closePops(); else zainoPopApri(piu);
-      return;
-    }
     if(e.target.closest('#zainoCrea')){ zainoCrea((document.getElementById('zainoNome')||{}).value); return; }
     var zr=e.target.closest('.zx-rinomina');
     if(zr){ zainoRinomina(zr.dataset.zaino); return; }
@@ -13471,7 +13440,7 @@ document.addEventListener('click',function(e){
      lo si usa. `closePops()` chiude anche il menu della selezione, quindi
      senza questa eccezione il 🔗 si spegneva e si portava via la superficie da
      cui era stato premuto — cambiavi idea e dovevi riselezionare la frase. */
-  if(!(e.target.closest && (e.target.closest('.popmenu')||e.target.closest('.ncb-callout')||e.target.closest('.ncb-emoji')||e.target.closest('.ncb-mat')||e.target.closest('#mVista')||e.target.closest('#bancoBtn')||e.target.closest('#mappaSvg .mfonte')||e.target.closest('#searchBtn')||e.target.closest('#searchRes')||e.target.closest('#zainoNuovo')||e.target.closest('#pdfDoc')||e.target.closest('.ctx-cita')||e.target.closest('.zs-assegna')))) closePops();
+  if(!(e.target.closest && (e.target.closest('.popmenu')||e.target.closest('.ncb-callout')||e.target.closest('.ncb-emoji')||e.target.closest('.ncb-mat')||e.target.closest('#mVista')||e.target.closest('#bancoBtn')||e.target.closest('#mappaSvg .mfonte')||e.target.closest('#searchBtn')||e.target.closest('#searchRes')||e.target.closest('#zainoScegli')||e.target.closest('#pdfDoc')||e.target.closest('.ctx-cita')||e.target.closest('.zs-assegna')))) closePops();
   var a=e.target.closest && e.target.closest('.myotes a[data-note]');
   if(a){ e.preventDefault(); noteApriAttivo(a.getAttribute('data-note')); return; }
   if(e.target.closest && e.target.closest('#addNoteBtn')){ noteNew(''); return; }

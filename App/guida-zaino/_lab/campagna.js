@@ -54,21 +54,21 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
 
   /* ── 1. entrare e creare ── */
   await passo('01-07 creazione', async () => {
-    const b = await L.centro('button.brand');
+    const b = await L.centro('.brand');
     await L.puntatore(b.x, b.y);
     await L.scatta('01-logo-commutatore', { clip: { x: 0, y: 0, width: 420, height: 60 }, scala: 3 });
     await L.overlayPulisci();
-    await L.clicca('button.brand'); await L.pausa(900);
+
     await L.scatta('03-sidebar-vuota', { clip: { x: 0, y: 40, width: 280, height: 140 }, scala: 3 });
     await L.scatta('03b-zaino-senza-zaini');
-    const p = await L.clicca('#zainoNuovo'); await L.pausa(500);
+    await L.val(`(()=>{const s=document.getElementById('zainoSelect');s.value='__nuovo__';s.dispatchEvent(new Event('change',{bubbles:true}));})()`); const p = await L.centro('#zainoScegli'); await L.pausa(500);
     await L.puntatore(p.x, p.y);
     const zp = await L.rect('#zainoPop');
-    await L.scatta('04-pop-crea-zaino', { clip: { x: zp.x - 90, y: 0, width: 470, height: zp.y + zp.h + 16 }, scala: 3 });
+    await L.scatta('04-pop-crea-zaino', { clip: { x: Math.max(0,zp.x - 90), y: 0, width: 470, height: zp.y + zp.h + 16 }, scala: 3 });
     await L.overlayPulisci();
     await L.clicca('#zainoNome'); await L.scrivi('Sistema solare'); await L.pausa(200);
     const c = await L.centro('#zainoCrea'); await L.puntatore(c.x, c.y);
-    await L.scatta('05-pop-nome-scritto', { clip: { x: zp.x - 90, y: 0, width: 470, height: zp.y + zp.h + 16 }, scala: 3 });
+    await L.scatta('05-pop-nome-scritto', { clip: { x: Math.max(0,zp.x - 90), y: 0, width: 470, height: zp.y + zp.h + 16 }, scala: 3 });
     await L.overlayPulisci();
     await L.clicca('#zainoCrea');
     await L.finoA(`zainoAttivo()==='sistema-solare' ? 1 : 0`, 8000); await L.pausa(700);
@@ -79,11 +79,9 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
 
   await passo('02 topbar numerata', async () => {
     const tb = await L.rect('header.topbar');
-    const zs = await L.rect('#zainoSelect');
-    const x0 = zs.x - 30;
-    await L.banda({ x: x0, y: tb.y + tb.h, w: W - x0, h: 0 }, { altezza: 34 });
-    await L.numeri([{ sel: '#zainoSelect', n: 1, dove: 'b' }, { sel: '#zainoNuovo', n: 2, dove: 'b' }, { sel: '#searchBtn', n: 3, dove: 'b' }, { sel: '#bancoBtn', n: 4, dove: 'b' }, { sel: '#chatBtn', n: 5, dove: 'b' }, { sel: '#settingsBtn', n: 6, dove: 'b' }, { sel: '#themeToggle', n: 7, dove: 'b' }, { sel: '#fsMinus', n: 8, dove: 'b' }, { sel: '#fsPlus', n: 9, dove: 'b' }], { filo: tb.y + tb.h + 5 });
-    await L.scatta('02-topbar-zaino', { clip: { x: x0, y: 0, width: W - x0, height: tb.h + 36 }, scala: 3 });
+    await L.banda({ x: 0, y: tb.y + tb.h, w: W, h: 0 }, { altezza: 34 });
+    await L.numeri(['#zainoSelect','#searchBtn','#bancoBtn','#chatBtn','#settingsBtn','#themeToggle'].map((sel,i)=>({sel,n:i+1,dove:'b'})), { filo: tb.y + tb.h + 5 });
+    await L.scatta('02-topbar-zaino', { clip: { x: 0, y: 0, width: W, height: tb.h + 36 }, scala: 3 });
     await L.overlayPulisci();
   });
 

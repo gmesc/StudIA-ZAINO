@@ -125,11 +125,13 @@
     }
     let toggle = $('chatBtn');
     if (!toggle) {
-      toggle = el('button', 'Chat AI', 'iconbtn'); toggle.id = 'chatBtn'; toggle.type = 'button';
+      toggle = el('button', undefined, 'iconbtn'); toggle.id = 'chatBtn'; toggle.type = 'button';
       const settingsButton = $('settingsBtn');
       if (settingsButton) settingsButton.before(toggle);
       else document.querySelector('.topbar').appendChild(toggle);
     }
+    toggle.innerHTML = '<svg class="topbar-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 3.5h17v13h-10l-6 4v-4h-1z"/></svg>';
+    toggle.setAttribute('aria-label', 'Chat AI: apri il tutor dello zaino');
     toggle.hidden = false; toggle.setAttribute('aria-haspopup', 'dialog'); toggle.setAttribute('aria-expanded', 'false');
     toggle.setAttribute('aria-controls', 'zchatWindow'); toggle.title = 'Apri il tutor AI dello zaino';
     const panel = el('section', undefined, 'zchat-window'); panel.id = 'zchatWindow'; panel.hidden = true;
