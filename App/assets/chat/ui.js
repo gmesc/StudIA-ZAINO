@@ -168,6 +168,8 @@
           <button type="submit" class="tbtn acc" id="zchatSend" aria-label="Invia messaggio" title="Invia messaggio">↑︎</button>
         </div>
       </form>`;
+    const settingsIcon = $('settingsBtn')?.querySelector('svg');
+    if (settingsIcon) panel.querySelector('#zchatSettings').replaceChildren(settingsIcon.cloneNode(true));
     document.body.appendChild(panel);
     function drawScope() {
       $('zchatScopeAll').checked = state.scope.mode === 'all';
