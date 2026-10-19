@@ -35,6 +35,8 @@
    Le misure, le maiuscole e l'hover arrivano da `.tbar`; qui resta soltanto
    ciò che una barra non sa: che questa si può afferrare e trascinare. */
 .zchat-head { cursor:move; touch-action:none; }
+/* L’ingranaggio segue la scala tipografica di − e ×, condivisa dalle .tbtn. */
+#zchatSettings .topbar-action-icon { width:var(--tb-fs); height:var(--tb-fs); }
 /* Il ruolo dice CHE COSA stai guardando, quindi apre la barra: nudo come un
    comando, non incorniciato come un campo. L'altezza e il corpo li dà
    `.tbar select`. */
