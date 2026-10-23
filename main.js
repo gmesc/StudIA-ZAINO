@@ -464,6 +464,11 @@ const fontiLib = require('./lib/fonti');
 const ripassoLib = require('./lib/ripasso');
 ipcMain.handle('fonti:importa', (e, { corso, percorsi } = {}) =>
   fontiLib.importa(vaultDir(), corso, percorsi));
+ipcMain.handle('fonti:scegli-cartelle', async () => {
+  const r = await dialog.showOpenDialog({ title: 'Importa cartelle di PDF come gruppi',
+    properties: ['openDirectory', 'multiSelections'], buttonLabel: 'Importa cartelle' });
+  return r.canceled ? [] : r.filePaths;
+});
 /**
  * Togliere un documento dallo zaino.
  *
@@ -566,7 +571,8 @@ ipcMain.handle('ocrpdf:applica', async (e, { corso, file, pagine } = {}) => {
   if (!vaultDir()) return { error: 'nessuna cartella vault impostata' };
   const nome = path.basename(String(file || ''));
   if (!nome || !/\.pdf$/i.test(nome)) return { error: 'documento non valido' };
-  const percorso = path.join(fontiLib.dirPdf(vaultDir(), corso), nome);
+  const percorso = fontiLib.percorso(vaultDir(), corso, nome);
+  if (!percorso) return { error: 'documento non trovato' };
   const r = await ocrpdfLib.scriviLayer(percorso, pagine);
   if (r.error) return r;
   /* L'indice ricorda subito CHI ha riconosciuto e l'impronta di prima: la

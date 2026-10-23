@@ -285,7 +285,7 @@ try {
   const rinomina = fonti.rinomina(vault, id, files[0], 'Fondamenti');
   uguali(rinomina.error, '');
   uguali(archivio.leggi(vault, id).stato, G.rinominaFile(scelta, files[0], rinomina.nome));
-  uguali(fs.existsSync(path.join(dir, 'PDF', rinomina.nome)), true);
+  uguali(fs.existsSync(path.join(dir, 'PDF', 'Gruppi', 'Esame', rinomina.nome)), true);
   uguali(fs.existsSync(path.join(dir, 'PDF', files[0])), false);
   uguali(fonti.rinomina(vault, id, rinomina.nome, 'Teoria').error, '');
   uguali(archivio.leggi(vault, id).stato, scelta);
@@ -310,7 +310,7 @@ try {
     vero(archivio.salva(vault, id, scelta).error);
     uguali(fs.readFileSync(registro, 'utf8'), rotto);
     vero(fonti.rinomina(vault, id, files[0], 'Non rinominato').error);
-    uguali(fs.existsSync(path.join(dir, 'PDF', files[0])), true);
+    uguali(fs.existsSync(path.join(dir, 'PDF', 'Gruppi', 'Esame', files[0])), true);
     uguali(fs.existsSync(path.join(dir, 'PDF', '01 Non rinominato.pdf')), false);
   }
   fs.writeFileSync(registro, prima);
@@ -328,7 +328,7 @@ try {
   fs.symlinkSync(esterno, tmp);
   vero(archivio.salva(vault, id, scelta).error);
   vero(fonti.rinomina(vault, id, files[0], 'Non rinominato').error);
-  uguali(fs.existsSync(path.join(dir, 'PDF', files[0])), true);
+  uguali(fs.existsSync(path.join(dir, 'PDF', 'Gruppi', 'Esame', files[0])), true);
   uguali(fs.existsSync(path.join(dir, 'PDF', '01 Non rinominato.pdf')), false);
   uguali(fs.readFileSync(registro, 'utf8'), prima);
   uguali(fs.readFileSync(esterno, 'utf8'), prima);

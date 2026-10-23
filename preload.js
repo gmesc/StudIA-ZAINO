@@ -618,6 +618,8 @@ const vaultApi = {
        nel main era vivo e intatto da sempre. */
     set: (corso, fonti) => ipcRenderer.invoke('fonti:set', { corso, fonti }),
     percorsoDi: (file) => { try { return webUtils.getPathForFile(file); } catch (e) { return ''; } },
+    eCartella: (file) => { try { return fs.lstatSync(webUtils.getPathForFile(file)).isDirectory(); } catch (e) { return false; } },
+    scegliCartelle: () => ipcRenderer.invoke('fonti:scegli-cartelle'),
     importa: (corso, percorsi) => ipcRenderer.invoke('fonti:importa', { corso, percorsi }),
     /* Togliere una fonte: il file va nel Cestino di sistema e resta una traccia
        del suo contenuto, così se lo stesso documento torna riprende il nome e il

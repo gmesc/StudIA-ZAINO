@@ -2,7 +2,7 @@
 // Solo vault sintetico: si provano anche i gesti nativi, non soltanto il riordino in memoria.
 const assert=require('assert/strict'), fs=require('fs'), path=require('path'), c=require('./cdp');
 const q=JSON.stringify;
-let prima, vault, mediaDir, mappeDir;
+let prima, vault, mediaDir, mappeDir, importati=[];
 const mappeProva=[];
 const base=sezione=>'#zainoNav [data-sezione="'+sezione+'"]';
 const stato=sezione=>c.val('ZNAV.gruppi['+q(sezione)+']');
@@ -71,6 +71,11 @@ async function trascina(da,a,dopo=true){
 async function pulisci(){
   if(!prima)return;
   await c.val('closePops();znavTrascinaFine()');
+  // I gruppi ora spostano file reali: si ripristinano i percorsi prima del registro.
+  const F=require('../../lib/fonti'), A=require('../../lib/gruppi-fonti'), G=require('../../App/assets/fonti/gruppi');
+  let s=A.leggi(vault,'biologia').stato;
+  if(s){for(const g of s.gruppi)s=G.elimina(s,g.id);assert.equal(A.salva(vault,'biologia',s).error,'');}
+  for(const f of importati){fs.rmSync(F.percorso(vault,'biologia',f),{force:true});fs.rmSync(F.percorsoIndice(vault,'biologia',f),{force:true});}
   for(const [file,testo] of Object.entries(prima.registri)){
     if(testo===null)fs.rmSync(file,{force:true});else fs.writeFileSync(file,testo);
   }
@@ -131,6 +136,10 @@ async function pulisci(){
       assert.equal(await c.val(`document.querySelector(${q(gruppo(sezione,uno)+' .zs-nome')}).textContent`),'Lezioni <base>');
       assert.equal(await c.val(`document.querySelectorAll(${q(base(sezione)+' select, '+base(sezione)+' [data-znav="file-su"], '+base(sezione)+' [data-znav="gruppo-su"]')}).length`),0);
       await assegna(sezione,files[0],uno);await assegna(sezione,files[1],uno);
+      if(sezione==='fonti'){
+        const pdf=path.join(vault,'Zaini/biologia/MATERIALI/PDF');
+        for(const f of files){assert(fs.existsSync(path.join(pdf,'Gruppi','Lezioni -base-',f)));assert(!fs.existsSync(path.join(pdf,f)));}
+      }
       console.log('  ok  '+sezione+': gruppi e assegnazione dal solo chevron');
       await trascina(item(sezione,files[0]),item(sezione,files[1]));
       assert.deepEqual((await stato(sezione)).gruppi[0].files,[files[1],files[0]],'riordino con mouse vero');
@@ -149,6 +158,11 @@ async function pulisci(){
       assert.deepEqual((await stato(sezione)).gruppi[0].files,[files[0]]);
       assert.equal((await stato(sezione)).gruppi[0].chiuso,false,'caduta nel gruppo chiuso rende visibile il risultato');
       await click(gruppo(sezione,due)+' [data-znav="rinomina"]');await nome('Da ripassare');
+      if(sezione==='fonti'){
+        const pdf=path.join(vault,'Zaini/biologia/MATERIALI/PDF');
+        assert(fs.existsSync(path.join(pdf,'Gruppi','Da ripassare',files[0])));
+        assert(!fs.existsSync(path.join(pdf,'Gruppi','Ripasso')));
+      }
       await altreInvariate(sezione,altre,'Rinominare un gruppo');
       await click(item(sezione,files[0])+' .zs-assegna');
       await tasto('Escape','Escape',27);
@@ -197,7 +211,45 @@ async function pulisci(){
       assert(await c.val(`(()=>{const e=document.getElementById('zainoNav');return e.scrollWidth<=e.clientWidth+1;})()`));
       assert(await c.val(`(()=>{const r=document.getElementById('znavGruppiPop').getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;})()`));
     }
-    console.log('✓ sidebar: quattro sezioni, mouse nativo, bubble menu, tastiera, persistenza, migrazione e errori');
+    await c.val('closePops()');
+    const lavoro=path.dirname(vault), sorgente=path.join(lavoro,'Cartella PDF di prova');
+    fs.mkdirSync(path.join(sorgente,'Sottocartella'),{recursive:true});
+    const F=require('../../lib/fonti'), {PDFDocument,StandardFonts}=require('pdf-lib');
+    const doc=await PDFDocument.create(), font=await doc.embedFont(StandardFonts.Helvetica);
+    for(let n=1;n<=3;n++){
+      const pagina=doc.addPage();
+      for(let r=0;r<6;r++)pagina.drawText('Storia e geografia: materiali di studio per la pagina '+n,{x:40,y:700-r*25,font,size:14});
+    }
+    const bytes=await doc.save();
+    fs.writeFileSync(path.join(sorgente,'Prima.pdf'),bytes);
+    fs.writeFileSync(path.join(sorgente,'Sottocartella','Seconda.pdf'),bytes);
+    fs.writeFileSync(path.join(lavoro,'dati','cartelle-pick.json'),JSON.stringify([sorgente]));
+    await click(base('fonti')+' [data-znav="importa"]');
+    await aspetta(`!FONTI.inCorso && ZNAV.gruppi.fonti.gruppi.some(g=>g.nome==='Cartella PDF di prova' && g.files.length===2)`);
+    const nuovo=(await stato('fonti')).gruppi.find(g=>g.nome==='Cartella PDF di prova');importati=nuovo.files;
+    assert.equal(JSON.parse(fs.readFileSync(path.join(lavoro,'dati','cartelle-dialogo.jsonl'),'utf8').trim()).properties.includes('openDirectory'),true);
+    for(const f of importati){
+      assert(fs.existsSync(path.join(vault,'Zaini/biologia/MATERIALI/PDF/Gruppi',nuovo.nome,f)));
+      assert(fs.existsSync(F.percorsoIndice(vault,'biologia',f)),'indice costruito da pdf.js per il PDF raggruppato');
+      assert(await c.val(`!!document.querySelector(${q(item('fonti',f))})`));
+    }
+    await aspetta('!!PDFJS.doc');
+    const aperto=await c.val('ANTEPRIMA.file');assert(importati.includes(aperto));
+    await c.val(`fonte2Apri(${q(importati[1])})`);await aspetta('!!FONTE2.doc && !FONTE2.caricando');
+    if(!await c.val('ZNAV.organizza.fonti'))await click(base('fonti')+' [data-znav="organizza"]');
+    await click(gruppo('fonti',nuovo.id)+' [data-znav="rinomina"]');await nome('PDF rinominati');
+    await aspetta('!!PDFJS.doc && !!FONTE2.doc && !FONTE2.caricando');
+    assert.equal(await c.val('ANTEPRIMA.file'),aperto);
+    assert(await c.val(`window.vault.srcUrl(${q(aperto)},'biologia').includes('PDF%20rinominati')`));
+    for(const f of importati)assert(fs.existsSync(path.join(vault,'Zaini/biologia/MATERIALI/PDF/Gruppi/PDF rinominati',f)));
+    await c.val('location.reload()');await c.pausa(1000);await aspetta(`typeof ZNAV!=='undefined' && ZNAV.id==='biologia' && !ZNAV.carico`);
+    assert.equal((await stato('fonti')).gruppi.find(g=>g.id===nuovo.id).nome,'PDF rinominati');
+    await c.val(`document.querySelector(${q(item('fonti',aperto)+' .zn-fonte')}).click()`);await aspetta('!!PDFJS.doc');
+    assert.equal(await c.val('PDFJS.doc.numPages'),3);
+    const immagine=await c.invia('Page.captureScreenshot',{format:'png'});
+    fs.writeFileSync('/tmp/studia-zaino-cartelle-pdf.png',Buffer.from(immagine.result.data,'base64'));
+    await c.val('closePdf();fonte2Chiudi()');
+    console.log('✓ sidebar e cartelle: import dal pulsante, gruppi sul disco, due viewer, indici e riapertura');
   }catch(e){console.error('Prima della pulizia:',e);const r=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/studia-sidebar-prima-pulizia.png',Buffer.from(r.result.data,'base64'));throw e;}finally{await pulisci();await c.invia('Emulation.setFocusEmulationEnabled',{enabled:false});}
   process.exit(0);
 })().catch(async e=>{console.error(e);try{const r=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/studia-zaino-gruppi-failure.png',Buffer.from(r.result.data,'base64'));}catch(_){}process.exit(1);});

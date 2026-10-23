@@ -1116,7 +1116,7 @@
     font-family:var(--font-text),var(--emoji-font),sans-serif;
     text-transform:uppercase; letter-spacing:.12em; text-align:center; padding:0 2rem;
     border:3px dashed var(--teal); pointer-events:none; }
-  html[data-drop="pdf"]::after{ content:"Rilascia qui documenti, video, audio, immagini e testi da mettere nello zaino"; }
+  html[data-drop="pdf"]::after{ content:"Rilascia qui PDF, cartelle di PDF, video, audio, immagini e testi da mettere nello zaino"; }
   html[data-drop="json"]::after{ content:"Rilascia qui il file della lezione (.json)"; }
 
   /* ---- Fonti (sorgenti PDF) + anteprima split view ---- */
@@ -5120,14 +5120,15 @@ function fontiIndiciCarica(){
 }
 
 /** Il testo di un documento, pagina per pagina, letto con pdf.js. */
-async function fontiIndicizza(nomeFile){
+async function fontiIndicizza(nomeFile, id){
+  id=id || corsoAttivo();
   if(!pdfjsAvvia()) return { error: 'il visualizzatore dei documenti non si è avviato' };
   var api=(window.vault && window.vault.fonti) || null;
   if(!api) return { error: 'disponibile solo nell’app' };
   /* ⚠️ La query rompe la cache dei `file://` di Chromium, e QUI si rompe
      sempre: l'indice si costruisce solo su un file appena entrato o appena
      cambiato (OCR), quindi la cache non può che servire byte vecchi. */
-  var url=window.vault.srcUrl(nomeFile, corsoAttivo())+'?v='+Date.now();
+  var url=window.vault.srcUrl(nomeFile, id)+'?v='+Date.now();
   var doc;
   try{ doc=await pdfjsLib.getDocument({ url:url, isEvalSupported:false }).promise; }
   catch(e){ return { error:(e && e.message) || 'documento non leggibile' }; }
@@ -5144,7 +5145,7 @@ async function fontiIndicizza(nomeFile){
     }
   } catch(e){ return { error:(e && e.message) || 'lettura interrotta' }; }
   finally { try{ doc.destroy(); }catch(e){} }
-  var r=await api.indiceScrivi(corsoAttivo(), nomeFile, pagine, 'pdfjs');
+  var r=await api.indiceScrivi(id, nomeFile, pagine, 'pdfjs');
   return r || {};
 }
 
@@ -5159,18 +5160,30 @@ async function fontiTrascinate(files){
      solo il contenuto — e copiare un file leggendolo e riscrivendolo sarebbe la
      stessa cosa fatta peggio. */
   var percorsi=files.map(function(f){ return api.percorsoDi(f); }).filter(Boolean);
+  return fontiImportaPercorsi(percorsi, id);
+}
+async function fontiScegliCartelle(){
+  var id=zainoAttivo(); if(!id || FONTI.inCorso) return;
+  var percorsi=await window.vault.fonti.scegliCartelle();
+  if(percorsi && percorsi.length) await fontiImportaPercorsi(percorsi,id);
+}
+async function fontiImportaPercorsi(percorsi, id){
+  var api=window.vault.fonti;
+  if(FONTI.inCorso){ toast('Sto ancora importando: un momento',false); return; }
   if(!percorsi.length){ toast('Non riesco a leggere il percorso di questi file', false); return; }
   FONTI.inCorso=true;
-  var r;
+  var r, aperti=fontiPercorsiAperti(id);
   try{ r=await api.importa(id, percorsi); }
   catch(e){ r={ error:(e && e.message) || 'import non riuscito' }; }
   if(!r || r.error){ FONTI.inCorso=false; toast('Import non riuscito: '+((r&&r.error)||'?'), false); return; }
+  await fontiRicaricaSpostate(id,aperti);
   var entrati=r.copiati||[], fuori=r.scartati||[];
   if(entrati.length) toast(entrati.length===1 ? 'Documento aggiunto: '+entrati[0].nome
                                               : entrati.length+' documenti aggiunti', true);
   /* Ciò che non è entrato si dice, col motivo: un import che ingoia in silenzio
      lascia a cercare un file che non c'è. */
   fuori.forEach(function(x){ toast('Fuori: '+x.file+' — '+x.motivo, false); });
+  (r.avvisi||[]).forEach(function(x){ toast(x,false); });
   try{ zainoNavAggiorna(); }catch(e){}
   /* L'indice si costruisce dopo, uno per volta: è la parte lenta, e intanto il
      documento è già lì e si può aprire. Se l'indice dice «scansione» — foto di
@@ -5179,7 +5192,7 @@ async function fontiTrascinate(files){
      bloccherebbe i documenti che seguono. */
   var scansioni=[];
   for(var i=0;i<entrati.length;i++){
-    var esito=await fontiIndicizza(entrati[i].nome);
+    var esito=await fontiIndicizza(entrati[i].nome,id);
     if(esito && esito.error) console.error('indice:', entrati[i].nome, esito.error);
     else if(esito && esito.scansione) scansioni.push({ nome:entrati[i].nome, vuote:esito.pagineVuote, npagine:esito.npagine });
   }
@@ -5187,6 +5200,7 @@ async function fontiTrascinate(files){
   numeriRegistra(id, entrati.map(function(x){ return x.nome; }));
   await fontiIndiciCarica();             // la lente deve rifare il suo indice
   FONTI.inCorso=false;
+  if(id!==corsoAttivo()) return;
   if(entrati.length){
     try{ openPdf(entrati[0].nome, null, titoloMateriale(entrati[0].nome)||entrati[0].nome); }catch(e){}
     try{ zainoNavAggiorna(); }catch(e){}
@@ -5452,7 +5466,9 @@ var MEDIAIMP={ inCorso:false };
  */
 function zainoTrascinati(files){
   var lista=[].slice.call(files||[]);
-  var pdf=lista.filter(function(f){ return /\.pdf$/i.test(f.name); });
+  var cartelle=lista.filter(function(f){ return window.vault.fonti.eCartella(f); });
+  lista=lista.filter(function(f){ return cartelle.indexOf(f)<0; });
+  var pdf=cartelle.concat(lista.filter(function(f){ return /\.pdf$/i.test(f.name); }));
   var media=lista.filter(function(f){ return !!Lettore.tipoDi(f.name); });
   /* Le immagini sono la terza popolazione, e si riconoscono dal nome SOLO per
      smistarle: che siano davvero immagini lo dicono i byte, un attimo dopo
@@ -8511,7 +8527,7 @@ window.addEventListener('keydown', function(e){
  * rimando con la pagina dentro (`pdf:03#p=7`) la passa e vince lui, perché
  * quella pagina è il senso del rimando.
  */
-function openPdf(pdf,page,label){
+function openPdf(pdf,page,label,conservaBanco){
   if(!pdf) return;
   var pg=parseInt(page,10)||0;
   if(!pg) pg=letturaPagina(pdf)||1;
@@ -8550,7 +8566,7 @@ function openPdf(pdf,page,label){
   document.documentElement.dataset.pdf='1';
   apertoScrivi('fonte', pdf);
   // il dock non c'è più: si chiede al banco di fare posto allo strumento
-  try{ bancoMostra('fonte'); }catch(e){}
+  if(!conservaBanco){ try{ bancoMostra('fonte'); }catch(e){} }
   aggiornaBarraPagina();
   /* Nello ZAINO il documento aperto è ciò che nei corsi è il capitolo (Z6):
      cambiandolo cambiano il chip «da dove nasce l'appunto» e i gruppi della
@@ -11099,6 +11115,7 @@ function znavRaccolta(sezione, titolo, voci, vuoto, errore, erroreGruppi){
     }).join('')+'</ul>';
   }
   var h='<section class="zs-raccolta" data-sezione="'+sezione+'"><div class="zs-tit"><button type="button" class="zs-collapse" data-znav="sezione" aria-expanded="'+!chiusa+'" aria-controls="zs-corpo-'+sezione+'"><span aria-hidden="true">'+(chiusa?'▸':'▾')+'</span><span>'+titolo+'</span><span class="zs-n">'+voci.length+'</span></button><span class="zs-azioni">'+
+    (sezione==='fonti'?znavComandoHtml('importa','↓','Importa cartelle di PDF come gruppi','',!!erroreGruppi||!!errore):'')+
     znavComandoHtml('crea','+','Crea gruppo di '+titolo.toLowerCase(),'',!!erroreGruppi||!!errore)+
     '<button type="button" class="tbtn" data-znav="organizza" title="Organizza '+titolo.toLowerCase()+'" aria-label="Organizza '+titolo.toLowerCase()+'" aria-pressed="'+edit+'"'+(erroreGruppi||errore?' disabled':'')+'>'+(edit?'✓':'✎')+'</button></span></div><div class="zs-corpo" id="zs-corpo-'+sezione+'"'+(chiusa?' hidden':'')+'>';
   if(errore) return h+'<div class="zs-vuoto zs-no">⚠ '+znavEsc(errore)+'</div></div></section>';
@@ -11116,13 +11133,33 @@ function znavRaccolta(sezione, titolo, voci, vuoto, errore, erroreGruppi){
   if(!voci.length && !stato.gruppi.length) h+='<div class="zs-vuoto">'+znavEsc(vuoto)+'</div>';
   return h+'</div></div></section>';
 }
+function fontiPercorsiAperti(id){
+  if(id!==zainoAttivo()) return {};
+  return {
+    primo:ANTEPRIMA.tipo==='pdf' && PDFJS.doc ?
+      {file:ANTEPRIMA.file,page:ANTEPRIMA.page,label:ANTEPRIMA.label,url:window.vault.srcUrl(ANTEPRIMA.file,id)}:null,
+    secondo:FONTE2.doc ? {file:FONTE2.file,url:window.vault.srcUrl(FONTE2.file,id)}:null
+  };
+}
+async function fontiRicaricaSpostate(id, aperti){
+  if(id!==zainoAttivo()) return;
+  var primo=aperti.primo, secondo=aperti.secondo;
+  // Anche le letture a blocchi di un PDF già aperto devono usare il percorso nuovo.
+  if(primo && ANTEPRIMA.file===primo.file && primo.url!==window.vault.srcUrl(primo.file,id)){
+    pdfChiudiDoc(); openPdf(primo.file,primo.page,primo.label,true);
+  }
+  if(secondo && FONTE2.file===secondo.file && secondo.url!==window.vault.srcUrl(secondo.file,id))
+    await fonte2Apri(secondo.file,{ripristina:true});
+}
 async function znavSalva(stato, id, sezione){
   if(ZNAV.salva || id!==zainoAttivo()) return false;
   ZNAV.salva=true; var ok=false;
   try{
+    var aperti=sezione==='fonti'?fontiPercorsiAperti(id):{};
     var r=await window.vault.zaino.gruppiSalva(id,stato,sezione);
     if(!r || r.error) throw new Error((r&&r.error)||'salvataggio non riuscito');
     ok=true;
+    await fontiRicaricaSpostate(id,aperti);
   }catch(e){ toast('Organizzazione non salvata: '+e.message,false); }
   finally{ ZNAV.salva=false; await zainoNavAggiorna(); }
   return ok;
@@ -11149,6 +11186,7 @@ function znavMenuGruppi(btn, sezione){
 }
 async function znavComando(btn){
   var azione=btn.dataset.znav, sezione=znavSezioneDi(btn), id=zainoAttivo(), s=ZNAV.gruppi[sezione];
+  if(azione==='importa' && !btn.disabled){ await fontiScegliCartelle(); return; }
   if(azione==='sezione'){
     var corpo=document.getElementById('zs-corpo-'+sezione);if(!corpo)return;
     corpo.hidden=!corpo.hidden;btn.setAttribute('aria-expanded',String(!corpo.hidden));btn.firstElementChild.textContent=corpo.hidden?'▸':'▾';
