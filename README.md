@@ -59,6 +59,8 @@ Le linee dei banchi sono sottili e grigie. La vecchia barra verticale di avanzam
 
 Attiva la **matita** della sezione per mostrare le **caselle a destra** e il **+**, poi seleziona una o più voci. Uscendo dalla modifica, le spunte si azzerano. Premi **+** per creare un gruppo che le contenga, oppure trascina una delle voci selezionate su un gruppo esistente per spostarle insieme. Il pulsante **A–Z / Z–A** ordina i file per nome visibile, dentro ciascun gruppo e fra quelli senza gruppo. L’ordine viene salvato nello zaino.
 
+Passando sul **+** con il mouse o raggiungendolo da tastiera, un popup spiega l’azione e indica quante voci selezionate entreranno nel gruppo. **Esc** chiude il suggerimento. I pulsanti sulle testate verdi si scuriscono leggermente al passaggio del mouse, conservando il colore dello sfondo.
+
 Puoi trascinare anche una voce singola per riordinarla o portarla in **Senza gruppo**. **Alt+↑/↓** riordina da tastiera. La matita mostra i comandi per rinominare o sciogliere i gruppi e permette di trascinarne le testate per cambiarne la posizione. Sciogliere un gruppo conserva tutte le sue voci.
 
 Ordine, assegnazioni e apertura viaggiano con lo zaino: `MATERIALI/_gruppi.json` conserva separatamente Fonti e Media, `APPUNTI/_gruppi.json` gli Appunti e `MAPPE/_gruppi.json` le Mappe. I gruppi di Fonti, Appunti, Media e Mappe sono indipendenti, anche quando hanno lo stesso nome: creare, rinominare o sciogliere un gruppo in una sezione lascia invariate le altre tre. Le copie vuote ereditate dalla vecchia migrazione vengono corrette; la rinomina di PDF, appunti e mappe conserva gruppo e posizione.

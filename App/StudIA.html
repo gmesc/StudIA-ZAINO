@@ -1551,8 +1551,15 @@
      riga sotto lo ripete sottile: due segni deboli invece di uno forte, perché
      il pannello non diventi una bandiera. */
   .bhead, .znav .zs-tit, #searchRes .sr-lesson{
-    background:color-mix(in srgb, var(--teal) 10%, var(--panel)); }
-  .blocco[data-attivo="1"] > .bhead{ background:color-mix(in srgb, var(--teal) 18%, var(--panel)); }
+    --testata-bg:color-mix(in srgb, var(--teal) 10%, var(--panel));
+    background:var(--testata-bg); }
+  .blocco[data-attivo="1"] > .bhead{ --testata-bg:color-mix(in srgb, var(--teal) 18%, var(--panel)); }
+  :is(.bhead, .znav .zs-tit, #searchRes .sr-lesson) button[aria-pressed="true"]{
+    --testata-bg:color-mix(in srgb, var(--teal) 26%, var(--panel)); }
+  /* Si moltiplica soltanto il fondo: testo e icone conservano il proprio contrasto. */
+  :is(.bhead, .znav .zs-tit, #searchRes .sr-lesson) :is(button, .tendina):hover:not(:disabled):not([aria-disabled="true"]){
+    background:linear-gradient(rgb(128 128 128 / .18), rgb(128 128 128 / .18)) var(--testata-bg);
+    background-blend-mode:multiply; }
   .znav .zs-tit, #searchRes .sr-lesson{
     border-bottom:1px solid color-mix(in srgb, var(--teal) 35%, var(--line)); }
   #searchRes .sr-lesson{ position:sticky; top:0; z-index:1;
@@ -2289,6 +2296,7 @@
     opacity:1; pointer-events:none; max-width:min(420px, calc(100vw - 16px));
     box-sizing:border-box; overflow-wrap:anywhere; z-index:210; }
   .rimbolla[hidden]{ display:none; }
+  #znavAiuto{ width:min(270px, calc(100vw - 16px)); font-weight:400; z-index:330; }
   .rimbolla .nt-head{ display:flex; flex-wrap:wrap; align-items:baseline; gap:.2rem .75rem; }
   .rimbolla .nt-head .nt-doc{ flex:1 1 12rem; }
   .rimbolla .nt-head .nt-loc{ margin:0; white-space:nowrap; }
@@ -9341,9 +9349,12 @@ function insertEmoji(ch, destinazione){
  */
 function popAt(pop, anchorEl){
   closePops();
+  pop.setAttribute('open','');
+  popPosiziona(pop, anchorEl);
+}
+function popPosiziona(pop, anchorEl){
   var r = (anchorEl && anchorEl.getBoundingClientRect) ? anchorEl.getBoundingClientRect()
         : (anchorEl || {left:100,top:100,bottom:100});
-  pop.setAttribute('open','');
   var box=pop.getBoundingClientRect();
   var w=box.width||280, h=box.height||0;
   pop.style.left=Math.max(8,Math.min(window.innerWidth-w-8, r.left))+'px';
@@ -9405,6 +9416,7 @@ function tendinaViva(sel, opt){
 }
 
 function closePops(){
+  znavAiutoChiudi();
   /* ⚠️ LA RICERCA NEL DOCUMENTO NON SI CHIUDE DA QUI, e non è una dimenticanza:
      è la decisione del 17 agosto. `closePops()` la chiama ogni click fuori da un
      pannellino, e finché la chiudeva bastava premere «+» dello zoom per
@@ -11112,8 +11124,23 @@ var ZNAV={ carico:false, ancora:false, organizza:{}, gruppi:{}, id:'', salva:fal
 function znavEsc(s){ return escHtml(s); }
 function znavComandoHtml(azione, testo, titolo, dati, spento){
   return '<button type="button" class="tbtn" data-znav="'+azione+'" '+(dati||'')+
-    ' title="'+znavEsc(titolo)+'" aria-label="'+znavEsc(titolo)+'"'+(spento?' disabled':'')+'>'+testo+'</button>';
+    (azione==='crea'?'':' title="'+znavEsc(titolo)+'"')+' aria-label="'+znavEsc(titolo)+'"'+(spento?' disabled':'')+'>'+testo+'</button>';
 }
+function znavAiutoChiudi(){ var box=document.getElementById('znavAiuto'); if(box) box.hidden=true; }
+function znavAiutoMostra(e){
+  var b=e.target.closest && e.target.closest('#zainoNav [data-aiuto]'), box=document.getElementById('znavAiuto');
+  if(!b || b.disabled || !box) return;
+  box.textContent=b.dataset.aiuto; box.hidden=false;
+  popPosiziona(box,b);
+}
+// La bolla vive fuori dalla sidebar per non essere tagliata dal suo scorrimento.
+document.addEventListener('pointerover',znavAiutoMostra);
+document.addEventListener('focusin',znavAiutoMostra);
+['pointerout','focusout','click'].forEach(function(tipo){ document.addEventListener(tipo,znavAiutoChiudi); });
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') znavAiutoChiudi(); });
+document.addEventListener('scroll',znavAiutoChiudi,true);
+window.addEventListener('resize',znavAiutoChiudi);
+window.addEventListener('blur',znavAiutoChiudi);
 
 /** Le quattro raccolte condividono i gesti, conservando registri separati. */
 function znavRaccolta(sezione, titolo, voci, vuoto, errore, erroreGruppi){
@@ -11122,6 +11149,9 @@ function znavRaccolta(sezione, titolo, voci, vuoto, errore, erroreGruppi){
   var edit=!!ZNAV.organizza[sezione] && !erroreGruppi && !errore;
   var selezione=ZNAV.selezione[sezione] || [];
   var modificabile=!erroreGruppi && !errore;
+  var aiuto=selezione.length
+    ? 'Crea un nuovo gruppo di '+titolo.toLowerCase()+' e vi sposta '+(selezione.length===1?'la voce selezionata':selezione.length+' voci selezionate')+'.'
+    : 'Crea un nuovo gruppo di '+titolo.toLowerCase()+'. Seleziona le voci con le caselle per inserirle nel nuovo gruppo; senza selezione crea un gruppo vuoto.';
   function lista(files, gruppo){
     return '<ul>'+files.map(function(file){
       var v=voci.find(function(x){ return x.quale===file; }); if(!v) return '';
@@ -11133,7 +11163,7 @@ function znavRaccolta(sezione, titolo, voci, vuoto, errore, erroreGruppi){
   }
   var h='<section class="zs-raccolta" data-sezione="'+sezione+'"><div class="zs-tit"><button type="button" class="zs-collapse" data-znav="sezione" aria-expanded="'+!chiusa+'" aria-controls="zs-corpo-'+sezione+'"><span aria-hidden="true">'+(chiusa?'▸':'▾')+'</span><span>'+titolo+'</span><span class="zs-n">'+voci.length+'</span></button><span class="zs-azioni">'+
     znavComandoHtml('ordina',ZNAV.ordine[sezione]==='az'?'Z–A':'A–Z','Ordina '+(ZNAV.ordine[sezione]==='az'?'Z–A':'A–Z'),'',!modificabile)+
-    (edit?znavComandoHtml('crea','+',selezione.length?'Crea gruppo con '+selezione.length+' voci selezionate':'Crea gruppo di '+titolo.toLowerCase()):'')+
+    (edit?znavComandoHtml('crea','+',selezione.length?'Crea gruppo con '+selezione.length+' voci selezionate':'Crea gruppo di '+titolo.toLowerCase(),'data-aiuto="'+znavEsc(aiuto)+'" aria-describedby="znavAiuto"'):'')+
     '<button type="button" class="tbtn" data-znav="organizza" title="Organizza '+titolo.toLowerCase()+'" aria-label="Organizza '+titolo.toLowerCase()+'" aria-pressed="'+edit+'"'+(erroreGruppi||errore?' disabled':'')+'>'+(edit?'✓':'✎')+'</button></span></div><div class="zs-corpo" id="zs-corpo-'+sezione+'"'+(chiusa?' hidden':'')+'>';
   if(errore) return h+'<div class="zs-vuoto zs-no">⚠ '+znavEsc(errore)+'</div></div></section>';
   if(erroreGruppi) h+='<div class="zs-vuoto zs-no">Organizzazione non leggibile: '+znavEsc(erroreGruppi)+'</div>';
@@ -11369,6 +11399,7 @@ async function zainoNavAggiorna(){
     return {classe:media?'zn-fonte zn-media':'zn-fonte', quale:f.name, titolo:media?f.name:FontiNomi.visibile(f.name),
       testo:segno+(media?(titoloMateriale(f.name)||f.name):FontiNomi.visibile(f.name)), attivo:f.name===(media?apertoMedia:apertoPdf)};
   }
+  znavAiutoChiudi();
   host.innerHTML =
     znavRaccolta('fonti','Fonti',fonti.filter(function(f){return f.tipo==='pdf';}).map(fonteVoce),
       'Nessun documento in questo zaino.',eFonti,eGruppi.fonti) +
@@ -22083,6 +22114,7 @@ window.addEventListener('keydown', function(e){
      `overflow` verrebbe tagliata. `aria-hidden` finché non ha niente da dire:
      è un aiuto alla lettura del mouse, e chi naviga a tastiera ha il `title`. -->
 <div id="rimBolla" class="note-tip rimbolla" role="tooltip" hidden aria-hidden="true"></div>
+<div id="znavAiuto" class="note-tip rimbolla" role="tooltip" hidden></div>
 <!-- La ricerca: un bottone che apre il campo, invece di un campo sempre steso in
      barra. Il pannello dei risultati (`#searchRes`) non è cambiato — si posa già
      da sé sotto l'input, ovunque l'input si trovi. -->

@@ -16,6 +16,11 @@ async function click(sel){
   await stabile(); await c.val(`document.querySelector(${q(sel)}).scrollIntoView({block:'nearest'})`);
   await c.pausa(80); await c.clicca(sel); await c.pausa(80);
 }
+async function sfiora(sel){
+  await c.val(`document.querySelector(${q(sel)}).scrollIntoView({block:'nearest'})`);
+  const p=await c.val(`(()=>{const r=document.querySelector(${q(sel)}).getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()`);
+  await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',...p});await c.pausa(180);
+}
 async function tasto(key,code,vk){
   await c.invia('Input.dispatchKeyEvent',{type:'keyDown',key,code,windowsVirtualKeyCode:vk,...(key==='Enter'?{text:'\r',unmodifiedText:'\r'}:{})});
   await c.invia('Input.dispatchKeyEvent',{type:'keyUp',key,code,windowsVirtualKeyCode:vk});
@@ -113,6 +118,25 @@ async function pulisci(){
   try{
     assert.equal(await c.val(`document.querySelectorAll('#zainoNav .zs-seleziona, #zainoNav [data-znav="crea"]').length`),0,'spunte e + assenti fuori dalla modifica');
     assert.equal(await c.val(`document.querySelectorAll('#zainoNav [data-znav="importa"]').length`),0,'le cartelle entrano con il drop');
+    await modifica('fonti');
+    const piu=base('fonti')+' [data-znav="crea"]';
+    await sfiora(piu);
+    assert(await c.val(`(()=>{const b=document.querySelector(${q(piu)}),tip=document.getElementById(b.getAttribute('aria-describedby'));return tip && !tip.hidden && tip.getAttribute('role')==='tooltip' && tip.textContent.includes('gruppo vuoto') && !b.hasAttribute('title');})()`),'il + spiega la creazione del gruppo con un popup visibile');
+    await tasto('Escape','Escape',27);assert.equal(await c.val(`document.getElementById('znavAiuto').hidden`),true);
+    await c.val(`document.querySelector(${q(piu)}).focus()`);
+    assert.equal(await c.val(`document.getElementById('znavAiuto').hidden`),false,'popup disponibile anche da tastiera');
+    for(const tema of ['chiaro','scuro']){
+      await c.val(`document.documentElement.dataset.theme=${q(tema)}`);
+      for(const sel of [piu,base('fonti')+' [data-znav="organizza"]',base('fonti')+' [data-znav="ordina"]',base('fonti')+' .zs-collapse','.blocco:not([hidden]) .bhead .tendina']){
+        await sfiora(sel);
+        assert.deepEqual(await c.val(`(()=>{const s=getComputedStyle(document.querySelector(${q(sel)}));return [s.backgroundBlendMode,s.backgroundImage.includes('128, 128, 128'),s.mixBlendMode];})()`),['multiply',true,'normal'],'il solo sfondo si moltiplica in '+tema+' su '+sel);
+      }
+      await sfiora(piu);
+      const r=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/studia-zaino-hover-'+tema+'.png',Buffer.from(r.result.data,'base64'));
+    }
+    await c.val(`document.documentElement.dataset.theme=${q(prima.tema)}`);
+    await click(base('fonti')+' [data-znav="organizza"]');
+    assert.equal(await c.val(`document.getElementById('znavAiuto').hidden`),true);
     assert.equal(await c.val(`getComputedStyle(document.getElementById('sidebarTitolo')).display`),'none');
     for(const sezione of ['fonti','appunti','media','mappe']){
       const toggle=base(sezione)+' .zs-collapse';
@@ -269,6 +293,8 @@ async function pulisci(){
     for(const f of importati)await click(item('fonti',f)+' .zs-seleziona');
     await c.val('zainoNavAggiorna()');await stabile();
     assert.equal(await c.val(`document.querySelectorAll(${q(base('fonti')+' .zs-seleziona:checked')}).length`),2,'la selezione sopravvive al refresh');
+    await sfiora(piu);
+    assert.match(await c.val(`document.getElementById('znavAiuto').textContent`),/2 voci selezionate/,'il popup descrive la selezione corrente');
     await click(base('fonti')+' [data-znav="organizza"]');
     assert.equal(await c.val(`document.querySelectorAll(${q(base('fonti')+' .zs-seleziona, '+base('fonti')+' [data-znav="crea"]')}).length`),0);
     assert.deepEqual(await c.val('ZNAV.selezione.fonti'),[],'nessuna selezione invisibile alla chiusura della modifica');
