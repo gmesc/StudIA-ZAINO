@@ -79,6 +79,8 @@ const strumentiSalvati = () => c.val(`Object.values(bancoStato().blocchi).filter
     verifica('le testate sono numerate nell’ordine visivo', ['1', '3', '2', '4'],
       await c.val(`['A','B','C','D'].map(b=>document.querySelector('.blocco[data-blocco="'+b+'"] .bnumero').textContent)`));
 
+    verifica('la maniglia non copre il nome del primo split',true,await c.val(`document.querySelector('.bhead[data-primo="1"] .bnumero').getBoundingClientRect().left>=document.querySelector('#menuBtn').getBoundingClientRect().right`));
+
     console.log('\n== Quattro → due: il quarto usato rimane per primo');
     await c.clicca('.blocco[data-blocco="D"] .bnumero');
     verifica('il click vero nel quarto riquadro lo attiva', 'D', await c.val('bancoBloccoAttivo()'));

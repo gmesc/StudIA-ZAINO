@@ -18,7 +18,8 @@ for(const titolo of ['Botanica','Biologia cellulare']){
  const doc=await PDFDocument.create(),font=await doc.embedFont(StandardFonts.Helvetica);
  for(let n=1;n<=3;n++)doc.addPage().drawText(titolo+' - pagina '+n,{x:40,y:700,font,size:18});
  const file=path.join(dir,titolo+'.pdf');fs.writeFileSync(file,await doc.save());
- require('./lib/fonti').importa(v,'biologia',[file]);
+ const pdfDir=path.join(v,'Zaini/biologia/MATERIALI/PDF');fs.mkdirSync(pdfDir,{recursive:true});
+ fs.copyFileSync(file,path.join(pdfDir,(titolo==='Botanica'?'01 ':'02 ')+titolo+'.pdf'));
 }
 if(process.env.STUDIA_RAG_MODEL){
  const M=require('./lib/rag-modello');if(!M.pronto(process.env.STUDIA_RAG_MODEL))throw Error('Modello della prova non pronto');

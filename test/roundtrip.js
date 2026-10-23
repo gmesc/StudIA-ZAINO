@@ -1863,9 +1863,9 @@ async function modelloFinto(o) {
     const corpo = /function titoloMateriale\(file\)\{([\s\S]*?)\n\}/.exec(html);
     check('il renderer sa calcolare il titolo di un materiale', true, !!corpo);
     if (corpo) {
-      const nelRenderer = new Function('file', corpo[1]);
+      const nelRenderer = new Function('FontiNomi', 'file', corpo[1]).bind(null, require('../App/assets/fonti/nomi'));
       for (const nome of ['02 TD 74 La consulenza con la famiglia edu.galton.it.mp4',
-        '03 I processi di apprendimento - Galton.pdf', '12 Lezione.webm', 'senza numero.pdf']) {
+        '03 I processi di apprendimento - Galton.pdf', '0001 - 01.1 CT Alunno.pdf', '12 Lezione.webm', 'senza numero.pdf']) {
         check('titolo di «' + nome + '»: renderer e corpus dicono lo stesso',
           corpL2.titoloDi(nome), nelRenderer(nome));
       }

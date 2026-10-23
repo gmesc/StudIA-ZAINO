@@ -71,7 +71,7 @@ function snapshot(dir) {
     assert.equal(F.percorso(vault, id, secondo), path.join(dir, secondo));
     assert(!fs.existsSync(path.join(dir, 'Gruppi', 'ripasso')));
     const secondoImport = F.importa(vault, id, [sorgente]);
-    assert.equal(secondoImport.copiati[0].nome.slice(0, 2), '03');
+    assert.equal(secondoImport.copiati[0].nome.slice(0, 4), '0003');
     assert.equal(secondoImport.copiati.length, 2);
     assert.equal(F.importa(vault, id, [sorgente]).copiati.length, 2);
     stato = A.leggi(vault, id).stato;

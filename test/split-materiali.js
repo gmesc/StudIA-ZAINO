@@ -78,7 +78,7 @@ function harness(){
     addEventListener(t,f){(eventiWindow[t]||(eventiWindow[t]=[])).push(f);},
     corsoAttivo:()=>corso,curMeta:()=>({courseId:corso}),modoAttivo:()=>'zaino',
     curCtx:()=>({courseId:corso,materiale:'',pagina:''}),notesApi:()=>api,
-    bancoVisibile:id=>visibili.includes(id),bancoMostra:id=>aperti.push(id),bancoTogli:id=>{visibili=visibili.filter(x=>x!==id);},
+    bancoAggiornaDocumenti(){},bancoVisibile:id=>visibili.includes(id),bancoMostra:id=>aperti.push(id),bancoTogli:id=>{visibili=visibili.filter(x=>x!==id);},
     toast:t=>messaggi.push(t),tendinaViva(){},tasti:String,tastiNelDom(){},barreSeparatori(){},zainoNavAggiorna(){},SEARCH:{},
     renderNoteMd:t=>t,escHtml:String,noteEtichetta:n=>n.title,noteEtichettaAltrove:n=>n.title,noteMateriale:n=>n.materiale||'',
     noteGroups:ns=>({qui:ns,altrove:[]}),noteInChapter:()=>true,PERSONALE:'Personale',

@@ -1102,7 +1102,7 @@ ipcMain.handle('corpus:list', (e, { corso } = {}) => {
       const stem = f.slice(0, f.length - ext.length);
       if (out.some((x) => x.stem === stem && x.tipo === tipo)) continue;
       let size = 0; try { size = fs.statSync(path.join(dir, f)).size; } catch (e) {}
-      const m = /^(\d{1,3})\b/.exec(f);
+      const m = /^(\d+)\b/.exec(f);
       const dove = { pdf: 'Indice-PDF', html: 'Indice-HTML', media: 'Trascrizioni' }[tipo];
       out.push({
         name: f, stem, dir: sub, size, tipo,

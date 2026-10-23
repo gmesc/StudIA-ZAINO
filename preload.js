@@ -74,7 +74,7 @@ function listByNum(dirs, exts) {
     for (const f of files.sort()) {
       const ext = path.extname(f).toLowerCase();
       if (exts && !exts.includes(ext)) continue;
-      const m = /^(\d{1,3})\b/.exec(f);
+      const m = /^(\d+)\b/.exec(f);
       if (m) { const k = m[1].padStart(2, '0'); if (!map[k]) map[k] = f; }
     }
   }

@@ -54,20 +54,20 @@ sezione('Il numero: si guarda il massimo, non quanti sono');
 
 sezione('Il nome con cui entra');
 {
-  check('prende il numero e resta leggibile', '04 dispensa.pdf', F.nomeDestinazione('dispensa.pdf', 4));
-  /* Il numero di prima non si eredita, o si accumulerebbe a ogni passaggio. */
-  check('un numero già davanti non si somma', '04 dispensa.pdf', F.nomeDestinazione('03 dispensa.pdf', 4));
-  check('e nemmeno con altri separatori', '02 appunti.pdf', F.nomeDestinazione('12_appunti.pdf', 2));
+  check('prende il numero e resta leggibile', '0004 - dispensa.pdf', F.nomeDestinazione('dispensa.pdf', 4));
+  /* Numeri e separatori del nome originale fanno parte del titolo. */
+  check('il numero originale si conserva', '0004 - 03 dispensa.pdf', F.nomeDestinazione('03 dispensa.pdf', 4));
+  check('anche con altri separatori', '0002 - 12_appunti.pdf', F.nomeDestinazione('12_appunti.pdf', 2));
   /* ⚠️ Il nome arriva da fuori. Due difese diverse, e vale la pena distinguerle:
      la barra la toglie `path.basename`, che di un percorso tiene solo l'ultimo
      pezzo — è la difesa contro «scrivi fuori dalla cartella»; gli altri
      caratteri li ripulisce la regex, ed è la difesa contro un file system che
      rifiuta il nome. */
-  check('un percorso diventa il solo nome del file', '01 b c.pdf', F.nomeDestinazione('a/b:c.pdf', 1));
-  check('e i caratteri che il disco rifiuta spariscono', '01 domande e.pdf',
+  check('un percorso diventa il solo nome del file', '0001 - b c.pdf', F.nomeDestinazione('a/b:c.pdf', 1));
+  check('e i caratteri che il disco rifiuta spariscono', '0001 - domande  e .pdf',
     F.nomeDestinazione('domande? e*.pdf', 1));
-  check('nemmeno con «..» si esce', '01 segreti.pdf', F.nomeDestinazione('../../segreti.pdf', 1));
-  check('un nome vuoto non produce un file senza nome', '01 documento.pdf', F.nomeDestinazione('.pdf', 1));
+  check('nemmeno con «..» si esce', '0001 - segreti.pdf', F.nomeDestinazione('../../segreti.pdf', 1));
+  check('un nome vuoto non produce un file senza nome', '0001 - documento.pdf', F.nomeDestinazione('.pdf', 1));
 }
 
 sezione('L\'import vero, dentro lo zaino');
@@ -76,10 +76,10 @@ sezione('L\'import vero, dentro lo zaino');
   const b = suScrivania('02 sentenze.pdf');
   const r = F.importa(VAULT, ZAINO, [a, b], QUANDO);
   check('sono entrati tutti e due', 2, r.copiati.length);
-  check('col numero in ordine', ['01 Dispensa di diritto.pdf', '02 sentenze.pdf'],
+  check('col numero in ordine', ['0001 - Dispensa di diritto.pdf', '0002 - 02 sentenze.pdf'],
     r.copiati.map((x) => x.nome));
   const dentro = path.join(VAULT, 'Zaini', ZAINO, 'MATERIALI', 'PDF');
-  check('e i file stanno dentro lo zaino', ['01 Dispensa di diritto.pdf', '02 sentenze.pdf'],
+  check('e i file stanno dentro lo zaino', ['0001 - Dispensa di diritto.pdf', '0002 - 02 sentenze.pdf'],
     fs.readdirSync(dentro).sort());
   check('non sotto Corsi/', false, fs.existsSync(path.join(VAULT, 'Corsi', ZAINO)));
   /* L'originale resta dov'era: si copia, non si sposta. */
@@ -87,7 +87,7 @@ sezione('L\'import vero, dentro lo zaino');
 
   /* Una seconda ondata continua la numerazione invece di sovrascrivere. */
   const r2 = F.importa(VAULT, ZAINO, [suScrivania('manuale.pdf')], QUANDO);
-  check('la seconda ondata continua a contare', '03 manuale.pdf', r2.copiati[0].nome);
+  check('la seconda ondata continua a contare', '0003 - manuale.pdf', r2.copiati[0].nome);
   check('e i documenti sono tre', 3, F.elenco(VAULT, ZAINO).length);
 
   /* Lo stesso file due volte NON si sovrascrive: sono due copie, con due
@@ -95,7 +95,7 @@ sezione('L\'import vero, dentro lo zaino');
      documento se ne accorge dall'elenco, mentre una sovrascrittura silenziosa
      porterebbe via le evidenze ancorate al nome di prima. */
   const r3 = F.importa(VAULT, ZAINO, [suScrivania('manuale.pdf')], QUANDO);
-  check('lo stesso nome due volte non sovrascrive', '04 manuale.pdf', r3.copiati[0].nome);
+  check('lo stesso nome due volte non sovrascrive', '0004 - manuale.pdf', r3.copiati[0].nome);
 }
 
 sezione('Che cosa NON entra, e perché lo dice');
@@ -172,7 +172,7 @@ sezione('Rinominare una fonte: cambia il nome, non il filo');
   Z.crea(VAULT, { nome: 'Rinomine' });
   const src = suScrivania('dispensa.pdf', '%PDF-1.4 la dispensa da rinominare');
   F.importa(VAULT, Z3, [src]);
-  F.scriviIndice(VAULT, Z3, '01 dispensa.pdf', [{ n: 1, t: 'prima pagina' }], 'pdfjs');
+  F.scriviIndice(VAULT, Z3, '0001 - dispensa.pdf', [{ n: 1, t: 'prima pagina' }], 'pdfjs');
 
   const base = path.dirname(F.dirPdf(VAULT, Z3));      // .../MATERIALI
   const cont = path.dirname(base);                     // la cartella del contenitore
@@ -183,50 +183,50 @@ sezione('Rinominare una fonte: cambia il nome, non il filo');
      è una foglia di `ALBUM/`. Con due abbozzi la prova sarebbe stata verde sul
      JSON riscritto e cieca su `usi()`, che è la domanda vera. */
   fs.writeFileSync(path.join(APP, '_evidenze.json'), JSON.stringify({ evidenze: [
-    { id: 'e1', exact: 'una frase evidenziata', materiale: '01 dispensa.pdf', pagina: 7, colore: '#fdf14d' }
+    { id: 'e1', exact: 'una frase evidenziata', materiale: '0001 - dispensa.pdf', pagina: 7, colore: '#fdf14d' }
   ] }, null, 2));
   fs.writeFileSync(path.join(ALB, '_album.json'), JSON.stringify({ voci: [
-    { id: 'a1b2c3d4e5f6', file: 'a1b2c3d4e5f6.webp', materiale: '01 dispensa.pdf', didascalia: 'un ritaglio',
+    { id: 'a1b2c3d4e5f6', file: 'a1b2c3d4e5f6.webp', materiale: '0001 - dispensa.pdf', didascalia: 'un ritaglio',
       pagina: 3, rect: { x: 0.1, y: 0.1, w: 0.3, h: 0.2 } }
   ] }, null, 2));
   /* Un appunto che nomina il documento in DUE modi: per esteso nel frontmatter,
      e col numero in un rimando. Il primo deve cambiare, il secondo restare. */
   fs.writeFileSync(path.join(APP, 'Nota.md'),
-    '---\nmateriale: "01 dispensa.pdf"\n---\n\nVedi [pagina 7](pdf:01#p=7) di «01 dispensa.pdf».\n');
+    '---\nmateriale: "0001 - dispensa.pdf"\n---\n\nVedi [pagina 7](pdf:0001#p=7) di «0001 - dispensa.pdf».\n');
   fs.writeFileSync(path.join(MAP, 'Mappa.json'),
-    JSON.stringify({ titolo: 'M', nodi: [{ id: 'n1', testo: 'da 01 dispensa.pdf' }], archi: [] }, null, 2));
+    JSON.stringify({ titolo: 'M', nodi: [{ id: 'n1', testo: 'da 0001 - dispensa.pdf' }], archi: [] }, null, 2));
   /* Una lapide scritta a mano: `elimina` è asincrona e qui serve solo il dato. */
   /* Il registro delle lapidi è `{ fonti: [...] }`: un array nudo lo legge come
      «nessuna traccia», ed è la forma che `scriviRimossi` mette su disco. */
   fs.writeFileSync(path.join(base, F.RIMOSSI),
-    JSON.stringify({ fonti: [{ nome: '01 dispensa.pdf', impronta: 'xyz', pagine: 1, tolto: QUANDO }] }, null, 2));
+    JSON.stringify({ fonti: [{ nome: '0001 - dispensa.pdf', impronta: 'xyz', pagine: 1, tolto: QUANDO }] }, null, 2));
 
-  const r = F.rinomina(VAULT, Z3, '01 dispensa.pdf', 'Diritto costituzionale');
-  check('il numero resta, il nome cambia', ['01 Diritto costituzionale.pdf', ''], [r.nome, r.error]);
-  check('il file nuovo c\'è', true, fs.existsSync(path.join(F.dirPdf(VAULT, Z3), '01 Diritto costituzionale.pdf')));
-  check('e il vecchio non c\'è più', false, fs.existsSync(path.join(F.dirPdf(VAULT, Z3), '01 dispensa.pdf')));
+  const r = F.rinomina(VAULT, Z3, '0001 - dispensa.pdf', 'Diritto costituzionale');
+  check('il numero resta, il nome cambia', ['0001 - Diritto costituzionale.pdf', ''], [r.nome, r.error]);
+  check('il file nuovo c\'è', true, fs.existsSync(path.join(F.dirPdf(VAULT, Z3), '0001 - Diritto costituzionale.pdf')));
+  check('e il vecchio non c\'è più', false, fs.existsSync(path.join(F.dirPdf(VAULT, Z3), '0001 - dispensa.pdf')));
   check('l\'indice ha seguito il documento', [true, false],
-    [F.haIndice(VAULT, Z3, '01 Diritto costituzionale.pdf'), F.haIndice(VAULT, Z3, '01 dispensa.pdf')]);
-  check('le evidenze puntano al nome nuovo', '01 Diritto costituzionale.pdf',
+    [F.haIndice(VAULT, Z3, '0001 - Diritto costituzionale.pdf'), F.haIndice(VAULT, Z3, '0001 - dispensa.pdf')]);
+  check('le evidenze puntano al nome nuovo', '0001 - Diritto costituzionale.pdf',
     JSON.parse(fs.readFileSync(path.join(APP, '_evidenze.json'), 'utf8')).evidenze[0].materiale);
-  check('e i ritagli dell\'album pure', '01 Diritto costituzionale.pdf',
+  check('e i ritagli dell\'album pure', '0001 - Diritto costituzionale.pdf',
     JSON.parse(fs.readFileSync(path.join(ALB, '_album.json'), 'utf8')).voci[0].materiale);
   const nota = fs.readFileSync(path.join(APP, 'Nota.md'), 'utf8');
-  check('l\'appunto lo nomina col nome nuovo', true, nota.indexOf('01 Diritto costituzionale.pdf') > 0);
-  check('e non lo nomina più col vecchio', false, nota.indexOf('01 dispensa.pdf') >= 0);
+  check('l\'appunto lo nomina col nome nuovo', true, nota.indexOf('0001 - Diritto costituzionale.pdf') > 0);
+  check('e non lo nomina più col vecchio', false, nota.indexOf('0001 - dispensa.pdf') >= 0);
   /* ⚠️ IL CONTROLLO CHE VALE LA FUNZIONE: il rimando cita il NUMERO, e il numero
      non si tocca. Se cambiasse, ogni link scritto negli appunti aprirebbe il
      documento sbagliato — o niente — e nessuno direbbe niente. */
-  check('ma il rimando pdf:01 è rimasto quello', true, nota.indexOf('(pdf:01#p=7)') > 0);
+  check('ma il rimando pdf:0001 è rimasto quello', true, nota.indexOf('(pdf:0001#p=7)') > 0);
   check('anche la mappa lo nomina col nome nuovo', true,
-    fs.readFileSync(path.join(MAP, 'Mappa.json'), 'utf8').indexOf('da 01 Diritto costituzionale.pdf') > 0);
-  check('e la lapide porta il nome di adesso', ['01 Diritto costituzionale.pdf'],
+    fs.readFileSync(path.join(MAP, 'Mappa.json'), 'utf8').indexOf('da 0001 - Diritto costituzionale.pdf') > 0);
+  check('e la lapide porta il nome di adesso', ['0001 - Diritto costituzionale.pdf'],
     F.rimossi(VAULT, Z3).map((x) => x.nome));
   check('e si dice che cosa si è toccato', [1, 1, ['Nota.md'], ['Mappa.json'], 1],
     [r.tocchi.evidenze, r.tocchi.album, r.tocchi.appunti, r.tocchi.mappe, r.tocchi.lapidi]);
   check('niente di storto da segnalare', [], r.avvisi);
   /* La prova che il filo regge davvero: `usi()` col nome NUOVO ritrova tutto. */
-  const u = F.usi(VAULT, Z3, '01 Diritto costituzionale.pdf');
+  const u = F.usi(VAULT, Z3, '0001 - Diritto costituzionale.pdf');
   check('e usi() ritrova il lavoro appeso al nome nuovo', [1, ['Nota.md'], ['Mappa.json'], 1],
     [u.evidenze, u.appunti, u.mappe, u.ritagli]);
 
@@ -236,27 +236,27 @@ sezione('Rinominare una fonte: cambia il nome, non il filo');
   check('un documento che non c\'è si rifiuta', 'documento non trovato',
     F.rinomina(VAULT, Z3, '99 mai vista.pdf', 'Qualcosa').error);
   check('un nome vuoto si rifiuta', 'un documento senza nome non si distinguerebbe dagli altri',
-    F.rinomina(VAULT, Z3, '02 altra.pdf', '   ').error);
+    F.rinomina(VAULT, Z3, '0002 - altra.pdf', '   ').error);
   /* ⚠️ Una collisione vera. Il numero resta, quindi due documenti diversi non
      possono scontrarsi cambiando nome — a meno che nella cartella ci sia già un
      file con lo STESSO numero, che è proprio il caso in cui sovrascrivere
      cancellerebbe un documento dell'utente senza dirlo. */
-  fs.writeFileSync(path.join(F.dirPdf(VAULT, Z3), '02 Gemella.pdf'), '%PDF-1.4 stesso numero');
+  fs.writeFileSync(path.join(F.dirPdf(VAULT, Z3), '0002 - Gemella.pdf'), '%PDF-1.4 stesso numero');
   check('un nome già preso si rifiuta', 'esiste già un documento con questo nome',
-    F.rinomina(VAULT, Z3, '02 altra.pdf', 'Gemella').error);
+    F.rinomina(VAULT, Z3, '0002 - altra.pdf', 'Gemella').error);
   check('e il documento che stava lì è ancora suo', '%PDF-1.4 stesso numero',
-    fs.readFileSync(path.join(F.dirPdf(VAULT, Z3), '02 Gemella.pdf'), 'utf8'));
+    fs.readFileSync(path.join(F.dirPdf(VAULT, Z3), '0002 - Gemella.pdf'), 'utf8'));
   /* Il nome arriva da un campo di testo: ciò che il file system non vuole non
      deve poterci entrare da qui, come non entra dall'import. */
-  check('i caratteri che fanno danno spariscono', '02 a b.pdf',
-    F.rinomina(VAULT, Z3, '02 altra.pdf', 'a/b').nome);
+  check('i caratteri che fanno danno spariscono', '0002 - a b.pdf',
+    F.rinomina(VAULT, Z3, '0002 - altra.pdf', 'a/b').nome);
   /* ⚠️ Cambiare le sole MAIUSCOLE: su un volume che non le distingue il file
      nuovo «esiste già» ed è sé stesso. Confrontare i nomi lo farebbe rifiutare
      (o, peggio, cancellare il file appena scritto: è costato una mappa vera). */
-  const maiuscole = F.rinomina(VAULT, Z3, '02 a b.pdf', 'A B');
-  check('cambiare solo le maiuscole si può', ['02 A B.pdf', ''], [maiuscole.nome, maiuscole.error]);
+  const maiuscole = F.rinomina(VAULT, Z3, '0002 - a b.pdf', 'A B');
+  check('cambiare solo le maiuscole si può', ['0002 - A B.pdf', ''], [maiuscole.nome, maiuscole.error]);
   check('e il documento c\'è, con il nome nuovo', true,
-    F.elenco(VAULT, Z3).map((m) => m.nome || m).indexOf('02 A B.pdf') >= 0);
+    F.elenco(VAULT, Z3).map((m) => m.nome || m).indexOf('0002 - A B.pdf') >= 0);
 }
 
 sezione('Togliere una fonte, e il filo del lavoro che ci sta sopra');
@@ -278,42 +278,42 @@ sezione('Togliere una fonte, e il filo del lavoro che ci sta sopra');
      pulizia in fondo al file di cancellare il vault mentre le promesse girano
      ancora. Chi aggiunge sezioni le metta PRIMA di questa. */
   F.importa(VAULT, Z2, [uno]);
-  F.scriviIndice(VAULT, Z2, '01 dispensa.pdf', [{ n: 1, t: 'prima pagina' }], 'pdfjs');
-  check('la fonte è entrata col suo numero', ['01 dispensa.pdf'], F.elenco(VAULT, Z2).map((m) => m.nome || m));
+  F.scriviIndice(VAULT, Z2, '0001 - dispensa.pdf', [{ n: 1, t: 'prima pagina' }], 'pdfjs');
+  check('la fonte è entrata col suo numero', ['0001 - dispensa.pdf'], F.elenco(VAULT, Z2).map((m) => m.nome || m));
 
-  return F.elimina(VAULT, Z2, '01 dispensa.pdf').then((r) => {
+  return F.elimina(VAULT, Z2, '0001 - dispensa.pdf').then((r) => {
     check('togliendola non si sbaglia', '', r.error);
-    check('il documento non c\'è più', false, fs.existsSync(path.join(F.dirPdf(VAULT, Z2), '01 dispensa.pdf')));
+    check('il documento non c\'è più', false, fs.existsSync(path.join(F.dirPdf(VAULT, Z2), '0001 - dispensa.pdf')));
     /* L'indice va via col documento: lasciarlo vuol dire una lente che trova
        pagine di un documento che non c'è, e un click che non apre niente. */
-    check('e nemmeno il suo indice', false, F.haIndice(VAULT, Z2, '01 dispensa.pdf'));
+    check('e nemmeno il suo indice', false, F.haIndice(VAULT, Z2, '0001 - dispensa.pdf'));
     const lapidi = F.rimossi(VAULT, Z2);
-    check('resta una traccia, con il nome di allora', ['01 dispensa.pdf'], lapidi.map((x) => x.nome));
+    check('resta una traccia, con il nome di allora', ['0001 - dispensa.pdf'], lapidi.map((x) => x.nome));
     check('e con l\'impronta del CONTENUTO', F.impronta(uno), lapidi[0].impronta);
     check('la traccia sa quante pagine aveva', 1, lapidi[0].pagine);
 
     /* ⚠️ Il numero di una fonte tolta resta prenotato. Senza, il documento
        importato subito dopo se lo prendeva, e al ritorno della dispensa il
-       contenitore aveva due «01»: un rimando `pdf:01` non avrebbe più saputo
+       contenitore aveva due «01»: un rimando `pdf:0001` non avrebbe più saputo
        chi aprire — cioè proprio il legame che la traccia esiste per salvare. */
     F.importa(VAULT, Z2, [due]);
-    check('il numero della fonte tolta resta prenotato', ['02 altro.pdf'],
+    check('il numero della fonte tolta resta prenotato', ['0002 - altro.pdf'],
       F.elenco(VAULT, Z2).map((m) => m.nome || m));
 
     const rit = F.importa(VAULT, Z2, [uno]).copiati[0];
-    check('lo stesso contenuto che torna riprende il nome di prima', '01 dispensa.pdf', rit.nome);
+    check('lo stesso contenuto che torna riprende il nome di prima', '0001 - dispensa.pdf', rit.nome);
     check('e l\'importazione lo dichiara, invece di farlo di nascosto', true, rit.tornata);
     check('la traccia sparisce solo quando la fonte è tornata davvero', [], F.rimossi(VAULT, Z2).map((x) => x.nome));
 
     /* Il riaggancio è sul contenuto: un file DIVERSO con lo stesso nome non
        deve ereditare le evidenze di un altro documento. */
-    F.elimina(VAULT, Z2, '02 altro.pdf').then((r2) => {
+    F.elimina(VAULT, Z2, '0002 - altro.pdf').then((r2) => {
       check('anche la seconda lascia la sua traccia', '', r2.error);
       const finto = path.join(FUORI, 'altro.pdf');
       fs.writeFileSync(finto, '%PDF-1.4 tutt\'altra roba, stesso nome');
       const c = F.importa(VAULT, Z2, [finto]).copiati[0];
       check('stesso nome ma contenuto diverso: è un documento nuovo', false, c.tornata);
-      check('e prende un numero nuovo', '03 altro.pdf', c.nome);
+      check('e prende un numero nuovo', '0003 - altro.pdf', c.nome);
 
       const d = F.dimentica(VAULT, Z2, F.rimossi(VAULT, Z2)[0].impronta);
       check('una traccia si può dimenticare', [1, ''], [d.tolte, d.error]);
@@ -330,19 +330,19 @@ sezione('Togliere una fonte, e il filo del lavoro che ci sta sopra');
       fs.writeFileSync(scan, '%PDF-1.4 sole immagini, niente testo');
       const impOrig = F.impronta(scan);
       const s0 = F.importa(VAULT, Z2, [scan]).copiati[0];
-      check('la scansione entra col numero dopo', '04 scheda.pdf', s0.nome);
+      check('la scansione entra col numero dopo', '0004 - scheda.pdf', s0.nome);
       /* «Il riconoscimento»: il file nel contenitore cambia, l'indice se lo ricorda. */
-      fs.appendFileSync(path.join(F.dirPdf(VAULT, Z2), '04 scheda.pdf'), '\n% layer di testo aggiunto dal riconoscimento');
-      F.scriviIndice(VAULT, Z2, '04 scheda.pdf', [{ n: 1, t: 'testo riconosciuto' }], 'tesseract', { improntaOriginale: impOrig });
-      check('nel contenitore l\'impronta è cambiata', true, F.impronta(path.join(F.dirPdf(VAULT, Z2), '04 scheda.pdf')) !== impOrig);
-      F.elimina(VAULT, Z2, '04 scheda.pdf').then((r3) => {
+      fs.appendFileSync(path.join(F.dirPdf(VAULT, Z2), '0004 - scheda.pdf'), '\n% layer di testo aggiunto dal riconoscimento');
+      F.scriviIndice(VAULT, Z2, '0004 - scheda.pdf', [{ n: 1, t: 'testo riconosciuto' }], 'tesseract', { improntaOriginale: impOrig });
+      check('nel contenitore l\'impronta è cambiata', true, F.impronta(path.join(F.dirPdf(VAULT, Z2), '0004 - scheda.pdf')) !== impOrig);
+      F.elimina(VAULT, Z2, '0004 - scheda.pdf').then((r3) => {
         check('la scansione si toglie', '', r3.error);
-        const lap = F.rimossi(VAULT, Z2).filter((x) => x.nome === '04 scheda.pdf')[0];
+        const lap = F.rimossi(VAULT, Z2).filter((x) => x.nome === '0004 - scheda.pdf')[0];
         check('la traccia porta ANCHE l\'impronta dell\'originale', impOrig, lap && lap.improntaOriginale);
         const s1 = F.importa(VAULT, Z2, [scan]).copiati[0];
         check('l\'originale che torna è un ritorno', true, s1.tornata);
-        check('e riprende il numero di prima', '04 scheda.pdf', s1.nome);
-        check('la traccia se ne va', 0, F.rimossi(VAULT, Z2).filter((x) => x.nome === '04 scheda.pdf').length);
+        check('e riprende il numero di prima', '0004 - scheda.pdf', s1.nome);
+        check('la traccia se ne va', 0, F.rimossi(VAULT, Z2).filter((x) => x.nome === '0004 - scheda.pdf').length);
 
         for (const dd of [VAULT, FUORI]) { try { fs.rmSync(dd, { recursive: true, force: true }); } catch (e) {} }
         console.log('\n' + (ko ? '✗ ' + ko + ' controlli falliti' : '✓ tutti i controlli passati') + ' (' + ok + ' ok)');

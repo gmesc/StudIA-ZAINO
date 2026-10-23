@@ -55,12 +55,23 @@
   }
   // Indice indica la posizione FINALE: si misura dopo aver tolto il file da dov'era.
   function sposta(stato, file, gruppoId, indice) {
+    return spostaMolti(stato, [file], gruppoId, indice);
+  }
+  function spostaMolti(stato, files, gruppoId, indice) {
     var s = copia(stato), g = gruppo(s, gruppoId);
-    if ((gruppoId !== '' && !g) || tutti(s).indexOf(file) < 0) return s;
-    s.gruppi.forEach(function (x) { x.files = x.files.filter(function (f) { return f !== file; }); });
-    s.liberi = s.liberi.filter(function (f) { return f !== file; });
+    if (gruppoId !== '' && !g) return s;
+    var scelti = new Set(lista(files)), spostati = tutti(s).filter(function (f) { return scelti.has(f); });
+    s.gruppi.forEach(function (x) { x.files = x.files.filter(function (f) { return !scelti.has(f); }); });
+    s.liberi = s.liberi.filter(function (f) { return !scelti.has(f); });
     var destinazione = g ? g.files : s.liberi;
-    destinazione.splice(posizione(indice, destinazione.length), 0, file);
+    destinazione.splice(posizione(indice, destinazione.length), 0, ...spostati);
+    return s;
+  }
+  function ordina(stato, direzione, nomi) {
+    var s = copia(stato), verso = direzione === 'za' ? -1 : 1;
+    function confronta(a, b) { return verso * String((nomi || {})[a] || a).localeCompare(String((nomi || {})[b] || b), 'it', { sensitivity: 'base', numeric: true }); }
+    s.liberi.sort(confronta);
+    s.gruppi.forEach(function (g) { g.files.sort(confronta); });
     return s;
   }
   function ordinaGruppo(stato, id, indice) {
@@ -89,13 +100,14 @@
   function trascina(stato, origine, bersaglio) {
     var s = copia(stato), o = origine || {}, b = bersaglio || {};
     if (o.file) {
-      if (o.file === b.file) return s;
+      var scelti = new Set(o.files || [o.file]);
+      if (scelti.has(b.file)) return s;
       var g = gruppo(s, b.gruppo), files = g ? g.files : s.liberi;
       if (b.gruppo && !g) return s;
-      files = files.filter(function (f) { return f !== o.file; });
+      files = files.filter(function (f) { return !scelti.has(f); });
       var i = b.file ? files.indexOf(b.file) : files.length;
       if (i < 0) return s;
-      return sposta(s, o.file, b.gruppo || '', i + (b.file && b.dopo ? 1 : 0));
+      return spostaMolti(s, Array.from(scelti), b.gruppo || '', i + (b.file && b.dopo ? 1 : 0));
     }
     if (o.gruppo && b.gruppo && o.gruppo !== b.gruppo) {
       var altri = s.gruppi.filter(function (g) { return g.id !== o.gruppo; });
@@ -106,5 +118,5 @@
   }
 
   return { normalizza: normalizza, crea: crea, rinomina: rinomina, elimina: elimina,
-    sposta: sposta, ordinaGruppo: ordinaGruppo, toggle: toggle, rinominaFile: rinominaFile, trascina: trascina };
+    sposta: sposta, spostaMolti: spostaMolti, ordina: ordina, ordinaGruppo: ordinaGruppo, toggle: toggle, rinominaFile: rinominaFile, trascina: trascina };
 }));

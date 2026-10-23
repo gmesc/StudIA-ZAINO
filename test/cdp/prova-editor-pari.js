@@ -104,6 +104,26 @@ async function pulisci() {
     assert.deepEqual(await c.val(`${q(comandi)}.map(id=>[!!document.getElementById(id),!!document.getElementById(id+'2')])`),
       comandi.map(()=>[true,true]), 'anche i comandi del documento sono presenti in entrambi');
     console.log('  ok  toolbar e comandi del documento identici');
+    assert.deepEqual(await c.val(`__pariStati().map(s=>document.querySelector('.blocco[data-blocco="'+bancoBloccoDi(s.id)+'"] .bdoc').textContent)`),[prefisso+' 1',prefisso+' 2']);
+    assert(await c.val(`(()=>{
+      const s=__pariStati()[0],prima=s.cur.title;s.cur.title='Un documento con un titolo molto lungo '.repeat(12);refreshNoteUI();
+      const h=document.querySelector('.blocco[data-blocco="'+bancoBloccoDi(s.id)+'"] .bhead'),d=h.querySelector('.bdoc'),t=h.querySelector('.tendina'),st=getComputedStyle(d);
+      const ok=d.textContent===s.cur.title && d.title===s.cur.title && st.fontWeight==='400' && st.textAlign==='right' && st.textOverflow==='ellipsis' && d.scrollWidth>d.clientWidth && d.getBoundingClientRect().right<=h.getBoundingClientRect().right && t.getBoundingClientRect().right<d.getBoundingClientRect().right;
+      s.cur.title=prima;refreshNoteUI();return ok;
+    })()`),'titolo completo accessibile, normale, a destra e troncato quando lungo');
+    for(const tema of ['chiaro','scuro']){
+      const precedente=await c.val('document.documentElement.dataset.theme');
+      await c.val(`document.documentElement.dataset.theme=${q(tema)}`);
+      assert(await c.val(`(()=>{
+        const e=document.createElement('canvas'),ctx=e.getContext('2d');
+        return Array.from(document.querySelectorAll('#banco .blocco:not([hidden]) .bhead')).every(h=>{
+          ctx.fillStyle=getComputedStyle(h).backgroundColor;ctx.fillRect(0,0,1,1);const [r,g,b]=ctx.getImageData(0,0,1,1).data;
+          return g>r && g>b && getComputedStyle(h).justifyContent==='flex-start' && getComputedStyle(h.querySelector('.tendina'),'::after').content.includes('▾');
+        });
+      })()`),'testate verdi, selettore a sinistra e chevron in tema '+tema);
+      await c.val(`document.documentElement.dataset.theme=${q(precedente)}`);
+    }
+
 
     for(const i of [0,1])for(const mode of ['preview','side']){
       await c.val(`__pariStati()[${i}].mde.${mode==='preview'?'togglePreview':'toggleSideBySide'}()`);
@@ -188,6 +208,7 @@ async function pulisci() {
       assert.deepEqual(await c.val(`__pariStati()[${i}].mde.codemirror.historySize()`),{undo:0,redo:0},'il nuovo appunto non eredita la cronologia precedente');
       assert.equal(await aperto(1-i), altro, 'il dialogo Nuovo non sostituisce l’altro appunto');
       assert.equal(await c.val(`__pariStati()[${i}].cur.materiale`), '02 Biologia cellulare.pdf');
+      assert.equal(await c.val(`document.querySelector('.blocco[data-blocco="'+bancoBloccoDi(__pariStati()[${i}].id)+'"] .bdoc').textContent`),titolo);
       const nuovo = await aperto(i), testo = 'Appunto nato nel riquadro ' + (i+1) + '.';
       await scrivi(i, testo);await salva(i);
       assert(disco(nuovo).includes(testo));assert(!disco(altro).includes(testo));
