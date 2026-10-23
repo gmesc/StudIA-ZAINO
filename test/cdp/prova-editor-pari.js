@@ -115,12 +115,15 @@ async function pulisci() {
       const precedente=await c.val('document.documentElement.dataset.theme');
       await c.val(`document.documentElement.dataset.theme=${q(tema)}`);
       assert(await c.val(`(()=>{
-        const e=document.createElement('canvas'),ctx=e.getContext('2d');
-        return Array.from(document.querySelectorAll('#banco .blocco:not([hidden]) .bhead')).every(h=>{
-          ctx.fillStyle=getComputedStyle(h).backgroundColor;ctx.fillRect(0,0,1,1);const [r,g,b]=ctx.getImageData(0,0,1,1).data;
-          return g>r && g>b && getComputedStyle(h).justifyContent==='flex-start' && getComputedStyle(h.querySelector('.tendina'),'::after').content.includes('▾');
+        const e=document.createElement('canvas'),ctx=e.getContext('2d'),sfondo=getComputedStyle(document.querySelector('#zainoNav .zs-tit')).backgroundColor;
+        const ricerca=document.createElement('div');ricerca.className='sr-lesson';document.getElementById('searchRes').appendChild(ricerca);
+        const stesso=getComputedStyle(ricerca).backgroundColor===sfondo;ricerca.remove();
+        function intensita(colore){ctx.fillStyle=colore;ctx.fillRect(0,0,1,1);const rgb=Array.from(ctx.getImageData(0,0,1,1).data).slice(0,3);return Math.max(...rgb)-Math.min(...rgb);}
+        return stesso && Array.from(document.querySelectorAll('#banco .blocco:not([hidden]) .bhead')).every(h=>{
+          const colore=getComputedStyle(h).backgroundColor,attivo=h.closest('.blocco').dataset.attivo==='1';
+          return (attivo?intensita(colore)>intensita(sfondo):colore===sfondo) && getComputedStyle(h).justifyContent==='flex-start' && getComputedStyle(h.querySelector('.tendina'),'::after').content.includes('▾');
         });
-      })()`),'testate verdi, selettore a sinistra e chevron in tema '+tema);
+      })()`),'testate uguali a sidebar e ricerca, attivo più saturo, in tema '+tema);
       await c.val(`document.documentElement.dataset.theme=${q(precedente)}`);
     }
 

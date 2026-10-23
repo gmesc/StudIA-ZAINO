@@ -3,15 +3,8 @@
 // Nessuna variabile d'ambiente o opzione di produzione abilita questi adattatori.
 const provider = require('../lib/chat-provider');
 const fs = require('fs'), path = require('path');
-const { app, dialog } = require('electron');
+const { app } = require('electron');
 const registra = (nome, dati) => fs.appendFileSync(path.join(app.getPath('userData'), nome), JSON.stringify(dati) + '\n');
-const apriDialogo = dialog.showOpenDialog.bind(dialog);
-dialog.showOpenDialog = async (opzioni) => {
-  if (opzioni.buttonLabel !== 'Importa cartelle') return apriDialogo(opzioni);
-  registra('cartelle-dialogo.jsonl', opzioni);
-  const scelta = path.join(app.getPath('userData'), 'cartelle-pick.json');
-  return { canceled: !fs.existsSync(scelta), filePaths: fs.existsSync(scelta) ? JSON.parse(fs.readFileSync(scelta)) : [] };
-};
 provider.modelli = async () => [{id:'modello-locale-di-prova',nome:'Modello locale di prova'}];
 provider.rispondi = async ({messages,signal,system}) => {
   const ultimo=messages.at(-1).content;

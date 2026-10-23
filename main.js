@@ -464,11 +464,6 @@ const fontiLib = require('./lib/fonti');
 const ripassoLib = require('./lib/ripasso');
 ipcMain.handle('fonti:importa', (e, { corso, percorsi } = {}) =>
   fontiLib.importa(vaultDir(), corso, percorsi));
-ipcMain.handle('fonti:scegli-cartelle', async () => {
-  const r = await dialog.showOpenDialog({ title: 'Importa cartelle di PDF come gruppi',
-    properties: ['openDirectory', 'multiSelections'], buttonLabel: 'Importa cartelle' });
-  return r.canceled ? [] : r.filePaths;
-});
 /**
  * Togliere un documento dallo zaino.
  *

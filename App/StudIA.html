@@ -645,9 +645,9 @@
   .blocco{ border-left:0; border-top:0; }
   .blocco[data-bordo-sx="1"]{ border-left:1px solid var(--line); }
   .blocco[hidden]{ display:none!important; }
-  /* I separatori restano neutri: il riquadro in uso si riconosce dal pallino. */
+  /* I separatori restano neutri: il riquadro in uso si riconosce dalla testata. */
   .bhead{ display:flex; align-items:center; justify-content:flex-start; gap:.4rem; padding:0 .5rem; flex:0 0 auto; min-width:0;
-    min-height:var(--tb-blocco-h); border-bottom:1px solid var(--line); background:color-mix(in srgb, #22c55e 24%, var(--panel));
+    min-height:var(--tb-blocco-h); border-bottom:1px solid var(--line);
     border-top:1px solid var(--line); }
   /* La maniglia della sidebar occupa l’angolo del primo riquadro. */
   .bhead[data-primo="1"]{ padding-left:calc(var(--tb-blocco-h) + .5rem); }
@@ -1550,8 +1550,10 @@
      anche loro. Il teal è il colore che in tutta l'app vuol dire «questo», e la
      riga sotto lo ripete sottile: due segni deboli invece di uno forte, perché
      il pannello non diventi una bandiera. */
+  .bhead, .znav .zs-tit, #searchRes .sr-lesson{
+    background:color-mix(in srgb, var(--teal) 10%, var(--panel)); }
+  .blocco[data-attivo="1"] > .bhead{ background:color-mix(in srgb, var(--teal) 18%, var(--panel)); }
   .znav .zs-tit, #searchRes .sr-lesson{
-    background:color-mix(in srgb, var(--teal) 10%, var(--panel));
     border-bottom:1px solid color-mix(in srgb, var(--teal) 35%, var(--line)); }
   #searchRes .sr-lesson{ position:sticky; top:0; z-index:1;
     font-size:10px; text-transform:uppercase; letter-spacing:.12em; font-weight:700;
@@ -5043,9 +5045,9 @@ function readLessonFile(f){
        la lezione in un corso. Un cartello che promette la cosa sbagliata è
        peggio di nessun cartello. */
     root.dataset.drop = (modoAttivo()==='zaino') ? 'pdf' : 'json';
-  });
+  },true);
   window.addEventListener('dragleave',function(e){ if(!e.relatedTarget) delete root.dataset.drop; });
-  window.addEventListener('drop',function(e){
+  function rilasciaFile(e){
     delete root.dataset.drop;
     if(!trascinaFile(e)) return;      // un gesto interno all'app: non è roba nostra
     e.preventDefault();
@@ -5060,11 +5062,20 @@ function readLessonFile(f){
          .json» mandava a cercare una porta che in questa modalità non esiste.
          Un rifiuto deve dire che cosa entra DAVVERO dove si è. */
       var chi=(files[0] && files[0].name) || 'questo file';
-      toast('In uno zaino entrano documenti .pdf, video, audio, immagini e testi (.md .txt) — «'+chi+'» no', false);
+      toast('In uno zaino entrano documenti .pdf, cartelle di PDF, video, audio, immagini e testi (.md .txt) — «'+chi+'» no', false);
       return;
     }
     readLessonFile(files[0]);
-  });
+  }
+  window.addEventListener('drop',rilasciaFile);
+  // L’editor intercetta i file: una cartella va importata prima che provi a leggerla come testo.
+  window.addEventListener('drop',function(e){
+    delete root.dataset.drop;
+    if(modoAttivo()!=='zaino' || !trascinaFile(e)) return;
+    var files=Array.from(e.dataTransfer.files);
+    if(!files.some(function(f){return window.vault.fonti.eCartella(f);})) return;
+    e.stopPropagation(); rilasciaFile(e);
+  },true);
   refreshLessonSelect();
 })();
 
@@ -5169,11 +5180,6 @@ async function fontiTrascinate(files){
      stessa cosa fatta peggio. */
   var percorsi=files.map(function(f){ return api.percorsoDi(f); }).filter(Boolean);
   return fontiImportaPercorsi(percorsi, id);
-}
-async function fontiScegliCartelle(){
-  var id=zainoAttivo(); if(!id || FONTI.inCorso) return;
-  var percorsi=await window.vault.fonti.scegliCartelle();
-  if(percorsi && percorsi.length) await fontiImportaPercorsi(percorsi,id);
 }
 async function fontiImportaPercorsi(percorsi, id){
   var api=window.vault.fonti;
@@ -11122,13 +11128,12 @@ function znavRaccolta(sezione, titolo, voci, vuoto, errore, erroreGruppi){
       var dati='data-file="'+znavEsc(file)+'" data-gruppo="'+znavEsc(gruppo)+'"';
       return '<li class="zs-item" '+dati+(modificabile?' draggable="true" tabindex="0" title="Trascina le voci selezionate in un gruppo · Alt+↑/↓ per riordinare"':'')+'>'+
         '<button type="button" class="'+v.classe+(v.attivo?' attivo':'')+'" data-quale="'+znavEsc(file)+'" title="'+znavEsc(v.titolo||v.testo)+'">'+znavEsc(v.testo)+'</button>'+
-        (modificabile?'<input type="checkbox" class="zs-seleziona" '+dati+' aria-label="Seleziona '+znavEsc(v.testo)+'"'+(selezione.includes(file)?' checked':'')+'>':'')+'</li>';
+        (edit?'<input type="checkbox" class="zs-seleziona" '+dati+' aria-label="Seleziona '+znavEsc(v.testo)+'"'+(selezione.includes(file)?' checked':'')+'>':'')+'</li>';
     }).join('')+'</ul>';
   }
   var h='<section class="zs-raccolta" data-sezione="'+sezione+'"><div class="zs-tit"><button type="button" class="zs-collapse" data-znav="sezione" aria-expanded="'+!chiusa+'" aria-controls="zs-corpo-'+sezione+'"><span aria-hidden="true">'+(chiusa?'▸':'▾')+'</span><span>'+titolo+'</span><span class="zs-n">'+voci.length+'</span></button><span class="zs-azioni">'+
-    (sezione==='fonti'?znavComandoHtml('importa','↓','Importa cartelle di PDF come gruppi','',!!erroreGruppi||!!errore):'')+
     znavComandoHtml('ordina',ZNAV.ordine[sezione]==='az'?'Z–A':'A–Z','Ordina '+(ZNAV.ordine[sezione]==='az'?'Z–A':'A–Z'),'',!modificabile)+
-    znavComandoHtml('crea','+',selezione.length?'Crea gruppo con '+selezione.length+' voci selezionate':'Crea gruppo di '+titolo.toLowerCase(),'',!!erroreGruppi||!!errore)+
+    (edit?znavComandoHtml('crea','+',selezione.length?'Crea gruppo con '+selezione.length+' voci selezionate':'Crea gruppo di '+titolo.toLowerCase()):'')+
     '<button type="button" class="tbtn" data-znav="organizza" title="Organizza '+titolo.toLowerCase()+'" aria-label="Organizza '+titolo.toLowerCase()+'" aria-pressed="'+edit+'"'+(erroreGruppi||errore?' disabled':'')+'>'+(edit?'✓':'✎')+'</button></span></div><div class="zs-corpo" id="zs-corpo-'+sezione+'"'+(chiusa?' hidden':'')+'>';
   if(errore) return h+'<div class="zs-vuoto zs-no">⚠ '+znavEsc(errore)+'</div></div></section>';
   if(erroreGruppi) h+='<div class="zs-vuoto zs-no">Organizzazione non leggibile: '+znavEsc(erroreGruppi)+'</div>';
@@ -11189,7 +11194,6 @@ function znavRiprendiFuoco(prima, sezione){
 }
 async function znavComando(btn){
   var azione=btn.dataset.znav, sezione=znavSezioneDi(btn), id=zainoAttivo(), s=ZNAV.gruppi[sezione];
-  if(azione==='importa' && !btn.disabled){ await fontiScegliCartelle(); return; }
   if(azione==='sezione'){
     var corpo=document.getElementById('zs-corpo-'+sezione);if(!corpo)return;
     corpo.hidden=!corpo.hidden;btn.setAttribute('aria-expanded',String(!corpo.hidden));btn.firstElementChild.textContent=corpo.hidden?'▸':'▾';
@@ -11208,7 +11212,9 @@ async function znavComando(btn){
     return;
   }
   if(azione==='organizza'){
-    ZNAV.organizza[sezione]=!ZNAV.organizza[sezione]; await zainoNavAggiorna();
+    ZNAV.organizza[sezione]=!ZNAV.organizza[sezione];
+    if(!ZNAV.organizza[sezione]) ZNAV.selezione[sezione]=[];
+    await zainoNavAggiorna();
     if(id===zainoAttivo()) znavRiprendiFuoco(btn,sezione); return;
   }
   var g=s.gruppi.find(function(x){ return x.id===btn.dataset.gruppo; }), prossimo;
