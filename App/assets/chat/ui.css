@@ -207,3 +207,11 @@
 #zstudyQueue select { text-overflow:ellipsis; }
 #zstudyQuestion form { margin-block:1rem; }
 #zstudyStatus:empty,#zragStatus:empty { display:none; }
+
+/* I profili condividono i file del modello; il conto dice solo ciò che manca. */
+.zrag-modello-info { font-size:var(--tb-fs); line-height:1.5; margin:.65rem 0; }
+.zrag-modello-info a { color:var(--teal-strong); }
+.zrag-modelli article { display:flex; align-items:center; flex-wrap:wrap; gap:.5rem; border-top:1px solid var(--line); padding:.65rem 0; }
+.zrag-modelli article > div { flex:1; min-width:min(100%,180px); }
+.zrag-modelli article strong { font-size:var(--tb-fs); }
+.zrag-modelli article p { margin:.15rem 0; }

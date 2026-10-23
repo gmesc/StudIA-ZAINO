@@ -34,5 +34,16 @@ voce.rendi = async (testo, nome, opts) => {
   wav.write('data',36); wav.writeUInt32LE(wav.length-44,40); fs.writeFileSync(opts.file,wav);
   return {ok:true,file:opts.file};
 };
+// I clic dei download passano dall’IPC reale, con pesi simulati e nessuna rete.
+require('../lib/rag-modello').installa=async(_dir,{modalita,signal,progress})=>{
+  registra('rag-downloads.jsonl',{modalita});progress({phase:'download',bytes:1,total:10});
+  await new Promise((resolve,reject)=>{
+    const done=()=>{signal.removeEventListener('abort',stop);resolve();};
+    const timer=setTimeout(done,1200);
+    const stop=()=>{clearTimeout(timer);reject(Error('Download interrotto.'));};
+    if(signal.aborted)stop();else signal.addEventListener('abort',stop,{once:true});
+  });
+  throw Error('Download simulato nella prova UI.');
+};
 global.fetch=async()=>{throw new Error('Rete disabilitata nella prova UI.');};
 require('../main');

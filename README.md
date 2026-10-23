@@ -35,6 +35,8 @@ vault/
 
 Il contesto inviato all'AI è una selezione di passaggi pertinenti, con nomi dei file e pagine: i limiti e i documenti non leggibili sono dichiarati nella chat. I PDF fotografati richiedono prima l'OCR facoltativo già presente nello zaino. La ricerca locale del testo resta disponibile; non viene eseguita la pipeline CORSI. Vedi [dettagli chat](docs/CHAT.md) e [provider e fonti ufficiali](docs/PROVIDER-AI.md).
 
+L’embedder locale è **EmbeddingGemma 2 · ONNX** ([scheda su Hugging Face](https://huggingface.co/onnx-community/embeddinggemma-2-ONNX)). In **Cerca e studia → Indice sul dispositivo** sono disponibili i download **Testo** (346,4 MB), **Visione** e **Video** (541,8 MB con il testo incluso). Visione e Video condividono i componenti: scaricarne uno prepara entrambi. I file già presenti e i download parziali vengono riutilizzati; l’app mostra quanti MB mancano. La ricerca attuale usa il testo; i download visivi preparano i componenti per immagini e fotogrammi.
+
 ## Materiali in parallelo
 
 Ogni tendina nella testata del banco offre **Appunti** e **Fonti**. Scegli la stessa voce in un secondo riquadro per aprire un altro materiale: sono disponibili due editor e due visualizzatori PDF indipendenti, anche insieme nella forma a quattro riquadri. Il menu del materiale in ciascun riquadro sceglie il file. Posizioni e materiali aperti vengono ripristinati per zaino.
