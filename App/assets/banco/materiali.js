@@ -6,6 +6,16 @@
 })(typeof window!=='undefined'?window:this, function(root){
   'use strict';
   var istanze={ fonte:['fonte','fonte2'], appunti:['appunti','appunti2'] };
+  function riquadro(id){ return id==='foto' || id==='player' ? 'album' : id; }
+  // Il primo Album visibile conserva il posto; i vecchi pannelli duplicati si svuotano.
+  function unificaAlbum(stato,visibili){
+    var blocchi=Object.assign({},stato.blocchi), visto=false;
+    (visibili||[]).concat(Object.keys(blocchi).filter(function(b){return !(visibili||[]).includes(b);})).forEach(function(b){
+      if(riquadro(blocchi[b])!=='album') return;
+      blocchi[b]=visto?'':'album'; visto=true;
+    });
+    return Object.assign({},stato,{blocchi:blocchi});
+  }
   function tipo(id){ return id==='fonte2'?'fonte':id==='appunti2'?'appunti':id; }
   function scegli(blocchi, visibili, blocco, richiesta){
     var pool=istanze[richiesta];
@@ -35,5 +45,5 @@
     };
     root.document.addEventListener('DOMContentLoaded',function(){ root.appuntiParalleli.layout(); });
   }
-  return {tipo:tipo,scegli:scegli};
+  return {tipo:tipo,scegli:scegli,riquadro:riquadro,unificaAlbum:unificaAlbum};
 });

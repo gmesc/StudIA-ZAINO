@@ -85,12 +85,10 @@ const strumentiSalvati = () => c.val(`Object.values(bancoStato().blocchi).filter
     await c.clicca('.blocco[data-blocco="D"] .bnumero');
     verifica('il click vero nel quarto riquadro lo attiva', 'D', await c.val('bancoBloccoAttivo()'));
     verifica('anche Appunta segue la testata scelta', 'appunti2', await c.val('noteStatoAttivo().id'));
-    verifica('il pallino attivo compare sul quarto riquadro', true,
-      await c.val(`!document.querySelector('.blocco[data-blocco="D"] .battivo').hidden && document.querySelector('.blocco[data-blocco="D"]').dataset.attivo==='1'`));
-    verifica('il pallino sostituisce il testo ed è accessibile', true, await c.val(`(()=>{
-      const e=document.querySelector('.blocco[data-blocco="D"] .battivo'),s=getComputedStyle(e);
-      return !e.textContent && e.getAttribute('aria-label')==='Riquadro attivo' && s.width==='6px' && s.height==='6px' && s.backgroundColor===s.color;
-    })()`));
+    verifica('il quarto riquadro è attivo senza pallino', true,
+      await c.val(`!document.querySelector('.battivo') && document.querySelector('.blocco[data-blocco="D"]').dataset.attivo==='1'`));
+    verifica('il riquadro attivo resta accessibile', true,
+      await c.val(`document.querySelector('.blocco[data-blocco="D"] .bnumero').getAttribute('aria-label').includes('Riquadro attivo')`));
     verifica('separatori sottili grigi, senza sottolineatura attiva', true, await c.val(`(()=>{
       const linea=getComputedStyle(document.querySelector('.blocco[data-bordo-sx="1"]')).borderLeftColor;
       return Array.from(document.querySelectorAll('#banco .blocco:not([hidden]) > .bhead')).every(e=>{
@@ -123,8 +121,8 @@ const strumentiSalvati = () => c.val(`Object.values(bancoStato().blocchi).filter
     verifica('gli altri pannelli rimangono vivi nel magazzino', true,
       await c.val(`!!document.querySelector('#bancoMagazzino > #notePane') && !!document.querySelector('#bancoMagazzino > #pdfPane2')`));
     verifica('l’attivo segue lo strumento nel nuovo primo riquadro', 'A', await c.val('bancoBloccoAttivo()'));
-    verifica('un solo pallino è attivo a schermo', 1,
-      await c.val(`Array.from(document.querySelectorAll('#banco .blocco')).filter(b=>!b.hidden && !b.querySelector('.battivo').hidden).length`));
+    verifica('un solo riquadro è attivo a schermo', 1,
+      await c.val(`Array.from(document.querySelectorAll('#banco .blocco')).filter(b=>!b.hidden && b.dataset.attivo==='1').length`));
     verifica('tutti gli strumenti restano nello stato', tutti, await strumentiSalvati());
     verifica('nessun pannello o testo di appunto viene ricreato o perso', true, await pannelliIntatti());
     await formaConMouse('quattro');

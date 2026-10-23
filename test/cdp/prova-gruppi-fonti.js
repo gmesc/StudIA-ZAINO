@@ -143,7 +143,7 @@ async function pulisci(){
       await click(toggle);assert.equal(await c.val(`document.getElementById('zs-corpo-${sezione}').hidden`),true);
       await c.val('zainoNavAggiorna()');await stabile();assert.equal(await c.val(`document.querySelector(${q(toggle)}).getAttribute('aria-expanded')`),'false');
       await click(toggle);assert.equal(await c.val(`document.getElementById('zs-corpo-${sezione}').hidden`),false);
-      const gap=await c.val(`(()=>{const s=document.querySelector(${q(base(sezione))}),head=s.querySelector('.zs-tit'),first=s.querySelector('.zs-corpo .zs-item');return first.getBoundingClientRect().top-head.getBoundingClientRect().bottom;})()`);assert(Math.abs(gap)<1,'Nessuno spazio tra titolo e primo elemento: '+sezione+' '+gap);
+      const gap=await c.val(`(()=>{const s=document.querySelector(${q(base(sezione))}),head=s.querySelector('.zs-tit'),first=s.querySelector('.zs-corpo .zs-media-tipo, .zs-corpo .zs-item');return first.getBoundingClientRect().top-head.getBoundingClientRect().bottom;})()`);assert(Math.abs(gap)<1,'Nessuno spazio tra titolo e primo elemento: '+sezione+' '+gap);
     }
     for(const sezione of ['fonti','appunti','media','mappe']){
       const altre=await c.val('ZNAV.gruppi');

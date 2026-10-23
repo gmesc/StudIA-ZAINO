@@ -49,13 +49,19 @@ I due editor degli appunti hanno gli stessi comandi: formattazione, callout, emo
 
 Le toolbar di Appunti e Mappe includono **Annulla/Ripeti**. Ogni editor usa la propria cronologia; nella mappa si recuperano anche le disposizioni e la vista conservate dal gesto. Una modifica dopo Annulla abbandona i passi da ripetere. Le cronologie sono della sessione del documento e si azzerano quando si apre un altro file; non sostituiscono le versioni salvate degli appunti.
 
-Le testate del Banco usano lo stesso sfondo di sidebar e sezioni di Cerca; lo split attivo ha una tinta più satura. Mostrano il nome dello strumento e il chevron a sinistra. In Fonti e Appunti, il documento aperto compare a destra in carattere normale, abbreviato con puntini quando non entra; il nome completo resta disponibile al passaggio del mouse. Le testate mostrano l’ordine dei riquadri e indicano quello attivo con un **pallino verde**. Quando riduci la vista resta prima l’attivo, poi gli altri da sinistra a destra, riga per riga. Nel menu Banco, passando sulle disposizioni o raggiungendole con la tastiera, puoi leggere in anticipo quali contenuti resteranno. Per esempio, con quattro riquadri numerati 1–4 e il 4 attivo, passando a due conserverai i contenuti del **4 e dell’1**, rinumerati nella nuova vista; passando da tre a uno resta solo quello attivo. Gli altri rimangono aperti fuori vista e tornano riallargandola, nell’ordine risultante dagli spostamenti.
+Le testate del Banco usano lo stesso sfondo di sidebar e sezioni di Cerca; lo split attivo ha una tinta più satura. Mostrano il nome dello strumento e il chevron a sinistra. In Fonti e Appunti, il documento aperto compare a destra in carattere normale, abbreviato con puntini quando non entra; il nome completo resta disponibile al passaggio del mouse. Le testate mostrano l’ordine dei riquadri; quella attiva ha un colore più saturo, senza pallino. Quando riduci la vista resta prima l’attivo, poi gli altri da sinistra a destra, riga per riga. Nel menu Banco, passando sulle disposizioni o raggiungendole con la tastiera, puoi leggere in anticipo quali contenuti resteranno. Per esempio, con quattro riquadri numerati 1–4 e il 4 attivo, passando a due conserverai i contenuti del **4 e dell’1**, rinumerati nella nuova vista; passando da tre a uno resta solo quello attivo. Gli altri rimangono aperti fuori vista e tornano riallargandola, nell’ordine risultante dagli spostamenti.
 
 Le linee dei banchi sono sottili e grigie. La vecchia barra verticale di avanzamento del capitolo è nascosta nello ZAINO.
 
+## Album
+
+La tendina degli split offre un unico **Album**, con le raccolte **Ritagli**, **Immagini**, **Video** e **Audio**. Un clic su un file apre l’anteprima o il player nello stesso split; **×** o **Esc** riporta alla raccolta. Anche i link con minutaggio negli appunti aprono ALBUM, al secondo citato.
+
+Il cursore regola le miniature. La lente cerca in tutte le raccolte e raggruppa i risultati per tipo. Il chevron dell’ordinamento sceglie **Alfabetico** o **Data** di caricamento; il pulsante accanto inverte l’ordine e indica l’azione successiva: **Z–A / A–Z** oppure **31–1 / 1–31**. Le preferenze si ricordano per zaino. Per rinominare, eliminare o inserire una foto o un ritaglio negli appunti, usa il tasto destro sulla scheda; il trascinamento resta disponibile.
+
 ## Organizzare la sidebar
 
-**Fonti**, **Appunti**, **Media** e **Mappe** hanno ciascuno i propri gruppi. **+** crea un gruppo; il chevron accanto al suo nome lo chiude o riapre. **✎** attiva l’organizzazione e **✓** la conclude.
+La sidebar mostra **Appunti**, **Mappe**, **Fonti**, **Media**, in questo ordine. Media contiene le sottosezioni **Immagini**, **Video** e **Audio**. Ogni sezione conserva i propri gruppi. **+** crea un gruppo; il chevron accanto al suo nome lo chiude o riapre. **✎** attiva l’organizzazione e **✓** la conclude.
 
 Attiva la **matita** della sezione per mostrare le **caselle a destra** e il **+**, poi seleziona una o più voci. Uscendo dalla modifica, le spunte si azzerano. Premi **+** per creare un gruppo che le contenga, oppure trascina una delle voci selezionate su un gruppo esistente per spostarle insieme. Il pulsante **A–Z / Z–A** ordina i file per nome visibile, dentro ciascun gruppo e fra quelli senza gruppo. L’ordine viene salvato nello zaino.
 

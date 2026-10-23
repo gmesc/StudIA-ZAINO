@@ -1096,11 +1096,11 @@ ipcMain.handle('corpus:list', (e, { corso } = {}) => {
       const tipo = isPdf ? 'pdf' : isHtml ? 'html' : 'media';
       const stem = f.slice(0, f.length - ext.length);
       if (out.some((x) => x.stem === stem && x.tipo === tipo)) continue;
-      let size = 0; try { size = fs.statSync(path.join(dir, f)).size; } catch (e) {}
+      let size = 0, creato = ''; try { const st = fs.statSync(path.join(dir, f)); size = st.size; creato = new Date(st.birthtimeMs > 0 ? st.birthtimeMs : st.mtimeMs).toISOString(); } catch (e) {}
       const m = /^(\d+)\b/.exec(f);
       const dove = { pdf: 'Indice-PDF', html: 'Indice-HTML', media: 'Trascrizioni' }[tipo];
       out.push({
-        name: f, stem, dir: sub, size, tipo,
+        name: f, stem, dir: sub, size, tipo, creato,
         num: m ? m[1].padStart(2, '0') : null,
         fatto: stato(dove, stem),
         // la trascrizione fornita dall'autore, quando c'è, affianca quella di Whisper

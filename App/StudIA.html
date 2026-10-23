@@ -168,6 +168,8 @@
 <!-- Che cosa entra nell'album delle foto e in che misura: formati letti dai
      byte, tetto delle dimensioni, motivi degli scarti. Puro, provato in Node. -->
 <script src="assets/album/foto.js"></script>
+<script src="assets/album/catalogo.js"></script>
+<script src="assets/album/spazio.js"></script>
 <!-- I testi che arrivano da fuori e diventano appunti: titolo, frontmatter di
      un altro programma, e le tre cose che si perderebbero in silenzio. -->
 <script src="assets/appunti/importa.js"></script>
@@ -652,7 +654,6 @@
   /* La maniglia della sidebar occupa l’angolo del primo riquadro. */
   .bhead[data-primo="1"]{ padding-left:calc(var(--tb-blocco-h) + .5rem); }
   .bnumero{ color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums; }
-  .battivo{ width:6px; height:6px; flex:0 0 6px; border-radius:50%; color:var(--teal-strong); background:currentColor; }
   /* Stessa ragione della barra della mappa: l'altezza la dà il token, perché
      questo `<select>` è il gemello trasparente del guscio `.tendina.piccola`. */
   .bhead select{ font-size:11px; height:var(--tb-h); max-width:min(60cqw,240px); }
@@ -1550,25 +1551,25 @@
      anche loro. Il teal è il colore che in tutta l'app vuol dire «questo», e la
      riga sotto lo ripete sottile: due segni deboli invece di uno forte, perché
      il pannello non diventi una bandiera. */
-  .bhead, .znav .zs-tit, #searchRes .sr-lesson{
+  .bhead, .znav .zs-tit, :is(#searchRes, #albumCercaRisultati) .sr-lesson{
     --testata-bg:color-mix(in srgb, var(--teal) 10%, var(--panel));
     background:var(--testata-bg); }
-  .blocco[data-attivo="1"] > .bhead{ --testata-bg:color-mix(in srgb, var(--teal) 18%, var(--panel)); }
-  :is(.bhead, .znav .zs-tit, #searchRes .sr-lesson) button[aria-pressed="true"]{
+  .blocco[data-attivo="1"] > .bhead{ --testata-bg:color-mix(in srgb, var(--teal) 19.8%, var(--panel)); }
+  :is(.bhead, .znav .zs-tit, :is(#searchRes, #albumCercaRisultati) .sr-lesson) button[aria-pressed="true"]{
     --testata-bg:color-mix(in srgb, var(--teal) 26%, var(--panel)); }
   /* Si moltiplica soltanto il fondo: testo e icone conservano il proprio contrasto. */
-  :is(.bhead, .znav .zs-tit, #searchRes .sr-lesson) :is(button, .tendina):hover:not(:disabled):not([aria-disabled="true"]){
+  :is(.bhead, .znav .zs-tit, :is(#searchRes, #albumCercaRisultati) .sr-lesson) :is(button, .tendina):hover:not(:disabled):not([aria-disabled="true"]){
     background:linear-gradient(rgb(128 128 128 / .18), rgb(128 128 128 / .18)) var(--testata-bg);
     background-blend-mode:multiply; }
-  .znav .zs-tit, #searchRes .sr-lesson{
+  .znav .zs-tit, :is(#searchRes, #albumCercaRisultati) .sr-lesson{
     border-bottom:1px solid color-mix(in srgb, var(--teal) 35%, var(--line)); }
-  #searchRes .sr-lesson{ position:sticky; top:0; z-index:1;
+  :is(#searchRes, #albumCercaRisultati) .sr-lesson{ position:sticky; top:0; z-index:1;
     font-size:10px; text-transform:uppercase; letter-spacing:.12em; font-weight:700;
     padding:.3rem .6rem; color:var(--teal-strong); }
-  #searchRes .sr-item{ display:block; width:100%; text-align:left; border:0; border-bottom:1px solid var(--line-weak);
+  :is(#searchRes, #albumCercaRisultati) .sr-item{ display:block; width:100%; text-align:left; border:0; border-bottom:1px solid var(--line-weak);
     background:transparent; color:var(--ink); cursor:pointer; padding:.4rem .6rem; font-size:13px; font-family:inherit; }
-  #searchRes .sr-item:hover, #searchRes .sr-item.sel{ background:var(--hover); }
-  #searchRes .sr-head{ font-weight:700; font-size:12px; }
+  :is(#searchRes, #albumCercaRisultati) .sr-item:hover, :is(#searchRes, #albumCercaRisultati) .sr-item.sel{ background:var(--hover); }
+  :is(#searchRes, #albumCercaRisultati) .sr-head{ font-weight:700; font-size:12px; }
   /* Il titolo di un APPUNTO è ciò che l'utente ha scritto lui, e prende
      l'accento come l'intestazione: nell'elenco è la voce che sta cercando più
      spesso, ed è quella che nel gruppo «Appunti» distingue una riga dall'altra. */
@@ -1577,17 +1578,17 @@
      vista da tre parti — e distinguerli con tre colori direbbe che sono tre
      nature diverse quando la natura è una: testo tuo. Che poi siano un appunto
      o un nodo lo dice l'intestazione del gruppo, due righe più su. */
-  #searchRes .sr-item[data-tipo="appunto"] .sr-head,
-  #searchRes .sr-item[data-tipo="mappa"] .sr-head,
-  #searchRes .sr-item[data-tipo="ritaglio"] .sr-head{ color:var(--teal-strong); }
+  :is(#searchRes, #albumCercaRisultati) .sr-item[data-tipo="appunto"] .sr-head,
+  :is(#searchRes, #albumCercaRisultati) .sr-item[data-tipo="mappa"] .sr-head,
+  :is(#searchRes, #albumCercaRisultati) .sr-item[data-tipo="ritaglio"] .sr-head{ color:var(--teal-strong); }
   /* ⚠️ Il frammento si ferma a DUE RIGHE. Prima ne prendeva tre o quattro quando
      il testo attorno era fitto, e otto risultati riempivano lo schermo: il
      pannello serve a scegliere una riga, non a leggere il documento — quello si
      fa dopo, nel documento. */
-  #searchRes .sr-snip{ color:var(--muted); font-size:12px; margin-top:.1rem;
+  :is(#searchRes, #albumCercaRisultati) .sr-snip{ color:var(--muted); font-size:12px; margin-top:.1rem;
     display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
-  #searchRes mark{ background:color-mix(in srgb, var(--yellow) 55%, var(--panel)); color:var(--ink); }
-  #searchRes .sr-empty{ padding:.9rem .7rem; color:var(--muted); font-size:12px; }
+  :is(#searchRes, #albumCercaRisultati) mark{ background:color-mix(in srgb, var(--yellow) 55%, var(--panel)); color:var(--ink); }
+  :is(#searchRes, #albumCercaRisultati) .sr-empty{ padding:.9rem .7rem; color:var(--muted); font-size:12px; }
   /* Il lampo sull'occorrenza trovata dalla ricerca. Non è un elemento: è un
      intervallo registrato con la CSS Custom Highlight API, e si colora da qui.
      Le pseudo di evidenziatura accettano poche proprietà — fra queste non c'è
@@ -3064,6 +3065,28 @@
     body > *{ display:none !important; }
     body{ background:#fff; color:#111; margin:0; padding:0; }
   }
+
+  #albumSpazio{display:none;flex-direction:column;height:100%;min-height:0;background:var(--panel);}
+  .bcorpo > #albumSpazio{display:flex!important;}
+  #albumViste{display:flex;flex:1;min-height:0;overflow:hidden;}
+  #albumViste > section{display:flex;flex-direction:column;width:100%;min-height:0;}
+  #albumViste > [hidden]{display:none!important;}
+  #albumPane > .albar, #fotoBarra{display:none!important;}
+  .albumTabs{flex-wrap:wrap;gap:.15rem;}
+  .albumTabs button{font-size:11px;letter-spacing:.04em;}
+  .albumTabs button[aria-pressed="true"]{background:var(--hover);color:var(--teal-strong);box-shadow:inset 0 -2px var(--teal);}
+  .albumComandi{gap:.35rem;flex-wrap:wrap;}
+  #albumDimensione{width:clamp(60px,10vw,150px);min-width:60px;accent-color:var(--teal-strong);}
+  #albumSpazio .alblista{grid-template-columns:repeat(auto-fill,minmax(min(var(--album-card),100%),1fr));align-content:start;width:100%;}
+  #albumSpazio .alcard :is(img,video,.albumAudio){height:var(--album-immagine);width:100%;object-fit:contain;background:var(--hover);}
+  #albumSpazio .alcard{font-family:inherit;color:var(--ink);text-align:left;cursor:pointer;}
+  .albumAudio{display:grid;place-items:center;font-size:calc(var(--album-immagine) * .5);color:var(--teal-strong);}
+  #albumCercaPop{width:min(440px,92vw);padding:0;}
+  #albumCercaInput{box-sizing:border-box;width:100%;padding:.65rem;border:0;border-bottom:1px solid var(--line);font:inherit;background:var(--panel);color:var(--ink);}
+  #albumCercaRisultati{max-height:50vh;overflow:auto;}
+  #albumOrdineMenu button[aria-checked="true"]::before{content:'✓ ';}
+  .zs-media-tipo{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:.4rem .6rem;border-bottom:1px solid var(--line-weak);}
+
 </style>
 <!-- Le regole del foglio, scritte al momento di stampare (vedi sopra). Nasce
      vuoto: finché nessuno stampa, non c'è nessun `@page` in giro. -->
@@ -5695,7 +5718,7 @@ async function fotoTrascinate(files){
   }
   FOTOIMP.inCorso=false;
 
-  try{ fotoAggiorna(); }catch(e){}
+  try{ fotoAggiorna(); zainoNavAggiorna(); }catch(e){}
   if(entrate) toast(entrate===1 ? 'Immagine aggiunta' : entrate+' immagini aggiunte', true);
   if(gia && !entrate) toast(gia===1 ? 'Quell’immagine c’era già' : 'Erano già tutte in archivio', true);
   /* Gli scarti si dicono uno per uno finché sono pochi, e a gruppi quando sono
@@ -7111,11 +7134,13 @@ function albumDisegnaVista(quale){
   }
   var r=window.vault.album.elenco(corsoAttivo(), cfg.origine);
   st.voci=(r && r.voci) || [];
+  st.errore=(r && r.error) || '';
   if(r && r.error){
     lista.innerHTML='<div class="alvuoto">'+escHtml(r.error)+'</div>';
     if(conto) conto.textContent='';
     return;
   }
+  st.voci=AlbumCatalogo.ordina(st.voci,AlbumSpazio.preferenze());
   var q=st.filtro.trim().toLowerCase();
   var viste=q ? st.voci.filter(function(v){
     return (v.didascalia+' '+v.materiale).toLowerCase().indexOf(q)>=0;
@@ -7200,7 +7225,7 @@ function fotoVistaAperta(){ return !!FOTOV.aperta; }
  */
 function fotoApri(id){
   var v=albumVoce(id); if(!v){ toast('Immagine non trovata', false); return; }
-  try{ bancoMostra('foto'); }catch(e){}
+  AlbumSpazio.apri(v.origine==='foto'?'immagini':'ritagli','foto');
   FOTOV.aperta=v.id;
   FOTOV.larghezza=0;
   var img=$('#fotoImg');
@@ -7221,6 +7246,7 @@ function fotoChiudiVista(){
   try{ if(ALBUM.attivo && !albumRitagliabile()) albumRitaglioModo(false); albumModificatore(false); }catch(e){}
   fotoFacce();
   fotoAggiorna();
+  AlbumSpazio.ritorna('foto');
 }
 /** Quale delle due facce si vede. Un punto solo, o le due barre e i due
  *  contenuti si contraddicono al primo ripensamento. */
@@ -7518,15 +7544,7 @@ function fotoSostituisciInserimento(nuova){
  * il click sulla figura e la voce del suo menu contestuale — e due riti per lo
  * stesso verbo divergono al primo ritocco (invariante 6).
  */
-function albumMostraCitata(id){
-  var v=albumVoce(id);
-  var dove=(v && v.origine==='foto') ? 'foto' : 'album';
-  try{ bancoMostra(dove); }catch(err){}
-  albumStato(dove).filtro='';
-  var ce=$(ALBUMVISTE[dove].cerca); if(ce) ce.value='';
-  albumDisegnaVista(dove);
-  albumEvidenzia(id);
-}
+function albumMostraCitata(id){ fotoApri(id); }
 
 /** Rilegge l'album dei ritagli e ridisegna la griglia. */
 function albumAggiorna(){ albumDisegnaVista('album'); }
@@ -7570,7 +7588,11 @@ function albumPunto(v){
 /** Una voce per id, in QUALUNQUE delle due viste: i menu, il trascinamento e i
  *  rimandi parlano di immagini, non di griglie. */
 function albumVoce(id){
-  return ALBUMVISTA.voci.concat(FOTOVISTA.voci).filter(function(v){ return v.id===id; })[0] || null;
+  var v=ALBUMVISTA.voci.concat(FOTOVISTA.voci).find(function(v){ return v.id===id; });
+  if(v) return v;
+  var r=window.vault.album.elenco(corsoAttivo());
+  if(r.error){toast(r.error,false);return null;}
+  return r.voci.find(function(v){return v.id===id;}) || null;
 }
 
 /**
@@ -7840,8 +7862,7 @@ function albumElimina(corso, v){
     albumModificatore(e.metaKey || e.ctrlKey);
   }, true);
 
-  /* Le due griglie hanno due ricerche, e ognuna filtra la sua: sono due elenchi
-     a schermo, non due modi di guardare lo stesso. */
+  /* Ingressi delle vecchie ricerche; il Cerca di ALBUM interroga tutte le raccolte. */
   document.addEventListener('input', function(e){
     if(!e.target.closest) return;
     if(e.target.closest('#albCerca')){ ALBUMVISTA.filtro=e.target.value||''; albumAggiorna(); return; }
@@ -7859,7 +7880,7 @@ function albumElimina(corso, v){
        trascinamento, stessa identità. Un secondo elenco di gestori sarebbe la
        seconda copia destinata a divergere (trappola ④). */
     var card=e.target.closest(CARD_ALBUM);
-    if(card){ albumMenu(card.getAttribute('data-id'), e.clientX, e.clientY); return; }
+    if(card){ albumChiudiMenu(); fotoApri(card.getAttribute('data-id')); return; }
     if(!e.target.closest('#albMenu') && !e.target.closest('#albBolla')) albumChiudiMenu();
   });
   document.addEventListener('contextmenu', function(e){
@@ -7868,17 +7889,6 @@ function albumElimina(corso, v){
     e.preventDefault();
     albumMenu(card.getAttribute('data-id'), e.clientX, e.clientY);
   });
-  /* Il doppio click apre l'immagine: è il gesto che chiunque prova per primo su
-     una griglia di provini, e chiama la stessa funzione della voce di menu —
-     due porte, un rito solo. */
-  document.addEventListener('dblclick', function(e){
-    var card=e.target.closest && e.target.closest(CARD_ALBUM);
-    if(!card || modoAttivo()!=='zaino') return;
-    e.preventDefault();
-    albumChiudiMenu();
-    fotoApri(card.getAttribute('data-id'));
-  });
-
   /* ── TRASCINARE UN RITAGLIO ───────────────────────────────────────────────
    *
    * Il trascinamento è la TERZA porta per due verbi che esistono già — «metti
@@ -8100,7 +8110,7 @@ function playerApri(file, t, label){
   }
   try{ v.playbackRate=PLAYER.vel; }catch(e){}
   v.play().catch(function(){});
-  try{ bancoMostra('player'); }catch(e){}
+  AlbumSpazio.apri(tipo,'player');
   playerBarraAggiorna();
   try{ pdfZoomAggiorna(); }catch(e){}     // le forbici valgono anche su un fotogramma
 }
@@ -8121,6 +8131,7 @@ function playerChiudi(){
   }
   playerBarraAggiorna();
   try{ pdfZoomAggiorna(); }catch(e){}
+  AlbumSpazio.ritorna('player');
 }
 
 /** Il secondo a cui sta il player adesso (0 se non c'è niente). */
@@ -9433,7 +9444,7 @@ function closePops(){
      vista da un altro lato: togliergli `open` lo farebbe sparire lasciando il
      colore acceso sulla pagina — cioè ricreerebbe esattamente lo stato invisibile
      che si è appena finito di togliere, per un click sul «+» dello zoom. */
-  ['#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#zainoPop','#pdfDocPop','#pdfSommarioPop','#plMediaPop','#pittorePop','#stratiPop']
+  ['#albumCercaPop','#albumOrdineMenu','#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#zainoPop','#pdfDocPop','#pdfSommarioPop','#plMediaPop','#pittorePop','#stratiPop']
     .forEach(function(s){ var e=$(s); if(e) e.removeAttribute('open'); });
   /* ⚠️ Il menu della selezione e la sua barra non si chiudono togliendo un
      attributo: hanno uno stato in una CLASSE (`open`, `aperta`) e due funzioni
@@ -11167,18 +11178,26 @@ function znavRaccolta(sezione, titolo, voci, vuoto, errore, erroreGruppi){
     '<button type="button" class="tbtn" data-znav="organizza" title="Organizza '+titolo.toLowerCase()+'" aria-label="Organizza '+titolo.toLowerCase()+'" aria-pressed="'+edit+'"'+(erroreGruppi||errore?' disabled':'')+'>'+(edit?'✓':'✎')+'</button></span></div><div class="zs-corpo" id="zs-corpo-'+sezione+'"'+(chiusa?' hidden':'')+'>';
   if(errore) return h+'<div class="zs-vuoto zs-no">⚠ '+znavEsc(errore)+'</div></div></section>';
   if(erroreGruppi) h+='<div class="zs-vuoto zs-no">Organizzazione non leggibile: '+znavEsc(erroreGruppi)+'</div>';
-  stato.gruppi.forEach(function(g){
-    var dati='data-gruppo="'+znavEsc(g.id)+'"';
-    h+='<section class="zs-gruppo" '+dati+'><div class="zs-gruppo-testa" '+dati+(edit?' draggable="true" tabindex="0" title="Trascina il gruppo · Alt+↑/↓ per riordinare"':'')+'>'+
-      '<button type="button" data-znav="toggle" '+dati+' aria-expanded="'+!g.chiuso+'"'+(erroreGruppi?' disabled':'')+'><span aria-hidden="true">'+(g.chiuso?'▸':'▾')+'</span><span class="zs-nome">'+znavEsc(g.nome)+'</span><span class="zs-n">'+g.files.length+'</span></button>'+
-      (edit?'<span class="zs-azioni">'+znavComandoHtml('rinomina','✎','Rinomina il gruppo '+g.nome,dati)+znavComandoHtml('elimina','×','Sciogli il gruppo '+g.nome+' (conserva le voci)',dati)+'</span>':'')+'</div>'+
-      '<div'+(g.chiuso?' hidden':'')+'>'+(g.files.length?lista(g.files,g.id):'<div class="zs-vuoto">'+(edit?'Trascina qui una voce.':'Gruppo vuoto.')+'</div>')+'</div></section>';
+  var categorie=sezione==='media'?[['immagini','Immagini'],['video','Video'],['audio','Audio']]:[['','']];
+  categorie.forEach(function(categoria,indice){
+    var tipo=categoria[0];
+    var ammesse=new Set(voci.filter(function(v){return !tipo || v.tipo===tipo;}).map(function(v){return v.quale;}));
+    if(tipo) h+='<section data-media-tipo="'+tipo+'"><div class="zs-media-tipo">'+categoria[1]+'</div>';
+    var presenti=stato.gruppi.filter(function(g){return g.files.some(function(f){return ammesse.has(f);}) || (!g.files.length && !indice);});
+    presenti.forEach(function(g){
+      var files=g.files.filter(function(f){return ammesse.has(f);}), dati='data-gruppo="'+znavEsc(g.id)+'"';
+      h+='<section class="zs-gruppo" '+dati+'><div class="zs-gruppo-testa" '+dati+(edit?' draggable="true" tabindex="0" title="Trascina il gruppo · Alt+↑/↓ per riordinare"':'')+'>'+
+        '<button type="button" data-znav="toggle" '+dati+' aria-expanded="'+!g.chiuso+'"'+(erroreGruppi?' disabled':'')+'><span aria-hidden="true">'+(g.chiuso?'▸':'▾')+'</span><span class="zs-nome">'+znavEsc(g.nome)+'</span><span class="zs-n">'+files.length+'</span></button>'+
+        (edit?'<span class="zs-azioni">'+znavComandoHtml('rinomina','✎','Rinomina il gruppo '+g.nome,dati)+znavComandoHtml('elimina','×','Sciogli il gruppo '+g.nome+' (conserva le voci)',dati)+'</span>':'')+'</div>'+
+        '<div'+(g.chiuso?' hidden':'')+'>'+(files.length?lista(files,g.id):'<div class="zs-vuoto">'+(edit?'Trascina qui una voce.':'Gruppo vuoto.')+'</div>')+'</div></section>';
+    });
+    h+='<div class="zs-liberi" data-gruppo="">';
+    if(presenti.length) h+='<div class="zs-senza">Senza gruppo</div>';
+    h+=lista(stato.liberi.filter(function(f){return ammesse.has(f);}), '');
+    if(!ammesse.size && !presenti.length) h+='<div class="zs-vuoto">'+(tipo?'Nessun file.':znavEsc(vuoto))+'</div>';
+    h+='</div>'+(tipo?'</section>':'');
   });
-  h+='<div class="zs-liberi" data-gruppo="">';
-  if(stato.gruppi.length) h+='<div class="zs-senza">Senza gruppo</div>';
-  h+=lista(stato.liberi,'');
-  if(!voci.length && !stato.gruppi.length) h+='<div class="zs-vuoto">'+znavEsc(vuoto)+'</div>';
-  return h+'</div></div></section>';
+  return h+'</div></section>';
 }
 function fontiPercorsiAperti(id){
   if(id!==zainoAttivo()) return {};
@@ -11307,7 +11326,8 @@ function znavBersaglio(e){
     if(el.checked) scelti.add(el.dataset.file); else scelti.delete(el.dataset.file);
     ZNAV.selezione[sezione]=Array.from(scelti);
     var crea=el.closest('.zs-raccolta').querySelector('[data-znav="crea"]');
-    crea.title=crea.ariaLabel=scelti.size?'Crea gruppo con '+scelti.size+' voci selezionate':'Crea gruppo';
+    crea.ariaLabel=scelti.size?'Crea gruppo con '+scelti.size+' voci selezionate':'Crea gruppo';
+    crea.dataset.aiuto=scelti.size?'Crea un nuovo gruppo e vi sposta '+scelti.size+' voci selezionate.':'Crea un nuovo gruppo vuoto. Seleziona le voci con le caselle per inserirle nel nuovo gruppo.';
   });
   document.addEventListener('keydown',function(e){
     var el=e.target.closest && e.target.closest('#zainoNav [draggable="true"]');
@@ -11346,7 +11366,7 @@ async function zainoNavAggiorna(){
      cambio). La richiesta persa si RICORDA, e a fine giro si riparte. */
   if(ZNAV.carico){ ZNAV.ancora=true; return; }
   ZNAV.carico=true;
-  var fonti=[], eFonti='', appunti=[], eAppunti='', mappe=[], eMappe='', gruppi={}, eGruppi={};
+  var fonti=[], eFonti='', immagini=[], eImmagini='', appunti=[], eAppunti='', mappe=[], eMappe='', gruppi={}, eGruppi={};
   try{
     var corpus = await window.vault.corpus.list(id);
     /* Le fonti sono TUTTO ciò che si studia: documenti E media. Un video
@@ -11370,6 +11390,9 @@ async function zainoNavAggiorna(){
     });
     eMappe=m.error||'';
   }catch(e3){ eMappe=(e3&&e3.message)||String(e3); }
+  try{
+    var foto=window.vault.album.elenco(id,'foto'); immagini=foto.voci||[]; eImmagini=foto.error||'';
+  }catch(e){eImmagini=e.message;}
   for(var sezione of ['fonti','appunti','media','mappe']){
     try{
       var organizzazione=await window.vault.zaino.gruppiLeggi(id,sezione);
@@ -11396,22 +11419,25 @@ async function zainoNavAggiorna(){
 
   function fonteVoce(f){
     var media=f.tipo==='media', segno=media?(Lettore.tipoDi(f.name)==='audio'?'♪ ':'▶ '):'';
-    return {classe:media?'zn-fonte zn-media':'zn-fonte', quale:f.name, titolo:media?f.name:FontiNomi.visibile(f.name),
-      testo:segno+(media?(titoloMateriale(f.name)||f.name):FontiNomi.visibile(f.name)), attivo:f.name===(media?apertoMedia:apertoPdf)};
+    return {tipo:media?Lettore.tipoDi(f.name):'pdf', classe:media?'zn-fonte zn-media':'zn-fonte', quale:f.name, titolo:FontiNomi.visibile(f.name),
+      testo:segno+FontiNomi.visibile(f.name), attivo:f.name===(media?apertoMedia:apertoPdf)};
   }
   znavAiutoChiudi();
   host.innerHTML =
-    znavRaccolta('fonti','Fonti',fonti.filter(function(f){return f.tipo==='pdf';}).map(fonteVoce),
-      'Nessun documento in questo zaino.',eFonti,eGruppi.fonti) +
     znavRaccolta('appunti','Appunti',appunti.map(function(n){
       return { classe:'zn-appunto', quale:n.file, testo:noteEtichetta(n), attivo:n.file===apertoNota };
     }), 'Nessun appunto. Si scrivono nel blocco «Appunti».',eAppunti,eGruppi.appunti) +
-    znavRaccolta('media','Media',fonti.filter(function(f){return f.tipo==='media';}).map(fonteVoce),
-      'Nessun audio o video in questo zaino.',eFonti,eGruppi.media) +
     znavRaccolta('mappe','Mappe', mappe.map(function(x){
       return { classe:'zn-mappa', quale:x.file, testo:x.titolo||x.file,
                titolo:x.file, attivo:x.file===apertaMappa };
-    }), 'Nessuna mappa. Si disegnano nel blocco «Mappa».', eMappe,eGruppi.mappe);
+    }), 'Nessuna mappa. Si disegnano nel blocco «Mappa».', eMappe,eGruppi.mappe) +
+    znavRaccolta('fonti','Fonti',fonti.filter(function(f){return f.tipo==='pdf';}).map(fonteVoce),
+      'Nessun documento in questo zaino.',eFonti,eGruppi.fonti) +
+    znavRaccolta('media','Media',immagini.map(function(v){
+      return {tipo:'immagini',classe:'zn-immagine',quale:'album:'+v.id,testo:v.didascalia||v.materiale,attivo:FOTOV.aperta===v.id};
+    }).concat(fonti.filter(function(f){return f.tipo==='media';}).map(fonteVoce)),
+      'Nessun media in questo zaino.',[eFonti,eImmagini].filter(Boolean).join(' · '),eGruppi.media);
+  if(bancoVisibile('album')) AlbumSpazio.aggiorna();
 }
 
 /** I documenti di un contenitore: una strada sola, per tutti quelli che li
@@ -11650,6 +11676,8 @@ async function zainoCrea(nome){
        strada vorrebbe dire una quarta cosa da tenere allineata. */
     /* Prima i media: hanno anche la classe `zn-fonte`, e l'ordine dei
        controlli è l'unica cosa che li distingue dal documento. */
+    var im=e.target.closest('.zn-immagine');
+    if(im){fotoApri(im.dataset.quale.slice(6));zainoNavAggiorna();return;}
     var md=e.target.closest('.zn-media');
     if(md){ playerApri(md.dataset.quale, null, titoloMateriale(md.dataset.quale)||md.dataset.quale);
             zainoNavAggiorna(); return; }
@@ -13523,7 +13551,7 @@ document.addEventListener('click',function(e){
      lo si usa. `closePops()` chiude anche il menu della selezione, quindi
      senza questa eccezione il 🔗 si spegneva e si portava via la superficie da
      cui era stato premuto — cambiavi idea e dovevi riselezionare la frase. */
-  if(!(e.target.closest && (e.target.closest('.popmenu')||e.target.closest('.ncb-callout')||e.target.closest('.ncb-emoji')||e.target.closest('.ncb-mat')||e.target.closest('#mVista')||e.target.closest('#bancoBtn')||e.target.closest('#mappaSvg .mfonte')||e.target.closest('#searchBtn')||e.target.closest('#searchRes')||e.target.closest('#zainoScegli')||e.target.closest('#pdfDoc')||e.target.closest('.ctx-cita')))) closePops();
+  if(!(e.target.closest && (e.target.closest('.popmenu')||e.target.closest('.ncb-callout')||e.target.closest('.ncb-emoji')||e.target.closest('.ncb-mat')||e.target.closest('#mVista')||e.target.closest('#bancoBtn')||e.target.closest('#mappaSvg .mfonte')||e.target.closest('#albumCerca')||e.target.closest('#albumOrdine')||e.target.closest('#searchBtn')||e.target.closest('#searchRes')||e.target.closest('#zainoScegli')||e.target.closest('#pdfDoc')||e.target.closest('.ctx-cita')))) closePops();
   var a=e.target.closest && e.target.closest('.myotes a[data-note]');
   if(a){ e.preventDefault(); noteApriAttivo(a.getAttribute('data-note')); return; }
   if(e.target.closest && e.target.closest('#addNoteBtn')){ noteNew(''); return; }
@@ -17754,12 +17782,6 @@ function bancoStrumenti(){
        l'elenco dei formati che sa aprire. Erano due parole che invecchiavano —
        il giorno che entra un terzo tipo di materiale, l'etichetta mente. */
     fonte:     { nome:'Fonti',           famiglia:'fonte',    sel:'#pdfPane' },
-    /* Il player è UNA voce sola per il video e per l'audio. Sono lo stesso
-       gesto — apri, scorri, segna il minuto — e l'audio è un video senza
-       immagine: due voci vorrebbero dire due pannelli, due stati e due strade
-       per ogni cosa (il segno d'ascolto, la citazione, i tasti rapidi), per un
-       guadagno che non c'è — due media non si ascoltano insieme. */
-    player:    { nome:'Player',          famiglia:'fonte',    sel:'#playerPane' },
     /* Il Confronto: un secondo documento affiancato. Vive in TUTTE le modalità
        — confrontare due dispense serve nei corsi quanto negli zaini — e il suo
        unico ingresso è il pannellino dei documenti nella sua barra. */
@@ -17768,17 +17790,7 @@ function bancoStrumenti(){
     appunti2:  { nome:'Appunti',         famiglia:'quaderno', sel:'#notePane2' },
     mappa:     { nome:'Mappa',           famiglia:'quaderno', sel:'#mappaView' },
     keyword:   { nome:'Parole chiave',   famiglia:'quaderno', sel:'#keywordPane' },
-    /* «Ritagli» e non «Album»: da quando esiste l'Album Foto, «album» da solo
-       non dice più quale dei due — e qui dentro finiscono anche i fermi
-       immagine del player, quindi nemmeno «Ritagli PDF» sarebbe vero. La chiave
-       resta `album` perché è quella scritta nelle disposizioni già salvate:
-       cambiarla svuoterebbe il blocco a chi l'aveva scelto (stessa ragione di
-       `flashcard`). */
-    album:     { nome:'Ritagli',         famiglia:'quaderno', sel:'#albumPane' },
-    /* L'Album Foto vive solo negli ZAINI: le immagini si portano dentro dove si
-       studia sui propri materiali. In un corso i materiali li governa la
-       pipeline, e `bancoStrumentiOfferti` non offre questa voce. */
-    foto:      { nome:'Album Foto',      famiglia:'quaderno', sel:'#fotoPane' },
+    album:     { nome:'Album',           famiglia:'quaderno', sel:'#albumSpazio' },
     /* «Ripasso» e non «Flashcard»: la chiave resta `flashcard` perché è quella
        scritta nelle disposizioni già salvate, e cambiarla svuoterebbe il blocco
        a chi l'aveva scelto. Il nome in tendina dice che cosa si fa. */
@@ -17793,7 +17805,7 @@ function bancoStrumenti(){
     postille:  { nome:'Postille',        famiglia:'quaderno', sel:'#postillePane' }
   };
 }
-function bancoStrumento(id){ return bancoStrumenti()[id] || null; }
+function bancoStrumento(id){ return bancoStrumenti()[BancoMateriali.riquadro(id)] || null; }
 function bancoElemento(id){
   var s=bancoStrumento(id);
   return (s && s.sel) ? document.querySelector(s.sel) : null;
@@ -17831,6 +17843,7 @@ function bancoCarica(){
   var grezzo=null;
   try{ grezzo=JSON.parse(localStorage.getItem(bancoChiave())||'null'); }catch(e){}
   BANCO.stato=BancoForme.normalizzaStato(grezzo||bancoPredefinito());
+  BANCO.stato=BancoMateriali.unificaAlbum(BANCO.stato,BancoForme.blocchiInLettura(BANCO.stato.forma));
   /* ⚠️ Rete per una disposizione dello zaino salvata quando «Capitolo»
      era ancora in elenco: uno strumento che la tendina non offre
      più resterebbe montato e irraggiungibile — a schermo il capitolo di un
@@ -17869,10 +17882,10 @@ function bancoStrumentoIn(blocco){ return (bancoStato().blocchi||{})[blocco] || 
  *  già `BancoForme.bloccoCon`; qui si aggiunge la sola cosa che il modulo puro
  *  non può sapere, cioè se quel blocco è a schermo con la forma di adesso. */
 function bancoBloccoDi(strumento){
-  var b=BancoForme.bloccoCon(bancoStato(), strumento);
+  var b=BancoForme.bloccoCon(bancoStato(), BancoMateriali.riquadro(strumento));
   return (b && bancoBlocchiVisibili().indexOf(b)>=0) ? b : '';
 }
-function bancoVisibile(strumento){ return !!bancoBloccoDi(strumento); }
+function bancoVisibile(strumento){ return !!bancoBloccoDi(strumento) && (!['foto','player'].includes(strumento) || AlbumSpazio.visibile(strumento)); }
 
 /** L'ultimo riquadro usato resta riconoscibile anche mentre il focus è nel
  *  menu Banco. All'avvio si parte dal primo in ordine di lettura. */
@@ -17896,10 +17909,7 @@ function bancoSegnaAttivo(){
     var numero=h.querySelector('.bnumero');
     if(!numero){ numero=document.createElement('span'); numero.className='bnumero'; h.prepend(numero); }
     numero.textContent=n ? String(n) : ''; numero.title='Riquadro '+n+' in ordine di lettura';
-    var segno=h.querySelector('.battivo');
-    if(!segno){ segno=document.createElement('span'); segno.className='battivo'; segno.setAttribute('role','img'); segno.setAttribute('aria-label','Riquadro attivo');
-      segno.title='Riducendo il banco, questo riquadro resta visibile'; h.appendChild(segno); }
-    segno.hidden=b!==attivo;
+    numero.setAttribute('aria-label',numero.title+(b===attivo?' · Riquadro attivo':''));
   });
 }
 
@@ -17999,6 +18009,8 @@ function bancoPosizionaDivisori(){
 /** Sposta ogni strumento nel blocco che gli tocca, e in magazzino quelli che
  *  non sono a schermo. Non ricrea niente: `appendChild` sposta. */
 function bancoMonta(){
+  BANCO.stato=BancoMateriali.unificaAlbum(bancoStato(),BancoForme.blocchiInLettura(bancoStato().forma));
+  AlbumSpazio.init();
   var visibili=bancoBlocchiVisibili();
   var collocati={};
   visibili.forEach(function(b){
@@ -18176,7 +18188,7 @@ function bancoDopoLayout(){
     if(EVIDENZE.corso!==corsoAttivo()) evidenzeCarica();
     postilleDisegna();
   } }catch(e){ console.error('banco/postille:', e); }
-  try{ if(typeof albumAggiorna==='function' && bancoVisibile('album')) albumAggiorna(); }
+  try{ if(bancoVisibile('album')) AlbumSpazio.aggiorna(); }
   catch(e){ console.error('banco/album:', e); }
   /* Stessa ragione per l'Album Foto: montarlo è un `appendChild`, e nessuno gli
      direbbe che adesso è a schermo e ha del contenuto da mostrare. */
@@ -18232,6 +18244,9 @@ function bancoAssegnaDaMenu(blocco, tipo){
   bancoAssegna(blocco,id);
 }
 function bancoAssegna(blocco, strumento){
+  if(strumento==='foto') AlbumSpazio.scegli('immagini');
+  if(strumento==='player') AlbumSpazio.scegli(PLAYER.tipo||'video');
+  strumento=BancoMateriali.riquadro(strumento);
   if(!bancoPronto()) return;
   BANCO.stato=BancoForme.assegna(bancoStato(), blocco, strumento);
   bancoSalva(); bancoDisegna();
@@ -18250,6 +18265,9 @@ function bancoAssegna(blocco, strumento){
  * deve ridisporre il banco: vedi la guardia qui sotto.
  */
 function bancoMostra(strumento){
+  if(strumento==='foto') AlbumSpazio.scegli('immagini');
+  if(strumento==='player') AlbumSpazio.scegli(PLAYER.tipo||'video');
+  strumento=BancoMateriali.riquadro(strumento);
   if(!bancoPronto() || !bancoDisponibile(strumento)) return;
   if(bancoVisibile(strumento)) return;
   /* ⚠️ Il guasto misurato il 13 agosto, e la ragione di questa riga.
@@ -21791,7 +21809,7 @@ window.addEventListener('keydown', function(e){
          dall'utente. Compare SOLO nello zaino, dove i media sono suoi. -->
     <button class="tbtn" id="plElimina" type="button" hidden
             title="Togli questo media dallo zaino" aria-label="Togli questo media dallo zaino">&#128465;</button>
-    <button class="tbtn" id="plClose" type="button" aria-label="Chiudi il player">&#10005;</button>
+    <button class="tbtn" id="plClose" type="button" title="Torna ai file" aria-label="Torna ai file">&#10005;</button>
   </div>
   <div id="plHost">
     <video id="mediaVideo" controls preload="metadata"></video>
@@ -21846,6 +21864,22 @@ window.addEventListener('keydown', function(e){
      blocco che lo ospita. Le immagini vivono in `Corsi/<corso>/ALBUM/`, che è
      cartella dell'UTENTE: i ritagli di Chandra si rifanno rileggendo il PDF,
      questi no. -->
+<section id="albumSpazio" aria-label="Album">
+  <div class="tbar albumTabs" role="group" aria-label="Materiali dell’album">
+    <button class="tbtn" type="button" data-album-tab="ritagli">RITAGLI</button>
+    <button class="tbtn" type="button" data-album-tab="immagini">IMMAGINI</button>
+    <button class="tbtn" type="button" data-album-tab="video">VIDEO</button>
+    <button class="tbtn" type="button" data-album-tab="audio">AUDIO</button>
+  </div>
+  <div class="tbar albumComandi">
+    <input id="albumDimensione" type="range" min="100" max="260" step="10" value="150" aria-label="Dimensione delle anteprime" title="Dimensione delle anteprime">
+    <span class="tbspazio"></span>
+    <button class="tbtn" id="albumCerca" type="button" title="Cerca in tutti i materiali dell’album" aria-label="Cerca in tutto l’album" aria-haspopup="dialog"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg></button>
+    <button class="tbtn" id="albumOrdina" type="button">Z–A</button>
+    <button class="tbtn" id="albumOrdine" type="button" title="Scegli il criterio di ordinamento" aria-label="Criterio di ordinamento" aria-haspopup="menu">▾</button>
+  </div>
+  <div id="albumViste"><div id="albumMediaLista" class="alblista" hidden></div></div>
+</section>
 <section id="albumPane" aria-label="Album dei ritagli">
   <div class="tbar albar">
     <input id="albCerca" type="search" placeholder="Cerca fra i ritagli…" aria-label="Cerca fra i ritagli dell'album">
@@ -21867,7 +21901,7 @@ window.addEventListener('keydown', function(e){
        comandi e gli stessi segni (`⟷` `⤢` `NNN%`): due riquadri che si guardano
        allo stesso modo non devono avere due grammatiche di zoom. -->
   <div class="tbar albar fotobar" id="fotoBarraVista" hidden>
-    <button class="tbtn" id="fotoIndietro" type="button" title="Torna all'album" aria-label="Torna all'album">&#8249;</button>
+    <button class="tbtn" id="fotoIndietro" type="button" title="Torna ai file" aria-label="Torna ai file">&#10005;</button>
     <strong id="fotoTitolo">Immagine</strong>
     <span class="tbspazio"></span>
     <i class="tbsep" aria-hidden="true"></i>
@@ -22342,6 +22376,14 @@ window.addEventListener('keydown', function(e){
 <div id="emojiPop" class="popmenu" aria-label="Inserisci emoji">
   <input id="emojiSearch" type="search" placeholder="Cerca: libro, idea, attenzione…" autocomplete="off">
   <div id="emojiGrid"></div>
+</div>
+<div class="popmenu" id="albumOrdineMenu" role="menu" aria-label="Ordina i materiali">
+  <button class="ctx-item" type="button" role="menuitemradio" data-album-ordine="nome">Alfabetico</button>
+  <button class="ctx-item" type="button" role="menuitemradio" data-album-ordine="data">Data</button>
+</div>
+<div class="popmenu" id="albumCercaPop" role="dialog" aria-label="Cerca nell’album">
+  <input id="albumCercaInput" type="search" placeholder="Cerca in tutto l’album…" aria-label="Cerca nei materiali">
+  <div id="albumCercaRisultati"></div>
 </div>
 <div id="searchRes" role="listbox" aria-label="Risultati della ricerca"></div>
 <div id="setup" hidden><div class="setup-card">

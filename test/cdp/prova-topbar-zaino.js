@@ -46,6 +46,8 @@ const scegli=val=>c.val(`(()=>{const s=document.getElementById('zainoSelect');s.
  await c.val("document.documentElement.dataset.theme='chiaro'");await c.pausa(400);
  const shot=await c.invia('Page.captureScreenshot',{format:'png',clip:{x:0,y:0,width:1470,height:60,scale:1}});
  fs.writeFileSync('/private/tmp/zaino-topbar-nuova.png',Buffer.from(shot.result.data,'base64'));
+ // La chat ridotta resterebbe sopra il primo appunto della sidebar nella prova seguente.
+ await c.clicca('#zchatClose');
  await c.invia('Emulation.clearDeviceMetricsOverride',{});
  console.log('OK: topbar, scelta e creazione zaini, ripristino, temi, icone e finestre strette.');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});
