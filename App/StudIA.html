@@ -12179,6 +12179,9 @@ function ensureMde(s){
     frammento.querySelectorAll('[id]').forEach(function(el){ el.id+=s.suffisso; });
     if(i===0) tb.insertBefore(frammento,tb.firstChild); else tb.appendChild(frammento);
   });
+  var altri=document.createElement('button');altri.type='button';altri.className='tbtn ncb-more no-disable';altri.textContent='Altri strumenti';altri.setAttribute('aria-expanded','false');
+  altri.onclick=function(){var aperti=tb.classList.toggle('strumenti-aperti');altri.setAttribute('aria-expanded',String(aperti));altri.textContent=aperti?'Meno strumenti':'Altri strumenti';};
+  tb.appendChild(altri);tb.addEventListener('keydown',function(e){if(e.key==='Escape'&&tb.classList.contains('strumenti-aperti')){e.stopPropagation();tb.classList.remove('strumenti-aperti');altri.setAttribute('aria-expanded','false');altri.textContent='Altri strumenti';altri.focus();}});
   noteCollegaCallout(cm);
   cm.on('changes',function(){ noteCronologiaComandi(s); });
   cm.setOption('extraKeys',Object.assign({},cm.getOption('extraKeys')||{}, {
@@ -18578,6 +18581,13 @@ document.addEventListener('click', function(e){
     else { bancoDisegnaForme(); popAt(pop, e.target.closest('#bancoBtn')); }
     return;
   }
+  var attivita=e.target.closest('[data-attivita]');
+  if(attivita){
+    closePops();
+    if(attivita.dataset.attivita==='lettura'){bancoForma('due-col');bancoAssegna('A','fonte');bancoAssegna('C','appunti');}
+    else {bancoForma('uno');bancoAssegna('A',attivita.dataset.attivita==='studio'?'studio':'flashcard');}
+    var primo=document.querySelector('.blocco[data-blocco="A"] .bhead button');if(primo)primo.focus();return;
+  }
   if(e.target.closest('#bFormaNuova')){ pittoreApri(); return; }
   if(e.target.closest('#pittoreAzzera')){ PITTORE.celle=Array(9).fill(''); pittoreDisegna(); return; }
   if(e.target.closest('#pittoreSalva')){
@@ -22074,6 +22084,7 @@ window.addEventListener('keydown', function(e){
      `container-type`, quindi dentro sarebbe posizionato rispetto al blocco e
      finirebbe sotto la topbar. Stessa ragione di #mappaPop e #mapMenu. -->
 <div id="bancoPop" class="popmenu" role="dialog" aria-label="Disposizione dei blocchi">
+  <div id="bAttivita" role="group" aria-label="Disposizioni per attività"><button class="tbtn" type="button" data-attivita="lettura">Leggi e annota</button><button class="tbtn" type="button" data-attivita="studio">Prepara schede</button><button class="tbtn" type="button" data-attivita="ripasso">Ripassa</button></div>
   <div class="bforme" id="bForme"></div>
   <p class="bforma-anteprima" id="bFormaAnteprima" aria-live="polite"></p>
   <p class="bforma-aiuto">Riducendo: prima il riquadro attivo, poi gli altri in ordine di lettura. Gli altri restano aperti e tornano riallargando la vista.</p>
@@ -22762,6 +22773,7 @@ window.addEventListener('keydown', function(e){
   <div class="ib-track"><i id="ibFill"></i></div>
   <div class="ib-file" id="ibFile"></div>
 </div>
+<script src="assets/chat/percorso-studio.js"></script>
 <script src="assets/chat/fonti-scelta.js"></script>
 <script src="assets/chat/schede-testo.js"></script>
 <script src="assets/chat/schede-ripasso.js"></script>

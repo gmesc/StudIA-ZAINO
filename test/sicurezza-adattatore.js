@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path'), crypto = require('node:crypto');
 const {app} = require('electron');
 const dati = app.getPath('userData');
-assert(dati.includes('studia-zaino-prova-'), 'Adattatore sicurezza riservato al profilo sintetico');
+assert(dati.includes('studia-zaino-prova-') || dati.includes('studia-guida-'), 'Adattatore sicurezza riservato al profilo sintetico');
 const registro = path.join(dati, 'sicurezza-chiamate.jsonl');
 const scrivi = voce => fs.appendFileSync(registro, JSON.stringify({...voce, quando:Date.now()}) + '\n');
 const attendi = ms => new Promise(resolve => setTimeout(resolve, ms));

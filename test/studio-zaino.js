@@ -8,6 +8,14 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(ro
  let calls=0;
  const opts={provider:'openai',model:'finto',chiama:async req=>{calls++;const data=JSON.parse(req.messages[0].content);if(data.porzioni)return {text:JSON.stringify({items:[{title:'Mitocondri',text:'Producono ATP.\n- Concetti: ATP.\n- Prerequisiti: energia.',refs:[data.porzioni[0].chunkId]}]})};if(data.proofs && data.topic)return {text:JSON.stringify({question:'Quale organello produce ATP?',answer:'I mitocondri.',rubric:['Identifica i mitocondri.'],hint:'Pensa alla respirazione cellulare.',refs:[data.proofs[0].chunkId]})};assert.equal(data.question,'Quale organello produce ATP?');assert(data.proofs[0].text.includes('mitocondri'));return {text:JSON.stringify({correct:['Hai indicato i mitocondri.'],missing:[],contradictory:[],summary:'La risposta è coerente con il materiale.',assessable:true})};}};
  for(const preset of Object.keys(S.PRESET)){const card=await S.genera(root,'test',source.id,preset,opts);assert(card.items[0].refs.length);assert.equal(S.leggi(root,'test',source.id,preset).status,'current');}
+ const cardQuestions=S.leggi(root,'test',source.id,'domande').card,beforeOpen=calls;
+ const exact=I.daScheda(root,'test',source.id,0,cardQuestions.revision);
+ assert.equal(exact.question,cardQuestions.items[0].title);assert.equal(exact.saved,true);assert(!Object.hasOwn(exact,'answer'));assert.equal(calls,beforeOpen);
+ const exactStored=I.leggi(root,'test',exact.id);exactStored.attempts.push({id:'kept',status:'done',text:'Tentativo già scritto',createdAt:new Date().toISOString(),corrections:[]});
+ fs.writeFileSync(path.join(d,'RIPASSO/domande',exact.id+'.json'),JSON.stringify(exactStored));
+ assert.equal(I.daScheda(root,'test',source.id,0,cardQuestions.revision).attempts[0].text,'Tentativo già scritto');
+ assert.throws(()=>I.daScheda(root,'test',source.id,0,'vecchia-revisione'),/cambiata/);
+ fs.unlinkSync(path.join(d,'RIPASSO/domande',exact.id+'.json'));
  assert.equal(S.elenco(root,'test').cards.length,5);assert(S.elenco(root,'test').cards.every(c=>c.status==='current'&&c.sourceId===source.id));
  const copy=S.copia(root,'test',source.id,'sintesi');
  const note=require('../lib/appunti').parse(fs.readFileSync(path.join(d,'APPUNTI',copy.file),'utf8'));

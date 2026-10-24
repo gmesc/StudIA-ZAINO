@@ -9,10 +9,12 @@
   button.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg><span></span>';
   button.title='Scegli una o più fonti per questo strumento';button.setAttribute('aria-expanded','false');button.setAttribute('aria-controls',prefix);bar.prepend(button);
   const panel=document.createElement('div');panel.id=prefix;panel.hidden=true;panel.className='zchat-scope zchat-source-picker';host.append(panel);
+  const summary=document.createElement('p');summary.className='zstudio-context';summary.id=prefix+'Summary';summary.setAttribute('role','status');host.prepend(summary);
   let epoch=0;
   const key=()=> 'studia-zaino.fonti.'+prefix+'.'+window.vault.path+'.'+state.zaino;
   function draw(){
    button.querySelector('span').textContent=state.scope.mode==='all'?'Fonti: tutte':'Fonti: '+state.scope.sourceIds.length;
+   summary.textContent='Materiali usati: '+window.ZainoPercorso.riassunto(state.scope,state.sources);
    panel.replaceChildren();
    function row(label,checked,fn,id){const l=document.createElement('label'),c=document.createElement('input'),t=document.createElement('span');c.type='checkbox';c.disabled=button.disabled;c.checked=checked;c.onchange=()=>fn(c.checked);if(id)c.dataset.sourceId=id;t.textContent=label.split('/').pop();t.title=label;l.append(c,t);panel.append(l);}
    row('Tutto lo zaino',state.scope.mode==='all',checked=>set({mode:checked?'all':'selected',sourceIds:[]}));

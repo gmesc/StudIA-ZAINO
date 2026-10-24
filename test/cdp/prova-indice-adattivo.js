@@ -11,13 +11,13 @@ async function click(sel){await c.val(`document.querySelector(${JSON.stringify(s
  const sources=(await c.val(`window.vault.chat.sources('biologia')`)).sources,note=sources.find(s=>s.kind==='appunto');assert(note);
  const file=path.join(vault,'Zaini/biologia',note.file),old=fs.readFileSync(file),dir=path.join(vault,'Zaini/biologia/_lavorazione/rag'),marker=path.join(path.dirname(vault),'dati/rag-runtime-finto');
  try{
-  await c.val(`bancoForma('due-col');bancoAssegna('A','studio');bancoAssegna('C','appunti');bancoAttivaBlocco('A');document.getElementById('zragIndexOptions').open=false`);
+  await c.val(`bancoForma('due-col');bancoAssegna('A','studio');bancoAssegna('C','appunti');bancoAttivaBlocco('A');document.getElementById('zragIndexOptions').open=false;document.getElementById('zragSearch').open=true`);
   await wait(`document.getElementById('zragIndex').textContent==='Attiva indice'`);
-  assert(await c.val(`!!document.querySelector('#zragToolbar>#zragIndex') && !document.getElementById('zragReset')`));
+  assert(await c.val(`!!document.querySelector('#zragSearch>#zragIndex') && !document.getElementById('zragReset')`));
   await click('#zragIndex');assert(await c.val(`!document.getElementById('settingsModal').hidden && !!document.querySelector('#zchatLocalSettings #zragDownloads')`));await click('#settingsClose');
   fs.writeFileSync(marker,'solo prova');
   await c.val(`document.getElementById('zragIndexOptions').open=true`);await wait(`document.getElementById('zragIndex').textContent==='Crea indice'`);
-  await c.val(`document.getElementById('zragIndexOptions').open=false`);await click('#zragIndex');
+  await c.val(`document.getElementById('zragIndexOptions').open=false;document.getElementById('zragSearch').open=true`);await click('#zragIndex');
   await wait(`document.getElementById('zragIndex').textContent==='Ricostruisci indice' && !document.getElementById('zragIndex').disabled`);
   assert(fs.existsSync(path.join(dir,'indice.json')));assert(fs.readdirSync(path.join(dir,'vettori')).some(f=>f.endsWith('.bin')));
   fs.writeFileSync(file,Buffer.concat([old,Buffer.from('\nUna modifica per la prova dell’indice adattivo.')]));

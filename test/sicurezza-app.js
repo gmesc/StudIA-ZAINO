@@ -6,6 +6,8 @@ const base = { vault:'/vault', appDir:'/app', userData:'/dati', temporanei:'/tmp
 assert.equal(S.urlEsterna('https://example.org/documento'), true);
 for (const u of ['file:///etc/passwd','javascript:alert(1)','data:text/html,x','https://user:pass@example.org','smb://host/share']) assert.equal(S.urlEsterna(u),false,u);
 assert.throws(()=>S.privilegi('ignoto:leggi',{},base),/non autorizzat/);
+const fromCard=S.privilegi('studio:fromCard',{zaino:'biologia'},base);
+assert(fromCard.scrittura.includes('/vault/Zaini/biologia/RIPASSO'));assert(!fromCard.scrittura.includes('/vault/Zaini/biologia/APPUNTI'));assert(!fromCard.scrittura.includes('/vault/Costi'));
 const r = S.privilegi('rag:index',{zaino:'biologia'},base);
 assert(r.lettura.includes('/vault/Zaini/biologia'));
 assert(!r.scrittura.includes('/vault/Zaini/biologia/APPUNTI'));

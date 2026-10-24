@@ -223,3 +223,23 @@
 #zragDownloads .zchat-hint { margin:.2rem 0; }
 #zragDownloads > .set-note { line-height:1.6; }
 #zragIndexOptions code { font-family:ui-monospace,SFMono-Regular,Menlo,var(--emoji-font),monospace; }
+/* La fonte e l’azione restano leggibili anche in un riquadro stretto. */
+.zstudio-context { margin:0; padding:.45rem var(--tb-pad-x); font-size:max(12px,calc(var(--fs) * .75)); line-height:1.5; color:var(--muted); border-bottom:1px solid var(--line); overflow-wrap:anywhere; }
+.zstudio-config { padding:.6rem; border-inline-start:3px solid var(--teal-strong); background:var(--panel); }
+.zstudio-config p { margin:0 0 .4rem; }
+.zstudio-actions>label { flex-basis:100%; margin:0; }
+.zstudio-collection .zstudio-card-open { white-space:normal; height:auto; min-height:var(--tb-h); overflow-wrap:anywhere; }
+.zstudio :is(button,input,select,textarea,summary):focus-visible,.zstudio-context:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+.zstudio :is(input,select,textarea) { border-color:var(--muted); }
+#zstudyQuestion h3:focus { outline:2px solid var(--focus); outline-offset:3px; }
+#zschedeCost { margin-bottom:.5rem; }
+#zstudyNext:disabled { display:none; }
+#bAttivita { display:flex; flex-direction:column; align-items:stretch; padding-bottom:.6rem; border-bottom:1px solid var(--line); margin-bottom:.6rem; }
+#bAttivita .tbtn { text-align:left; }
+.editor-toolbar .ncb-more { display:none; }
+@container (max-width:480px) {
+ .editor-toolbar .ncb-more { display:inline-flex; }
+ .editor-toolbar:not(.strumenti-aperti) :is(.heading,.unordered-list,.ordered-list,.ncb-callout,.ncb-emoji,.ncb-mat,.link,.code,.side-by-side,.ncb-guida,.separator) { display:none!important; }
+}
+
+.zstudio .zchat-hint { font-size:max(12px,calc(var(--fs) * .75)); line-height:1.5; }

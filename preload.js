@@ -463,6 +463,7 @@ vaultApi.rag = (function ponte(ipc){const call=(name,o)=>ipc.invoke('rag:'+name,
 vaultApi.studio = (function ponte(ipc){const call=(n,o)=>ipc.invoke('studio:'+n,o);return {
  presets:()=>call('presets'),estimate:(zaino,sourceId,preset)=>call('estimate',{zaino,sourceId,preset}),
  cards:zaino=>call('cards',{zaino}),
+ fromCard:(zaino,sourceId,index,revision)=>call('fromCard',{zaino,sourceId,index,revision}),
  card:(zaino,sourceId,preset)=>call('card',{zaino,sourceId,preset}),analyze:(zaino,o)=>call('analyze',{zaino,...o}),copyCard:(zaino,sourceId,preset)=>call('copyCard',{zaino,sourceId,preset}),
  state:(zaino,scope)=>call('state',{zaino,scope}),start:(zaino,o)=>call('start',{zaino,...o}),
  answer:(zaino,id,o)=>call('answer',{zaino,id,...o}),keep:(zaino,id)=>call('keep',{zaino,id}),

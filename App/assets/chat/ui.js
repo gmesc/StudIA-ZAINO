@@ -157,9 +157,9 @@
         <label><input id="zchatScopeAll" type="checkbox" checked> Tutto lo zaino</label>
         <div id="zchatScopeList" class="zchat-scope-list"></div>
         <label><input id="zchatScopeWiki" type="checkbox" checked> Consenti Wikipedia in Spiegamelo</label>
-        <p id="zchatScopeStatus" class="zchat-hint" role="status"></p>
+        <button type="button" class="tbtn" id="zchatUseStudySources">Usa fonti di Cerca e studia</button><p id="zchatScopeStatus" class="zchat-hint" role="status"></p>
       </section>
-      <div id="zchatMessages" class="zchat-messages" role="log" aria-label="Messaggi" aria-live="polite" aria-relevant="additions"></div>
+      <p id="zchatContext" class="zstudio-context" role="status"></p><div id="zchatMessages" class="zchat-messages" role="log" aria-label="Messaggi" aria-live="polite" aria-relevant="additions"></div>
       <form id="zchatForm" class="zchat-composer">
         <p id="zchatStatus" class="zchat-hint" role="status" aria-live="polite"></p>
         <div class="zchat-compose-row tbar-ctl"><label for="zchatInput" class="zchat-sr">Messaggio al tutor. Invio per inviare, Maiusc più Invio per andare a capo.</label>
@@ -172,6 +172,7 @@
     if (settingsIcon) panel.querySelector('#zchatSettings').replaceChildren(settingsIcon.cloneNode(true));
     document.body.appendChild(panel);
     function drawScope() {
+      $('zchatContext').textContent='Materiali della chat: '+window.ZainoPercorso.riassunto(state.scope,state.sources)+(state.scope.wikipedia&&$('zchatRole').value==='spiegamelo'?' · Wikipedia consentita':'');
       $('zchatScopeAll').checked = state.scope.mode === 'all';
       $('zchatScopeWiki').checked = state.scope.wikipedia;
       $('zchatScopeTitle').textContent = state.scope.mode === 'all' ? 'Fonti: tutto lo zaino' : 'Fonti selezionate: ' + state.scope.sourceIds.length;
@@ -209,6 +210,7 @@
     $('zchatScopeAll').addEventListener('change', () => {
       state.scope = { mode: $('zchatScopeAll').checked ? 'all' : 'selected', sourceIds: [], wikipedia: false }; saveScope();
     });
+    $('zchatUseStudySources').onclick=()=>{if(state.sending||state.scopeSaving)return;state.scope=window.zainoStudio.scope();saveScope();};
     $('zchatScopeWiki').addEventListener('change', () => { state.scope.wikipedia = $('zchatScopeWiki').checked; saveScope(); });
     function showScope(open) {
       $('zchatScope').hidden = !open;
@@ -591,6 +593,7 @@
     }
     function resizeInput() { const input = $('zchatInput'); input.style.height = 'auto'; input.style.height = Math.min(128, input.scrollHeight) + 'px'; }
     function updateControls() {
+      $('zchatUseStudySources').disabled=state.sending||state.scopeSaving;
       const busy = state.sending || state.loading || state.finishing || state.scopeSaving || state.studying;
       $('zchatScopeAll').disabled=$('zchatScopeWiki').disabled=busy;
       $('zchatScopeList').querySelectorAll('input').forEach(c=>{c.disabled=busy || state.scope.mode==='all';});

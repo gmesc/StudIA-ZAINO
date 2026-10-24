@@ -8,6 +8,7 @@ async function shot(name,sel){await L.muovi(10,940);await L.pausa(600);await L.s
 (async()=>{
  await L.collega();const vault=process.env.GUIDA_VAULT;
  assert(vault && fs.realpathSync(vault).startsWith('/private/tmp/studia-guida-'));assert.equal(await L.val('window.vault.path'),vault);
+ if(process.argv.includes('--solo-studio'))await L.val(`(async()=>{await window.vault.chat.setKey({provider:'openai',value:'chiave-finta-guida'});await window.vault.chat.saveSettings({provider:'openai',model:'modello-locale-di-prova'});})()`);
  await L.pulito();await L.invia('Emulation.setDeviceMetricsOverride',{width:1470,height:956,deviceScaleFactor:2,mobile:false});
  await L.val(`cambiaZaino('biologia')`);await wait(`zainoAttivo()==='biologia' && !!document.getElementById('zstudio')`);
  await L.val(`bancoAssegna('A','studio');bancoForma('due-col');bancoAssegna('A','studio');bancoAssegna('C','fonte');bancoAttivaBlocco('A');openPdf('01 Botanica.pdf');`);await wait(`!!PDFJS.doc`);await L.pausa(3800);
@@ -19,7 +20,7 @@ async function shot(name,sel){await L.muovi(10,940);await L.pausa(600);await L.s
  await click('#settingsBtn');await click('.set-tab[data-tab="ai"]');await L.val(`document.getElementById('zragIndexOptions').open=true;document.getElementById('zragIndexOptions').scrollIntoView({block:'start'})`);await shot('194-indice-dispositivo','#zragIndexOptions');
  await L.val(`document.getElementById('zragIndexOptions').open=false;document.getElementById('zchatLocalSettings').scrollIntoView({block:'start'})`);await shot('203-impostazioni-ai-locale','#zchatLocalSettings');await click('#settingsClose');
  await L.val(`document.getElementById('zragSearch').open=false`);await click('#zschedeNewButton');
- await wait(`document.getElementById('zschedePreset').options.length===5 && !document.getElementById('zschedeEstimate').disabled`);
+ await wait(`document.getElementById('zschedeNew').open && !document.getElementById('zschedeNewButton').disabled && document.getElementById('zschedePreset').options.length===5 && !document.getElementById('zschedeEstimate').disabled`);
  const sources=(await L.val(`window.vault.chat.sources('biologia')`)).sources,source=sources.find(s=>s.file.endsWith('01 Botanica.pdf'));assert(source);
  await set('zschedeSource',source.id);await set('zschedePreset','sintesi');await click('#zschedeEstimate');
  await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);
@@ -28,11 +29,12 @@ async function shot(name,sel){await L.muovi(10,940);await L.pausa(600);await L.s
  await L.val(`document.getElementById('zschede').scrollIntoView({block:'start'})`);await shot('196-scheda-raccoglitore','#studioPane');
  await L.val(`document.getElementById('zschedeResult').scrollIntoView({block:'end'})`);await shot('201-scheda-copia','#studioPane');
  await click('#zragOpenReview');await wait(`bancoVisibile('flashcard')`);await L.val(`bancoZoom(bancoBloccoDi('flashcard'))`);await L.pausa(3800);
- await set('zstudyTopic','luce e fotosintesi');await click('#zstudyStart');await wait(`!!document.getElementById('zstudyAttempt') && document.getElementById('zstudyCancel').hidden`);
+ await L.val(`document.getElementById('zstudyNew').open=true`);await set('zstudyTopic','luce e fotosintesi');await click('#zstudyStart');await wait(`!!document.getElementById('zstudyAttempt') && document.getElementById('zstudyCancel').hidden`);
  await set('zstudyAttempt','La fotosintesi permette alle piante di usare la luce.');await L.val(`document.getElementById('zstudyQuestion').scrollIntoView({block:'start'})`);await shot('197-ripasso-tentativo','#zinterroga');
  await L.val(`document.querySelector('#zstudyQuestion form').requestSubmit()`);
  await wait(`document.getElementById('zstudyQuestion').textContent.includes('Scegli o correggi il tuo esito') && document.getElementById('zstudyCancel').hidden`);
  await L.val(`document.getElementById('zstudyQuestion').scrollIntoView({block:'start'})`);await shot('198-ripasso-riscontro','#zinterroga');
+ if(process.argv.includes('--solo-studio')){console.log('Nove schermate di studio aggiornate.');process.exit(0);}
  // I gruppi si costruiscono con gli stessi moduli dell'interfaccia, sul solo vault dimostrativo.
  await L.val(`(async()=>{await zainoNavAggiorna();let s=ZNAV.gruppi.fonti;s=FontiGruppi.crea(s,'guida-da-studiare','Da studiare');s=FontiGruppi.sposta(s,'01 Botanica.pdf','guida-da-studiare');await znavSalva(s,zainoAttivo(),'fonti');ZNAV.organizza.fonti=true;await zainoNavAggiorna();})()`);
  await shot('199-sidebar-gruppi','#zainoNav');
