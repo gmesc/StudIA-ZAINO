@@ -327,21 +327,23 @@
 
         <h3 id="cs-indice">Attivare la ricerca per significato</h3>
         <p>La ricerca per parole funziona subito. Per cercare anche concetti simili, scarica il modello locale.</p>
-        <p>Il <strong>modello locale</strong> è un componente che confronta i testi sul computer. L’<strong>indice</strong> prepara i passaggi per questa ricerca.</p>
+        <p>Il <strong>modello locale</strong> è un componente che confronta i testi sul computer. L’<strong>indice</strong> è un archivio tecnico usato dalla ricerca: tu vedi i risultati e i rimandi alle fonti, non un documento da leggere. Resta salvato nella cartella dello zaino <code>_lavorazione/rag</code> anche dopo la chiusura dell’app. Se lo zaino è in una cartella sincronizzata, anche questi file possono essere sincronizzati.</p>
         <ol class="passi">
-          <li>Apri <strong>«⚙ Impostazioni» → «AI» → «AI locale»</strong>. Puoi arrivarci anche da <strong>«Cerca e studia» → «Indice sul dispositivo» → «AI locale…»</strong>.</li>
+          <li>Premi <strong>«Attiva indice»</strong> nella barra superiore di Cerca e studia: apre <strong>«⚙ Impostazioni» → «AI» → «AI locale»</strong>.</li>
           <li>Trovi la spiegazione dell’embedder, <strong>EmbeddingGemma 2 · ONNX</strong> e il link <strong>Informazioni su Hugging Face</strong>. Premi <strong>text · Scarica</strong> (346,4 MB). Per il download serve Internet.</li>
           <li>Aspetta la fine del download nelle impostazioni, poi torna a Cerca e studia. Leggi lo stato della preparazione dell’indice sotto il campo di ricerca.</li>
           <li>Cerca di nuovo. L’app indica il tipo di ricerca disponibile e gli eventuali limiti.</li>
         </ol>
         <p>Sono disponibili anche i download <strong>vision</strong> e <strong>video</strong>: 541,8 MB inclusa la parte testuale, oppure circa 195,4 MB aggiuntivi se text è già scaricato. Condividono i file: scaricarne uno prepara entrambi. L’app mostra i MB mancanti, riprende i download interrotti e indica <strong>Scaricato</strong> quando i componenti sono pronti. Puoi scaricarli anche senza uno zaino aperto. Questi download preparano i componenti; la ricerca nei contenuti visivi non è ancora attiva. <a href="https://huggingface.co/onnx-community/embeddinggemma-2-ONNX" target="_blank" rel="noopener noreferrer">Scheda del modello su Hugging Face</a>.</p>
         <figure class="fig-intera"><img src="img/203-impostazioni-ai-locale.png" alt="AI locale nelle impostazioni, con descrizione, link e tre download" loading="lazy"><figcaption><b>AI locale.</b> Non serve una chiave AI per la ricerca locale.</figcaption></figure>
-        <figure class="fig-blocco"><img src="img/194-indice-dispositivo.png" alt="Indice sul dispositivo con la scorciatoia AI locale e i comandi di aggiornamento" loading="lazy"><figcaption><b>I comandi dell’indice.</b> Qui controlli la preparazione dei materiali dello zaino aperto.</figcaption></figure>
+        <figure class="fig-blocco"><img src="img/194-indice-dispositivo.png" alt="Cerca e studia con il pulsante dell’indice sempre visibile nella barra superiore" loading="lazy"><figcaption><b>Un solo comando per l’indice.</b> Il pulsante cambia nome e azione in base allo stato dei materiali.</figcaption></figure>
         <div class="tabwrap"><table>
           <thead><tr><th>Comando o stato</th><th>Che cosa significa</th></tr></thead>
           <tbody>
-            <tr><td>«Aggiorna ora»</td><td>Controlla subito aggiunte e modifiche. È disponibile quando il modello è pronto.</td></tr>
-            <tr><td>«Ricostruisci indice»</td><td>Rifà l’indice di ricerca. Conserva appunti, schede e ripassi.</td></tr>
+            <tr><td>«Attiva indice»</td><td>Manca il modello locale. Apre le impostazioni per scaricarlo.</td></tr>
+            <tr><td>«Crea indice»</td><td>Il modello è pronto ma manca l’indice. Prepara tutte le fonti leggibili dello zaino.</td></tr>
+            <tr><td>«Aggiorna indice»</td><td>L’indice esiste ed è da aggiornare. Riutilizza i passaggi invariati.</td></tr>
+            <tr><td>«Ricostruisci indice»</td><td>L’indice è già aggiornato. Se necessario puoi rifarlo da zero, conservando appunti, schede e ripassi.</td></tr>
             <tr><td>«Interrompi»</td><td>Ferma l’operazione in corso. Compare soltanto durante il lavoro.</td></tr>
             <tr><td>Barra di avanzamento e avvisi</td><td>Mostrano il lavoro svolto e le fonti che l’app non riesce a leggere.</td></tr>
           </tbody>

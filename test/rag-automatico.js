@@ -12,8 +12,10 @@ async function wait(fn){for(let n=0;n<200;n++){if(fn())return;await new Promise(
  auto=A.crea({vault:root,zaino:'test',runtime,delay:15,onState:s=>states.push(s),watch:(_p,_opts,fn)=>{changed=fn;const w=new EventEmitter();w.close=()=>{closed=true;};return w;}});
  await wait(()=>auto.state().phase==='waiting-model');assert.equal(calls.length,0);
  ready=true;auto.request(true);await wait(()=>auto.state().phase==='ready');assert.equal(calls.length,1);assert(states.some(s=>s.phase==='indexing'&&s.done===0));assert(states.some(s=>s.done===1&&s.total===1));
+ assert.equal(auto.state().indice.current,true);
  const first=auto.state().updatedAt;
  fs.writeFileSync(path.join(dir,'APPUNTI','appunto.md'),'Un nuovo appunto sulla fotosintesi.');changed('rename','APPUNTI/appunto.md');changed('change','APPUNTI/appunto.md');
+ assert.equal(auto.state().indice.exists,true);assert.equal(auto.state().indice.current,false);
  await wait(()=>auto.state().phase==='ready'&&auto.state().updatedAt!==first);assert.equal(calls.length,2);assert.equal(auto.state().reused,1);
  assert(!A.rilevante('_lavorazione/rag/vettori/x.json'));assert(!A.rilevante('APPUNTI/_versioni/copia.md'));assert(!A.rilevante('APPUNTI/.temp.md'));assert(A.rilevante('MATERIALI/PDF/01.pdf'));assert(A.rilevante('APPUNTI'));
  const count=calls.length;changed('change','_lavorazione/rag/vettori/x.json');await new Promise(r=>setTimeout(r,40));assert.equal(calls.length,count);
@@ -21,6 +23,7 @@ async function wait(fn){for(let n=0;n<200;n++){if(fn())return;await new Promise(
  fs.writeFileSync(path.join(dir,'MATERIALI','bio.txt'),'Prima modifica.');changed('change','MATERIALI/bio.txt');await wait(()=>entered);
  fs.writeFileSync(path.join(dir,'MATERIALI','bio.txt'),'Seconda modifica durante il lavoro.');changed('change','MATERIALI/bio.txt');release();
  await wait(()=>auto.state().phase==='ready'&&calls.includes('Seconda modifica durante il lavoro.'));
+ assert.equal(auto.state().indice.current,true);
  const search=await R.cerca(root,'test','modifica',{runtime});assert.equal(search.indexed,2);
  await auto.pause();fs.writeFileSync(path.join(dir,'MATERIALI','bio.txt'),'Terza modifica in pausa.');changed('change','MATERIALI/bio.txt');assert.equal(auto.state().phase,'paused');auto.resume();await wait(()=>auto.state().phase==='ready'&&calls.includes('Terza modifica in pausa.'));
  fs.unlinkSync(path.join(dir,'APPUNTI','appunto.md'));changed('rename','APPUNTI/appunto.md');await wait(()=>auto.state().phase==='ready'&&auto.state().total===1);

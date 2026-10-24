@@ -46,4 +46,15 @@ require('../lib/rag-modello').installa=async(_dir,{modalita,signal,progress})=>{
   throw Error('Download simulato nella prova UI.');
 };
 global.fetch=async()=>{throw new Error('Rete disabilitata nella prova UI.');};
+// Solo la prova dell’indice crea questo marcatore nel profilo temporaneo: il resto
+// delle prove continua a usare lo stato reale del modello, compreso il download.
+const runtime=require('../lib/rag-runtime'),creaRuntime=runtime.crea;
+runtime.crea=dir=>{
+ const real=creaRuntime(dir),finto=()=>fs.existsSync(path.join(app.getPath('userData'),'rag-runtime-finto'));
+ return {...real,ready:()=>finto()||real.ready(),embed:async(text,opts)=>{
+  if(!finto())return real.embed(text,opts);
+  await new Promise(resolve=>setTimeout(resolve,100));if(opts.signal?.aborted)throw Error('Indicizzazione interrotta.');
+  return {vector:[1,...Array(767).fill(0)]};
+ }};
+};
 require('../main');

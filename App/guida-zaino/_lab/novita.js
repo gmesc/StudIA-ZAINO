@@ -17,7 +17,7 @@ async function shot(name,sel){await L.muovi(10,940);await L.pausa(600);await L.s
  await wait(`document.querySelectorAll('#zragResults article').length>0 && document.getElementById('zragCancel').hidden`);
  await shot('193-ricerca-passaggi','#studioPane');
  await L.val(`document.getElementById('zragResults').replaceChildren();document.getElementById('zragIndexOptions').open=true`);
- await shot('194-indice-dispositivo','#zragIndexOptions');
+ await L.muovi(10,940);await L.pausa(600);const indiceRect=await L.rect('#studioPane'),indiceFine=await L.rect('#zragIndexOptions');await L.scatta('194-indice-dispositivo',{clip:{x:indiceRect.x,y:indiceRect.y,width:indiceRect.w,height:indiceFine.y+indiceFine.h-indiceRect.y+8},scala:2});
  await click('#zragSettings');await L.val(`document.getElementById('zchatLocalSettings').scrollIntoView({block:'start'})`);await shot('203-impostazioni-ai-locale','#zchatLocalSettings');await click('#settingsClose');
  await L.val(`document.getElementById('zragIndexOptions').open=false;document.getElementById('zschede').open=true`);
  await wait(`document.getElementById('zschedePreset').options.length===5 && !document.getElementById('zschedeEstimate').disabled`);
