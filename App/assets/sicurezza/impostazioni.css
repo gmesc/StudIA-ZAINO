@@ -1,0 +1,10 @@
+.sicurezza-section + .sicurezza-section { margin-top:1.5rem; }
+.sicurezza-section > .set-sec-h { padding:.5em var(--tb-pad-x); color:var(--teal-strong); }
+.sicurezza-azioni { display:flex; flex-wrap:wrap; align-items:center; gap:1rem; margin:.5rem 0 1rem; }
+.sicurezza-azioni label { display:flex; align-items:center; gap:.4rem; cursor:pointer; }
+.sicurezza-azioni input { accent-color:var(--teal-strong); }
+#sicurezzaSettings .tbtn[aria-disabled="true"] { opacity:.55; }
+#sicurezzaProgresso { min-height:1.5em; overflow-wrap:anywhere; }
+#sicurezzaUltimi p { margin:.4em 0; overflow-wrap:anywhere; }
+#sicurezzaControllo { position:fixed; bottom:1rem; left:50%; transform:translateX(-50%); padding:.6rem 1rem; max-width:90vw; background:var(--panel); color:var(--ink); border:1px solid var(--line); box-shadow:var(--sh-3d); z-index:180; }
+#sicurezzaControllo[hidden] { display:none; }

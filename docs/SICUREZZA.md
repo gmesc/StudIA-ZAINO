@@ -10,6 +10,26 @@ Restano disponibili selezione del testo, navigazione tra pagine, evidenze di ZAI
 
 I collegamenti esterni possono aprire nel browser di sistema soltanto URL HTTP/HTTPS validi, senza credenziali incorporate. Altri schemi e nuove finestre interne sono bloccati. La navigazione della finestra dell'app e dei suoi frame è limitata; documenti e anteprime non possono caricare script, pagine o risorse remote.
 
+## Controlli opzionali in Impostazioni → Sicurezza
+
+qpdf e ClamAV sono due programmi separati da Electron. L’utente sceglie **Installa** e poi **Attiva controllo** per ciascuno. Le preferenze sono per dispositivo e valgono per tutti gli zaini; il download dell’embedder è indipendente. Senza attivarli restano applicati i controlli di formato, percorsi e renderer descritti in questo documento.
+
+- **qpdf 12.4.2** esegue `--check` e verifica la struttura. Non è un antivirus né ripulisce il file. L’esito 0 è ammesso; l’avviso specifico `object has offset 0`, riscontrato nei PDF CT, è ammesso con segnalazione. Altri avvisi/errori, file cifrati e controlli incompleti sono bloccati come non verificabili, senza definirli virus.
+- **ClamAV 1.5.4** esegue `clamscan` con scansione PDF e controlli sui limiti/cifratura. Ogni file deve avere un verdetto completo; una minaccia, un errore, un timeout o un limite superato impedisce l’uso del PDF. Non si spostano o cancellano gli originali.
+- **Firme**: l’installazione di ClamAV avvia `freshclam`, che scarica e verifica i database ufficiali. `sigtool` verifica i database prima di registrarli come pronti. ClamAV non si può attivare senza firme verificate. Se attivo, l’app verifica all’avvio e ogni sei ore se è passato almeno un giorno dall’ultimo aggiornamento; resta disponibile **Aggiorna firme**. Dopo sette giorni senza verifica valida il controllo blocca i PDF finché l’aggiornamento riesce. Anche il motore verifica l’età dei database. Nessun documento viene caricato su server per la scansione.
+
+L’installazione è privata in `userData/sicurezza/`: su macOS nei dati dell’app in `~/Library/Application Support/`, su Windows nei dati dell’app dell’utente. I pacchetti inclusi sono verificati con SHA-256, estratti senza collegamenti e sostituiti tramite una directory temporanea. Eseguibili, librerie, certificati e ricevuta vengono ricontrollati prima dell’uso. Non serve Homebrew, non viene eseguito `sudo` e non si registra un servizio di sistema. I motori si avviano soltanto per il controllo; `freshclam` parte per installazione/aggiornamento. Si avviano senza shell e con ambiente limitato.
+
+L’importazione di una cartella prepara una sola scansione antivirus per il lotto. I parser ricevono copie private; la copia importata e i byte destinati a OCR/estrazione sono confrontati con quelli approvati. Il visualizzatore riceve un’istantanea privata del PDF verificato, eliminata alla chiusura. I controlli precedono anche l’apertura di PDF già presenti, modificati o aggiunti fuori dall’app e il riuso della cache di testo. Gli esiti positivi si riusano in memoria nella sessione soltanto con gli stessi byte, impostazioni, motori e firme; nessuna cache positiva permanente permette di saltare la verifica dopo un riavvio. Il riepilogo dei controlli è visibile nella sezione Sicurezza per la sessione corrente.
+
+Limiti attuali: 200 MB per PDF, 1 GB e 1000 PDF per lotto; qpdf ha 30 secondi per file, ClamAV limiti di scansione e un timeout complessivo fino a 10 minuti per lotto. Le copie approvate per il visualizzatore hanno un budget complessivo di 2 GB nella sessione: raggiungerlo richiede la chiusura e riapertura dell’app, che libera i temporanei, senza eliminare le fonti. Le scansioni sono asincrone e serializzate, così non caricano più copie delle firme contemporaneamente. Un file che cambia durante il controllo o prima della copia viene rifiutato e può essere riprovato.
+
+### Preparazione e distribuzione dei componenti
+
+`bin/prepara-motori-sicurezza.js` prepara release ufficiali fissate per versione e SHA-256. I pacchetti vengono inclusi come risorse esterne all’ASAR; i payload compressi mantengono l’impronta anche durante la firma del contenitore Electron. `bin/verifica-motori-sicurezza.js` blocca la build se mancano risorse valide per il target. Le prove native di questa integrazione sono state eseguite su macOS arm64; Mac Intel e Windows richiedono ancora collaudo sui sistemi corrispondenti.
+
+qpdf conserva la licenza Apache-2.0; ClamAV conserva GPL-2.0 e viene eseguito come programma autonomo, senza collegare `libclamav` a Electron. Il pacchetto conserva testi di licenza, avvisi, archivi dei sorgenti core, vendor Rust e ricetta di preparazione. La licenza del codice ZAINO resta GPL-3.0-or-later. Prima di una distribuzione pubblica dei binari occorre completare l’inventario e la disponibilità dei sorgenti delle dipendenze native incorporate dalle release upstream; gli archivi core inclusi non costituiscono da soli una verifica completa di questi obblighi.
+
 ## Renderer isolato e richieste al main
 
 La finestra principale usa `sandbox:true`, `contextIsolation:true`, `nodeIntegration:false` e `webSecurity:true`; i webview sono disabilitati. Il preload non importa `fs`, `path` o librerie applicative: espone comandi nominati attraverso Electron. Anche i salvataggi sincroni di appunti, evidenze e album passano dal main, conservando il salvataggio alla chiusura.
@@ -37,6 +57,8 @@ La policy applicativa è in `lib/sicurezza-app.js`, il controllo dei percorsi e 
 | Indice locale e schede | Fonti dello zaino, modello locale | `_fonti-ai.json` e `_lavorazione/rag/`; copia negli appunti solo a comando |
 | Ripasso | Fonti, schede e ripassi dello zaino | `RIPASSO/`, cache/inventario necessari e costi delle chiamate AI |
 | Download embedder | Risorse del modello | Cartella `rag-model/` nei dati locali dell'app |
+| Installazione/aggiornamento sicurezza | Pacchetti inclusi, motori e firme locali | Solo `sicurezza/` nei dati locali dell’app e temporanei privati |
+| Scansione PDF | Sorgenti già autorizzate, motori e firme locali | Copie temporanee private; vietata sugli originali e sui materiali dello zaino |
 | Preferenze/profili | Preferenze pertinenti | `.studia/` del vault; configurazione e chiavi nei dati locali dell'app tramite funzioni dedicate |
 | Creazione/rinomina/rimozione zaini | Elenco degli zaini | `Zaini/`, soltanto attraverso quei comandi espliciti |
 | Esportazione | Contenuto da esportare e risorse dell'app | File scelto dal dialogo nativo e temporanei privati |
@@ -58,9 +80,9 @@ Le esportazioni usano il dialogo nativo per scegliere la destinazione. Il render
 
 ## Limiti e manutenzione
 
-Queste protezioni non sono un antivirus e non certificano che un PDF, un'immagine o un video siano innocui. Un formato valido può sfruttare un difetto del parser o consumare risorse. Non si analizzano o «ripuliscono» tutte le possibili strutture malevole del documento.
+I controlli di base e qpdf non sono antivirus. Anche attivando ClamAV non si certifica che un PDF sia innocuo: le firme possono non riconoscere una minaccia nuova. Un formato valido può sfruttare un difetto del parser o consumare risorse. Non si analizzano o «ripuliscono» tutte le possibili strutture malevole del documento. I motori opzionali di questa versione riguardano i PDF; immagini, audio e video mantengono i controlli di formato già esistenti.
 
-La sandbox del renderer è una protezione di Electron/Chromium. La policy di lettura e scrittura del main è invece un confine applicativo: il processo principale, il worker Node per estrarre testo PDF e i convertitori nativi HEIC/OCR non sono sandbox del sistema operativo. L'app continua a operare con l'account dell'utente per i servizi che le servono.
+La sandbox del renderer è una protezione di Electron/Chromium. La policy di lettura e scrittura del main è invece un confine applicativo: il processo principale, il worker Node per estrarre testo PDF, i convertitori nativi HEIC/OCR e i processi qpdf/ClamAV non sono sandbox del sistema operativo. Ai motori vengono passate soltanto copie private e percorsi dedicati, ma questo non equivale a una limitazione OS delle loro capacità. L'app continua a operare con l'account dell'utente per i servizi che le servono.
 
 Controlli dei descrittori, identità e percorsi riducono le sostituzioni dei file, ma non eliminano tutte le corse con altre applicazioni che modificano contemporaneamente directory o file (TOCTOU). Non proteggono da un sistema operativo o da un account già compromesso. Limiti di tempo/memoria dell'estrazione contengono alcuni blocchi, senza dimostrare l'assenza di vulnerabilità.
 

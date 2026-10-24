@@ -11,13 +11,15 @@
     "notarizza": "bash bin/notarizza-mac.sh",
     "dist:win": "electron-builder --win --x64",
     "pacchetto": "bash bin/pacchetto-mac.sh",
-    "test": "node test/roundtrip.js && node test/mappe.js && node test/modifica.js && node test/evidenze.js && node test/evidenze-appunti.js && node test/strati.js && node test/grafo-focus.js && node test/disegna-fonti.js && node test/appunti-rinomina.js && node test/appunti-zaino.js && node test/genera-concetti.js && node test/figure.js && node test/misura-immagini.js && node test/mappa-immagini.js && node test/album.js && node test/album-catalogo.js && node test/ritentativi.js && node test/costi.js && node test/zaini.js && node test/evidenze-pdf.js && node test/lettura.js && node test/fonti.js && node test/sidebar-fonti.js && node test/ocrpdf.js && node test/ascolto.js && node test/media.js && node test/postille.js && node test/player.js && node test/riga.js && node test/note.js && node test/appunti-md.js && node test/scrivibile.js && node test/ricerca.js && node test/tasti.js && node test/tasti-lettura.js && node test/stampa-foglio.js && node test/anteprima.js && node test/rimandi.js && node test/identita.js && node test/ripasso.js && node test/zoom-fonte.js && node test/pagina-fonte.js && node test/attesa-fonte.js && node test/stanza.js && node test/righello.js && node test/crediti.js && node test/atlante.js && node test/foto.js && node test/heic.js && node test/importa-testi.js && node test/emoji.js && node test/ambiente.js && node test/onboarding-avvio.js && node test/zaino-only.js && node test/chat-profili.js && node test/chat.js && node test/chat-provider.js && node test/chat-ipc.js && node test/chat-ui.js && node test/split-materiali.js && node test/appunti-destinazione.js && node test/gruppi-fonti.js && node test/cartelle-fonti.js && node test/fonti-ai.js && node test/chat-fonti.js && node test/risposte-ai.js && node test/rag.js && node test/rag-automatico.js && node test/studio-zaino.js && node test/rag-modello.js && node test/permessi-disco.js && node test/formati-sicuri.js && node test/preload-sicuro.js && node test/sicurezza-app.js",
+    "test": "node test/roundtrip.js && node test/mappe.js && node test/modifica.js && node test/evidenze.js && node test/evidenze-appunti.js && node test/strati.js && node test/grafo-focus.js && node test/disegna-fonti.js && node test/appunti-rinomina.js && node test/appunti-zaino.js && node test/genera-concetti.js && node test/figure.js && node test/misura-immagini.js && node test/mappa-immagini.js && node test/album.js && node test/album-catalogo.js && node test/ritentativi.js && node test/costi.js && node test/zaini.js && node test/evidenze-pdf.js && node test/lettura.js && node test/fonti.js && node test/sidebar-fonti.js && node test/ocrpdf.js && node test/ascolto.js && node test/media.js && node test/postille.js && node test/player.js && node test/riga.js && node test/note.js && node test/appunti-md.js && node test/scrivibile.js && node test/ricerca.js && node test/tasti.js && node test/tasti-lettura.js && node test/stampa-foglio.js && node test/anteprima.js && node test/rimandi.js && node test/identita.js && node test/ripasso.js && node test/zoom-fonte.js && node test/pagina-fonte.js && node test/attesa-fonte.js && node test/stanza.js && node test/righello.js && node test/crediti.js && node test/atlante.js && node test/foto.js && node test/heic.js && node test/importa-testi.js && node test/emoji.js && node test/ambiente.js && node test/onboarding-avvio.js && node test/zaino-only.js && node test/chat-profili.js && node test/chat.js && node test/chat-provider.js && node test/chat-ipc.js && node test/chat-ui.js && node test/split-materiali.js && node test/appunti-destinazione.js && node test/gruppi-fonti.js && node test/cartelle-fonti.js && node test/fonti-ai.js && node test/chat-fonti.js && node test/risposte-ai.js && node test/rag.js && node test/rag-automatico.js && node test/studio-zaino.js && node test/rag-modello.js && node test/permessi-disco.js && node test/formati-sicuri.js && node test/preload-sicuro.js && node test/sicurezza-app.js && node test/sicurezza-installazione.js && node test/sicurezza-pdf.js && node test/sicurezza-servizio.js",
     "icona": "electron bin/icona.js",
     "emoji": "electron bin/emoji.js",
     "crediti": "node lib/crediti.js",
     "test:ui": "bash bin/prova-zaino.sh",
     "preload": "node bin/preload.js",
-    "prestart": "node bin/preload.js"
+    "prestart": "node bin/preload.js",
+    "sicurezza:prepara": "node bin/prepara-motori-sicurezza.js",
+    "sicurezza:verifica": "node bin/prepara-motori-sicurezza.js --verifica"
   },
   "devDependencies": {
     "electron": "^39.0.0",
@@ -62,7 +64,13 @@
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
       "notarize": false,
-      "artifactName": "StudIA-ZAINO-${version}-${arch}.${ext}"
+      "artifactName": "StudIA-ZAINO-${version}-${arch}.${ext}",
+      "extraResources": [
+        {
+          "from": "build/sicurezza-pacchetti/darwin-${arch}",
+          "to": "sicurezza-pacchetti/darwin-${arch}"
+        }
+      ]
     },
     "dmg": {
       "title": "StudIA - ZAINO ${version}"
@@ -77,7 +85,13 @@
         }
       ],
       "icon": "build/icon.ico",
-      "artifactName": "StudIA-ZAINO-${version}-setup-x64.${ext}"
+      "artifactName": "StudIA-ZAINO-${version}-setup-x64.${ext}",
+      "extraResources": [
+        {
+          "from": "build/sicurezza-pacchetti/win32-${arch}",
+          "to": "sicurezza-pacchetti/win32-${arch}"
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -85,7 +99,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "shortcutName": "StudIA - ZAINO"
-    }
+    },
+    "beforePack": "bin/verifica-motori-sicurezza.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",

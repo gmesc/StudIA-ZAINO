@@ -65,3 +65,7 @@ docs/mockup-chat/
 sito/
 bin/sito.js
 bin/hooks/
+
+# Componenti opzionali verificati, rigenerati dalle release ufficiali.
+build/sicurezza-pacchetti/
+build/sicurezza-download/

@@ -57,6 +57,13 @@ const concessioni={ha:(id,file)=>{
 const appFile=path.join(__dirname,'App','StudIA.html');
 require('./lib/sicurezza-app').registra({ipcMain,contesto:()=>({vault:readCfg().vaultPath,appDir:__dirname,risorse:process.resourcesPath,userData:app.getPath('userData'),temporanei:temporanei()}),finestra:()=>win,appFile:pathToFileURL(appFile).href,concessioni});
 require('./lib/zaino-only').proteggiIpc(ipcMain,()=>readCfg().vaultPath);
+const sicurezzaPdf=require('./lib/sicurezza-servizio').crea({userData:app.getPath('userData'),risorse:app.isPackaged?process.resourcesPath:path.join(__dirname,'build'),tempRoot:temporanei(),readCfg,writeCfg,invia:d=>{if(win&&!win.isDestroyed())win.webContents.send('sicurezza:progress',d);}});
+require('./lib/sicurezza-accesso').configura(sicurezzaPdf);
+ipcMain.handle('sicurezza:stato',()=>sicurezzaPdf.stato());
+ipcMain.handle('sicurezza:installa',(_e,{id}={})=>sicurezzaPdf.installa(id));
+ipcMain.handle('sicurezza:attiva',(_e,{id,attivo}={})=>sicurezzaPdf.attiva(id,attivo));
+ipcMain.handle('sicurezza:firme',()=>sicurezzaPdf.aggiornaFirme());
+app.whenReady().then(()=>{sicurezzaPdf.aggiornaAutomaticamente();const timer=setInterval(()=>sicurezzaPdf.aggiornaAutomaticamente(),6*60*60*1000);timer.unref();});
 ipcMain.on('file:selezionato',(e,{percorso}={})=>{
   try {
     if(typeof percorso!=='string'||!path.isAbsolute(percorso))throw Error('Selezione non valida.');
@@ -166,7 +173,7 @@ function createWindow() {
       nodeIntegration:false, sandbox:true, webSecurity:true, webviewTag:false, backgroundThrottling:false }
   });
   const finestre=require('./lib/sicurezza-finestre');
-  finestre.installaSessione(win.webContents.session,{appDir:path.join(__dirname,'App'),vaultDir:()=>readCfg().vaultPath,temporanei});
+  finestre.installaSessione(win.webContents.session,{appDir:path.join(__dirname,'App'),vaultDir:()=>readCfg().vaultPath,temporanei,verificaPdf:file=>sicurezzaPdf.urlVerificata(file)});
   finestre.proteggiFinestra(win,{file:appFile,shell});
   win.loadFile(appFile);
 }
@@ -499,8 +506,16 @@ ipcMain.handle('media:usi', (e, { corso, file } = {}) => mediaLib.usi(vaultDir()
  * modelli. Qui si scrive soltanto, e si dichiara chi ha letto (`motore`). */
 const fontiLib = require('./lib/fonti');
 const ripassoLib = require('./lib/ripasso');
-ipcMain.handle('fonti:importa', (e, { corso, percorsi } = {}) =>
-  fontiLib.importa(vaultDir(), corso, percorsi));
+ipcMain.handle('fonti:importa', async (e, { corso, percorsi } = {}) => {
+  const s=fontiLib.selezione(percorsi),pdf=s.files.filter(f=>/\.pdf$/i.test(f));
+  const r=await sicurezzaPdf.controlla(pdf),bloccati=new Map(r.esiti.filter(e=>!e.ok).map(e=>[e.percorso,e.error]));
+  s.files=s.files.filter(f=>!bloccati.has(f));
+  for(const [file,motivo] of bloccati)s.scartati.push({file:path.basename(file),motivo});
+  const risultato=fontiLib.importa(vaultDir(),corso,[],undefined,s);
+  const avvisi=r.esiti.filter(e=>e.ok&&e.avvisi?.length).length;
+  if(avvisi)risultato.avvisi=[...(risultato.avvisi||[]),avvisi+' PDF presentano avvisi strutturali. Dettagli in Impostazioni → Sicurezza.'];
+  return risultato;
+});
 /**
  * Togliere un documento dallo zaino.
  *

@@ -65,4 +65,5 @@ runtime.crea=dir=>{
   return {vector:[1,...Array(767).fill(0)]};
  }};
 };
+require('./sicurezza-adattatore');
 require('../main');

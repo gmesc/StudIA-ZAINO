@@ -1552,7 +1552,7 @@
      anche loro. Il teal è il colore che in tutta l'app vuol dire «questo», e la
      riga sotto lo ripete sottile: due segni deboli invece di uno forte, perché
      il pannello non diventi una bandiera. */
-  .bhead, .znav .zs-tit, .zchat-ai-section > .set-sec-h, :is(#searchRes, #albumCercaRisultati) .sr-lesson{
+  .bhead, .znav .zs-tit, .zchat-ai-section > .set-sec-h, .sicurezza-section > .set-sec-h, :is(#searchRes, #albumCercaRisultati) .sr-lesson{
     --testata-bg:color-mix(in srgb, var(--teal) 10%, var(--panel));
     background:var(--testata-bg); }
   .blocco[data-attivo="1"] > .bhead{ --testata-bg:color-mix(in srgb, var(--teal) 23.958%, var(--panel)); }
@@ -3098,6 +3098,7 @@
 #modoBtn img{animation:none!important;}
 #modoBtn::after{display:none!important;}
 </style>
+<link rel="stylesheet" href="assets/sicurezza/impostazioni.css">
 </head>
 <body>
 <a class="skip" href="#content">Vai al contenuto</a>
@@ -16721,7 +16722,7 @@ try{
 
     /* --- 1. schede --- */
     function showTab(name){
-      if (!['utente','zaino','ai'].includes(name)) name='utente';
+      if (!['utente','zaino','ai','sicurezza'].includes(name)) name='utente';
       modal.querySelectorAll('.set-tab').forEach(function(t){ t.setAttribute('aria-selected', String(t.dataset.tab===name)); });
       modal.querySelectorAll('.set-pane').forEach(function(p){ p.hidden = (p.dataset.pane!==name); });
       try{ localStorage.setItem('studia.settingsTab', name); }catch(e){}
@@ -22415,6 +22416,7 @@ window.addEventListener('keydown', function(e){
       <button class="set-tab" role="tab" data-tab="corsi" aria-selected="false">Corsi</button>
       <button class="set-tab" role="tab" data-tab="zaino" aria-selected="false">Zaino</button>
       <button class="set-tab" role="tab" data-tab="ai" aria-selected="false">AI</button>
+      <button class="set-tab" role="tab" data-tab="sicurezza" aria-selected="false">Sicurezza</button>
     </div>
     <div class="set-body tbar-ctl">
 
@@ -22690,6 +22692,8 @@ window.addEventListener('keydown', function(e){
         <div id="setZaini" class="setzaini"></div>
       </section>
 
+      <section class="set-pane" data-pane="sicurezza" id="sicurezzaSettings" hidden></section>
+
       <!-- ============ AI ============ -->
       <section class="set-pane" data-pane="ai" hidden>
         <div class="set-sec-h">Chiavi API personali</div>
@@ -22764,5 +22768,6 @@ window.addEventListener('keydown', function(e){
 <script src="assets/chat/studio.js"></script>
 <script src="assets/chat/citazioni.js"></script>
 <script src="assets/chat/ui.js"></script>
+<script src="assets/sicurezza/impostazioni.js"></script>
 </body>
 </html>

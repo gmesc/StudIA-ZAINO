@@ -41,6 +41,13 @@ function verificaFile(file) {
 }
 const vaultApi = {
   hasElectron: true,
+  sicurezza: {
+    stato:()=>ipcRenderer.invoke('sicurezza:stato'),
+    installa:id=>ipcRenderer.invoke('sicurezza:installa',{id}),
+    attiva:(id,attivo)=>ipcRenderer.invoke('sicurezza:attiva',{id,attivo}),
+    aggiornaFirme:()=>ipcRenderer.invoke('sicurezza:firme'),
+    onProgress:cb=>{const h=(_e,d)=>cb(d);ipcRenderer.on('sicurezza:progress',h);return ()=>ipcRenderer.removeListener('sicurezza:progress',h);}
+  },
   path: vaultPath,
   lessons: [],
   courses: [],

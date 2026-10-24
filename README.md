@@ -87,7 +87,9 @@ I gruppi già esistenti vengono organizzati sul disco al primo salvataggio dell�
 
 L’app ammette solo i formati previsti e controlla il contenuto prima di importarli e aprirli. PDF senza scripting, renderer isolato e permessi per singola operazione proteggono l’accesso al disco: gli originali importati restano in sola lettura; le esportazioni richiedono una destinazione scelta nel dialogo nativo. Eseguibili, script, HTML, SVG e archivi non si importano come materiali.
 
-Questi controlli non sostituiscono un antivirus e non garantiscono l’assenza di vulnerabilità nei decoder. La [documentazione di sicurezza](docs/SICUREZZA.md) descrive i privilegi, i formati e i limiti effettivi.
+In **Impostazioni → Sicurezza** puoi installare e attivare separatamente **qpdf** (controllo della struttura PDF) e **ClamAV** (antivirus). I componenti sono inclusi nel pacchetto dell’app e vengono installati nei suoi dati locali, senza Homebrew, privilegi di amministratore o servizi permanenti. ClamAV scarica le firme prima di poter essere attivato; la stessa sezione ne mostra lo stato e permette di aggiornarle. Nessun PDF viene inviato online per questi controlli.
+
+I controlli attivi precedono importazione, apertura, OCR ed estrazione per chat/ricerca, anche per PDF aggiunti o modificati fuori dall’app. La scansione di una cartella usa un lotto antivirus; i file invariati già approvati vengono riutilizzati nella sessione. Le rilevazioni e i controlli incompleti bloccano il file e mostrano il motivo. Gli avvisi strutturali riconosciuti come recuperabili sono segnalati separatamente. La [documentazione di sicurezza](docs/SICUREZZA.md) descrive privilegi, limiti e manutenzione: nessun motore garantisce l’assenza di ogni minaccia.
 
 ## Verifica
 
@@ -101,6 +103,8 @@ Le prove includono un PDF reale, aggiornamento del contesto, persistenza e riape
 ## Pacchetto
 
 `npm run dist:mac` crea il pacchetto macOS; `npm run dist:win` quello Windows. Identità, nome e nomi degli installer sono propri del fork. L'eventuale firma/notarizzazione del progetto originale non si trasferisce al fork.
+
+Prima del pacchetto prepara i componenti di sicurezza: `npm run sicurezza:prepara -- --piattaforma darwin --arch arm64` (oppure `darwin/x64`, `win32/x64`). Il preparatore scarica release ufficiali con SHA-256 fissati e conserva licenze, sorgenti core e ricetta; le risorse generate in `build/sicurezza-pacchetti/` sono ignorate da Git. `npm run sicurezza:verifica` controlla il target locale; la build verifica quello richiesto e si ferma se manca o è alterato. L’estrazione e preparazione dei pacchetti macOS richiede macOS. Per una nuova distribuzione pubblica va completata anche la verifica dei sorgenti delle dipendenze native incorporate nelle release upstream, descritta nella documentazione di sicurezza.
 
 StudIA - ZAINO è **software libero**, distribuito con licenza **GNU General Public License v3 o successiva** (`GPL-3.0-or-later`): il testo integrale è nel file [`LICENSE`](LICENSE). Puoi usarlo, studiarlo, modificarlo e ridistribuirlo; chi riceve una copia, anche modificata, deve poter avere il codice sorgente con la stessa libertà.
 
