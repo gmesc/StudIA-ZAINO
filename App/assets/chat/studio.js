@@ -17,11 +17,12 @@
   const host=document.getElementById('studioPane');if(!host||host.children.length)return;
   const state={zaino:null,scope:{mode:'all',sourceIds:[],wikipedia:false},sources:[]},api=window.vault.rag;
   host.innerHTML=`<div class="tbar" id="zragToolbar" role="toolbar" aria-label="Ricerca e fonti"><span class="tbsep"></span><button class="tbtn" id="zragIndex" type="button" disabled>Crea indice</button><span class="tbsep"></span><button class="tbtn" id="zragOpenReview" type="button" title="Apre lo split Ripasso: scegli le fonti e allenati con domande e risposte.">Apri Ripasso</button></div><div id="zragScopeHost"></div>
-   <div id="zstudio" class="zstudio zstudio-banco"><h2>Cerca e studia le fonti</h2>
-   <p class="zchat-hint">Cerca nei documenti e negli appunti selezionati, usando l’indice locale. Le schede generate si consultano nella sezione Schede; sintesi e domande usano il provider AI configurato.</p>
+   <div id="zstudio" class="zstudio zstudio-banco"><details id="zragSearch" class="zstudio-section"><summary>Cerca nei materiali</summary>
+   <p class="zchat-hint">Trova passaggi nei documenti e negli appunti selezionati. I risultati rimandano alle fonti originali.</p>
    <form id="zragForm" class="zstudio-actions"><label class="zchat-sr" for="zragQuery">Cerca nei materiali per parole o significato</label><input class="ctl-input" id="zragQuery" placeholder="Che cosa vuoi trovare?" maxlength="12000"><button class="tbtn acc" type="submit">Cerca</button></form>
+   <div id="zragResults" class="zstudio-results"></div></details>
    <div class="zstudio-index-state"><p id="zragAutoStatus" role="status" class="zchat-hint"></p><progress id="zragAutoProgress" aria-label="Avanzamento indicizzazione automatica" hidden></progress></div>
-   <details id="zragIndexOptions" class="zstudio-section"><summary>Come funziona l’indice locale</summary><p class="zchat-hint">L’indice è un archivio tecnico usato dalla ricerca: vedi i risultati e i rimandi alle fonti, non un documento da leggere. Resta salvato sul disco nella cartella dello zaino <code>_lavorazione/rag</code>, anche dopo la chiusura dell’app. Se lo zaino è sincronizzato, anche l’indice può esserlo.</p><p class="zchat-hint">Si aggiorna automaticamente dopo aggiunte e modifiche salvate finché lo zaino è aperto. Il pulsante nella barra superiore crea l’indice se manca, aggiorna i passaggi modificati oppure ricostruisce un indice già aggiornato. Appunti, schede e ripassi sono conservati. L’indice prepara tutte le fonti leggibili; la selezione Fonti limita solo la ricerca.</p>
+   <button class="tbtn" id="zragCancel" type="button" hidden>Interrompi</button><p id="zragStatus" role="status" class="zchat-hint"></p>
    <section id="zragDownloads" hidden><p class="set-note">EmbeddingGemma 2 è un modello di embedding multilingue. La versione ONNX viene eseguita localmente; scegli i componenti da scaricare.</p>
    <p class="zrag-modello-info"><strong id="zragModelName">EmbeddingGemma 2 · ONNX</strong> · <a id="zragModelInfo" href="https://huggingface.co/onnx-community/embeddinggemma-2-ONNX" target="_blank" rel="noopener noreferrer">Informazioni su Hugging Face ↗</a></p>
    <div class="zrag-modelli">
@@ -30,10 +31,9 @@
     <article data-modello="video"><div><strong>video</strong><p class="zchat-hint">Componenti per i fotogrammi video, inclusa la parte testuale.</p><p class="zchat-hint" id="zragModelSize-video"></p></div><button class="tbtn" id="zragInstallVideo" data-download="video" type="button" aria-label="Scarica EmbeddingGemma 2 ONNX: Video">Scarica</button></article>
    </div>
    <p class="zchat-hint">Visione e Video condividono i file: scaricandone uno, sono disponibili entrambi. Questi download preparano i componenti; la ricerca nei contenuti visivi non è ancora attiva.</p>
-   <button class="tbtn" id="zragDownloadCancel" type="button" hidden>Interrompi download</button><p id="zragDownloadStatus" class="set-note" role="status" aria-live="polite"></p></section>
-   <div class="tbar zstudio-actions"><button class="tbtn" id="zragSettings" type="button">AI locale…</button></div></details>
-   <button class="tbtn" id="zragCancel" type="button" hidden>Interrompi</button><p id="zragStatus" role="status" class="zchat-hint"></p>
-   <div id="zragResults" class="zstudio-results"></div></div>`;
+   <button class="tbtn" id="zragDownloadCancel" type="button" hidden>Interrompi download</button><p id="zragDownloadStatus" class="set-note" role="status" aria-live="polite"></p>
+   <details id="zragIndexOptions" class="zstudio-section"><summary>Come funziona l’indice locale</summary><p class="zchat-hint">L’indice è un archivio tecnico usato dalla ricerca: vedi i risultati e i rimandi alle fonti, non un documento da leggere. Resta salvato sul disco nella cartella dello zaino <code>_lavorazione/rag</code>, anche dopo la chiusura dell’app. Se lo zaino è sincronizzato, anche l’indice può esserlo.</p><p class="zchat-hint">Si aggiorna automaticamente dopo aggiunte e modifiche salvate finché lo zaino è aperto. Il pulsante nella barra superiore di Cerca e studia crea l’indice se manca, aggiorna i passaggi modificati oppure ricostruisce un indice già aggiornato. Appunti, schede e ripassi sono conservati. L’indice prepara tutte le fonti leggibili; la selezione Fonti limita solo la ricerca.</p></details>
+   </section></div>`;
   const box=document.getElementById('zstudio'),$=id=>document.getElementById(id),el=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;};
   let busy=false,downloadBusy=false,epoch=0,study,ready=false,auto=null;
   const downloads=$('zragDownloads'),nomi={testo:'text',vision:'vision',video:'video'};
@@ -92,9 +92,9 @@
    finally{clearInterval(poll);downloadBusy=false;$('zragDownloadCancel').hidden=true;await stato().catch(()=>{});}
   };});
   $('zragDownloadCancel').onclick=()=>call('cancel','download').catch(e=>status(e.message,true,'zragDownloadStatus'));
-  $('zragSettings').onclick=()=>{$('settingsBtn').click();document.querySelector('.set-tab[data-tab="ai"]').click();$('zchatLocalSettings')?.scrollIntoView({block:'start'});};
+  function impostazioniLocali(){$('settingsBtn').click();document.querySelector('.set-tab[data-tab="ai"]').click();$('zchatLocalSettings')?.scrollIntoView({block:'start'});}
   $('zragIndex').onclick=()=>{
-   const a=indiceButton();if(a.disabled)return;if(a.action==='settings')return $('zragSettings').click();
+   const a=indiceButton();if(a.disabled)return;if(a.action==='settings')return impostazioniLocali();
    action(async current=>{
     if(!window.noteFlush())throw Error('Salva prima gli appunti aperti.');
     if(a.action==='reset')await call('reset',state.zaino);

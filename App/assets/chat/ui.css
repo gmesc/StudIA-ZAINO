@@ -189,6 +189,7 @@
 .zstudio summary { font-size:calc(var(--fs) * .82); cursor:pointer; }
 .zstudio-section>summary { padding:.5em var(--tb-pad-x); background:color-mix(in srgb,var(--teal) 16%,var(--panel)); color:var(--teal-strong); font-weight:var(--tb-peso); }
 .zstudio-section>summary:hover { background:color-mix(in srgb,var(--teal) 26%,var(--panel)); }
+.zstudio-section>h2 { padding:.5em var(--tb-pad-x); background:color-mix(in srgb,var(--teal) 16%,var(--panel)); color:var(--teal-strong); }
 .zstudio-index-state progress { display:block; width:100%; height:.4rem; accent-color:var(--teal-strong); margin:.4rem 0; }
 .zstudio-index-state .zchat-hint { margin:.5em 0; }
 .zstudio-card-text :is(ul,ol) { padding-inline-start:2em; margin-block:.6em; }
@@ -221,3 +222,4 @@
 .zchat-ai-section[hidden],#zchatInfomaniak[hidden],#zragDownloads[hidden],#zragDownloads [hidden] { display:none!important; }
 #zragDownloads .zchat-hint { margin:.2rem 0; }
 #zragDownloads > .set-note { line-height:1.6; }
+#zragIndexOptions code { font-family:ui-monospace,SFMono-Regular,Menlo,var(--emoji-font),monospace; }

@@ -8,9 +8,12 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
  await c.val(`window.vault.chat.setKey({provider:'openai',value:'chiave-finta-della-prova'})`);await c.val(`window.vault.chat.saveSettings({provider:'openai',model:'modello-locale-di-prova'})`);
  await c.val('location.reload()');await c.pausa(800);await c.collega();await wait(`!!document.getElementById('zstudio')`);
- await c.val(`bancoMostra('studio')`);await wait(`bancoVisibile('studio')`);assert.equal(await c.val(`!!document.querySelector('#zchatWindow #zstudio')`),false);await set('zragQuery','energia');await c.val(`document.getElementById('zragForm').requestSubmit()`);
+ assert.equal(await c.val(`!!document.querySelector('#studioPane #zragIndexOptions')`),false,'La spiegazione dell’indice vive solo in AI locale');
+ assert.equal(await c.val(`document.getElementById('zschede').tagName`),'SECTION','Le schede sono la superficie principale sempre visibile');
+ assert(await c.val(`document.getElementById('zstudio').firstElementChild.id==='zschede' && !document.getElementById('zschedeRead')`));
+ await c.val(`bancoMostra('studio');document.getElementById('zragSearch').open=true`);await wait(`bancoVisibile('studio')`);assert.equal(await c.val(`!!document.querySelector('#zchatWindow #zstudio')`),false);await set('zragQuery','energia');await c.val(`document.getElementById('zragForm').requestSubmit()`);
  await wait(`document.querySelectorAll('#zragResults article').length>0`);assert(/Ricerca (lessicale|ibrida)/.test(await c.val(`document.getElementById('zragStatus').textContent`)));
- await c.val(`document.getElementById('zschede').open=true`);await wait(`document.getElementById('zschedePreset').options.length===5`);
+ await wait(`document.getElementById('zschedePreset').options.length===5`);await click('#zschedeNewButton');assert.equal(await c.val(`document.getElementById('zschedeNew').open`),true);
  await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden`);assert((await c.val(`document.getElementById('zschedeEstimateText').textContent`)).includes('token'));
  await click('#zschedeGenerate');await wait(`document.querySelectorAll('#zschedeResult article').length===1`);
  assert.equal(await c.val(`document.querySelector('#zschedeResult strong').textContent`),'Energia cellulare');
@@ -18,8 +21,19 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await set('zschedeFilter','inesistente');assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),0);await set('zschedeFilter','Sintesi');
  await c.val(`document.getElementById('zschedeResult').replaceChildren()`);await click('#zschedeCollection button');await wait(`!!document.querySelector('#zschedeResult article')`);
  assert.deepEqual(await c.val(`[...document.querySelectorAll('#zschedeResult .zstudio-card-text strong')].map(e=>e.textContent)`),['Concetti:','Prerequisiti:','Esempi:']);
+ // Il raccoglitore resta generale anche quando la ricerca ammette una sola fonte.
+ const firstCard=(await c.val(`window.vault.studio.cards('biologia')`)).cards[0],other=(await c.val(`window.vault.chat.sources('biologia')`)).sources.find(s=>s.kind==='appunto'&&s.id!==firstCard.sourceId);assert(other);
+ await click('#zschedeNewButton');await set('zschedeSource',other.id);await set('zschedePreset','concetti');await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);await click('#zschedeGenerate');
+ await wait(`document.getElementById('zschedeCollectionStatus').textContent.includes('Schede salvate: 2') && !document.getElementById('zschedeRefresh').disabled`);
+ await set('zschedeFilter','');assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),2);
+ await click('#zragScopeButton');await click('#zragScope input');await click('#zragScope [data-source-id="'+other.id+'"]');await click('#zragScopeButton');
+ await wait(`document.getElementById('zschedeSource').options.length===1`);assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),2);
+ await set('zschedeFilter',firstCard.file);assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),1);
+ const requests=path.join(path.dirname(vault),'dati/chat-requests.jsonl'),sent=fs.readFileSync(requests,'utf8');
+ await click('#zschedeCollection .zstudio-card-open');await wait(`!!document.querySelector('#zschedeResult article') && !document.getElementById('zschedeRefresh').disabled`);assert.equal(fs.readFileSync(requests,'utf8'),sent,'Aprire una scheda salvata non chiama il provider');
+ await click('#zragScopeButton');await click('#zragScope input');await click('#zragScopeButton');await wait(`document.getElementById('zschedeSource').options.length>1`);
  // Una modifica esterna aggiorna il raccoglitore aperto; la stima non rigenera.
- const cached=(await c.val(`window.vault.studio.cards('biologia')`)).cards[0];
+ const cached=(await c.val(`window.vault.studio.cards('biologia')`)).cards.find(c=>c.preset==='sintesi');
  const sourceFile=path.join(vault,'Zaini/biologia',cached.file),original=fs.readFileSync(sourceFile),cacheFile=path.join(vault,'Zaini/biologia/_lavorazione/rag/schede',cached.sourceId+'-'+cached.preset+'.json'),before=fs.readFileSync(cacheFile,'utf8');
  try{
   fs.appendFileSync(sourceFile,'\nNuovo paragrafo di prova: energia conservata nei legami chimici.\n');
@@ -43,7 +57,7 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  assert.equal(await c.val(`document.getElementById('zragOpenReview').textContent`),'Apri Ripasso');
  for(const theme of ['chiaro','scuro']){
   await c.val(`document.documentElement.dataset.theme=${JSON.stringify(theme)}`);
-  assert(await c.val(`['zragIndexOptions','zschede'].every(id=>{const s=getComputedStyle(document.querySelector('#'+id+'>summary'));return s.backgroundColor!=='rgba(0, 0, 0, 0)' && parseFloat(s.fontWeight)>=600;})`));
+  assert(await c.val(`['#zschedeTitle','#zragSearch>summary'].every(sel=>{const s=getComputedStyle(document.querySelector(sel));return s.backgroundColor!=='rgba(0, 0, 0, 0)' && parseFloat(s.fontWeight)>=600;})`));
  }
  await c.val(`document.documentElement.dataset.theme='chiaro'`);
  await c.val(`document.getElementById('zchatWindow').hidden=true;bancoMostra('flashcard')`);await wait(`bancoVisibile('flashcard')`);

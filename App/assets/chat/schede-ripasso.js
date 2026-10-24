@@ -6,22 +6,24 @@
   const action=fn=>studio.action(fn,'zstudyStatus'),status=(text,error)=>studio.status(text,error,'zstudyStatus'),riferimento=s=>studio.riferimento(s,'zstudyStatus');
   const reviewState={zaino:state.zaino,scope:{mode:'all',sourceIds:[],wikipedia:false},sources:[]};
   const extra=el('div');extra.innerHTML=`
-   <details id="zschede" class="zstudio-section"><summary>Schede delle fonti</summary>
-    <h3>Raccoglitore delle schede</h3><p class="zchat-hint">Tutte le schede già generate in questo zaino. Aprirle non richiede una nuova analisi AI.</p>
+   <section id="zschede" class="zstudio-section" aria-labelledby="zschedeTitle"><h2 id="zschedeTitle">Schede delle fonti</h2>
+    <p class="zchat-hint">Apri una scheda già creata oppure prepara sintesi, concetti e domande a partire da documenti e appunti.</p>
+    <h3>Raccoglitore delle schede</h3><p class="zchat-hint">L’elenco raccoglie tutte le schede salvate in questo zaino, anche delle fonti escluse dalla ricerca. Cerca per fonte o tipo e premi «Apri». Non serve una nuova analisi AI.</p>
     <div class="zstudio-actions"><label class="zchat-sr" for="zschedeFilter">Filtra le schede per fonte o tipo</label><input id="zschedeFilter" class="ctl-input" placeholder="Filtra per fonte o tipo di scheda…"><button id="zschedeRefresh" class="tbtn" type="button">Aggiorna elenco</button></div>
     <p id="zschedeCollectionStatus" class="zchat-hint" role="status"></p><div id="zschedeCollection" class="zstudio-collection"></div>
-    <h3>Apri o prepara una scheda</h3>
-    <label>Fonte<select id="zschedeSource"></select></label><label>Scheda<select id="zschedePreset"></select></label>
-    <div class="zstudio-actions"><button class="tbtn" id="zschedeRead" type="button">Apri scheda</button><button class="tbtn" id="zschedeEstimate" type="button">Prepara analisi</button></div>
-    <p id="zschedeEstimateText" class="zchat-hint"></p><button class="tbtn" id="zschedeGenerate" type="button" hidden>Analizza con il mio provider</button>
     <div id="zschedeResult" class="zstudio-results"></div>
-   </details>
+    <details id="zschedeNew" class="zstudio-section"><summary>Nuova scheda</summary><p class="zchat-hint">Scegli una fonte e il tipo di scheda. «Prepara analisi» mostra la stima; solo la conferma successiva avvia l’AI e salva la scheda nel raccoglitore.</p>
+    <label>Fonte<select id="zschedeSource"></select></label><label>Tipo di scheda<select id="zschedePreset"></select></label>
+    <p id="zschedeSourceStatus" class="zchat-hint"></p><div class="zstudio-actions"><button class="tbtn" id="zschedeEstimate" type="button">Prepara analisi</button></div>
+    <p id="zschedeEstimateText" class="zchat-hint"></p><button class="tbtn" id="zschedeGenerate" type="button" hidden>Analizza con il mio provider</button>
+    </details>
+   </section>
    <section id="zinterroga" class="zstudio-panel" aria-label="Interrogazione e ripasso">
     <div class="tbar" id="zstudyToolbar" role="toolbar" aria-label="Fonti del ripasso"><span class="tbsep"></span><button class="tbtn" id="zstudyRefresh" type="button">Aggiorna</button><button class="tbtn" id="zstudyCancel" type="button" hidden>Interrompi</button></div>
     <div id="zstudyScopeHost"></div>
     <div class="zstudio zstudio-banco">
      <h2>Interrogazione e ripasso</h2>
-     <p class="zchat-hint">Scegli le fonti e affronta una domanda alla volta. Il tutor usa il provider AI configurato; le domande conservate restano nel tuo zaino.</p>
+     <p class="zchat-hint">Allenati su documenti e appunti selezionati, anche senza creare prima una scheda. Puoi arrivare qui da «Interrogami su questa» nelle schede di domande. Le domande conservate restano disponibili in «Riprendi», con tentativi e prossime date di ripasso. Il tutor usa il provider AI configurato.</p>
      <label class="zstudio-field" for="zstudyTopic">Argomento<input class="ctl-input" id="zstudyTopic" maxlength="3000" placeholder="Lascia vuoto per i concetti principali"></label>
      <div class="tbar zstudio-actions"><button class="tbtn acc" id="zstudyStart" type="button">Interrogami</button><button class="tbtn" id="zstudySelection" type="button">Usa selezione</button></div>
      <p id="zstudyStatus" role="status" class="zchat-hint"></p>
@@ -29,30 +31,33 @@
      <div id="zstudyQueue" class="zstudio-actions"><label class="zchat-sr" for="zstudySaved">Domande nelle fonti selezionate</label><select id="zstudySaved" class="ctl-select"></select><button class="tbtn" id="zstudyResume" type="button">Riprendi</button></div>
      <div id="zstudyQuestion" class="zstudio-results"></div>
     </div>
-   </section>`;box.append(extra);
+   </section>`;box.append(extra);box.prepend($('zschede'));
   const pane=document.getElementById('ripassoPane');
   if(pane){const old=el('div');old.hidden=true;while(pane.firstChild)old.append(pane.firstChild);pane.append(old,$('zinterroga'));}
+  if(!extra.children.length)extra.remove();
   const picker=window.ZainoSceltaFonti.crea({prefix:'zstudyScope',bar:$('zstudyToolbar'),host:$('zstudyScopeHost'),state:reviewState,onChange(){drawQuestion(null);refresh().catch(e=>status(e.message,true));}});
 
-  let estimate=null,question=null,attemptId=null,review=false,selection='',cards=[],collectionTimer;const drafts=new Map();
+  let estimate=null,question=null,attemptId=null,review=false,selection='',cards=[],collectionWarnings=[],collectionTimer;const drafts=new Map();
   const call=async(n,...args)=>{const r=await api[n](...args);if(!r?.ok)throw Error(r?.error || 'Operazione non riuscita.');return r;};
   const button=(text,fn)=>{const b=el('button',text,'tbtn');b.type='button';b.onclick=fn;return b;};
   function drawCollection(){
    const query=$('zschedeFilter').value.trim().toLocaleLowerCase('it'),found=cards.filter(c=>(c.file+' '+c.title).toLocaleLowerCase('it').includes(query)),target=$('zschedeCollection');target.replaceChildren();
-   if(!found.length){target.append(el('p',cards.length?'Nessuna scheda corrisponde al filtro.':'Non ci sono ancora schede. Scegli una fonte e prepara la prima analisi.','zchat-hint'));return;}
+   $('zschedeCollectionStatus').textContent='Schede salvate: '+cards.length+(query?' · mostrate: '+found.length:'')+(collectionWarnings.length?' · '+collectionWarnings.join(' '):'');
+   if(!found.length){target.append(el('p',cards.length?'Nessuna scheda corrisponde al filtro.':'Non ci sono ancora schede salvate. Premi «Nuova scheda» per crearne una.','zchat-hint'));return;}
    for(const c of found){
-    const row=el('article'),open=button(c.title+' · '+c.file.split('/').pop(),()=>studio.action(async current=>{const r=await call('card',state.zaino,c.sourceId,c.preset);if(current()){drawCard(r.card,r.status);$('zschedeResult').scrollIntoView({block:'nearest'});}}));open.classList.add('zstudio-card-open');open.title=c.title+' — '+c.file;
+    const row=el('article'),open=button('Apri '+c.title+' · '+c.file.split('/').pop(),()=>studio.action(async current=>{const r=await call('card',state.zaino,c.sourceId,c.preset);if(current()){drawCard(r.card,r.status);$('zschedeResult').scrollIntoView({block:'nearest'});}}));open.classList.add('zstudio-card-open');open.title=c.title+' — '+c.file;
     const date=new Date(c.createdAt),label={current:'Aggiornata',changed:'Fonte modificata · da aggiornare',removed:'Fonte non disponibile'}[c.status];
     row.append(open,el('p',(Number.isNaN(date.getTime())?'Data non disponibile':date.toLocaleString('it-IT'))+' · '+label+(c.partial?' · analisi parziale':''),'zchat-hint'));if(c.status!=='removed'){const regenerate=button('Rigenera…',()=>studio.action(current=>prepare(current,c.sourceId,c.preset)));regenerate.classList.add('zstudio-card-regenerate');regenerate.title='Mostra prima la stima del consumo, senza avviare l’analisi.';row.append(regenerate);}target.append(row);
    }
   }
-  async function collection(){const z=state.zaino,r=await call('cards',z);if(z!==state.zaino)return;cards=r.cards;$('zschedeCollectionStatus').textContent=cards.length+' schede disponibili'+(r.warnings.length?' · '+r.warnings.join(' '):'');drawCollection();}
-  window.vault.rag.onAuto(s=>{if(s.zaino!==state.zaino||!$('zschede').open||!['queued','waiting-model','ready','warning','error'].includes(s.phase))return;clearTimeout(collectionTimer);collectionTimer=setTimeout(()=>collection().catch(e=>studio.status(e.message,true,'zschedeCollectionStatus')),250);});
+  async function collection(){const z=state.zaino,r=await call('cards',z);if(z!==state.zaino)return;cards=r.cards;collectionWarnings=r.warnings;drawCollection();}
+  window.vault.rag.onAuto(s=>{if(s.zaino!==state.zaino||!['queued','waiting-model','ready','warning','error'].includes(s.phase))return;clearTimeout(collectionTimer);collectionTimer=setTimeout(()=>collection().catch(e=>studio.status(e.message,true,'zschedeCollectionStatus')),250);});
   $('zschedeFilter').oninput=drawCollection;
   $('zschedeRefresh').onclick=()=>studio.action(collection);
-  async function sources(){const z=state.zaino,scope=JSON.stringify(state.scope),result=await window.vault.chat.sources(z);if(z!==state.zaino||scope!==JSON.stringify(state.scope))return;if(!result?.ok)throw Error(result?.error);const old=$('zschedeSource').value;$('zschedeSource').replaceChildren();for(const s of result.sources.filter(s=>state.scope.mode==='all'||state.scope.sourceIds.includes(s.id)))$('zschedeSource').append(new Option(s.file,s.id));if([...$('zschedeSource').options].some(o=>o.value===old))$('zschedeSource').value=old;}
+  async function sources(){const z=state.zaino,scope=JSON.stringify(state.scope),result=await window.vault.chat.sources(z);if(z!==state.zaino||scope!==JSON.stringify(state.scope))return;if(!result?.ok)throw Error(result?.error);const old=$('zschedeSource').value;$('zschedeSource').replaceChildren();for(const s of result.sources.filter(s=>state.scope.mode==='all'||state.scope.sourceIds.includes(s.id)))$('zschedeSource').append(new Option(s.file,s.id));if([...$('zschedeSource').options].some(o=>o.value===old))$('zschedeSource').value=old;$('zschedeEstimate').disabled=!$('zschedeSource').options.length;$('zschedeSourceStatus').textContent=$('zschedeSource').options.length?'':'Nessuna fonte disponibile nella selezione. Cambia il filtro «Fonti».';}
   function drawCard(c,st){
    const target=$('zschedeResult');target.replaceChildren();if(!c){target.append(el('p','Nessuna scheda disponibile.'));return;}
+   target.append(el('h3',(cards.find(s=>s.sourceId===c.sourceId&&s.preset===c.preset)?.title||c.preset)+' — '+c.file.split('/').pop()));
    target.append(el('p',(st==='changed'?'Fonte modificata. ':st==='removed'?'Fonte rimossa. ':'')+'Copertura: '+c.covered+'/'+c.total+' passaggi'+(c.partial?' · analisi parziale':'')+' · '+c.provider+' / '+c.model));
    for(const item of c.items){const row=el('article'),body=el('div',undefined,'zstudio-card-text'),template=document.createElement('template');
     template.innerHTML=window.LetturaCapitolo.crea().mdToHtml(window.ZainoSchedeTesto.etichette(item.text),true);
@@ -60,18 +65,17 @@
     if(c.preset==='domande')row.append(button('Interrogami su questa',()=>{$('zstudyTopic').value=item.title;picker.set({mode:'selected',sourceIds:[c.sourceId],wikipedia:false});window.bancoMostra('flashcard');start();}));target.append(row);}
    target.append(button('Conserva una copia negli appunti',()=>studio.action(async current=>{const r=await call('copyCard',state.zaino,c.sourceId,c.preset);if(current()){window.notesReload();window.refreshMyNotes();window.noteApriAttivo(r.file);studio.status(r.duplicate?'Copia già presente negli appunti.':'Copia personale conservata.');}})));
   }
-  $('zschede').addEventListener('toggle',()=>{if($('zschede').open)studio.action(async current=>{await sources();await collection();const r=await call('presets');if(current()&&!$('zschedePreset').options.length)for(const [id,label] of Object.entries(r.presets))$('zschedePreset').append(new Option(label,id));});});
+  const nuova=button('Nuova scheda',()=>{$('zschedeNew').open=true;$('zschedeNew').scrollIntoView({block:'start'});$('zschedeSource').focus();});nuova.id='zschedeNewButton';nuova.classList.add('acc');$('zragToolbar').insertBefore(nuova,$('zragToolbar').firstChild);
   for(const id of ['zschedeSource','zschedePreset'])$(id).onchange=()=>{estimate=null;$('zschedeGenerate').hidden=true;$('zschedeEstimateText').textContent='';$('zschedeResult').replaceChildren();};
-  $('zschedeRead').onclick=()=>studio.action(async current=>{const r=await call('card',state.zaino,$('zschedeSource').value,$('zschedePreset').value);if(current())drawCard(r.card,r.status);});
   async function prepare(current,sourceId,preset){
-   estimate=null;$('zschedeGenerate').hidden=true;$('zschedeEstimateText').textContent='';
+   estimate=null;$('zschedeNew').open=true;$('zschedeGenerate').hidden=true;$('zschedeEstimateText').textContent='';
    if(!window.noteFlush())throw Error('Salva prima gli appunti aperti.');const r=await call('estimate',state.zaino,sourceId,preset);if(!current())return;
    if(![...$('zschedeSource').options].some(o=>o.value===sourceId))$('zschedeSource').append(new Option(r.file,sourceId));
    $('zschedeSource').value=sourceId;$('zschedePreset').value=preset;
    estimate=r;$('zschedeEstimateText').textContent=r.file+' · '+(cards.find(c=>c.sourceId===sourceId&&c.preset===preset)?.title||[...$('zschedePreset').options].find(o=>o.value===preset)?.text||preset)+' — '+r.covered+'/'+r.total+' passaggi'+(r.partial?' · analisi parziale':'')+'. Saranno inviati a '+(r.provider||'provider da configurare')+' / '+(r.model||'modello da scegliere')+'. Circa '+r.estimatedInputTokens+' token in ingresso per richiesta (risposta esclusa); un’eventuale correzione può richiedere una seconda chiamata. '+r.warnings.join(' ');$('zschedeGenerate').hidden=false;$('zschedeEstimateText').scrollIntoView({block:'nearest'});
   }
   $('zschedeEstimate').onclick=()=>studio.action(current=>prepare(current,$('zschedeSource').value,$('zschedePreset').value));
-  $('zschedeGenerate').onclick=()=>studio.action(async current=>{if(!estimate)throw Error('Prepara prima l’analisi.');const r=await call('analyze',state.zaino,{sourceId:estimate.sourceId,preset:estimate.preset,expectedRevision:estimate.revision,expectedProvider:estimate.provider,expectedModel:estimate.model});if(current()){drawCard(r.card,'current');await collection();studio.status('Scheda generata.');}});
+  $('zschedeGenerate').onclick=()=>studio.action(async current=>{if(!estimate)throw Error('Prepara prima l’analisi.');const r=await call('analyze',state.zaino,{sourceId:estimate.sourceId,preset:estimate.preset,expectedRevision:estimate.revision,expectedProvider:estimate.provider,expectedModel:estimate.model});if(current()){await collection();drawCard(r.card,'current');$('zschedeNew').open=false;$('zschedeResult').scrollIntoView({block:'nearest'});studio.status('Scheda generata e aggiunta al raccoglitore.');}});
   function drawQuestion(q){
    if(question && $('zstudyAttempt'))drafts.set(question.id,$('zstudyAttempt').value);question=q;const target=$('zstudyQuestion');target.replaceChildren();if(!q)return;
    target.append(el('h3',q.question));
@@ -122,6 +126,6 @@
     picker.set(scope);status(file?'Interrogazione sulla fonte selezionata.':'Cerco prove per questo argomento nelle fonti scelte; il testo selezionato non è una fonte aggiuntiva.');start(scope);
    }catch(e){status(e.message,true);}
   };
-  return {async sync(){reviewState.zaino=state.zaino;await picker.sync();if(state.zaino){await refresh();if($('zschede').open){await sources();await collection();}}},scopeChanged(){estimate=null;$('zschedeGenerate').hidden=true;$('zschedeResult').replaceChildren();$('zschedeEstimateText').textContent='';if($('zschede').open)sources().catch(e=>status(e.message,true));},reset(){api.cancel();clearTimeout(collectionTimer);cards=[];$('zschedeCollection').replaceChildren();$('zschedeCollectionStatus').textContent='';$('zschedeFilter').value='';estimate=null;question=null;drafts.clear();review=false;selection='';$('zschedeResult').replaceChildren();$('zschedeSource').replaceChildren();$('zschedeGenerate').hidden=true;$('zschedeEstimateText').textContent='';$('zstudyQuestion').replaceChildren();$('zstudySaved').replaceChildren();$('zstudyQueue').hidden=true;$('zstudyTopic').value='';$('zstudyCount').textContent='';window.RIPCONTO={mai:0,oggi:0,attesa:0,totale:0,corso:state.zaino};window.ripassoContoDisegna?.();},refresh};
+  return {async sync(){reviewState.zaino=state.zaino;await picker.sync();if(state.zaino){await Promise.all([refresh(),sources(),collection()]);if(!$('zschedePreset').options.length){const r=await call('presets');for(const [id,label] of Object.entries(r.presets))$('zschedePreset').append(new Option(label,id));}}},scopeChanged(){estimate=null;$('zschedeGenerate').hidden=true;$('zschedeResult').replaceChildren();$('zschedeEstimateText').textContent='';sources().catch(e=>status(e.message,true));},reset(){api.cancel();clearTimeout(collectionTimer);cards=[];collectionWarnings=[];$('zschedeCollection').replaceChildren();$('zschedeCollectionStatus').textContent='';$('zschedeFilter').value='';$('zschedeNew').open=false;estimate=null;question=null;drafts.clear();review=false;selection='';$('zschedeResult').replaceChildren();$('zschedeSource').replaceChildren();$('zschedeSourceStatus').textContent='';$('zschedeGenerate').hidden=true;$('zschedeEstimateText').textContent='';$('zstudyQuestion').replaceChildren();$('zstudySaved').replaceChildren();$('zstudyQueue').hidden=true;$('zstudyTopic').value='';$('zstudyCount').textContent='';window.RIPCONTO={mai:0,oggi:0,attesa:0,totale:0,corso:state.zaino};window.ripassoContoDisegna?.();},refresh};
  }};
 }(typeof self!=='undefined'?self:this));

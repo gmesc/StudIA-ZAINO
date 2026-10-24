@@ -57,8 +57,8 @@ async function click(sel){await c.val(`document.querySelector(${JSON.stringify(s
   if(!(await c.val('window.vault.rag.state()')).ready)assert(scaricati.includes('testo'));
   const nonValido=await c.val(`window.vault.rag.install('non-valido')`);assert.equal(nonValido.ok,false);assert.match(nonValido.error,/Modalità/);
   await click('#settingsClose');
-  await c.val(`bancoForma('uno');bancoAssegna('A','studio');document.getElementById('zragIndexOptions').open=true`);
-  await click('#zragSettings');
+  await click('#settingsBtn');await click('.set-tab[data-tab="ai"]');
+  assert(await c.val(`!!document.querySelector('#zchatLocalSettings #zragIndexOptions') && !document.querySelector('#studioPane #zragIndexOptions')`));
   assert(await c.val(`!document.getElementById('settingsModal').hidden && document.querySelector('.set-tab[data-tab="ai"]').getAttribute('aria-selected')==='true'`));
   console.log('✓ impostazioni AI: quattro provider, chiave Infomaniak, download text/vision/video senza zaino, progresso, annullamento, cambio zaino e scorciatoia');
  }finally{

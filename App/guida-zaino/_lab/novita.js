@@ -13,13 +13,12 @@ async function shot(name,sel){await L.muovi(10,940);await L.pausa(600);await L.s
  await L.val(`bancoAssegna('A','studio');bancoForma('due-col');bancoAssegna('A','studio');bancoAssegna('C','fonte');bancoAttivaBlocco('A');openPdf('01 Botanica.pdf');`);await wait(`!!PDFJS.doc`);await L.pausa(3800);
  await L.val(`bancoAssegna('A','studio');bancoForma('due-col');bancoAssegna('A','studio');bancoAssegna('C','fonte');bancoAttivaBlocco('A')`);await L.pausa(3800);
  assert.equal(await L.val('bancoBlocchiVisibili().length'),2);assert(await L.val("bancoVisibile('studio') && bancoVisibile('fonte')"));await shot('192-cerca-studia');
- await set('zragQuery','fotosintesi');await L.val(`document.getElementById('zragForm').requestSubmit()`);
+ await L.val(`document.getElementById('zragSearch').open=true;document.getElementById('zragSearch').scrollIntoView({block:'start'})`);await set('zragQuery','fotosintesi');await L.val(`document.getElementById('zragForm').requestSubmit()`);
  await wait(`document.querySelectorAll('#zragResults article').length>0 && document.getElementById('zragCancel').hidden`);
  await shot('193-ricerca-passaggi','#studioPane');
- await L.val(`document.getElementById('zragResults').replaceChildren();document.getElementById('zragIndexOptions').open=true`);
- await L.muovi(10,940);await L.pausa(600);const indiceRect=await L.rect('#studioPane'),indiceFine=await L.rect('#zragIndexOptions');await L.scatta('194-indice-dispositivo',{clip:{x:indiceRect.x,y:indiceRect.y,width:indiceRect.w,height:indiceFine.y+indiceFine.h-indiceRect.y+8},scala:2});
- await click('#zragSettings');await L.val(`document.getElementById('zchatLocalSettings').scrollIntoView({block:'start'})`);await shot('203-impostazioni-ai-locale','#zchatLocalSettings');await click('#settingsClose');
- await L.val(`document.getElementById('zragIndexOptions').open=false;document.getElementById('zschede').open=true`);
+ await click('#settingsBtn');await click('.set-tab[data-tab="ai"]');await L.val(`document.getElementById('zragIndexOptions').open=true;document.getElementById('zragIndexOptions').scrollIntoView({block:'start'})`);await shot('194-indice-dispositivo','#zragIndexOptions');
+ await L.val(`document.getElementById('zragIndexOptions').open=false;document.getElementById('zchatLocalSettings').scrollIntoView({block:'start'})`);await shot('203-impostazioni-ai-locale','#zchatLocalSettings');await click('#settingsClose');
+ await L.val(`document.getElementById('zragSearch').open=false`);await click('#zschedeNewButton');
  await wait(`document.getElementById('zschedePreset').options.length===5 && !document.getElementById('zschedeEstimate').disabled`);
  const sources=(await L.val(`window.vault.chat.sources('biologia')`)).sources,source=sources.find(s=>s.file.endsWith('01 Botanica.pdf'));assert(source);
  await set('zschedeSource',source.id);await set('zschedePreset','sintesi');await click('#zschedeEstimate');
