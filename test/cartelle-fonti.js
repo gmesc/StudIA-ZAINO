@@ -4,18 +4,28 @@ const F = require('../lib/fonti'), Z = require('../lib/zaini'), M = require('../
 const A = require('../lib/gruppi-fonti'), G = require('../App/assets/fonti/gruppi');
 const C = require('../lib/cartelle-fonti'), AI = require('../lib/fonti-ai');
 // Il drop riconosce le cartelle prima dell'estensione, anche quando finiscono in .mp4.
-const html = fs.readFileSync(path.join(__dirname, '../App/StudIA.html'), 'utf8'), ricevuti = {};
-const drop = { window: { vault: { fonti: { eCartella: f => !!f.cartella } } },
+const html = fs.readFileSync(path.join(__dirname, '../App/StudIA.html'), 'utf8'), ricevuti = {}, verificati = [], avvisi = [];
+const drop = { window: { vault: { fonti: {
+    eCartella: f => !!f.cartella,
+    verifica: f => { verificati.push(f); return { ok: !f.vietato, error: f.vietato ? 'Formato non consentito' : '' }; }
+  } } }, toast: (testo, ok) => avvisi.push({ testo, ok }),
   Lettore: { tipoDi: n => n.endsWith('.mp4') }, AlbumFoto: { tipoDalNome: n => n.endsWith('.png') },
   AppuntiImporta: { tipoDalNome: n => n.endsWith('.txt') } };
 for (const tipo of ['fonti', 'media', 'foto', 'testi']) drop[tipo + 'Trascinat' + (['media', 'testi'].includes(tipo) ? 'i' : 'e')] = f => { ricevuti[tipo] = f; };
-require('vm').runInNewContext(html.match(/function zainoTrascinati\(files\)\{[\s\S]*?\n\}/)[0], drop);
+require('vm').runInNewContext(['fileImportabile', 'zainoTrascinati'].map(nome =>
+  html.match(new RegExp('function ' + nome + '\\([^)]*\\)\\{[\\s\\S]*?\\n\\}'))[0]).join('\n'), drop);
 const caduti = [{ name: 'Lezioni.mp4', cartella: true }, { name: 'Teoria.pdf' }, { name: 'Video.mp4' }, { name: 'Foto.png' }, { name: 'Nota.txt' }];
-assert.equal(drop.zainoTrascinati(caduti), true);
+const vietati = [{ name: 'Camuffato.pdf', vietato: true }, { name: 'programma.exe', vietato: true }];
+assert.equal(drop.zainoTrascinati(caduti.concat(vietati)), true);
+assert.deepEqual(verificati, caduti.concat(vietati), 'ogni file e cartella passa dalla verifica prima dello smistamento');
 assert.deepEqual(Array.from(ricevuti.fonti), caduti.slice(0, 2));
 assert.deepEqual(Array.from(ricevuti.media), [caduti[2]]);
 assert.deepEqual(Array.from(ricevuti.foto), [caduti[3]]);
 assert.deepEqual(Array.from(ricevuti.testi), [caduti[4]]);
+assert.deepEqual(avvisi, vietati.map(f => ({ testo: f.name + ': Formato non consentito', ok: false })));
+for (const tipo of Object.keys(ricevuti)) delete ricevuti[tipo];
+assert.equal(drop.zainoTrascinati(vietati), true, 'un drop vietato è gestito senza ripiegare su altri import');
+assert.deepEqual(ricevuti, {}, 'i file vietati non raggiungono nessun importatore');
 const tmp = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'zaino-cartelle-')));
 const vault = path.join(tmp, 'vault'), sorgente = path.join(tmp, 'Lezioni di storia');
 function salva(id, stato) { const r = A.salva(vault, id, stato); assert.equal(r.error, ''); return r.stato; }

@@ -43,7 +43,11 @@ const FUORI = path.join(VAULT, '_scrivania');
 fs.mkdirSync(FUORI, { recursive: true });
 function semina(nome, contenuto) {
   const p = path.join(FUORI, nome);
-  fs.writeFileSync(p, contenuto || nome, 'utf-8');
+  // Firme dei contenitori: questi test provano numerazione e copia, non codec.
+  const ext = path.extname(nome).toLowerCase();
+  const firma = ext === '.webm' ? Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 0]) :
+    ['.mp4', '.m4a'].includes(ext) ? Buffer.concat([Buffer.from([0, 0, 0, 20]), Buffer.from('ftypisom\0\0\0\0isom')]) : Buffer.from(nome);
+  fs.writeFileSync(p, contenuto || firma);
   return p;
 }
 

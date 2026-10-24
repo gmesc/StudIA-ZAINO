@@ -344,9 +344,9 @@ check('una lezione non lo è', null, importa.pagineDiServizio('2A AI as a learni
 // cartella finta con la stessa forma di quella preparata dall'utente
 const VI = fs.mkdtempSync(path.join(require('os').tmpdir(), 'studia-imp-'));
 ['MEDIA', 'PDF', 'HTML', 'HTML/1A Benvenuto_files', 'SOTTOTITOLI'].forEach((d) => fs.mkdirSync(path.join(VI, d), { recursive: true }));
-fs.writeFileSync(path.join(VI, 'MEDIA', '1A Lezione uno.webm'), 'video');
-fs.writeFileSync(path.join(VI, 'MEDIA', '2A Lezione due.webm'), 'video');
-fs.writeFileSync(path.join(VI, 'PDF', '1A Dispensa.pdf'), 'pdf');
+fs.writeFileSync(path.join(VI, 'MEDIA', '1A Lezione uno.webm'), Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 0]));
+fs.writeFileSync(path.join(VI, 'MEDIA', '2A Lezione due.webm'), Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 0]));
+fs.writeFileSync(path.join(VI, 'PDF', '1A Dispensa.pdf'), '%PDF-1.7\npdf');
 fs.writeFileSync(path.join(VI, 'HTML', '1A Benvenuto.html'), '<html>ciao</html>');
 fs.writeFileSync(path.join(VI, 'HTML', '3B Certificate of completion.html'), '<html>certificato</html>');
 fs.writeFileSync(path.join(VI, 'HTML', '1A Benvenuto_files', 'stile.css'), 'body{}');
@@ -355,22 +355,22 @@ fs.writeFileSync(path.join(VI, 'SOTTOTITOLI', '9Z orfana.txt'), 'senza video');
 fs.writeFileSync(path.join(VI, '.DS_Store'), 'x');
 
 const pianoI = importa.esamina(VI);
-check('materiali riconosciuti', 4, pianoI.riepilogo.materiali);
+check('materiali riconosciuti, pagine attive escluse', 3, pianoI.riepilogo.materiali);
 check('trascrizioni abbinate', 1, pianoI.riepilogo.trascrizioniAbbinate);
-check('numerazione progressiva', ['01', '02', '03', '04'], pianoI.materiali.map((m) => m.num));
-check('a parità di sigla il video viene prima', ['media', 'html', 'pdf', 'media'], pianoI.materiali.map((m) => m.tipo));
+check('numerazione progressiva', ['01', '02', '03'], pianoI.materiali.map((m) => m.num));
+check('a parità di sigla il video viene prima', ['media', 'pdf', 'media'], pianoI.materiali.map((m) => m.tipo));
 check('il nome originale resta intero dopo il numero', '01 1A Lezione uno.webm', pianoI.materiali[0].nome);
 check('i video vanno in Media', 'Media', pianoI.materiali[0].dir);
-check('gli html stanno con le fonti', 'Fonti', pianoI.materiali[1].dir);
+check('il PDF sta con le fonti', 'Fonti', pianoI.materiali[1].dir);
 check('la trascrizione prende il nome del suo video',
   '01 1A Lezione uno.ufficiale.txt', pianoI.materiali[0].abbinati[0].nome);
 check('e finisce fra le trascrizioni', 'Trascrizioni', pianoI.materiali[0].abbinati[0].dir);
-check('il video senza trascrizione non ne inventa una', 0, pianoI.materiali[3].abbinati.length);
+check('il video senza trascrizione non ne inventa una', 0, pianoI.materiali[2].abbinati.length);
 check('il .DS_Store non entra', false, pianoI.esclusi.some((e) => e.nome === '.DS_Store'));
-check('il css della pagina è un asset',
-  'asset della pagina salvata', (pianoI.esclusi.find((e) => e.nome === 'stile.css') || {}).motivo);
-check('il certificato è escluso ma ribaltabile',
-  true, !!(pianoI.esclusi.find((e) => /Certificate/.test(e.nome)) || {}).ribaltabile);
+check('il css della pagina non è importabile',
+  true, /Formato non consentito/.test((pianoI.esclusi.find((e) => e.nome === 'stile.css') || {}).motivo));
+check('una pagina HTML è esclusa e non può essere forzata',
+  false, !!(pianoI.esclusi.find((e) => /Certificate/.test(e.nome)) || {}).ribaltabile);
 check('la trascrizione orfana dice perché resta fuori',
   true, /senza video/.test((pianoI.esclusi.find((e) => e.nome === '9Z orfana.txt') || {}).motivo || ''));
 
@@ -417,10 +417,10 @@ fs.rmSync(VH, { recursive: true, force: true });
 // la copia vera dentro un vault
 const VD = fs.mkdtempSync(path.join(require('os').tmpdir(), 'studia-dest-'));
 const esitoI = importa.applica(VD, pianoI);
-check('importati tutti i materiali', 4, esitoI.importati);
+check('importati tutti i materiali consentiti', 3, esitoI.importati);
 check('il video è sul disco', true, fs.existsSync(path.join(VD, 'Media', '01 1A Lezione uno.webm')));
 check('la trascrizione ufficiale accanto', true, fs.existsSync(path.join(VD, 'Trascrizioni', '01 1A Lezione uno.ufficiale.txt')));
-check('il pdf è fra le fonti', true, fs.existsSync(path.join(VD, 'Fonti', '03 1A Dispensa.pdf')));
+check('il pdf è fra le fonti', true, fs.existsSync(path.join(VD, 'Fonti', '02 1A Dispensa.pdf')));
 check('il certificato non è stato copiato', false, fs.existsSync(path.join(VD, 'Fonti', '02 3B Certificate of completion.html')));
 // un secondo import non deve sovrascrivere il primo
 importa.applica(VD, pianoI);

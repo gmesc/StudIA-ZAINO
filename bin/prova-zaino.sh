@@ -24,7 +24,7 @@ for(const titolo of ['Botanica','Biologia cellulare']){
 if(process.env.STUDIA_RAG_MODEL){
  const M=require('./lib/rag-modello');if(!M.pronto(process.env.STUDIA_RAG_MODEL))throw Error('Modello della prova non pronto');
  const models=path.join(dir,'dati','rag-model');fs.mkdirSync(models,{recursive:true});
- fs.symlinkSync(path.resolve(process.env.STUDIA_RAG_MODEL),path.join(models,M.REV),'dir');
+ fs.cpSync(path.resolve(process.env.STUDIA_RAG_MODEL),path.join(models,M.REV),{recursive:true,mode:fs.constants.COPYFILE_FICLONE});
 }
 fs.mkdirSync(path.join(v,'Corsi','corso-nascosto'),{recursive:true});
 fs.writeFileSync(path.join(dir,'dati','config.json'),JSON.stringify({vaultPath:v,onboardingFatto:true}));
@@ -36,7 +36,7 @@ for _ in $(seq 1 40); do if curl -sf "http://127.0.0.1:$PORTA/json/version" >/de
 # ⚠️ IL REGISTRO delle prove sullo zaino sintetico (chat, fonti e appunti). Una prova nuova va
 # scritta QUI, o non la lancia nessuno: `con-vault-di-prova.sh` gira sul vault
 # vero copiato e non conosce lo zaino «biologia» che questo script fabbrica.
-PROVE=(prova-album-unificato.js prova-topbar-zaino.js prova-chat-zaino.js prova-chat-stile.js prova-gruppi-fonti.js prova-callout-bolla.js prova-editor-pari.js prova-banco-riduzione.js prova-cronologia-citazioni.js prova-chat-fonti.js prova-rag-download.js prova-studio-zaino.js prova-indice-adattivo.js prova-rag-locale.js)
+PROVE=(prova-sicurezza.js prova-album-unificato.js prova-topbar-zaino.js prova-chat-zaino.js prova-chat-stile.js prova-gruppi-fonti.js prova-callout-bolla.js prova-editor-pari.js prova-banco-riduzione.js prova-cronologia-citazioni.js prova-chat-fonti.js prova-rag-download.js prova-studio-zaino.js prova-indice-adattivo.js prova-rag-locale.js)
 # Un sottoinsieme mirato: bash bin/prova-zaino.sh prova-callout-bolla.js
 if [ "$#" -gt 0 ]; then PROVE=("$@"); fi
 KO=0

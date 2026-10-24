@@ -1,3 +1,4 @@
+// GENERATO da preload-base.js e lib/*-ipc.js: node bin/preload.js
 /*
  * StudIA - ZAINO — studiare sui propri materiali: documenti, appunti, mappe e un tutor AI.
  * Copyright (C) 2026 Giacomo Meschini
@@ -18,180 +19,26 @@
  * riceve una copia — anche modificata — deve poter avere il codice sorgente con la
  * stessa libertà. Il sorgente sta su https://github.com/gmesc/StudIA-ZAINO
  */
+// Sorgente del preload sandbox; genera preload.js con node bin/preload.js.
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
-const fs = require('fs');
-const path = require('path');
-const url = require('url');
-const mat = require('./lib/materiali');   // materiali del corso, con ripiego sulle cartelle globali
-const corsiLib = require('./lib/corsi');  // dove stanno corsi e lezioni, anche nei vault mai migrati
-const evidenzeLib = require('./lib/evidenze'); // le parole chiave evidenziate, accanto agli appunti
-const albumLib = require('./lib/album');  // le immagini ritagliate dai documenti, per corso
-const mappeLib = require('./lib/mappe');  // i grafi delle mappe: la lente ha bisogno del loro testo
-const heicLib = require('./lib/heic');    // le foto dell'iPhone, che il browser non sa disegnare
-const voceLib = require('./lib/voce');    // sintesi di sistema per la lettura ad alta voce
-
 const cfg = ipcRenderer.sendSync('cfg:get') || {};
 const vaultPath = cfg.vaultPath || null;
-
-function loadLessons() {
-  if (!vaultPath) return [];
-  const dir = path.join(vaultPath, 'Lezioni'); const out = [];
+const sync = (gruppo, metodo, ...args) => ipcRenderer.sendSync('vault:sync', {gruppo, metodo, args});
+const iniziale = sync('iniziale', 'leggi') || {};
+// Il renderer consegna un File: una stringa inventata non concede accesso al disco.
+function selezionato(file) {
   try {
-    for (const f of fs.readdirSync(dir)) {
-      if (!f.toLowerCase().endsWith('.json')) continue;
-      try { out.push(JSON.parse(fs.readFileSync(path.join(dir, f), 'utf-8'))); }
-      catch (e) { console.error('Lezione non valida:', f, e.message); }
-    }
-  } catch (e) {}
-  return out;
+    const percorso = webUtils.getPathForFile(file);
+    if (!percorso) return null;
+    const risposta = ipcRenderer.sendSync('file:selezionato', {percorso});
+    return risposta && risposta.ok ? {percorso, cartella:!!risposta.cartella} : null;
+  } catch (_) { return null; }
 }
-/* ⚠️ `Figure` sta nell'elenco perché i ritagli dei PDF sono file come gli altri e
-   il lettore li chiede per nome, esattamente come chiede un video o un PDF. Senza
-   questa voce un capitolo con una figura mostrerebbe una casella vuota — e la
-   causa (una cartella non cercata) non si vedrebbe da nessuna parte. */
-/* ⚠️ `corso` è il contenitore ATTIVO, e va passato: `trova` mette le sue
-   cartelle davanti a tutte. Senza, due zaini con un file omonimo aprivano
-   quello del primo in ordine alfabetico — misurato il 13 agosto, quando due
-   prove hanno copiato lo stesso PDF in due zaini e `srcUrl` ha risposto con
-   lo zaino sbagliato. */
-function srcUrl(file, corso) {
-  if (!vaultPath) return '../Fonti/' + encodeURIComponent(file);
-  for (const sub of ['Fonti', 'Media', 'Figure']) {
-    const p = mat.trova(vaultPath, sub, file, corso, true);
-    if (p) return url.pathToFileURL(p).href;
-  }
-  return '';
-}
-
-// mappa "NN" -> nome file (per risolvere gli schemi video:NN / pdf:NN dei capitoli .md)
-// ⚠️ La lista la dice `lib/materiali.js`: la copia che stava qui non aveva
-// `.ogg .opus .aiff`, e i rimandi `video:NN` a un memo vocale non risolvevano
-const MEDIA_EXT = mat.EXT_MEDIA;
-function listByNum(dirs, exts) {
-  const map = {};
-  for (const dir of dirs) {
-    let files; try { files = fs.readdirSync(dir); } catch (e) { continue; }
-    for (const f of files.sort()) {
-      const ext = path.extname(f).toLowerCase();
-      if (exts && !exts.includes(ext)) continue;
-      const m = /^(\d+)\b/.exec(f);
-      if (m) { const k = m[1].padStart(2, '0'); if (!map[k]) map[k] = f; }
-    }
-  }
-  return map;
-}
-/**
- * Le mappe NN → file di OGNI corso, tenute separate.
- *
- * Una mappa sola per tutto il vault funzionava finché i numeri erano unici a
- * livello di vault. Ora che ogni corso numera per conto suo, due corsi
- * possono avere entrambi un «01»: con una mappa unica `listByNum` terrebbe il
- * primo in ordine alfabetico, e un rimando `video:01` scritto in una lezione
- * aprirebbe il video di un altro corso — senza errore, senza avviso.
- */
-function numeriPerCorso() {
-  const out = {};
-  if (!vaultPath) return out;
-  /* ⚠️ Le DUE radici, come ovunque: un documento dentro uno zaino ha un numero
-     (`01 dispensa.pdf`) esattamente come quelli di un corso, ed è quel numero a
-     rendere apribile un rimando `pdf:01#p=7`. Guardando solo `Corsi/`, nello
-     zaino la mappa restava vuota: le parole chiave e i frammenti finivano negli
-     appunti come testo nudo, senza link, e non si capiva perché. */
-  const ids = [];
-  for (const radice of [path.join(vaultPath, corsiLib.RADICE_ZAINI)]) {
-    try { ids.push(...fs.readdirSync(radice, { withFileTypes: true })); } catch (e) { /* non c'è */ }
-  }
-  for (const d of ids) {
-    if (!d.isDirectory()) continue;
-    const media = mat.cartelle(vaultPath, 'Media', d.name, true)
-      .concat(mat.cartelle(vaultPath, 'Fonti', d.name, true));
-    out[d.name] = {
-      media: listByNum(media, MEDIA_EXT),
-      pdf: listByNum(mat.cartelle(vaultPath, 'Fonti', d.name, true), ['.pdf'])
-    };
-  }
-  return out;
-}
-
-// carica i corsi del vault: Corsi/<corso>/<lezione>/NN-*.md (markdown grezzo, parsato dal renderer)
-function loadCourses() {
-  if (!vaultPath) return [];
-  const root = corsiLib.radice(vaultPath); const out = [];
-  let cdirs; try { cdirs = fs.readdirSync(root, { withFileTypes: true }); } catch (e) { return []; }
-  for (const pe of cdirs.sort((a, b) => a.name.localeCompare(b.name))) {
-    if (!pe.isDirectory()) continue;
-    const cdir = path.join(root, pe.name);
-    let progRaw = ''; try { progRaw = fs.readFileSync(corsiLib.fileCorso(vaultPath, pe.name), 'utf-8'); } catch (err) {}
-    // i corsi-laboratorio non compaiono nel lettore: servono alla pipeline, non allo studio
-    if (/^nascosto:\s*true\s*$/m.test(progRaw)) continue;
-    const lessons = [];
-    // le lezioni stanno in LEZIONI/; i corsi fatti prima le tengono nella radice
-    const lbase = corsiLib.cartellaLezioni(vaultPath, pe.name);
-    let ldirs; try { ldirs = fs.readdirSync(lbase, { withFileTypes: true }); } catch (e) { ldirs = []; }
-    /* L'elenco sta in lib/corsi: teneva qui una copia più corta, e ogni cartella
-       dell'utente che mancava (PERCORSI, MAPPE) diventava una lezione fantasma. */
-    const NON_LEZIONI = corsiLib.NON_LEZIONI.concat([mat.CARTELLA]);
-    for (const ce of ldirs.sort((a, b) => a.name.localeCompare(b.name))) {
-      if (!ce.isDirectory() || NON_LEZIONI.includes(ce.name)) continue;
-      const ldir = path.join(lbase, ce.name);
-      let lezioneRaw = ''; try { lezioneRaw = fs.readFileSync(corsiLib.fileLezione(ldir), 'utf-8'); } catch (err) {}
-      const chapters = [];
-      let files; try { files = fs.readdirSync(ldir); } catch (e) { files = []; }
-      for (const f of files.filter(x => /^\d+.*\.md$/.test(x)).sort()) {
-        try { chapters.push({ file: f, raw: fs.readFileSync(path.join(ldir, f), 'utf-8') }); } catch (e) {}
-      }
-      if (chapters.length) lessons.push({ folder: ce.name, lezioneRaw, chapters });
-    }
-    if (lessons.length) out.push({ id: pe.name, progRaw, lessons });
-  }
-  return out;
-}
-
-/* ---------------- APPUNTI (note personali dell'utente) ----------------
-   La logica sta in lib/appunti.js — condivisa e coperta dai test. Qui restano
-   solo i legacci col vault corrente. */
-const appunti = require('./lib/appunti');
-
-/* ---------------- PROFILO DI APPRENDIMENTO + PREFERENZE ----------------
-   Profilo persona -> <vault>/_profilo.md (frontmatter con i campi a scelta multipla,
-   corpo con i due campi liberi). Preferenze tecniche (modelli AI) -> <vault>/.studia/prefs.json.
-   Entrambi leggibili dal main process quando arriverà la pipeline di generazione. */
-// lib/ condivise: UN solo serializzatore e UN solo lettore del profilo, usati anche dal main
-let mdser = null, profiloLib = null, validate = null;
-try { mdser = require(path.join(__dirname, 'lib', 'mdser.js')); } catch (e) { console.error('mdser non caricato:', e.message); }
-try { profiloLib = require(path.join(__dirname, 'lib', 'profilo.js')); } catch (e) { console.error('profilo non caricato:', e.message); }
-try { validate = require(path.join(__dirname, 'lib', 'validate.js')); } catch (e) { console.error('validate non caricato:', e.message); }
-
-function profiloRead() {
-  if (!vaultPath || !profiloLib) return {};
-  return profiloLib.load(vaultPath);
-}
-function profiloSave(o) {
-  if (!vaultPath) throw new Error('nessuna cartella vault impostata');
-  if (!profiloLib) throw new Error('lib/profilo.js non disponibile');
-  // validazione dei vocabolari prima di scrivere: un profilo fuori schema
-  // romperebbe directives() a valle, quando l'errore non sarebbe più attribuibile
-  if (validate) {
-    const perSchema = {
-      schema: 1, tipo: 'profilo', bisogni: o.bisogni || [], bisogni_altro: o.bisogniAltro || '',
-      stile_corso: o.stileCorso, stile_lezioni: o.stileLezioni, stile_capitoli: o.stileCapitoli,
-      granularita: o.granularita, capitoli_brevi: o.capitoliBrevi, quiz: o.quiz,
-      glossario: o.glossario, esempi_concreti: o.esempiConcreti, approfondimenti: o.approfondimenti,
-      comeImparo: o.comeImparo || '', cosaAffatica: o.cosaAffatica || ''
-    };
-    Object.keys(perSchema).forEach(k => perSchema[k] === undefined && delete perSchema[k]);
-    const r = validate.validateProfilo(perSchema);
-    if (!r.ok) throw new Error('profilo non valido: ' + r.errors.slice(0, 3).join(' · '));
-  }
-  return profiloLib.save(vaultPath, o || {});
-}
-function prefsPath() { return path.join(vaultPath, '.studia', 'prefs.json'); }
-function prefsRead() { try { return JSON.parse(fs.readFileSync(prefsPath(), 'utf-8')); } catch (e) { return {}; } }
-function prefsSave(o) {
-  if (!vaultPath) throw new Error('nessuna cartella vault impostata');
-  fs.mkdirSync(path.dirname(prefsPath()), { recursive: true });
-  fs.writeFileSync(prefsPath(), JSON.stringify(o || {}, null, 2), 'utf-8');
-  return true;
+function percorsoDi(file) { return selezionato(file)?.percorso || ''; }
+function verificaFile(file) {
+  const percorso = percorsoDi(file);
+  if (!percorso) return {ok:false,error:'Scegli o trascina un file dal computer.',cartella:false};
+  return ipcRenderer.sendSync('file:verifica', {percorso});
 }
 const vaultApi = {
   hasElectron: true,
@@ -202,8 +49,8 @@ const vaultApi = {
   // globali: ripiego per i vault a corpus unico, dove i numeri non hanno corso
   mediaByNum: {},
   pdfByNum: {},
-  numeriPerCorso: numeriPerCorso(),   // e queste sono quelle che contano
-  srcUrl: srcUrl,
+  numeriPerCorso: iniziale.numeriPerCorso || {},   // e queste sono quelle che contano
+  srcUrl: (file, id) => sync('materiali', 'srcUrl', file, id),
   /* Mostra un file nel Finder. Prende ciò che il renderer ha per mano — un
      `file://` — e la conversione a percorso la fa il main, insieme al controllo
      che stia dentro il vault. */
@@ -275,251 +122,41 @@ const vaultApi = {
     notice: (percorso) => ipcRenderer.invoke('crediti:notice', { percorso: percorso || '' })
   },
   notes: {
-    // leggi() dice anche che cosa è andato storto; list() resta per compatibilità
-    leggi: (courseId) => vaultPath ? appunti.read(vaultPath, courseId) : { notes: [], error: 'nessuna cartella vault impostata' },
-    list: (courseId) => vaultPath ? appunti.read(vaultPath, courseId).notes : [],
-    /* ⚠️ `opt.svuota` è la chiave che permette di scrivere il VUOTO sopra un
-       appunto che ha del testo. Non ha valore di comodo: chi non la passa non
-       può svuotare niente, e l'autosalvataggio non la passa MAI. La difesa
-       vera sta in `lib/appunti.js`, che è l'unico punto da cui passano tutte
-       le scritture; qui si limita a lasciarla dichiarare. */
-    save: (courseId, file, meta, body, opt) => {
-      try {
-        if (!vaultPath) throw new Error('nessuna cartella vault impostata');
-        return appunti.save(vaultPath, courseId, file, meta || {}, body || '', null, opt || {});
-      } catch (e) { return { error: e.message }; }
-    },
-    /* Rinomina: cambia il titolo DENTRO il file E il nome del file, che devono
-       restare d'accordo. Torna `{ file, nota }` — e `file` è il nome VERO che
-       l'appunto ha su disco, che quando cambiano le sole maiuscole NON è quello
-       chiesto: chi chiama deve usare questo per riaprirlo.
-       Sincrona come tutto ciò che sta in `notes`, e non è una svista: la
-       ragione è quella scritta qui sotto sulle evidenze — il sincrono è ciò
-       che permette di scrivere dentro `beforeunload`, dove una `invoke` non
-       farebbe in tempo a tornare. Perciò niente canale IPC nemmeno qui. */
-    rename: (courseId, file, titolo) => {
-      try {
-        if (!vaultPath) throw new Error('nessuna cartella vault impostata');
-        return appunti.rinomina(vaultPath, courseId, file, titolo);
-      } catch (e) { return { error: e.message }; }
-    },
-    /* ⚠️ L'unica voce ASINCRONA del blocco: passa dal main perché
-       `shell.trashItem` — il Cestino di sistema — esiste solo là, e un appunto
-       è l'unico file che esiste soltanto in questo vault. Non serve dentro
-       `beforeunload`: si cancella a gesto, mai alla chiusura. */
-    remove: (courseId, file) => ipcRenderer.invoke('note:rimuovi', { corso: courseId, file }).then((r) => !!(r && r.ok)),
-    reindex: (courseId) => { try { return appunti.reindex(vaultPath, courseId); } catch (e) { return 0; } },
-    /* Le copie di ciò che è stato perso, dalla più recente. Sono `.md` veri in
-       `APPUNTI/_versioni/`: si aprono col Finder o con Obsidian anche senza
-       che l'app offra un gesto: un backup che si legge solo con lo strumento
-       che l'ha rotto non è un backup. */
-    versioni: (courseId, file) => { try { return appunti.versioni(vaultPath, courseId, file); } catch (e) { return []; } },
-    cartellaVersioni: (courseId) => { try { return appunti.dirVersioni(vaultPath, courseId); } catch (e) { return ''; } },
-    indexPath: (courseId) => { try { return path.join(appunti.dir(vaultPath, courseId), '_indice.md'); } catch (e) { return ''; } }
+    leggi: id => sync('notes','leggi',id), list: id => sync('notes','list',id),
+    save: (id,file,meta,body,opt) => sync('notes','save',id,file,meta,body,opt),
+    rename: (id,file,titolo) => sync('notes','rename',id,file,titolo),
+    remove: (id,file) => ipcRenderer.invoke('note:rimuovi',{corso:id,file}).then(r=>!!(r&&r.ok)),
+    reindex: id => sync('notes','reindex',id), versioni: (id,file) => sync('notes','versioni',id,file),
+    cartellaVersioni: id => sync('notes','cartellaVersioni',id), indexPath: id => sync('notes','indexPath',id)
   },
-  /* Le parole chiave evidenziate nel testo (APPUNTI/_evidenze.json).
-     Sincrone come gli appunti e per la stessa ragione: si scrivono a gesto
-     dell'utente, una alla volta, e la scrittura sincrona è ciò che permette di
-     salvarle dentro `beforeunload` — cosa che alle mappe, che passano da
-     `invoke`, è preclusa perché la finestra si chiude prima della risposta. */
   evidenze: {
-    leggi: (courseId) => {
-      if (!vaultPath) return { evidenze: [], error: 'nessuna cartella vault impostata' };
-      try { return evidenzeLib.leggi(vaultPath, courseId); }
-      catch (e) { return { evidenze: [], error: e.message }; }
-    },
-    salva: (courseId, elenco) => {
-      if (!vaultPath) return { evidenze: [], error: 'nessuna cartella vault impostata' };
-      try { return evidenzeLib.salva(vaultPath, courseId, elenco); }
-      catch (e) { return { evidenze: [], error: e.message }; }
-    },
-    aggiungi: (courseId, voce) => {
-      if (!vaultPath) return { evidenza: null, evidenze: [], error: 'nessuna cartella vault impostata' };
-      try { return evidenzeLib.aggiungi(vaultPath, courseId, voce); }
-      catch (e) { return { evidenza: null, evidenze: [], error: e.message }; }
-    },
-    rimuovi: (courseId, id) => {
-      if (!vaultPath) return { tolte: 0, evidenze: [], error: 'nessuna cartella vault impostata' };
-      try { return evidenzeLib.rimuovi(vaultPath, courseId, id); }
-      catch (e) { return { tolte: 0, evidenze: [], error: e.message }; }
-    },
-    colora: (courseId, id, colore) => {
-      if (!vaultPath) return { evidenza: null, evidenze: [], error: 'nessuna cartella vault impostata' };
-      try { return evidenzeLib.colora(vaultPath, courseId, id, colore); }
-      catch (e) { return { evidenza: null, evidenze: [], error: e.message }; }
-    },
-    /* Il terzo gemello di `colora`: la POSTILLA, cioè il perché di una
-       sottolineatura. Non tocca l'identità — sta accanto a colore e tratto —
-       e una postilla vuota la toglie. */
-    postilla: (courseId, id, testo) => {
-      if (!vaultPath) return { evidenza: null, evidenze: [], error: 'nessuna cartella vault impostata' };
-      try { return evidenzeLib.postilla(vaultPath, courseId, id, testo); }
-      catch (e) { return { evidenza: null, evidenze: [], error: e.message }; }
-    },
-    // il gemello di `colora`, per il TRATTO: sottolineatura o fondo pieno
-    tratta: (courseId, id, tratto) => {
-      if (!vaultPath) return { evidenza: null, evidenze: [], error: 'nessuna cartella vault impostata' };
-      try { return evidenzeLib.tratta(vaultPath, courseId, id, tratto); }
-      catch (e) { return { evidenza: null, evidenze: [], error: e.message }; }
-    },
-    /**
-     * Che id AVRÀ questa voce, senza scriverla.
-     *
-     * ⚠️ Sta nel main e non nel renderer per la sola ragione ammessa
-     * dall'invariante 5: l'id è uno `sha1`, e `crypto` di là non c'è. Rifarlo
-     * nel renderer sarebbe una seconda implementazione della stessa identità —
-     * e il giorno che le due divergessero, un appunto citerebbe un'evidenza che
-     * non esiste, in silenzio. È la stessa scelta già fatta per `ripasso:ids`.
-     *
-     * Serve ad «Appunta»: per scrivere `[==testo==](ev:<id>)` l'id lo si deve
-     * sapere PRIMA di scrivere l'appunto, e l'evidenza si crea dopo — perché un
-     * giallo acceso senza l'appunto che l'ha causato sarebbe comparso dal nulla.
-     * Non tocca niente: è un calcolo, e non serve nemmeno il vault.
-     */
-    /* Le LETTURE (gli strati): stesso file delle evidenze, stessa natura
-       sincrona del resto di questo blocco. Tre verbi soli — nasce, si rinomina,
-       si toglie — perché accendere e spegnere non tocca il disco: è una
-       preferenza di lettura, e vive nel localStorage del renderer. */
-    creaStrato: (courseId, nome) => {
-      if (!vaultPath) return { strato: null, strati: [], error: 'nessuna cartella vault impostata' };
-      try { return evidenzeLib.creaStrato(vaultPath, courseId, nome); }
-      catch (e) { return { strato: null, strati: [], error: e.message }; }
-    },
-    rinominaStrato: (courseId, id, nome) => {
-      if (!vaultPath) return { strati: [], error: 'nessuna cartella vault impostata' };
-      try { return evidenzeLib.rinominaStrato(vaultPath, courseId, id, nome); }
-      catch (e) { return { strati: [], error: e.message }; }
-    },
-    /* `dove`: `'via'` porta via anche i segni, l'id di un'altra lettura ce li
-       sposta. Non c'è un valore di comodo — chi chiama deve aver chiesto. */
-    rimuoviStrato: (courseId, id, dove) => {
-      if (!vaultPath) return { tolte: 0, spostate: 0, rinati: [], strati: [], error: 'nessuna cartella vault impostata' };
-      try { return evidenzeLib.rimuoviStrato(vaultPath, courseId, id, dove); }
-      catch (e) { return { tolte: 0, spostate: 0, rinati: [], strati: [], error: e.message }; }
-    },
-    identita: (voce) => {
-      try {
-        /* ⚠️ Si passa da `normalizzaVoce`, che è la STESSA porta da cui passa
-           `aggiungi`: l'id nasce dai campi raddrizzati, e chiamare `identita`
-           sulla voce grezza darebbe un id diverso da quello che verrà scritto
-           — cioè un appunto che cita un'evidenza che non esiste, in silenzio. */
-        const n = evidenzeLib.normalizzaVoce(voce);
-        return { id: n ? n.id : '', error: n ? '' : 'evidenza senza testo' };
-      } catch (e) { return { id: '', error: e.message }; }
-    }
+    leggi: id => sync('evidenze','leggi',id), salva: (id,voci) => sync('evidenze','salva',id,voci),
+    aggiungi: (id,voce) => sync('evidenze','aggiungi',id,voce), rimuovi: (id,voce) => sync('evidenze','rimuovi',id,voce),
+    colora: (id,voce,colore) => sync('evidenze','colora',id,voce,colore),
+    postilla: (id,voce,testo) => sync('evidenze','postilla',id,voce,testo),
+    tratta: (id,voce,tratto) => sync('evidenze','tratta',id,voce,tratto),
+    creaStrato: (id,nome) => sync('evidenze','creaStrato',id,nome),
+    rinominaStrato: (id,strato,nome) => sync('evidenze','rinominaStrato',id,strato,nome),
+    rimuoviStrato: (id,strato,dove) => sync('evidenze','rimuoviStrato',id,strato,dove),
+    identita: voce => sync('evidenze','identita',voce)
   },
-  /* L'album delle immagini ritagliate dai documenti (ALBUM/ + _album.json).
-     Sincrono e diretto come `notes` e `evidenze`, e per la stessa ragione detta
-     su `notes.rename`: si scrive a gesto dell'utente, una immagine alla volta, e
-     il sincrono è ciò che permette di salvare dentro `beforeunload` — dove una
-     `invoke` non farebbe in tempo a tornare. Nessun canale IPC nuovo, quindi:
-     l'album sta dalla parte degli appunti, non delle mappe.
-     Ogni metodo torna un oggetto con `error`: l'immagine che non si è salvata
-     deve poterlo dire, invece di fallire in silenzio. */
   album: {
-    /* `origine` filtra la vista: `'ritaglio'` per i Ritagli, `'foto'` per
-       l'Album Foto, niente per l'archivio intero. Il filtro lo fa la libreria,
-       così le due viste partono dalla stessa risposta. */
-    elenco: (corso, origine) => {
-      if (!vaultPath) return { voci: [], error: 'nessuna cartella vault impostata' };
-      try { return albumLib.elenco(vaultPath, corso, origine); }
-      catch (e) { return { voci: [], error: e.message }; }
-    },
-    /* Il percorso vero di un file trascinato dentro. ⚠️ Da Electron 32 un `File`
-       non ha più `.path`: senza questa riga, di una foto si avrebbe solo il
-       contenuto — e per l'HEIC serve il file, perché a convertirlo è `sips`.
-       È lo stesso ponte già usato dai media. */
-    percorsoDi: (file) => { try { return webUtils.getPathForFile(file); } catch (e) { return ''; } },
-    /* Una foto HEIC tradotta in JPEG, come data URL — la stessa forma che
-       `salva` accetta già. Sincrono come il resto dell'album: converte un file
-       per volta, a gesto dell'utente. */
-    heic: (percorso) => {
-      try { return heicLib.converti(percorso); }
-      catch (e) { return { dati: '', error: e.message }; }
-    },
-    heicDisponibile: () => { try { return heicLib.disponibile(); } catch (e) { return false; } },
-    SENZA_HEIC: heicLib.SENZA_SIPS,
-    /* `voce` è `{ materiale, pagina, rect, didascalia, dati }`, dove `rect` è in
-       coordinate della PAGINA (non dello schermo: a un altro zoom indicherebbe
-       un altro punto) e `dati` è il data URL del canvas. Se quell'area era già
-       stata ritagliata torna quella di prima con `giaCera: true`. */
-    salva: (corso, voce) => {
-      if (!vaultPath) return { voce: null, giaCera: false, error: 'nessuna cartella vault impostata' };
-      try { return albumLib.salva(vaultPath, corso, voce); }
-      catch (e) { return { voce: null, giaCera: false, error: e.message }; }
-    },
-    // cambia la DIDASCALIA: il nome del file resta quello, ed è l'identità a cui
-    // puntano gli appunti (`album:<id>`) e i nodi delle mappe
-    rinomina: (corso, id, didascalia) => {
-      if (!vaultPath) return { voce: null, error: 'nessuna cartella vault impostata' };
-      try { return albumLib.rinomina(vaultPath, corso, id, didascalia); }
-      catch (e) { return { voce: null, error: e.message }; }
-    },
-    // dove compare quest'immagine: serve a chiederlo PRIMA di cancellare
-    usi: (corso, id) => {
-      if (!vaultPath) return { appunti: [], mappe: [], illeggibili: [], quanti: 0, error: 'nessuna cartella vault impostata' };
-      try { return albumLib.usi(vaultPath, corso, id); }
-      catch (e) { return { appunti: [], mappe: [], illeggibili: [], quanti: 0, error: e.message }; }
-    },
-    /* Rifiuta se l'immagine è usata: si passa con `{ insisti: true }`, che è una
-       scelta dell'utente e non un valore di fabbrica.
-       ⚠️ ASINCRONA, sola del blocco: passa dal main perché `shell.trashItem` —
-       il Cestino di sistema — esiste solo là. `usi` resta qui: è una lettura. */
-    rimuovi: (corso, id, opt) => ipcRenderer.invoke('album:rimuovi', { corso, id, opt }),
-    /* La URL con cui `<img>` mostra l'immagine, come `srcUrl` fa per i materiali.
-       ⚠️ Vuole anche il corso, a differenza della firma abbozzata nel piano:
-       l'album è di un corso, e un id da solo non individua nessun file — il nome
-       del file lo dà l'indice di QUEL corso. */
-    srcUrl: (corso, id, quale) => {
-      if (!vaultPath) return '';
-      try {
-        /* `'mini'` chiede il francobollo, e se non c'è si torna l'immagine vera
-           invece di una stringa vuota: chi disegna una card non deve gestire il
-           caso «niente da mostrare» per una cosa che c'è. */
-        const m = quale === 'mini' ? albumLib.percorsoMini(vaultPath, corso, id) : '';
-        const p = m || albumLib.percorsoImmagine(vaultPath, corso, id);
-        return p ? url.pathToFileURL(p).href : '';
-      } catch (e) { return ''; }
-    }
+    elenco: (id,origine) => sync('album','elenco',id,origine),
+    percorsoDi,
+    heic: percorso => sync('album','heic',percorso),
+    heicDisponibile: () => !!iniziale.heicDisponibile,
+    SENZA_HEIC: iniziale.senzaHeic || '',
+    salva: (id,voce) => sync('album','salva',id,voce),
+    rinomina: (id,voce,didascalia) => sync('album','rinomina',id,voce,didascalia),
+    usi: (id,voce) => sync('album','usi',id,voce),
+    rimuovi: (corso,id,opt) => ipcRenderer.invoke('album:rimuovi',{corso,id,opt}),
+    srcUrl: (corso,id,quale) => sync('album','srcUrl',corso,id,quale)
   },
-  /* Le mappe dell'utente (MAPPE/*.json). A differenza degli appunti passano dal
-     main: una mappa la si salva mentre la si sta modificando, e un solo processo
-     che tocca il vault è ciò che rende la scrittura atomica una garanzia e non
-     una speranza. Tutti i metodi tornano un oggetto con `error`: la mappa che
-     non si è salvata deve poterlo dire, non fallire in silenzio. */
+  // Le mappe passano dal main; solo i nodi per la ricerca richiedono risposta sincrona.
   mappe: {
     // elenco leggero (titoli e conteggi): i nodi arrivano solo con apri()
     elenco: (corso) => ipcRenderer.invoke('mappe:elenco', { corso }),
-    /**
-     * Il TESTO di tutte le mappe del contenitore, in un colpo e SINCRONO.
-     *
-     * ⚠️ Serve alla LENTE, e ha dovuto essere una porta nuova. `elenco` di
-     * proposito i nodi non li porta — un grafo intero che attraversa il ponte
-     * per riempire una tendina è peso per niente — e `apri` è asincrona, mentre
-     * l'indice della ricerca si costruisce in modo sincrono. Il risultato era
-     * che di una mappa non aperta si poteva cercare solo il titolo: una parola
-     * scritta in un nodo non si trovava, senza nessun errore da nessuna parte.
-     *
-     * Sincrona come `album.elenco`, e per la stessa ragione: è una lettura, e
-     * l'indice si ricostruisce una volta per contenitore, non a ogni tasto.
-     *
-     * ⚠️ Passano solo i tre campi che l'indice cerca. Posizioni, colori, archi
-     * e memorie non c'entrano niente con la ricerca, e su un vault con molte
-     * mappe sarebbero il grosso di ciò che attraversa il ponte.
-     */
-    nodi: (corso) => {
-      if (!vaultPath) return { mappe: [], error: 'nessuna cartella vault impostata' };
-      try {
-        const r = mappeLib.read(vaultPath, corso);
-        return {
-          mappe: (r.mappe || []).map((m) => ({
-            file: m.file || '', titolo: m.titolo || '', errore: m.errore || '',
-            nodi: (m.nodi || []).map((n) => ({ id: n.id, testo: n.testo, nota: n.nota }))
-          })),
-          error: r.error || ''
-        };
-      } catch (e) { return { mappe: [], error: e.message }; }
-    },
+    nodi: corso => sync('mappe','nodi',corso),
     apri: (corso, file) => ipcRenderer.invoke('mappe:apri', { corso, file }),
     // `file` assente = mappa nuova; il nome scelto torna in `{ file }`
     salva: (corso, file, mappa) => ipcRenderer.invoke('mappe:salva', { corso, file, mappa }),
@@ -529,18 +166,12 @@ const vaultApi = {
     // «Modifica una copia»: il grafo è quello di MappaGenera.daCapitolo/daLezione
     semina: (corso, grafo, meta) => ipcRenderer.invoke('mappe:semina', { corso, grafo, meta })
   },
-  profile: {
-    read: () => { try { return profiloRead(); } catch (e) { return {}; } },
-    save: (o) => { try { profiloSave(o); return { ok: true }; } catch (e) { return { error: e.message }; } }
-  },
-  prefs: {
-    read: () => { try { return prefsRead(); } catch (e) { return {}; } },
-    save: (o) => { try { prefsSave(o); return { ok: true }; } catch (e) { return { error: e.message }; } }
-  },
+  profile: {read: () => ({}), save: () => ({ok:false,error:'Funzione CORSI non disponibile in StudIA - ZAINO.'})},
+  prefs: {read: () => sync('prefs','read'), save: o => sync('prefs','save',o)},
   // lettura ad alta voce con la sintesi di sistema: vede anche le voci premium,
   // che a Web Speech dentro Chromium non arrivano
   voce: {
-    disponibile: voceLib.disponibile(),
+    disponibile: !!iniziale.voceDisponibile,
     elenco: () => ipcRenderer.invoke('voce:elenco'),
     // sintetizza un blocco su file e ne restituisce l'URL: la riproduzione la fa
     // il renderer con un <audio>, così l'avvio di say non cade fra un blocco e l'altro
@@ -608,6 +239,7 @@ const vaultApi = {
      quello un documento trascinato non si potrebbe copiare — si potrebbe solo
      leggerne il contenuto e riscriverlo, cioè fare la stessa cosa in peggio. */
   fonti: {
+    verifica: verificaFile,
     /* ⚠️ `set` — il ruolo dichiarato di una fonte, che scrive il wizard — stava
        in un SECONDO blocco `fonti:` più in su nello stesso oggetto letterale.
        Due chiavi uguali in un letterale non sono due cose: l'ultima vince e la
@@ -617,8 +249,8 @@ const vaultApi = {
        non arrivava mai in `_corso.md`, e l'utente non vedeva niente. Il canale
        nel main era vivo e intatto da sempre. */
     set: (corso, fonti) => ipcRenderer.invoke('fonti:set', { corso, fonti }),
-    percorsoDi: (file) => { try { return webUtils.getPathForFile(file); } catch (e) { return ''; } },
-    eCartella: (file) => { try { return fs.lstatSync(webUtils.getPathForFile(file)).isDirectory(); } catch (e) { return false; } },
+    percorsoDi,
+    eCartella: file => !!selezionato(file)?.cartella,
     importa: (corso, percorsi) => ipcRenderer.invoke('fonti:importa', { corso, percorsi }),
     /* Togliere una fonte: il file va nel Cestino di sistema e resta una traccia
        del suo contenuto, così se lo stesso documento torna riprende il nome e il
@@ -697,7 +329,7 @@ const vaultApi = {
        «Carico l'elenco…»: il TypeError è sincrono e scappa PRIMA che esista una
        Promise, quindi nemmeno il `.catch` lo raccoglieva. */
     list: () => ipcRenderer.invoke('media:list'),
-    percorsoDi: (file) => { try { return webUtils.getPathForFile(file); } catch (e) { return ''; } },
+    percorsoDi,
     importa: (corso, percorsi) => ipcRenderer.invoke('media:importa', { corso, percorsi }),
     elenco: (corso) => ipcRenderer.invoke('media:elenco', { corso }),
     elimina: (corso, file) => ipcRenderer.invoke('media:elimina', { corso, file }),
@@ -738,7 +370,7 @@ const vaultApi = {
   files: {
     pick: () => ipcRenderer.invoke('files:pick'),
     import: (paths) => ipcRenderer.invoke('files:import', { paths }),
-    pathOf: (file) => { try { return require('electron').webUtils.getPathForFile(file); } catch (e) { return file && file.path ? file.path : null; } }
+    pathOf: percorsoDi
   },
   // importazione di un'intera cartella: prima si guarda, poi si copia
   cartella: {
@@ -783,8 +415,50 @@ const vaultApi = {
     pipelineVista: (v) => ipcRenderer.invoke('onboarding:pipelineVista', { vista: v !== false })
   }
 };
-require('./lib/zaino-only').proteggiPreload(vaultApi, vaultPath);
-vaultApi.chat = require('./lib/chat-ipc').ponte(ipcRenderer);
-vaultApi.rag = require('./lib/rag-ipc').ponte(ipcRenderer);
-vaultApi.studio = require('./lib/studio-ipc').ponte(ipcRenderer);
+// Il guscio condiviso conserva i nomi delle vecchie funzioni CORSI, senza capacità.
+const nonDisponibile = () => ({ok:false,error:'Funzione CORSI non disponibile in StudIA - ZAINO.'});
+for (const nome of ['schede','plan','ingest','course','brief','claudecode','modelli','scaletta','composer','percorsi','gen','files','cartella','ocr']) {
+  for (const metodo of Object.keys(vaultApi[nome] || {})) vaultApi[nome][metodo] = metodo.startsWith('on') ? () => () => {} : () => Promise.resolve(nonDisponibile());
+}
+vaultApi.course.list = async () => [];
+vaultApi.percorsi.list = async () => [];
+vaultApi.onboarding.stato = async () => ({fatto:true,profiloSaltato:true,pipelineVista:true});
+vaultApi.ambiente.rileva = async () => ({});
+vaultApi.chat = (function ponte(ipc) {
+  const invoca = (azione, ...args) => ipc.invoke('chat:' + azione, ...args);
+  return {
+    catalogo: () => invoca('catalogo'), settings: () => invoca('settings'),
+    saveSettings: (o) => invoca('saveSettings', o), models: (o) => invoca('models', o),
+    keysStatus: () => ipc.invoke('keys:status'),
+    setKey: (o) => ipc.invoke('keys:set', o), clearKey: (o) => ipc.invoke('keys:clear', o),
+    profiles: () => invoca('profiles'), saveProfile: (o) => invoca('saveProfile', o),
+    cloneProfile: (id) => invoca('cloneProfile', id), deleteProfile: (id) => invoca('deleteProfile', id),
+    activateProfile: (id) => invoca('activateProfile', id),
+    list: (zaino) => invoca('list', { zaino }), read: (zaino, id) => invoca('read', { zaino, id }),
+    create: (zaino, o) => invoca('create', { zaino, ...o }), remove: (zaino, id) => invoca('remove', { zaino, id }),
+    rename: (zaino, id, title) => invoca('rename', { zaino, id, title }),
+    branch: (zaino, id, messageId) => invoca('branch', { zaino, id, messageId }),
+    sources: (zaino) => invoca('sources', { zaino }),
+    resolveSource: (zaino, source) => invoca('resolveSource', { zaino, source }),
+    saveAnswer: (zaino, id, messageId, target) => ipc.sendSync('chat:saveAnswer', { zaino, id, messageId, target }),
+    scope: (zaino, id, scope) => invoca('scope', { zaino, id, scope }),
+    citation: (zaino, id, messageId, alias) => invoca('citation', { zaino, id, messageId, alias }),
+    send: (zaino, o) => invoca('send', { zaino, ...o }), cancel: () => invoca('cancel')
+  };
+})(ipcRenderer);
+vaultApi.rag = (function ponte(ipc){const call=(name,o)=>ipc.invoke('rag:'+name,o);return {
+ state:()=>call('state'),install:modalita=>call('install',{modalita}),cancel:tipo=>call('cancel',{tipo}),
+ watch:zaino=>call('watch',{zaino}),
+ onAuto:fn=>{const listener=(_,state)=>fn(state);ipc.on('rag:auto',listener);return ()=>ipc.removeListener('rag:auto',listener);},
+ index:(zaino,scope)=>call('index',{zaino,scope}),search:(zaino,query,scope)=>call('search',{zaino,query,scope}),
+ reset:zaino=>call('reset',{zaino}),resolve:(zaino,source)=>call('resolve',{zaino,source})
+};})(ipcRenderer);
+vaultApi.studio = (function ponte(ipc){const call=(n,o)=>ipc.invoke('studio:'+n,o);return {
+ presets:()=>call('presets'),estimate:(zaino,sourceId,preset)=>call('estimate',{zaino,sourceId,preset}),
+ cards:zaino=>call('cards',{zaino}),
+ card:(zaino,sourceId,preset)=>call('card',{zaino,sourceId,preset}),analyze:(zaino,o)=>call('analyze',{zaino,...o}),copyCard:(zaino,sourceId,preset)=>call('copyCard',{zaino,sourceId,preset}),
+ state:(zaino,scope)=>call('state',{zaino,scope}),start:(zaino,o)=>call('start',{zaino,...o}),
+ answer:(zaino,id,o)=>call('answer',{zaino,id,...o}),keep:(zaino,id)=>call('keep',{zaino,id}),
+ outcome:(zaino,id,attemptId,outcome)=>call('outcome',{zaino,id,attemptId,outcome}),resume:(zaino,id)=>call('resume',{zaino,id}),cancel:()=>call('cancel')
+};})(ipcRenderer);
 contextBridge.exposeInMainWorld('vault', vaultApi);

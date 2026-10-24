@@ -83,6 +83,12 @@ I nuovi PDF mantengono il nome originale completo dopo un prefisso interno di al
 
 I gruppi già esistenti vengono organizzati sul disco al primo salvataggio dell’organizzazione Fonti. Gruppi omonimi restano distinti, con suffissi nelle cartelle; i caratteri non ammessi dal filesystem vengono sostituiti. I file non PDF e i collegamenti simbolici nelle cartelle importate sono esclusi con un messaggio. Se l’organizzazione non si può salvare, gli spostamenti vengono ripristinati; eventuali PDF appena copiati restano accessibili senza gruppo e l’importazione segnala il problema.
 
+## Sicurezza
+
+L’app ammette solo i formati previsti e controlla il contenuto prima di importarli e aprirli. PDF senza scripting, renderer isolato e permessi per singola operazione proteggono l’accesso al disco: gli originali importati restano in sola lettura; le esportazioni richiedono una destinazione scelta nel dialogo nativo. Eseguibili, script, HTML, SVG e archivi non si importano come materiali.
+
+Questi controlli non sostituiscono un antivirus e non garantiscono l’assenza di vulnerabilità nei decoder. La [documentazione di sicurezza](docs/SICUREZZA.md) descrive i privilegi, i formati e i limiti effettivi.
+
 ## Verifica
 
 ```bash

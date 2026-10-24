@@ -72,7 +72,7 @@ if (!H.disponibile()) {
   fs.writeFileSync(finto, 'questo non è un\'immagine');
   const male = H.converti(finto);
   ok('un file storto non produce un\'immagine', '', male.dati);
-  ok('e l\'errore riporta quello che ha detto sips', true, /sips:/.test(male.error));
+  ok('il file camuffato è rifiutato prima del convertitore', true, /contenuto non corrisponde/.test(male.error));
   console.log('   ' + male.error);
   fs.unlinkSync(finto);
 }

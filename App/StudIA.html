@@ -14,6 +14,7 @@
 -->
 <html lang="it" data-theme="chiaro">
 <head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' file: data: blob:; media-src 'self' file: data: blob:; connect-src 'self' file:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>StudIA - ZAINO</title>
@@ -5180,7 +5181,7 @@ async function fontiIndicizza(nomeFile, id){
      cambiato (OCR), quindi la cache non può che servire byte vecchi. */
   var url=window.vault.srcUrl(nomeFile, id)+'?v='+Date.now();
   var doc;
-  try{ doc=await pdfjsLib.getDocument({ url:url, isEvalSupported:false }).promise; }
+  try{ doc=await pdfjsLib.getDocument({ url:url, isEvalSupported:false, enableXfa:false }).promise; }
   catch(e){ return { error:(e && e.message) || 'documento non leggibile' }; }
   var pagine=[];
   try{
@@ -5340,7 +5341,7 @@ async function ocrRiconosci(nome){
     var av=await api.apri();
     if(av && av.error){ toast('Motore OCR non partito: '+av.error, false); return; }
     var doc;
-    try{ doc=await pdfjsLib.getDocument({ url:window.vault.srcUrl(nome, corsoAttivo()), isEvalSupported:false }).promise; }
+    try{ doc=await pdfjsLib.getDocument({ url:window.vault.srcUrl(nome, corsoAttivo()), isEvalSupported:false, enableXfa:false }).promise; }
     catch(e){ toast('Documento non leggibile: '+((e&&e.message)||'?'), false); return; }
     /* ⚠️ Si leggono SOLO le pagine che l'indice dice senza testo
        (`daRiconoscere`): una pagina che il testo ce l'ha già — nativa in mezzo
@@ -5509,8 +5510,14 @@ var MEDIAIMP={ inCorso:false };
  * Torna `true` se qualcosa era per noi, così chi chiama sa se deve provare il
  * gesto di prima (il `.json` di una lezione).
  */
+function fileImportabile(file){
+  var r=window.vault.fonti.verifica(file);
+  if(!r || !r.ok){toast((file.name||'File')+': '+((r&&r.error)||'Importazione non consentita'),false);return false;}
+  return true;
+}
 function zainoTrascinati(files){
-  var lista=[].slice.call(files||[]);
+  var lista=[].slice.call(files||[]).filter(fileImportabile);
+  if(!lista.length)return true;
   var cartelle=lista.filter(function(f){ return window.vault.fonti.eCartella(f); });
   lista=lista.filter(function(f){ return cartelle.indexOf(f)<0; });
   var pdf=cartelle.concat(lista.filter(function(f){ return /\.pdf$/i.test(f.name); }));
@@ -5530,30 +5537,15 @@ function zainoTrascinati(files){
 }
 
 /** Il gesto: dei media trascinati sopra la finestra, in modalità zaino. */
-/**
- * Questo file il lettore lo sa aprire? Lo si CHIEDE a lui.
- *
- * ⚠️ Non c'è nessuna lista dei formati buoni, ed è deliberato: sarebbe una
- * copia di ciò che decide Chromium — che cambia a ogni Electron — e la sesta
- * copia del difetto che Q7 ha appena chiuso. Si prova ad aprire il file vero e
- * si guarda come va: così anche un `.mkv` con dentro un codec esotico viene
- * riconosciuto, e un formato che un domani Chromium imparerà entrerà da solo,
- * senza che nessuno tocchi una riga.
- *
- * ⚠️ Si passa da `createObjectURL`, non dal percorso: il file è ancora fuori
- * dal vault (sta sulla scrivania di chi trascina), e un blob URL si carica
- * sempre, senza dipendere da che cosa il renderer possa leggere da `file://`.
- *
- * ⚠️ E NEL DUBBIO SI LASCIA ENTRARE: se entro qualche secondo non si è capito,
- * la risposta è «sì». Rifiutare un file valido è il danno peggiore — quello
- * dell'utente resta fuori e lui non sa perché — mentre uno che entra e non si
- * apre lo dice all'apertura. È la stessa regola scritta in `lib/album.js`:
- * «non lo so» non è «no».
+/** Dopo il controllo del formato nel main, Chromium verifica il codec.
+ * Un timeout non annulla la verifica di sicurezza già superata: indica solo
+ * che non sappiamo ancora se il lettore saprà riprodurre quel media.
+ * Il blob evita di concedere al renderer accesso al percorso esterno.
  */
 function mediaSiApre(file){
   return new Promise(function(risolvi){
     var tipo=(typeof Lettore!=='undefined') ? Lettore.tipoDi(file && file.name) : '';
-    if(!tipo){ risolvi(true); return; }          // non è roba nostra: non tocca a noi dire di no
+    if(!tipo){ risolvi(false); return; }
     var el=document.createElement(tipo==='audio' ? 'audio' : 'video');
     el.preload='metadata'; el.muted=true;
     var url='';
@@ -5589,6 +5581,7 @@ async function mediaTrascinati(files){
      trascrive, e passa da ffmpeg invece che da Chromium. Questa funzione la
      chiama solo lo zaino. */
   var lista=[].slice.call(files||[]);
+  lista=lista.filter(fileImportabile);
   var esiti=await Promise.all(lista.map(mediaSiApre));
   var fuori=lista.filter(function(f, i){ return !esiti[i]; });
   files=lista.filter(function(f, i){ return esiti[i]; });
@@ -5732,6 +5725,7 @@ async function fotoTrascinate(files){
 
 /** Una sola immagine, dal file all'archivio. `{ giaCera, error }`. */
 async function fotoImporta(corso, file){
+  if(!fileImportabile(file))return {giaCera:false,error:'Formato o contenuto non consentito.'};
   var api=window.vault.album;
   var byte=await fotoPrimiByte(file, 16);
   var tipo=AlbumFoto.tipoDaiByte(byte);
@@ -5822,6 +5816,7 @@ async function testiTrascinati(files){
   for(var i=0;i<vaglio.buone.length;i++){
     var v=vaglio.buone[i], file=perNome[v.nome];
     try{
+      if(!fileImportabile(file)){scartati.push({nome:v.nome,motivo:'Formato o contenuto non consentito.'});continue;}
       var grezzo=await testoLeggi(file);
       var letto=AppuntiImporta.daTesto(grezzo, v.nome);
       var r=api.save(id, null, { title:letto.titolo }, letto.corpo);
@@ -6122,7 +6117,7 @@ function pdfjsAvvia(){
   try{
     pdfjsLib.GlobalWorkerOptions.workerSrc='assets/pdfjs/pdf.worker.min.mjs';
     PDFJS.bus=new pdfjsViewer.EventBus();
-    PDFJS.link=new pdfjsViewer.PDFLinkService({ eventBus:PDFJS.bus });
+    PDFJS.link=new pdfjsViewer.PDFLinkService({ eventBus:PDFJS.bus, externalLinkTarget:2, externalLinkRel:'noopener noreferrer' });
     PDFJS.find=new pdfjsViewer.PDFFindController({ eventBus:PDFJS.bus, linkService:PDFJS.link });
     PDFJS.viewer=new pdfjsViewer.PDFViewer({
       container:host, viewer:tela,
@@ -6142,6 +6137,7 @@ function pdfjsAvvia(){
          appiccicata sopra la fonte senza un modo per toglierla. L'app non offre
          l'annotazione dei PDF: quel layer non è una funzione spenta, è una
          funzione che non abbiamo mai voluto. */
+      annotationMode:1,
       annotationEditorMode:-1,
       /* ⚠️ «RIEMPI LARGHEZZA» DEVE RIEMPIRE LA LARGHEZZA, e senza questa riga
          non ci arrivava. Chi si mangiava lo spazio è UNO, e sta nella libreria:
@@ -6306,11 +6302,12 @@ function fonte2Avvia(){
        idempotente. */
     pdfjsLib.GlobalWorkerOptions.workerSrc='assets/pdfjs/pdf.worker.min.mjs';
     FONTE2.bus=new pdfjsViewer.EventBus();
-    FONTE2.link=new pdfjsViewer.PDFLinkService({ eventBus:FONTE2.bus });
+    FONTE2.link=new pdfjsViewer.PDFLinkService({ eventBus:FONTE2.bus, externalLinkTarget:2, externalLinkRel:'noopener noreferrer' });
     FONTE2.viewer=new pdfjsViewer.PDFViewer({
       container:host, viewer:tela,
       eventBus:FONTE2.bus, linkService:FONTE2.link,
       textLayerMode:1,                 // selezionare e COPIARE è metà del confronto
+      annotationMode:1,
       annotationEditorMode:-1,         // stessa lezione della fonte: niente «timbri»
       removePageBorders:true,          // «riempi larghezza» riempie: il perché sta in `pdfjsAvvia`
       imageResourcesPath:'assets/pdfjs/images/'
@@ -6353,7 +6350,7 @@ async function fonte2Apri(file, opt){
   var corso=corsoAttivo(), op=++FONTE2.operazione;
   var url=(window.vault&&window.vault.srcUrl)?window.vault.srcUrl(file,corso):('../Fonti/'+encodeURIComponent(file));
   try{
-    var doc=await pdfjsLib.getDocument({ url:url, isEvalSupported:false }).promise;
+    var doc=await pdfjsLib.getDocument({ url:url, isEvalSupported:false, enableXfa:false }).promise;
     if(op!==FONTE2.operazione || corso!==corsoAttivo()){ doc.destroy(); return; }
     if(FONTE2.doc){ try{ FONTE2.doc.destroy(); }catch(e){} }
     FONTE2.ripresa=fonte2Punti(corso)[file]||null;
@@ -8595,9 +8592,6 @@ function openPdf(pdf,page,label,conservaBanco){
   /* Qui si scriveva il titolo per esteso in barra. Adesso il nome del documento
      lo dice solo il selettore, che lo prende da `pdfDocEtichetta` giù in
      `aggiornaBarraPagina`: un posto solo, non due che possono discordare. */
-  // il collegamento "apri in una scheda" resta al visualizzatore di sistema, e
-  // la' la pagina si dice ancora col frammento #page=
-  var nt=$('#pdfNewtab'); if(nt) nt.href=url+(pg?('#page='+pg):'');
   document.documentElement.dataset.pdf='1';
   apertoScrivi('fonte', pdf);
   // il dock non c'è più: si chiede al banco di fare posto allo strumento
@@ -8627,7 +8621,7 @@ function openPdf(pdf,page,label,conservaBanco){
      arriverebbe DOPO quella del secondo, mettendo a schermo il documento
      sbagliato con il titolo giusto. È la stessa rete che hanno le mappe. */
   var mio=++PDFJS.seq;
-  pdfjsLib.getDocument({ url:url, isEvalSupported:false }).promise.then(function(doc){
+  pdfjsLib.getDocument({ url:url, isEvalSupported:false, enableXfa:false }).promise.then(function(doc){
     if(mio!==PDFJS.seq){ try{ doc.destroy(); }catch(e){} return; }
     PDFJS.doc=doc;
     /* ⚠️ La pagina chiesta si stringe a quelle che esistono, e solo qui si può:
@@ -8641,9 +8635,6 @@ function openPdf(pdf,page,label,conservaBanco){
     var vera=Math.max(1, Math.min(tot, ANTEPRIMA.page||1));
     if(vera!==ANTEPRIMA.page){
       ANTEPRIMA.page=vera;
-      // (la pagina corretta finiva anche nel titolo in barra: quel titolo non
-      // c'è più, e la pagina la ridice il chip via `aggiornaBarraPagina`)
-      var n2=$('#pdfNewtab'); if(n2 && n2.href) n2.href=n2.href.replace(/#page=\d+$/,'')+'#page='+vera;
     }
     PDFJS.viewer.setDocument(doc);
     PDFJS.link.setDocument(doc, null);
@@ -21676,7 +21667,7 @@ window.addEventListener('keydown', function(e){
             title="Riconosci il testo di questo documento fotografato"
             aria-label="Riconosci il testo di questo documento fotografato">Aa&#8599;</button>
     <i class="tbsep" aria-hidden="true"></i>
-    <a id="pdfNewtab" href="#" target="_blank" rel="noopener">Apri in una scheda &#8599;</a>
+
     <!-- ⚠️ Togliere una fonte è l'unico gesto dell'app che tocca un file portato
          dentro dall'utente: sta accanto alla ✕ ma è un'altra cosa, e la barretta
          prima lo dichiara. Compare SOLO nello zaino, dove i documenti sono suoi;

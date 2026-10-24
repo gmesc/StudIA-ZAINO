@@ -20,7 +20,9 @@
  */
 const { app, BrowserWindow, shell, ipcMain, dialog, safeStorage } = require('electron');
 const path = require('path');
-const fs = require('fs');
+const fsNativo = require('node:fs');
+const disco = require('./lib/permessi-disco');
+const fs = disco.fs;
 const { spawn, spawnSync } = require('child_process');
 const readline = require('readline');
 const os = require('os');
@@ -28,11 +30,52 @@ const { pathToFileURL } = require('url');
 
 app.setName('StudIA - ZAINO');
 if (!app.commandLine.hasSwitch('user-data-dir')) app.setPath('userData', path.join(app.getPath('appData'), 'studia-zaino'));
-require('./lib/zaino-only').proteggiIpc(ipcMain, () => readCfg().vaultPath);
+
 
 const CFG = path.join(app.getPath('userData'), 'config.json');
-const readCfg = () => { try { return JSON.parse(fs.readFileSync(CFG, 'utf8')); } catch (e) { return {}; } };
-const writeCfg = (c) => { try { fs.mkdirSync(path.dirname(CFG), { recursive: true }); } catch (e) {} fs.writeFileSync(CFG, JSON.stringify(c, null, 2)); };
+const readCfg = () => { try { return JSON.parse(fsNativo.readFileSync(disco.percorso(app.getPath('userData'),CFG), 'utf8')); } catch (e) { return {}; } };
+const writeCfg = c => disco.esegui({lettura:[app.getPath('userData')],scrittura:[app.getPath('userData')]},()=>{
+  disco.percorso(app.getPath('userData'),CFG);
+  fs.mkdirSync(path.dirname(CFG),{recursive:true,mode:0o700});
+  require('./lib/appunti').writeAtomic(CFG,JSON.stringify(c,null,2));
+});
+let cartellaPrivata;
+function temporanei() {
+  if(!cartellaPrivata)cartellaPrivata=fsNativo.mkdtempSync(path.join(os.tmpdir(),'studia-privata-'));
+  return cartellaPrivata;
+}
+app.on('will-quit',()=>{if(cartellaPrivata)fsNativo.rmSync(cartellaPrivata,{recursive:true,force:true});});
+const selezioni=new Map(),esportati=new Set();
+const concessioni={ha:(id,file)=>{
+  try {
+    if(typeof file!=='string')return false;
+    const prima=selezioni.get(id)?.get(path.resolve(file));if(!prima)return false;
+    const ora=fsNativo.lstatSync(file);
+    return !ora.isSymbolicLink() && (ora.isDirectory()||ora.isFile()&&ora.nlink===1) && ora.dev===prima.dev && ora.ino===prima.ino && fsNativo.realpathSync(file)===prima.reale;
+  }catch(_){return false;}
+}};
+const appFile=path.join(__dirname,'App','StudIA.html');
+require('./lib/sicurezza-app').registra({ipcMain,contesto:()=>({vault:readCfg().vaultPath,appDir:__dirname,risorse:process.resourcesPath,userData:app.getPath('userData'),temporanei:temporanei()}),finestra:()=>win,appFile:pathToFileURL(appFile).href,concessioni});
+require('./lib/zaino-only').proteggiIpc(ipcMain,()=>readCfg().vaultPath);
+ipcMain.on('file:selezionato',(e,{percorso}={})=>{
+  try {
+    if(typeof percorso!=='string'||!path.isAbsolute(percorso))throw Error('Selezione non valida.');
+    const st=fsNativo.lstatSync(percorso);
+    if(st.isSymbolicLink()||(!st.isFile()&&!st.isDirectory())||(st.isFile()&&st.nlink>1))throw Error('Collegamenti e file speciali non sono importabili.');
+    let set=selezioni.get(e.sender.id);if(!set){set=new Map();selezioni.set(e.sender.id,set);e.sender.once('destroyed',()=>selezioni.delete(e.sender.id));}
+    set.set(path.resolve(percorso),{dev:st.dev,ino:st.ino,reale:fsNativo.realpathSync(percorso)});e.returnValue={ok:true,cartella:st.isDirectory(),percorso};
+  }catch(error){e.returnValue={ok:false,error:error.message};}
+});
+ipcMain.on('file:verifica',(e,{percorso}={})=>{
+  if(!concessioni.ha(e.sender.id,percorso)){e.returnValue={ok:false,error:'Seleziona o trascina il file nell’app.'};return;}
+  e.returnValue=disco.esegui({lettura:[percorso]},()=>{
+    if(fs.lstatSync(percorso).isDirectory())return {ok:true,cartella:true};
+    return require('./lib/formati-sicuri').verificaFile(percorso);
+  });
+});
+ipcMain.on('vault:sync',(e,{gruppo,metodo,args}={})=>{
+  e.returnValue=require('./lib/vault-sincrono').esegui(readCfg().vaultPath,gruppo,metodo,args,{autorizzaLettura:f=>concessioni.ha(e.sender.id,f),tempRoot:temporanei()});
+});
 const mat = require('./lib/materiali');   // i materiali possono vivere dentro il corso
 // Un vault nuovo nasce con le sole cartelle che servono: i materiali di un
 // corso vivono dentro il corso (vedi lib/materiali.js), «Lezioni/» era il
@@ -120,13 +163,12 @@ function createWindow() {
     // timer a un secondo. Chi ascolta un capitolo intanto fa altro, e la lettura
     // andrebbe a scatti: fra un paragrafo e l'altro si aprirebbe un secondo di vuoto.
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true,
-      nodeIntegration: false, sandbox: false, backgroundThrottling: false }
+      nodeIntegration:false, sandbox:true, webSecurity:true, webviewTag:false, backgroundThrottling:false }
   });
-  win.loadFile(path.join(__dirname, 'App', 'StudIA.html'));
-  win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:/i.test(url)) { shell.openExternal(url); return { action: 'deny' }; }
-    return { action: 'allow' };
-  });
+  const finestre=require('./lib/sicurezza-finestre');
+  finestre.installaSessione(win.webContents.session,{appDir:path.join(__dirname,'App'),vaultDir:()=>readCfg().vaultPath,temporanei});
+  finestre.proteggiFinestra(win,{file:appFile,shell});
+  win.loadFile(appFile);
 }
 app.whenReady().then(() => { createWindow(); app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); }); });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
@@ -146,7 +188,7 @@ ipcMain.handle('voce:elenco', () => {
    blocco precedente si sta ancora ascoltando, invece che nel silenzio fra i due. */
 let voceTmp = null;
 function voceCartella() {
-  if (!voceTmp || !fs.existsSync(voceTmp)) voceTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'studia-voce-'));
+  if (!voceTmp || !fs.existsSync(voceTmp)) voceTmp = fs.mkdtempSync(path.join(temporanei(), 'voce-'));
   return voceTmp;
 }
 function voceScarta() {
@@ -187,7 +229,7 @@ ipcMain.handle('vault:choose', async () => {
   });
   if (r.canceled || !r.filePaths[0]) return null;
   const vault = r.filePaths[0];
-  scaffold(vault);
+  disco.esegui({lettura:[vault],scrittura:[vault]},()=>scaffold(vault));
   const c = readCfg(); c.vaultPath = vault; writeCfg(c);
   return vault;
 });
@@ -344,12 +386,7 @@ const fileCorsoDi = (id) => corsiLib.fileCorso(vaultDir(), id);
 const MEDIA_EXTS = mat.EXT_MEDIA;
 
 // scrittura atomica: mai lasciare un .md a metà se il processo muore
-function writeAtomic(file, text) {
-  const tmp = file + '.tmp';
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(tmp, text, 'utf-8');
-  fs.renameSync(tmp, file);
-}
+function writeAtomic(file,text){return require('./lib/appunti').writeAtomic(file,text);}
 
 // ---- profilo (il lettore vero è lib/profilo.js, condiviso con preload) ----
 ipcMain.handle('profile:get', () => { const v = vaultDir(); return v ? profiloLib.load(v) : { exists: false, bisogni: [] }; });
@@ -676,23 +713,21 @@ ipcMain.handle('crediti:chromium', async () => {
   return err ? { error: err } : { ok: true };
 });
 
-ipcMain.handle('crediti:notice', async (e, { percorso } = {}) => {
-  const dati = creditiLib.leggi(path.join(__dirname, 'App', 'assets', 'dati', 'crediti.json'));
-  if (dati.errore) return { error: dati.errore };
-  let dest = percorso || '';
-  if (!dest) {
-    const r = await dialog.showSaveDialog(win, {
-      title: 'Esporta crediti e licenze',
-      defaultPath: path.join(app.getPath('downloads'), 'StudIA-NOTICE.txt'),
-      filters: [{ name: 'Testo', extensions: ['txt'] }]
-    });
-    if (r.canceled || !r.filePath) return { annullato: true };
-    dest = r.filePath;
-  }
-  try { fs.writeFileSync(dest, creditiLib.notice(dati), 'utf8'); }
-  catch (err) { return { error: err.message }; }
-  return { ok: true, percorso: dest };
+ipcMain.handle('crediti:notice',async()=>{
+  const dati=creditiLib.leggi(path.join(__dirname,'App','assets','dati','crediti.json'));
+  if(dati.errore)return {error:dati.errore};
+  const r=await dialog.showSaveDialog(win,{title:'Esporta crediti e licenze',defaultPath:path.join(app.getPath('downloads'),'StudIA-NOTICE.txt'),filters:[{name:'Testo',extensions:['txt']}]});
+  if(r.canceled||!r.filePath)return {annullato:true};
+  return salvaEsportazione(r.filePath,creditiLib.notice(dati),'.txt');
 });
+function salvaEsportazione(file,contenuto,ext){
+  try{
+    if(path.extname(file).toLowerCase()!==ext)throw Error('Formato di esportazione non consentito.');
+    disco.percorso(path.dirname(file),file);
+    disco.esegui({scrittura:[file]},()=>require('./lib/appunti').writeAtomic(file,contenuto));
+    esportati.add(file);return {ok:true,percorso:file};
+  }catch(error){return {error:error.message};}
+}
 
 // ---- pacchetto: un corso in un file solo, e ritorno ----
 // Il caso d'uso è un docente che passa il corso agli allievi: dentro ci va tutto
@@ -728,29 +763,31 @@ function contaFileRicorsivo(dir, salta) {
  * nega i sotto-file `file://` — cioè il nostro CSS, i font e le icone. Con un
  * file vero il `<base href>` che il renderer ci mette dentro risolve tutto.
  *
- * `percorso` salta il dialogo: serve alle prove, che non possono premere
- * «Salva» in una finestra di sistema.
+ * La destinazione proviene sempre dal dialogo nativo; nessun percorso IPC
+ * può autorizzare una scrittura fuori dallo zaino.
  */
-ipcMain.handle('stampa:pdf', async (e, { html, nome, landscape, percorso } = {}) => {
+ipcMain.handle('stampa:pdf', async (e, { html, nome, landscape } = {}) => {
   if (!html || typeof html !== 'string') return { error: 'niente da stampare' };
-  let dest = percorso || '';
-  if (!dest) {
+  let dest = '';
+  {
     const r = await dialog.showSaveDialog(win, {
       title: 'Salva come PDF',
-      defaultPath: path.join(app.getPath('downloads'), (nome || 'StudIA') + '.pdf'),
+      defaultPath: path.join(app.getPath('downloads'), path.basename(String(nome || 'StudIA')) + '.pdf'),
       filters: [{ name: 'PDF', extensions: ['pdf'] }]
     });
     if (r.canceled || !r.filePath) return { annullato: true };
     dest = r.filePath;
   }
-  const tmp = path.join(os.tmpdir(), 'studia-stampa-' + Date.now() + '.html');
+  const tmp = path.join(temporanei(), 'stampa-' + require('node:crypto').randomUUID() + '.html');
   let finestra = null;
   try {
-    fs.writeFileSync(tmp, html, 'utf8');
+    fs.writeFileSync(tmp, html, {encoding:'utf8',flag:'wx',mode:0o600});
     finestra = new BrowserWindow({
       show: false,
-      webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false }
+      webPreferences: {sandbox:true,contextIsolation:true,nodeIntegration:false,javascript:false,webviewTag:false,partition:'stampa-'+require('node:crypto').randomUUID()}
     });
+    require('./lib/sicurezza-finestre').installaSessione(finestra.webContents.session,{appDir:path.join(__dirname,'App'),vaultDir,temporanei,documento:tmp});
+    require('./lib/sicurezza-finestre').proteggiFinestra(finestra,{file:tmp,shell,esterni:false});
     await finestra.loadFile(tmp);
     /* I font PRIMA della stampa, e non un tempo a caso: senza, il foglio esce
        col carattere di ripiego e le misure cambiano. Tetto a 4s — meglio un
@@ -763,8 +800,7 @@ ipcMain.handle('stampa:pdf', async (e, { html, nome, landscape, percorso } = {})
     const pdf = await finestra.webContents.printToPDF({
       printBackground: true, preferCSSPageSize: true, landscape: !!landscape
     });
-    fs.writeFileSync(dest, pdf);
-    return { ok: true, percorso: dest };
+    return salvaEsportazione(dest,pdf,'.pdf');
   } catch (err) {
     return { error: err.message || String(err) };
   } finally {
@@ -791,10 +827,7 @@ ipcMain.handle('guida:apri', async () => {
   });
   /* I link http della guida vanno nel browser di sistema, come nella finestra
      principale: una finestra di documentazione non è un browser. */
-  guidaWin.webContents.setWindowOpenHandler(({ url: u }) => {
-    if (/^https?:/i.test(u)) { shell.openExternal(u); return { action: 'deny' }; }
-    return { action: 'allow' };
-  });
+  require('./lib/sicurezza-finestre').proteggiFinestra(guidaWin,{file,shell});
   guidaWin.on('closed', () => { guidaWin = null; });
   await guidaWin.loadFile(file);
   return { ok: true };
@@ -805,7 +838,7 @@ ipcMain.handle('guida:apri', async () => {
    il file — un PDF che si apre da solo è una finestra che nessuno ha chiesto. */
 ipcMain.handle('stampa:mostra', async (e, { percorso } = {}) => {
   try {
-    if (!percorso || !fs.existsSync(percorso)) return { error: 'file inesistente' };
+    if (!percorso || !esportati.has(percorso)) return {error:'Mostra soltanto un file esportato da questa sessione.'};
     shell.showItemInFolder(percorso);
     return { ok: true };
   } catch (err) { return { error: err.message }; }
@@ -1577,6 +1610,7 @@ ipcMain.handle('file:reveal', (e, quale) => {
   const dentro = path.resolve(p);
   if (!dentro.startsWith(path.resolve(v) + path.sep)) return { ok: false, error: 'fuori dal vault' };
   if (!fs.existsSync(dentro)) return { ok: false, error: 'il file non c\'è più' };
+  disco.percorso(v, dentro);
   shell.showItemInFolder(dentro);
   return { ok: true, error: '' };
 });

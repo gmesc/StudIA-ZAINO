@@ -3,7 +3,15 @@
 // Nessuna variabile d'ambiente o opzione di produzione abilita questi adattatori.
 const provider = require('../lib/chat-provider');
 const fs = require('fs'), path = require('path');
-const { app } = require('electron');
+const {app,dialog}=require('electron');
+dialog.showSaveDialog=async()=>{
+ try{return JSON.parse(fs.readFileSync(path.join(app.getPath('userData'),'dialogo-salvataggio.json'),'utf8'));}
+ catch(_){return {canceled:true};}
+};
+app.on('web-contents-created',(_,contents)=>contents.once('did-finish-load',()=>{
+ const p=contents.getLastWebPreferences();
+ fs.appendFileSync(path.join(app.getPath('userData'),'finestre-sicurezza.jsonl'),JSON.stringify({sandbox:p.sandbox,contextIsolation:p.contextIsolation,nodeIntegration:p.nodeIntegration,preload:p.preload})+'\n');
+}));
 const registra = (nome, dati) => fs.appendFileSync(path.join(app.getPath('userData'), nome), JSON.stringify(dati) + '\n');
 provider.modelli = async () => [{id:'modello-locale-di-prova',nome:'Modello locale di prova'}];
 provider.rispondi = async ({messages,signal,system}) => {
