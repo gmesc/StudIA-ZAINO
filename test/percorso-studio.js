@@ -19,3 +19,8 @@ console.log('percorso-studio: raccolta comune, filtri, fonti non ambigue e coda 
 
 assert.deepEqual(P.ambitoDomanda({mode:'all',sourceIds:[]},{sources:[{sourceId:'b'}]}),{mode:'all',sourceIds:[]});
 assert.deepEqual(P.ambitoDomanda({mode:'selected',sourceIds:['a']},{sources:[{sourceId:'b'}]}).sourceIds,['a','b']);
+
+assert.equal(P.riprendi(qs,['one','two'],'three').id,'three','Riprendi mantiene la domanda in pausa anche se non dovuta');
+assert.equal(P.riprendi(qs,['one','two'],'rimossa').id,'one','Una domanda rimossa lascia posto alla prima dovuta');
+assert.equal(P.riprendi(qs,[],null),null,'Nessuna domanda dovuta: invita a scegliere, senza anticipare una scadenza');
+assert.equal(P.riprendi([{id:'bozza',saved:false}],['bozza'],'bozza'),null);

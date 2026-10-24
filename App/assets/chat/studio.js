@@ -38,7 +38,7 @@
   let busy=false,downloadBusy=false,epoch=0,study,ready=false,auto=null;
   $('zragSearch').append($('zragIndex'),document.querySelector('.zstudio-index-state'));
   const downloads=$('zragDownloads'),nomi={testo:'text',vision:'vision',video:'video'};
-  function status(text,error,id='zragStatus'){const e=$(id);if(e){e.textContent=text||'';e.classList.toggle('zchat-error',!!error);}}
+  function status(text,error,id='zragStatus'){const e=$(id);if(e){e.textContent=text||'';e.classList.toggle('zchat-error',!!error);if(error)e.scrollIntoView({block:'nearest'});}}
   function indiceButton(){const b=$('zragIndex'),a=azioneIndice({zaino:state.zaino,ready,busy,auto});b.textContent=a.text;b.title=a.title;b.disabled=a.disabled;return a;}
   function autoState(s){
    if(!s||s.zaino!==state.zaino)return;
@@ -66,12 +66,12 @@
    autoState(r.auto);indiceButton();return r;}
   async function action(fn,area='zragStatus'){
    if(busy){status('Attendi il termine dell’operazione in corso.',false,area);return;}if(!state.zaino){status('Apri uno zaino.',true,area);return;}
-   const run=epoch,z=state.zaino;busy=true;indiceButton();
+   const run=epoch,z=state.zaino,origin=document.activeElement;busy=true;indiceButton();
    const controls=[...document.querySelectorAll('#studioPane button,#studioPane input,#studioPane select,#zinterroga button,#zinterroga input,#zinterroga select,#zinterroga textarea')].filter(e=>!['zragCancel','zstudyCancel'].includes(e.id)).map(e=>[e,e.disabled]);controls.forEach(([e])=>{e.disabled=true;});
    const cancel=$(area==='zstudyStatus'?'zstudyCancel':'zragCancel');cancel.hidden=false;
    const poll=area==='zragStatus'?setInterval(()=>stato().catch(()=>{}),750):null;
    try{await fn(()=>run===epoch && z===state.zaino);}catch(e){if(run===epoch)status(e.message,true,area);}
-   finally{clearInterval(poll);busy=false;cancel.hidden=true;controls.forEach(([e,disabled])=>{e.disabled=disabled;});study?.settled();await stato().catch(()=>{});}
+   finally{clearInterval(poll);busy=false;cancel.hidden=true;controls.forEach(([e,disabled])=>{e.disabled=disabled;});study?.settled();if(document.activeElement===document.body&&origin?.isConnected&&origin.getClientRects().length)origin.focus();await stato().catch(()=>{});}
   }
   async function apri(source){const z=state.zaino,r=await call('resolve',z,source);if(z!==state.zaino)return;
    if(r.status!=='available')throw Error(r.status==='changed'?'Fonte modificata: il riferimento conserva la versione precedente.':'Fonte non più disponibile.');
@@ -115,20 +115,20 @@
   $('zragIndexOptions').addEventListener('toggle',()=>{if($('zragIndexOptions').open)stato().catch(e=>status(e.message,true));});
   let ritornoAI=null;
   function configuraAI(target){ritornoAI=target;$('settingsBtn').click();document.querySelector('.set-tab[data-tab="ai"]').click();$('zchatCloudSettings')?.scrollIntoView({block:'start'});$('zchatSettingsProvider')?.focus();}
-  async function ensureAI(area){
+  async function ensureAI(area,returnFocus){
    const z=state.zaino;const [config,keys]=await Promise.all([window.vault.chat.settings(),window.vault.chat.keysStatus()]);
    if(z!==state.zaino)return null;
    if(config?.ok===false||keys?.ok===false)throw Error(config.error||keys.error);
    const ready=window.ZainoPercorso.configurato(config,keys);
    const target=$(area);let notice=$(area+'Config');
    if(!notice){notice=el('div',undefined,'zstudio-config');notice.id=area+'Config';target.after(notice);}
-   notice.replaceChildren();notice.hidden=ready;
+   notice.replaceChildren();notice.hidden=ready;notice.dataset.returnFocus=returnFocus||(area==='zstudyStatus'?'zstudyTopic':'zschedeEstimate');
    if(ready)status('AI cloud: '+config.provider+' / '+config.model,false,area);
    if(!ready){notice.append(el('p','Per generare o valutare, configura AI cloud. I materiali già salvati restano disponibili.'));const b=el('button','Configura AI cloud','tbtn acc');b.type='button';b.onclick=()=>configuraAI(b);notice.append(b);status('Configurazione AI necessaria.',true,area);}
    if(!ready){notice.scrollIntoView({block:'nearest'});}
    return ready?config:null;
   }
-  $('settingsClose')?.addEventListener('click',()=>{if(ritornoAI){const target=ritornoAI,area=target.closest('.zstudio-config').id.replace(/Config$/,'');ritornoAI=null;ensureAI(area).then(()=>{if(target.isConnected&&!target.closest('[hidden]'))target.focus();else ($(area+'Config').querySelector('button')||$(area==='zstudyStatus'?'zstudyStart':'zschedeEstimate')).focus();}).catch(e=>status(e.message,true));}});
+  $('settingsClose')?.addEventListener('click',()=>{if(ritornoAI){const target=ritornoAI,area=target.closest('.zstudio-config').id.replace(/Config$/,''),focusId=target.closest('.zstudio-config').dataset.returnFocus;ritornoAI=null;ensureAI(area).then(()=>{if(target.isConnected&&!target.closest('[hidden]'))target.focus();else ($(area+'Config').querySelector('button')||$(focusId)).focus();}).catch(e=>status(e.message,true));}});
   // Il documento selezionato viene ricordato prima che il click nello studio cambi il riquadro attivo.
   let documento='';
   document.addEventListener('focusin',ricordaDocumento,true);document.addEventListener('pointerdown',ricordaDocumento,true);

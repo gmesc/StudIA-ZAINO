@@ -193,8 +193,8 @@
 .zstudio-index-state progress { display:block; width:100%; height:.4rem; accent-color:var(--teal-strong); margin:.4rem 0; }
 .zstudio-index-state .zchat-hint { margin:.5em 0; }
 .zstudio-card-text :is(ul,ol) { padding-inline-start:2em; margin-block:.6em; }
-.zstudio-collection { max-height:32vh; overflow:auto; }
-.zstudio-collection article { border-bottom:1px solid var(--line); padding:.3rem 0; }
+
+.zstudio-collection article { border-bottom:1px solid var(--line); padding:.6rem 0; }
 .zstudio-collection .zstudio-card-open { display:block; max-width:100%; text-transform:none; letter-spacing:normal; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; color:var(--teal-strong); }
 .zstudio-collection p { margin:0; padding-inline:var(--tb-pad-x); }
 .zstudio label { display:flex; flex-direction:column; gap:.35rem; margin:.7rem 0; font-size:var(--tb-fs); font-weight:var(--tb-peso); }
@@ -243,3 +243,38 @@
 }
 
 .zstudio .zchat-hint { font-size:max(12px,calc(var(--fs) * .75)); line-height:1.5; }
+
+/* Studio: una vista per attività e un solo scorrimento per split. */
+.zstudio-heading { display:flex; align-items:baseline; justify-content:space-between; gap:.7rem; }
+.zstudio-heading h2 { margin:.35rem 0; }
+.zstudio-options { flex:0 1 45%; text-align:right; }
+.zstudio-options p { text-align:left; }
+.zstudio-filters { display:flex; flex-wrap:wrap; gap:.7rem; }
+.zstudio-filters label:first-child { flex:2 1 12rem; }
+.zstudio-filters label:last-child { flex:1 1 7rem; }
+.zstudio-filters label { margin:.5rem 0; }
+.zstudio-collection { max-height:none; overflow:visible; }
+.zstudio-item-type { display:block; padding-inline:var(--tb-pad-x); color:var(--muted); font-size:var(--tb-fs); }
+.zstudio-collection .zstudio-card-open { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; white-space:normal; overflow:hidden; font-weight:400; line-height:1.5; padding-block:.2rem; }
+.zstudio-view>summary,#zragSearch>summary { list-style:none; }
+.zstudio-view>summary::-webkit-details-marker,#zragSearch>summary::-webkit-details-marker { display:none; }
+.zstudio-view,.zstudio #zragSearch { margin-top:0; }
+.zstudy-aids { display:flex; flex-wrap:wrap; align-items:flex-start; gap:.25rem 1.3rem; }
+.zstudy-aids details { margin-top:.3rem; }
+.zstudy-aids details[open] { flex-basis:100%; }
+#zstudyQuestion h3 { margin:.3rem 0 .65rem; }
+#zstudyQuestion form { margin:.7rem 0; }
+#zstudyQuestion form .acc { margin-top:.6rem; }
+#zstudyQuestion label { margin:.4rem 0; }
+#zstudyProgress { margin:.3rem 0; }
+#zschedeCollectionStatus { margin:.35rem 0; }
+#zstudyNavigation { border-top:1px solid var(--line); }
+#zstudySession:empty,#zschedeStatus:empty { display:none; }
+#zstudyBody :is(h2,h3):focus-visible,#zschedeResult h3:focus-visible { outline:2px solid var(--focus); outline-offset:3px; }
+#zstudyToolbar,#zragToolbar { flex-wrap:wrap; height:auto; min-height:var(--tb-h); }
+
+.zstudio-collection .zstudio-card-open { font-size:inherit; }
+.zstudy-feedback { margin-top:.6rem; }
+
+#zstudyFeedbackTitle { margin:0 0 .6rem; font-size:var(--fs); }
+#zstudyFeedbackTitle:focus { outline:2px solid var(--focus); outline-offset:3px; }

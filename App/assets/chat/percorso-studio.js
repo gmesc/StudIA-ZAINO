@@ -8,5 +8,6 @@
  function coda(questions,due,filter='due'){return questions.filter(q=>q.saved&&(filter==='all'||filter==='new'&&!q.esito||filter==='due'&&due.includes(q.id)||filter==='later'&&!due.includes(q.id)));}
  function ambitoDomanda(scope,q){if(scope.mode==='all')return scope;return {...scope,sourceIds:[...new Set([...scope.sourceIds,...q.sources.map(s=>s.sourceId)])]};}
  function configurato(config,keys){return !!(config?.provider&&config.model&&(keys?.[config.provider]===true||keys?.[config.provider]?.set));}
- return {ambitoDomanda,configurato,raccolta,filtra,fontePreferita,riassunto,coda};
+ function riprendi(questions,due,pausedId){return questions.find(q=>q.saved&&q.id===pausedId)||coda(questions,due)[0]||null;}
+ return {riprendi,ambitoDomanda,configurato,raccolta,filtra,fontePreferita,riassunto,coda};
 }));

@@ -13,18 +13,18 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  assert(await c.val(`document.getElementById('zstudio').firstElementChild.id==='zschede' && !document.getElementById('zschedeRead')`));
  await c.val(`bancoMostra('studio');document.getElementById('zragSearch').open=true`);await wait(`bancoVisibile('studio')`);assert.equal(await c.val(`!!document.querySelector('#zchatWindow #zstudio')`),false);await set('zragQuery','energia');await c.val(`document.getElementById('zragForm').requestSubmit()`);
  await wait(`document.querySelectorAll('#zragResults article').length>0`);assert(/Ricerca (lessicale|ibrida)/.test(await c.val(`document.getElementById('zragStatus').textContent`)));
- await wait(`document.getElementById('zschedePreset').options.length===5`);await click('#zschedeNewButton');await wait(`document.getElementById('zschedeNew').open`);assert.equal(await c.val(`document.getElementById('zschedeNew').open`),true);
+ await wait(`document.getElementById('zschedePreset').options.length===5`);await click('#zschedeBack');await click('#zschedeNewButton');await wait(`document.getElementById('zschedeNew').open`);assert.equal(await c.val(`document.getElementById('zschedeNew').open`),true);
  await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden`);assert((await c.val(`document.getElementById('zschedeTokens').textContent`)).includes('token'));
  await click('#zschedeGenerate');await wait(`document.querySelectorAll('#zschedeResult article').length===1`);
  assert.equal(await c.val(`document.querySelector('#zschedeResult strong').textContent`),'Energia cellulare');
  await wait(`document.querySelectorAll('#zschedeCollection article').length===1 && !document.getElementById('zschedeRefresh').disabled`);
- await set('zschedeFilter','inesistente');assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),0);await set('zschedeFilter','Sintesi');
+ await click('#zschedeBack');await set('zschedeFilter','inesistente');assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),0);await set('zschedeFilter','Sintesi');
  await c.val(`document.getElementById('zschedeResult').replaceChildren()`);await click('#zschedeCollection button');await wait(`!!document.querySelector('#zschedeResult article')`);
  assert.deepEqual(await c.val(`[...document.querySelectorAll('#zschedeResult .zstudio-card-text strong')].map(e=>e.textContent)`),['Concetti:','Prerequisiti:','Esempi:']);
  // Il raccoglitore resta generale anche quando la ricerca ammette una sola fonte.
  const firstCard=(await c.val(`window.vault.studio.cards('biologia')`)).cards[0],other=(await c.val(`window.vault.chat.sources('biologia')`)).sources.find(s=>s.kind==='appunto'&&s.id!==firstCard.sourceId);assert(other);
- await click('#zschedeNewButton');await wait(`document.getElementById('zschedeNew').open`);await set('zschedeSource',other.id);await set('zschedePreset','concetti');await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);await click('#zschedeGenerate');
- await wait(`document.getElementById('zschedeCollectionStatus').textContent.includes('Schede salvate: 2') && !document.getElementById('zschedeRefresh').disabled`);
+ await click('#zschedeBack');await click('#zschedeNewButton');await wait(`document.getElementById('zschedeNew').open`);await set('zschedeSource',other.id);await set('zschedePreset','concetti');await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);await click('#zschedeGenerate');
+ await wait(`document.getElementById('zschedeCollectionStatus').textContent.includes('2 schede') && !document.getElementById('zschedeRefresh').disabled`);
  await set('zschedeFilter','');assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),2);
  await click('#zragScopeButton');await click('#zragScope input');await click('#zragScope [data-source-id="'+other.id+'"]');await click('#zragScopeButton');
  await wait(`document.getElementById('zschedeSource').options.length===1`);assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),2);
@@ -38,7 +38,7 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  try{
   fs.appendFileSync(sourceFile,'\nNuovo paragrafo di prova: energia conservata nei legami chimici.\n');
   await wait(`document.getElementById('zschedeCollection').textContent.includes('Fonte modificata')`);
-  await click('#zschedeCollection .zstudio-card-regenerate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);
+  await click('#zschedeBack');await click('#zschedeCollection .zstudio-card-open');await wait(`!document.getElementById('zschedeRefresh').disabled`);await click('#zschedeResult .zstudio-card-regenerate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);
   assert.equal(fs.readFileSync(cacheFile,'utf8'),before,'Mostrare la stima non deve chiamare il provider o modificare la scheda');
   assert((await c.val(`document.getElementById('zschedeEstimateText').textContent`)).includes(cached.file.split('/').pop()));
   await click('#zschedeGenerate');await wait(`!document.getElementById('zschedeRefresh').disabled && document.getElementById('zschedeCollection').textContent.includes('Aggiornata') && !document.getElementById('zschedeCollection').textContent.includes('Fonte modificata')`);
@@ -58,7 +58,7 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await set('zstudyQueueFilter','all');
  for(const theme of ['chiaro','scuro']){
   await c.val(`document.documentElement.dataset.theme=${JSON.stringify(theme)}`);
-  assert(await c.val(`['#zschedeTitle','#zragSearch>summary'].every(sel=>{const s=getComputedStyle(document.querySelector(sel));return s.backgroundColor!=='rgba(0, 0, 0, 0)' && parseFloat(s.fontWeight)>=600;})`));
+  assert(await c.val(`['#zragSearch>summary'].every(sel=>{const s=getComputedStyle(document.querySelector(sel));return s.backgroundColor!=='rgba(0, 0, 0, 0)' && parseFloat(s.fontWeight)>=600;})`));
  }
  await c.val(`document.documentElement.dataset.theme='chiaro'`);
  await c.val(`document.getElementById('zchatWindow').hidden=true;bancoMostra('flashcard')`);await wait(`bancoVisibile('flashcard')`);
@@ -87,8 +87,13 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await set('zstudyQueueFilter','all');
  for(const theme of ['chiaro','scuro']){
   await c.val(`document.documentElement.dataset.theme=${JSON.stringify(theme)}`);
-  const layout=await c.val(`(()=>{const root=getComputedStyle(document.documentElement),ids=['zstudyTopic','zstudySaved','zstudyStart','zstudyRefresh'];return ids.map(id=>{const e=document.getElementById(id),s=getComputedStyle(e);return {id,height:e.getBoundingClientRect().height,expected:parseFloat(root.getPropertyValue(e.tagName==='BUTTON'?'--tb-h':'--ctl-h')),radius:s.borderRadius};});})()`);
-  for(const e of layout){assert(Math.abs(e.height-e.expected)<1.2,JSON.stringify(e));assert.equal(e.radius,'0px');}
+  for(const [nav,ids] of [['zstudyNewButton',['zstudyTopic','zstudyStart']],['zstudyBrowse',['zstudySaved','zstudyRefresh']]]){
+   await click('#'+nav);
+   const layout=await c.val(`(()=>{const root=getComputedStyle(document.documentElement);return ${JSON.stringify(ids)}.map(id=>{const e=document.getElementById(id),s=getComputedStyle(e);return {id,height:e.getBoundingClientRect().height,expected:parseFloat(root.getPropertyValue(e.tagName==='BUTTON'?'--tb-h':'--ctl-h')),radius:s.borderRadius};});})()`);
+   for(const e of layout){assert(Math.abs(e.height-e.expected)<1.2,JSON.stringify(e));assert.equal(e.radius,'0px');}
+   await click('#zstudyBack');
+  }
+  await click('#zstudyRetry');
   assert(await c.val(`document.getElementById('zstudyAttempt').getBoundingClientRect().height>parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ctl-h'))*2`),'Il tentativo offre più righe per scrivere');
  }
  await c.val(`document.documentElement.dataset.theme='chiaro'`);
