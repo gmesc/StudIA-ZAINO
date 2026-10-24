@@ -13,25 +13,28 @@
    <form id="zragForm" class="zstudio-actions"><label class="zchat-sr" for="zragQuery">Cerca nei materiali per parole o significato</label><input class="ctl-input" id="zragQuery" placeholder="Che cosa vuoi trovare?" maxlength="12000"><button class="tbtn acc" type="submit">Cerca</button></form>
    <div class="zstudio-index-state"><p id="zragAutoStatus" role="status" class="zchat-hint"></p><progress id="zragAutoProgress" aria-label="Avanzamento indicizzazione automatica" hidden></progress></div>
    <details id="zragIndexOptions" class="zstudio-section"><summary>Indice sul dispositivo</summary><p class="zchat-hint">L’indice si aggiorna automaticamente dopo aggiunte e modifiche salvate, anche fuori dall’app, finché questo zaino è aperto. Prepara tutte le fonti leggibili dello zaino sul dispositivo; la ricerca usa solo quelle selezionate. I passaggi invariati vengono riutilizzati. «Ricostruisci indice» rifà l’indice di ricerca conservando appunti, schede e ripassi.</p>
+   <section id="zragDownloads" hidden><p class="set-note">EmbeddingGemma 2 è un modello di embedding multilingue. La versione ONNX viene eseguita localmente; scegli i componenti da scaricare.</p>
    <p class="zrag-modello-info"><strong id="zragModelName">EmbeddingGemma 2 · ONNX</strong> · <a id="zragModelInfo" href="https://huggingface.co/onnx-community/embeddinggemma-2-ONNX" target="_blank" rel="noopener noreferrer">Informazioni su Hugging Face ↗</a></p>
    <div class="zrag-modelli">
-    <article data-modello="testo"><div><strong>Testo</strong><p class="zchat-hint">Ricerca per significato nei documenti e negli appunti.</p><p class="zchat-hint" id="zragModelSize-testo"></p></div><button class="tbtn" id="zragInstall" data-download="testo" type="button" aria-label="Scarica EmbeddingGemma 2 ONNX: Testo">Scarica</button></article>
-    <article data-modello="vision"><div><strong>Visione</strong><p class="zchat-hint">Componenti per le immagini, inclusa la parte testuale.</p><p class="zchat-hint" id="zragModelSize-vision"></p></div><button class="tbtn" id="zragInstallVision" data-download="vision" type="button" aria-label="Scarica EmbeddingGemma 2 ONNX: Visione">Scarica</button></article>
-    <article data-modello="video"><div><strong>Video</strong><p class="zchat-hint">Componenti per i fotogrammi video, inclusa la parte testuale.</p><p class="zchat-hint" id="zragModelSize-video"></p></div><button class="tbtn" id="zragInstallVideo" data-download="video" type="button" aria-label="Scarica EmbeddingGemma 2 ONNX: Video">Scarica</button></article>
+    <article data-modello="testo"><div><strong>text</strong><p class="zchat-hint">Ricerca per significato nei documenti e negli appunti.</p><p class="zchat-hint" id="zragModelSize-testo"></p></div><button class="tbtn" id="zragInstall" data-download="testo" type="button" aria-label="Scarica EmbeddingGemma 2 ONNX: Testo">Scarica</button></article>
+    <article data-modello="vision"><div><strong>vision</strong><p class="zchat-hint">Componenti per le immagini, inclusa la parte testuale.</p><p class="zchat-hint" id="zragModelSize-vision"></p></div><button class="tbtn" id="zragInstallVision" data-download="vision" type="button" aria-label="Scarica EmbeddingGemma 2 ONNX: Visione">Scarica</button></article>
+    <article data-modello="video"><div><strong>video</strong><p class="zchat-hint">Componenti per i fotogrammi video, inclusa la parte testuale.</p><p class="zchat-hint" id="zragModelSize-video"></p></div><button class="tbtn" id="zragInstallVideo" data-download="video" type="button" aria-label="Scarica EmbeddingGemma 2 ONNX: Video">Scarica</button></article>
    </div>
    <p class="zchat-hint">Visione e Video condividono i file: scaricandone uno, sono disponibili entrambi. Questi download preparano i componenti; la ricerca nei contenuti visivi non è ancora attiva.</p>
-   <div class="tbar zstudio-actions"><button class="tbtn" id="zragIndex" type="button">Aggiorna ora</button><button class="tbtn" id="zragReset" type="button">Ricostruisci indice</button></div></details>
+   <button class="tbtn" id="zragDownloadCancel" type="button" hidden>Interrompi download</button><p id="zragDownloadStatus" class="set-note" role="status" aria-live="polite"></p></section>
+   <div class="tbar zstudio-actions"><button class="tbtn" id="zragSettings" type="button">AI locale…</button><button class="tbtn" id="zragIndex" type="button">Aggiorna ora</button><button class="tbtn" id="zragReset" type="button">Ricostruisci indice</button></div></details>
    <button class="tbtn" id="zragCancel" type="button" hidden>Interrompi</button><p id="zragStatus" role="status" class="zchat-hint"></p>
    <div id="zragResults" class="zstudio-results"></div></div>`;
   const box=document.getElementById('zstudio'),$=id=>document.getElementById(id),el=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;};
-  let busy=false,epoch=0,study;
+  let busy=false,downloadBusy=false,epoch=0,study;
+  const downloads=$('zragDownloads'),nomi={testo:'text',vision:'vision',video:'video'};
   function status(text,error,id='zragStatus'){const e=$(id);if(e){e.textContent=text||'';e.classList.toggle('zchat-error',!!error);}}
   function autoState(s){
    if(!s||s.zaino!==state.zaino)return;
    const progress=$('zragAutoProgress'),active=['queued','extracting','indexing'].includes(s.phase);
    progress.hidden=!active;progress.max=Math.max(1,s.total||0);
    if(s.phase==='indexing'&&s.total)progress.value=s.done;else progress.removeAttribute('value');
-   const messages={queued:'Indice automatico: aggiornamento in attesa…',extracting:'Indice automatico: lettura dei materiali…',indexing:'Indicizzazione automatica: '+s.done+'/'+s.total+' passaggi'+(s.file?' · '+s.file.split('/').pop():''),ready:'Indice aggiornato · '+s.total+' passaggi · '+s.reused+' riutilizzati.',warning:'Indice aggiornato con avvisi · '+s.done+'/'+s.total+' passaggi.',error:'Indice automatico da controllare.',paused:'Indice automatico: aggiornamento manuale in corso.', 'waiting-model':'Per l’indice automatico, scarica il modello in «Indice sul dispositivo». La ricerca per parole è già disponibile.'};
+   const messages={queued:'Indice automatico: aggiornamento in attesa…',extracting:'Indice automatico: lettura dei materiali…',indexing:'Indicizzazione automatica: '+s.done+'/'+s.total+' passaggi'+(s.file?' · '+s.file.split('/').pop():''),ready:'Indice aggiornato · '+s.total+' passaggi · '+s.reused+' riutilizzati.',warning:'Indice aggiornato con avvisi · '+s.done+'/'+s.total+' passaggi.',error:'Indice automatico da controllare.',paused:'Indice automatico: aggiornamento manuale in corso.', 'waiting-model':'Per la ricerca per significato, scarica text in Impostazioni → AI → AI locale. La ricerca per parole è già disponibile.'};
    $('zragAutoStatus').textContent=(messages[s.phase]||'')+(s.warnings?.length?' '+s.warnings.join(' '):'');
    $('zragAutoStatus').classList.toggle('zchat-error',s.phase==='error');
   }
@@ -40,13 +43,13 @@
   async function stato(){const r=await call('state');$('zragIndex').disabled=!r.ready || busy;$('zragReset').disabled=busy;
    if(r.model){$('zragModelName').textContent=r.model.nome+' · '+r.model.formato;$('zragModelInfo').href=r.model.url;}
    for(const p of r.packages||[]){
-    const b=host.querySelector('[data-download="'+p.id+'"]'),conto=$('zragModelSize-'+p.id);if(!b || !conto)continue;
-    b.disabled=p.pronto || busy || r.download;
-    b.textContent=p.pronto?'Scaricato':p.daScaricare?'Scarica':'Verifica';
+    const b=downloads.querySelector('[data-download="'+p.id+'"]'),conto=$('zragModelSize-'+p.id);if(!b || !conto)continue;
+    b.disabled=p.pronto || downloadBusy || r.download;
+    b.textContent=nomi[p.id]+' · '+(p.pronto?'Scaricato':p.daScaricare?'Scarica':'Verifica');
     b.setAttribute('aria-label',(p.pronto?'Componenti scaricati':p.daScaricare?'Scarica':'Verifica')+' · EmbeddingGemma 2 ONNX · '+p.nome);
     conto.textContent=dimensione(p.totale)+(p.pronto?' · componenti scaricati':p.daScaricare<p.totale?' totali · '+dimensione(p.daScaricare)+' da scaricare':' da scaricare');
    }
-   if(r.download && r.progress){const p=(r.packages||[]).find(p=>p.id===r.progress.modalita);status('Download '+(p?.nome||'modello')+': '+Math.round(100*r.progress.bytes/r.progress.total)+'%');}
+   if(r.download && r.progress){const p=(r.packages||[]).find(p=>p.id===r.progress.modalita);status('Download '+(nomi[p?.id]||'modello')+': '+Math.round(100*r.progress.bytes/r.progress.total)+'%',false,'zragDownloadStatus');}
    else if(r.busy && r.job)status('Indicizzazione: '+r.job.done+'/'+r.job.total+' passaggi · '+r.job.file);
    autoState(r.auto);return r;}
   async function action(fn,area='zragStatus'){
@@ -65,16 +68,22 @@
    else status(r.source.file+': '+(source.text||source.quote||''));
   }
   function riferimento(source,area='zragStatus'){const b=el('button',source.file.split('/').pop()+(source.page?' · p. '+source.page:''),'tbtn zchat-citation');b.type='button';b.title=source.file;b.onclick=()=>apri(source).catch(e=>status(e.message,true,area));return b;}
-  const picker=window.ZainoSceltaFonti.crea({prefix:'zragScope',bar:$('zragToolbar'),host:$('zragScopeHost'),state,onChange(){epoch++;api.cancel();$('zragResults').replaceChildren();study?.scopeChanged();status('Fonti della ricerca aggiornate.');}});
+  const picker=window.ZainoSceltaFonti.crea({prefix:'zragScope',bar:$('zragToolbar'),host:$('zragScopeHost'),state,onChange(){epoch++;api.cancel('index');$('zragResults').replaceChildren();study?.scopeChanged();status('Fonti della ricerca aggiornate.');}});
   api.onAuto(autoState);
   $('zragOpenReview').onclick=()=>{window.bancoMostra('flashcard');study.refresh().catch(e=>status(e.message,true,'zstudyStatus'));};
-  host.querySelectorAll('[data-download]').forEach(b=>{b.onclick=()=>action(async current=>{
-   const nome=host.querySelector('[data-modello="'+b.dataset.download+'"] strong').textContent;
-   status('Download di EmbeddingGemma 2 · '+nome+'…');await call('install',b.dataset.download);
-   if(current())status('EmbeddingGemma 2 · '+nome+': componenti scaricati. L’indice testuale si aggiorna automaticamente.');
-  });});
+  downloads.querySelectorAll('[data-download]').forEach(b=>{b.onclick=async()=>{
+   if(downloadBusy)return;downloadBusy=true;
+   downloads.querySelectorAll('button[data-download]').forEach(b=>b.disabled=true);
+   $('zragDownloadCancel').hidden=false;status('Download di EmbeddingGemma 2 · '+nomi[b.dataset.download]+'…',false,'zragDownloadStatus');
+   const poll=setInterval(()=>stato().catch(()=>{}),750);
+   try{await call('install',b.dataset.download);status('Componenti '+nomi[b.dataset.download]+' scaricati.',false,'zragDownloadStatus');}
+   catch(e){status(e.message,true,'zragDownloadStatus');}
+   finally{clearInterval(poll);downloadBusy=false;$('zragDownloadCancel').hidden=true;await stato().catch(()=>{});}
+  };});
+  $('zragDownloadCancel').onclick=()=>call('cancel','download').catch(e=>status(e.message,true,'zragDownloadStatus'));
+  $('zragSettings').onclick=()=>{$('settingsBtn').click();document.querySelector('.set-tab[data-tab="ai"]').click();$('zchatLocalSettings')?.scrollIntoView({block:'start'});};
   $('zragIndex').onclick=()=>action(async current=>{if(!window.noteFlush())throw Error('Salva prima gli appunti aperti.');const r=await call('index',state.zaino,state.scope);if(current())status('Indicizzazione: '+r.done+'/'+r.total+' passaggi, '+r.reused+' già pronti. '+r.warnings.join(' '));});
-  $('zragCancel').onclick=()=>call('cancel').catch(e=>status(e.message,true));
+  $('zragCancel').onclick=()=>call('cancel','index').catch(e=>status(e.message,true));
   $('zragReset').onclick=()=>action(async current=>{await call('reset',state.zaino);const r=await call('index',state.zaino,state.scope);if(current())status('Indice ricostruito: '+r.done+'/'+r.total+' passaggi. '+r.warnings.join(' '));});
   $('zragForm').onsubmit=e=>{e.preventDefault();action(async current=>{
    if(!window.noteFlush())throw Error('Salva prima gli appunti aperti.');
@@ -88,13 +97,15 @@
   study=window.ZainoSchedeRipasso.crea(apiUi,state);
   async function sync(){
    const z=window.zainoAttivo?.();if(z===state.zaino)return;
-   epoch++;api.cancel();state.zaino=z;study.reset();$('zragResults').replaceChildren();$('zragQuery').value='';status('');
+   epoch++;api.cancel('index');state.zaino=z;study.reset();$('zragResults').replaceChildren();$('zragQuery').value='';status('');
    $('zragAutoStatus').textContent='';$('zragAutoProgress').hidden=true;
    autoState((await call('watch',z)).auto);await picker.sync();await study.sync();await stato();
   }
   window.addEventListener('studia:zaino-changed',()=>sync().catch(e=>status(e.message,true)));
   window.zainoRipasso={refresh:async()=>{try{await sync();if(state.zaino)await study.refresh();}catch(e){status(e.message,true,'zstudyStatus');}}};
-  window.zainoStudio={refresh:sync};sync().catch(e=>status(e.message,true));
+  window.zainoStudio={refresh:sync,impostazioni:target=>{if(!target)return;target.appendChild(downloads);downloads.hidden=false;stato().catch(()=>{});}};
+  document.querySelector('.set-tab[data-tab="ai"]')?.addEventListener('click',()=>stato().catch(()=>{}));
+  $('settingsBtn')?.addEventListener('click',()=>stato().catch(()=>{}));sync().catch(e=>status(e.message,true));
   return apiUi;
  }
  return {crea};

@@ -40,7 +40,7 @@ const mat = require('./lib/materiali');   // i materiali possono vivere dentro i
 const scaffold = (v) => { for (const d of ['Zaini', '.studia']) { try { fs.mkdirSync(path.join(v, d), { recursive: true }); } catch (e) {} } };
 
 // ---- chiavi API personali: cifrate con safeStorage (Keychain) quando disponibile ----
-const PROVIDERS = ['anthropic', 'openai', 'google', 'qwen', 'kimi', 'deepseek'];
+const PROVIDERS = ['anthropic', 'openai', 'google', 'qwen', 'kimi', 'deepseek', 'infomaniak'];
 function storeKey(provider, value) {
   const c = readCfg(); c.keys = c.keys || {};
   if (!value) { delete c.keys[provider]; writeCfg(c); return; }

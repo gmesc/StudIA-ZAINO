@@ -22,7 +22,7 @@ La testata contiene il ruolo, l’ingranaggio per le impostazioni AI, **+**, **�
 
 In **Impostazioni → Utente** puoi salvare, clonare, eliminare e scegliere profili: lettura, carico cognitivo, conoscenze iniziali, lingua, presentazione, lunghezza, esempi, verifiche e preferenze libere. Sono inclusi Equilibrato, Explain like I'm 5 e Mr Feynman. I profili descrivono preferenze didattiche, non diagnosi.
 
-In **Impostazioni → AI**, scegli un provider, segui il link per creare una chiave API, salvala e seleziona un modello dall'elenco restituito dal provider. Supportati Anthropic, Gemini, OpenAI, Qwen, Kimi e DeepSeek. Qwen richiede la piattaforma internazionale Singapore; Kimi la piattaforma globale. Le chiavi vengono cifrate con l'archivio sicuro del sistema, restano fuori dal vault e non sono esposte al renderer. Se l'archivio sicuro non è disponibile, il salvataggio viene rifiutato.
+In **Impostazioni → AI → AI cloud**, scegli Google, OpenAI, Anthropic o Infomaniak, segui il link per creare una chiave API, salvala e seleziona un modello dall'elenco restituito dal provider. Infomaniak rileva automaticamente il prodotto AI Services; se ne hai più di uno, inserisci il suo ID nell’apposito campo. Le chiavi vengono cifrate con l'archivio sicuro del sistema, restano fuori dal vault e non sono esposte al renderer. Se l'archivio sicuro non è disponibile, il salvataggio viene rifiutato. Le configurazioni precedenti Qwen, Kimi e DeepSeek restano utilizzabili.
 
 ```text
 vault/
@@ -35,7 +35,7 @@ vault/
 
 Il contesto inviato all'AI è una selezione di passaggi pertinenti, con nomi dei file e pagine: i limiti e i documenti non leggibili sono dichiarati nella chat. I PDF fotografati richiedono prima l'OCR facoltativo già presente nello zaino. La ricerca locale del testo resta disponibile; non viene eseguita la pipeline CORSI. Vedi [dettagli chat](docs/CHAT.md) e [provider e fonti ufficiali](docs/PROVIDER-AI.md).
 
-L’embedder locale è **EmbeddingGemma 2 · ONNX** ([scheda su Hugging Face](https://huggingface.co/onnx-community/embeddinggemma-2-ONNX)). In **Cerca e studia → Indice sul dispositivo** sono disponibili i download **Testo** (346,4 MB), **Visione** e **Video** (541,8 MB con il testo incluso). Visione e Video condividono i componenti: scaricarne uno prepara entrambi. I file già presenti e i download parziali vengono riutilizzati; l’app mostra quanti MB mancano. La ricerca attuale usa il testo; i download visivi preparano i componenti per immagini e fotogrammi.
+L’embedder locale è **EmbeddingGemma 2 · ONNX** ([scheda su Hugging Face](https://huggingface.co/onnx-community/embeddinggemma-2-ONNX)): confronta il significato di documenti, appunti e domande sul computer. In **Impostazioni → AI → AI locale** trovi le descrizioni e i download **text** (346,4 MB), **vision** e **video** (541,8 MB con il testo incluso), disponibili anche senza uno zaino aperto. Visione e Video condividono i componenti: scaricarne uno prepara entrambi. I file già presenti e i download parziali vengono riutilizzati; l’app mostra quanti MB mancano. La ricerca attuale usa il testo; i download visivi preparano i componenti per immagini e fotogrammi. In **Cerca e studia → Indice sul dispositivo** restano i comandi per aggiornare o ricostruire l’indice e una scorciatoia alle impostazioni locali.
 
 ## Materiali in parallelo
 

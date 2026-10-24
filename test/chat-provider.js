@@ -25,10 +25,25 @@ function sse(...data) {
 }
 
 (async () => {
-  assert.deepEqual(P.catalogo().map(p => p.id), ['anthropic', 'google', 'openai', 'qwen', 'kimi', 'deepseek']);
+  assert.deepEqual(P.catalogo().map(p => p.id), ['anthropic', 'google', 'openai', 'qwen', 'kimi', 'deepseek', 'infomaniak']);
   assert.ok(P.catalogo().every(p => p.nome && p.keyUrl.startsWith('https://') && !p.base));
   const cat = P.catalogo(); cat[0].nome = 'mutato';
   assert.notEqual(P.catalogo()[0].nome, 'mutato');
+
+  mock({result:'success',data:[{product_id:12345,status:'ok'}]}, {data:[{id:'mistral3'},{id:'BAAI/bge-m3'},{id:'flux1'}]});
+  assert.deepEqual((await P.modelli('infomaniak',key)).map(m=>m.id),['mistral3']);
+  assert.equal(calls[0].url,'https://api.infomaniak.com/1/ai');
+  assert.equal(calls[1].url,'https://api.infomaniak.com/2/ai/12345/openai/v1/models');
+  assert.equal(calls[1].headers.Authorization,'Bearer '+key);
+  mock({choices:[{message:{content:'Risposta svizzera'}}],usage:{prompt_tokens:10,completion_tokens:4}});
+  assert.equal((await request('infomaniak',{productId:'67890'})).text,'Risposta svizzera');
+  assert.equal(calls[0].url,'https://api.infomaniak.com/2/ai/67890/openai/v1/chat/completions');
+  assert.equal(calls[0].json.messages[0].role,'system');
+  assert(!calls[0].url.includes(key));
+  mock({result:'success',data:[{product_id:1,status:'ok'},{product_id:2,status:'ok'}]});
+  await assert.rejects(P.modelli('infomaniak',key),/ID prodotto/);
+  mock();await assert.rejects(P.modelli('infomaniak',key,{productId:'../evil'}),/ID prodotto/);
+  assert.equal(calls.length,0);
 
   mock(
     { data: [{ id: 'claude-a', display_name: 'Claude A', max_input_tokens: 200000 }], has_more: true, last_id: 'claude-a' },
@@ -145,5 +160,5 @@ function sse(...data) {
   const pending = request('openai', { signal: ongoing.signal }); ongoing.abort();
   await assert.rejects(pending, e => e.name === 'AbortError');
   assert.equal(queue.length, 0);
-  console.log('chat-provider: catalogo, paginazione, 6 provider, streaming, sicurezza e annullamento OK');
+  console.log('chat-provider: catalogo, paginazione, 7 provider, streaming, sicurezza e annullamento OK');
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => { global.fetch = originalFetch; });

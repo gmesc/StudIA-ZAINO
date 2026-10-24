@@ -276,14 +276,17 @@
       <div class="set-sec-h">Prova un preset</div><p class="set-note">Crea una copia modificabile e confronta modi diversi di studiare.</p><div class="zchat-profile-actions" id="zchatPresets"></div>
       <p id="zchatProfileStatus" class="set-note" role="status" aria-live="polite"></p>`);
     preserveLegacy('ai', `
-      <div class="set-sec-h">Provider e modelli della chat</div>
+      <section id="zchatCloudSettings" class="zchat-ai-section" aria-labelledby="zchatCloudTitle"><h3 id="zchatCloudTitle" class="set-sec-h">AI cloud</h3>
       <p class="set-note">Inserisci una chiave personale del provider scelto. L’elenco dei modelli viene richiesto con quella chiave; disponibilità e costi dipendono dal tuo account.</p>
       <div class="setgrid"><label>Provider<select id="zchatSettingsProvider"></select></label><label>Modello per la chat<select id="zchatSettingsModel"></select></label></div>
+      <div id="zchatInfomaniak" hidden><label class="zchat-field">ID prodotto AI Services (facoltativo)<input class="ctl-input" id="zchatProductId" type="text" inputmode="numeric" maxlength="16" placeholder="Rilevato automaticamente se hai un solo prodotto"></label><button class="tbtn" type="button" id="zchatProductSave">Salva ID prodotto</button></div>
       <p id="zchatProviderNote" class="set-note"></p>
       <p class="set-note">La chat usa il profilo predefinito scelto in Impostazioni → Utente. A ogni invio rilegge documenti e appunti dello zaino; invia al provider i passaggi pertinenti, la cronologia e il profilo. Spiegamelo può cercare l’argomento su Wikipedia. Le conversazioni restano nel vault.</p>
       <div class="zchat-profile-actions"><a id="zchatKeyLink" target="_blank" rel="noopener noreferrer">Crea una API key</a><button type="button" class="tbtn" id="zchatModelsRefresh">Aggiorna elenco modelli</button></div>
       <p id="zchatKeyStatus" class="set-note"></p><form id="zchatKeyForm"><label class="zchat-field">Nuova API key<input id="zchatKeyInput" class="ctl-input" type="password" autocomplete="new-password" spellcheck="false" placeholder="Incolla una nuova chiave" maxlength="1000"></label><div class="zchat-profile-actions"><button type="submit" class="tbtn acc" id="zchatKeySave">Salva chiave</button><button type="button" class="tbtn" id="zchatKeyRemove">Rimuovi chiave</button></div></form>
-      <p id="zchatAIStatus" class="set-note" role="status" aria-live="polite"></p>`);
+      <p id="zchatAIStatus" class="set-note" role="status" aria-live="polite"></p></section>
+      <section id="zchatLocalSettings" class="zchat-ai-section" aria-labelledby="zchatLocalTitle"><h3 id="zchatLocalTitle" class="set-sec-h">AI locale</h3><p class="set-note">L’embedder permette di cercare per significato nei documenti e negli appunti, anche quando usano parole diverse dalla domanda. La ricerca avviene sul tuo computer.</p></section>`);
+    window.zainoStudio?.impostazioni($('zchatLocalSettings'));
     for (const [key, [labelText, choices]] of Object.entries(fields)) {
       const label = el('label', labelText); const select = el('select'); select.id = 'zchatField-' + key;
       choices.forEach(([value, label]) => select.appendChild(new Option(label, value))); label.appendChild(select); $('zchatProfileFields').appendChild(label);
@@ -352,11 +355,14 @@
     function drawConfig() {
       const provider = state.settings.provider;
       const known = state.catalog.find(item => item.id === provider);
-      const choices = state.catalog.map(item => ({ ...item, nome: item.nome + (hasKey(item.id) ? ' · chiave salvata' : '') }));
+      const cloud=['google','openai','anthropic','infomaniak'];
+      const choices = state.catalog.filter(item=>cloud.includes(item.id)||item.id===provider).sort((a,b)=>cloud.indexOf(a.id)-cloud.indexOf(b.id)).map(item => ({ ...item, nome: item.nome + (hasKey(item.id) ? ' · chiave salvata' : '') }));
       ['zchatSettingsProvider'].forEach(id => options($(id), choices, provider, 'Scegli provider'));
       const models = state.modelCache[provider] || [];
       ['zchatSettingsModel'].forEach(id => options($(id), models, state.settings.model, hasKey(provider) ? 'Scegli modello' : 'Inserisci una API key'));
       $('zchatProviderNote').textContent = known?.nota || '';
+      $('zchatInfomaniak').hidden=provider!=='infomaniak';
+      $('zchatProductId').value=state.settings.infomaniakProductId||'';
       const href = safeLink(known?.keyUrl); const link = $('zchatKeyLink');
       link.hidden = !href; if (href) link.href = href; else link.removeAttribute('href');
       link.textContent = 'Crea una API key ' + (known?.nome || '');
@@ -386,7 +392,7 @@
     }
     async function selectProvider(provider) {
       if (state.sending) return; const epoch = ++state.configEpoch;
-      state.settings = { provider, model: '' }; $('zchatKeyInput').value = ''; drawConfig();
+      state.settings = { ...state.settings, provider, model: '' }; $('zchatKeyInput').value = ''; drawConfig();
       try { if (provider) await call('saveSettings', state.settings); if (epoch === state.configEpoch) await refreshModels(); }
       catch (error) { if (epoch === state.configEpoch) status('zchatAIStatus', errorText(error), true); }
     }
@@ -398,6 +404,17 @@
     ['zchatSettingsProvider'].forEach(id => $(id).addEventListener('change', () => selectProvider($(id).value)));
     ['zchatSettingsModel'].forEach(id => $(id).addEventListener('change', () => selectModel($(id).value)));
     $('zchatModelsRefresh').addEventListener('click', refreshModels);
+    async function salvaProdotto(){
+      const prodotto=$('zchatProductId').value.trim();
+      if(prodotto===(state.settings.infomaniakProductId||''))return;
+      const risultato=await call('saveSettings',{...state.settings,model:'',infomaniakProductId:prodotto});
+      state.settings={provider:risultato.provider,model:risultato.model,...(risultato.infomaniakProductId?{infomaniakProductId:risultato.infomaniakProductId}:{})};
+      delete state.modelCache.infomaniak;
+    }
+    $('zchatProductSave').addEventListener('click',async()=>{
+      try{await salvaProdotto();drawConfig();status('zchatAIStatus','Collegamento Infomaniak salvato.');await refreshModels();}
+      catch(e){status('zchatAIStatus',errorText(e),true);}
+    });
     let keyBusy = false;
     $('zchatKeyForm').addEventListener('submit', async event => {
       event.preventDefault(); if (keyBusy) return;
@@ -405,6 +422,7 @@
       if (!provider || !value) { status('zchatAIStatus', 'Scegli il provider e inserisci la nuova API key.', true); return; }
       keyBusy = true; $('zchatKeySave').disabled = true;
       try {
+        if(provider==='infomaniak')await salvaProdotto();
         await call('setKey', { provider, value }); $('zchatKeyInput').value = '';
         state.keys = await call('keysStatus'); delete state.modelCache[provider]; drawConfig();
         status('zchatAIStatus', 'Chiave salvata.'); if (provider === state.settings.provider) await refreshModels();
@@ -579,7 +597,7 @@
       $('zchatRole').disabled = !state.zaino || busy;
       $('zchatRole').title = descriptions[$('zchatRole').value];
       $('zchatNew').disabled = !state.zaino || state.loading || state.finishing || state.studying;
-      ['zchatSettingsProvider','zchatSettingsModel'].forEach(id => { $(id).disabled = state.sending || !state.ready; });
+      ['zchatSettingsProvider','zchatSettingsModel','zchatProductId','zchatProductSave'].forEach(id => { $(id).disabled = state.sending || !state.ready; });
       $('zchatInput').disabled = !state.zaino || state.sending || state.loading || state.finishing || !api;
       const validModel = (state.modelCache[state.settings.provider] || []).some(model => model.id === state.settings.model);
       $('zchatSend').disabled = !state.zaino || busy || !api || !state.ready || !hasKey(state.settings.provider) || !validModel || !$('zchatInput').value.trim();

@@ -17,7 +17,8 @@ async function shot(name,sel){await L.muovi(10,940);await L.pausa(600);await L.s
  await wait(`document.querySelectorAll('#zragResults article').length>0 && document.getElementById('zragCancel').hidden`);
  await shot('193-ricerca-passaggi','#studioPane');
  await L.val(`document.getElementById('zragResults').replaceChildren();document.getElementById('zragIndexOptions').open=true`);
- await shot('194-indice-dispositivo','#studioPane');
+ await shot('194-indice-dispositivo','#zragIndexOptions');
+ await click('#zragSettings');await L.val(`document.getElementById('zchatLocalSettings').scrollIntoView({block:'start'})`);await shot('203-impostazioni-ai-locale','#zchatLocalSettings');await click('#settingsClose');
  await L.val(`document.getElementById('zragIndexOptions').open=false;document.getElementById('zschede').open=true`);
  await wait(`document.getElementById('zschedePreset').options.length===5 && !document.getElementById('zschedeEstimate').disabled`);
  const sources=(await L.val(`window.vault.chat.sources('biologia')`)).sources,source=sources.find(s=>s.file.endsWith('01 Botanica.pdf'));assert(source);

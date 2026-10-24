@@ -215,3 +215,8 @@
 .zrag-modelli article > div { flex:1; min-width:min(100%,180px); }
 .zrag-modelli article strong { font-size:var(--tb-fs); }
 .zrag-modelli article p { margin:.15rem 0; }
+
+.zchat-ai-section + .zchat-ai-section { margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--line); }
+.zchat-ai-section[hidden],#zchatInfomaniak[hidden],#zragDownloads[hidden],#zragDownloads [hidden] { display:none!important; }
+#zragDownloads .zchat-hint { margin:.2rem 0; }
+#zragDownloads > .set-note { line-height:1.6; }

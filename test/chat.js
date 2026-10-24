@@ -51,8 +51,9 @@ async function main() {
       assert(!url.includes('Le%20foglie'), 'a Wikipedia va la domanda, non gli appunti');
       return { ok: true, json: async () => ({ query: { pages: [{ title: 'Fotosintesi clorofilliana', extract: 'La fotosintesi trasforma energia luminosa in energia chimica.' }] } }) };
     };
-    const r = await C.invia(vault, 'scienze', input(s, 'Fotosintesi', 'spiegamelo'), { fetch, apiKey: 'private-key', rispondi: async (o) => {
+    const r = await C.invia(vault, 'scienze', input(s, 'Fotosintesi', 'spiegamelo'), { fetch, apiKey: 'private-key', productId:'12345', rispondi: async (o) => {
       chiamata = o;
+      assert.equal(o.productId,'12345','Il collegamento al prodotto arriva al provider');
       const persisted = C.leggi(vault, 'scienze', s.id);
       assert.equal(persisted.messages.at(-1).status, 'sending', 'il messaggio è su disco prima della chiamata');
       return { text: 'La luce alimenta la fotosintesi [MATERIALI/PDF/Botanica.pdf, p. 1].', reasoningContent: 'reasoning-for-provider' };

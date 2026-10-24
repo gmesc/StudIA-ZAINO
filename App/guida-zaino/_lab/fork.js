@@ -28,7 +28,7 @@ async function shot(name,sel){await L.pausa(400);await L.scatta(name,sel?{sel,sc
  await shot('184-profilo-utente','#settingsModal .media-card');
  await click('[data-tab="ai"]');await value('zchatSettingsProvider','openai','change');
  await value('zchatKeyInput','chiave-finta-per-la-guida');await click('#zchatKeySave');await L.finoA(`document.getElementById('zchatSettingsModel').options.length>1`,8000);
- await value('zchatSettingsModel','modello-locale-di-prova','change');await shot('185-impostazioni-ai','#settingsModal .media-card');
+ await value('zchatSettingsModel','modello-locale-di-prova','change');await L.val(`document.querySelector('#settingsModal .set-body').scrollTop=0`);await shot('185-impostazioni-ai','#zchatCloudSettings');
  await click('#settingsClose');await click('#chatBtn');await value('zchatInput','Mi aiuti a capire come la luce viene usata nella fotosintesi?');await click('#zchatSend');
  await L.finoA(`document.querySelectorAll('.zchat-message-assistant').length===1`,12000);await shot('180-chat-tutor','#zchatWindow');
  await click('#zchatClose');await L.finoA(`document.getElementById('zchatRenameDialog').open`,5000);await shot('182-nome-conversazione','#zchatRenameDialog');

@@ -25,7 +25,7 @@ const call = (name, data, id = 1) => handlers.get('chat:' + name)(event(id), dat
   fs.mkdirSync(path.join(root, 'Corsi', 'corso'), { recursive: true });
   fs.writeFileSync(path.join(root, 'Corsi', 'corso', '_corso.md'), '# Corso');
   guard.proteggiIpc(ipcMain, () => root);
-  provider.modelli = async (id, key) => { listed.push({ id, key }); return [{ id: 'model-a', nome: 'Modello A' }]; };
+  provider.modelli = async (id, key, options) => { listed.push({ id, key, options }); return [{ id: 'model-a', nome: 'Modello A' }]; };
   chat.crea = () => ({ id: 'session-1', messages: [] });
   chat.invia = (vault, zaino, input, options) => new Promise(resolve => {
     sends.push({ vault, zaino, input, options, resolve });
@@ -50,8 +50,18 @@ const call = (name, data, id = 1) => handlers.get('chat:' + name)(event(id), dat
   assert.ok(!JSON.stringify(await call('catalogo')).includes(secret));
   assert.equal((await call('saveSettings', { provider: 'unknown', model: 'a' })).ok, false);
 
+  const inf=await call('saveSettings',{provider:'infomaniak',model:'mistral3',infomaniakProductId:'12345'});
+  assert.equal(inf.infomaniakProductId,'12345');
+  await call('models',{provider:'infomaniak',productId:'99999'});
+  assert.deepEqual(listed.pop(),{id:'infomaniak',key:secret,options:{productId:'12345'}},'Il catalogo usa il prodotto salvato nel main');
+  await call('saveSettings',{provider:'openai',model:'model-a'});
+  assert.equal(cfg.chat.infomaniakProductId,'12345','Cambiare provider conserva il collegamento Infomaniak');
+  assert.equal((await call('saveSettings',{provider:'infomaniak',model:'x',infomaniakProductId:'../bad'})).ok,false);
+  await call('saveSettings',{provider:'openai',model:'model-a',infomaniakProductId:''});
+  assert.equal(cfg.chat.infomaniakProductId,undefined);
+
   const models = await call('models', { provider: 'openai', apiKey: 'renderer-cannot-override-key' });
-  assert.deepEqual(listed, [{ id: 'openai', key: secret }]);
+  assert.deepEqual(listed, [{ id: 'openai', key: secret, options:{productId:undefined} }]);
   assert.equal(models.ok, true);
   assert.ok(!JSON.stringify(models).includes(secret));
   assert.equal((await call('models', { provider: 'unknown' })).ok, false);
@@ -68,11 +78,13 @@ const call = (name, data, id = 1) => handlers.get('chat:' + name)(event(id), dat
   assert.equal((await call('rename', { zaino: 'corso', id: savedChat.id, title: 'No' })).ok, false);
   assert.equal((await call('branch', { zaino: 'primo', id: savedChat.id, messageId: 'missing' })).ok, false);
 
-  const first = call('send', base);
+  await call('saveSettings',{provider:'infomaniak',model:'mistral3',infomaniakProductId:'12345'});
+  const first = call('send', {...base,provider:'infomaniak',productId:'99999'});
   assert.equal(sends.length, 1);
   assert.equal(sends[0].vault, root);
   assert.equal(sends[0].zaino, 'primo');
   assert.equal(sends[0].options.apiKey, secret);
+  assert.equal(sends[0].options.productId,'12345','La chat usa il prodotto salvato, non il parametro del renderer');
   assert.equal((await call('send', base)).ok, false, 'una sola richiesta per finestra');
   await call('cancel', undefined, 2);
   assert.equal(sends[0].options.signal.aborted, false, 'una finestra non annulla un’altra');

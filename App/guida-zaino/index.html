@@ -272,12 +272,13 @@
           <p><strong>La chiave può costare soldi.</strong> Ogni domanda consuma credito dell'account del fornitore. Se all'account è collegata una carta, le domande si pagano davvero. Fissa un limite di spesa nel sito del fornitore.</p>
         </div>
         <ol class="passi">
-          <li>Apri <strong>«⚙ Impostazioni»</strong> e scegli la scheda <strong>«AI»</strong>.</li>
-          <li>Scegli il fornitore: Anthropic, Gemini, OpenAI, Qwen, Kimi o DeepSeek.</li>
+          <li>Apri <strong>«⚙ Impostazioni» → «AI» → «AI cloud»</strong>.</li>
+          <li>Scegli il fornitore: Google, OpenAI, Anthropic o Infomaniak.</li>
           <li>Premi <strong>«Crea una API key»</strong>. Si apre la pagina del fornitore.</li>
           <li>Copia la chiave dal sito del fornitore. Incollala nel campo. Premi <strong>«Salva chiave»</strong>.</li>
           <li>Scegli il modello nell'elenco. L'elenco arriva dal fornitore e dipende dal tuo account.</li>
         </ol>
+        <p>Per Infomaniak usa un token con accesso ad AI Services. Se hai un solo prodotto, l’app lo trova da sola. Se ne hai più di uno, inserisci l’<strong>ID prodotto AI Services</strong> e premi <strong>Salva ID prodotto</strong>.</p>
         <figure class="fig-intera"><img src="img/185-impostazioni-ai.png" alt="La scheda AI delle impostazioni: fornitore, chiave e modello" loading="lazy"><figcaption><b>Fornitore e modello.</b> L'elenco dei modelli nell'immagine è un esempio. Il tuo elenco dipende dal tuo account.</figcaption></figure>
         <div class="callout">
           <div class="ch">✅ La chiave resta sul tuo computer</div>
@@ -328,13 +329,14 @@
         <p>La ricerca per parole funziona subito. Per cercare anche concetti simili, scarica il modello locale.</p>
         <p>Il <strong>modello locale</strong> è un componente che confronta i testi sul computer. L’<strong>indice</strong> prepara i passaggi per questa ricerca.</p>
         <ol class="passi">
-          <li>Apri <strong>«Indice sul dispositivo»</strong>.</li>
-          <li>Trovi <strong>EmbeddingGemma 2 · ONNX</strong> e il link <strong>Informazioni su Hugging Face</strong>. Premi <strong>Scarica</strong> accanto a <strong>Testo</strong> (346,4 MB). Per il download serve Internet.</li>
-          <li>Aspetta la fine del download e della preparazione. Leggi lo stato sotto il campo di ricerca.</li>
+          <li>Apri <strong>«⚙ Impostazioni» → «AI» → «AI locale»</strong>. Puoi arrivarci anche da <strong>«Cerca e studia» → «Indice sul dispositivo» → «AI locale…»</strong>.</li>
+          <li>Trovi la spiegazione dell’embedder, <strong>EmbeddingGemma 2 · ONNX</strong> e il link <strong>Informazioni su Hugging Face</strong>. Premi <strong>text · Scarica</strong> (346,4 MB). Per il download serve Internet.</li>
+          <li>Aspetta la fine del download nelle impostazioni, poi torna a Cerca e studia. Leggi lo stato della preparazione dell’indice sotto il campo di ricerca.</li>
           <li>Cerca di nuovo. L’app indica il tipo di ricerca disponibile e gli eventuali limiti.</li>
         </ol>
-        <p>Sono disponibili anche i download <strong>Visione</strong> e <strong>Video</strong>: 541,8 MB inclusa la parte testuale, oppure circa 195,4 MB aggiuntivi se Testo è già scaricato. Condividono i file: scaricarne uno prepara entrambi. L’app mostra i MB mancanti, riprende i download interrotti e indica <strong>Scaricato</strong> quando i componenti sono pronti. Questi download preparano i componenti; la ricerca nei contenuti visivi non è ancora attiva. <a href="https://huggingface.co/onnx-community/embeddinggemma-2-ONNX" target="_blank" rel="noopener noreferrer">Scheda del modello su Hugging Face</a>.</p>
-        <figure class="fig-blocco"><img src="img/194-indice-dispositivo.png" alt="Indice sul dispositivo con i comandi di download e aggiornamento" loading="lazy"><figcaption><b>I comandi dell’indice.</b> La schermata mostra lo stato prima del download. Non serve una chiave AI per la ricerca locale.</figcaption></figure>
+        <p>Sono disponibili anche i download <strong>vision</strong> e <strong>video</strong>: 541,8 MB inclusa la parte testuale, oppure circa 195,4 MB aggiuntivi se text è già scaricato. Condividono i file: scaricarne uno prepara entrambi. L’app mostra i MB mancanti, riprende i download interrotti e indica <strong>Scaricato</strong> quando i componenti sono pronti. Puoi scaricarli anche senza uno zaino aperto. Questi download preparano i componenti; la ricerca nei contenuti visivi non è ancora attiva. <a href="https://huggingface.co/onnx-community/embeddinggemma-2-ONNX" target="_blank" rel="noopener noreferrer">Scheda del modello su Hugging Face</a>.</p>
+        <figure class="fig-intera"><img src="img/203-impostazioni-ai-locale.png" alt="AI locale nelle impostazioni, con descrizione, link e tre download" loading="lazy"><figcaption><b>AI locale.</b> Non serve una chiave AI per la ricerca locale.</figcaption></figure>
+        <figure class="fig-blocco"><img src="img/194-indice-dispositivo.png" alt="Indice sul dispositivo con la scorciatoia AI locale e i comandi di aggiornamento" loading="lazy"><figcaption><b>I comandi dell’indice.</b> Qui controlli la preparazione dei materiali dello zaino aperto.</figcaption></figure>
         <div class="tabwrap"><table>
           <thead><tr><th>Comando o stato</th><th>Che cosa significa</th></tr></thead>
           <tbody>
