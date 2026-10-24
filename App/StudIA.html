@@ -1551,10 +1551,10 @@
      anche loro. Il teal è il colore che in tutta l'app vuol dire «questo», e la
      riga sotto lo ripete sottile: due segni deboli invece di uno forte, perché
      il pannello non diventi una bandiera. */
-  .bhead, .znav .zs-tit, :is(#searchRes, #albumCercaRisultati) .sr-lesson{
+  .bhead, .znav .zs-tit, .zchat-ai-section > .set-sec-h, :is(#searchRes, #albumCercaRisultati) .sr-lesson{
     --testata-bg:color-mix(in srgb, var(--teal) 10%, var(--panel));
     background:var(--testata-bg); }
-  .blocco[data-attivo="1"] > .bhead{ --testata-bg:color-mix(in srgb, var(--teal) 21.78%, var(--panel)); }
+  .blocco[data-attivo="1"] > .bhead{ --testata-bg:color-mix(in srgb, var(--teal) 23.958%, var(--panel)); }
   :is(.bhead, .znav .zs-tit, :is(#searchRes, #albumCercaRisultati) .sr-lesson) button[aria-pressed="true"]{
     --testata-bg:color-mix(in srgb, var(--teal) 26%, var(--panel)); }
   /* Si moltiplica soltanto il fondo: testo e icone conservano il proprio contrasto. */
@@ -3085,7 +3085,7 @@
   #albumCercaInput{box-sizing:border-box;width:100%;padding:.65rem;border:0;border-bottom:1px solid var(--line);font:inherit;background:var(--panel);color:var(--ink);}
   #albumCercaRisultati{max-height:50vh;overflow:auto;}
   #albumOrdineMenu button[aria-checked="true"]::before{content:'✓ ';}
-  .zs-media-tipo{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:.4rem .6rem;border-bottom:1px solid var(--line-weak);}
+  .zs-media-tipo{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--teal-strong);padding:.4rem .6rem;border-bottom:1px solid var(--line-weak);background:color-mix(in srgb,var(--teal) 7%,var(--panel));}
 
 </style>
 <!-- Le regole del foglio, scritte al momento di stampare (vedi sopra). Nasce
