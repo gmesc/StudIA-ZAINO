@@ -15,7 +15,6 @@ assert.deepEqual(P.coda(qs,['one','two'],'new').map(q=>q.id),['two']);
 assert.deepEqual(P.coda(qs,['one','two'],'later').map(q=>q.id),['three']);
 assert.equal(P.configurato({provider:'openai',model:'x'},{openai:{set:false}}),false);
 assert.equal(P.configurato({provider:'openai',model:'x'},{openai:{set:true}}),true);
-console.log('percorso-studio: raccolta comune, filtri, fonti non ambigue e coda OK');
 
 assert.deepEqual(P.ambitoDomanda({mode:'all',sourceIds:[]},{sources:[{sourceId:'b'}]}),{mode:'all',sourceIds:[]});
 assert.deepEqual(P.ambitoDomanda({mode:'selected',sourceIds:['a']},{sources:[{sourceId:'b'}]}).sourceIds,['a','b']);
@@ -24,3 +23,16 @@ assert.equal(P.riprendi(qs,['one','two'],'three').id,'three','Riprendi mantiene 
 assert.equal(P.riprendi(qs,['one','two'],'rimossa').id,'one','Una domanda rimossa lascia posto alla prima dovuta');
 assert.equal(P.riprendi(qs,[],null),null,'Nessuna domanda dovuta: invita a scegliere, senza anticipare una scadenza');
 assert.equal(P.riprendi([{id:'bozza',saved:false}],['bozza'],'bozza'),null);
+
+const daScheda={id:'scheda-a',saved:false,question:'Come nasce la luce?',scheda:{sourceId:'a',file:'MATERIALI/A.pdf',title:'Domande per capire'},sources:[{sourceId:'a',file:'MATERIALI/A.pdf'}],attempts:[]};
+const salvata={...daScheda,saved:true,esito:'buono',attempts:[{id:'tentativo'}]};
+const disponibili=P.domande([salvata,...questions],[daScheda,{...daScheda,id:'scheda-b'}]);
+assert.equal(disponibili.filter(q=>q.id==='scheda-a').length,1);
+assert.equal(disponibili.find(q=>q.id==='scheda-a').attempts[0].id,'tentativo');
+assert(!disponibili.some(q=>q.id==='draft'));
+assert.deepEqual(P.coda(disponibili,[],'new','LUCE','a').map(q=>q.id),['scheda-b']);
+assert.deepEqual(P.coda(disponibili,[],'later','','a').map(q=>q.id),['scheda-a']);
+assert.deepEqual(P.coda(disponibili,[],'all','','none').map(q=>q.id),['q']);
+assert.equal(P.riprendi([daScheda],[],null).id,'scheda-a');
+assert.equal(P.gruppiDomande(disponibili).length,1);
+console.log('percorso-studio: raccolta comune, filtri combinati, origine, deduplica, fonti e coda OK');

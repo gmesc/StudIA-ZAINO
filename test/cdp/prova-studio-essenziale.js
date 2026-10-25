@@ -4,7 +4,7 @@ async function wait(expr){for(let n=0;n<160;n++){if(await c.val(expr))return;awa
 const click=async s=>{await c.val(`document.querySelector(${JSON.stringify(s)}).scrollIntoView({block:'nearest'})`);await c.pausa(80);await c.clicca(s);};
 (async()=>{
  await c.collega();await wait(`!!window.zainoStudio && document.getElementById('zschedePreset')?.options.length===5`);
- assert.equal(await c.val(`document.getElementById('zstudyResume').textContent`),'Apri');
+ assert.equal(await c.val(`!!document.querySelector('#zstudySaved, #zstudyResume')`),false,'La domanda si apre direttamente dall’elenco');
  assert.equal(await c.val(`!!document.querySelector('#zschedeLibrary details, #zschedeRefresh')`),false,'Il raccoglitore automatico non richiede opzioni di aggiornamento manuale');
  const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
  const initial=await c.val(`({banco:JSON.parse(JSON.stringify(bancoStato())),theme:document.documentElement.dataset.theme,storage:{...localStorage}})`);

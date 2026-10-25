@@ -23,19 +23,19 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);await screenshot('stima');await click('#zschedeGenerate');await wait(`!!document.querySelector('#zschedeResult article button') && !document.getElementById('zschedeNewButton').disabled`);
  const exactTitle=await c.val(`document.querySelector('#zschedeResult h4').textContent`),afterGeneration=sent();
  await click('#zschedeResult article>button:last-child');
- await wait(`!!document.querySelector('#zstudyQuestion h3') && !document.getElementById('zstudyRefresh').disabled`);
+ await wait(`!!document.querySelector('#zstudyQuestion h3') && !document.getElementById('zstudyBrowse').disabled`);
  assert.equal(await c.val(`document.querySelector('#zstudyQuestion h3').textContent`),exactTitle);assert.equal(sent(),afterGeneration);
  let state=await c.val(`window.vault.studio.state('biologia')`);const q=state.questions.find(q=>q.question===exactTitle&&q.saved);assert(q);assert.equal(state.questions.length,old+1);
  await click('#zstudyCollection');await wait(`!!document.querySelector('#zschedeCollection [data-question-id]')`);await set('zschedeKind','domanda');await set('zschedeFilter',exactTitle);
  assert(await c.val(`!!document.querySelector('#zschedeCollection [data-question-id="${q.id}"]')`));await click('#zschedeCollection [data-question-id="'+q.id+'"] button');await wait(`!!document.getElementById('zstudyAttempt')`);assert.equal(sent(),afterGeneration);
  await set('zstudyAttempt','Bozza personale da conservare');await click('#zstudyPause');assert.equal(await c.val(`document.querySelector('#zstudyQuestion h3')`),null);
- await click('#zstudyBrowse');await set('zstudyQueueFilter','all');await set('zstudySaved',q.id);await click('#zstudyResume');await wait(`!!document.getElementById('zstudyAttempt')`);assert.equal(await c.val(`document.getElementById('zstudyAttempt').value`),'Bozza personale da conservare');
+ await click('#zstudyBrowse');await click('#zstudyQueueFilter [data-filter="all"]');await wait(`!!document.querySelector('#zstudyQueue [data-question-id="${q.id}"]')`);await click('#zstudyQueue [data-question-id="'+q.id+'"]');await wait(`!!document.getElementById('zstudyAttempt')`);assert.equal(await c.val(`document.getElementById('zstudyAttempt').value`),'Bozza personale da conservare');
  // Una seconda domanda sintetica rende verificabile il passaggio senza rigenerazione.
  const q2={...JSON.parse(fs.readFileSync(path.join(ripasso,'domande',q.id+'.json'),'utf8')),id:'prova-ux-seconda',question:'Seconda domanda conservata',attempts:[]};
  fs.writeFileSync(path.join(ripasso,'domande',q2.id+'.json'),JSON.stringify(q2));
- await click('#zstudyBrowse');await click('#zstudyRefresh');await wait(`!document.getElementById('zstudyRefresh').disabled`);await click('#zstudyBack');
+ await click('#zstudyBrowse');await wait(`!!document.querySelector('#zstudyQueue [data-question-id="prova-ux-seconda"]')`);await click('#zstudyBack');
  const visited=[await c.val(`document.querySelector('#zstudyQuestion h3').textContent`)];
- while(!await c.val(`document.getElementById('zstudyNext').disabled`)){assert(visited.length<20);await click('#zstudyNext');await wait(`!document.getElementById('zstudyRefresh').disabled`);visited.push(await c.val(`document.querySelector('#zstudyQuestion h3').textContent`));}
+ while(!await c.val(`document.getElementById('zstudyNext').disabled`)){assert(visited.length<20);await click('#zstudyNext');await wait(`!document.getElementById('zstudyBrowse').disabled`);visited.push(await c.val(`document.querySelector('#zstudyQuestion h3').textContent`));}
  assert.equal(new Set(visited).size,visited.length);assert(visited.includes(q2.question));assert.equal(sent(),afterGeneration);assert.match(await c.val(`document.getElementById('zstudySession').textContent`),/tutte le domande/);
  await screenshot('ripasso');fs.unlinkSync(path.join(ripasso,'domande',q2.id+'.json'));
  await click('#zstudyCollection');await set('zschedeKind','all');await set('zschedeFilter','');
@@ -58,7 +58,7 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await click('#bancoBtn');await click('[data-attivita="studio"]');
  await c.val(`document.getElementById('zschedeBack').click();document.getElementById('zschedeFilter').scrollIntoView({block:'center'});document.getElementById('zschedeFilter').focus()`);await key('Tab');
  assert.equal(await c.val(`document.activeElement.id`),'zschedeKind');assert.equal(await c.val(`getComputedStyle(document.activeElement).outlineStyle`),'solid');
- assert(await c.val(`['zschedeFilter','zschedeKind','zstudyQueueFilter','zstudySaved'].every(id=>document.getElementById(id).labels.length>0)`));
+ assert(await c.val(`['zschedeFilter','zschedeKind','zstudySearch','zstudyOrigin'].every(id=>document.getElementById(id).labels.length>0)`));
  const contrasts={};
  for(const theme of ['chiaro','scuro']){
   await c.val(`document.documentElement.dataset.theme=${JSON.stringify(theme)}`);await screenshot(theme);assert(await c.val(`document.documentElement.scrollWidth<=innerWidth`));
@@ -74,12 +74,12 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await c.val(`document.documentElement.style.setProperty('--fs',${JSON.stringify(fsBefore)})`);
  // Anche una domanda nuova non ancora conservata resta reperibile dopo Pausa.
  await c.val(`bancoForma('uno');bancoAssegna('A','flashcard');document.getElementById('zstudyNewButton').click()`);
- await set('zstudyTopic','luce e fotosintesi');await click('#zstudyStart');await wait(`!!document.getElementById('zstudyAttempt') && !document.getElementById('zstudyRefresh').disabled`);
+ await set('zstudyTopic','luce e fotosintesi');await click('#zstudyStart');await wait(`!!document.getElementById('zstudyAttempt') && !document.getElementById('zstudyBrowse').disabled`);
  assert.equal(await c.val(`document.getElementById('zstudyNew').open`),false);
  const fresh=(await c.val(`window.vault.studio.state('biologia')`)).active;assert(fresh&&!fresh.saved);
- await set('zstudyAttempt','Bozza della domanda nuova');await click('#zstudyPause');await wait(`!document.getElementById('zstudyAttempt') && !document.getElementById('zstudyRefresh').disabled`);
+ await set('zstudyAttempt','Bozza della domanda nuova');await click('#zstudyPause');await wait(`!document.getElementById('zstudyAttempt') && !document.getElementById('zstudyBrowse').disabled`);
  assert((await c.val(`window.vault.studio.state('biologia')`)).questions.find(x=>x.id===fresh.id).saved);
- await click('#zstudyBrowse');await set('zstudyQueueFilter','all');await set('zstudySaved',fresh.id);await click('#zstudyResume');await wait(`!!document.getElementById('zstudyAttempt')`);assert.equal(await c.val(`document.getElementById('zstudyAttempt').value`),'Bozza della domanda nuova');
+ await click('#zstudyBrowse');await click('#zstudyQueueFilter [data-filter="all"]');await wait(`!!document.querySelector('#zstudyQueue [data-question-id="${fresh.id}"]')`);await click('#zstudyQueue [data-question-id="'+fresh.id+'"]');await wait(`!!document.getElementById('zstudyAttempt')`);assert.equal(await c.val(`document.getElementById('zstudyAttempt').value`),'Bozza della domanda nuova');
  fs.unlinkSync(path.join(ripasso,'domande',fresh.id+'.json'));
  await c.val(`cambiaZaino('storia',true)`);await wait(`document.getElementById('zschedeCollectionStatus').textContent.includes('0 domande')`);assert(!(await c.val(`document.getElementById('zschedeCollection').textContent`)).includes(exactTitle));
  await c.val(`cambiaZaino('biologia',true)`);await wait(`document.getElementById('zschedeCollectionStatus').textContent.includes('${savedCount+1} domande')`);

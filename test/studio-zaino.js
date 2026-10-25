@@ -9,11 +9,21 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(ro
  const opts={provider:'openai',model:'finto',chiama:async req=>{calls++;const data=JSON.parse(req.messages[0].content);if(data.porzioni)return {text:JSON.stringify({items:[{title:'Mitocondri',text:'Producono ATP.\n- Concetti: ATP.\n- Prerequisiti: energia.',refs:[data.porzioni[0].chunkId]}]})};if(data.proofs && data.topic)return {text:JSON.stringify({question:'Quale organello produce ATP?',answer:'I mitocondri.',rubric:['Identifica i mitocondri.'],hint:'Pensa alla respirazione cellulare.',refs:[data.proofs[0].chunkId]})};assert.equal(data.question,'Quale organello produce ATP?');assert(data.proofs[0].text.includes('mitocondri'));return {text:JSON.stringify({correct:['Hai indicato i mitocondri.'],missing:[],contradictory:[],summary:'La risposta è coerente con il materiale.',assessable:true})};}};
  for(const preset of Object.keys(S.PRESET)){const card=await S.genera(root,'test',source.id,preset,opts);assert(card.items[0].refs.length);assert.equal(S.leggi(root,'test',source.id,preset).status,'current');}
  const cardQuestions=S.leggi(root,'test',source.id,'domande').card,beforeOpen=calls;
+ const catalogo=I.stato(root,'test',scope);
+ assert.equal(catalogo.cardQuestions.length,1,'Le domande mai aperte sono già disponibili');
+ assert.equal(catalogo.cardQuestions[0].question,cardQuestions.items[0].title);
+ assert.equal(catalogo.cardQuestions[0].scheda.sourceId,source.id);
+ assert(!JSON.stringify(catalogo.cardQuestions).includes('Producono ATP.'),'Le anteprime non rivelano la risposta');
+ assert(!fs.existsSync(path.join(d,'RIPASSO/domande')),'Elencare non crea ripassi sul disco');
+ assert.equal(I.stato(root,'test',{mode:'selected',sourceIds:[],wikipedia:false}).cardQuestions.length,0);
  const exact=I.daScheda(root,'test',source.id,0,cardQuestions.revision);
  assert.equal(exact.question,cardQuestions.items[0].title);assert.equal(exact.saved,true);assert(!Object.hasOwn(exact,'answer'));assert.equal(calls,beforeOpen);
- const exactStored=I.leggi(root,'test',exact.id);exactStored.attempts.push({id:'kept',status:'done',text:'Tentativo già scritto',createdAt:new Date().toISOString(),corrections:[]});
+ assert.equal(exact.id,catalogo.cardQuestions[0].id);assert.equal(exact.scheda.sourceId,source.id);
+ assert.throws(()=>I.daScheda(root,'test',source.id,0,cardQuestions.revision,'scheda-superata'),/cambiata/);
+ const exactStored=I.leggi(root,'test',exact.id);delete exactStored.scheda;exactStored.attempts.push({id:'kept',status:'done',text:'Tentativo già scritto',createdAt:new Date().toISOString(),corrections:[]});
  fs.writeFileSync(path.join(d,'RIPASSO/domande',exact.id+'.json'),JSON.stringify(exactStored));
  assert.equal(I.daScheda(root,'test',source.id,0,cardQuestions.revision).attempts[0].text,'Tentativo già scritto');
+ assert.equal(I.stato(root,'test',scope).questions.find(q=>q.id===exact.id).scheda.sourceId,source.id,'Anche le conversioni precedenti ritrovano la scheda di origine');
  assert.throws(()=>I.daScheda(root,'test',source.id,0,'vecchia-revisione'),/cambiata/);
  fs.unlinkSync(path.join(d,'RIPASSO/domande',exact.id+'.json'));
  assert.equal(S.elenco(root,'test').cards.length,5);assert(S.elenco(root,'test').cards.every(c=>c.status==='current'&&c.sourceId===source.id));
