@@ -210,11 +210,19 @@
 .zstudy-filters { display:flex; flex-wrap:wrap; gap:.25rem; margin-block:.5rem; }
 .zstudy-source-group h3 { padding:.4rem var(--tb-pad-x); margin:.75rem 0 .25rem; background:var(--comando-hover); color:var(--teal-strong); font-size:var(--tb-fs); overflow-wrap:anywhere; }
 .zstudy-source-group ul { margin:0; padding:0; list-style:none; }
-.zstudy-source-group li { padding:.5rem 0; border-bottom:1px solid var(--line); }
+.zstudy-source-group li { position:relative; padding:.5rem 0 .5rem var(--tb-pad-x); border-bottom:1px solid var(--line); }
+.zstudy-source-group li::before { content:""; position:absolute; inset-block:.5rem; inset-inline-start:0; width:3px; background:color-mix(in srgb,var(--teal) 38%,var(--panel)); }
+.zstudy-source-group li:has([aria-current="true"])::before { background:var(--teal-strong); }
+.zstudy-card-group>summary { display:flex; align-items:center; gap:.4rem; min-height:var(--tb-h); padding:.4rem var(--tb-pad-x); color:var(--teal-strong); font-weight:600; cursor:pointer; list-style:none; }
+.zstudy-card-group>summary::-webkit-details-marker { display:none; }
+.zstudy-card-group>summary::before { content:""; flex:none; width:1em; height:1em; background:currentColor; mask:var(--icon-chevron-right) center/contain no-repeat; }
+.zstudy-card-group[open]>summary::before { transform:rotate(90deg); }
+.zstudy-card-group>summary:hover,.zstudy-card-group>summary:active { background:var(--comando-hover); }
+.zstudy-card-group>summary:focus-visible { outline:2px solid var(--teal-strong); outline-offset:-2px; }
 .zstudy-queue .zstudy-question-open { display:block; width:100%; height:auto; min-height:var(--tb-h); text-transform:none; letter-spacing:normal; font-size:inherit; font-weight:400; line-height:1.5; white-space:normal; overflow-wrap:anywhere; text-align:left; }
 .zstudy-question-meta { display:flex; align-items:baseline; flex-wrap:wrap; gap:.4rem .75rem; padding-inline:var(--tb-pad-x); color:var(--muted); font-size:var(--tb-fs); line-height:1.5; }
 .zstudy-origin-chip { display:inline-block; padding:.1rem .4rem; border:1px solid var(--line); color:var(--teal-strong); }
-.zstudy-question-open[aria-current="true"] { box-shadow:inset 3px 0 var(--teal-strong); }
+.zstudy-current { color:var(--teal-strong); font-weight:600; }
 #zstudyQuestion form { margin-block:1rem; }
 #zstudyStatus:empty,#zragStatus:empty { display:none; }
 

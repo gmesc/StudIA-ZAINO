@@ -18,6 +18,8 @@ async function wait(expr){assert(await L.finoA(expr,18000),expr);}
   await L.clicca('#zstudyScopeButton');await wait(`document.querySelectorAll('#zstudyQueue .zstudy-question-open').length>=3`);
   await L.val(`document.getElementById('zstudySearch').value='';document.getElementById('zstudySearch').dispatchEvent(new Event('input'));document.getElementById('zstudyOrigin').value='all';document.getElementById('zstudyOrigin').dispatchEvent(new Event('change'));document.querySelector('#zstudyQueueFilter [data-filter="all"]').click()`);
   await L.muovi(10,940);await L.pausa(3800);await L.scatta('208-ripasso-domande',{sel:'#zinterroga',scala:2,margine:4});
+  await L.clicca('#zstudyQueue .zstudy-card-group > summary');await wait(`!document.querySelector('#zstudyQueue .zstudy-card-group').open`);await L.muovi(10,940);await L.pausa(200);
+  const chiusa=await L.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-ripasso-scheda-chiusa.png',Buffer.from(chiusa.result.data,'base64'));
  }finally{if(old)fs.writeFileSync(file,old);else fs.rmSync(file,{force:true});}
  console.log('Elenco Ripasso: ricerca, etichette e filtri acquisiti.');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

@@ -47,6 +47,8 @@ Il riepilogo **Materiali usati** compare nella ricerca e nella scelta o creazion
 
 **Nuova domanda** apre la generazione. **Torna alla domanda** conserva la bozza. Dopo l’invio compare il riscontro: **Riprova** riapre il campo di risposta. **Prossima domanda** segue gli stessi filtri dell’elenco; **Pausa** e **Riprendi** conservano la domanda e il testo non inviato durante la sessione dell’app. Domande conservate, tentativi inviati e date restano sul disco. Nelle schede, **Rispondi** riusa quella stessa domanda e il suo storico.
 
+Le domande di ciascuna scheda si possono comprimere dal titolo con il chevron e il conteggio. Le domande create singolarmente restano visibili; apertura e chiusura dei gruppi si conservano mentre usi i filtri o torni all’elenco nello stesso zaino. Ogni domanda ha una linea verde chiara; quella attualmente aperta usa una linea più marcata e l’etichetta **Aperta**, per ritrovare il punto del ripasso.
+
 ## Materiali in parallelo
 
 I pulsanti delle azioni hanno sfondo trasparente e hover verde, anche nelle toolbar e sulle superfici colorate. Spazi e linee verticali separano i gruppi di comandi. Il verde persistente indica una selezione o un comando acceso, come la raccolta di Album; Album e Impostazioni non aggiungono una barra sotto il tab selezionato. Nella sidebar, ordinamento e matita compaiono solo nelle sezioni aperte, con testo verde scuro; nelle sezioni chiuse restano nome e chevron.

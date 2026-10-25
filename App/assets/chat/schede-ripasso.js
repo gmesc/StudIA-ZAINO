@@ -46,6 +46,7 @@
   const picker=window.ZainoSceltaFonti.crea({prefix:'zstudyScope',bar:$('zstudyToolbar'),host:$('zstudyScopeHost'),state:reviewState,onChange(){visitati.clear();drawQuestion(null);refresh().catch(e=>status(e.message,true));}});
 
   let estimate=null,question=null,attemptId=null,review=false,selection='',cards=[],savedQuestions=[],queueState={questions:[],due:[]},collectionWarnings=[],collectionTimer,collectionRun=0;const drafts=new Map(),visitati=new Set();let paused=false,pausedId=null,schedeView='library',ripassoView='home',queueFilter='all';
+  const schedeChiuse=new Set();
   const call=async(n,...args)=>{const r=await api[n](...args);if(!r?.ok)throw Error(r?.error || 'Operazione non riuscita.');return r;};
   const button=(text,fn,principale=false)=>{const b=el('button',text,principale?'tbtn acc':'tbtn');b.type='button';b.onclick=fn;return b;};
   // Una sola attività per superficie; il DOM nascosto conserva filtri e risposte in corso.
@@ -167,21 +168,33 @@
    // Un filtro su una scheda rimossa resta esplicito, senza passare in silenzio a tutte.
    if(selected && ![...origin.options].some(o=>o.value===selected))origin.append(new Option('Scheda non disponibile nelle fonti scelte',selected));
    origin.value=selected||'all';
-   const rows=domandeFiltrate(),target=$('zstudyQueue'),focused=target.contains(document.activeElement)?document.activeElement.dataset.questionId:null;
+   const rows=domandeFiltrate(),target=$('zstudyQueue'),focused=target.contains(document.activeElement)?{...document.activeElement.dataset}:null;
+   for(const d of target.querySelectorAll('details[data-scheda-id]')){if(d.open)schedeChiuse.delete(d.dataset.schedaId);else schedeChiuse.add(d.dataset.schedaId);}
    target.replaceChildren();
-   for(const group of P.gruppiDomande(rows)){
-    const section=el('section',undefined,'zstudy-source-group'),heading=el('h3',group.files.map(f=>f.split('/').pop()).join(' · '));heading.title=group.files.join(' · ');section.append(heading);
-    const list=el('ul');section.append(list);
-    for(const q of group.questions){
+   function listaDomande(questions){
+    const list=el('ul');
+    for(const q of questions){
      const row=el('li'),open=button(q.question,()=>openQuestion(q.id));open.classList.add('zstudy-question-open');open.dataset.questionId=q.id;
-     if(q.id===question?.id)open.setAttribute('aria-current','true');row.append(open);
+     const current=q.id===question?.id;if(current)open.setAttribute('aria-current','true');row.append(open);
      const meta=el('div',undefined,'zstudy-question-meta');
+     if(current)meta.append(el('span','Aperta','zstudy-current'));
      if(q.scheda){const chip=el('span','Scheda · '+q.scheda.title,'zstudy-origin-chip');chip.title=q.scheda.title+' — '+q.scheda.file;meta.append(chip);}
      const due=queueState.due.includes(q.id),label=!q.esito?'Nuova':due?'Da ripassare':'Più avanti';
      meta.append(el('span',label+' · '+q.attempts.length+(q.attempts.length===1?' tentativo':' tentativi')+(q.prossimo&&!due?' · '+new Date(q.prossimo).toLocaleDateString('it-IT'):'')));
      if(q.sourcesCurrent===false)meta.append(el('span','Fonti modificate o non disponibili'));
      row.append(meta);list.append(row);
+    }return list;
+   }
+   for(const group of P.gruppiDomande(rows)){
+    const section=el('section',undefined,'zstudy-source-group'),heading=el('h3',group.files.map(f=>f.split('/').pop()).join(' · '));heading.title=group.files.join(' · ');section.append(heading);
+    for(const card of group.schede){
+     const details=el('details',undefined,'zstudy-card-group'),summary=el('summary',card.title+' · '+card.questions.length+(card.questions.length===1?' domanda':' domande'));
+     details.dataset.schedaId=summary.dataset.schedaId=card.sourceId;details.open=!schedeChiuse.has(card.sourceId);
+     const tooltip=()=>{summary.title=(details.open?'Comprimi':'Espandi')+' le domande della scheda';};tooltip();
+     details.ontoggle=()=>{if(!details.isConnected)return;if(details.open)schedeChiuse.delete(card.sourceId);else schedeChiuse.add(card.sourceId);tooltip();};
+     details.append(summary,listaDomande(card.questions));section.append(details);
     }
+    if(group.questions.length)section.append(listaDomande(group.questions));
     target.append(section);
    }
    for(const b of $('zstudyQueueFilter').querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.dataset.filter===queueFilter));
@@ -191,7 +204,7 @@
    $('zstudyProgress').textContent=question?(rows.some(q=>q.id===question.id)?'Domanda '+(rows.findIndex(q=>q.id===question.id)+1)+' di '+rows.length:'Domanda di ripasso'):'';
    const remaining=rows.filter(q=>q.id!==question?.id&&!visitati.has(q.id));$('zstudyNext').disabled=!remaining.length;$('zstudyNext').classList.toggle('acc',!!question?.attempts.at(-1)?.corrections?.length);$('zstudyPause').disabled=!question;
    $('zstudySession').textContent=rows.length&&!remaining.length&&question?'Hai aperto tutte le domande. Scegline un’altra da «Domande».':'';
-   if(focused)[...target.querySelectorAll('button')].find(b=>b.dataset.questionId===focused)?.focus({preventScroll:true});
+   if(focused)[...target.querySelectorAll('button,summary')].find(b=>focused.questionId?b.dataset.questionId===focused.questionId:b.dataset.schedaId===focused.schedaId)?.focus({preventScroll:true});
   }
   async function loadQuestion(id,current){const preview=queueState.cardQuestions?.find(q=>q.id===id),saved=queueState.questions.some(q=>q.id===id);const r=preview&&!saved?await call('fromCard',state.zaino,preview.scheda.sourceId,preview.scheda.index,preview.scheda.revision,preview.id):await call('resume',state.zaino,id);if(current()){paused=false;pausedId=null;pulisciAvvisoRipasso();const scope=P.ambitoDomanda(reviewState.scope,r.question);if(JSON.stringify(scope)!==JSON.stringify(reviewState.scope)){picker.set(scope);status('Aggiunte alle fonti del ripasso quelle della domanda aperta.');}if(question)visitati.add(question.id);review=true;drawQuestion(r.question);window.bancoMostra('flashcard');await refresh();await collection();$('zstudyQuestion h3')?.focus();}}
   function openQuestion(id){return action(current=>loadQuestion(id,current));}
@@ -219,6 +232,6 @@
    }catch(e){status(e.message,true);}
   };
   vistaSchede('library');vistaRipasso('home');
-  return {openReview,settled(){drawQueue();$('zschedeEstimate').disabled=!$('zschedeSource').options.length;},async sync(){reviewState.zaino=state.zaino;await picker.sync();if(state.zaino){await Promise.all([refresh(),sources(),collection()]);if(!$('zschedePreset').options.length){const r=await call('presets');for(const [id,label] of Object.entries(r.presets))$('zschedePreset').append(new Option(label,id));}}},scopeChanged(){invalidateEstimate();sources().catch(e=>status(e.message,true));},reset(){api.cancel();clearTimeout(collectionTimer);collectionRun++;cards=[];savedQuestions=[];queueState={questions:[],due:[]};collectionWarnings=[];$('zschedeKind').value='all';queueFilter='all';$('zstudySearch').value='';$('zstudyOrigin').replaceChildren(new Option('Tutte le origini','all'));$('zstudyQueueCount').textContent='';$('zstudyNew').open=false;$('zstudySession').textContent='';$('zstudyQueueEmpty').textContent='';document.querySelectorAll('.zstudio-config').forEach(e=>{e.hidden=true;});$('zschedeStatus').textContent='';$('zstudyStatus').textContent='';$('zschedeTokens').textContent='';$('zschedeCollection').replaceChildren();$('zschedeCollectionStatus').textContent='';$('zschedeFilter').value='';$('zschedeNew').open=false;estimate=null;question=null;drafts.clear();visitati.clear();paused=false;pausedId=null;review=false;selection='';vistaSchede('library');vistaRipasso('home');$('zschedeResult').replaceChildren();$('zschedeSource').replaceChildren();$('zschedeSourceStatus').textContent='';$('zschedeGenerate').hidden=true;$('zschedeEstimateText').textContent='';$('zstudyQuestion').replaceChildren();$('zstudyQueue').replaceChildren();$('zstudyQueue').hidden=true;$('zstudyTopic').value='';$('zstudyCount').textContent='';window.RIPCONTO={mai:0,oggi:0,attesa:0,totale:0,corso:state.zaino};window.ripassoContoDisegna?.();},refresh};
+  return {openReview,settled(){drawQueue();$('zschedeEstimate').disabled=!$('zschedeSource').options.length;},async sync(){reviewState.zaino=state.zaino;await picker.sync();if(state.zaino){await Promise.all([refresh(),sources(),collection()]);if(!$('zschedePreset').options.length){const r=await call('presets');for(const [id,label] of Object.entries(r.presets))$('zschedePreset').append(new Option(label,id));}}},scopeChanged(){invalidateEstimate();sources().catch(e=>status(e.message,true));},reset(){api.cancel();clearTimeout(collectionTimer);collectionRun++;cards=[];savedQuestions=[];queueState={questions:[],due:[]};collectionWarnings=[];$('zschedeKind').value='all';queueFilter='all';$('zstudySearch').value='';$('zstudyOrigin').replaceChildren(new Option('Tutte le origini','all'));$('zstudyQueueCount').textContent='';$('zstudyNew').open=false;$('zstudySession').textContent='';$('zstudyQueueEmpty').textContent='';document.querySelectorAll('.zstudio-config').forEach(e=>{e.hidden=true;});$('zschedeStatus').textContent='';$('zstudyStatus').textContent='';$('zschedeTokens').textContent='';$('zschedeCollection').replaceChildren();$('zschedeCollectionStatus').textContent='';$('zschedeFilter').value='';$('zschedeNew').open=false;estimate=null;question=null;drafts.clear();visitati.clear();schedeChiuse.clear();paused=false;pausedId=null;review=false;selection='';vistaSchede('library');vistaRipasso('home');$('zschedeResult').replaceChildren();$('zschedeSource').replaceChildren();$('zschedeSourceStatus').textContent='';$('zschedeGenerate').hidden=true;$('zschedeEstimateText').textContent='';$('zstudyQuestion').replaceChildren();$('zstudyQueue').replaceChildren();$('zstudyQueue').hidden=true;$('zstudyTopic').value='';$('zstudyCount').textContent='';window.RIPCONTO={mai:0,oggi:0,attesa:0,totale:0,corso:state.zaino};window.ripassoContoDisegna?.();},refresh};
  }};
 }(typeof self!=='undefined'?self:this));

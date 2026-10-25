@@ -12,7 +12,15 @@
    &&(scheda==='all'||scheda==='none'&&!q.scheda||q.scheda?.sourceId===scheda)
    &&(!text||[q.question,q.scheda?.title,q.scheda?.file,...(q.sources||[]).map(s=>s.file)].join(' ').toLocaleLowerCase('it').includes(text)));
  }
- function gruppiDomande(rows){const groups=new Map();for(const q of rows){const files=[...new Set((q.sources||[]).map(s=>s.file))].sort(),id=JSON.stringify(files);if(!groups.has(id))groups.set(id,{id,files,questions:[]});groups.get(id).questions.push(q);}return [...groups.values()].sort((a,b)=>a.id.localeCompare(b.id,'it'));}
+ function gruppiDomande(rows){
+  const groups=new Map();for(const q of rows){
+   const files=[...new Set((q.sources||[]).map(s=>s.file))].sort(),id=JSON.stringify(files);
+   if(!groups.has(id))groups.set(id,{id,files,questions:[],schede:[]});const group=groups.get(id);
+   if(!q.scheda){group.questions.push(q);continue;}
+   let card=group.schede.find(s=>s.sourceId===q.scheda.sourceId);
+   if(!card){card={...q.scheda,questions:[]};group.schede.push(card);}card.questions.push(q);
+  }return [...groups.values()].sort((a,b)=>a.id.localeCompare(b.id,'it'));
+ }
  function ambitoDomanda(scope,q){if(scope.mode==='all')return scope;return {...scope,sourceIds:[...new Set([...scope.sourceIds,...q.sources.map(s=>s.sourceId)])]};}
  function configurato(config,keys){return !!(config?.provider&&config.model&&(keys?.[config.provider]===true||keys?.[config.provider]?.set));}
  function riprendi(questions,due,pausedId){return questions.find(q=>q.saved&&q.id===pausedId)||coda(questions,due)[0]||null;}

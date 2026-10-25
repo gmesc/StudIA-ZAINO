@@ -35,4 +35,9 @@ assert.deepEqual(P.coda(disponibili,[],'later','','a').map(q=>q.id),['scheda-a']
 assert.deepEqual(P.coda(disponibili,[],'all','','none').map(q=>q.id),['q']);
 assert.equal(P.riprendi([daScheda],[],null).id,'scheda-a');
 assert.equal(P.gruppiDomande(disponibili).length,1);
+const gruppo=P.gruppiDomande(disponibili)[0];
+assert.deepEqual(gruppo.questions.map(q=>q.id),['q'],'Le domande singole restano fuori dalle schede collassabili');
+assert.equal(gruppo.schede.length,1);
+assert.equal(gruppo.schede[0].sourceId,'a');
+assert.deepEqual(gruppo.schede[0].questions.map(q=>q.id),['scheda-a','scheda-b']);
 console.log('percorso-studio: raccolta comune, filtri combinati, origine, deduplica, fonti e coda OK');
