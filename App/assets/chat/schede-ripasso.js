@@ -25,7 +25,9 @@
     <div id="zstudyScopeHost" hidden></div>
     <div id="zstudyBody" class="zstudio zstudio-banco">
      <section id="zstudyHome"><h2 id="zstudyHomeTitle" tabindex="-1">Pronto per ripassare?</h2><p id="zstudyCount" class="zchat-hint" role="status"></p><button id="zstudyBegin" class="tbtn acc" type="button">Inizia ripasso</button><p id="zstudyHomeEmpty" class="zchat-hint">Crea una domanda con AI oppure aprine una dal raccoglitore.</p></section>
-     <section id="zstudyChoose" hidden aria-labelledby="zstudyChooseTitle"><div class="zstudio-heading"><h2 id="zstudyChooseTitle" tabindex="-1">Domande</h2></div>
+     <section id="zstudyChoose" hidden aria-labelledby="zstudyChooseTitle"><div class="zstudio-heading"><h2 id="zstudyChooseTitle" tabindex="-1">Domande</h2><button id="zstudyEdit" class="tbtn" type="button" aria-pressed="false" title="Modifica l’elenco delle domande" aria-label="Modifica l’elenco delle domande"></button></div>
+      <div id="zstudyEditBar" class="zstudy-editbar" hidden><label class="zstudy-selection"><input id="zstudySelectAll" type="checkbox">Seleziona elenco</label><span id="zstudySelected" role="status" class="zchat-hint"></span><button id="zstudyDelete" type="button" class="tbtn" title="Elimina dal ripasso le domande selezionate; potrai annullare" disabled>Elimina selezionate</button></div>
+      <div id="zstudyUndoBar" class="zstudy-editbar" hidden><span id="zstudyRemoved" class="zchat-hint" role="status"></span><button id="zstudyUndo" type="button" class="tbtn" title="Ripristina l’ultima eliminazione, con i tentativi precedenti">Annulla</button></div>
       <div class="zstudio-filters"><label for="zstudySearch">Cerca domanda o fonte<input id="zstudySearch" type="search" class="ctl-input"></label><label for="zstudyOrigin">Scheda di origine<select id="zstudyOrigin"><option value="all">Tutte le origini</option></select></label></div>
       <div id="zstudyQueueFilter" class="zstudy-filters" role="group" aria-label="Mostra domande"><button type="button" class="tbtn" data-filter="all" aria-pressed="true">Tutte</button><button type="button" class="tbtn" data-filter="due" aria-pressed="false">Da ripassare</button><button type="button" class="tbtn" data-filter="new" aria-pressed="false">Nuove</button><button type="button" class="tbtn" data-filter="later" aria-pressed="false">Più avanti</button></div>
       <p id="zstudyQueueCount" class="zchat-hint" role="status"></p><div id="zstudyQueue" class="zstudy-queue"></div><p id="zstudyQueueEmpty" class="zchat-hint"></p>
@@ -46,7 +48,8 @@
   const picker=window.ZainoSceltaFonti.crea({prefix:'zstudyScope',bar:$('zstudyToolbar'),host:$('zstudyScopeHost'),state:reviewState,onChange(){visitati.clear();drawQuestion(null);refresh().catch(e=>status(e.message,true));}});
 
   let estimate=null,question=null,attemptId=null,review=false,selection='',cards=[],savedQuestions=[],queueState={questions:[],due:[]},collectionWarnings=[],collectionTimer,collectionRun=0;const drafts=new Map(),visitati=new Set();let paused=false,pausedId=null,schedeView='library',ripassoView='home',queueFilter='all';
-  const schedeChiuse=new Set();
+  const schedeChiuse=new Set(),selezionate=new Set();let modifica=false;
+  window.UiIcone.imposta($('zstudyEdit'),'pencil');
   const call=async(n,...args)=>{const r=await api[n](...args);if(!r?.ok)throw Error(r?.error || 'Operazione non riuscita.');return r;};
   const button=(text,fn,principale=false)=>{const b=el('button',text,principale?'tbtn acc':'tbtn');b.type='button';b.onclick=fn;return b;};
   // Una sola attività per superficie; il DOM nascosto conserva filtri e risposte in corso.
@@ -60,7 +63,7 @@
    box.scrollTop=0;if(focus)$(focus)?.focus();
   }
   function vistaRipasso(view,focus){
-   ripassoView=view;$('zstudyBody').dataset.vista=view;
+   if(view!=='queue'){modifica=false;selezionate.clear();}ripassoView=view;$('zstudyBody').dataset.vista=view;
    for(const [id,v] of [['zstudyHome','home'],['zstudyChoose','queue'],['zstudyNew','new'],['zstudyQuestion','question'],['zstudyProgress','question'],['zstudyNavigation','question']])$(id).hidden=view!==v;
    $('zstudyNew').open=view==='new';
    $('zstudyScopeButton').hidden=!['new','queue'].includes(view);$('zstudyScopeHost').hidden=!['new','queue'].includes(view);
@@ -157,6 +160,30 @@
   }
   function domandeDisponibili(){return P.domande(queueState.questions,queueState.cardQuestions);}
   function domandeFiltrate(){return P.coda(domandeDisponibili(),queueState.due,queueFilter,$('zstudySearch').value,$('zstudyOrigin').value);}
+  function selezioneDisegna(){
+   const rows=domandeFiltrate(),ids=new Set(rows.map(q=>q.id));for(const q of selezionate)if(!ids.has(q))selezionate.delete(q);
+   $('zstudyEdit').setAttribute('aria-pressed',String(modifica));$('zstudyEdit').title=modifica?'Termina le modifiche':'Modifica l’elenco delle domande';$('zstudyEdit').setAttribute('aria-label',$('zstudyEdit').title);
+   $('zstudyEditBar').hidden=!modifica;$('zstudyDelete').disabled=!selezionate.size;
+   $('zstudySelected').textContent=selezionate.size+(selezionate.size===1?' selezionata':' selezionate');
+   const all=$('zstudySelectAll');all.checked=!!rows.length&&rows.every(q=>selezionate.has(q.id));all.indeterminate=!!selezionate.size&&!all.checked;all.disabled=!rows.length;
+   all.title='Seleziona tutte le domande dell’elenco con i filtri attuali, anche nei gruppi chiusi';
+   for(const cb of $('zstudyQueue').querySelectorAll('input[type="checkbox"]')){const chosen=cb._questionIds.filter(id=>selezionate.has(id)).length;cb.checked=chosen===cb._questionIds.length;cb.indeterminate=chosen>0&&!cb.checked;}
+   const removed=queueState.rimozione;$('zstudyUndoBar').hidden=!removed;
+   $('zstudyRemoved').textContent=removed?removed.count+(removed.count===1?' domanda eliminata':' domande eliminate')+' dal ripasso.':'';
+  }
+  function spunta(ids,label){
+   const wrap=el('label',undefined,'zstudy-selection'),input=el('input');input.type='checkbox';input._questionIds=ids;input.setAttribute('aria-label',label);input.title=label;
+   input.onchange=()=>{for(const id of ids){if(input.checked)selezionate.add(id);else selezionate.delete(id);}selezioneDisegna();};
+   wrap.onclick=e=>e.stopPropagation();wrap.append(input);return wrap;
+  }
+  $('zstudyEdit').onclick=()=>{modifica=!modifica;selezionate.clear();drawQueue();};
+  $('zstudySelectAll').onchange=e=>{for(const q of domandeFiltrate()){if(e.target.checked)selezionate.add(q.id);else selezionate.delete(q.id);}selezioneDisegna();};
+  $('zstudyDelete').onclick=()=>{const ids=[...selezionate];if(!ids.length)return;action(async current=>{
+   await call('remove',state.zaino,ids);if(!current())return;
+   if(ids.includes(question?.id))drawQuestion(null);if(ids.includes(pausedId))pausedId=null;
+   for(const id of ids)visitati.delete(id);selezionate.clear();await refresh();await collection();$('zstudyUndo').focus();
+  });};
+  $('zstudyUndo').onclick=()=>{const token=queueState.rimozione?.token;if(!token)return;action(async current=>{const r=await call('undoRemove',state.zaino,token);if(current()){await refresh();await collection();status(r.count+(r.count===1?' domanda ripristinata.':' domande ripristinate.'));$('zstudyEdit').focus();}});};
   function drawQueue(){
    const all=domandeDisponibili(),resume=P.riprendi(all,queueState.due,pausedId);
    $('zstudyHomeTitle').textContent=paused?'Ripasso in pausa':'Pronto per ripassare?';$('zstudyBegin').textContent=paused&&resume?'Riprendi':resume?'Inizia ripasso':'Scegli una domanda';
@@ -175,7 +202,8 @@
     const list=el('ul');
     for(const q of questions){
      const row=el('li'),open=button(q.question,()=>openQuestion(q.id));open.classList.add('zstudy-question-open');open.dataset.questionId=q.id;
-     const current=q.id===question?.id;if(current)open.setAttribute('aria-current','true');row.append(open);
+     const current=q.id===question?.id;if(current)open.setAttribute('aria-current','true');
+     if(modifica){row.classList.add('zstudy-editing');const check=spunta([q.id],'Seleziona domanda: '+q.question);check.querySelector('input').dataset.selectionId=q.id;row.append(check);}row.append(open);
      const meta=el('div',undefined,'zstudy-question-meta');
      if(current)meta.append(el('span','Aperta','zstudy-current'));
      if(q.scheda){const chip=el('span','Scheda · '+q.scheda.title,'zstudy-origin-chip');chip.title=q.scheda.title+' — '+q.scheda.file;meta.append(chip);}
@@ -188,7 +216,8 @@
    for(const group of P.gruppiDomande(rows)){
     const section=el('section',undefined,'zstudy-source-group'),heading=el('h3',group.files.map(f=>f.split('/').pop()).join(' · '));heading.title=group.files.join(' · ');section.append(heading);
     for(const card of group.schede){
-     const details=el('details',undefined,'zstudy-card-group'),summary=el('summary',card.title+' · '+card.questions.length+(card.questions.length===1?' domanda':' domande'));
+     const details=el('details',undefined,'zstudy-card-group'),summary=el('summary');summary.append(el('span',card.title+' · '+card.questions.length+(card.questions.length===1?' domanda':' domande')));
+     if(modifica)summary.append(spunta(card.questions.map(q=>q.id),'Seleziona le domande della scheda '+card.title+' nell’elenco'));
      details.dataset.schedaId=summary.dataset.schedaId=card.sourceId;details.open=!schedeChiuse.has(card.sourceId);
      const tooltip=()=>{summary.title=(details.open?'Comprimi':'Espandi')+' le domande della scheda';};tooltip();
      details.ontoggle=()=>{if(!details.isConnected)return;if(details.open)schedeChiuse.delete(card.sourceId);else schedeChiuse.add(card.sourceId);tooltip();};
@@ -204,7 +233,8 @@
    $('zstudyProgress').textContent=question?(rows.some(q=>q.id===question.id)?'Domanda '+(rows.findIndex(q=>q.id===question.id)+1)+' di '+rows.length:'Domanda di ripasso'):'';
    const remaining=rows.filter(q=>q.id!==question?.id&&!visitati.has(q.id));$('zstudyNext').disabled=!remaining.length;$('zstudyNext').classList.toggle('acc',!!question?.attempts.at(-1)?.corrections?.length);$('zstudyPause').disabled=!question;
    $('zstudySession').textContent=rows.length&&!remaining.length&&question?'Hai aperto tutte le domande. Scegline un’altra da «Domande».':'';
-   if(focused)[...target.querySelectorAll('button,summary')].find(b=>focused.questionId?b.dataset.questionId===focused.questionId:b.dataset.schedaId===focused.schedaId)?.focus({preventScroll:true});
+   selezioneDisegna();
+   if(focused)[...target.querySelectorAll('button,summary,input')].find(b=>focused.selectionId?b.dataset.selectionId===focused.selectionId:focused.questionId?b.dataset.questionId===focused.questionId:b.dataset.schedaId===focused.schedaId)?.focus({preventScroll:true});
   }
   async function loadQuestion(id,current){const preview=queueState.cardQuestions?.find(q=>q.id===id),saved=queueState.questions.some(q=>q.id===id);const r=preview&&!saved?await call('fromCard',state.zaino,preview.scheda.sourceId,preview.scheda.index,preview.scheda.revision,preview.id):await call('resume',state.zaino,id);if(current()){paused=false;pausedId=null;pulisciAvvisoRipasso();const scope=P.ambitoDomanda(reviewState.scope,r.question);if(JSON.stringify(scope)!==JSON.stringify(reviewState.scope)){picker.set(scope);status('Aggiunte alle fonti del ripasso quelle della domanda aperta.');}if(question)visitati.add(question.id);review=true;drawQuestion(r.question);window.bancoMostra('flashcard');await refresh();await collection();$('zstudyQuestion h3')?.focus();}}
   function openQuestion(id){return action(current=>loadQuestion(id,current));}
@@ -232,6 +262,6 @@
    }catch(e){status(e.message,true);}
   };
   vistaSchede('library');vistaRipasso('home');
-  return {openReview,settled(){drawQueue();$('zschedeEstimate').disabled=!$('zschedeSource').options.length;},async sync(){reviewState.zaino=state.zaino;await picker.sync();if(state.zaino){await Promise.all([refresh(),sources(),collection()]);if(!$('zschedePreset').options.length){const r=await call('presets');for(const [id,label] of Object.entries(r.presets))$('zschedePreset').append(new Option(label,id));}}},scopeChanged(){invalidateEstimate();sources().catch(e=>status(e.message,true));},reset(){api.cancel();clearTimeout(collectionTimer);collectionRun++;cards=[];savedQuestions=[];queueState={questions:[],due:[]};collectionWarnings=[];$('zschedeKind').value='all';queueFilter='all';$('zstudySearch').value='';$('zstudyOrigin').replaceChildren(new Option('Tutte le origini','all'));$('zstudyQueueCount').textContent='';$('zstudyNew').open=false;$('zstudySession').textContent='';$('zstudyQueueEmpty').textContent='';document.querySelectorAll('.zstudio-config').forEach(e=>{e.hidden=true;});$('zschedeStatus').textContent='';$('zstudyStatus').textContent='';$('zschedeTokens').textContent='';$('zschedeCollection').replaceChildren();$('zschedeCollectionStatus').textContent='';$('zschedeFilter').value='';$('zschedeNew').open=false;estimate=null;question=null;drafts.clear();visitati.clear();schedeChiuse.clear();paused=false;pausedId=null;review=false;selection='';vistaSchede('library');vistaRipasso('home');$('zschedeResult').replaceChildren();$('zschedeSource').replaceChildren();$('zschedeSourceStatus').textContent='';$('zschedeGenerate').hidden=true;$('zschedeEstimateText').textContent='';$('zstudyQuestion').replaceChildren();$('zstudyQueue').replaceChildren();$('zstudyQueue').hidden=true;$('zstudyTopic').value='';$('zstudyCount').textContent='';window.RIPCONTO={mai:0,oggi:0,attesa:0,totale:0,corso:state.zaino};window.ripassoContoDisegna?.();},refresh};
+  return {openReview,settled(){drawQueue();$('zschedeEstimate').disabled=!$('zschedeSource').options.length;},async sync(){reviewState.zaino=state.zaino;await picker.sync();if(state.zaino){await Promise.all([refresh(),sources(),collection()]);if(!$('zschedePreset').options.length){const r=await call('presets');for(const [id,label] of Object.entries(r.presets))$('zschedePreset').append(new Option(label,id));}}},scopeChanged(){invalidateEstimate();sources().catch(e=>status(e.message,true));},reset(){api.cancel();clearTimeout(collectionTimer);collectionRun++;cards=[];savedQuestions=[];queueState={questions:[],due:[]};collectionWarnings=[];$('zschedeKind').value='all';queueFilter='all';$('zstudySearch').value='';$('zstudyOrigin').replaceChildren(new Option('Tutte le origini','all'));$('zstudyQueueCount').textContent='';$('zstudyNew').open=false;$('zstudySession').textContent='';$('zstudyQueueEmpty').textContent='';document.querySelectorAll('.zstudio-config').forEach(e=>{e.hidden=true;});$('zschedeStatus').textContent='';$('zstudyStatus').textContent='';$('zschedeTokens').textContent='';$('zschedeCollection').replaceChildren();$('zschedeCollectionStatus').textContent='';$('zschedeFilter').value='';$('zschedeNew').open=false;estimate=null;question=null;drafts.clear();visitati.clear();schedeChiuse.clear();selezionate.clear();modifica=false;selezioneDisegna();paused=false;pausedId=null;review=false;selection='';vistaSchede('library');vistaRipasso('home');$('zschedeResult').replaceChildren();$('zschedeSource').replaceChildren();$('zschedeSourceStatus').textContent='';$('zschedeGenerate').hidden=true;$('zschedeEstimateText').textContent='';$('zstudyQuestion').replaceChildren();$('zstudyQueue').replaceChildren();$('zstudyQueue').hidden=true;$('zstudyTopic').value='';$('zstudyCount').textContent='';window.RIPCONTO={mai:0,oggi:0,attesa:0,totale:0,corso:state.zaino};window.ripassoContoDisegna?.();},refresh};
  }};
 }(typeof self!=='undefined'?self:this));

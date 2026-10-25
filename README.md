@@ -47,7 +47,7 @@ Il riepilogo **Materiali usati** compare nella ricerca e nella scelta o creazion
 
 **Nuova domanda** apre la generazione. **Torna alla domanda** conserva la bozza. Dopo l’invio compare il riscontro: **Riprova** riapre il campo di risposta. **Prossima domanda** segue gli stessi filtri dell’elenco; **Pausa** e **Riprendi** conservano la domanda e il testo non inviato durante la sessione dell’app. Domande conservate, tentativi inviati e date restano sul disco. Nelle schede, **Rispondi** riusa quella stessa domanda e il suo storico.
 
-Le domande di ciascuna scheda si possono comprimere dal titolo con il chevron e il conteggio. Le domande create singolarmente restano visibili; apertura e chiusura dei gruppi si conservano mentre usi i filtri o torni all’elenco nello stesso zaino. Ogni domanda ha una linea verde chiara; quella attualmente aperta usa una linea più marcata e l’etichetta **Aperta**, per ritrovare il punto del ripasso.
+Le domande di ciascuna scheda si possono comprimere dal titolo con il chevron e il conteggio. Le domande create singolarmente restano visibili; apertura e chiusura dei gruppi si conservano mentre usi i filtri o torni all’elenco nello stesso zaino. Le domande della scheda sono rientrate, senza linea; le domande singole hanno una linea verde chiara, più marcata su quella aperta. L’etichetta **Aperta** indica il punto del ripasso. La matita accanto a **Domande** attiva le spunte e **Elimina selezionate**: puoi scegliere più domande, un gruppo o l’elenco filtrato. Le rimozioni restano salvate nello zaino; non alterano le schede originali. **Annulla** ripristina l’ultima eliminazione con i tentativi precedenti, anche dopo la riapertura dell’app.
 
 ## Materiali in parallelo
 
