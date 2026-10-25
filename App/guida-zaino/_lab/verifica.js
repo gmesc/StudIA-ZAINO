@@ -22,6 +22,7 @@ const L=require('./lab'),fs=require('fs'),path=require('path'),assert=require('a
  assert(await L.val(`[...document.querySelectorAll('section.cap h2')].every((h,i)=>Number(h.dataset.n)===i+1)`),'Capitoli in sequenza');
  assert(await L.val(`[...document.querySelectorAll('ol.legenda')].every(ol=>[...ol.children].every((li,i)=>Number(li.dataset.n)===i+1))`),'Legende in sequenza');
  assert.equal(await L.val(`document.querySelector('.brand img').getAttribute('src')`),'../assets/1F392.svg');
+ assert(await L.val(`[...document.querySelectorAll('button')].every(b=>b.querySelector('svg.ui-icon')&&b.title)`),'Comandi della guida con icone Lucide e tooltip');
  await L.invia('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});await L.pausa(300);
  async function shot(file){const r=await L.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync(file,Buffer.from(r.result.data,'base64'));}
  await shot('/tmp/studia-guida-desktop.png');

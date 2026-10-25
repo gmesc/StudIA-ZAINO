@@ -776,8 +776,9 @@
      qui le voci non sono numerate — un documento non è il terzo capitolo di
      niente, e una numerazione direbbe un ordine che non esiste. */
   .znav[hidden]{ display:none!important; }
+  .znav{ --znav-titolo:12px; }
   .znav .zs-tit{ display:flex; align-items:center; gap:.4rem; margin:0; padding:.3rem .6rem .3rem .8rem;
-    font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--teal-strong); }
+    font-size:var(--znav-titolo); font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--teal-strong); }
   .znav .zs-raccolta + .zs-raccolta .zs-tit{ margin-top:.8rem; }
   .znav .zs-n{ font-size:10px; letter-spacing:.06em; color:var(--muted); font-variant-numeric:tabular-nums; }
   .znav ul{ list-style:none; }
@@ -790,7 +791,8 @@
   .znav .zs-vuoto{ padding:.5rem 1rem .7rem .8rem; color:var(--muted); font-size:12px; line-height:1.45; }
   .znav .zs-no{ color:var(--no-ink); }
   .znav .zs-tit .zs-azioni{ margin-left:auto; display:flex; }
-  .znav .zs-azioni button{ width:auto; flex:0 0 auto; border:0; text-align:center; padding:0 .35rem; }
+  .znav .zs-azioni button{ width:auto; flex:0 0 auto; border:0; text-align:center; padding:0 .35rem; font-size:var(--znav-titolo); }
+  .znav .zs-azioni .ui-icon{ width:1em; height:1em; }
   .znav .zs-azioni button:disabled{ opacity:.35; cursor:default; }
   .znav .zs-tit .zs-collapse{ display:flex; align-items:center; gap:.4rem; flex:1; min-width:0; padding:0; border:0; height:var(--tb-h); color:inherit; font:inherit; text-transform:inherit; letter-spacing:inherit; }
   .znav .zs-corpo[hidden]{ display:none!important; }
@@ -807,7 +809,8 @@
   .znav .zs-item:hover, .znav .zs-item:has(> button.attivo){ background:var(--hover); }
   .znav .zs-item > button:hover, .znav .zs-item > button.attivo{ background:transparent; }
   .znav .zs-item > button:first-child{ flex:1; min-width:0; }
-  .znav .zs-seleziona{ align-self:center; flex:0 0 auto; width:14px; height:14px; margin:0 .5rem;
+  .znav .zs-seleziona-area{ display:flex; align-items:center; justify-content:center; flex:0 0 auto; min-width:28px; min-height:28px; cursor:pointer; }
+  .znav .zs-seleziona{ flex:0 0 auto; width:var(--znav-titolo); height:var(--znav-titolo); margin:0;
     accent-color:var(--teal-strong); cursor:pointer; }
   .znav .zs-item:has(.zs-seleziona:checked){ background:color-mix(in srgb, var(--teal) 20%, var(--panel)); }
   .znav .zs-seleziona:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
@@ -3269,7 +3272,12 @@
 /* Le icone stanno in `assets/dati/icone.js`: sono 58 KB di base64 su una riga
    sola, e in mezzo al codice rendevano il file illeggibile e i diff inutili. */
 const ICONS = DatiIcone;
-function ic(n,c){ return '<img class="oi'+(c?' '+c:'')+'" src="'+ICONS[n]+'" alt="" aria-hidden="true">'; }
+function ic(n,c){
+  if(n==='ghost')return '<img class="oi'+(c?' '+c:'')+'" src="'+ICONS[n]+'" alt="" aria-hidden="true">';
+  var nomi={play:'play',pause:'pause',stop:'square',reset:'rotate-ccw',check:'circle-check',cross:'circle-x',plus:'plus',minus:'minus',menu:'list',target:'target',left:'chevron-left',right:'chevron-right',grad:'graduation-cap',bulb:'lightbulb',star:'star',book:'book-open',brain:'brain',speaker:'volume-2',palette:'palette',text:'type',import:'import',export:'download',books:'library',gear:'settings',sun:'sun',moon:'moon'};
+  var titoli={play:'Riproduci',pause:'Pausa',stop:'Ferma',reset:'Ripristina',check:'Corretto',cross:'Da rivedere',plus:'Aggiungi',minus:'Riduci',menu:'Elenco',target:'Obiettivo',left:'Precedente',right:'Successivo',grad:'Studio',bulb:'Idea',star:'Importante',book:'Leggi',brain:'Metti alla prova',speaker:'Ascolta',palette:'Colori',text:'Testo',import:'Importa',export:'Esporta',books:'Materiali',gear:'Impostazioni',sun:'Tema chiaro',moon:'Tema scuro'};
+  return UiIcone.svg(nomi[n]||n,titoli[n]||n).replace('class="ui-icon"','class="ui-icon oi'+(c?' '+c:'')+'"');
+}
 (function(){var r=document.documentElement.style;r.setProperty('--icon-plus','url("'+ICONS.plus+'")');r.setProperty('--icon-minus','url("'+ICONS.minus+'")');r.setProperty('--icon-check','url("'+ICONS.check+'")');})();
 
 /* ====== Registro lezioni: l'app carica "database" di lezioni (data-driven) ====== */
@@ -7288,7 +7296,7 @@ function fotoZoomAggiorna(){
   var img=$('#fotoImg');
   var pronta=!!(img && img.naturalWidth);
   var e=FontiZoom.etichetta(fotoZoomSalvato(), fotoScala(), pronta, true);
-  lvl.textContent=e.testo; lvl.title=e.titolo;
+  UiIcone.imposta(lvl,fotoZoomSalvato()==='page-fit'?'maximize':'move-horizontal',e.titolo);lvl.setAttribute('aria-label',e.titolo);
 }
 /** «+» e «−»: un gesto a mano, che esce dall'adattamento dinamico. */
 function fotoZoomPasso(su){
@@ -8175,7 +8183,7 @@ function playerBarraAggiorna(){
   var c=playerAperto();
   var b=$('#plScegli');
   if(b){
-    b.textContent=(c ? PLAYER.label : 'Media')+' ▾';
+    b.innerHTML='<span class="ui-documento">'+escHtml(c?PLAYER.label:'Media')+'</span>'+UiIcone.svg('chevron-down');
     b.title=c ? ('In riproduzione: '+PLAYER.label+' — premi per cambiare') : 'Scegli il video o l’audio';
   }
   var cmd=$('#plComandi'); if(cmd) cmd.hidden=!c;
@@ -8194,7 +8202,7 @@ function playerBarraAggiorna(){
   if(play){
     var suona=!!(c && v && !v.paused);
     play.setAttribute('aria-pressed', String(suona));
-    play.innerHTML=suona ? '&#10073;&#10073;' : '&#9654;';
+    UiIcone.imposta(play,suona?'pause':'play',suona?'Pausa (K)':'Riproduci (K)');play.setAttribute('aria-label',play.title);
   }
   try{ barreSeparatori(); }catch(e){}
 }
@@ -8458,7 +8466,7 @@ async function playerScegliApri(ancora){
     var tipo=Lettore.tipoDi(m.name);
     return '<button class="pd-voce'+(m.name===PLAYER.file?' attivo':'')+'" role="menuitem" type="button"'+
       ' data-media="'+escHtml(m.name)+'" title="'+escHtml(m.name)+'">'+
-      (tipo==='audio' ? '♪ ' : '▶ ')+
+      UiIcone.svg(tipo==='audio'?'music':'video')+
       escHtml(titoloMateriale(m.name)||m.name)+
       (s ? ' <span class="set-note">— '+Lettore.tempo(s)+'</span>' : '')+'</button>';
   }).join('');
@@ -8927,6 +8935,11 @@ function calloutDef(k){
   if(!o) return base;
   return { k:base.k, label:o.etichetta||base.label, emoji:o.emoji||base.emoji, col:o.col, ink:o.ink };
 }
+function calloutIcona(d){
+  var personalizzata=riquadriOvr()[d.k];
+  if(personalizzata && personalizzata.emoji)return '<span title="'+escHtml(d.label)+'">'+escHtml(d.emoji)+'</span>';
+  return '<span title="'+escHtml(d.label)+'">'+UiIcone.svg(({nota:'notebook-pen',importante:'star',definizione:'book-open',esempio:'puzzle',dubbio:'help-circle',attenzione:'triangle-alert',dafare:'list-todo'})[d.k]||'notebook-text')+'</span>';
+}
 /**
  * I colori scelti, in UN foglio di stile generato.
  *
@@ -8980,10 +8993,10 @@ function riquadriRighe(){
     return '<div class="riq-riga" data-k="'+base.k+'">'+
       '<div class="ucallout uc-'+base.k+' riq-campione"'+
         (col?' style="--uc-col:'+escHtml(col)+(ink?';--uc-ink:'+escHtml(ink):'')+'"':'')+'>'+
-        '<div class="uc-head"><span>'+d.emoji+'</span>'+escHtml(d.label)+'</div>'+
+        '<div class="uc-head">'+calloutIcona(d)+escHtml(d.label)+'</div>'+
         '<div class="uc-body">Come si vedrà nell’appunto.</div></div>'+
       '<div class="riq-campi">'+
-        '<button type="button" class="tbtn riq-emoji" title="Cambia l’emoji" aria-label="Cambia l’emoji di '+escHtml(d.label)+'">'+d.emoji+'</button>'+
+        '<button type="button" class="tbtn riq-emoji" title="Cambia l’emoji" aria-label="Cambia l’emoji di '+escHtml(d.label)+'">'+UiIcone.svg('smile')+'</button>'+
         '<input class="riq-et" type="text" value="'+escHtml(d.label)+'" aria-label="Nome del riquadro '+escHtml(base.label)+'" maxlength="24">'+
         '<label class="riq-col" title="Il colore del bordo e del fondo">'+
           '<input type="color" class="riq-c" value="'+escHtml(col||riquadriTinta(base.k,'--uc-col'))+'" aria-label="Colore di '+escHtml(d.label)+'"></label>'+
@@ -9036,10 +9049,10 @@ function calloutMenuHTML(){
      scrivendo. Col mouse si preme da tutte e due le porte. */
   return CALLOUTS.map(function(c, i){
     var d=calloutDef(c.k);
-    return '<button type="button" role="menuitem" data-cal="'+c.k+'" data-i="'+i+'">'+
-           '<span>'+d.emoji+'</span>'+escHtml(d.label)+'</button>';
+    return '<button type="button" role="menuitem" data-cal="'+c.k+'" data-i="'+i+'" title="Inserisci il riquadro '+escHtml(d.label)+'">'+
+           calloutIcona(d)+escHtml(d.label)+'</button>';
   }).join('') +
-  '<button type="button" class="cal-stili">✎ Personalizza i riquadri…</button>';
+  '<button type="button" class="cal-stili" title="Personalizza i riquadri">'+UiIcone.svg('pencil')+' Personalizza i riquadri…</button>';
 }
 function openCalloutMenu(anchorEl, cm){
   var menu=$('#calloutMenu'); if(!menu) return;
@@ -9227,7 +9240,7 @@ function renderNoteMd(md, opt){
       // il corpo finisce anche quando comincia un ALTRO callout: senza questo,
       // due riquadri attaccati (senza riga vuota in mezzo) si fondevano in uno
       while(i<lines.length && /^>/.test(lines[i]) && !/^>\s*\[!/.test(lines[i])){ body.push(lines[i].replace(/^>\s?/,'')); i++; }
-      out+=avvolgi('<div class="ucallout uc-'+d.k+'"><div class="uc-head"><span>'+d.emoji+'</span>'+escHtml(titolo)+'</div>'+
+      out+=avvolgi('<div class="ucallout uc-'+d.k+'"><div class="uc-head">'+calloutIcona(d)+escHtml(titolo)+'</div>'+
            '<div class="uc-body">'+mdToHtml(body.join('\n'), true)+'</div></div>', da, i-1);
       continue;
     }
@@ -11126,7 +11139,7 @@ var ZNAV={ carico:false, ancora:false, organizza:{}, gruppi:{}, id:'', salva:fal
 function znavEsc(s){ return escHtml(s); }
 function znavComandoHtml(azione, testo, titolo, dati, spento){
   return '<button type="button" class="tbtn'+(azione==='crea'?' acc':'')+'" data-znav="'+azione+'" '+(dati||'')+
-    (azione==='crea'?'':' title="'+znavEsc(titolo)+'"')+' aria-label="'+znavEsc(titolo)+'"'+(spento?' disabled':'')+'>'+testo+'</button>';
+    (azione==='crea'?'':' title="'+znavEsc(titolo)+'"')+' aria-label="'+znavEsc(titolo)+'"'+(spento?' disabled':'')+'>'+(({crea:'plus',rinomina:'pencil',elimina:'x'})[azione]?UiIcone.svg(({crea:'plus',rinomina:'pencil',elimina:'x'})[azione]):testo)+'</button>';
 }
 function znavAiutoChiudi(){ var box=document.getElementById('znavAiuto'); if(box) box.hidden=true; }
 function znavAiutoMostra(e){
@@ -11160,14 +11173,14 @@ function znavRaccolta(sezione, titolo, voci, vuoto, errore, erroreGruppi){
       var dati='data-file="'+znavEsc(file)+'" data-gruppo="'+znavEsc(gruppo)+'"';
       return '<li class="zs-item" '+dati+(modificabile?' draggable="true" tabindex="0" title="Trascina le voci selezionate in un gruppo · Alt+↑/↓ per riordinare"':'')+'>'+
         '<button type="button" class="'+v.classe+(v.attivo?' attivo':'')+'" data-quale="'+znavEsc(file)+'" title="'+znavEsc(v.titolo||v.testo)+'">'+znavEsc(v.testo)+'</button>'+
-        (edit?'<input type="checkbox" class="zs-seleziona" '+dati+' aria-label="Seleziona '+znavEsc(v.testo)+'"'+(selezione.includes(file)?' checked':'')+'>':'')+'</li>';
+        (edit?'<label class="zs-seleziona-area" title="Seleziona '+znavEsc(v.testo)+'"><input type="checkbox" class="zs-seleziona" '+dati+' aria-label="Seleziona '+znavEsc(v.testo)+'"'+(selezione.includes(file)?' checked':'')+'></label>':'')+'</li>';
     }).join('')+'</ul>';
   }
-  var h='<section class="zs-raccolta" data-sezione="'+sezione+'"><div class="zs-tit"><button type="button" class="zs-collapse" data-znav="sezione" aria-expanded="'+!chiusa+'" aria-controls="zs-corpo-'+sezione+'"><span aria-hidden="true">'+(chiusa?'▸':'▾')+'</span><span>'+titolo+'</span><span class="zs-n">'+voci.length+'</span></button><span class="zs-azioni">'+
+  var h='<section class="zs-raccolta" data-sezione="'+sezione+'"><div class="zs-tit"><button type="button" class="zs-collapse" data-znav="sezione" aria-expanded="'+!chiusa+'" aria-controls="zs-corpo-'+sezione+'" title="'+(chiusa?'Espandi ':'Comprimi ')+titolo+'"><span aria-hidden="true">'+UiIcone.svg(chiusa?'chevron-right':'chevron-down')+'</span><span>'+titolo+'</span><span class="zs-n">'+voci.length+'</span></button><span class="zs-azioni">'+
     znavComandoHtml('ordina',ZNAV.ordine[sezione]==='az'?'Z–A':'A–Z','Ordina '+(ZNAV.ordine[sezione]==='az'?'Z–A':'A–Z'),'',!modificabile)+
     (edit?znavComandoHtml('crea','+',selezione.length?'Crea gruppo con '+selezione.length+' voci selezionate':'Crea gruppo di '+titolo.toLowerCase(),'data-aiuto="'+znavEsc(aiuto)+'" aria-describedby="znavAiuto"'):'')+
-    '<button type="button" class="tbtn" data-znav="organizza" title="Organizza '+titolo.toLowerCase()+'" aria-label="Organizza '+titolo.toLowerCase()+'" aria-pressed="'+edit+'"'+(erroreGruppi||errore?' disabled':'')+'>'+(edit?'✓':'✎')+'</button></span></div><div class="zs-corpo" id="zs-corpo-'+sezione+'"'+(chiusa?' hidden':'')+'>';
-  if(errore) return h+'<div class="zs-vuoto zs-no">⚠ '+znavEsc(errore)+'</div></div></section>';
+    '<button type="button" class="tbtn" data-znav="organizza" title="Organizza '+titolo.toLowerCase()+'" aria-label="Organizza '+titolo.toLowerCase()+'" aria-pressed="'+edit+'"'+(erroreGruppi||errore?' disabled':'')+'>'+UiIcone.svg(edit?'check':'pencil')+'</button></span></div><div class="zs-corpo" id="zs-corpo-'+sezione+'"'+(chiusa?' hidden':'')+'>';
+  if(errore) return h+'<div class="zs-vuoto zs-no">'+UiIcone.svg('triangle-alert','Errore di lettura')+' '+znavEsc(errore)+'</div></div></section>';
   if(erroreGruppi) h+='<div class="zs-vuoto zs-no">Organizzazione non leggibile: '+znavEsc(erroreGruppi)+'</div>';
   var categorie=sezione==='media'?[['immagini','Immagini'],['video','Video'],['audio','Audio']]:[['','']];
   categorie.forEach(function(categoria,indice){
@@ -11178,7 +11191,7 @@ function znavRaccolta(sezione, titolo, voci, vuoto, errore, erroreGruppi){
     presenti.forEach(function(g){
       var files=g.files.filter(function(f){return ammesse.has(f);}), dati='data-gruppo="'+znavEsc(g.id)+'"';
       h+='<section class="zs-gruppo" '+dati+'><div class="zs-gruppo-testa" '+dati+(edit?' draggable="true" tabindex="0" title="Trascina il gruppo · Alt+↑/↓ per riordinare"':'')+'>'+
-        '<button type="button" data-znav="toggle" '+dati+' aria-expanded="'+!g.chiuso+'"'+(erroreGruppi?' disabled':'')+'><span aria-hidden="true">'+(g.chiuso?'▸':'▾')+'</span><span class="zs-nome">'+znavEsc(g.nome)+'</span><span class="zs-n">'+files.length+'</span></button>'+
+        '<button type="button" data-znav="toggle" '+dati+' aria-expanded="'+!g.chiuso+'" title="'+(g.chiuso?'Espandi ':'Comprimi ')+znavEsc(g.nome)+'"'+(erroreGruppi?' disabled':'')+'><span aria-hidden="true">'+UiIcone.svg(g.chiuso?'chevron-right':'chevron-down')+'</span><span class="zs-nome">'+znavEsc(g.nome)+'</span><span class="zs-n">'+files.length+'</span></button>'+
         (edit?'<span class="zs-azioni">'+znavComandoHtml('rinomina','✎','Rinomina il gruppo '+g.nome,dati)+znavComandoHtml('elimina','×','Sciogli il gruppo '+g.nome+' (conserva le voci)',dati)+'</span>':'')+'</div>'+
         '<div'+(g.chiuso?' hidden':'')+'>'+(files.length?lista(files,g.id):'<div class="zs-vuoto">'+(edit?'Trascina qui una voce.':'Gruppo vuoto.')+'</div>')+'</div></section>';
     });
@@ -11236,7 +11249,7 @@ async function znavComando(btn){
   var azione=btn.dataset.znav, sezione=znavSezioneDi(btn), id=zainoAttivo(), s=ZNAV.gruppi[sezione];
   if(azione==='sezione'){
     var corpo=document.getElementById('zs-corpo-'+sezione);if(!corpo)return;
-    corpo.hidden=!corpo.hidden;btn.setAttribute('aria-expanded',String(!corpo.hidden));btn.firstElementChild.textContent=corpo.hidden?'▸':'▾';
+    corpo.hidden=!corpo.hidden;btn.setAttribute('aria-expanded',String(!corpo.hidden));btn.firstElementChild.innerHTML=UiIcone.svg(corpo.hidden?'chevron-right':'chevron-down');btn.title=corpo.hidden?'Espandi la sezione':'Comprimi la sezione';
     try{localStorage.setItem('studia-zaino.sezione.'+window.vault.path+'.'+id+'.'+sezione,corpo.hidden?'chiusa':'aperta');}catch(_){}
     return;
   }
@@ -11479,7 +11492,7 @@ async function setZainiDisegna(){
   host.innerHTML='<div class="set-note">Leggo gli zaini…</div>';
   var lista=[];
   try{ lista=await window.vault.zaino.list()||[]; }
-  catch(e){ host.innerHTML='<div class="set-note">⚠ Non riesco a leggere gli zaini: '+escHtml((e&&e.message)||String(e))+'</div>'; return; }
+  catch(e){ host.innerHTML='<div class="set-note">'+UiIcone.svg('triangle-alert','Errore di lettura')+' Non riesco a leggere gli zaini: '+escHtml((e&&e.message)||String(e))+'</div>'; return; }
   if(!lista.length){ host.innerHTML='<div class="set-note">Nessuno zaino. Apri il menu ZAINO in alto e scegli «+ Crea uno zaino nuovo».</div>'; return; }
   host.innerHTML=lista.map(function(z){
     var conto=z.documenti ? (z.documenti+(z.documenti===1?' documento':' documenti')) : 'vuoto';
@@ -11490,10 +11503,10 @@ async function setZainiDisegna(){
       '<b>'+nome+'</b><span class="set-note">'+escHtml(conto)+'</span>'+
       '<button type="button" class="tbtn zx-rinomina" data-zaino="'+escHtml(z.id)+'"'+
       ' title="Rinomina «'+nome+'»"'+
-      ' aria-label="Rinomina lo zaino '+nome+'">&#9998;</button>'+
+      ' aria-label="Rinomina lo zaino '+nome+'">'+UiIcone.svg('pencil')+'</button>'+
       '<button type="button" class="tbtn zx-elimina" data-zaino="'+escHtml(z.id)+'"'+
       ' title="Elimina «'+nome+'»: la cartella intera va nel Cestino"'+
-      ' aria-label="Elimina lo zaino '+nome+'">&#128465;</button></div>';
+      ' aria-label="Elimina lo zaino '+nome+'">'+UiIcone.svg('trash-2')+'</button></div>';
   }).join('');
 }
 /**
@@ -12168,11 +12181,6 @@ function ensureMde(s){
   host.addEventListener('click',function(e){
     if(e.target.closest && e.target.closest('.editor-toolbar')) mdbChiudi(true,s);
   },true);
-  [['.ncb-undo','↶︎'],['.ncb-redo','↷︎'],['.ncb-callout','📜'],['.ncb-emoji','😀'],['.ncb-guida','?'],['.ncb-cita','🔖'],['.ncb-mat','📎']].forEach(function(p){
-    var b=host.querySelector(p[0]); if(!b) return;
-    if(p[0]==='.ncb-undo'||p[0]==='.ncb-redo') b.innerHTML='<span class="tb-cronologia" aria-hidden="true">'+p[1]+'</span>';
-    else b.textContent=p[1];
-  });
   var tb=host.querySelector('.editor-toolbar');
   ['noteCtlTpl','noteCtlFineTpl'].forEach(function(id,i){
     var tpl=document.getElementById(id); if(!tb || !tpl) return;
@@ -12180,6 +12188,7 @@ function ensureMde(s){
     frammento.querySelectorAll('[id]').forEach(function(el){ el.id+=s.suffisso; });
     if(i===0) tb.insertBefore(frammento,tb.firstChild); else tb.appendChild(frammento);
   });
+  UiToolbar.appunti(host);
   var altri=document.createElement('button');altri.type='button';altri.className='tbtn ncb-more no-disable';altri.textContent='Altri strumenti';altri.setAttribute('aria-expanded','false');
   altri.onclick=function(){var aperti=tb.classList.toggle('strumenti-aperti');altri.setAttribute('aria-expanded',String(aperti));altri.textContent=aperti?'Meno strumenti':'Altri strumenti';};
   tb.appendChild(altri);tb.addEventListener('keydown',function(e){if(e.key==='Escape'&&tb.classList.contains('strumenti-aperti')){e.stopPropagation();tb.classList.remove('strumenti-aperti');altri.setAttribute('aria-expanded','false');altri.textContent='Altri strumenti';altri.focus();}});
@@ -12439,9 +12448,9 @@ function figMenuHTML(){
     '<button class="ctx-item" role="menuitem" data-fig="album">Mostra nell’album</button>'+
     '<div class="ctx-sep"></div>'+
     '<div class="ctx-colori" role="group" aria-label="Larghezza dell’immagine">'+
-      '<button class="ctx-item ctx-kimg" data-fig="-" title="Più stretta" aria-label="Più stretta">−</button>'+
+      '<button class="ctx-item ctx-kimg" data-fig="-" title="Più stretta" aria-label="Più stretta">'+UiIcone.svg('minus')+'</button>'+
       '<button class="ctx-item ctx-kimg" data-fig="0" title="Torna alla misura sua" aria-label="Torna alla misura sua">com’era</button>'+
-      '<button class="ctx-item ctx-kimg" data-fig="+" title="Più larga" aria-label="Più larga">+</button>'+
+      '<button class="ctx-item ctx-kimg" data-fig="+" title="Più larga" aria-label="Più larga">'+UiIcone.svg('plus')+'</button>'+
     '</div>';
 }
 function figMenuChiudi(){ var m=$('#figMenu'); if(m) m.classList.remove('open'); }
@@ -13015,12 +13024,12 @@ function appuntaRiga(origine, spento){
   var h='<div class="ctx-cals" role="group" aria-label="Come appuntare">';
   h+='<button class="ctx-cal" type="button" data-app="" aria-pressed="'+(attivo===''?'true':'false')+'"'+
      (spento?' disabled':'')+' title="Appunta: citazione a blocco per le frasi, virgolette e corsivo per i frammenti"'+
-     ' aria-label="Appunta con citazione automatica">\u00B6</button>';
+     ' aria-label="Appunta con citazione automatica">'+UiIcone.svg('pilcrow')+'</button>';
   CALLOUTS.forEach(function(c){
     h+='<button class="ctx-cal" type="button" data-app="'+escHtml(c.k)+'"'+
        ' aria-pressed="'+(attivo===c.k?'true':'false')+'"'+(spento?' disabled':'')+
        ' title="Appunta in un riquadro «'+escHtml(c.label)+'»"'+
-       ' aria-label="Appunta in un riquadro '+escHtml(c.label)+'">'+c.emoji+'</button>';
+       ' aria-label="Appunta in un riquadro '+escHtml(c.label)+'">'+calloutIcona(calloutDef(c.k))+'</button>';
   });
   /* ⚠️ IL 🔗 NON APPUNTA, e per questo è staccato dagli altri da una barretta.
      Gli otto bottoni qui sopra hanno il patto della riga dei colori — premerne
@@ -13035,7 +13044,7 @@ function appuntaRiga(origine, spento){
      ' aria-pressed="'+(cita?'true':'false')+'"'+(spento?' disabled':'')+
      ' title="'+(cita ? 'Il frammento porta da dove viene: premi per toglierla'
                       : 'Il frammento arriva senza la fonte: premi per rimetterla')+'"'+
-     ' aria-label="Portare la fonte nel frammento">\uD83D\uDD17</button>';
+     ' aria-label="Portare la fonte nel frammento">'+UiIcone.svg('link')+'</button>';
   return h+'</div>';
 }
 
@@ -13497,7 +13506,7 @@ function refreshNoteUI(s){
     var fuori = s.cur && !(ctx && noteInChapter(s.cur, ctx));
     w.hidden=!fuori;
     if(fuori){
-      w.textContent = zaino ? ('↪ '+noteMateriale(s.cur)) : '↪ altro capitolo';
+      w.innerHTML = UiIcone.svg('git-branch')+' '+escHtml(zaino ? noteMateriale(s.cur) : 'altro capitolo');
       w.title='Stai scrivendo su «'+noteEtichetta(s.cur)+'» ('+(noteDove(s.cur)||'altro capitolo')+'), non sul '+(zaino?'documento':'capitolo')+' aperto.';
     }
   }
@@ -13513,7 +13522,7 @@ function myNotesInner(){
   var g=noteGroups(NOTES.list, curCtx(), null);
   var mine=g.qui;
   var h='<h3>I miei appunti</h3>';
-  if(NOTES.listError) h+='<div class="nt-snip">⚠ Non sono riuscito a leggere la cartella APPUNTI: '+escHtml(NOTES.listError)+'</div>';
+  if(NOTES.listError) h+='<div class="nt-snip">'+UiIcone.svg('triangle-alert','Errore di lettura')+' Non sono riuscito a leggere la cartella APPUNTI: '+escHtml(NOTES.listError)+'</div>';
   if(!mine.length) h+='<div class="nt-snip">Nessun appunto in questo capitolo.'+
     (g.altrove.length? ' Ne hai '+g.altrove.length+' in altri capitoli di questo corso: li trovi nella tendina dell’editor.' : '')+'</div>';
   else h+='<ul>'+mine.map(function(n){
@@ -15410,8 +15419,8 @@ function stratiPopDisegna(){
          di uno strato. Un comando spento che non si può spiegare sarebbe
          peggio di un comando che non c'è. */
       (r.base ? '' :
-        '<button class="tbtn" type="button" data-str="rinomina" title="Rinomina questa lettura" aria-label="Rinomina la lettura '+escHtml(r.nome)+'">\u{270E}</button>'+
-        '<button class="tbtn" type="button" data-str="via" title="Togli questa lettura" aria-label="Togli la lettura '+escHtml(r.nome)+'">\u{1F5D1}</button>')+
+        '<button class="tbtn" type="button" data-str="rinomina" title="Rinomina questa lettura" aria-label="Rinomina la lettura '+escHtml(r.nome)+'">'+UiIcone.svg('pencil')+'</button>'+
+        '<button class="tbtn" type="button" data-str="via" title="Togli questa lettura" aria-label="Togli la lettura '+escHtml(r.nome)+'">'+UiIcone.svg('trash-2')+'</button>')+
       '</div>';
   }).join('');
 }
@@ -17902,7 +17911,7 @@ function bancoSegnaAttivo(){
     numero.textContent=n ? String(n) : ''; numero.title='Riquadro '+n+' in ordine di lettura';
     numero.setAttribute('aria-label',numero.title+(b===attivo?' · Riquadro attivo':''));
     var chiudi=h.querySelector('.bchiudi');
-    if(!chiudi){chiudi=document.createElement('button');chiudi.type='button';chiudi.className='tbtn bchiudi';chiudi.textContent='×';h.appendChild(chiudi);}
+    if(!chiudi){chiudi=document.createElement('button');chiudi.type='button';chiudi.className='tbtn bchiudi';UiIcone.imposta(chiudi,'x');h.appendChild(chiudi);}
     chiudi.disabled=v.length<2;
     chiudi.setAttribute('aria-label','Chiudi split '+n+': '+bancoNomeStrumento(bancoStrumentoIn(b)));
     chiudi.title=chiudi.disabled?'L’ultimo split resta aperto: puoi cambiarne il contenuto.':'Chiudi lo split; il documento resta disponibile.';
@@ -18453,7 +18462,7 @@ function bancoDisegnaForme(){
   var piu=document.createElement('button');
   piu.type='button'; piu.className='bforma bformapiu'; piu.id='bFormaNuova';
   piu.title='Disegna una forma tua'; piu.setAttribute('aria-label','Disegna una forma tua');
-  piu.textContent='+';
+  UiIcone.imposta(piu,'plus');
   host.appendChild(piu);
   bancoMostraAnteprima(attuale);
 }
@@ -20081,7 +20090,7 @@ function mappaMemorieDisegna(){
       : 'Slot '+(i+1)+' vuoto — tasto destro per salvarci la disposizione di adesso';
     return '<button type="button" data-mem="'+i+'" class="mem'+(pieno?' piena':' vuota')+
       '" title="'+escHtml(tit)+'" aria-label="'+escHtml(tit)+'">'+
-      (pieno ? (m.protetta?'🔒':'')+escHtml(nome.length>12?nome.slice(0,11)+'…':nome) : (i+1))+
+      (pieno ? (m.protetta?UiIcone.svg('lock-keyhole','Disposizione protetta'):'')+escHtml(nome.length>12?nome.slice(0,11)+'…':nome) : (i+1))+
     '</button>';
   }).join('');
 }
@@ -20687,9 +20696,9 @@ function mapMenuApri(x, y, b){
         var kOra=Math.round(((d.immagine.scala||1))*100);
         h+=sep+testa('Ridimensiona · '+kOra+'%');
         h+='<div class="ctx-colori" role="group" aria-label="Dimensione dell’immagine">'+
-           '<button class="ctx-item ctx-kimg" data-kimg="-" title="Più piccola" aria-label="Più piccola">−</button>'+
+           '<button class="ctx-item ctx-kimg" data-kimg="-" title="Più piccola" aria-label="Più piccola">'+UiIcone.svg('minus')+'</button>'+
            '<button class="ctx-item ctx-kimg" data-kimg="1" title="Dimensione di partenza" aria-label="Dimensione di partenza">100%</button>'+
-           '<button class="ctx-item ctx-kimg" data-kimg="+" title="Più grande" aria-label="Più grande">+</button>'+
+           '<button class="ctx-item ctx-kimg" data-kimg="+" title="Più grande" aria-label="Più grande">'+UiIcone.svg('plus')+'</button>'+
            '</div>';
       }
       h+=sep;
@@ -20697,7 +20706,7 @@ function mapMenuApri(x, y, b){
       mappaColori().forEach(function(c){
         h+='<button class="ctx-col" data-col="'+c+'" style="background:'+c+'" aria-label="Colora"></button>';
       });
-      h+='<button class="ctx-col nessuno" data-col="" aria-label="Togli il colore" title="Torna al colore del ramo">✕</button>';
+      h+='<button class="ctx-col nessuno" data-col="" aria-label="Togli il colore" title="Torna al colore del ramo">'+UiIcone.svg('x')+'</button>';
       h+='<input type="color" id="mColPick" aria-label="Scegli un colore">';
       h+='</div>';
       h+='<label class="ctx-casc"><input type="checkbox" id="mCasc"> applica ai discendenti</label>';
@@ -21012,8 +21021,8 @@ function mappaFontiBolla(d, ancora){
     fonti.map(function(f,i){
       var eti=f.label || (f.type==='video' ? 'Video' : 'Documento');
       var dove=f.type==='video' ? ('min. '+fmtTime(f.t||0)) : ('p. '+(f.page||1));
-      return '<button class="ctx-item" type="button" data-fonte="'+i+'">'+
-             '<span class="fb-tipo" aria-hidden="true">'+(f.type==='video'?'&#9654;':'&#128196;')+'</span>'+
+      return '<button class="ctx-item" type="button" data-fonte="'+i+'" title="Apri '+escHtml(eti)+' · '+escHtml(dove)+'">'+
+             '<span class="fb-tipo" aria-hidden="true">'+UiIcone.svg(f.type==='video'?'video':'file-text')+'</span>'+
              '<span class="fb-eti">'+escHtml(eti)+'</span>'+
              '<span class="ctx-scorc">'+escHtml(dove)+'</span></button>';
     }).join('');
@@ -22294,7 +22303,7 @@ window.addEventListener('keydown', function(e){
   <div class="ps-card">
     <h2 id="psTitle">Come vuoi studiare?</h2>
     <p>StudIA può adattare la <b>forma</b> delle lezioni che genera: lunghezza dei capitoli, quantità di esempi, quiz, glossario, e come presentare i contenuti. Non cambia mai <b>quali</b> argomenti trattare.</p>
-    <p class="ps-small">Bastano due minuti. Puoi rivedere tutto quando vuoi da <b>⚙ Impostazioni › Utente</b>, e saltare adesso senza perdere niente.</p>
+    <p class="ps-small">Bastano due minuti. Puoi rivedere tutto quando vuoi da <b>Impostazioni › Utente</b>, e saltare adesso senza perdere niente.</p>
     <div class="ps-row">
       <button type="button" class="tbtn acc" id="psCompila">Compila il profilo</button>
       <button type="button" class="tbtn" id="psSalta">Salta per ora</button>
@@ -22356,7 +22365,7 @@ window.addEventListener('keydown', function(e){
   </div>
   <div class="cmp-ov" id="cmpOv">
     <div class="cmp-alert">
-      <div class="h"><span style="font-size:22px;font-family:var(--emoji-font)">⚠️</span><b>Percorsi incompleti</b></div>
+      <div class="h"><span data-ui-icona="triangle-alert" title="Attenzione"></span><b>Percorsi incompleti</b></div>
       <div class="b" id="cmpOvBody"></div>
       <div class="f">
         <button type="button" class="tbtn" id="cmpOvNo">Torna a comporre</button>

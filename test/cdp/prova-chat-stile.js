@@ -173,6 +173,8 @@ const SUPERFICI = {
      un audit senza conversazione non vede mai. */
   ok('l ultima risposta ha i suoi quattro comandi', 4,
     await c.val(`[...document.querySelectorAll('.zchat-message-actions')].at(-1).querySelectorAll('.tbtn').length`));
+  ok('le azioni della risposta hanno icone Lucide e tooltip',true,
+    await c.val(`[...[...document.querySelectorAll('.zchat-message-actions')].at(-1).querySelectorAll('.tbtn')].every(b=>b.querySelector('svg.ui-icon')&&b.title&&b.getAttribute('aria-label'))`));
 
   for (const tema of temi) {
     await c.val(`document.documentElement.dataset.theme=${JSON.stringify(tema)}`);

@@ -130,7 +130,7 @@
       if (settingsButton) settingsButton.before(toggle);
       else document.querySelector('.topbar').appendChild(toggle);
     }
-    toggle.innerHTML = '<svg class="topbar-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 3.5h17v13h-10l-6 4v-4h-1z"/></svg>';
+    window.UiIcone.imposta(toggle,'message-square');
     toggle.setAttribute('aria-label', 'Chat AI: apri il tutor dello zaino');
     toggle.hidden = false; toggle.setAttribute('aria-haspopup', 'dialog'); toggle.setAttribute('aria-expanded', 'false');
     toggle.setAttribute('aria-controls', 'zchatWindow'); toggle.title = 'Apri il tutor AI dello zaino';
@@ -168,7 +168,7 @@
           <button type="submit" class="tbtn acc" id="zchatSend" aria-label="Invia messaggio" title="Invia messaggio">↑︎</button>
         </div>
       </form>`;
-    for(const [id,icon] of Object.entries({zchatNew:'plus',zchatSettings:'settings',zchatCollapse:'minus',zchatClose:'x'}))window.UiIcone.imposta(panel.querySelector('#'+id),icon);
+    for(const [id,icon] of Object.entries({zchatSend:'arrow-up',zchatStop:'square',zchatNew:'plus',zchatSettings:'settings',zchatCollapse:'minus',zchatClose:'x'}))window.UiIcone.imposta(panel.querySelector('#'+id),icon);
     panel.querySelector('#zchatScopeButton svg').outerHTML=window.UiIcone.svg('list-filter');
     document.body.appendChild(panel);
     function drawScope() {
@@ -468,14 +468,14 @@
       parent.appendChild(details);
     }
     function messageButton(text, label, className, message, action) {
-      const button = el('button', text, 'tbtn ' + className); button.type = 'button';
+      const button = el('button', undefined, 'tbtn ' + className); button.type = 'button';window.UiIcone.imposta(button,({'zchat-copy':'copy','zchat-note':'notebook-pen','zchat-speak':'volume-2','zchat-branch':'git-branch'})[className],label);
       button.setAttribute('aria-label', label); button.title = label; button.dataset.messageId = message.id;
       button.addEventListener('click', action); return button;
     }
     function updateSpeechButtons() {
       panel.querySelectorAll('.zchat-speak').forEach(button => {
         const active = button.dataset.messageId === state.speaking;
-        button.textContent = active ? '■︎' : '▷'; button.setAttribute('aria-pressed', String(active));
+        window.UiIcone.imposta(button,active?'square':'volume-2'); button.setAttribute('aria-pressed', String(active));
         button.title = active ? 'Ferma la lettura' : 'Leggi la risposta'; button.setAttribute('aria-label', button.title);
       });
     }
@@ -540,7 +540,7 @@
             const date = new Date(session.updatedAt || session.createdAt);
             if (!Number.isNaN(date.getTime())) button.appendChild(el('span', date.toLocaleDateString('it-IT', {day:'numeric',month:'short',year:'numeric'}), 'zchat-history-date'));
             button.disabled = state.loading || state.finishing; button.addEventListener('click', () => resumeSession(session.id)); li.appendChild(button);
-            const remove = el('button', '×', 'tbtn zchat-history-delete'); remove.type = 'button'; remove.title = 'Elimina conversazione'; remove.setAttribute('aria-label', 'Elimina conversazione ' + (session.title || '')); remove.disabled = state.loading || state.finishing;
+            const remove = el('button', undefined, 'tbtn zchat-history-delete');window.UiIcone.imposta(remove,'trash-2'); remove.type = 'button'; remove.title = 'Elimina conversazione'; remove.setAttribute('aria-label', 'Elimina conversazione ' + (session.title || '')); remove.disabled = state.loading || state.finishing;
             remove.addEventListener('click', () => removeSession(session)); li.appendChild(remove); list.appendChild(li);
           }); empty.appendChild(list);
         }

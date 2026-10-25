@@ -1,17 +1,21 @@
 /* Guida ZAINO — indice navigabile (scrollspy), lightbox, tema, sidebar mobile */
 (function(){
   var root = document.documentElement;
+  [['#menuBtn','list'],['.lbx','x'],['.lbp','chevron-left'],['.lbn','chevron-right']].forEach(function(v){UiIcone.imposta(document.querySelector(v[0]),v[1]);});
 
   /* ---- tema chiaro/scuro (ricordato) ---- */
   var salvato = null;
   try { salvato = localStorage.getItem('guida.tema'); } catch(e){}
   if (salvato) root.setAttribute('data-theme', salvato);
   var tt = document.getElementById('temaBtn');
+  function iconaTema(){var scuro=root.getAttribute('data-theme')==='scuro';UiIcone.imposta(tt,scuro?'sun':'moon',scuro?'Passa al tema chiaro':'Passa al tema scuro');}
+  iconaTema();
   if (tt) tt.addEventListener('click', function(){
     var scuro = root.getAttribute('data-theme') === 'scuro' ||
       (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
     var nuovo = scuro ? 'chiaro' : 'scuro';
     root.setAttribute('data-theme', nuovo);
+    iconaTema();
     try { localStorage.setItem('guida.tema', nuovo); } catch(e){}
   });
 

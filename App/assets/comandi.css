@@ -31,6 +31,8 @@
  background:var(--comando-hover);
 }
 :root .znav .zs-tit .zs-azioni .tbtn { color:var(--comando-ink); }
+/* La maniglia deve distinguersi dalla testata anche quando la sidebar è chiusa. */
+#menuBtn { --comando-bg:#fff; }
 .znav .zs-tit:has(.zs-collapse[aria-expanded="false"]) > .zs-azioni,
 .znav .zs-collapse[aria-expanded="false"] .zs-n { display:none; }
 /* Sul colore della superficie non si sovrappone un secondo rettangolo.
@@ -58,3 +60,20 @@
 .ui-documento { overflow:hidden; text-overflow:ellipsis; min-width:0; }
 
 :is(#noteHost,#noteHost2) .editor-toolbar button:is(:disabled,[aria-disabled="true"]) { opacity:.45; cursor:not-allowed; }
+/* Anche le icone di EasyMDE provengono dal catalogo locale Lucide. */
+:is(#noteHost,#noteHost2) .editor-toolbar button:has(> .ui-icon)::before { content:none; }
+:root .tendina::after { content:""; width:.85em; height:.85em; background:currentColor; mask:var(--icon-chevron-down) center/contain no-repeat; }
+:root a.vlink::before,:root a.plink::before { content:""; display:inline-block; width:.9em; height:.9em; margin-right:.25em; background:currentColor; mask:var(--icon-external-link) center/contain no-repeat; }
+:root a.vlink::before { mask-image:var(--icon-play); }
+:root .topbar .iconbtn > .ui-icon,:root #themeToggle .ui-icon { width:var(--topbar-action-oi); height:var(--topbar-action-oi); }
+:root .tbtn:has(> .ui-icon + span) { gap:.4rem; }
+.zs-collapse > span:first-child .ui-icon,[data-znav="toggle"] > span:first-child .ui-icon { width:.8em; height:.8em; }
+.albumAudio .ui-icon { width:3rem; height:3rem; }
+.ui-icon:has(> title) { pointer-events:auto; }
+/* I simboli applicati via CSS usano lo stesso catalogo e seguono il tema. */
+:root details.level > summary::before,:root .callout-head .car { background:currentColor; mask:var(--icon-minus) center/contain no-repeat; }
+:root details.level:not([open]) > summary::before,:root .callout.collapsed .callout-head .car { mask-image:var(--icon-plus); }
+:root #helpPop .hp-ok button::before,:root #helpPop .hp-no li::before,:root #albumOrdineMenu button[aria-checked="true"]::before {
+ content:""; display:inline-block; width:1em; height:1em; vertical-align:middle; margin-right:.3em; background:currentColor; mask:var(--icon-check) center/contain no-repeat;
+}
+:root #helpPop .hp-no li::before { mask-image:var(--icon-x); }

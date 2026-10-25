@@ -71,7 +71,7 @@ function harness(){
     },
     rename(id,file,title){const n=files[id].find(n=>n.file===file);assert(n);n.title=title;n.file=title+'.md';return {file:n.file,nota:{...n}};},
     async remove(id,file){if(errore)return false;files[id]=files[id].filter(n=>n.file!==file);return true;}};
-  const ctx={console,document:{getElementById:elemento,createElement(){return elemento('creato-'+elementi.size);},documentElement:{dataset:{}},
+  const ctx={console,UiToolbar:{appunti(){}},document:{getElementById:elemento,createElement(){return elemento('creato-'+elementi.size);},documentElement:{dataset:{}},
       addEventListener(t,f){(eventiDom[t]||(eventiDom[t]=[])).push(f);}},
     localStorage:{getItem:k=>dati.get(k)||null,setItem:(k,v)=>dati.set(k,v)},EasyMDE:Mde,
     setTimeout(f,ms){const id=++prossimoTimer;timers.set(id,{f,ms});return id;},clearTimeout:id=>timers.delete(id),

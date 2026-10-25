@@ -6,7 +6,7 @@
  function normalizza(s){return {mode:s?.mode==='selected'?'selected':'all',sourceIds:[...new Set((Array.isArray(s?.sourceIds)?s.sourceIds:[]).filter(id=>typeof id==='string'))],wikipedia:false};}
  function crea({prefix,bar,host,state,onChange}){
   const button=document.createElement('button');button.type='button';button.className='tbtn zstudio-scope-button';button.id=prefix+'Button';
-  button.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg><span></span>';
+  button.innerHTML=window.UiIcone.svg('list-filter')+'<span></span>';
   button.title='Scegli una o più fonti per questo strumento';button.setAttribute('aria-expanded','false');button.setAttribute('aria-controls',prefix);bar.prepend(button);
   const panel=document.createElement('div');panel.id=prefix;panel.hidden=true;panel.className='zchat-scope zchat-source-picker';host.append(panel);
   const summary=document.createElement('p');summary.className='zstudio-context';summary.id=prefix+'Summary';summary.setAttribute('role','status');host.prepend(summary);

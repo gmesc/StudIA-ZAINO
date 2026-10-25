@@ -65,7 +65,7 @@
     lista.innerHTML=viste.map(function(v){
       var src=root.vault.srcUrl(v.file,root.corsoAttivo()), esc=root.escHtml;
       return '<button type="button" class="alcard" data-album-media="'+esc(v.file)+'" title="Apri '+esc(v.nome)+'">'+
-        (v.tipo==='video'?'<video preload="metadata" muted tabindex="-1" aria-hidden="true" src="'+esc(src)+'#t=0.1"></video>':'<span class="albumAudio" aria-hidden="true">♫</span>')+
+        (v.tipo==='video'?'<video preload="metadata" muted tabindex="-1" aria-hidden="true" src="'+esc(src)+'#t=0.1"></video>':'<span class="albumAudio" aria-hidden="true">'+root.UiIcone.svg('music')+'</span>')+
         '<span class="alcap">'+esc(v.nome)+'</span></button>';
     }).join('');
   }

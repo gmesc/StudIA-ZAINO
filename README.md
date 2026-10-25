@@ -51,7 +51,12 @@ I pulsanti delle azioni hanno sfondo trasparente e hover verde, anche nelle tool
 
 La **× nella toolbar** di Appunti o Fonti chiude il documento e lascia disponibili gli strumenti. L’appunto viene prima salvato; se il salvataggio fallisce resta aperto. Senza PDF il contatore mostra **− DI −**, con un PDF **n DI N**. Gli strumenti che richiedono un documento restano visibili e disabilitati.
 
-Le toolbar di Fonti, Mappe e la testata della chat usano icone Lucide SVG locali; nomi, contatori e posizioni 1–5 restano testo. L’occhio in Fonti e Parole chiave controlla la stessa visibilità delle sottolineature: occhio aperto = visibili, barrato = nascoste. Nel menu delle letture, l’occhio barrato identifica un layer nascosto. Non si possono creare sottolineature su un PDF se la vista globale o il layer di destinazione è nascosto: un avviso indica dove riattivarlo. La matita nelle Mappe continua a rinominare la mappa.
+Le icone dell’interfaccia usano **Lucide SVG locali**, con tooltip sui comandi. Restano **OpenMoji lo zaino come marchio, il fantasma della sidebar e il mago dei Crediti**. Le emoji scritte negli appunti o scelte per personalizzare un riquadro restano contenuto dell’utente. Nomi, contatori e posizioni 1–5 restano testo.
+
+La maniglia con il fantasma ha **sfondo bianco** per distinguersi dalla testata dello split; al passaggio del mouse usa l’hover verde.
+Nella sidebar A–Z, icone dei comandi e checkbox seguono la dimensione dei titoli delle sezioni. Le caselle conservano un’area cliccabile più ampia del segno visibile.
+
+L’occhio in Fonti e Parole chiave controlla la stessa visibilità delle sottolineature: occhio aperto = visibili, barrato = nascoste. Nel menu delle letture, l’occhio barrato identifica un layer nascosto. Non si possono creare sottolineature su un PDF se la vista globale o il layer di destinazione è nascosto: un avviso indica dove riattivarlo. La matita nelle Mappe continua a rinominare la mappa.
 
 In **Parole chiave**, **AZ/ZA** indica l’ordine alfabetico che verrà applicato al clic. Il calendario indica l’ordine attuale: **↑** dal meno recente al più recente, **↓** dal più recente al meno recente. Un altro clic inverte l’ordine. Il tooltip di ogni parola termina con la data di creazione.
 

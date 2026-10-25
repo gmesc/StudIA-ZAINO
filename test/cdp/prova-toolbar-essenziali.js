@@ -14,6 +14,11 @@ async function wait(expr){for(let i=0;i<160;i++){if(await c.val(expr))return;awa
   await wait(`NOTES.list.length>0 && !!NOTES.mde`);
   const file=await c.val(`NOTES.list[0].file`);await c.val(`noteOpen(${q(file)},NOTES)`);
   const body=await c.val(`NOTES.mde.value()`);assert(body);
+  assert(await c.val(`['.bold','.italic','.heading','.quote','.unordered-list','.ordered-list','.link','.code','.preview','.side-by-side','.ncb-undo','.ncb-redo','.ncb-callout','.ncb-emoji','.ncb-guida','.ncb-cita','.ncb-mat'].every(sel=>{const b=document.querySelector('#noteHost .editor-toolbar '+sel);return b?.querySelector('svg.ui-icon')&&b.title;})`),'Appunti: tutti i simboli sono SVG con tooltip');
+  assert(await c.val(`(()=>{const b=document.querySelector('#noteHost .editor-toolbar .bold');return b.title.startsWith('Grassetto (')&&b.getAttribute('aria-label')===b.title;})()`),'tooltip e nome accessibile in italiano, con scorciatoia');
+  assert(await c.val(`!!document.querySelector('#menuBtn img.oi') && !!document.querySelector('#creditsBtn .btn-emoji') && !!document.querySelector('#modoBtn img.oi')`),'fantasma, mago e marchio conservati');
+  assert(await c.val(`[...document.querySelectorAll('#zainoNav [data-znav="organizza"]')].every(b=>b.querySelector('svg.ui-icon')&&b.title)`),'sidebar: SVG con tooltip');
+
   await c.val(`window.__toolbarFlush=noteFlushStato;noteFlushStato=()=>false`);
   await c.clicca('#noteClose');assert.equal(await c.val(`NOTES.cur.file`),file);
   await c.val(`noteFlushStato=window.__toolbarFlush`);
@@ -63,6 +68,7 @@ async function wait(expr){for(let i=0;i<160;i++){if(await c.val(expr))return;awa
   for(const tema of ['chiaro','scuro']){
    await c.val(`document.documentElement.dataset.theme=${q(tema)}`);await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});await c.pausa(250);
    assert(await c.val(`['#settingsBtn','#zschedeNewButton','#mNuova','#kwEvid','#albumOrdina'].every(sel=>{const e=document.querySelector(sel);return e&&getComputedStyle(e).backgroundColor==='rgba(0, 0, 0, 0)';})`),'azioni trasparenti in '+tema);
+   assert.equal(await c.val(`getComputedStyle(document.getElementById('menuBtn')).backgroundColor`),'rgb(255, 255, 255)','la maniglia della sidebar resta bianca in '+tema);
    assert.equal(await c.val(`getComputedStyle(document.querySelector('[data-album-tab][aria-pressed="true"]')).boxShadow`),'none');
    assert.notEqual(await c.val(`getComputedStyle(document.querySelector('[data-album-tab][aria-pressed="true"]')).backgroundColor`),'rgba(0, 0, 0, 0)');
    const b=await c.val(`(()=>{const r=document.getElementById('mNuova').getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`);await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',...b});await c.pausa(250);
@@ -74,8 +80,13 @@ async function wait(expr){for(let i=0;i<160;i++){if(await c.val(expr))return;awa
   assert(await c.val(`['zchatNew','zchatScopeButton','zchatSettings','zchatCollapse','zchatClose'].every(id=>!!document.querySelector('#'+id+' svg.ui-icon'))`));
   await c.clicca('#zchatCollapse');assert.equal(await c.val(`document.querySelector('#zchatCollapse svg').dataset.icona`),'maximize');
   await c.clicca('#zchatCollapse');await c.clicca('#zchatClose');
+  await c.val(`document.getElementById('bancoBtn').click()`);
+  assert(await c.val(`!!document.querySelector('#bFormaNuova svg.ui-icon') && !!document.getElementById('bFormaNuova').title`),'anche Nuova forma usa SVG e tooltip');
+  await c.val('closePops()');
   await c.val(`document.getElementById('settingsBtn').click()`);
   assert.equal(await c.val(`getComputedStyle(document.querySelector('.set-tab[aria-selected="true"]')).boxShadow`),'none');
+  assert.deepEqual(await c.val(`[...document.querySelectorAll('button:has(svg.ui-icon),a:has(svg.ui-icon),button.tendina')].filter(b=>!b.title&&!b.getAttribute('aria-describedby')).map(b=>b.id||b.className)`),[],'ogni comando con icona ha un tooltip');
+  assert.deepEqual(await c.val(`[...document.querySelectorAll('button svg:not(.ui-icon)')].map(s=>s.closest('button').id)`),[],'i simboli dei comandi provengono tutti da Lucide');
  }finally{
   if(evPrima)fs.writeFileSync(evFile,evPrima);else fs.rmSync(evFile,{force:true});
   await c.val(`document.getElementById('settingsClose').click();if(window.__toolbarFlush)noteFlushStato=window.__toolbarFlush;localStorage.clear();Object.entries(${q(prima.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));EVIDENZE.viste=null;evidenzeCarica();KW.ordine={criterio:'alfa',verso:'asc'};keywordDisegna();BANCO.stato=${q(prima.banco)};BANCO.attivo=${q(prima.attivo)};document.documentElement.dataset.theme=${q(prima.tema)};bancoSalva();bancoDisegna()`);}

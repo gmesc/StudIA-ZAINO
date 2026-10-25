@@ -119,6 +119,7 @@ async function pulisci(){
     assert.equal(await c.val(`document.querySelectorAll('#zainoNav .zs-seleziona, #zainoNav [data-znav="crea"]').length`),0,'spunte e + assenti fuori dalla modifica');
     assert.equal(await c.val(`document.querySelectorAll('#zainoNav [data-znav="importa"]').length`),0,'le cartelle entrano con il drop');
     await modifica('fonti');
+    assert(await c.val(`(()=>{const sezione=document.querySelector('#zainoNav [data-sezione="fonti"]'),tit=getComputedStyle(sezione.querySelector('.zs-tit')).fontSize,dim=parseFloat(tit);return [...sezione.querySelectorAll('.zs-tit .zs-azioni button')].every(b=>getComputedStyle(b).fontSize===tit&&[...b.querySelectorAll('svg')].every(s=>s.getBoundingClientRect().width===dim&&s.getBoundingClientRect().height===dim))&&[...sezione.querySelectorAll('.zs-seleziona')].every(b=>b.getBoundingClientRect().width===dim&&b.getBoundingClientRect().height===dim&&b.closest('label').getBoundingClientRect().width>=24);})()`),'A–Z, icone e checkbox della stessa misura del titolo, con area cliccabile ampia');
     const piu=base('fonti')+' [data-znav="crea"]';
     await sfiora(piu);
     assert(await c.val(`(()=>{const b=document.querySelector(${q(piu)}),tip=document.getElementById(b.getAttribute('aria-describedby'));return tip && !tip.hidden && tip.getAttribute('role')==='tooltip' && tip.textContent.includes('gruppo vuoto') && !b.hasAttribute('title');})()`),'il + spiega la creazione del gruppo con un popup visibile');
