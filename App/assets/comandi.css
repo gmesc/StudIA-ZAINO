@@ -1,9 +1,8 @@
-/* Un'unica palette per i gesti dell'app. Le voci degli elenchi e i rimandi
- * restano contenuti da aprire; le azioni usano i token di Verifica risposta. */
+/* Comandi trasparenti a riposo; il verde fisso indica una selezione. */
 :root {
- --comando-bg:var(--hover);
- --comando-primario-bg:color-mix(in srgb,var(--teal) 16%,var(--panel));
- --comando-primario-hover:color-mix(in srgb,var(--teal) 28%,var(--panel));
+ --comando-bg:transparent;
+ --comando-primario-bg:transparent;
+ --comando-hover:color-mix(in srgb,var(--teal) 16%,var(--panel));
  --comando-ink:var(--teal-strong);
  --comando-selezionato-bg:color-mix(in srgb,var(--teal) 26%,var(--panel));
 }
@@ -13,9 +12,11 @@
 }
 :root :is(.tbtn,.mbtn,.ncbtn,.iconbtn,.paneltoggle,.chiptoggle,.tendina,.mseg button,.srcchip,.vidchip,.ttsbtn,.ratebtn,.zs-collapse):hover:not(:disabled):not([aria-disabled="true"]):not(.zchat-citation):not(.zstudio-card-open),
 :is(#noteHost,#noteHost2) .editor-toolbar :is(button,.notectl .ncbtn):hover:not(:disabled):not([aria-disabled="true"]) {
- background:var(--comando-primario-bg); color:var(--comando-ink); box-shadow:none;
+ background:var(--comando-hover); color:var(--comando-ink); box-shadow:none;
 }
 :root :is(.tbtn,.mbtn,.iconbtn,.chiptoggle)[aria-pressed="true"]:not(.zchat-citation):not(.zstudio-card-open),
+:root .mseg button[aria-pressed="true"]:not(.zchat-citation):not(.zstudio-card-open),
+:root .tbtn.acceso:not(.zchat-citation):not(.zstudio-card-open),
 :root [aria-controls="zchatWindow"][aria-expanded="true"]:not(:disabled),
 :root .ttsbtn.on:not(:disabled):not([aria-disabled="true"]),
 :is(#noteHost,#noteHost2) .editor-toolbar :is(button,.notectl .ncbtn).active {
@@ -27,7 +28,7 @@
 }
 :root :is(.tbtn,.mbtn,.ncbtn).acc:hover:not(:disabled):not([aria-disabled="true"]):not(.zchat-citation):not(.zstudio-card-open),
 :is(#noteHost,#noteHost2) .editor-toolbar .notectl .ncbtn.acc:hover:not(:disabled):not([aria-disabled="true"]) {
- background:var(--comando-primario-hover);
+ background:var(--comando-hover);
 }
 :root .znav .zs-tit .zs-azioni .tbtn { color:var(--comando-ink); }
 .znav .zs-tit:has(.zs-collapse[aria-expanded="false"]) > .zs-azioni,
@@ -37,6 +38,23 @@
 :is(.bhead,.zs-tit,.sr-lesson,.set-sec-h,.ucallout,.brief,.keypoints,.glossary,.quiz,.sources,.myotes,.fb,.zchat-message-user,[data-sfondo-colorato]) {
  --comando-bg:transparent;
  --comando-primario-bg:transparent;
- --comando-primario-hover:transparent;
  --comando-selezionato-bg:transparent;
 }
+
+.ui-icon { width:1.15em; height:1.15em; flex:none; vertical-align:middle; pointer-events:none; }
+:root :is(.tbtn,.mbtn,.ncbtn):has(> .ui-icon) { font-family:inherit; }
+.albumTabs button[aria-pressed="true"], .set-tab[aria-selected="true"] { box-shadow:none; }
+.set-tab:hover { background:var(--comando-hover); color:var(--comando-ink); }
+.stratoriga.spenta .stratonome { text-decoration:none; }
+/* Le lineette dividono i gesti nelle righe di azioni; le toolbar hanno già i gruppi tbsep. */
+:is(.zstudio-actions,.setrow,.um-row,.zchat-actions,#zschedeResult,#zstudyQuestion,#zragToolbar,#zstudyToolbar) > .tbtn + .tbtn {
+ margin-left:.5rem; position:relative;
+}
+:is(.zstudio-actions,.setrow,.um-row,.zchat-actions,#zschedeResult,#zstudyQuestion,#zragToolbar,#zstudyToolbar) > .tbtn + .tbtn::before {
+ content:""; position:absolute; left:-.25rem; top:calc(50% - 8px); height:16px; width:1px; background:var(--line);
+}
+#zchatScopeCount { display:none; }
+
+.ui-documento { overflow:hidden; text-overflow:ellipsis; min-width:0; }
+
+:is(#noteHost,#noteHost2) .editor-toolbar button:is(:disabled,[aria-disabled="true"]) { opacity:.45; cursor:not-allowed; }

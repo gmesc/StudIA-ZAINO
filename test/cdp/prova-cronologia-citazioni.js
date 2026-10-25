@@ -111,9 +111,9 @@ async function foto(nome){
 
   const misure=await c.val(`['#noteHost .ncb-undo','#noteHost .ncb-redo','#mAnnulla','#mRipeti'].map(sel=>{
     const e=document.querySelector(sel),r=e.getBoundingClientRect(),s=getComputedStyle(e);
-    return {h:r.height,w:r.width,bordo:s.borderTopWidth,icona:e.textContent.trim(),label:e.getAttribute('aria-label')};})`);
+    return {h:r.height,w:r.width,bordo:s.borderTopWidth,icona:e.querySelector('svg')?.dataset.icona||e.textContent.trim(),label:e.getAttribute('aria-label')};})`);
   assert(misure.every(m=>m.h===misure[0].h&&m.w>=30&&m.bordo==='0px'&&m.label),JSON.stringify(misure));
-  assert.equal(misure[0].icona,misure[2].icona);assert.equal(misure[1].icona,misure[3].icona);
+  assert(misure[0].icona&&misure[1].icona);assert.equal(misure[2].icona,'undo-2');assert.equal(misure[3].icona,'redo-2');
   await foto('studia-cronologia-citazioni');
   console.log('  ok  frecce coerenti per dimensioni, icone ed etichette accessibili');
   await c.val(`noteFlush();mappaFlush()`);

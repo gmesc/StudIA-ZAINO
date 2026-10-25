@@ -130,7 +130,7 @@ async function pulisci(){
       for(const sel of [piu,base('fonti')+' [data-znav="organizza"]',base('fonti')+' [data-znav="ordina"]',base('fonti')+' .zs-collapse','.blocco:not([hidden]) .bhead .tendina']){
         await sfiora(sel);
         await c.pausa(300);
-        assert(await c.val(`(()=>{const b=document.querySelector(${q(sel)}),s=getComputedStyle(b),p=document.createElement('span');p.style.background='transparent';p.style.color='var(--comando-ink)';document.body.append(p);const a=getComputedStyle(p),ok=s.backgroundColor===a.backgroundColor&&s.color===a.color;p.remove();return ok;})()`),'hover coerente con le azioni in '+tema+' su '+sel);
+        assert(await c.val(`(()=>{const b=document.querySelector(${q(sel)}),s=getComputedStyle(b),p=document.createElement('span');p.style.background='var(--comando-hover)';p.style.color='var(--comando-ink)';document.body.append(p);const a=getComputedStyle(p),ok=s.backgroundColor===a.backgroundColor&&s.color===a.color;p.remove();return ok;})()`),'hover coerente con le azioni in '+tema+' su '+sel);
       }
       await sfiora(piu);
       const r=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/studia-zaino-hover-'+tema+'.png',Buffer.from(r.result.data,'base64'));

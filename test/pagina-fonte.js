@@ -77,11 +77,11 @@ ok('senza etichette, il numero è il numero', 3, P.leggi('3', DOC));
 sezione('Che cosa scrive il contatore: sempre il numero FISICO');
 /* ⚠️ Le etichette sono un INGRESSO, mai un rimando: `pdf:NN#p=` cita il numero
    fisico, e due numerazioni dentro la grammatica sarebbero due grammatiche. */
-ok('«p. 3 di 266»', 'p. 3 di 266', P.etichetta(3, DOC));
-ok('anche su un libro con le etichette', 'p. 3 di 6', P.etichetta(3, LIBRO));
-ok('senza sapere quante, dice solo dove si è', 'p. 3', P.etichetta(3, {}));
-ok('una pagina storta non stampa NaN', 'p. 1 di 266', P.etichetta('boh', DOC));
-ok('e nemmeno lo zero', 'p. 1 di 266', P.etichetta(0, DOC));
+ok('«p. 3 di 266»', '3 di 266', P.etichetta(3, DOC));
+ok('anche su un libro con le etichette', '3 di 6', P.etichetta(3, LIBRO));
+ok('senza sapere quante, dice solo dove si è', '3 di -', P.etichetta(3, {}));
+ok('una pagina storta non stampa NaN', '1 di 266', P.etichetta('boh', DOC));
+ok('e nemmeno lo zero', '1 di 266', P.etichetta(0, DOC));
 
 sezione('Il suggerimento nomina l\'etichetta solo se dice qualcosa in più');
 ok('dice che si può scrivere', true, /scrivi il numero/.test(P.suggerimento(3, DOC)));

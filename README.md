@@ -47,7 +47,13 @@ Il riepilogo **Materiali usati** compare nella ricerca e nella scelta o creazion
 
 ## Materiali in parallelo
 
-I comandi principali usano lo stesso verde di **Verifica risposta**; quelli secondari hanno fondo grigio e diventano verdi al passaggio del mouse. Sulle testate degli split, sui titoli della sidebar e sulle altre superfici colorate i pulsanti restano trasparenti, anche al passaggio del mouse. Nella sidebar, ordinamento e matita compaiono solo nelle sezioni aperte, con testo verde scuro; nelle sezioni chiuse restano nome e chevron.
+I pulsanti delle azioni hanno sfondo trasparente e hover verde, anche nelle toolbar e sulle superfici colorate. Spazi e linee verticali separano i gruppi di comandi. Il verde persistente indica una selezione o un comando acceso, come la raccolta di Album; Album e Impostazioni non aggiungono una barra sotto il tab selezionato. Nella sidebar, ordinamento e matita compaiono solo nelle sezioni aperte, con testo verde scuro; nelle sezioni chiuse restano nome e chevron.
+
+La **× nella toolbar** di Appunti o Fonti chiude il documento e lascia disponibili gli strumenti. L’appunto viene prima salvato; se il salvataggio fallisce resta aperto. Senza PDF il contatore mostra **− DI −**, con un PDF **n DI N**. Gli strumenti che richiedono un documento restano visibili e disabilitati.
+
+Le toolbar di Fonti, Mappe e la testata della chat usano icone Lucide SVG locali; nomi, contatori e posizioni 1–5 restano testo. L’occhio in Fonti e Parole chiave controlla la stessa visibilità delle sottolineature: occhio aperto = visibili, barrato = nascoste. Nel menu delle letture, l’occhio barrato identifica un layer nascosto. Non si possono creare sottolineature su un PDF se la vista globale o il layer di destinazione è nascosto: un avviso indica dove riattivarlo. La matita nelle Mappe continua a rinominare la mappa.
+
+In **Parole chiave**, **AZ/ZA** indica l’ordine alfabetico che verrà applicato al clic. Il calendario indica l’ordine attuale: **↑** dal meno recente al più recente, **↓** dal più recente al meno recente. Un altro clic inverte l’ordine. Il tooltip di ogni parola termina con la data di creazione.
 
 La **× nella testata** chiude uno split e ridistribuisce gli altri, rinumerandoli da 1 in ordine di lettura. Conserva i documenti, ma il riquadro chiuso non ricompare da solo allargando il Banco. Se il salvataggio degli appunti fallisce, lo split resta aperto. L’ultimo split resta disponibile e la × è disabilitata. Sono disponibili anche forme da cinque, sette e otto riquadri, per chiuderne sempre uno alla volta.
 

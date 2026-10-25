@@ -36,8 +36,8 @@ async function hover(sel){await c.val(`document.querySelector(${q(sel)}).scrollI
   }
   for(const tema of ['chiaro','scuro']){
    await c.val(`document.documentElement.dataset.theme=${q(tema)}`);await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});await c.pausa(300);
-   assert(await c.val(`(()=>{const e=document.createElement('span');e.style.background='var(--hover)';e.style.color='var(--teal-strong)';document.body.append(e);const t=getComputedStyle(e),b=getComputedStyle(document.querySelector('#zschedeBack')),s=getComputedStyle(document.querySelector('#zainoNav [data-znav="ordina"]')),ok=b.backgroundColor===t.backgroundColor&&s.color===t.color;e.remove();return ok;})()`));
-   await hover('#zragSearchButton');assert(await c.val(`(()=>{const e=document.createElement('button');e.className='tbtn acc';document.body.append(e);const a=getComputedStyle(e),b=getComputedStyle(document.getElementById('zragSearchButton')),ok=a.backgroundColor===b.backgroundColor&&a.color===b.color;e.remove();return ok;})()`));
+   assert(await c.val(`(()=>{const e=document.createElement('span');e.style.background='transparent';e.style.color='var(--teal-strong)';document.body.append(e);const t=getComputedStyle(e),b=getComputedStyle(document.querySelector('#zschedeBack')),s=getComputedStyle(document.querySelector('#zainoNav [data-znav="ordina"]')),ok=b.backgroundColor===t.backgroundColor&&s.color===t.color;e.remove();return ok;})()`));
+   await hover('#zragSearchButton');assert(await c.val(`(()=>{const e=document.createElement('button');e.className='tbtn acc';e.style.background='var(--comando-hover)';document.body.append(e);const a=getComputedStyle(e),b=getComputedStyle(document.getElementById('zragSearchButton')),ok=a.backgroundColor===b.backgroundColor&&a.color===b.color;e.remove();return ok;})()`));
   }
  }finally{
   if(old)fs.writeFileSync(cache,old);else fs.rmSync(cache,{force:true});

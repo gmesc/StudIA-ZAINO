@@ -120,6 +120,11 @@
   /** Si vedono, sì o no. */
   function accese(stato) { return normalizza(stato).tutte; }
 
+  /** Il segno nuovo deve essere visibile nel suo strato, anche se altri sono accesi. */
+  function bloccoScrittura(stato, strato) {
+    return !accese(stato) ? 'tutte' : spento(stato, strato) ? 'strato' : '';
+  }
+
   /**
    * Le evidenze da dipingere adesso.
    *
@@ -274,7 +279,7 @@
 
   return {
     diFabbrica: diFabbrica, normalizza: normalizza, scrivi: scrivi,
-    commuta: commuta, accese: accese, visibili: visibili, conta: conta,
+    commuta: commuta, accese: accese, visibili: visibili, conta: conta, bloccoScrittura:bloccoScrittura,
     spento: spento, commutaStrato: commutaStrato, potaSpenti: potaSpenti,
     TETTO: TETTO, livelli: livelli,
     nomeValido: nomeValido, nomeLibero: nomeLibero, normalizzaStrato: normalizzaStrato,

@@ -5,10 +5,12 @@ const L=require('./lab'),fs=require('fs'),path=require('path'),assert=require('a
  await L.finoA(`window.vault && window.vault.path && document.getElementById('settingsBtn')`,15000);
  assert(vault && fs.realpathSync(vault).startsWith('/private/tmp/studia-guida-'));assert.equal(await L.val('window.vault.path'),vault);
  await L.invia('Emulation.setDeviceMetricsOverride',{width:1470,height:956,deviceScaleFactor:2,mobile:false});
+ if(!process.argv.includes('--solo-guida')){
  await L.pulito();await L.clicca('#settingsBtn');await L.pausa(200);await L.clicca('[data-tab="zaino"]');await L.pausa(400);
  await L.clicca('.zx-rinomina[data-zaino="sistema-solare"]');await L.finoA(`document.getElementById('uiModal').hasAttribute('open')`,3000);
  await L.scatta('93-rinomina-zaino',{sel:'#uiModal .um-card',scala:2});
  await L.clicca('#umCancel');
+ }
  const url=require('url').pathToFileURL(path.resolve(__dirname,'../index.html')).href;
  await L.invia('Page.navigate',{url});await L.pausa(1800);await L.collega();
  await L.val(`document.documentElement.style.scrollBehavior='auto'; document.querySelectorAll('img[loading]').forEach(i=>i.loading='eager')`);

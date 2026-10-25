@@ -264,6 +264,16 @@
       "url": "https://huggingface.co/onnx-community/embeddinggemma-2-ONNX",
       "licenzaFile": "apache-2.0.txt",
       "avviso": "Solo encoder testuale; tokenizer e pesi vengono scaricati su richiesta. Nessun documento dello zaino è inviato per gli embeddings."
+    },
+    {
+      "nome": "Lucide",
+      "versione": "1.61.0",
+      "categoria": "interfaccia",
+      "ruolo": "icone SVG delle toolbar, incluse offline",
+      "licenza": "ISC",
+      "copyright": "Copyright (c) 2026 Lucide Icons and Contributors",
+      "url": "https://lucide.dev",
+      "licenzaFile": "lucide.txt"
     }
   ]
 }

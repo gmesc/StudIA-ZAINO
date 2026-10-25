@@ -176,15 +176,7 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
   /* ── 4. la Fonte ── */
   await passo('20 pdfbar numerata', async () => {
     await bloccoLargo('A');
-    const bar = await L.rect('#pdfPane .pdfbar');
-    await L.banda(bar, { altezza: 36 });
-    /* ⚠️ Diciassette, non dodici: da quando la barra fu numerata (17 ago) ci
-       sono entrati il foglio colorato, il righello, la voce, l'interruttore
-       delle sottolineature e le letture. Una figura numerata che salta dei
-       bottoni PRESENTI nella figura è peggio di nessuna figura. */
-    await L.numeri([{ sel: '#pdfDoc', n: 1, dove: 'b' }, { sel: '#pdfPrev', n: 2, dove: 'b' }, { sel: '#pdfPagN', n: 3, dove: 'b' }, { sel: '#pdfNext', n: 4, dove: 'b' }, { sel: '#pdfTinta', n: 5, dove: 'b' }, { sel: '#pdfRighelloBtn', n: 6, dove: 'b' }, { sel: '#pdfVoce', n: 7, dove: 'b' }, { sel: '#pdfZoomOut', n: 8, dove: 'b' }, { sel: '#pdfZoomLvl', n: 9, dove: 'b' }, { sel: '#pdfZoomIn', n: 10, dove: 'b' }, { sel: '#pdfEvid', n: 11, dove: 'b' }, { sel: '#pdfStrati', n: 12, dove: 'b' }, { sel: '#pdfRitaglia', n: 13, dove: 'b' }, { sel: '#pdfFindBtn', n: 14, dove: 'b' }, { sel: '#pdfNewtab', n: 15, dove: 'b' }, { sel: '#pdfElimina', n: 16, dove: 'b' }, { sel: '#pdfClose', n: 17, dove: 'b' }], { filo: bar.y + bar.h + 6 });
-    await L.scatta('20-pdfbar-numerata', { clip: { x: bar.x, y: bar.y - 2, width: bar.w, height: bar.h + 38 }, scala: 3 });
-    await L.overlayPulisci();
+    await require('./barre').fonti(L);
     await bloccoTorna();
   });
   await passo('21 pop documenti', async () => {

@@ -168,8 +168,8 @@
           <button type="submit" class="tbtn acc" id="zchatSend" aria-label="Invia messaggio" title="Invia messaggio">↑︎</button>
         </div>
       </form>`;
-    const settingsIcon = $('settingsBtn')?.querySelector('svg');
-    if (settingsIcon) panel.querySelector('#zchatSettings').replaceChildren(settingsIcon.cloneNode(true));
+    for(const [id,icon] of Object.entries({zchatNew:'plus',zchatSettings:'settings',zchatCollapse:'minus',zchatClose:'x'}))window.UiIcone.imposta(panel.querySelector('#'+id),icon);
+    panel.querySelector('#zchatScopeButton svg').outerHTML=window.UiIcone.svg('list-filter');
     document.body.appendChild(panel);
     function drawScope() {
       $('zchatContext').textContent='Materiali della chat: '+window.ZainoPercorso.riassunto(state.scope,state.sources)+(state.scope.wikipedia&&$('zchatRole').value==='spiegamelo'?' · Wikipedia consentita':'');
@@ -753,7 +753,7 @@
     function setCollapsed(collapsed) {
       panel.classList.toggle('is-collapsed', collapsed);
       if(collapsed)showScope(false); $('zchatScopeButton').hidden = collapsed; $('zchatMessages').hidden = collapsed; $('zchatForm').hidden = collapsed;
-      const button = $('zchatCollapse'); button.textContent = collapsed ? '□' : '−'; button.setAttribute('aria-expanded', String(!collapsed));
+      const button = $('zchatCollapse'); window.UiIcone.imposta(button,collapsed?'maximize':'minus'); button.setAttribute('aria-expanded', String(!collapsed));
       button.title = collapsed ? 'Espandi la chat' : 'Collassa la chat'; button.setAttribute('aria-label', button.title);
       if (!collapsed) { const rect = panel.getBoundingClientRect(); move(rect.left, rect.top); resizeInput(); $('zchatInput').focus(); }
     }

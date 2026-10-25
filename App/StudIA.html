@@ -65,6 +65,9 @@
      domani gli strati. Sta accanto all'ancoraggio perché è l'altra metà della
      stessa domanda, e come quello non sa niente del DOM. -->
 <script src="assets/evidenze/strati.js"></script>
+<script src="assets/evidenze/ordine.js"></script>
+<script src="assets/interfaccia/icone.js"></script>
+<script src="assets/interfaccia/toolbar.js"></script>
 <script src="assets/evidenze/postille.js"></script>
 <script src="assets/appunti/segno.js"></script>
 <script src="assets/rimandi/anteprima.js"></script>
@@ -5302,12 +5305,13 @@ function ocrDocOfferta(nome){
 function pdfOcrAggiorna(){
   var b=$('#pdfOcr'); if(!b) return;
   var nome=ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file;
-  if(OCRZ.inCorso){ b.hidden=false; b.setAttribute('aria-pressed','true');
+  UiIcone.imposta(b,OCRZ.inCorso?'square':'scan-text');
+  if(OCRZ.inCorso){ b.hidden=false;b.disabled=false; b.setAttribute('aria-pressed','true');
     b.title='Ferma il riconoscimento del testo'; b.setAttribute('aria-label', b.title); return; }
   b.setAttribute('aria-pressed','false');
   b.title='Riconosci il testo di questo documento fotografato';
   b.setAttribute('aria-label', b.title);
-  b.hidden=!(modoAttivo()==='zaino' && nome && ocrDocOfferta(nome));
+  b.hidden=modoAttivo()!=='zaino';b.disabled=!(nome && ocrDocOfferta(nome));
 }
 
 /**
@@ -6387,23 +6391,22 @@ function fonte2Aggiorna(){
   var sel=$('#pdf2Doc');
   if(sel){
     var nome=aperta ? (titoloMateriale(FONTE2.file)||FONTE2.file) : '';
-    sel.textContent=(nome || 'Documenti')+' \u25BE';
+    sel.innerHTML='<span class="ui-documento">'+escHtml(nome || 'Documenti')+'</span>'+UiIcone.svg('chevron-down');
     var dice=nome ? (nome+' — premi per cambiarlo') : 'Scegli un documento';
     sel.title=dice; sel.setAttribute('aria-label', dice);
   }
   var vuoto=$('#pdf2Vuoto'); if(vuoto) vuoto.hidden=aperta;
   var pag=$('#pdf2Pag'), zoom=$('#pdf2Zoom'), chiudi=$('#pdf2Close');
-  if(pag) pag.hidden=!aperta;
-  if(zoom) zoom.hidden=!aperta;
-  if(chiudi) chiudi.hidden=!aperta;
-  if(!aperta) return;
-  var n=$('#pdf2PagN');
-  if(n) n.textContent='p. '+(FONTE2.page||1)+(FONTE2.doc?(' di '+FONTE2.doc.numPages):'');
+  if(pag){pag.hidden=false;pag.querySelectorAll('button').forEach(function(b){b.disabled=!aperta;});}
+  if(zoom){zoom.hidden=false;zoom.querySelectorAll('button').forEach(function(b){b.disabled=!aperta;});}
+  if(chiudi){chiudi.hidden=false;chiudi.disabled=!aperta;}
+  var n=$('#pdf2PagN');if(n)n.textContent=FontiPagina.etichetta(aperta?FONTE2.page:null,{numPages:FONTE2.doc?.numPages||0});
+  if(!aperta)return;
   var lvl=$('#pdf2ZoomLvl');
   if(lvl){
     var e=FontiZoom.etichetta(FONTE2.viewer && FONTE2.viewer.currentScaleValue,
                               FONTE2.viewer && FONTE2.viewer.currentScale, true);
-    lvl.textContent=e.testo; lvl.title=e.titolo;
+    UiIcone.imposta(lvl,(FONTE2.viewer && FONTE2.viewer.currentScaleValue)==='page-fit'?'maximize':'move-horizontal');lvl.title=e.titolo;lvl.setAttribute('aria-label',e.titolo);
   }
 }
 function fonte2Pagina(avanti){
@@ -6548,14 +6551,14 @@ function pdfZoomAggiorna(){
      ⚠️ Da quando il media ha un riquadro suo, «c'è un video?» lo sa il player e
      non `ANTEPRIMA`: qui si chiede a lui. */
   var conVideo = (typeof playerAperto==='function') && playerAperto();
-  if(box) box.hidden=!attivo;
-  if(find) find.hidden=!attivo;
-  if(rit) rit.hidden=!(attivo || conVideo);
+  if(box){box.hidden=false;box.querySelectorAll('button').forEach(function(b){b.disabled=!attivo;});}
+  if(find){find.hidden=false;find.disabled=!attivo;}
+  if(rit){rit.hidden=false;rit.disabled=!(attivo || conVideo);}
   /* Senza documento le forbici non hanno su che cosa lavorare: si spengono da
      sé, o resterebbero accese sopra un riquadro vuoto. Vale per tutt'e due i
      modi — quello appiccicato e ⌘ tenuto premuto. */
   if(!attivo && !conVideo){ if(ALBUM.attivo) albumRitaglioModo(false); albumModificatore(false); }
-  if(!attivo || !lvl) return;
+  if(!attivo || !lvl){if(lvl)UiIcone.imposta(lvl,'maximize');return;}
   /* Il segno quando la fonte segue il riquadro, la percentuale quando lo zoom
      l'ha scelto una mano. Il `title` dice sempre tutte e due le cose — dove si
      è e dove porta il click — perché da un glifo non si deduce nessuna delle
@@ -6563,7 +6566,7 @@ function pdfZoomAggiorna(){
   var e=FontiZoom.etichetta(PDFJS.viewer && PDFJS.viewer.currentScaleValue,
                             PDFJS.viewer && PDFJS.viewer.currentScale,
                             PDFFIND.scalaPronta);
-  lvl.textContent=e.testo; lvl.title=e.titolo;
+  UiIcone.imposta(lvl,(PDFJS.viewer && PDFJS.viewer.currentScaleValue)==='page-fit'?'maximize':'move-horizontal');lvl.title=e.titolo;lvl.setAttribute('aria-label',e.titolo);
 }
 
 /** Ingrandisce o riduce partendo dalla scala vera: un gesto a mano, che ESCE
@@ -10396,7 +10399,7 @@ function pdfDocEtichetta(){
   var b=document.getElementById('pdfDoc'); if(!b) return;
   var f=(typeof ANTEPRIMA!=='undefined' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf') ? ANTEPRIMA.file : '';
   var nome=f ? (titoloMateriale(f)||f) : '';
-  b.textContent=(nome || 'Documenti')+' \u25BE';
+  b.innerHTML='<span class="ui-documento">'+escHtml(nome || 'Documenti')+'</span>'+UiIcone.svg('chevron-down');
   var dice=nome ? ('Documento aperto: '+nome+' — premi per cambiarlo') : 'Scegli il documento';
   b.title=dice;
   /* ⚠️ Anche il nome accessibile è vivo, e viene da qui: l'`aria-label` scritto
@@ -10417,15 +10420,17 @@ function aggiornaBarraPagina(){
      è a schermo, e deciderlo dopo lascerebbe una barretta accanto al nulla. */
   var soloMio = (modoAttivo()==='zaino' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file);
   var cest=$('#pdfElimina');
-  if(cest) cest.hidden = !soloMio;
+  if(cest){cest.hidden=modoAttivo()!=='zaino';cest.disabled=!soloMio;}
   var rin=$('#pdfRinomina');
-  if(rin) rin.hidden = !soloMio;
+  if(rin){rin.hidden=modoAttivo()!=='zaino';rin.disabled=!soloMio;}
   try{ barreSeparatori(); }catch(e){}
   var box=$('#pdfPag'), et=$('#pdfPagN');
   if(!box) return;
   var mostra = ANTEPRIMA.tipo==='pdf';
-  box.hidden = !mostra;
-  // «p. 7 di 80»: quante siano lo sa solo il documento aperto, e saperlo cambia
+  box.hidden=false;
+  ['pdfPagN','pdfPrev','pdfNext','pdfEvid','pdfStrati','pdfClose'].forEach(function(id){var b=document.getElementById(id);if(b)b.disabled=!mostra;});
+  if(!mostra && et){et.textContent=FontiPagina.etichetta(null,{numPages:0});et.title='Apri un documento per scegliere una pagina';et.setAttribute('aria-label',et.title);}
+  // «7 di 80»: quante siano lo sa solo il documento aperto, e saperlo cambia
   // che cosa vuol dire premere «pagina successiva»
   var tot=(PDFJS.doc && PDFJS.doc.numPages) ? PDFJS.doc.numPages : 0;
   if(mostra && et){
@@ -10655,11 +10660,10 @@ function voceDaOcr(nome){
 }
 function voceAggiorna(){
   var b=$('#pdfVoce'); if(!b) return;
-  /* Dove la sintesi di sistema non c'è, il comando non c'è: un bottone che non
-     può fare quello che promette è peggio di un bottone che manca. */
-  b.hidden = !(ANTEPRIMA && ANTEPRIMA.tipo==='pdf' && ttsSistema());
+  /* La voce compare dove è disponibile; senza un PDF resta visibile ma disabilitata. */
+  b.hidden=!ttsSistema();b.disabled=!(ANTEPRIMA && ANTEPRIMA.tipo==='pdf');
   var va=voceInCorso();
-  b.textContent = va ? '\u25A0' : '\u25B6';
+  UiIcone.imposta(b,va?'square':'play');
   b.title = va ? 'Ferma la lettura' : 'Leggi ad alta voce questa pagina';
   b.setAttribute('aria-label', b.title);
   b.classList.toggle('acceso', va);
@@ -10737,7 +10741,7 @@ function righelloVai(i){
 }
 function righelloAggiorna(){
   var b=$('#pdfRighelloBtn'); if(!b) return;
-  b.hidden = !(ANTEPRIMA && ANTEPRIMA.tipo==='pdf');
+  b.hidden=false;b.disabled=!(ANTEPRIMA && ANTEPRIMA.tipo==='pdf');
   b.classList.toggle('acceso', RIGHELLO.acceso);
   b.title = RIGHELLO.acceso
     ? 'Finestra sulla riga accesa — le frecce ↑ ↓ la spostano, Esc la spegne'
@@ -10829,7 +10833,7 @@ function tintaNome(t){
 }
 function tintaAggiorna(){
   var b=$('#pdfTinta'); if(!b) return;
-  b.hidden = !(ANTEPRIMA && ANTEPRIMA.tipo==='pdf');
+  b.hidden=false;b.disabled=!(ANTEPRIMA && ANTEPRIMA.tipo==='pdf');
   var ora=AspettoStanza.tinta(document.documentElement.dataset.tinta);
   var poi=AspettoStanza.tintaDopo(ora);
   /* Il suggerimento dice DOVE si è e DOVE si va: un comando che cicla senza
@@ -12120,11 +12124,13 @@ function openEditor(s){
 }
 function closeEditor(s){
   s=s||noteStatoAttivo();
+  if(!s.cur && s.mde && s.mde.value().trim()){
+    toast('L’appunto non ha ancora un nome: usa «+» per salvarlo prima di chiuderlo.',false);return false;
+  }
   if(!noteFlushStato(s)) return false;
-  noteChiudiPopup(s);
-  try{ bancoTogli(s.id); }catch(e){}
-  if(!noteStati().some(function(n){ return bancoVisibile(n.id); })) document.documentElement.dataset.editor='';
-  refreshNoteUI();
+  apertoScrivi(s.suffisso?'appunto2':'appunto','');
+  noteSvuota(s);refreshNoteUI();
+  var apri=noteHost(s)?.querySelector('.tendina');if(apri)apri.focus();
   return true;
 }
 function ensureMde(s){
@@ -13476,7 +13482,7 @@ function refreshNoteUI(s){
   }
   // dove sta l'appunto aperto, quando non è di quello che stai leggendo
   var d=noteEl('noteDirty',s); if(d) d.hidden=!s.dirty;
-  ['noteSave','noteRen','noteDel','noteStampa','notePdf'].forEach(function(id){ var b=noteEl(id,s); if(b) b.disabled=!s.cur; });
+  ['noteSave','noteRen','noteDel','noteStampa','notePdf','noteClose'].forEach(function(id){ var b=noteEl(id,s); if(b) b.disabled=!s.cur; });
   var w=noteEl('noteWhere',s);
   if(w){
     /* ⚠️ Nello ZAINO non esistono capitoli: il chip restava acceso a dire
@@ -14612,7 +14618,7 @@ function evidenzeNegliAppunti(){
    suo valore. Quali siano orfane si sa però solo del capitolo a schermo —
    per gli altri bisognerebbe caricarne il testo, e non lo si fa per disegnare
    un elenco. */
-var KW={ ordine:'alfa', filtro:'' };
+var KW={ ordine:{criterio:'alfa',verso:'asc'}, filtro:'' };
 function kwOrfana(e){ return (EVIDENZE.orfaneId||[]).indexOf(e.id)>=0; }
 /**
  * Quali evidenze sono PAROLE CHIAVE, e non semplici sottolineature.
@@ -14750,10 +14756,18 @@ document.addEventListener('input', function(e){
 
 function keywordDisegna(){
   var host=document.getElementById('kwLista'); if(!host) return;
-  var b=document.getElementById('kwOrdine');
-  if(b){ b.textContent=(KW.ordine==='alfa'?'Aa':'📅');
-         b.title=(KW.ordine==='alfa'?'In ordine alfabetico — premi per ordinare per data'
-                                    :'Per data di aggiunta — premi per ordinare in alfabetico'); }
+  var ordine=ParoleOrdine.stato(KW.ordine),alfa=document.getElementById('kwOrdine'),data=document.getElementById('kwData');
+  if(alfa){
+    alfa.textContent=ordine.criterio==='alfa'?ParoleOrdine.etichetta(ordine):'AZ';
+    alfa.title='Ordina '+(alfa.textContent==='AZ'?'da A a Z':'da Z a A');alfa.setAttribute('aria-label',alfa.title);
+    alfa.setAttribute('aria-pressed',String(ordine.criterio==='alfa'));
+  }
+  if(data){
+    var temporale=ordine.criterio==='data'?ordine:{criterio:'data',verso:'desc'};
+    data.innerHTML=UiIcone.svg('calendar-days')+UiIcone.svg(ParoleOrdine.freccia(temporale));
+    data.title=ordine.criterio==='data'?(ordine.verso==='asc'?'Dal meno recente al più recente — premi per invertire':'Dal più recente al meno recente — premi per invertire'):'Ordina per data: più recenti prima';
+    data.setAttribute('aria-label',data.title);data.setAttribute('aria-pressed',String(ordine.criterio==='data'));
+  }
   var q=KW.filtro.trim().toLowerCase();
   /* Prima il metro delle parole chiave, poi la ricerca dell'utente: cercare non
      deve far comparire una frase che l'elenco non mostrerebbe comunque. */
@@ -14761,9 +14775,7 @@ function keywordDisegna(){
   var lista=chiavi.filter(function(e){
     return !q || e.exact.toLowerCase().indexOf(q)>=0 || String(e.capitolo||'').toLowerCase().indexOf(q)>=0;
   });
-  lista.sort(KW.ordine==='alfa'
-    ? function(a,b2){ return a.exact.localeCompare(b2.exact, 'it'); }
-    : function(a,b2){ return String(b2.creato||'').localeCompare(String(a.creato||'')); });
+  lista=ParoleOrdine.ordina(lista,ordine);
   /* ⚠️ Con i segni spenti l'elenco RESTA, e lo dice — e lo dice PRIMA di
      sapere se ha dei chip da mostrare.
      Spegnere serve a rileggere il testo pulito, non a mettere via le proprie
@@ -14795,7 +14807,7 @@ function keywordDisegna(){
     return '<button class="kwchip'+(kwOrfana(e)?' orfana':'')+'" role="listitem" draggable="true"'+
       ' data-kw="'+escHtml(e.id)+'" style="--kw:'+escHtml(e.colore||'var(--line)')+'"'+
       ' title="'+escHtml(kwDove(e)+(kwOrfana(e)?' — il testo non è più lì':'')+
-      '\nDoppio click per andarci, trascina negli appunti o sulla mappa')+'">'+
+      '\nDoppio click per andarci, trascina negli appunti o sulla mappa'+'\n'+ParoleOrdine.data(e.creato))+'">'+
       '<span class="kwtxt">'+escHtml(e.exact)+'</span></button>';
   }).join('');
 }
@@ -14828,8 +14840,8 @@ document.addEventListener('input', function(e){
   KW.filtro=e.target.value||''; keywordDisegna();
 });
 document.addEventListener('click', function(e){
-  if(!e.target.closest || !e.target.closest('#kwOrdine')) return;
-  KW.ordine=(KW.ordine==='alfa')?'data':'alfa'; keywordDisegna();
+  if(!e.target.closest)return;var b=e.target.closest('#kwOrdine,#kwData');if(!b)return;
+  KW.ordine=ParoleOrdine.scegli(KW.ordine,b.id==='kwData'?'data':'alfa');keywordDisegna();
 });
 /* I due interruttori delle sottolineature — quello della Fonte e quello delle
    Parole chiave — in un gestore solo: sono lo stesso comando, e due gestori
@@ -15312,27 +15324,15 @@ function evidenzeCommuta(){
     ? 'Sottolineature accese'
     : (n ? 'Sottolineature nascoste: '+n+' restano sul disco' : 'Sottolineature nascoste'), true);
 }
-/**
- * I due bottoni dicono lo stato, non quello che faranno: è la stessa regola del
- * bottone dell'ordine delle parole chiave, e vale per tutti i comandi che hanno
- * due posizioni.
- *
- * ⚠️ E si rifanno ANCHE quando il documento è pronto. Questo inline sta in cima
- * al corpo e i riquadri stanno in fondo: al primo giro — che è quando il
- * contenitore si carica e `evidenzeCarica()` chiama di qui — `#pdfEvid` non
- * esiste ancora, e `$` torna `null` in silenzio. Riavviando l'app con le
- * sottolineature spente il bottone mostrava «si vedono», cioè un comando che
- * mente proprio nel momento in cui serve capire perché il testo è pulito.
- * È la stessa trappola pagata dagli osservatori del visualizzatore delle
- * immagini (PIANO-FOTO §F2): lì si aspetta il documento, e si aspetta anche qui.
- */
+/** L'occhio indica lo stato; il tooltip descrive il gesto. Le due viste
+ * condividono la stessa preferenza e il medesimo comando. */
 function evidenzeBottoni(){
   var accese=EvidenzeStrati.accese(evViste());
   var n=EvidenzeStrati.conta(EVIDENZE.elenco||[], evViste()).nascoste;
   ['#pdfEvid','#kwEvid'].forEach(function(sel){
     var b=$(sel); if(!b) return;
     b.setAttribute('aria-pressed', accese ? 'false' : 'true');
-    b.textContent = accese ? '\u{1F58D}' : '\u{1F441}';
+    UiIcone.imposta(b,accese?'eye':'eye-off');
     b.title = accese
       ? 'Nascondi le sottolineature sul testo (restano salvate)'
       : ('Rimostra le sottolineature'+(n ? ' — '+n+' nascoste' : ''));
@@ -15397,16 +15397,10 @@ function stratiPopDisegna(){
        misura nuova — è la stessa barra della mappa e degli appunti. */
     var suo=(r.id===attivo);
     return '<div class="tbar stratoriga'+(r.spento?' spenta':'')+(suo?' attiva':'')+'" data-strato="'+escHtml(r.id)+'">'+
-      /* ⚠️ Sempre l'occhio, e lo stato lo dice `aria-pressed` (premuto =
-         spenta), come per ogni comando a due posizioni di quest'app. Sulla
-         barra della Fonte il bottone ALTERNA matita e occhio perché lì è solo,
-         e il glifo è l'unica cosa che si legge; qui accanto c'è la ✎ del
-         rinomina, e due matite nella stessa riga si scambiano per lo stesso
-         comando — visto a schermo, non dedotto. */
       '<button class="tbtn" type="button" data-str="occhio" aria-pressed="'+(r.spento?'true':'false')+'"'+
         ' title="'+(r.spento?'Rimostra questa lettura':'Nascondi questa lettura')+'"'+
         ' aria-label="'+(r.spento?'Rimostra':'Nascondi')+' la lettura '+escHtml(r.nome)+'">'+
-        '\u{1F441}</button>'+
+        UiIcone.svg(r.spento || !gen?'eye-off':'eye')+'</button>'+
       '<button class="tbtn stratonome" type="button" data-str="attiva"'+
         ' title="'+(suo?'È qui che finiscono i segni nuovi':'Segna in questa lettura')+'"'+
         ' aria-pressed="'+(suo?'true':'false')+'">'+escHtml(r.nome)+'</button>'+
@@ -15589,6 +15583,7 @@ function evidenzaPrepara(range, colore, opt){
   if(!q){ return no('Qui non si può evidenziare'); }
   var indirizzo=evIndirizzo(q.sup);
   if(!indirizzo){ return no('Apri un capitolo del vault'); }
+  if(indirizzo.materiale){var blocco=evidenzaBloccoScrittura(evStratoAttivo());if(blocco)return no(blocco);}
   var m=q.m, pos=offsetDaRange(m, range);
   if(!pos){ return no('Non riesco ad ancorare questa selezione'); }
   var sel=EvidenzeAncoraggio.daTesto(m.testo, pos.inizio, pos.fine);
@@ -15614,8 +15609,14 @@ function evidenzaPrepara(range, colore, opt){
  * aggiunta» della riuscita — gli avvisi di guasto restano, perché un'evidenza
  * che non si è salvata deve dirlo anche quando la chiama qualcun altro.
  */
+function evidenzaBloccoScrittura(strato){
+  var motivo=EvidenzeStrati.bloccoScrittura(evViste(),strato);
+  return motivo==='tutte'?'Sottolineatura non creata: mostra le sottolineature con il pulsante occhio nella barra Fonti.'
+    : motivo==='strato'?'Sottolineatura non creata: mostra la lettura «'+evStratoNome(strato)+'» nel menu delle letture.':'';
+}
 function evidenzaScrivi(prep, opt){
   if(!prep) return false;
+  if(prep.indirizzo.materiale){var blocco=evidenzaBloccoScrittura(prep.strato);if(blocco){toast(blocco,false);return false;}}
   var api=evidenzeApi(); if(!api) return false;
   if(prep.corso!==corsoAttivo()){ toast('Il corso è cambiato: parola chiave non aggiunta',false); return false; }
   var r=api.aggiungi(prep.corso, Object.assign({
@@ -21665,13 +21666,8 @@ window.addEventListener('keydown', function(e){
       <button class="tbtn" id="pdfZoomIn" type="button" title="Ingrandisci" aria-label="Ingrandisci">+</button>
     </span>
     <i class="tbsep" aria-hidden="true"></i>
-    <!-- Le sottolineature si spengono per rileggere il testo pulito, e restano
-         dove sono. ⚠️ Il bottone dice lo STATO (la matita se sono accese,
-         l'occhio se sono spente), non che cosa farà: è la stessa regola del
-         bottone dell'ordine nelle Parole chiave, e l'unica che permette di
-         sapere come stanno le cose senza premerlo per scoprirlo. Il gemello sta
-         nella barra delle Parole chiave, e chiama la stessa funzione: nascondere
-         vale ovunque, quindi l'interruttore non può stare in un posto solo. -->
+    <!-- L'occhio descrive la visibilità, il tooltip spiega il gesto successivo.
+         Lo stesso comando è disponibile anche dalle Parole chiave. -->
     <button class="tbtn" id="pdfEvid" type="button" aria-pressed="false"
             title="Nascondi le sottolineature sul testo (restano salvate)"
             aria-label="Nascondi le sottolineature sul testo (restano salvate)">&#128397;</button>
@@ -21710,7 +21706,7 @@ window.addEventListener('keydown', function(e){
          comando che era anche un tasto e resta solo un bottone, senza
          suggerimento, è un comando diventato più difficile in silenzio. -->
     <button class="tbtn" id="pdfClose" type="button"
-            title="Chiudi il documento" aria-label="Chiudi il documento">&#10005;</button>
+            title="Chiudi il documento; lo split e gli strumenti restano aperti" aria-label="Chiudi il documento">&#10005;</button>
   </div>
 
   <!-- Il visualizzatore. ⚠️ Due `<div>`, e non è una preferenza: `PDFViewer`
@@ -21866,7 +21862,7 @@ window.addEventListener('keydown', function(e){
            accende «grafica di sfondo»; qui il PDF lo scrive l'app, e i colori
            dei callout ci sono sempre. -->
       <button class="ncbtn" id="notePdf" type="button" title="Salva l’appunto come PDF" aria-label="Salva l’appunto come PDF">PDF</button>
-      <button class="ncbtn" id="noteClose" type="button" title="Chiudi editor" aria-label="Chiudi editor">&#10005;</button>
+      <button class="ncbtn" id="noteClose" type="button" title="Chiudi l’appunto; lo split e gli strumenti restano aperti" aria-label="Chiudi l’appunto">&#10005;</button>
     </span>
   </template>
 </section>
@@ -21940,9 +21936,9 @@ window.addEventListener('keydown', function(e){
 <section id="keywordPane" aria-label="Parole chiave">
   <div class="tbar kwbar">
     <input id="kwCerca" type="search" placeholder="Cerca fra le parole chiave…" aria-label="Cerca fra le parole chiave">
-    <!-- un bottone solo che dice in che ordine sono ADESSO, non che cosa farà:
-         l'etichetta è lo stato, e premerlo lo cambia -->
-    <button class="tbtn" id="kwOrdine" type="button" title="Ordina per data di aggiunta">Aa</button>
+    <button class="tbtn" id="kwOrdine" type="button" title="Ordina da Z a A">ZA</button>
+    <button class="tbtn" id="kwData" type="button" title="Ordina per data: più recenti prima"></button>
+    <i class="tbsep" aria-hidden="true"></i>
     <!-- Il gemello del bottone che sta sulla barra della Fonte: stessa funzione,
          stesso stato. Sta anche qui perché nascondere vale su TUTTE le
          superfici — sul capitolo come sul documento — e un interruttore che si

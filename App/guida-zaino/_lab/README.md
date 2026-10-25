@@ -11,7 +11,7 @@ Il comando avvia il runtime Electron dei test con dati e vault sintetici in
 Non usa chiavi o servizi AI reali e non modifica `dist`. Alla fine chiude soltanto
 il processo avviato; conserva il laboratorio temporaneo e i log per ispezionarli.
 
-- `barre.js`: numerazione condivisa delle toolbar Appunti e Mappa, con controllo
+- `barre.js`: numerazione condivisa delle toolbar Fonti, Appunti e Mappa, con controllo
   che tutti i pulsanti stiano su una sola riga.
 - `campagna.js`: rigenera gli stati degli strumenti con i materiali in `materiali/`.
 - `fork.js`: acquisisce chat, cronologia, rinomina, profili, provider e quattro pannelli.
@@ -34,3 +34,7 @@ Qualunque passo fallito della campagna fa terminare il comando con errore.
 
 La cartella `_lab/` è esclusa dai pacchetti dell'app. Le schermate usano una finestra
 1470×956 a densità 2; i numeri delle barre sono allineati su una sola riga.
+
+- `toolbar.js`: riprese mirate delle toolbar trasparenti, Lucide, ordinamento e chiusura
+  dei documenti. Richiede il vault guida Biologia con 01 Botanica.pdf e un appunto,
+  oltre a `GUIDA_VAULT`/`STUDIA_PORTA`. Scrive soltanto nel laboratorio controllato.

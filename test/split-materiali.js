@@ -30,7 +30,7 @@ function harness(){
     if(!elementi.has(id)){
       const el={id,value:'',innerHTML:'',textContent:'',hidden:false,offsetParent:true,options:[],style:{},
         setAttribute(k,v){this[k]=v;},getAttribute(k){return this[k];},
-        addEventListener(){},appendChild(o){this.options.push(o);},insertBefore(){},
+        focus(){this.focalizzato=true;},addEventListener(){},appendChild(o){this.options.push(o);},insertBefore(){},
         querySelector(sel){
           if(sel==='.mdb-edit')return this.campo||null;
           if(sel.includes('editor-preview'))return this.anteprima?(this.preview||(this.preview={innerHTML:''})):null;
@@ -130,7 +130,7 @@ async function editor(){
   assert.equal(s2.mde.codemirror.getScrollInfo().top,120);assert.equal(s2.mde.codemirror.getCursor().line,3);
   h.modificaBlocco(s2,'Anteprima modificata');assert.equal(a.flush(),true);
   assert.match(h.files.uno[1].body,/Anteprima modificata/,'flush raccoglie il testo ancora nella textarea di anteprima');
-  const corpo=s2.mde.value();h.ctx.closeEditor(s2);assert.equal(s2.mde.value(),corpo,'chiudere il riquadro conserva il documento');
+  const corpo=s2.mde.value();h.ctx.closeEditor(s2);assert.equal(s2.cur,null);assert.equal(s2.mde.value(),'','chiudere l’appunto libera l’editor');assert.equal(h.files.uno[1].body,corpo,'la chiusura conserva il documento su disco');assert(h.ctx.bancoVisibile('appunti2'),'la toolbar resta nello split');a.open('b.md');assert.equal(s2.mde.value(),corpo);
   s2.mde.value('Da recuperare');h.errore(true);assert.equal(a.flush(),false);assert.equal(a.molla(),false,'non svuotare un editor che non si è salvato');
   assert.match(h.messaggi.at(-1),/bozza resta conservata/);
   const memoria=new Map(h.dati);h.errore(false);h.ctx.noteSvuota(s2); // simula nuova istanza dopo un riavvio

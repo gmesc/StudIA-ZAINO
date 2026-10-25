@@ -13,3 +13,7 @@ exports.appunti=L=>barra(L,'50-notebar-numerata','#noteHost .editor-toolbar',[
 exports.mappa=L=>barra(L,'68-mappabar-numerata','#mappaView .mtoolbar',[
  '#mappaView .tendina.piccola','#mNuova','#mRinomina','#mCestino','#mAnnulla','#mRipeti','#mMemorie','#mOrient','#mVista','#mStampa','#mPdf','#mAdatta','#mChiudi'
 ]);
+exports.fonti=L=>barra(L,'20-pdfbar-numerata','#pdfPane .pdfbar',[
+ '#pdfDoc','#pdfPrev','#pdfPagN','#pdfNext','#pdfTinta','#pdfRighelloBtn','#pdfVoce','#pdfZoomOut','#pdfZoomLvl','#pdfZoomIn',
+ '#pdfEvid','#pdfStrati','#pdfRitaglia','#pdfFindBtn','#pdfOcr','#pdfRinomina','#pdfElimina','#pdfClose'
+]);

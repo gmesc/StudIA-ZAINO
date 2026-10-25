@@ -103,7 +103,7 @@
     var n = quante(o);
     var p = parseInt(pagina, 10);
     if (!isFinite(p) || p < 1) p = 1;
-    return 'p. ' + p + (n ? (' di ' + n) : '');
+    return n ? p + ' di ' + n : (pagina == null ? '- di -' : p + ' di -');
   }
 
   /**
