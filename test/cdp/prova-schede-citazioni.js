@@ -5,7 +5,7 @@ async function wait(expr){for(let n=0;n<150;n++){if(await c.val(expr))return;awa
 const click=sel=>c.val(`document.querySelector(${q(sel)}).click()`);
 async function hover(sel){await c.val(`document.querySelector(${q(sel)}).scrollIntoView({block:'nearest'})`);const p=await c.val(`(()=>{const r=document.querySelector(${q(sel)}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',...p});await c.pausa(300);}
 (async()=>{
- await c.collega();await wait(`!!window.zainoStudio && !!document.getElementById('zschedeRefresh')`);
+ await c.collega();await wait(`!!window.zainoStudio && !!document.getElementById('zschedeKind')`);
  const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
  const initial=await c.val(`({banco:bancoStato(),tema:document.documentElement.dataset.theme,storage:{...localStorage}})`);
  await c.val(`cambiaZaino('biologia',true);bancoForma('uno');bancoAssegna('A','studio')`);
@@ -16,8 +16,8 @@ async function hover(sel){await c.val(`document.querySelector(${q(sel)}).scrollI
  fs.mkdirSync(path.dirname(cache),{recursive:true});fs.writeFileSync(cache,JSON.stringify(card));
  const noteDir=path.join(vault,'Zaini/biologia/APPUNTI'),notePrima=new Set(fs.readdirSync(noteDir));
  try{
-  await click('#zschedeBack');await c.val(`document.getElementById('zschedeKind').value='scheda';document.getElementById('zschedeFilter').value='Botanica.pdf Domande per capire';`);await click('#zschedeRefresh');await wait(`document.querySelectorAll('#zschedeCollection article').length===1 && !document.getElementById('zschedeRefresh').disabled`);
-  await click('#zschedeCollection button');await wait(`!!document.querySelector('#zschedeResult article') && !document.getElementById('zschedeRefresh').disabled`);
+  await click('#zschedeBack');await c.val(`document.getElementById('zschedeKind').value='scheda';document.getElementById('zschedeFilter').value='Botanica.pdf Domande per capire';`);await click('#zschedeBack');await wait(`document.querySelectorAll('#zschedeCollection article').length===1 && !document.getElementById('zschedeNewButton').disabled`);
+  await click('#zschedeCollection button');await wait(`!!document.querySelector('#zschedeResult article') && !document.getElementById('zschedeNewButton').disabled`);
   assert.equal(await c.val(`document.querySelector('#zschedeResult article').firstElementChild.tagName`),'H4');
   assert.deepEqual(await c.val(`[...document.querySelectorAll('#zschedeResult article .zchat-citation')].map(b=>b.textContent)`),['01 Botanica.pdf · p. 1','01 Botanica.pdf · p. 2']);
   assert.equal(await c.val(`document.querySelector('#zschedeResult article>button:last-child').textContent`),'Rispondi');
@@ -44,7 +44,7 @@ async function hover(sel){await c.val(`document.querySelector(${q(sel)}).scrollI
   await c.val(`noteFlush();cambiaZaino('storia',true)`);
   for(const file of fs.readdirSync(noteDir))if(file.startsWith('Scheda AI ')&&!notePrima.has(file))fs.rmSync(path.join(noteDir,file));
   require('../../lib/appunti').reindex(vault,'biologia');await c.val(`cambiaZaino('biologia',true)`);
-  await c.val(`noteFlush();document.documentElement.dataset.theme=${q(initial.tema)};localStorage.clear();Object.entries(${q(initial.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));BANCO.stato=${q(initial.banco)};bancoSalva();bancoDisegna();document.getElementById('zschedeFilter').value='';document.getElementById('zschedeKind').value='all';document.getElementById('zschedeRefresh').click()`);
+  await c.val(`noteFlush();document.documentElement.dataset.theme=${q(initial.tema)};localStorage.clear();Object.entries(${q(initial.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));BANCO.stato=${q(initial.banco)};bancoSalva();bancoDisegna();document.getElementById('zschedeFilter').value='';document.getElementById('zschedeKind').value='all';document.getElementById('zschedeBack').click()`);
  }
  console.log('schede-citazioni UI: H4/H6, rimandi unici per pagina, copia leggibile, azioni e sidebar nei due temi OK');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

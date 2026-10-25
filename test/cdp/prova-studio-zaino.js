@@ -17,20 +17,20 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden`);assert((await c.val(`document.getElementById('zschedeTokens').textContent`)).includes('token'));
  await click('#zschedeGenerate');await wait(`document.querySelectorAll('#zschedeResult article').length===1`);
  assert.equal(await c.val(`document.querySelector('#zschedeResult strong').textContent`),'Energia cellulare');
- await wait(`document.querySelectorAll('#zschedeCollection article').length===1 && !document.getElementById('zschedeRefresh').disabled`);
+ await wait(`document.querySelectorAll('#zschedeCollection article').length===1 && !document.getElementById('zschedeNewButton').disabled`);
  await click('#zschedeBack');await set('zschedeFilter','inesistente');assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),0);await set('zschedeFilter','Sintesi');
  await c.val(`document.getElementById('zschedeResult').replaceChildren()`);await click('#zschedeCollection button');await wait(`!!document.querySelector('#zschedeResult article')`);
  assert.deepEqual(await c.val(`[...document.querySelectorAll('#zschedeResult .zstudio-card-text strong')].map(e=>e.textContent)`),['Concetti:','Prerequisiti:','Esempi:']);
  // Il raccoglitore resta generale anche quando la ricerca ammette una sola fonte.
  const firstCard=(await c.val(`window.vault.studio.cards('biologia')`)).cards[0],other=(await c.val(`window.vault.chat.sources('biologia')`)).sources.find(s=>s.kind==='appunto'&&s.id!==firstCard.sourceId);assert(other);
  await click('#zschedeBack');await click('#zschedeNewButton');await wait(`document.getElementById('zschedeNew').open`);await set('zschedeSource',other.id);await set('zschedePreset','concetti');await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);await click('#zschedeGenerate');
- await wait(`document.getElementById('zschedeCollectionStatus').textContent.includes('2 schede') && !document.getElementById('zschedeRefresh').disabled`);
+ await wait(`document.getElementById('zschedeCollectionStatus').textContent.includes('2 schede') && !document.getElementById('zschedeNewButton').disabled`);
  await set('zschedeFilter','');assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),2);
  await click('#zragScopeButton');await click('#zragScope input');await click('#zragScope [data-source-id="'+other.id+'"]');await click('#zragScopeButton');
  await wait(`document.getElementById('zschedeSource').options.length===1`);assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),2);
  await set('zschedeFilter',firstCard.file);assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),1);
  const requests=path.join(path.dirname(vault),'dati/chat-requests.jsonl'),sent=fs.readFileSync(requests,'utf8');
- await click('#zschedeCollection .zstudio-card-open');await wait(`!!document.querySelector('#zschedeResult article') && !document.getElementById('zschedeRefresh').disabled`);assert.equal(fs.readFileSync(requests,'utf8'),sent,'Aprire una scheda salvata non chiama il provider');
+ await click('#zschedeCollection .zstudio-card-open');await wait(`!!document.querySelector('#zschedeResult article') && !document.getElementById('zschedeNewButton').disabled`);assert.equal(fs.readFileSync(requests,'utf8'),sent,'Aprire una scheda salvata non chiama il provider');
  await click('#zragScopeButton');await click('#zragScope input');await click('#zragScopeButton');await wait(`document.getElementById('zschedeSource').options.length>1`);
  // Una modifica esterna aggiorna il raccoglitore aperto; la stima non rigenera.
  const cached=(await c.val(`window.vault.studio.cards('biologia')`)).cards.find(c=>c.preset==='sintesi');
@@ -38,10 +38,10 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  try{
   fs.appendFileSync(sourceFile,'\nNuovo paragrafo di prova: energia conservata nei legami chimici.\n');
   await wait(`document.getElementById('zschedeCollection').textContent.includes('Fonte modificata')`);
-  await click('#zschedeBack');await click('#zschedeCollection .zstudio-card-open');await wait(`!document.getElementById('zschedeRefresh').disabled`);await click('#zschedeResult .zstudio-card-regenerate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);
+  await click('#zschedeBack');await click('#zschedeCollection .zstudio-card-open');await wait(`!document.getElementById('zschedeNewButton').disabled`);await click('#zschedeResult .zstudio-card-regenerate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);
   assert.equal(fs.readFileSync(cacheFile,'utf8'),before,'Mostrare la stima non deve chiamare il provider o modificare la scheda');
   assert((await c.val(`document.getElementById('zschedeEstimateText').textContent`)).includes(cached.file.split('/').pop()));
-  await click('#zschedeGenerate');await wait(`!document.getElementById('zschedeRefresh').disabled && document.getElementById('zschedeCollection').textContent.includes('Aggiornata') && !document.getElementById('zschedeCollection').textContent.includes('Fonte modificata')`);
+  await click('#zschedeGenerate');await wait(`!document.getElementById('zschedeNewButton').disabled && document.getElementById('zschedeCollection').textContent.includes('Aggiornata') && !document.getElementById('zschedeCollection').textContent.includes('Fonte modificata')`);
   assert.notEqual(fs.readFileSync(cacheFile,'utf8'),before,'La conferma rigenera la scheda');
  }finally{fs.writeFileSync(sourceFile,original);}
  await click('#zschedeResult>button');await wait(`document.getElementById('zragStatus').textContent.includes('conservata')`);

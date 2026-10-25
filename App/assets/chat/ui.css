@@ -250,8 +250,6 @@
 /* Studio: una vista per attività e un solo scorrimento per split. */
 .zstudio-heading { display:flex; align-items:baseline; justify-content:space-between; gap:.7rem; }
 .zstudio-heading h2 { margin:.35rem 0; }
-.zstudio-options { flex:0 1 45%; text-align:right; }
-.zstudio-options p { text-align:left; }
 .zstudio-filters { display:flex; flex-wrap:wrap; gap:.7rem; }
 .zstudio-filters label:first-child { flex:2 1 12rem; }
 .zstudio-filters label:last-child { flex:1 1 7rem; }

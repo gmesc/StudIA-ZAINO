@@ -25,8 +25,8 @@ async function shot(name,sel){await L.muovi(10,940);await L.pausa(600);await L.s
  await set('zschedeSource',source.id);await set('zschedePreset','sintesi');await click('#zschedeEstimate');
  await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);
  await shot('195-scheda-stima','#studioPane');
- await click('#zschedeGenerate');await wait(`!!document.querySelector('#zschedeResult article') && !document.getElementById('zschedeRefresh').disabled`);
- await click('#zschedeBack');await shot('196-scheda-raccoglitore','#studioPane');await click('#zschedeCollection .zstudio-card-open');await wait(`!!document.querySelector('#zschedeResult article') && !document.getElementById('zschedeRefresh').disabled`);
+ await click('#zschedeGenerate');await wait(`!!document.querySelector('#zschedeResult article') && !document.getElementById('zschedeNewButton').disabled`);
+ await click('#zschedeBack');await shot('196-scheda-raccoglitore','#studioPane');await click('#zschedeCollection .zstudio-card-open');await wait(`!!document.querySelector('#zschedeResult article') && !document.getElementById('zschedeNewButton').disabled`);
  await L.val(`document.getElementById('zschedeResult').scrollIntoView({block:'end'})`);await shot('201-scheda-copia','#studioPane');
  await click('#zragOpenReview');await wait(`bancoVisibile('flashcard')`);await L.val(`bancoZoom(bancoBloccoDi('flashcard'))`);await L.pausa(3800);
  await click('#zstudyNewButton');await set('zstudyTopic','luce e fotosintesi');await click('#zstudyStart');await wait(`!!document.getElementById('zstudyAttempt') && document.getElementById('zstudyCancel').hidden`);
