@@ -68,7 +68,11 @@
     ['tre-col',   'Tre · colonne affiancate',      '"A C E"'],
     ['tre-col-dx','Tre colonne · la terza divisa', '"A C E" "A C F"'],
     ['tre-col-sx','Tre colonne · la prima divisa', '"A C E" "B C E"'],
-    ['sei',       'Sei blocchi',                   '"A C E" "B D F"']
+    ['sei',       'Sei blocchi',                   '"A C E" "B D F"'],
+    // Ogni chiusura deve togliere esattamente un riquadro, anche da forme personali.
+    ['cinque',    'Cinque blocchi',                '"A C E" "B D E"'],
+    ['sette',     'Sette blocchi',                 '"A C E" "B D F" "G G G"'],
+    ['otto',      'Otto blocchi',                  '"A C E" "B D F" "G H H"']
   ];
 
   /* ------------------------------------------------------- leggere le aree */
@@ -524,6 +528,28 @@
     return segna(s, 'usciti', usciti);
   }
 
+  /** Chiude un riquadro, compatta gli altri in ordine di lettura e conserva
+   * gli strumenti già fuori vista. Il documento chiuso resta nel renderer:
+   * qui si toglie solo la sua assegnazione, così non riappare cambiando forma. */
+  function chiudiBlocco(stato,blocco){
+    var s=normalizzaStato(stato),prima=blocchiInLettura(s.forma);
+    if(prima.length<2 || prima.indexOf(blocco)<0)return s;
+    var g=griglia(s.forma),rimasti=prima.filter(function(b){return b!==blocco;});
+    var candidate=CHIAVI.filter(function(f){return !FORME[f].personale && FORME[f].quanti===rimasti.length;});
+    candidate.sort(function(a,b){
+      function distanza(f){var d=griglia(f);return Math.abs(d.colonne-g.colonne)+Math.abs(d.righe-g.righe);}
+      return distanza(a)-distanza(b);
+    });
+    if(!candidate.length)return s;
+    var forma=candidate[0],destinazioni=blocchiInLettura(forma);
+    var fuori=BLOCCHI.filter(function(b){return prima.indexOf(b)<0;}),contenuti={};
+    BLOCCHI.forEach(function(b){contenuti[b]='';});
+    rimasti.forEach(function(b,i){contenuti[destinazioni[i]]=s.blocchi[b];});
+    var liberi=BLOCCHI.filter(function(b){return destinazioni.indexOf(b)<0;});
+    fuori.forEach(function(b,i){contenuti[liberi[i]]=s.blocchi[b];});
+    s.forma=forma;s.blocchi=contenuti;return s;
+  }
+
   return {
     FORME: FORME, CHIAVI: CHIAVI, BLOCCHI: BLOCCHI, DI_FABBRICA: DI_FABBRICA,
     blocchiDi: blocchiDi, blocchiInLettura: blocchiInLettura, visibile: visibile, righeDi: righeDi, griglia: griglia,
@@ -531,6 +557,6 @@
     guastoNelleAree: guastoNelleAree, frazione: frazione, frazioneDopo: frazioneDopo,
     normalizzaStato: normalizzaStato, bloccoCon: bloccoCon,
     registraForma: registraForma, dimenticaForma: dimenticaForma,
-    assegna: assegna, cambiaForma: cambiaForma
+    assegna: assegna, cambiaForma: cambiaForma, chiudiBlocco:chiudiBlocco
   };
 }));

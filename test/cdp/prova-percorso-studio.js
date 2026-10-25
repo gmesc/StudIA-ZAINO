@@ -21,8 +21,8 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await c.val(`window.vault.chat.setKey({provider:'openai',value:'chiave-finta-ux'})`);await click('#settingsClose');await wait(`document.getElementById('zschedeStatusConfig').hidden`);
  assert.equal(await c.val(`document.getElementById('zschedeSource').value`),source);assert.equal(await c.val(`document.getElementById('zschedePreset').value`),'domande');assert.equal(sent(),before);assert.equal(await c.val(`document.activeElement.id`),'zschedeEstimate');
  await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);await screenshot('stima');await click('#zschedeGenerate');await wait(`!!document.querySelector('#zschedeResult article button') && !document.getElementById('zschedeRefresh').disabled`);
- const exactTitle=await c.val(`document.querySelector('#zschedeResult strong').textContent`),afterGeneration=sent();
- await click('#zschedeResult article button:last-child');
+ const exactTitle=await c.val(`document.querySelector('#zschedeResult h4').textContent`),afterGeneration=sent();
+ await click('#zschedeResult article>button:last-child');
  await wait(`!!document.querySelector('#zstudyQuestion h3') && !document.getElementById('zstudyRefresh').disabled`);
  assert.equal(await c.val(`document.querySelector('#zstudyQuestion h3').textContent`),exactTitle);assert.equal(sent(),afterGeneration);
  let state=await c.val(`window.vault.studio.state('biologia')`);const q=state.questions.find(q=>q.question===exactTitle&&q.saved);assert(q);assert.equal(state.questions.length,old+1);

@@ -679,6 +679,7 @@
   .bdoc{ flex:1; min-width:0; order:2; text-align:right; font-size:12px; font-weight:400;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .bdoc[hidden]{ display:none; }
+  .bhead .bchiudi{ order:3; flex:none; margin-left:auto; padding:0 .4rem; min-width:var(--tb-h); }
   .mtoolbar .tendina.viva{ max-width:min(38vw,260px); }
   .notectl .tendina.viva{ max-width:min(38vw,240px); }
   .bcorpo{ flex:1; min-height:0; min-width:0; overflow:auto; position:relative;
@@ -1558,10 +1559,6 @@
   .blocco[data-attivo="1"] > .bhead{ --testata-bg:color-mix(in srgb, var(--teal) 23.958%, var(--panel)); }
   :is(.bhead, .znav .zs-tit, :is(#searchRes, #albumCercaRisultati) .sr-lesson) button[aria-pressed="true"]{
     --testata-bg:color-mix(in srgb, var(--teal) 26%, var(--panel)); }
-  /* Si moltiplica soltanto il fondo: testo e icone conservano il proprio contrasto. */
-  :is(.bhead, .znav .zs-tit, :is(#searchRes, #albumCercaRisultati) .sr-lesson) :is(button, .tendina):hover:not(:disabled):not([aria-disabled="true"]){
-    background:linear-gradient(rgb(128 128 128 / .18), rgb(128 128 128 / .18)) var(--testata-bg);
-    background-blend-mode:multiply; }
   .znav .zs-tit, :is(#searchRes, #albumCercaRisultati) .sr-lesson{
     border-bottom:1px solid color-mix(in srgb, var(--teal) 35%, var(--line)); }
   :is(#searchRes, #albumCercaRisultati) .sr-lesson{ position:sticky; top:0; z-index:1;
@@ -2149,9 +2146,6 @@
   #uiModal #umExtra[hidden]{ display:none; }
   #uiModal .um-lab{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin:0 0 .35rem; }
   #uiModal .um-row{ display:flex; gap:.5rem; justify-content:flex-end; margin-top:.9rem; }
-  #uiModal button{ border:1px solid var(--line); background:var(--panel); cursor:pointer; padding:.45rem .9rem; font-size:12px; font-weight:700; }
-  #uiModal button.primary{ background:color-mix(in srgb, var(--teal) 22%, var(--panel)); border-color:transparent; color:var(--teal-strong); }
-  #uiModal button:hover{ box-shadow:var(--sh-3d); }
   .popmenu{ position:fixed; z-index:310; display:none; background:var(--panel); border:1px solid var(--line); box-shadow:var(--sh-3d); }
   .popmenu[open]{ display:block; }
   #calloutMenu button{ display:flex; align-items:center; gap:.5rem; width:100%; border:0; background:transparent; cursor:pointer;
@@ -3099,6 +3093,7 @@
 #modoBtn::after{display:none!important;}
 </style>
 <link rel="stylesheet" href="assets/sicurezza/impostazioni.css">
+<link rel="stylesheet" href="assets/comandi.css">
 </head>
 <body>
 <a class="skip" href="#content">Vai al contenuto</a>
@@ -11126,7 +11121,7 @@ async function cambiaModo(m){
 var ZNAV={ carico:false, ancora:false, organizza:{}, gruppi:{}, id:'', salva:false, trascinamento:null, selezione:{}, ordine:{} };
 function znavEsc(s){ return escHtml(s); }
 function znavComandoHtml(azione, testo, titolo, dati, spento){
-  return '<button type="button" class="tbtn" data-znav="'+azione+'" '+(dati||'')+
+  return '<button type="button" class="tbtn'+(azione==='crea'?' acc':'')+'" data-znav="'+azione+'" '+(dati||'')+
     (azione==='crea'?'':' title="'+znavEsc(titolo)+'"')+' aria-label="'+znavEsc(titolo)+'"'+(spento?' disabled':'')+'>'+testo+'</button>';
 }
 function znavAiutoChiudi(){ var box=document.getElementById('znavAiuto'); if(box) box.hidden=true; }
@@ -17905,6 +17900,11 @@ function bancoSegnaAttivo(){
     if(!numero){ numero=document.createElement('span'); numero.className='bnumero'; h.prepend(numero); }
     numero.textContent=n ? String(n) : ''; numero.title='Riquadro '+n+' in ordine di lettura';
     numero.setAttribute('aria-label',numero.title+(b===attivo?' · Riquadro attivo':''));
+    var chiudi=h.querySelector('.bchiudi');
+    if(!chiudi){chiudi=document.createElement('button');chiudi.type='button';chiudi.className='tbtn bchiudi';chiudi.textContent='×';h.appendChild(chiudi);}
+    chiudi.disabled=v.length<2;
+    chiudi.setAttribute('aria-label','Chiudi split '+n+': '+bancoNomeStrumento(bancoStrumentoIn(b)));
+    chiudi.title=chiudi.disabled?'L’ultimo split resta aperto: puoi cambiarne il contenuto.':'Chiudi lo split; il documento resta disponibile.';
   });
 }
 
@@ -18218,6 +18218,17 @@ function bancoDopoLayout(){
 
 /* ---- i comandi ---- */
 
+function bancoChiudiSplit(blocco){
+  var prima=bancoStato(),ordine=BancoForme.blocchiInLettura(prima.forma);
+  if(ordine.length<2 || ordine.indexOf(blocco)<0)return;
+  if(!noteFlush()){toast('Lo split resta aperto: non è stato possibile salvare gli appunti.',false);return;}
+  var attivo=bancoBloccoAttivo(),strumentoAttivo=bancoStrumentoIn(attivo),indice=ordine.indexOf(blocco);
+  BANCO.stato=BancoForme.chiudiBlocco(prima,blocco);bancoZoomScrivi(null);
+  var rimasti=BancoForme.blocchiInLettura(BANCO.stato.forma);
+  BANCO.attivo=attivo!==blocco && strumentoAttivo ? BancoForme.bloccoCon(BANCO.stato,strumentoAttivo) : rimasti[Math.min(indice,rimasti.length-1)];
+  bancoSalva();bancoDisegna();
+  var focus=document.querySelector('.blocco[data-blocco="'+bancoBloccoAttivo()+'"] .tendina');if(focus)focus.focus();
+}
 function bancoForma(f){
   if(!bancoPronto() || !BancoForme.FORME[f]) return;
   /* Una forma scelta dal pannello dice «adesso si sta così»: la memoria del
@@ -18563,6 +18574,7 @@ function pittoreElimina(chiave){
 
 ['pointerdown','focusin'].forEach(function(tipo){
   document.addEventListener(tipo,function(e){
+    if(e.target.closest && e.target.closest('.bchiudi'))return;
     var b=e.target.closest && e.target.closest('#banco .blocco');
     if(b) bancoAttivaBlocco(b.dataset.blocco);
   },true);
@@ -18575,6 +18587,8 @@ function pittoreElimina(chiave){
 });
 document.addEventListener('click', function(e){
   if(!e.target.closest) return;
+  var chiudi=e.target.closest('.bchiudi');
+  if(chiudi){bancoChiudiSplit(chiudi.closest('.blocco').dataset.blocco);return;}
   if(e.target.closest('#bancoBtn')){
     var pop=document.getElementById('bancoPop');
     if(pop && pop.hasAttribute('open')) closePops();
@@ -18610,7 +18624,7 @@ document.addEventListener('change', function(e){
    dello strumento, non una richiesta di ingrandire il blocco. */
 document.addEventListener('dblclick', function(e){
   if(!e.target.closest) return;
-  if(e.target.closest('.tendina') || e.target.closest('.bsel')) return;
+  if(e.target.closest('.tendina') || e.target.closest('.bsel') || e.target.closest('.bchiudi')) return;
   var h=e.target.closest('.bhead'); if(!h) return;
   var blocco=h.closest('.blocco'); if(!blocco) return;
   bancoZoom(blocco.dataset.blocco);
@@ -21836,8 +21850,8 @@ window.addEventListener('keydown', function(e){
       <select id="noteSelect" aria-label="I tuoi appunti"></select>
       <span id="noteDirty" class="dirty" hidden title="Modifiche non salvate">&#9679;</span>
       <span id="noteWhere" class="nwhere" hidden></span>
-      <button class="ncbtn" id="noteNew" type="button" title="Nuovo appunto" aria-label="Nuovo appunto">+</button>
-      <button class="ncbtn" id="noteSave" type="button" title="Salva (Cmd+S)" aria-label="Salva appunto">&#128190;</button>
+      <button class="ncbtn acc" id="noteNew" type="button" title="Nuovo appunto" aria-label="Nuovo appunto">+</button>
+      <button class="ncbtn acc" id="noteSave" type="button" title="Salva (Cmd+S)" aria-label="Salva appunto">&#128190;</button>
       <button class="ncbtn" id="noteRen" type="button" title="Rinomina appunto" aria-label="Rinomina appunto">&#9998;</button>
       <button class="ncbtn" id="noteDel" type="button" title="Elimina appunto" aria-label="Elimina appunto">&#128465;</button>
     </span>
@@ -22004,8 +22018,8 @@ window.addEventListener('keydown', function(e){
          tua da quello che stai guardando), «+» in quello delle tue: sono lo
          stesso posto perché sono la stessa domanda — «da dove parte questa
          mappa». Uno dei due è sempre nascosto. -->
-    <button class="mbtn mlungo" id="mCopia" type="button" title="Crea una tua mappa con la sola radice di questa vista: i concetti li metti tu, ed è il punto">Parti da qui</button>
-    <button class="mbtn" id="mNuova" type="button" hidden title="Nuova mappa vuota" aria-label="Nuova mappa">&#43;</button>
+    <button class="mbtn mlungo acc" id="mCopia" type="button" title="Crea una tua mappa con la sola radice di questa vista: i concetti li metti tu, ed è il punto">Parti da qui</button>
+    <button class="mbtn acc" id="mNuova" type="button" hidden title="Nuova mappa vuota" aria-label="Nuova mappa">&#43;</button>
     <!-- il cestino sta accanto alla tendina, cioè accanto alla cosa che
          elimina: in fondo alla barra, fra «adatta» e «chiudi», sarebbe a un
          pixel dai comandi che si premono di continuo -->
@@ -22071,12 +22085,12 @@ window.addEventListener('keydown', function(e){
      perché la regola in `@media print` è «di body si stampa solo questo». -->
 <div id="stampaFoglio" aria-hidden="true"></div>
 <div id="uiModal" role="dialog" aria-modal="true" aria-labelledby="umTitle">
-  <div class="um-card">
+  <div class="um-card tbar-ctl">
     <h3 id="umTitle">Titolo</h3>
     <input id="umInput" type="text" autocomplete="off">
     <div class="um-row">
-      <button type="button" id="umCancel">Annulla</button>
-      <button type="button" id="umOk" class="primary">Conferma</button>
+      <button type="button" id="umCancel" class="tbtn">Annulla</button>
+      <button type="button" id="umOk" class="tbtn acc primary">Conferma</button>
     </div>
   </div>
 </div>
@@ -22097,7 +22111,7 @@ window.addEventListener('keydown', function(e){
   <div class="pittoreaiuto" id="pittoreAiuto"></div>
   <div class="pittorepiedi">
     <button class="tbtn" id="pittoreAzzera" type="button">Ricomincia</button>
-    <button class="tbtn" id="pittoreSalva" type="button" aria-disabled="true">Salva la forma</button>
+    <button class="tbtn acc" id="pittoreSalva" type="button" aria-disabled="true">Salva la forma</button>
   </div>
 </div>
 <!-- Creare uno zaino: un campo e un bottone, aperti dal «+» accanto alla
@@ -22112,7 +22126,7 @@ window.addEventListener('keydown', function(e){
   <label class="zp-lab" for="zainoNome">Nome della materia</label>
   <div class="zp-riga">
     <input type="text" id="zainoNome" placeholder="es. Diritto pubblico" autocomplete="off">
-    <button class="tbtn" id="zainoCrea" type="button">Crea</button>
+    <button class="tbtn acc" id="zainoCrea" type="button">Crea</button>
   </div>
   <p class="zp-stato" id="zainoStato" role="status"></p>
 </div>
@@ -22615,7 +22629,7 @@ window.addEventListener('keydown', function(e){
         <div class="set-sec-h" style="margin-top:1.4rem;">Passare il corso a qualcuno</div>
         <div class="setrow">
           <button class="tbtn" id="projExport" type="button">Esporta corso&#8230;</button>
-          <button class="tbtn" id="projImport" type="button">Importa corso&#8230;</button>
+          <button class="tbtn acc" id="projImport" type="button">Importa corso&#8230;</button>
         </div>
         <!-- L'opzione NON sta nel vassoio dei comandi: è ciò che l'esportazione
              porta con sé, non un comando da premere. -->
@@ -22635,8 +22649,8 @@ window.addEventListener('keydown', function(e){
           <p class="set-note" id="ocrTitolo" style="margin-top:0;font-weight:700;">Controllo in corso&#8230;</p>
           <p class="set-note" id="ocrTesto" style="margin-top:.2rem;"></p>
           <div class="setrow" id="ocrAzioni" hidden>
-            <button class="tbtn" id="ocrInstalla" type="button" hidden>Installa la lettura avanzata&#8230;</button>
-            <button class="tbtn" id="ocrScarica" type="button" hidden>Scarica ora il modello&#8230;</button>
+            <button class="tbtn acc" id="ocrInstalla" type="button" hidden>Installa la lettura avanzata&#8230;</button>
+            <button class="tbtn acc" id="ocrScarica" type="button" hidden>Scarica ora il modello&#8230;</button>
             <button class="tbtn" id="ocrRimuovi" type="button" hidden>Rimuovi</button>
           </div>
           <!-- La stima si vede anche senza Chandra installato: è il punto.
@@ -22647,7 +22661,7 @@ window.addEventListener('keydown', function(e){
             <div id="ocrElenco" style="max-height:15rem;overflow:auto;border:1px solid var(--line);"></div>
             <p class="set-note" id="ocrTotale" style="margin-top:.35rem;"></p>
             <div class="setrow" style="margin-top:.35rem;">
-              <button class="tbtn" id="ocrLeggi" type="button">Rileggi i PDF scelti</button>
+              <button class="tbtn acc" id="ocrLeggi" type="button">Rileggi i PDF scelti</button>
               <button class="tbtn" id="ocrTutti" type="button">Spunta tutti</button>
               <button class="tbtn" id="ocrNessuno" type="button">Nessuno</button>
             </div>
@@ -22667,7 +22681,7 @@ window.addEventListener('keydown', function(e){
           <p class="set-note" id="expStato" style="margin-top:0;">Controllo in corso&#8230;</p>
           <div class="setrow" id="expAzioni" hidden>
             <select id="expLezione" aria-label="Lezione da estendere" style="flex:1;min-width:180px;"></select>
-            <button class="tbtn" id="expVai" type="button">Estendi questa lezione&#8230;</button>
+            <button class="tbtn acc" id="expVai" type="button">Estendi questa lezione&#8230;</button>
           </div>
           <p class="set-note">I capitoli nuovi si <b>accodano</b> a quelli esistenti: i numeri gi&agrave; assegnati non cambiano mai, cos&igrave; i rimandi <code>[[NN-lezione]]</code> delle altre lezioni restano validi.</p>
           <div id="expRotti" hidden></div>

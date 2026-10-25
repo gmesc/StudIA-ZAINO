@@ -29,7 +29,7 @@ async function nome(testo){
   await aspetta(`document.getElementById('uiModal').hasAttribute('open')`);
   await c.val(`document.getElementById('umInput').value=${q(testo)}`);await c.clicca('#umOk');await stabile();
 }
-async function modifica(sezione){if(!await c.val('ZNAV.organizza['+q(sezione)+']'))await click(base(sezione)+' [data-znav="organizza"]');}
+async function modifica(sezione){if(await c.val('document.querySelector('+q(base(sezione)+' .zs-collapse')+').getAttribute("aria-expanded")=="false"'))await click(base(sezione)+' .zs-collapse');if(!await c.val('ZNAV.organizza['+q(sezione)+']'))await click(base(sezione)+' [data-znav="organizza"]');}
 async function crea(sezione,n){await modifica(sezione);await click(base(sezione)+' [data-znav="crea"]');await nome(n);return (await stato(sezione)).gruppi.at(-1).id;}
 const item=(sezione,file)=>base(sezione)+' .zs-item[data-file='+q(file)+']';
 const gruppo=(sezione,id)=>base(sezione)+' .zs-gruppo[data-gruppo='+q(id)+']';
@@ -129,7 +129,8 @@ async function pulisci(){
       await c.val(`document.documentElement.dataset.theme=${q(tema)}`);
       for(const sel of [piu,base('fonti')+' [data-znav="organizza"]',base('fonti')+' [data-znav="ordina"]',base('fonti')+' .zs-collapse','.blocco:not([hidden]) .bhead .tendina']){
         await sfiora(sel);
-        assert.deepEqual(await c.val(`(()=>{const s=getComputedStyle(document.querySelector(${q(sel)}));return [s.backgroundBlendMode,s.backgroundImage.includes('128, 128, 128'),s.mixBlendMode];})()`),['multiply',true,'normal'],'il solo sfondo si moltiplica in '+tema+' su '+sel);
+        await c.pausa(300);
+        assert(await c.val(`(()=>{const b=document.querySelector(${q(sel)}),s=getComputedStyle(b),p=document.createElement('span');p.style.background='transparent';p.style.color='var(--comando-ink)';document.body.append(p);const a=getComputedStyle(p),ok=s.backgroundColor===a.backgroundColor&&s.color===a.color;p.remove();return ok;})()`),'hover coerente con le azioni in '+tema+' su '+sel);
       }
       await sfiora(piu);
       const r=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/studia-zaino-hover-'+tema+'.png',Buffer.from(r.result.data,'base64'));

@@ -382,7 +382,7 @@
           <li>Apri Cerca e studia. Il <strong>«Raccoglitore»</strong> è subito visibile e mostra tutte le schede e le domande conservate nello zaino.</li>
           <li>Per trovare un contenuto, scrivi titolo, fonte o tipo nel filtro. «Tipo» distingue schede e domande.</li>
           <li>Premi il nome del contenuto. L’app apre la copia conservata, senza una nuova chiamata AI.</li>
-          <li>Per modificarla personalmente, premi <strong>«Conserva una copia negli appunti»</strong>.</li>
+          <li>Per modificarla personalmente, premi <strong>«Crea appunti da domanda»</strong> (per le domande) oppure <strong>«Crea appunti da scheda»</strong>.</li>
           <li>Apri la copia in <strong>Appunti</strong>. Aggiungi esempi, correggi il testo e salva.</li>
         </ol>
         <figure class="fig-blocco"><img src="img/196-scheda-raccoglitore.png" alt="Il raccoglitore con una Sintesi salvata e lo stato Aggiornata" loading="lazy"><figcaption><b>Le schede già pronte.</b> Esempio con analisi simulata. La copia negli appunti diventa un testo personale modificabile.</figcaption></figure>
@@ -393,15 +393,17 @@
           <li><strong>«Opzioni» → «Aggiorna elenco»</strong>: rilegge lo stato delle schede. Non rigenera le analisi.</li>
           <li><strong>«Rigenera…»</strong>, nella scheda aperta: prepara una nuova stima. Premi poi «Genera e salva scheda» per confermare l’analisi.</li>
         </ul>
-        <figure class="fig-blocco"><img src="img/201-scheda-copia.png" alt="La scheda aperta con il rimando alla fonte e il pulsante Conserva una copia negli appunti" loading="lazy"><figcaption><b>Dalla scheda agli appunti.</b> Il pulsante in fondo conserva una copia personale. Contenuto AI simulato.</figcaption></figure>
+        <figure class="fig-blocco"><img src="img/201-scheda-copia.png" alt="La scheda aperta con il rimando alla fonte e il pulsante Crea appunti da scheda" loading="lazy"><figcaption><b>Dalla scheda agli appunti.</b> Il pulsante in fondo conserva una copia personale. Contenuto AI simulato.</figcaption></figure>
         <p>Il raccoglitore mostra tutte le schede e le domande conservate dello zaino, anche se hai limitato le fonti della ricerca. Il titolo di una domanda passa al Ripasso conservando tentativi e scadenze. «Raccoglitore» torna all’elenco mantenendo i filtri.</p>
+        <p>Nelle schede di domande, le domande sono titoli H4. Ogni rimando mostra il nome del PDF e la pagina, su una riga distinta e senza ripetizioni nella stessa domanda. Nella copia negli appunti, il titolo della scheda è H6 e le domande restano H4. I link conservano la versione della fonte citata.</p>
+        <p>Le copie nel vecchio formato restano intatte, anche se modificate: il nuovo formato crea un nuovo appunto alla prima copia. Premendo ancora il comando si riapre la copia già creata.</p>
         <p>La rigenerazione conserva le copie personali negli appunti. I tuoi appunti e i ripassi restano anche quando ricostruisci l’indice.</p>
       </section>
 
       <section class="cap" id="ripasso-guidato">
         <h2 data-n="05">Ripasso: provare a rispondere e controllare</h2>
         <p>Il Ripasso propone una domanda alla volta. Scrivi un tentativo, leggi il riscontro e scegli quando rivedere la domanda.</p>
-        <p>Puoi partire direttamente da documenti e appunti selezionati, senza creare prima una scheda, oppure da <strong>«Rispondi a questa domanda»</strong> in una scheda di domande. La domanda della scheda viene riaperta senza generarla di nuovo. Le domande conservate si ritrovano sia nel raccoglitore sia in Ripasso, con gli stessi tentativi e le stesse date.</p>
+        <p>Puoi partire direttamente da documenti e appunti selezionati, senza creare prima una scheda, oppure da <strong>«Rispondi»</strong> in una scheda di domande. La domanda della scheda viene riaperta senza generarla di nuovo. Le domande conservate si ritrovano sia nel raccoglitore sia in Ripasso, con gli stessi tentativi e le stesse date.</p>
         <p>Le nuove domande e il riscontro sul tentativo usano il <a href="#profilo-provider">fornitore AI configurato</a>.</p>
         <h3 id="rg-fonti">Aprire Ripasso e scegliere le fonti</h3>
         <ol class="passi">
@@ -580,10 +582,12 @@
         <p>Fonti, Appunti, Media e Mappe hanno gruppi indipendenti, anche quando usi lo stesso nome.</p>
 
         <h3 id="finestra-banco">Il banco: le forme</h3>
+        <p>La <strong>× nella testata</strong> chiude uno split. Gli altri si ridistribuiscono mantenendo l’ordine di lettura e si rinumerano da 1. Il documento resta disponibile: puoi riaprirlo dalla sidebar o dal menu dello split, senza perderne il contenuto. L’ultimo split resta aperto. Se gli appunti non possono essere salvati, la chiusura viene fermata.</p>
+        <p>I pulsanti sulle testate colorate restano trasparenti. Sulle superfici neutre, le azioni principali sono verdi e quelle secondarie grigie, con hover verde.</p>
         <p>Le testate hanno lo stesso colore delle sezioni della sidebar e di Cerca. Quella dello split attivo è un po’ più satura. A sinistra trovi il nome dello strumento e il chevron per cambiarlo; in Fonti e Appunti, a destra, il nome del documento aperto. I titoli lunghi terminano con puntini: passa il mouse per leggerli interamente.</p>
-        <p>Premi <strong>«◫ BANCO»</strong>. Si apre il pannello «Disposizione dei blocchi». Ci sono dodici forme pronte e una casella per disegnare la tua forma. La forma in uso ha il bordo verde-acqua.</p>
+        <p>Premi <strong>«◫ BANCO»</strong>. Si apre il pannello «Disposizione dei blocchi». Ci sono quindici forme pronte e una casella per disegnare la tua forma. La forma in uso ha il bordo verde-acqua.</p>
         <figure class="fig-blocco">
-          <img src="img/41-banco-forme.png" alt="Il pannello «Disposizione dei blocchi» con tredici caselle numerate" loading="lazy">
+          <img src="img/41-banco-forme.png" alt="Il pannello «Disposizione dei blocchi» con le forme pronte e la casella per disegnarne una personale" loading="lazy">
           <figcaption><b>Il pannello delle forme.</b> Ferma il mouse su una casella: la casella dice il suo nome.</figcaption>
         </figure>
         <ol class="legenda">

@@ -46,7 +46,7 @@
 
   let estimate=null,question=null,attemptId=null,review=false,selection='',cards=[],savedQuestions=[],queueState={questions:[],due:[]},collectionWarnings=[],collectionTimer,collectionRun=0;const drafts=new Map(),visitati=new Set();let paused=false,pausedId=null,schedeView='library',ripassoView='home';
   const call=async(n,...args)=>{const r=await api[n](...args);if(!r?.ok)throw Error(r?.error || 'Operazione non riuscita.');return r;};
-  const button=(text,fn)=>{const b=el('button',text,'tbtn');b.type='button';b.onclick=fn;return b;};
+  const button=(text,fn,principale=false)=>{const b=el('button',text,principale?'tbtn acc':'tbtn');b.type='button';b.onclick=fn;return b;};
   // Una sola attività per superficie; il DOM nascosto conserva filtri e risposte in corso.
   function vistaSchede(view,focus){
    if(view!==schedeView){studio.status('');$('zschedeStatusConfig')?.setAttribute('hidden','');}schedeView=view;box.dataset.vista=view;
@@ -99,10 +99,10 @@
    const heading=target.querySelector('h3');heading.tabIndex=-1;heading.focus();
    for(const [index,item] of c.items.entries()){const row=el('article'),body=el('div',undefined,'zstudio-card-text'),template=document.createElement('template');
     template.innerHTML=window.LetturaCapitolo.crea().mdToHtml(window.ZainoSchedeTesto.etichette(item.text),true);
-    body.append(window.ZainoChatUI.copyFormatting(template.content,document));row.append(el('strong',item.title),body);for(const id of item.refs){const s=c.sources.find(s=>s.chunkId===id);if(s)row.append(studio.riferimento(s));}
-    if(c.preset==='domande')row.append(button('Rispondi a questa domanda',()=>studio.action(async current=>{const r=await call('fromCard',state.zaino,c.sourceId,index,c.revision);if(current()){await collection();await loadQuestion(r.question.id,current);}})));target.append(row);}
-   target.append(button('Conserva una copia negli appunti',()=>studio.action(async current=>{const r=await call('copyCard',state.zaino,c.sourceId,c.preset);if(current()){window.notesReload();window.refreshMyNotes();window.noteApriAttivo(r.file);studio.status(r.duplicate?'Copia già presente negli appunti.':'Copia personale conservata.');}})));
-   if(st!=='removed'){const regenerate=button('Rigenera…',()=>studio.action(current=>prepare(current,c.sourceId,c.preset)));regenerate.classList.add('zstudio-card-regenerate');regenerate.title='Mostra la stima prima di confermare l’uso dell’AI.';target.append(regenerate);}
+    body.append(window.ZainoChatUI.copyFormatting(template.content,document));row.append(el(c.preset==='domande'?'h4':'strong',item.title),body);const refs=el('div',undefined,'zstudio-card-refs');for(const s of window.ZainoCitazioni.perRiferimenti(item.refs,c.sources))refs.append(studio.riferimento(s));row.append(refs);
+    if(c.preset==='domande')row.append(button('Rispondi',()=>studio.action(async current=>{const r=await call('fromCard',state.zaino,c.sourceId,index,c.revision);if(current()){await collection();await loadQuestion(r.question.id,current);}}),true));target.append(row);}
+   target.append(button(c.preset==='domande'?'Crea appunti da domanda':'Crea appunti da scheda',()=>studio.action(async current=>{const r=await call('copyCard',state.zaino,c.sourceId,c.preset);if(current()){window.notesReload();window.refreshMyNotes();window.noteApriAttivo(r.file);studio.status(r.duplicate?'Copia già presente negli appunti.':'Copia personale conservata.');}}),true));
+   if(st!=='removed'){const regenerate=button('Rigenera…',()=>studio.action(current=>prepare(current,c.sourceId,c.preset)),true);regenerate.classList.add('zstudio-card-regenerate');regenerate.title='Mostra la stima prima di confermare l’uso dell’AI.';target.append(regenerate);}
   }
   const nuova=button('Nuova scheda',async()=>{nuova.disabled=true;try{await sources(true);vistaSchede('new','zschedeSource');}catch(e){vistaSchede('new');studio.status(e.message,true,'zschedeStatus');$('zschedeStatus').scrollIntoView({block:'nearest'});}finally{nuova.disabled=false;}});nuova.id='zschedeNewButton';nuova.classList.add('acc');$('zragToolbar').insertBefore(nuova,$('zragToolbar').firstChild);
   const back=button('Raccoglitore',()=>vistaSchede('library','zschedeFilter'));back.id='zschedeBack';const search=button('Cerca nei materiali',()=>vistaSchede('search','zragQuery'));search.id='zragSearchButton';$('zragToolbar').insertBefore(back,nuova);nuova.after(search);
@@ -141,7 +141,7 @@
     for(const es of q.anteprima){const outcome=button(es.esito.replace('-',' ')+' · '+es.testo,()=>action(async current=>{const r=await call('outcome',state.zaino,q.id,last.id,es.esito);if(current()){drawQuestion(r.question);await refresh();status('Esito conservato; puoi correggerlo.');$('zstudyQuestion').querySelector('[data-esito="'+es.esito+'"]')?.focus();}}));outcome.dataset.esito=es.esito;fb.append(outcome);}
     target.append(fb);const retry=button('Riprova',()=>{form.hidden=false;text.focus();});retry.id='zstudyRetry';target.append(retry);
    }else if(last?.error)target.append(el('p','Tentativo conservato: '+last.error));
-   if(!q.saved)target.append(button('Conserva nel ripasso',()=>action(async current=>{const r=await call('keep',state.zaino,q.id);if(current()){drawQuestion(r.question);await refresh();await collection();status('Domanda conservata nel raccoglitore e in Ripasso.');$('zstudyQuestion h3')?.focus();}})));
+   if(!q.saved)target.append(button('Conserva nel ripasso',()=>action(async current=>{const r=await call('keep',state.zaino,q.id);if(current()){drawQuestion(r.question);await refresh();await collection();status('Domanda conservata nel raccoglitore e in Ripasso.');$('zstudyQuestion h3')?.focus();}}),true));
    else if(q.prossimo)target.append(el('p','Ripasso prossimo: '+new Date(q.prossimo).toLocaleString('it-IT'),'zchat-hint'));
    if(q.attempts.length){const history=el('details');history.append(el('summary','Tentativi precedenti · '+q.attempts.length));for(const a of q.attempts){history.append(el('p',new Date(a.createdAt).toLocaleString('it-IT')+' — '+a.text+'\n'+(a.feedback?.summary||a.error||'Riscontro interrotto')));}target.append(history);}
   }

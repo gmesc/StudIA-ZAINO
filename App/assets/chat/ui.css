@@ -193,6 +193,9 @@
 .zstudio-index-state progress { display:block; width:100%; height:.4rem; accent-color:var(--teal-strong); margin:.4rem 0; }
 .zstudio-index-state .zchat-hint { margin:.5em 0; }
 .zstudio-card-text :is(ul,ol) { padding-inline-start:2em; margin-block:.6em; }
+.zstudio-results article > h4 { font-size:var(--tit-4); line-height:1.3; margin:.4rem 0 .8rem; font-weight:700; }
+.zstudio-card-refs { display:flex; flex-direction:column; align-items:flex-start; gap:.35rem; margin:.75rem 0; }
+.zstudio .zstudio-card-refs .zchat-citation { height:auto; min-height:var(--tb-h); text-align:left; white-space:normal; overflow-wrap:anywhere; }
 
 .zstudio-collection article { border-bottom:1px solid var(--line); padding:.6rem 0; }
 .zstudio-collection .zstudio-card-open { display:block; max-width:100%; text-transform:none; letter-spacing:normal; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; color:var(--teal-strong); }

@@ -5,7 +5,7 @@ async function aspetta(expr){const fine=Date.now()+12000;while(Date.now()<fine){
 async function clicca(sel){await c.val(`document.querySelector(${q(sel)}).scrollIntoView({block:'nearest'})`);await c.clicca(sel);}
 async function esc(){await c.invia('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await c.invia('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});}
 (async()=>{
- await c.collega();await c.invia('Emulation.setFocusEmulationEnabled',{enabled:true});await aspetta(`typeof AlbumSpazio==='object' && zainoAttivo()==='biologia'`);await c.partiPulito();
+ await c.collega();await c.invia('Emulation.setFocusEmulationEnabled',{enabled:true});await aspetta(`typeof AlbumSpazio==='object' && typeof zainoAttivo==='function' && zainoAttivo()==='biologia'`);await c.partiPulito();
  const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
  const radice=path.join(vault,'Zaini/biologia'),audio=path.join(radice,'MATERIALI/Audio/0097 - Audio catalogo.wav'),video=path.join(radice,'MATERIALI/Video/0098 - Video catalogo.mp4');
  const prima=await c.val(`({banco:JSON.parse(JSON.stringify(bancoStato())),attivo:BANCO.attivo,nota:NOTES.cur?.file||'',preview:!!NOTES.mde?.isPreviewActive(),locale:Object.assign({},localStorage)})`);

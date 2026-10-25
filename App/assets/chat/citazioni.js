@@ -7,6 +7,12 @@
   'use strict';
   const escape=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
   function chiave(s){return JSON.stringify([s.sourceId || s.url || s.file || s.citation,s.revision || '',s.page || null]);}
+  // I passaggi restano prove distinte; il lettore apre una sola volta la stessa pagina.
+  function perRiferimenti(refs,sources){
+    const chunks=new Map((sources || []).map(s=>[s.chunkId,s])),visti=new Set(),fonti=[];
+    for(const id of refs || []){const s=chunks.get(id);if(!s)continue;const key=chiave(s);if(visti.has(key))continue;visti.add(key);fonti.push(s);}
+    return fonti;
+  }
   function analizza(text,sources){
     text=String(text || '');
     const tokens=new Map(),fonti=[],numeri=new Map(),occorrenze=[];
@@ -46,5 +52,5 @@
     }
     return found;
   }
-  return {analizza,citate,normalizza,numerata,chiave};
+  return {analizza,citate,normalizza,numerata,chiave,perRiferimenti};
 }));

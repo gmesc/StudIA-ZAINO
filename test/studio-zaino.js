@@ -23,6 +23,23 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(ro
  const T=require('../App/assets/chat/schede-testo');
  assert.equal(T.etichette('- Concetti: ATP.\n- Prerequisiti: energia.\nEsempi: batteria.\n- **Limiti:** nessuno.\nhttps://example.org'),'- **Concetti:** ATP.\n- **Prerequisiti:** energia.\n**Esempi:** batteria.\n- **Limiti:** nessuno.\nhttps://example.org');
  fs.appendFileSync(path.join(d,'APPUNTI',copy.file),'\nModifica personale');assert(S.copia(root,'test',source.id,'sintesi').duplicate);assert(fs.readFileSync(path.join(d,'APPUNTI',copy.file),'utf8').includes('Modifica personale'));
+ // Più passaggi della stessa pagina producono un solo rimando per domanda.
+ const Cit=require('../App/assets/chat/citazioni');
+ const pagina={sourceId:source.id,revision:source.revision,kind:'pdf',file:'MATERIALI/PDF/01 Sistema_solare.pdf',page:3,chunkId:'p3a',quote:'Prima prova.'};
+ const prove=[pagina,{...pagina,chunkId:'p3b',quote:'Seconda prova.'},{...pagina,page:4,chunkId:'p4'}, {...pagina,revision:'b'.repeat(64),chunkId:'altra-versione'}, {...pagina,sourceId:'altra-fonte',chunkId:'altro-pdf'}];
+ assert.deepEqual(Cit.perRiferimenti(['p3a','p3b','p4','p4','altra-versione','altro-pdf','assente'],prove).map(s=>s.chunkId),['p3a','p4','altra-versione','altro-pdf']);
+ const cardPath=path.join(d,'_lavorazione/rag/schede',source.id+'-domande.json'),originale=fs.readFileSync(cardPath);
+ const pdfCard={...cardQuestions,file:pagina.file,sources:prove,items:[{title:'Come orbitano i pianeti?',text:'**Concetti:** eclittica.\n**Prerequisiti:** gravità.',refs:['p3a','p3b','p4','p4']},{title:'Dove si trova il Sole?',text:'Nella galassia.',refs:['p3a']}]};
+ fs.writeFileSync(cardPath,JSON.stringify(pdfCard));
+ const legacyFile='Scheda AI '+F.hash(JSON.stringify(pdfCard)).slice(0,24)+'.md';fs.writeFileSync(path.join(d,'APPUNTI',legacyFile),'La mia copia precedente, modificata.');
+ const copiaPdf=S.copia(root,'test',source.id,'domande'),bodyPdf=require('../lib/appunti').parse(fs.readFileSync(path.join(d,'APPUNTI',copiaPdf.file),'utf8')).body;
+ assert.notEqual(copiaPdf.file,legacyFile);assert.equal(fs.readFileSync(path.join(d,'APPUNTI',legacyFile),'utf8'),'La mia copia precedente, modificata.');
+ assert(bodyPdf.startsWith('###### Domande per capire — 01 Sistema\\_solare.pdf\n'));
+ const blocchi=bodyPdf.split(/^#### /m).slice(1);assert.equal(blocchi.length,2);assert(bodyPdf.includes('Prima prova.'));assert(bodyPdf.includes('Seconda prova.'));
+ assert.equal((blocchi[0].match(/\[01 Sistema_solare.pdf · p. 3\]/g)||[]).length,1);
+ assert.equal((blocchi[0].match(/\[01 Sistema_solare.pdf · p. 4\]/g)||[]).length,1);
+ assert.match(blocchi[0],/gravità\.\n\n\[01 Sistema_solare.pdf · p. 3\]\(pdf:01#p=3&s=[^\n]+\)\n\n\[01 Sistema_solare.pdf · p. 4\]/);
+ assert(S.copia(root,'test',source.id,'domande').duplicate);fs.writeFileSync(cardPath,originale);
  const q=await I.avvia(root,'test',{scope,topic:'ATP'},opts);assert(!Object.hasOwn(q,'answer'),'la soluzione non va al renderer prima del tentativo');assert.equal(I.stato(root,'test',scope).active.id,q.id);
  let answered=await I.rispondi(root,'test',q.id,{attemptId:'attempt-one',text:'I mitocondri.'},opts);assert.equal(answered.answer,'I mitocondri.');assert(answered.attempts[0].feedback.assessable);
  const n=calls;await I.rispondi(root,'test',q.id,{attemptId:'attempt-one',text:'I mitocondri.'},opts);assert.equal(calls,n);assert.equal(I.leggi(root,'test',q.id).attempts.length,1);

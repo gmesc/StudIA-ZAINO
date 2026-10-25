@@ -2948,7 +2948,7 @@ async function modelloFinto(o) {
      primo ritocco, e il guasto non fa eccezione da nessuna parte, si vede solo
      a occhio come un blocco che non compare. Qui si controlla che la
      derivazione sia una sola, e che lo stato regga il giro dal disco. */
-  sezione('Banco — dodici forme, fino a quattro divisori, uno stato che torna dal disco');
+  sezione('Banco — quindici forme, fino a quattro divisori, uno stato che torna dal disco');
   {
     const BF = require('../App/assets/banco/forme');
 
@@ -2957,27 +2957,27 @@ async function modelloFinto(o) {
        Le prime otto non cambiano di nome né di sostanza — una disposizione
        salvata prima continua a dire le stesse cose — ma le aree si sono
        ASCIUGATE: «un blocco solo» è '"A"', non più quattro celle uguali. */
-    check('dodici forme, le otto del piano per prime',
+    check('quindici forme, le otto del piano per prime',
       ['uno', 'due-col', 'due-riga', 'tre-sx', 'tre-dx', 'tre-sopra', 'tre-sotto', 'quattro',
-       'tre-col', 'tre-col-dx', 'tre-col-sx', 'sei'], BF.CHIAVI);
+       'tre-col', 'tre-col-dx', 'tre-col-sx', 'sei', 'cinque', 'sette', 'otto'], BF.CHIAVI);
     check('le aree, alla lettera',
       ['"A"', '"A C"', '"A" "B"', '"A C" "A D"',
        '"A C" "B C"', '"A A" "B D"', '"A C" "B B"', '"A C" "B D"',
        '"A C E"', '"A C E" "A C F"', '"A C E" "B C E"', '"A C E" "B D F"'],
-      BF.CHIAVI.map((k) => BF.FORME[k].aree));
+      BF.CHIAVI.slice(0,12).map((k) => BF.FORME[k].aree));
     check('ognuna ha un nome leggibile, e nessuno si ripete',
-      [[], 12], [BF.CHIAVI.filter((k) => !/\S/.test(BF.FORME[k].nome || '')),
+      [[], 15], [BF.CHIAVI.filter((k) => !/\S/.test(BF.FORME[k].nome || '')),
                 new Set(BF.CHIAVI.map((k) => BF.FORME[k].nome)).size]);
     check('i blocchi di ogni forma',
       [['A'], ['A', 'C'], ['A', 'B'], ['A', 'C', 'D'],
        ['A', 'B', 'C'], ['A', 'B', 'D'], ['A', 'B', 'C'], ['A', 'B', 'C', 'D'],
        ['A', 'C', 'E'], ['A', 'C', 'E', 'F'], ['A', 'B', 'C', 'E'], ['A', 'B', 'C', 'D', 'E', 'F']],
-      BF.CHIAVI.map((k) => BF.blocchiDi(k)));
+      BF.CHIAVI.slice(0,12).map((k) => BF.blocchiDi(k)));
     check('e la griglia di ognuna si legge dalle aree',
       [{colonne:1,righe:1}, {colonne:2,righe:1}, {colonne:1,righe:2}, {colonne:2,righe:2},
        {colonne:2,righe:2}, {colonne:2,righe:2}, {colonne:2,righe:2}, {colonne:2,righe:2},
        {colonne:3,righe:1}, {colonne:3,righe:2}, {colonne:3,righe:2}, {colonne:3,righe:2}],
-      BF.CHIAVI.map((k) => BF.griglia(k)));
+      BF.CHIAVI.slice(0,12).map((k) => BF.griglia(k)));
 
     /* ⚠️ La prova che conta davvero: l'elenco esce dalla STRINGA. Il test la
        rilegge per conto suo — se un giorno `blocchiDi` tornasse a leggere un
@@ -2998,10 +2998,10 @@ async function modelloFinto(o) {
     // ---- i due divisori, dove servono e dove no
     check('il divisore verticale c\'è dove una riga è spezzata in due',
       [false, true, false, true, true, true, true, true, true, true, true, true],
-      BF.CHIAVI.map((k) => BF.usaDivisoreColonna(k)));
+      BF.CHIAVI.slice(0,12).map((k) => BF.usaDivisoreColonna(k)));
     check('quello orizzontale dove è spezzata una colonna',
       [false, false, true, true, true, true, true, true, false, true, true, true],
-      BF.CHIAVI.map((k) => BF.usaDivisoreRiga(k)));
+      BF.CHIAVI.slice(0,12).map((k) => BF.usaDivisoreRiga(k)));
     /* ⚠️ QUALI fessure sono divisori veri: con tre colonne una fessura può non
        separare niente — «tre colonne, la seconda unita» non esiste in tabella,
        ma le forme personali possono farla nascere. */
@@ -3043,7 +3043,7 @@ async function modelloFinto(o) {
        non devono passare, mentre un rettangolo che copre più righe sì. */
     check('una L su tre colonne non passa', true, /rettangolo/.test(BF.guastoNelleAree('"A A C" "A C C"')));
     check('un rettangolo largo sì', '', BF.guastoNelleAree('"A A C" "A A C" "B B C"'));
-    check('le dodici forme, invece, passano tutte', [], BF.CHIAVI.filter((k) => BF.guastoNelleAree(BF.FORME[k].aree)));
+    check('tutte le forme passano la verifica geometrica', [], BF.CHIAVI.filter((k) => BF.guastoNelleAree(BF.FORME[k].aree)));
 
     // ---- le forme personali
     check('una forma personale valida entra', '', BF.registraForma('mia-test', 'Di prova', '"A A C" "B B C"'));
