@@ -118,7 +118,7 @@ async function scegli(id,value){await c.val(`(()=>{const el=document.getElementB
  const primo=await c.val('NOTES.cur.file');
  const secondo=await c.val(`NOTES.list.find(n=>n.file!==NOTES.cur.file).file`);
  await scegli('noteSelect2',secondo);await aspetta(`appuntiParalleli.stato.cur?.file===${JSON.stringify(secondo)}`);
- assert.equal(await c.val(`document.querySelector('#noteSelect2 option[value='+JSON.stringify(NOTES.cur.file)+']').disabled`),true);
+ assert.equal(await c.val(`document.querySelector('#noteSelect2 option[value='+JSON.stringify(NOTES.cur.file)+']').disabled`),false,'l’appunto aperto nel primo split resta selezionabile per trasferirlo');
  // Il focus può passare alla fonte: Appunta conserva l'ultimo editor usato.
  await c.val('appuntiParalleli.stato.mde.codemirror.focus()');
  await click('#pdfDoc');await aspetta(`!!document.querySelector('#pdfDocPop .pd-voce[data-doc="01 Botanica.pdf"]')`);

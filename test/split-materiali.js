@@ -49,7 +49,9 @@ function harness(){
       this.body='';const eventi={},opzioni={};
       const index=p=>this.body.split('\n').slice(0,p.line).reduce((n,r)=>n+r.length+1,0)+p.ch;
       const cm=this.codemirror={on(t,f){eventi[t]=f;},setOption(k,v){opzioni[k]=v;},getOption:k=>opzioni[k],
-        historySize:()=>({undo:0,redo:0}),clearHistory(){},
+        historySize:()=>({undo:0,redo:0}),clearHistory(){cm.storia={done:[],undone:[]};},
+        getHistory:()=>cm.storia||{done:[],undone:[]},setHistory:h=>{cm.storia=h;},
+        listSelections:()=>[{anchor:cm.getCursor(),head:cm.getCursor()}],setSelections:s=>cm.setCursor(s[0].head),
         getCursor(){return cm.cursor||{line:0,ch:0};},getScrollInfo(){return {top:cm.top||0,left:cm.left||0};},
         setCursor(p,ch){cm.cursor=typeof p==='number'?{line:p,ch:ch||0}:p;if(eventi.cursorActivity)eventi.cursorActivity();},
         scrollTo(x,y){cm.left=x;cm.top=y;},focus(){cm.focalizzato=true;},refresh(){},
@@ -71,7 +73,7 @@ function harness(){
     },
     rename(id,file,title){const n=files[id].find(n=>n.file===file);assert(n);n.title=title;n.file=title+'.md';return {file:n.file,nota:{...n}};},
     async remove(id,file){if(errore)return false;files[id]=files[id].filter(n=>n.file!==file);return true;}};
-  const ctx={console,UiToolbar:{appunti(){}},document:{getElementById:elemento,createElement(){return elemento('creato-'+elementi.size);},documentElement:{dataset:{}},
+  const ctx={console,UiIcone:require('../App/assets/interfaccia/icone'),UiToolbar:{appunti(){}},document:{getElementById:elemento,createElement(){return elemento('creato-'+elementi.size);},documentElement:{dataset:{}},
       addEventListener(t,f){(eventiDom[t]||(eventiDom[t]=[])).push(f);}},
     localStorage:{getItem:k=>dati.get(k)||null,setItem:(k,v)=>dati.set(k,v)},EasyMDE:Mde,
     setTimeout(f,ms){const id=++prossimoTimer;timers.set(id,{f,ms});return id;},clearTimeout:id=>timers.delete(id),
@@ -109,7 +111,9 @@ function harness(){
 }
 async function editor(){
   const h=harness(),a=h.api,s1=h.ctx.NOTES,s2=a.stato;
-  assert.equal(a.open('a.md'),false,'lo stesso file non si modifica da due riquadri');
+  assert.equal(a.open('a.md',{ripristina:true}),false,'il ripristino non duplica il file né lo sposta');
+  assert.equal(a.open('a.md'),true,'la scelta esplicita trasferisce il file');assert.equal(s1.cur,null);assert.equal(s2.cur.file,'a.md');
+  assert(h.ctx.noteOpen('a.md',s1));assert.equal(s2.cur,null);
   assert.equal(a.open('b.md'),true);h.scatti();
   assert.deepEqual(s1.mde.opt.toolbar.map(x=>typeof x==='string'?x:x.name),s2.mde.opt.toolbar.map(x=>typeof x==='string'?x:x.name),'una toolbar identica per entrambe le istanze');
   assert.equal(s2.mde.opt.previewRender('Corpo'),'Corpo');
@@ -121,7 +125,8 @@ async function editor(){
   h.tocca('notePane');h.ctx.noteInserisci('Citazione al primo');
   assert.match(h.files.uno[0].body,/Citazione al primo/);assert(!h.files.uno[1].body.includes('al primo'));
   h.tocca('notePane2');h.visibili(['appunti']);assert.equal(h.ctx.noteStatoAttivo(),s1);
-  h.visibili(['appunti','appunti2']);h.ctx.noteApriAttivo('a.md');assert.equal(h.ctx.noteStatoAttivo(),s1);
+  h.visibili(['appunti','appunti2']);h.ctx.noteApriAttivo('a.md');assert.equal(h.ctx.noteStatoAttivo(),s2);assert.equal(s1.cur,null);
+  h.ctx.noteOpen('a.md',s1);a.open('b.md');
   h.visibili(['appunti2']);h.tocca('notePane');assert.equal(h.ctx.noteStatoAttivo(),s2);
   h.visibili(['appunti','appunti2']);
   s1.mde.codemirror.setCursor({line:1,ch:0});s2.mde.codemirror.setCursor({line:2,ch:0});h.ctx.rigaFlush();
@@ -143,6 +148,29 @@ async function editor(){
   h.errore(true);assert.equal(await h.ctx.noteDelete(s2),false);assert(s2.cur,'eliminazione fallita lascia appunto aperto');
   h.errore(false);assert.equal(await h.ctx.noteDelete(s2),true);assert.equal(s2.cur,null);
   assert(h.ctx.noteMolla());
+}
+async function trasferimento(){
+  const h=harness(),[s1,s2]=h.ctx.noteStati();h.api.open('b.md');h.scatti();
+  s1.mde.value('Origine modificata');s2.mde.value('Destinazione modificata');
+  s1.mde.codemirror.setCursor({line:0,ch:4});s1.mde.codemirror.scrollTo(2,80);
+  const storia={done:[{testo:'prima'}],undone:[]};s1.mde.codemirror.setHistory(storia);
+  const save=h.ctx.noteSave;
+  for(const fallisce of [s1,s2]){
+    h.ctx.noteSave=(silent,s)=>s===fallisce?false:save(silent,s);
+    assert.equal(h.api.open('a.md'),false);assert.equal(s1.cur.file,'a.md');assert.equal(s2.cur.file,'b.md');
+    assert.equal(s1.mde.value(),'Origine modificata');assert.equal(s2.mde.value(),'Destinazione modificata');
+    s1.dirty=s2.dirty=true;
+  }
+  h.ctx.noteSave=save;
+  assert(h.api.open('a.md'));h.scatti();
+  assert.equal(s1.cur,null);assert.equal(s1.mde.value(),'');assert.equal(s2.mde.value(),'Origine modificata');
+  assert.equal(h.files.uno.find(n=>n.file==='b.md').body,'Destinazione modificata');
+  assert.deepEqual(s2.mde.codemirror.getHistory(),storia);assert.equal(s2.mde.codemirror.getCursor().ch,4);
+  assert.equal(s2.mde.codemirror.getScrollInfo().top,80);
+  s1.mde.value('Bozza senza nome');
+  assert.equal(h.ctx.noteOpen('a.md',s1),false);assert.equal(s1.mde.value(),'Bozza senza nome');assert.equal(s2.cur.file,'a.md');
+  h.ctx.noteSvuota(s1);assert(h.ctx.noteOpen('a.md',s1));assert.equal(s2.cur,null);
+  h.ctx.noteMolla();
 }
 async function creazione(){
   const h=harness(),a=h.api,s2=a.stato;a.layout();h.tocca('notePane2');
@@ -258,7 +286,7 @@ async function fonti(){
   deferred['uno/vecchio.pdf']({destroy(){distrutti.push('vecchio');}});await vecchio;
   assert.equal(ctx.FONTE2.file,'');assert(distrutti.includes('vecchio'),'caricamento vecchio non compare nel nuovo zaino');
 }
-editor().then(creazione).then(rinominaSoloMaiuscole).then(eliminazioneInAttesa).then(fonti).then(()=>{
+editor().then(trasferimento).then(creazione).then(rinominaSoloMaiuscole).then(eliminazioneInAttesa).then(fonti).then(()=>{
   for(const m of html.replace(/<!--[\s\S]*?-->/g,'').matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)){
     if(!/\bsrc\s*=/.test(m[1]) && m[2].trim())new vm.Script(m[2]);
   }

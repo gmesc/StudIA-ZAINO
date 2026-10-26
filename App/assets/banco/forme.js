@@ -550,6 +550,15 @@
     s.forma=forma;s.blocchi=contenuti;return s;
   }
 
+  /** Il contenuto viaggia, l'area no: anche fra riquadri di misure diverse
+   * si scambiano solo le assegnazioni. Gli strumenti fuori vista non partecipano. */
+  function scambiaBlocchi(stato,da,a){
+    var s=normalizzaStato(stato),visibili=blocchiDi(s.forma);
+    if(da===a || visibili.indexOf(da)<0 || visibili.indexOf(a)<0)return s;
+    var precedente=s.blocchi[a];s.blocchi[a]=s.blocchi[da];s.blocchi[da]=precedente;
+    return s;
+  }
+
   return {
     FORME: FORME, CHIAVI: CHIAVI, BLOCCHI: BLOCCHI, DI_FABBRICA: DI_FABBRICA,
     blocchiDi: blocchiDi, blocchiInLettura: blocchiInLettura, visibile: visibile, righeDi: righeDi, griglia: griglia,
@@ -557,6 +566,6 @@
     guastoNelleAree: guastoNelleAree, frazione: frazione, frazioneDopo: frazioneDopo,
     normalizzaStato: normalizzaStato, bloccoCon: bloccoCon,
     registraForma: registraForma, dimenticaForma: dimenticaForma,
-    assegna: assegna, cambiaForma: cambiaForma, chiudiBlocco:chiudiBlocco
+    assegna: assegna, cambiaForma: cambiaForma, chiudiBlocco:chiudiBlocco, scambiaBlocchi:scambiaBlocchi
   };
 }));

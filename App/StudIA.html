@@ -658,6 +658,10 @@
   /* La maniglia della sidebar occupa l’angolo del primo riquadro. */
   .bhead[data-primo="1"]{ padding-left:calc(var(--tb-blocco-h) + .5rem); }
   .bnumero{ color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums; }
+  .bhead[draggable="true"]{ cursor:grab; }
+  .bhead:focus-visible{ outline:2px solid var(--focus); outline-offset:-2px; }
+  .blocco[data-banco-drag] .bhead{ cursor:grabbing; }
+  .blocco[data-banco-drop]{ outline:3px solid var(--teal-strong); outline-offset:-3px; }
   /* Stessa ragione della barra della mappa: l'altezza la dà il token, perché
      questo `<select>` è il gemello trasparente del guscio `.tendina.piccola`. */
   .bhead select{ font-size:11px; height:var(--tb-h); max-width:min(60cqw,240px); }
@@ -12189,9 +12193,15 @@ function ensureMde(s){
     if(i===0) tb.insertBefore(frammento,tb.firstChild); else tb.appendChild(frammento);
   });
   UiToolbar.appunti(host);
-  var altri=document.createElement('button');altri.type='button';altri.className='tbtn ncb-more no-disable';altri.textContent='Altri strumenti';altri.setAttribute('aria-expanded','false');
-  altri.onclick=function(){var aperti=tb.classList.toggle('strumenti-aperti');altri.setAttribute('aria-expanded',String(aperti));altri.textContent=aperti?'Meno strumenti':'Altri strumenti';};
-  tb.appendChild(altri);tb.addEventListener('keydown',function(e){if(e.key==='Escape'&&tb.classList.contains('strumenti-aperti')){e.stopPropagation();tb.classList.remove('strumenti-aperti');altri.setAttribute('aria-expanded','false');altri.textContent='Altri strumenti';altri.focus();}});
+  var altri=document.createElement('button');altri.type='button';altri.className='tbtn ncb-more no-disable';
+  function altriStato(aperti){
+    var nome=aperti?'Meno strumenti':'Altri strumenti';
+    altri.innerHTML=UiIcone.svg('chevrons-right')+'<span>'+nome+'</span>';
+    altri.title=nome;altri.setAttribute('aria-label',nome);altri.setAttribute('aria-expanded',String(aperti));
+  }
+  altriStato(false);
+  altri.onclick=function(){altriStato(tb.classList.toggle('strumenti-aperti'));};
+  tb.appendChild(altri);tb.addEventListener('keydown',function(e){if(e.key==='Escape'&&tb.classList.contains('strumenti-aperti')){e.stopPropagation();tb.classList.remove('strumenti-aperti');altriStato(false);altri.focus();}});
   noteCollegaCallout(cm);
   cm.on('changes',function(){ noteCronologiaComandi(s); });
   cm.setOption('extraKeys',Object.assign({},cm.getOption('extraKeys')||{}, {
@@ -12643,15 +12653,39 @@ function noteStatoAttivo(){
 function noteApriAttivo(file){
   return noteOpen(file,noteStatoAttivo());
 }
+/** Il menu sceglie dove lavorare. Prima si salvano entrambi gli appunti;
+ * solo dopo si trasferisce il documento, senza distruggere i due editor. */
+function noteTrasferisci(da,a){
+  if(!a.cur && a.mde && a.mde.value().trim()){
+    toast('C’è testo senza nome: dagli un nome con «+» prima di spostare un appunto qui.',false);return false;
+  }
+  if(!noteFlushStato(a) || !noteFlushStato(da))return false;
+  if(!ensureMde(a))return false;
+  var cm=da.mde.codemirror,corpo=da.mde.value(),storia=cm.getHistory(),selezioni=cm.listSelections(),pos=cm.getScrollInfo();
+  noteChiudiPopup(a);
+  a.versione++;a.cur=Object.assign({},da.cur);a.courseId=da.courseId;a.dirty=false;a.invito=false;a.puntoRicerca=false;
+  noteCaricaCorpo(corpo,a);a.mde.codemirror.setHistory(storia);
+  // Svuotare l'origine viene per ultimo: nessun fallimento di salvataggio la tocca.
+  apertoScrivi(da.suffisso?'appunto2':'appunto','');noteSvuota(da);
+  apertoScrivi(a.suffisso?'appunto2':'appunto',a.cur.file);
+  openEditor(a);refreshNoteUI();
+  a.caricando=true;
+  try{a.mde.codemirror.setSelections(selezioni);a.mde.codemirror.scrollTo(pos.left,pos.top);}
+  finally{a.caricando=false;}
+  try{noteRicorda(a,false);}catch(e){toast('Posizione dell’appunto non salvata: '+e.message,false);}
+  var versione=a.versione;
+  setTimeout(function(){if(a.versione!==versione)return;a.mde.codemirror.refresh();a.mde.codemirror.scrollTo(pos.left,pos.top);},60);
+  a.mde.codemirror.focus();
+  toast('Appunto spostato in questo split.',true);return true;
+}
 function noteOpen(file,s,opt){
   s=s||noteStatoAttivo(); opt=opt||{};
   var corso=corsoAttivo(); if(!file || !corso) return false;
   var altro=noteOccupato(file,corso,s);
   if(altro){
-    toast('Questo appunto è già aperto nell’altro riquadro: continuo da lì.',false);
-    refreshNoteUI();
-    if(!opt.ripristina){ openEditor(altro); if(altro.mde) altro.mde.codemirror.focus(); }
-    return false;
+    // Una vecchia memoria duplicata all'avvio non è una richiesta di spostamento.
+    if(opt.ripristina)return false;
+    var spostato=noteTrasferisci(altro,s);refreshNoteUI();return spostato;
   }
   if(!noteFlushStato(s)) return false;
   if(!opt.creato && !s.cur && s.mde && s.mde.value().trim()){
@@ -13442,7 +13476,7 @@ async function noteRename(s){
 function noteOpt(n,altrove,s){
   s=s||noteStatoAttivo();
   var occupato=noteOccupato(n.file,corsoAttivo(),s);
-  return '<option value="'+escHtml(n.file)+'"'+(occupato?' disabled':'')+'>'+escHtml(altrove?noteEtichettaAltrove(n):noteEtichetta(n))+(occupato?' · aperto nell’altro riquadro':'')+'</option>';
+  return '<option value="'+escHtml(n.file)+'">'+escHtml(altrove?noteEtichettaAltrove(n):noteEtichetta(n))+(occupato?' · sposta qui dall’altro split':'')+'</option>';
 }
 function refreshNoteUI(s){
   bancoAggiornaDocumenti();
@@ -16082,7 +16116,7 @@ function searchGoto(r,q){
   if(r.d.appunto){
     var destinazione=noteStatoAttivo();
     noteOpen(r.d.appunto, destinazione);
-    /* Se era già aperto altrove, noteOpen porta il fuoco a quell’istanza. */
+    /* La ricerca segue il documento anche se il trasferimento non è riuscito. */
     destinazione=noteStati().find(function(s){ return s.cur && s.cur.file===r.d.appunto && s.courseId===corsoAttivo(); });
     if(destinazione) noteVaiAlPunto(q, destinazione);
     return;
@@ -17906,9 +17940,13 @@ function bancoSegnaAttivo(){
     el.dataset.attivo=b===attivo ? '1' : '0';
     if(!h) return;
     h.dataset.primo=n===1?'1':'0';
+    h.draggable=v.length>1;h.tabIndex=v.length>1?0:-1;h.setAttribute('role','group');
+    h.title=v.length>1?'Trascina la testata su un altro split per scambiare i posti. Da tastiera: Alt + frecce.':'';
+    h.setAttribute('aria-label','Split '+n+': '+bancoNomeStrumento(bancoStrumentoIn(b)));
+    if(v.length>1)h.setAttribute('aria-keyshortcuts','Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown');else h.removeAttribute('aria-keyshortcuts');
     var numero=h.querySelector('.bnumero');
     if(!numero){ numero=document.createElement('span'); numero.className='bnumero'; h.prepend(numero); }
-    numero.textContent=n ? String(n) : ''; numero.title='Riquadro '+n+' in ordine di lettura';
+    numero.textContent=n ? String(n) : ''; numero.title='Riquadro '+n+' in ordine di lettura'+(v.length>1?' · Trascina per scambiare posto con un altro split':'');
     numero.setAttribute('aria-label',numero.title+(b===attivo?' · Riquadro attivo':''));
     var chiudi=h.querySelector('.bchiudi');
     if(!chiudi){chiudi=document.createElement('button');chiudi.type='button';chiudi.className='tbtn bchiudi';UiIcone.imposta(chiudi,'x');h.appendChild(chiudi);}
@@ -18266,6 +18304,13 @@ function bancoAssegna(blocco, strumento){
   if(!bancoPronto()) return;
   BANCO.stato=BancoForme.assegna(bancoStato(), blocco, strumento);
   bancoSalva(); bancoDisegna();
+}
+function bancoScambia(da,a){
+  var visibili=bancoBlocchiVisibili();
+  if(da===a || !visibili.includes(da) || !visibili.includes(a))return false;
+  closePops();BANCO.stato=BancoForme.scambiaBlocchi(bancoStato(),da,a);
+  bancoZoomScrivi(null);BANCO.attivo=a;bancoSalva();bancoDisegna();
+  bancoAttivaBlocco(a);return true;
 }
 /**
  * «Fa' in modo che questo strumento sia a schermo». La chiamano `openPdf`,
@@ -18639,6 +18684,55 @@ document.addEventListener('dblclick', function(e){
   var blocco=h.closest('.blocco'); if(!blocco) return;
   bancoZoom(blocco.dataset.blocco);
 });
+
+/* Si trascinano le testate, non i documenti. Il MIME privato e lo stato della
+   sessione evitano che CodeMirror riceva testo o che un file diventi uno split. */
+(function(){
+  var gesto=null,escluso=false,mime='application/x-studia-split';
+  function blocco(e){return e.target.closest && e.target.closest('#banco .blocco:not([hidden])');}
+  function pulisci(){
+    gesto=null;document.querySelectorAll('[data-banco-drop],[data-banco-drag]').forEach(function(el){delete el.dataset.bancoDrop;delete el.dataset.bancoDrag;});
+  }
+  function interno(e){return gesto && e.dataTransfer && Array.from(e.dataTransfer.types).includes(mime);}
+  function valido(){return gesto && gesto.corso===corsoAttivo() && gesto.stato===JSON.stringify(bancoStato());}
+  document.addEventListener('pointerdown',function(e){escluso=!!e.target.closest('button,select,input,a,.tendina');},true);
+  document.addEventListener('dragstart',function(e){
+    var h=e.target.closest && e.target.closest('.bhead'),b=blocco(e);
+    if(!h || !b || !h.draggable || !e.dataTransfer)return;
+    if(escluso){e.preventDefault();return;}
+    closePops();gesto={da:b.dataset.blocco,corso:corsoAttivo(),stato:JSON.stringify(bancoStato())};
+    e.dataTransfer.setData(mime,gesto.da);e.dataTransfer.effectAllowed='move';
+    e.dataTransfer.setDragImage(h,Math.min(e.clientX-h.getBoundingClientRect().left,h.offsetWidth),h.offsetHeight/2);
+    b.dataset.bancoDrag='1';
+  });
+  window.addEventListener('dragover',function(e){
+    if(!interno(e))return;
+    e.preventDefault();e.stopPropagation();
+    document.querySelectorAll('[data-banco-drop]').forEach(function(el){delete el.dataset.bancoDrop;});
+    var b=blocco(e),ok=valido() && b && b.dataset.blocco!==gesto.da;
+    e.dataTransfer.dropEffect=ok?'move':'none';if(ok)b.dataset.bancoDrop='1';
+  },true);
+  window.addEventListener('drop',function(e){
+    if(!interno(e))return;
+    e.preventDefault();e.stopPropagation();var b=blocco(e),da=gesto.da,ok=valido();pulisci();
+    if(ok && b)bancoScambia(da,b.dataset.blocco);
+  },true);
+  window.addEventListener('dragleave',function(e){
+    if(gesto && !e.relatedTarget)document.querySelectorAll('[data-banco-drop]').forEach(function(el){delete el.dataset.bancoDrop;});
+  });
+  window.addEventListener('dragend',pulisci);
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape' && gesto){pulisci();return;}
+    var h=e.target.closest && e.target.closest('.bhead');
+    if(!h || e.target!==h || !e.altKey || !/^Arrow(Left|Right|Up|Down)$/.test(e.key))return;
+    e.preventDefault();var ordine=BancoForme.blocchiInLettura(bancoStato().forma),da=h.closest('.blocco').dataset.blocco;
+    var a=ordine[ordine.indexOf(da)+(/Left|Up/.test(e.key)?-1:1)];
+    if(a && bancoScambia(da,a)){
+      document.querySelector('.blocco[data-blocco="'+a+'"] .bhead').focus();
+      toast('Split spostato nella posizione '+(ordine.indexOf(a)+1)+'.',true);
+    }
+  });
+})();
 
 /* Trascinamento dei divisori. Le frazioni si salvano come frazioni, mai in
    pixel: passando a un monitor più largo il quaderno resterebbe una fessura. */
