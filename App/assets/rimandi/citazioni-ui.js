@@ -6,8 +6,18 @@
  function messaggio(t){document.getElementById('citazioneStato').textContent=t;}
  function pulisci(){
   sequenza++;var s=stato;stato=null;
+  selMenuChiudi();selBarraChiudi();
+  menuNelDialogo(false);
   if(s){s.viewer?.setDocument(null);s.task?.destroy().catch(function(){});}
   document.getElementById('citazionePagine').replaceChildren();
+ }
+ function menuNelDialogo(aperto){
+  // Un dialogo modale sta nel top layer: nessuno z-index del body può superarlo.
+  var dialog=document.getElementById('citazioneDialog');
+  ['selAncora','selBarra','selMenu'].forEach(function(id){
+   var el=document.getElementById(id);if(aperto)dialog.append(el);
+   else if(el.parentElement===dialog)document.body.append(el);
+  });
  }
  function chiudi(){document.getElementById('citazioneDialog').close();}
  function controlli(){
@@ -33,6 +43,12 @@
   var file=a.closest('#pdfPane2')?FONTE2.file:ANTEPRIMA.file;
   return file?{file:file,pagina:Number(a.dataset.pageNumber)}:null;
  };
+ window.citazioneSelezione=function(range){
+  var root=document.getElementById('citazionePagine');
+  if(!stato?.doc||!range||!root.contains(range.startContainer)||!root.contains(range.endContainer))return null;
+  var testo=testoSelezionePdf(range);
+  return testo?{range:range,testo:testo,soloCitazione:true}:null;
+ };
  // Il secondo lettore permette la copia, senza esporre gli strumenti di annotazione del primo.
  document.addEventListener('contextmenu',function(e){
   if(!e.target.closest('#pdfPane2'))return;
@@ -43,7 +59,7 @@
  window.citazioneZainoApri=async function(rimando){
   closePops();pulisci();var turno=sequenza,dialog=document.getElementById('citazioneDialog');
   document.getElementById('citazioneTitolo').textContent='Citazione PDF';
-  if(!dialog.open)dialog.showModal();messaggio('Controllo la fonte…');controlli();
+  if(!dialog.open)dialog.showModal();menuNelDialogo(true);messaggio('Controllo la fonte…');controlli();
   try{
    var r=await window.vault.citazioni.risolvi(rimando);
    if(turno!==sequenza||!dialog.open)return;
@@ -73,11 +89,11 @@
  document.getElementById('citazionePrima').onclick=function(){if(stato?.doc)stato.viewer.currentPageNumber--;};
  document.getElementById('citazioneDopo').onclick=function(){if(stato?.doc)stato.viewer.currentPageNumber++;};
  document.getElementById('citazioneCopia').addEventListener('mousedown',function(e){e.preventDefault();});
- document.getElementById('citazioneCopia').onclick=async function(){
+ window.citazioneCopiaDaRange=async function(range){
   var s=stato;if(!s?.doc)return;
-  var sel=window.getSelection(),testo='',pagina=s.viewer.currentPageNumber;
-  if(sel?.rangeCount&&!sel.isCollapsed){
-   var range=sel.getRangeAt(0),n=range.startContainer,e=range.endContainer;
+  var testo='',pagina=s.viewer.currentPageNumber;
+  if(citazioneSelezione(range)){
+   var n=range.startContainer,e=range.endContainer;
    var a=(n.nodeType===1?n:n.parentElement).closest('#citazionePagine .page');
    var b=(e.nodeType===1?e:e.parentElement).closest('#citazionePagine .page');
    if(a&&b){if(a!==b){toast('Seleziona un passaggio di una sola pagina per citarlo.',false);return;}pagina=Number(a.dataset.pageNumber);testo=testoSelezionePdf(range);}
@@ -86,6 +102,9 @@
   var ref=RimandiSintassi.leggi(s.info.rimando),url=RimandiSintassi.scriviPdfZaino(ref.zainoId,ref.sourceId,pagina,ref.revision);
   var md=RimandiSintassi.citazionePdfZaino({...s.info,pagina:pagina,rimando:url},testo);
   try{await navigator.clipboard.writeText(md);messaggio('Citazione copiata. Chiudi l’anteprima e incollala nel tuo appunto.');}catch(e){messaggio('Copia non riuscita: '+e.message);}
+ };
+ document.getElementById('citazioneCopia').onclick=function(){
+  var sel=window.getSelection();citazioneCopiaDaRange(sel?.rangeCount&&!sel.isCollapsed?sel.getRangeAt(0):null);
  };
  document.getElementById('citazioneVai').onclick=function(){
   var r=stato?.info;if(!r)return;chiudi();cambiaZaino(r.zaino);

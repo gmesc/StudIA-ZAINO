@@ -13805,6 +13805,8 @@ function selezioneAttiva(){
   var s=window.getSelection && window.getSelection();
   if(!s || !s.rangeCount || s.isCollapsed) return null;
   var r=s.getRangeAt(0);
+  // La consultazione esterna non eredita le azioni né la fonte del lettore sottostante.
+  var cit=window.citazioneSelezione?.(r);if(cit)return cit;
   var sup=evSupDaRange(r);
   if(!sup) return null;
   /* Mentre le forbici sono accese, trascinare sulla pagina disegna un
@@ -13969,7 +13971,7 @@ document.addEventListener('contextmenu', function(e){
  * una delle due dimentica di fare un pezzo.
  */
 function selAzione(az, testo, range){
-  if(az==='cita-pdf'){var origine=citazioneOriginePdf(range);if(origine)citazioneCopiaPdf(zainoAttivo(),origine.file,origine.pagina,testo);else toast('Seleziona un passaggio di una sola pagina per citarlo.',false);return;}
+  if(az==='cita-pdf'){if(window.citazioneSelezione?.(range)){citazioneCopiaDaRange(range);return;}var origine=citazioneOriginePdf(range);if(origine)citazioneCopiaPdf(zainoAttivo(),origine.file,origine.pagina,testo);else toast('Seleziona un passaggio di una sola pagina per citarlo.',false);return;}
   if(az==='interrogami'){var sup=evSupDaRange(range);window.zainoInterrogami?.({text:testo,file:sup && sup.tipo==='pdf'?ANTEPRIMA.file:''});return;}
   if(az==='copia'){
     if(!navigator.clipboard){ toast('Copia non disponibile',false); return; }
@@ -14368,6 +14370,7 @@ function evSupDaRange(range){
          evTextLayerDi(range.endContainer) ||
          evTextLayerDi(range.commonAncestorContainer);
   if(tl){
+    if(tl.closest('#citazioneDialog'))return null;
     var pag=tl.closest('.page');
     var n=pag ? parseInt(pag.getAttribute('data-page-number'),10) : 0;
     if(!n || typeof ANTEPRIMA==='undefined' || ANTEPRIMA.tipo!=='pdf' || !ANTEPRIMA.file) return null;

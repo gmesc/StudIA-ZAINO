@@ -5,6 +5,7 @@ async function wait(expr){for(let i=0;i<180;i++){if(await c.val(expr))return;awa
  await c.collega();await wait(`typeof zainiMenuApri==='function'&&!!zainoAttivo()`);await c.partiPulito();
  const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
  let fileCreato;
+ const locale=path.join(vault,'Zaini/storia/MATERIALI/PDF/01 Fonte locale.pdf');
  const letture=['biologia','storia'].map(z=>{const p=path.join(vault,'Zaini',z,'_lettura.json');return [p,fs.existsSync(p)?fs.readFileSync(p):null];});
  const prima=await c.val(`({z:zainoAttivo(),banco:bancoStato(),storage:{...localStorage},tema:document.documentElement.dataset.theme})`);
  const gruppo=path.join(vault,'Zaini/biologia/MATERIALI/PDF/Gruppi/Nuovi'),extra=path.join(gruppo,'03 Aggiunta.pdf');fs.mkdirSync(gruppo,{recursive:true});
@@ -30,6 +31,9 @@ async function wait(expr){for(let i=0;i<180;i++){if(await c.val(expr))return;awa
   const cita=await c.val(`window.vault.citazioni.crea('biologia','01 Botanica.pdf',2,'Botanica - pagina 2')`);
   assert(cita.markdown?.includes('Biologia › 01 Botanica.pdf · p. 2'),JSON.stringify(cita));
   await c.val(`cambiaZaino('storia',true);bancoForma('due-col');bancoAssegna('A','appunti');bancoAssegna('C','fonte')`);
+  fs.copyFileSync(path.join(vault,'Zaini/biologia/MATERIALI/PDF/02 Biologia cellulare.pdf'),locale);
+  await c.val(`openPdf('01 Fonte locale.pdf',1,'Fonte locale',true)`);
+  await wait(`!!document.querySelector('#pdfHost .page[data-page-number="1"] .textLayer span')`);
   const nota=await c.val(`window.vault.notes.save('storia',null,{title:'Citazione incrociata'},${q(cita.markdown)})`);assert(!nota.error,JSON.stringify(nota));fileCreato=path.join(vault,'Zaini/storia/APPUNTI',nota.file);
   await c.val(`notesReload();noteOpen(${q(nota.file)},NOTES)`);await wait(`NOTES.cur?.file===${q(nota.file)}`);
   // Lo stesso parser usato nell'anteprima e nella stampa deve mantenere il riferimento qualificato.
@@ -41,6 +45,25 @@ async function wait(expr){for(let i=0;i<180;i++){if(await c.val(expr))return;awa
   await wait(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span')`);
   assert((await c.val(`document.getElementById('citazioneTitolo').textContent`)).includes('Biologia'));
   assert(await c.val(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] canvas').getBoundingClientRect().height`));
+  // Il PDF locale rimane sotto il dialogo: la selezione esterna non può usare il suo menu.
+  await c.val(`window.__selezionaCitazione=()=>{const el=document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span'),r=document.createRange();r.selectNodeContents(el);getSelection().removeAllRanges();getSelection().addRange(r);const b=r.getBoundingClientRect();el.dispatchEvent(new MouseEvent('mouseup',{bubbles:true,button:0,clientX:b.x+4,clientY:b.y+4}));};window.__selezionaCitazione()`);
+  await wait(`document.getElementById('selBarra').classList.contains('aperta')`);
+  shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-citazione-menu.png',Buffer.from(shot.result.data,'base64'));
+  const livello=await c.val(`(()=>{const b=document.querySelector('#selBarra .ctx-item'),r=b.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return {raggiungibile:!!hit?.closest('#selBarra'),sopra:hit?.outerHTML.slice(0,180),contenitore:document.getElementById('selBarra').parentElement.id};})()`);
+  assert(livello.raggiungibile,'Menu della citazione davanti al PDF e cliccabile: '+JSON.stringify(livello));
+  assert.deepEqual(await c.val(`[...document.querySelectorAll('#selBarra .ctx-item')].map(b=>b.textContent)`),['Copia citazione','Copia']);
+  assert.equal(await c.val(`evSupDaRange(SELMENU.range)`),null,'nessuna annotazione sulla fonte sottostante');
+  await c.val(`window.__citazioneCopiata=''`);await c.clicca('#selBarra [data-az="cita-pdf"]');
+  await wait(`window.__citazioneCopiata?.includes('Biologia › 01 Botanica.pdf · p. 2')`);
+  assert(!(await c.val('window.__citazioneCopiata')).includes('Fonte locale'));
+  // Anche senza un PDF sottostante, il tasto destro apre il menu dentro il dialogo.
+  await c.val(`closePdf();window.__selezionaCitazione()`);await wait(`selBarraAperta()`);
+  const punto=await c.val(`(()=>{const r=getSelection().getRangeAt(0).getBoundingClientRect();return {x:r.x+4,y:r.y+4};})()`);
+  for(const type of ['mousePressed','mouseReleased'])await c.invia('Input.dispatchMouseEvent',{type,...punto,button:'right',clickCount:1});
+  await wait(`selMenuAperto()`);
+  assert(await c.val(`(()=>{const b=document.querySelector('#selMenu [data-az="copia"]'),r=b.getBoundingClientRect();return !!document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('#selMenu');})()`));
+  await c.val(`window.__citazioneCopiata=''`);await c.clicca('#selMenu [data-az="copia"]');
+  await wait(`window.__citazioneCopiata==='Botanica - pagina 2'`);
   await c.val(`(()=>{const r=document.createRange();r.selectNodeContents(document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span'));getSelection().removeAllRanges();getSelection().addRange(r);window.__citazioneCopiata='';})()`);
   await c.clicca('#citazioneCopia');await wait(`window.__citazioneCopiata?.includes('> Botanica - pagina 2')`);
   shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-citazione-anteprima.png',Buffer.from(shot.result.data,'base64'));
@@ -50,6 +73,7 @@ async function wait(expr){for(let i=0;i<180;i++){if(await c.val(expr))return;awa
   assert.equal(await c.val('zainoAttivo()'),'storia');
   await wait(`document.getElementById('citazioneStato').textContent.includes('La fonte è cambiata')`);
   assert.equal(await c.val(`document.querySelectorAll('#citazionePagine canvas').length`),0);await c.clicca('#citazioneChiudi');
+  await wait(`document.getElementById('selBarra').parentElement===document.body&&document.getElementById('selMenu').parentElement===document.body`);
   // Il selettore dell'editor legge A ma scrive nell'appunto B catturato all'apertura.
   await c.val(`apriMateriali(document.querySelector('#noteHost .ncb-mat'),NOTES)`);await wait(`!!document.getElementById('matZaino')`);
   await c.val(`document.getElementById('matZaino').value='biologia';document.getElementById('matZaino').dispatchEvent(new Event('change',{bubbles:true}))`);
@@ -64,6 +88,7 @@ async function wait(expr){for(let i=0;i<180;i++){if(await c.val(expr))return;awa
   await c.clicca('#noteClose');
  }finally{
   fs.rmSync(extra,{force:true});
+  fs.rmSync(locale,{force:true});
   await c.val(`if(document.getElementById('citazioneDialog').open)document.getElementById('citazioneDialog').close();if(window.__askCross)askText=window.__askCross;if(window.__copiaPrima)navigator.clipboard.writeText=window.__copiaPrima;closePops();localStorage.clear();Object.entries(${q(prima.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));cambiaZaino(${q(prima.z)},true);BANCO.stato=${q(prima.banco)};bancoSalva();bancoDisegna();document.documentElement.dataset.theme=${q(prima.tema)}`);
   if(fileCreato)fs.rmSync(fileCreato,{force:true});
   await c.val(`closePdf();clearTimeout(LETTURA.timer);LETTURA.timer=null;LETTURA.attesa=null;`);await c.pausa(150);
