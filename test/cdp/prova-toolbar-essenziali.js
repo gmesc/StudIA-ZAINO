@@ -5,7 +5,7 @@ async function wait(expr){for(let i=0;i<160;i++){if(await c.val(expr))return;awa
 (async()=>{
  await c.collega();await wait(`typeof bancoStato==='function' && !!window.zainoStudio`);
  assert((await c.val('window.vault.path')).includes('studia-zaino-prova-'));
- const prima=await c.val(`({banco:bancoStato(),attivo:BANCO.attivo,tema:document.documentElement.dataset.theme,storage:{...localStorage}})`);
+ const prima=await c.val(`({banco:bancoStato(),attivo:BANCO.attivo,tema:document.documentElement.dataset.theme,organizza:{...ZNAV.organizza},storage:{...localStorage}})`);
  const evFile=path.join(await c.val('window.vault.path'),'Zaini/biologia/APPUNTI/_evidenze.json'),evPrima=fs.existsSync(evFile)?fs.readFileSync(evFile):null;
  try{
   await c.partiPulito();await c.val(`cambiaZaino('storia',true);cambiaZaino('biologia',true);bancoForma('due-col');bancoAssegna('A','fonte');bancoAssegna('C','appunti')`);
@@ -14,6 +14,19 @@ async function wait(expr){for(let i=0;i<160;i++){if(await c.val(expr))return;awa
   await wait(`NOTES.list.length>0 && !!NOTES.mde`);
   const file=await c.val(`NOTES.list[0].file`);await c.val(`noteOpen(${q(file)},NOTES)`);
   const body=await c.val(`NOTES.mde.value()`);assert(body);
+  await c.val(`ZNAV.organizza.fonti=true;ZNAV.organizza.media=true;zainoNavAggiorna()`);
+  await wait(`!!document.querySelector('[data-sezione="fonti"] .zs-tit [data-znav="crea"]')`);
+  assert(await c.val(`['fonti','media'].every(s=>Array.from(document.querySelectorAll('[data-sezione="'+s+'"] .zs-tit .zs-azioni button')).map(b=>b.dataset.znav).join(',')==='crea,ordina,organizza')`),'sidebar: + prima di A–Z, ordinamento accanto alla matita');
+  await c.val(`ZNAV.organizza.fonti=false;ZNAV.organizza.media=false;zainoNavAggiorna()`);
+  const quaderni=await c.val(`(()=>{ensureMde(noteStati()[1]);return ['noteSelect','noteSelect2'].map(id=>{const s=document.getElementById(id),g=s.closest('.tendina');return {id,icona:!!g.querySelector('.tlab svg[data-icona="notebook"]'),testo:g.querySelector('.tlab').textContent,tooltip:g.title,nome:s.getAttribute('aria-label'),select:s.getBoundingClientRect().width,guscio:g.getBoundingClientRect().width};});})()`);
+  assert(quaderni.every(g=>g.icona&&!g.testo.trim()&&g.tooltip.includes('Quaderno')&&g.nome&&g.select<=g.guscio+1),'Quaderno: icona, tooltip e area cliccabile confinata: '+JSON.stringify(quaderni));
+  const layout=await c.val('bancoStato().col');
+  for(const larghezza of [420,280]){
+   await c.val(`BANCO.stato.col=1-${larghezza}/document.getElementById('banco').getBoundingClientRect().width;bancoDisegna()`);await c.pausa(150);
+   assert(await c.val(`(()=>{const b=document.querySelector('#noteHost .ncb-more');return !!b.getClientRects().length&&!!b.querySelector('svg[data-icona="chevrons-right"]')&&getComputedStyle(b.querySelector('svg')).display!=='none'&&!b.textContent.trim()&&b.title==='Altri strumenti'&&b.getAttribute('aria-label')===b.title;})()`),'toolbar a '+larghezza+'px: solo doppio chevron con tooltip');
+  }
+  const compatta=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-toolbar-quaderno.png',Buffer.from(compatta.result.data,'base64'));
+  await c.val(`BANCO.stato.col=${q(layout)};bancoDisegna()`);
   assert(await c.val(`['.bold','.italic','.heading','.quote','.unordered-list','.ordered-list','.link','.code','.preview','.side-by-side','.ncb-undo','.ncb-redo','.ncb-callout','.ncb-emoji','.ncb-guida','.ncb-cita','.ncb-mat'].every(sel=>{const b=document.querySelector('#noteHost .editor-toolbar '+sel);return b?.querySelector('svg.ui-icon')&&b.title;})`),'Appunti: tutti i simboli sono SVG con tooltip');
   assert(await c.val(`(()=>{const b=document.querySelector('#noteHost .editor-toolbar .bold');return b.title.startsWith('Grassetto (')&&b.getAttribute('aria-label')===b.title;})()`),'tooltip e nome accessibile in italiano, con scorciatoia');
   assert(await c.val(`!!document.querySelector('#menuBtn img.oi') && !!document.querySelector('#creditsBtn .btn-emoji') && !!document.querySelector('#modoBtn img.oi')`),'fantasma, mago e marchio conservati');
@@ -89,6 +102,6 @@ async function wait(expr){for(let i=0;i<160;i++){if(await c.val(expr))return;awa
   assert.deepEqual(await c.val(`[...document.querySelectorAll('button svg:not(.ui-icon)')].map(s=>s.closest('button').id)`),[],'i simboli dei comandi provengono tutti da Lucide');
  }finally{
   if(evPrima)fs.writeFileSync(evFile,evPrima);else fs.rmSync(evFile,{force:true});
-  await c.val(`document.getElementById('settingsClose').click();if(window.__toolbarFlush)noteFlushStato=window.__toolbarFlush;localStorage.clear();Object.entries(${q(prima.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));EVIDENZE.viste=null;evidenzeCarica();KW.ordine={criterio:'alfa',verso:'asc'};keywordDisegna();BANCO.stato=${q(prima.banco)};BANCO.attivo=${q(prima.attivo)};document.documentElement.dataset.theme=${q(prima.tema)};bancoSalva();bancoDisegna()`);}
+  await c.val(`document.getElementById('settingsClose').click();if(window.__toolbarFlush)noteFlushStato=window.__toolbarFlush;localStorage.clear();Object.entries(${q(prima.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));ZNAV.organizza=${q(prima.organizza)};zainoNavAggiorna();EVIDENZE.viste=null;evidenzeCarica();KW.ordine={criterio:'alfa',verso:'asc'};keywordDisegna();BANCO.stato=${q(prima.banco)};BANCO.attivo=${q(prima.attivo)};document.documentElement.dataset.theme=${q(prima.tema)};bancoSalva();bancoDisegna()`);}
  console.log('toolbar essenziali: trasparenza, chiusura documenti, strumenti e SVG OK');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

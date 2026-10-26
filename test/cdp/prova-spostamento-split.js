@@ -54,7 +54,7 @@ async function trascina(da,a){
   console.log('  ok  drag nativo, dimensioni della destinazione, tastiera e annullamento');
 
   await c.val(`BANCO.stato.col=.25;bancoSalva();bancoDisegna()`);await c.pausa(250);
-  assert(await c.val(`(()=>{const b=document.querySelector('#noteHost .ncb-more');return !!b.getClientRects().length&&!!b.querySelector('svg[data-icona="chevrons-right"]')&&getComputedStyle(b.querySelector('span')).display==='none'&&b.title==='Altri strumenti';})()`),'toolbar stretta: doppio chevron SVG, tooltip e testo nascosto');
+  assert(await c.val(`(()=>{const b=document.querySelector('#noteHost .ncb-more');return !!b.getClientRects().length&&!!b.querySelector('svg[data-icona="chevrons-right"]')&&!b.textContent.trim()&&b.title==='Altri strumenti';})()`),'toolbar stretta: doppio chevron SVG, tooltip e testo nascosto');
   await c.clicca('#noteHost .ncb-more');assert.equal(await c.val(`document.querySelector('#noteHost .ncb-more').getAttribute('aria-expanded')`),'true');
   const immagine=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-spostamento-toolbar.png',Buffer.from(immagine.result.data,'base64'));
   await c.val(`document.querySelector('#noteHost .ncb-more').dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))`);

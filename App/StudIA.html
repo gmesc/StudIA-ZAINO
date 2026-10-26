@@ -1286,7 +1286,6 @@
      gli altri e va a capo solo se non ci sta — che è ciò che fa `.tbar`. */
   :is(#noteHost,#noteHost2) .editor-toolbar .notectl{ display:flex; align-items:center; gap:0;
     flex:0 0 auto; min-width:0; }
-  :is(#noteSelect,#noteSelect2){ flex:0 1 auto; min-width:70px; }
   /* Sotto una certa larghezza i separatori sono spazio sprecato. La soglia guarda il
      RIQUADRO, non la finestra: il dock può essere stretto con la finestra larga. */
   :is(#notePane,#notePane2){ container-type:inline-size; container-name:appunti; }
@@ -1296,12 +1295,7 @@
   }
   @container appunti (max-width:360px){
     :is(#noteHost,#noteHost2) .editor-toolbar .notectl .tbsep{ margin:0 .2rem; }   /* riquadro strettissimo: gruppi più fitti */
-    :is(#noteSelect,#noteSelect2){ max-width:120px; }
   }
-  /* Idem: misure dal token. ⚠️ Prima questi bottoni erano senza bordo e alti
-     26px, quelli della mappa bordati e alti 30: due barre che fanno lo stesso
-     mestiere e sembravano di due app diverse. */
-  :is(#noteSelect,#noteSelect2){ max-width:clamp(90px,26%,190px); }
   /* l'appunto aperto non è di questo capitolo: dirlo, invece di lasciarlo capire */
   :is(#noteHost,#noteHost2) .editor-toolbar .notectl .nwhere{ font-size:10px; letter-spacing:.04em; white-space:nowrap;
     color:var(--yellow-strong); border:1px solid var(--line); padding:.05rem .3rem; cursor:help;
@@ -9404,7 +9398,7 @@ function tendinaViva(sel, opt){
   if(!sel || sel.dataset.tendina==='1') return;
   var o=opt||{};
   var guscio=document.createElement('span');
-  guscio.className='tendina'+(o.fissa?'':' viva')+(o.piccola?' piccola':'');
+  guscio.className='tendina'+(o.fissa?'':' viva')+(o.piccola?' piccola':'')+(o.icona?' tendina-icona':'');
   var lab=document.createElement('span'); lab.className='tlab';
   sel.parentNode.insertBefore(guscio, sel);
   guscio.appendChild(lab); guscio.appendChild(sel);
@@ -9419,7 +9413,8 @@ function tendinaViva(sel, opt){
        tagliato non direbbe niente.
        Etichetta VIVA: dice che cosa è scelto, e serve dove la tendina è l'unico
        posto in cui lo si legge — la testata di un blocco del banco. */
-    lab.textContent=o.fissa || t;
+    if(o.icona) lab.innerHTML=UiIcone.svg(o.icona);
+    else lab.textContent=o.fissa || t;
     /* Il `title` porta comunque il testo intero: l'etichetta o è fissa o è
        tagliata, e su un nome di mappa lungo il taglio cade quasi sempre dove
        serviva leggere. */
@@ -11181,8 +11176,8 @@ function znavRaccolta(sezione, titolo, voci, vuoto, errore, erroreGruppi){
     }).join('')+'</ul>';
   }
   var h='<section class="zs-raccolta" data-sezione="'+sezione+'"><div class="zs-tit"><button type="button" class="zs-collapse" data-znav="sezione" aria-expanded="'+!chiusa+'" aria-controls="zs-corpo-'+sezione+'" title="'+(chiusa?'Espandi ':'Comprimi ')+titolo+'"><span aria-hidden="true">'+UiIcone.svg(chiusa?'chevron-right':'chevron-down')+'</span><span>'+titolo+'</span><span class="zs-n">'+voci.length+'</span></button><span class="zs-azioni">'+
-    znavComandoHtml('ordina',ZNAV.ordine[sezione]==='az'?'Z–A':'A–Z','Ordina '+(ZNAV.ordine[sezione]==='az'?'Z–A':'A–Z'),'',!modificabile)+
     (edit?znavComandoHtml('crea','+',selezione.length?'Crea gruppo con '+selezione.length+' voci selezionate':'Crea gruppo di '+titolo.toLowerCase(),'data-aiuto="'+znavEsc(aiuto)+'" aria-describedby="znavAiuto"'):'')+
+    znavComandoHtml('ordina',ZNAV.ordine[sezione]==='az'?'Z–A':'A–Z','Ordina '+(ZNAV.ordine[sezione]==='az'?'Z–A':'A–Z'),'',!modificabile)+
     '<button type="button" class="tbtn" data-znav="organizza" title="Organizza '+titolo.toLowerCase()+'" aria-label="Organizza '+titolo.toLowerCase()+'" aria-pressed="'+edit+'"'+(erroreGruppi||errore?' disabled':'')+'>'+UiIcone.svg(edit?'check':'pencil')+'</button></span></div><div class="zs-corpo" id="zs-corpo-'+sezione+'"'+(chiusa?' hidden':'')+'>';
   if(errore) return h+'<div class="zs-vuoto zs-no">'+UiIcone.svg('triangle-alert','Errore di lettura')+' '+znavEsc(errore)+'</div></div></section>';
   if(erroreGruppi) h+='<div class="zs-vuoto zs-no">Organizzazione non leggibile: '+znavEsc(erroreGruppi)+'</div>';
@@ -12196,7 +12191,7 @@ function ensureMde(s){
   var altri=document.createElement('button');altri.type='button';altri.className='tbtn ncb-more no-disable';
   function altriStato(aperti){
     var nome=aperti?'Meno strumenti':'Altri strumenti';
-    altri.innerHTML=UiIcone.svg('chevrons-right')+'<span>'+nome+'</span>';
+    altri.innerHTML=UiIcone.svg('chevrons-right');
     altri.title=nome;altri.setAttribute('aria-label',nome);altri.setAttribute('aria-expanded',String(aperti));
   }
   altriStato(false);
@@ -13492,7 +13487,7 @@ function refreshNoteUI(s){
      quelli del corso, e il nome di quello aperto vive nel `title` e nel testo
      stesso dell'appunto. Un'etichetta viva qui diceva «nessun appunto» a
      schermo, cioè occupava un bottone per annunciare un vuoto. */
-  tendinaViva(sel, { piccola:true, fissa:'Quaderno' });
+  tendinaViva(sel, { piccola:true, fissa:'Quaderno', icona:'notebook' });
   var ctx=curCtx();
   var g=noteGroups(NOTES.list, ctx, s.cur);
   /* Nello zaino «qui» non vuol dire «questo capitolo» ma «questo documento» —
@@ -13523,6 +13518,7 @@ function refreshNoteUI(s){
     sel.value=''; sel.title=NOTES.listError ? ('Lettura degli appunti fallita: '+NOTES.listError)
               : (zaino ? 'Appunti di questo zaino' : 'Appunti di questo capitolo');
   }
+  sel.title='Apri un appunto · '+sel.title;
   // dove sta l'appunto aperto, quando non è di quello che stai leggendo
   var d=noteEl('noteDirty',s); if(d) d.hidden=!s.dirty;
   ['noteSave','noteRen','noteDel','noteStampa','notePdf','noteClose'].forEach(function(id){ var b=noteEl(id,s); if(b) b.disabled=!s.cur; });

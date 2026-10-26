@@ -12,7 +12,9 @@ async function click(sel){
  // una corsa su otto moriva in `null.scrollIntoView` o in un'attesa scaduta su
  // `NOTES.mde`, cioè dicendo un sintomo diverso dalla stessa causa. La guardia
  // sta QUI e non sulla singola chiamata: i click di questa prova sono venti.
- await aspetta(`!!document.querySelector(${JSON.stringify(sel)})`);
+ // Lo streaming può già mostrare la risposta mentre i suoi comandi sono ancora
+ // disabilitati. Un click in quel momento non parte e sporca le prove successive.
+ await aspetta(`(()=>{const b=document.querySelector(${JSON.stringify(sel)});return !!b&&!b.disabled;})()`);
  const dove=()=>c.val(`(()=>{const e=document.querySelector(${JSON.stringify(sel)});if(!e)return '';const r=e.getBoundingClientRect();return [Math.round(r.top),Math.round(r.left),Math.round(r.height)].join(',');})()`);
  for(let i=0,prima=await dove();i<25;i++){await c.pausa(100);const ora=await dove();if(ora&&ora===prima)break;prima=ora;}
  await c.val(`document.querySelector(${JSON.stringify(sel)}).scrollIntoView({block:'center'})`);await c.pausa(80);return c.clicca(sel);}

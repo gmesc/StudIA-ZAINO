@@ -254,14 +254,10 @@
 #bAttivita { display:flex; flex-direction:column; align-items:stretch; padding-bottom:.6rem; border-bottom:1px solid var(--line); margin-bottom:.6rem; }
 #bAttivita .tbtn { text-align:left; }
 .editor-toolbar .ncb-more { display:none; }
-.editor-toolbar .ncb-more .ui-icon { display:none; }
+.tendina-icona .tlab { display:flex; align-items:center; }
 @container (max-width:480px) {
  .editor-toolbar .ncb-more { display:inline-flex; }
  .editor-toolbar:not(.strumenti-aperti) :is(.heading,.unordered-list,.ordered-list,.ncb-callout,.ncb-emoji,.ncb-mat,.link,.code,.side-by-side,.ncb-guida,.separator) { display:none!important; }
-}
-@container appunti (max-width:360px) {
- .editor-toolbar .ncb-more span { display:none; }
- .editor-toolbar .ncb-more .ui-icon { display:block; }
 }
 
 .zstudio .zchat-hint { font-size:max(12px,calc(var(--fs) * .75)); line-height:1.5; }
