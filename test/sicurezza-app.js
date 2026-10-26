@@ -38,6 +38,27 @@ const C = require('../lib/chat');
 const R = require('../lib/rag');
 const negato = /Accesso al disco negato/;
 
+// La copia scrive solo dal frame principale dell'app; non concede lettura della clipboard.
+{
+  let check,request;
+  require('../lib/sicurezza-finestre').installaSessione({
+    setPermissionCheckHandler:f=>{check=f;},setPermissionRequestHandler:f=>{request=f;},
+    webRequest:{onBeforeRequest(){}}
+  },{appDir:'/app/App'});
+  const url='file:///app/App/StudIA.html',wc={mainFrame:{url}},details={isMainFrame:true,requestingUrl:url};
+  function consentito(perm,web=wc,d=details){
+    let risposta;request(web,perm,v=>{risposta=v;},d);
+    assert.equal(check(web,perm,'file://',d),risposta,'check e request devono concordare');return risposta;
+  }
+  assert.equal(consentito('clipboard-sanitized-write'),true,'Copia testo con fonte deve poter scrivere');
+  for(const perm of ['clipboard-read','deprecated-sync-clipboard-read','media','fileSystem','notifications','unknown'])assert.equal(consentito(perm),false,perm);
+  assert.equal(consentito('clipboard-sanitized-write',null),false);
+  assert.equal(consentito('clipboard-sanitized-write',wc,{...details,isMainFrame:false}),false);
+  assert.equal(consentito('clipboard-sanitized-write',wc,{...details,requestingUrl:'file:///vault/documento.html'}),false);
+  assert.equal(consentito('clipboard-sanitized-write',{mainFrame:{url:'file:///tmp/stampa.html'}}),false);
+  assert.equal(consentito('clipboard-sanitized-write',wc,{}),false);
+}
+
 async function integrazione() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zaino-policy-'));
   const ctx = { vault:path.join(root,'vault'), appDir:path.join(__dirname,'..'), userData:path.join(root,'dati'), temporanei:path.join(root,'temporanei'), risorse:path.join(root,'risorse-pacchetto') };

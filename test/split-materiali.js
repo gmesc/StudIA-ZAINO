@@ -61,6 +61,7 @@ function harness(){
         replaceRange:(t,a,b)=>this.value(this.body.slice(0,index(a))+t+this.body.slice(index(b||a))),
         replaceSelection:t=>cm.replaceRange(t,cm.getCursor())};
       this.value=(v)=>{if(v===undefined)return this.body;this.body=v;if(eventi.change)eventi.change();};
+      this.isPreviewActive=()=>!!this.host.anteprima;
       this.togglePreview=()=>{this.host.anteprima=!this.host.anteprima;};
     }
   }
@@ -122,6 +123,9 @@ async function editor(){
   assert.match(s2.mde.value(),/Citazione al secondo/);assert.equal(h.files.uno[0].body,'Appunto A');
   h.anteprima();assert(s2.mde.host.anteprima);assert(!s1.mde.host.anteprima);
   h.anteprima();assert(!s2.mde.host.anteprima);assert(s2.mde.codemirror.focalizzato);
+  const anteprima=s2.mde.opt.toolbar.find(x=>x.name==='preview');
+  anteprima.action();s2.mde.codemirror.focalizzato=false;anteprima.action();
+  assert(s2.mde.codemirror.focalizzato,'anche il bottone Anteprima restituisce il focus al testo');
   h.tocca('notePane');h.ctx.noteInserisci('Citazione al primo');
   assert.match(h.files.uno[0].body,/Citazione al primo/);assert(!h.files.uno[1].body.includes('al primo'));
   h.tocca('notePane2');h.visibili(['appunti']);assert.equal(h.ctx.noteStatoAttivo(),s1);

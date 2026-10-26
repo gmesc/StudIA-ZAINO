@@ -47,7 +47,9 @@
   var root=document.getElementById('citazionePagine');
   if(!stato?.doc||!range||!root.contains(range.startContainer)||!root.contains(range.endContainer))return null;
   var testo=testoSelezionePdf(range);
-  return testo?{range:range,testo:testo,soloCitazione:true}:null;
+  var b=stato.destinazione;
+  return testo?{range:range,testo:testo,soloCitazione:true,anteprimaEsterna:true,
+   appunto:b?.file&&noteBersaglioValido(b)?(b.stato.cur.title||b.file):''}:null;
  };
  // Il secondo lettore permette la copia, senza esporre gli strumenti di annotazione del primo.
  document.addEventListener('contextmenu',function(e){
@@ -56,7 +58,14 @@
   var r=s.getRangeAt(0);if(!citazioneOriginePdf(r)||!puntoNellaSelezione(r,e.clientX,e.clientY))return;
   e.preventDefault();selMenuApri(e.clientX,e.clientY,{range:r,testo:testoSelezionePdf(r),soloCitazione:true});
  });
- window.citazioneZainoApri=async function(rimando){
+ window.citazioneZainoApri=async function(rimando,destinazione){
+  // Il link può appartenere al secondo editor. Catturarlo prima dell'attesa
+  // impedisce che un cambio di focus scelga un altro documento al ritorno.
+  var bersaglio=noteBersaglio(destinazione);
+  if(bersaglio.file&&bersaglio.stato.mde){
+   mdbChiudi(true,bersaglio.stato);
+   bersaglio.punto=bersaglio.stato.mde.codemirror.getCursor('to');
+  }
   closePops();pulisci();var turno=sequenza,dialog=document.getElementById('citazioneDialog');
   document.getElementById('citazioneTitolo').textContent='Citazione PDF';
   if(!dialog.open)dialog.showModal();menuNelDialogo(true);messaggio('Controllo la fonte…');controlli();
@@ -71,7 +80,7 @@
    var viewer=new pdfjsViewer.PDFViewer({container:document.getElementById('citazioneFrame'),viewer:document.getElementById('citazionePagine'),eventBus:bus,linkService:link,textLayerMode:1,annotationMode:0,annotationEditorMode:-1,removePageBorders:true});
    link.setViewer(viewer);
    var task=pdfjsLib.getDocument({data:new Uint8Array(r.bytes),isEvalSupported:false,enableXfa:false});delete r.bytes;
-   var s={info:r,viewer:viewer,task:task,doc:null};stato=s;
+   var s={info:r,viewer:viewer,task:task,doc:null,destinazione:bersaglio};stato=s;
    bus.on('pagesinit',function(){if(stato!==s)return;viewer.currentScaleValue='page-width';viewer.currentPageNumber=r.pagina;controlli();});
    bus.on('pagechanging',controlli);
    var doc=await task.promise;
@@ -89,7 +98,7 @@
  document.getElementById('citazionePrima').onclick=function(){if(stato?.doc)stato.viewer.currentPageNumber--;};
  document.getElementById('citazioneDopo').onclick=function(){if(stato?.doc)stato.viewer.currentPageNumber++;};
  document.getElementById('citazioneCopia').addEventListener('mousedown',function(e){e.preventDefault();});
- window.citazioneCopiaDaRange=async function(range){
+ function markdownDaRange(range){
   var s=stato;if(!s?.doc)return;
   var testo='',pagina=s.viewer.currentPageNumber;
   if(citazioneSelezione(range)){
@@ -100,8 +109,28 @@
   }
   // Riusa l'identità e la revisione già verificate, anche se l'originale è cambiato nel frattempo.
   var ref=RimandiSintassi.leggi(s.info.rimando),url=RimandiSintassi.scriviPdfZaino(ref.zainoId,ref.sourceId,pagina,ref.revision);
-  var md=RimandiSintassi.citazionePdfZaino({...s.info,pagina:pagina,rimando:url},testo);
+  return RimandiSintassi.citazionePdfZaino({...s.info,pagina:pagina,rimando:url},testo);
+ }
+ window.citazioneCopiaDaRange=async function(range){
+  var md=markdownDaRange(range);if(!md)return;
   try{await navigator.clipboard.writeText(md);messaggio('Citazione copiata. Chiudi l’anteprima e incollala nel tuo appunto.');}catch(e){messaggio('Copia non riuscita: '+e.message);}
+ };
+ window.citazioneInserisciDaRange=function(range){
+  if(!citazioneSelezione(range))return;
+  var b=stato.destinazione;
+  if(!b?.file||!noteBersaglioValido(b)||!b.stato.mde){
+   messaggio('L’appunto di destinazione non è più aperto. Riapri la citazione dall’appunto in cui vuoi inserire il testo.');return;
+  }
+  var md=markdownDaRange(range);if(!md)return;
+  var s=b.stato;
+  chiudi();openEditor(s);mdbChiudi(true,s);
+  if(s.mde.isPreviewActive())s.mde.togglePreview();
+  // Inserire non deve cancellare un'eventuale selezione rimasta nell'appunto.
+  s.mde.codemirror.setCursor(b.punto);
+  if(noteScriviAlCursore('\n\n'+md+'\n\n',s)){
+   noteAnteprimaRidisegna(s);
+   toast('Testo con fonte inserito in «'+(s.cur.title||s.cur.file)+'».',true);
+  }
  };
  document.getElementById('citazioneCopia').onclick=function(){
   var sel=window.getSelection();citazioneCopiaDaRange(sel?.rangeCount&&!sel.isCollapsed?sel.getRangeAt(0):null);

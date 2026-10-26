@@ -12178,7 +12178,9 @@ function ensureMde(s){
       '|',
       {name:'cita',title:'Cita il punto che stai guardando (⌘⇧C)',className:'ncb-cita',action:function(){ citaCorrente(s); }},
       {name:'materiali',title:'Cita un materiale, anche da un altro zaino',className:'ncb-mat',action:function(){ apriMateriali(host.querySelector('.ncb-mat'),s); }},
-      '|','link','code','|','preview','side-by-side',
+      '|','link','code','|',
+      {name:'preview',title:'Anteprima (⌘J)',className:'preview no-disable',action:function(){ noteAlternaAnteprima(s); }},
+      'side-by-side',
       {name:'guida',title:'Come si scrive in StudIA',className:'ncb-guida',action:function(){ apriGuida(); }}],
     shortcuts:{toggleFullScreen:null,toggleSideBySide:'F9',togglePreview:null},
     previewClass:['editor-preview','md-prev'],
@@ -12587,6 +12589,13 @@ function figRidimensiona(verso){
   window.addEventListener('resize', figMenuChiudi);
 })();
 
+function noteAlternaAnteprima(s){
+  mdbChiudi(true,s);
+  var aperta=s.mde.isPreviewActive();
+  s.mde.togglePreview();
+  // EasyMDE lascia il focus sul bottone: l'incolla successivo finiva nel vuoto.
+  if(aperta){s.mde.codemirror.refresh();s.mde.codemirror.focus();}
+}
 /**
  * ⌘J: accende e SPEGNE l'anteprima dell'appunto.
  *
@@ -12610,9 +12619,7 @@ function figRidimensiona(verso){
     if(!host || !host.offsetParent) return;
     e.preventDefault(); e.stopPropagation();
     try{
-      mdbChiudi(true,destinazione);
-      destinazione.mde.togglePreview();
-      if(!host.querySelector('.editor-preview-active')) destinazione.mde.codemirror.focus();
+      noteAlternaAnteprima(destinazione);
     }catch(err){ console.error('anteprima:', err); }
   }, true);
 })();
@@ -13863,7 +13870,14 @@ function siStaRidimensionando(){
  * allo stesso posto passano per la stessa porta.
  */
 function selMenuHTML(sel){
-  if(sel.soloCitazione)return '<button type="button" class="ctx-item" role="menuitem" data-az="cita-pdf">Copia testo con fonte</button><button type="button" class="ctx-item" role="menuitem" data-az="copia">Copia</button>';
+  if(sel.soloCitazione){
+    var inserisci='';
+    if(sel.anteprimaEsterna){
+      var titolo=sel.appunto?'Inserisci testo e fonte in «'+sel.appunto+'»':'Apri un appunto nello zaino attivo per inserire il testo.';
+      inserisci='<button type="button" class="ctx-item" role="menuitem" data-az="inserisci-citazione" title="'+escHtml(titolo)+'"'+(sel.appunto?'':' disabled')+'>Inserisci nell’appunto</button>';
+    }
+    return inserisci+'<button type="button" class="ctx-item" role="menuitem" data-az="cita-pdf">Copia testo con fonte</button><button type="button" class="ctx-item" role="menuitem" data-az="copia">Copia</button>';
+  }
   var conVault=!!(notesApi() && curMeta());
   /* Le voci non ancora costruite si dichiarano e si spengono, come fa il
      registro degli strumenti del banco: se comparissero solo quando esistono,
@@ -13971,6 +13985,7 @@ document.addEventListener('contextmenu', function(e){
  * una delle due dimentica di fare un pezzo.
  */
 function selAzione(az, testo, range){
+  if(az==='inserisci-citazione'){citazioneInserisciDaRange(range);return;}
   if(az==='cita-pdf'){if(window.citazioneSelezione?.(range)){citazioneCopiaDaRange(range);return;}var origine=citazioneOriginePdf(range);if(origine)citazioneCopiaPdf(zainoAttivo(),origine.file,origine.pagina,testo);else toast('Seleziona un passaggio di una sola pagina per citarlo.',false);return;}
   if(az==='interrogami'){var sup=evSupDaRange(range);window.zainoInterrogami?.({text:testo,file:sup && sup.tipo==='pdf'?ANTEPRIMA.file:''});return;}
   if(az==='copia'){
@@ -16500,7 +16515,7 @@ document.addEventListener('click', function(e){
   var a=e.target.closest?e.target.closest('a.vlink,a.plink,a.wlink,a.clink'):null; if(!a) return;
   e.preventDefault();
   if(a.classList.contains('vlink')){ openVideo(a.getAttribute('data-file'), parseInt(a.getAttribute('data-t'),10), a.getAttribute('data-label')); }
-  else if(a.classList.contains('plink')){ if(a.dataset.citazioneZaino){citazioneZainoApri(a.dataset.citazioneZaino);return;}var pf=a.getAttribute('data-file');
+  else if(a.classList.contains('plink')){ if(a.dataset.citazioneZaino){citazioneZainoApri(a.dataset.citazioneZaino,noteStatoDaNodo(a));return;}var pf=a.getAttribute('data-file');
     if(a.dataset.sourceId){
       var z=zainoAttivo();
       window.vault.chat.resolveSource(z,{sourceId:a.dataset.sourceId,revision:a.dataset.sourceRevision,page:parseInt(a.dataset.page,10)||1}).then(function(r){
