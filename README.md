@@ -51,7 +51,7 @@ Le domande di ciascuna scheda si possono comprimere dal titolo con il chevron e 
 
 ## Citazioni fra zaini
 
-Seleziona un passaggio nel PDF e scegli **Copia citazione**, poi incollalo in un appunto di un altro zaino dello stesso vault. Nel secondo lettore il comando è nel menu del tasto destro. La toolbar Appunti → **Cita un materiale** permette anche di scegliere lo **Zaino della fonte** e inserire il rimando alla pagina.
+Seleziona un passaggio nel PDF e scegli **Copia testo con fonte**, poi incollalo in un appunto di un altro zaino dello stesso vault. Nel secondo lettore il comando è nel menu del tasto destro. La toolbar Appunti → **Cita un materiale** permette anche di scegliere lo **Zaino della fonte** e inserire il rimando alla pagina.
 
 Il link mostra **Zaino › PDF · pagina** e apre una consultazione in sola lettura senza cambiare lo zaino attivo. **Vai allo zaino di origine** cambia invece il contesto esplicitamente. Identità permanenti e revisione proteggono da rinomine, spostamenti tra gruppi e sostituzioni; fonti mancanti, cambiate o zaini con identità duplicata vengono segnalati. Il registro delle fonti ammette PDF fino a 40 MB. Esportare solo lo zaino con gli appunti conserva testo e riferimenti, ma non copia i PDF degli altri zaini.
 

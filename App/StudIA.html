@@ -13863,7 +13863,7 @@ function siStaRidimensionando(){
  * allo stesso posto passano per la stessa porta.
  */
 function selMenuHTML(sel){
-  if(sel.soloCitazione)return '<button type="button" class="ctx-item" role="menuitem" data-az="cita-pdf">Copia citazione</button><button type="button" class="ctx-item" role="menuitem" data-az="copia">Copia</button>';
+  if(sel.soloCitazione)return '<button type="button" class="ctx-item" role="menuitem" data-az="cita-pdf">Copia testo con fonte</button><button type="button" class="ctx-item" role="menuitem" data-az="copia">Copia</button>';
   var conVault=!!(notesApi() && curMeta());
   /* Le voci non ancora costruite si dichiarano e si spengono, come fa il
      registro degli strumenti del banco: se comparissero solo quando esistono,
@@ -13927,7 +13927,7 @@ function selMenuHTML(sel){
     voce('cancella','Cancella evidenziatura', sopra? '' : 'qui non ce n’è')+
     '<div class="ctx-sep"></div>'+
     (modoAttivo()==='zaino'?voce('interrogami','Interrogami su questo',''):'')+
-    (origineMenu?.tipo==='pdf'?voce('cita-pdf','Copia citazione',''):'')+
+    (origineMenu?.tipo==='pdf'?voce('cita-pdf','Copia testo con fonte',''):'')+
     voce('copia','Copia','');
 }
 function selMenuApri(x, y, sel){
@@ -22910,7 +22910,7 @@ window.addEventListener('keydown', function(e){
 <div id="zainiMenu" class="popmenu" role="dialog" aria-label="Scegli uno zaino"></div>
 <dialog id="citazioneDialog" aria-labelledby="citazioneTitolo">
   <div class="tbar"><strong id="citazioneTitolo">Citazione PDF</strong><span class="tbspazio"></span><button type="button" id="citazioneChiudi" class="tbtn" title="Chiudi la fonte" aria-label="Chiudi la fonte"></button></div>
-  <div class="tbar"><button type="button" id="citazionePrima" class="tbtn" title="Pagina precedente" aria-label="Pagina precedente"></button><span id="citazioneConto">− DI −</span><button type="button" id="citazioneDopo" class="tbtn" title="Pagina successiva" aria-label="Pagina successiva"></button><span class="tbsep"></span><button type="button" id="citazioneCopia" class="tbtn">Copia citazione</button><span class="tbsep"></span><button type="button" id="citazioneVai" class="tbtn">Vai allo zaino di origine</button></div>
+  <div class="tbar"><button type="button" id="citazionePrima" class="tbtn" title="Pagina precedente" aria-label="Pagina precedente"></button><span id="citazioneConto">− DI −</span><button type="button" id="citazioneDopo" class="tbtn" title="Pagina successiva" aria-label="Pagina successiva"></button><span class="tbsep"></span><button type="button" id="citazioneCopia" class="tbtn">Copia testo con fonte</button><span class="tbsep"></span><button type="button" id="citazioneVai" class="tbtn">Vai allo zaino di origine</button></div>
   <p id="citazioneStato" role="status"></p>
   <div id="citazionePdf"><div id="citazioneFrame"><div id="citazionePagine" class="pdfViewer"></div></div></div>
 </dialog>

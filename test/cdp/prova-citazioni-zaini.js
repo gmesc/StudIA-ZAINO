@@ -51,7 +51,7 @@ async function wait(expr){for(let i=0;i<180;i++){if(await c.val(expr))return;awa
   shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-citazione-menu.png',Buffer.from(shot.result.data,'base64'));
   const livello=await c.val(`(()=>{const b=document.querySelector('#selBarra .ctx-item'),r=b.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return {raggiungibile:!!hit?.closest('#selBarra'),sopra:hit?.outerHTML.slice(0,180),contenitore:document.getElementById('selBarra').parentElement.id};})()`);
   assert(livello.raggiungibile,'Menu della citazione davanti al PDF e cliccabile: '+JSON.stringify(livello));
-  assert.deepEqual(await c.val(`[...document.querySelectorAll('#selBarra .ctx-item')].map(b=>b.textContent)`),['Copia citazione','Copia']);
+  assert.deepEqual(await c.val(`[...document.querySelectorAll('#selBarra .ctx-item')].map(b=>b.textContent)`),['Copia testo con fonte','Copia']);
   assert.equal(await c.val(`evSupDaRange(SELMENU.range)`),null,'nessuna annotazione sulla fonte sottostante');
   await c.val(`window.__citazioneCopiata=''`);await c.clicca('#selBarra [data-az="cita-pdf"]');
   await wait(`window.__citazioneCopiata?.includes('Biologia › 01 Botanica.pdf · p. 2')`);
