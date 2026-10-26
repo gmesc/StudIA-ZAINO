@@ -2,18 +2,18 @@
 const assert=require('assert/strict');
 const c=require('./cdp');
 async function wait(expr){for(let i=0;i<100;i++){if(await c.val(expr))return;await c.pausa(100);}throw Error('Attesa scaduta: '+expr);}
-const scegli=val=>c.val(`(()=>{const s=document.getElementById('zainoSelect');s.value=${JSON.stringify(val)};s.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+async function scegli(val){await c.val('closePops()');await c.clicca('#zainoScegli');await wait(`!!document.querySelector('#zainiMenu[open] .zaini-elenco')`);await c.clicca(val==='__nuovo__'?'#zainiCrea':'[data-zaino-scegli="'+val+'"]');}
 (async()=>{
  await c.collega();await wait(`!!document.getElementById('chatBtn') && zainoAttivo()==='biologia'`);
  assert.equal(await c.val(`document.getElementById('zainoEtichetta').textContent`),'ZAINO Biologia');
- assert.equal(await c.val(`document.getElementById('zainoSelect').closest('.brand')!==null`),true);
- assert.equal(await c.val(`document.getElementById('zainoSelect').options[document.getElementById('zainoSelect').options.length-1].value`),'__nuovo__');
+ assert.equal(await c.val(`document.getElementById('zainoScegli').closest('.brand')!==null`),true);
+ await c.clicca('#zainoScegli');await wait(`!!document.getElementById('zainiCrea')`);await c.val('closePops()');
  assert.equal(await c.val(`!!document.getElementById('zainoNuovo') || !!document.getElementById('fsPlus') || !!document.getElementById('fsMinus')`),false);
  await scegli('storia');await wait(`zainoAttivo()==='storia'`);
  assert.equal(await c.val(`document.getElementById('zainoEtichetta').textContent`),'ZAINO Storia');
  await scegli('__nuovo__');
  assert.equal(await c.val(`document.getElementById('zainoPop').hasAttribute('open')`),true);
- assert.equal(await c.val(`document.getElementById('zainoSelect').value`),'storia');
+ assert.equal(await c.val(`zainoAttivo()`),'storia');
  await c.val(`document.getElementById('zainoNome').value='Geografia & società';`);await c.clicca('#zainoCrea');
  await wait(`document.getElementById('zainoEtichetta').textContent==='ZAINO Geografia & società'`);
  await c.val('location.reload()');await c.pausa(800);await c.collega();await wait(`!!document.getElementById('chatBtn') && document.getElementById('zainoEtichetta').textContent==='ZAINO Geografia & società'`);
@@ -38,7 +38,7 @@ const scegli=val=>c.val(`(()=>{const s=document.getElementById('zainoSelect');s.
  fs.renameSync(cartella,salvati);
  try{
   await c.val('MODO.zaino=null;zainiAggiorna();');await wait(`document.getElementById('zainoEtichetta').textContent==='ZAINO'`);
-  assert.equal(await c.val(`document.getElementById('zainoSelect').disabled`),false);
+  assert.equal(await c.val(`document.getElementById('zainoScegli').disabled`),false);
   await scegli('__nuovo__');assert.equal(await c.val(`document.getElementById('zainoPop').hasAttribute('open')`),true);
  }finally{fs.rmSync(cartella,{recursive:true,force:true});fs.renameSync(salvati,cartella);}
  await c.val(`closePops();zainiAggiorna();`);await wait(`!!zainoAttivo()`);await scegli('biologia');

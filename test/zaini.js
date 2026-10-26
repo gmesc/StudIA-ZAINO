@@ -101,6 +101,11 @@ sezione('L\'elenco');
   fs.writeFileSync(path.join(pdfDir, '.DS_Store'), 'x');
   fs.writeFileSync(path.join(pdfDir, 'appunti.txt'), 'x');
   check('un documento in più si vede', 1, Z.elenco(VAULT)[0].documenti);
+  const gruppo=path.join(pdfDir,'Gruppi','MCT');fs.mkdirSync(gruppo,{recursive:true});
+  fs.writeFileSync(path.join(gruppo,'02 nel gruppo.pdf'),'%PDF-1.4\n');
+  check('anche i PDF nei gruppi contribuiscono al conteggio',2,Z.elenco(VAULT)[0].documenti);
+  fs.rmSync(path.join(pdfDir,'Gruppi'),{recursive:true});
+
 
   /* ⚠️ Una cartella senza `_zaino.md` NON è uno zaino: può essere una
      creazione interrotta a metà, e aprirci una modalità sopra vorrebbe dire

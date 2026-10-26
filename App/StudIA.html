@@ -3086,6 +3086,24 @@
   #albumOrdineMenu button[aria-checked="true"]::before{content:'✓ ';}
   .zs-media-tipo{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--teal-strong);padding:.4rem .6rem;border-bottom:1px solid var(--line-weak);background:color-mix(in srgb,var(--teal) 7%,var(--panel));}
 
+  .brand #zainoScegli{padding-inline:var(--tb-pad-x,.75rem);}
+  #zainiMenu{width:min(420px,calc(100vw - 16px));padding:0;max-height:75vh;overflow:hidden;}
+  #zainiMenu .zaini-elenco{max-height:55vh;overflow:auto;}
+  #zainiMenu .zaini-voce{display:flex;width:100%;align-items:baseline;gap:.75rem;padding:.75rem;text-align:left;border:0;border-bottom:1px solid var(--line-weak);background:transparent;color:var(--ink);font:inherit;cursor:pointer;}
+  #zainiMenu .zaini-voce span:first-child{flex:1;overflow-wrap:anywhere;}
+  #zainiMenu .zaini-voce[aria-current="true"]{color:var(--teal-strong);font-weight:700;background:var(--comando-hover);}
+  #zainiMenu .zaini-voce:hover{background:var(--comando-hover);}
+  #zainiMenu .zaini-conto{font-size:12px;color:var(--muted);white-space:nowrap;}
+  #zainiMenu .zaini-stato{padding:.75rem;color:var(--muted);}
+  #matZaino{width:100%;margin-bottom:.5rem;padding:.5rem;background:var(--panel);color:var(--ink);border:1px solid var(--line);font:inherit;}
+  #citazioneDialog{margin:auto;padding:0;width:min(1000px,95vw);height:90vh;max-height:95vh;border:1px solid var(--line);background:var(--panel);color:var(--ink);box-shadow:var(--sh-3d);}
+  #citazioneDialog[open]{display:flex;flex-direction:column;isolation:isolate;}
+  #citazioneDialog::backdrop{background:rgba(0,0,0,.35);}
+  #citazioneDialog .tbar{flex-shrink:0;flex-wrap:wrap;}
+  #citazioneTitolo{min-width:0;overflow-wrap:anywhere;flex:1;}
+  #citazioneStato{margin:.5rem .75rem;font-size:13px;color:var(--muted);}
+  #citazionePdf{position:relative;flex:1;min-height:0;}
+  #citazioneFrame{position:absolute;inset:0;overflow:auto;}
 </style>
 <!-- Le regole del foglio, scritte al momento di stampare (vedi sopra). Nasce
      vuoto: finché nessuno stampa, non c'è nessun `@page` in giro. -->
@@ -3106,7 +3124,7 @@
   <div class="brand" id="modoBtn">
     <img class="oi oi-lg" src="assets/1F392.svg" alt="" aria-hidden="true"><span>STUDIA</span>
     <span class="zainorow">
-      <span class="tendina" id="zainoScegli"><span class="tlab" id="zainoEtichetta">ZAINO</span><select id="zainoSelect" aria-label="Seleziona lo zaino personale"></select></span>
+      <button type="button" class="tendina" id="zainoScegli" aria-haspopup="dialog" aria-expanded="false" aria-controls="zainiMenu" title="Scegli o crea uno zaino"><span class="tlab" id="zainoEtichetta">ZAINO</span></button>
     </span>
   </div>
   <div class="controls">
@@ -9446,7 +9464,7 @@ function closePops(){
      vista da un altro lato: togliergli `open` lo farebbe sparire lasciando il
      colore acceso sulla pagina — cioè ricreerebbe esattamente lo stato invisibile
      che si è appena finito di togliere, per un click sul «+» dello zoom. */
-  ['#albumCercaPop','#albumOrdineMenu','#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#zainoPop','#pdfDocPop','#pdfSommarioPop','#plMediaPop','#pittorePop','#stratiPop']
+  ['#albumCercaPop','#albumOrdineMenu','#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#zainiMenu','#zainoPop','#pdfDocPop','#pdfSommarioPop','#plMediaPop','#pittorePop','#stratiPop']
     .forEach(function(s){ var e=$(s); if(e) e.removeAttribute('open'); });
   /* ⚠️ Il menu della selezione e la sua barra non si chiudono togliendo un
      attributo: hanno uno stato in una CLASSE (`open`, `aperta`) e due funzioni
@@ -9475,6 +9493,7 @@ function closePops(){
      stato proprio: qui l'attributo si TOGLIE invece di metterlo a «false»,
      perché fuori dall'apertura quel bottone non promette niente. */
   document.querySelectorAll('.helpbtn[aria-expanded]').forEach(function(b){ b.removeAttribute('aria-expanded'); });
+  var zb=$('#zainoScegli');if(zb)zb.setAttribute('aria-expanded','false');
   var pd=$('#pdfDoc'); if(pd) pd.setAttribute('aria-expanded','false');
   var pm=$('#plScegli'); if(pm) pm.setAttribute('aria-expanded','false');
   /* I risultati della ricerca sono un secondo riquadro, fuori dal pannellino
@@ -10967,12 +10986,11 @@ function modoAggiorna(){
   var tit=document.getElementById('sidebarTitolo'); if(tit) tit.textContent = zaino ? 'Zaino' : 'Capitoli';
   /* La lente cerca in due posti diversi nelle due modalità, e lo deve dire. */
   try{ ricercaEtichette(); }catch(e){ console.error('lente/etichette:', e); }
-  var sel=document.getElementById('zainoSelect');
-  if(sel && sel.value!==(MODO.zaino||'')) sel.value = MODO.zaino || '';
   var scelto=(MODO.zaini||[]).find(function(z){ return z.id===MODO.zaino; });
   var etichetta=document.getElementById('zainoEtichetta');
   if(etichetta) etichetta.textContent='ZAINO' + (scelto ? ' ' + scelto.title : '');
-  if(sel) sel.title=scelto ? 'Zaino aperto: ' + scelto.title + ' · Cambia o crea zaino' : 'Scegli o crea uno zaino';
+  var btn=document.getElementById('zainoScegli');
+  if(btn)btn.title=scelto?'Zaino aperto: '+scelto.title+' · Cambia o crea zaino':'Scegli o crea uno zaino';
   /* La sidebar dello zaino si riempie da sé: chiamarla qui vuol dire che ogni
      porta che cambia modalità o zaino la aggiorna, senza doverselo ricordare. */
   try{ zainoNavAggiorna(); }catch(e){ console.error('zaino/sidebar:', e); }
@@ -11002,25 +11020,8 @@ function modoAggiorna(){
 /** Gli zaini che ci sono, e quello attivo. Torna l'elenco. */
 async function zainiAggiorna(){
   var lista=[];
-  try{ lista = await window.vault.zaino.list() || []; }catch(e){ lista=[]; }
+  try{ lista = await window.vault.zaino.list(); if(!Array.isArray(lista))throw Error(lista?.error||'Elenco non disponibile'); }catch(e){ toast('Non riesco a leggere gli zaini: '+e.message,false);return MODO.zaini||[]; }
   MODO.zaini=lista;
-  var sel=document.getElementById('zainoSelect');
-  if(sel){
-    sel.innerHTML='';
-    lista.forEach(function(z){
-      var o=document.createElement('option');
-      o.value=z.id;
-      /* Il conto dei documenti sta nell'etichetta e non altrove: è l'unica cosa
-         che distingue uno zaino pieno da uno appena creato. */
-      o.textContent=z.title + (z.documenti ? ' · ' + z.documenti + (z.documenti===1?' documento':' documenti') : '');
-      sel.appendChild(o);
-    });
-    if(!lista.length){
-      var vuoto=document.createElement('option'); vuoto.value=''; vuoto.textContent='Scegli uno zaino'; vuoto.disabled=true; sel.appendChild(vuoto);
-    }
-    var nuovo=document.createElement('option'); nuovo.value='__nuovo__'; nuovo.textContent='+ Crea uno zaino nuovo'; sel.appendChild(nuovo);
-    sel.disabled = false;
-  }
   /* Lo zaino attivo deve esistere: se è stato cancellato da fuori si prende il
      primo, e se non ce n'è nessuno si resta senza — la card di creazione è già
      a schermo, non serve inventare un contenitore. */
@@ -11357,7 +11358,7 @@ async function zainoNavAggiorna(){
   host.hidden=false;
   var id=zainoAttivo();
   if(!id){
-    host.innerHTML='<div class="zs-vuoto">Nessuno zaino. Apri il menu ZAINO in alto e scegli «+ Crea uno zaino nuovo».</div>';
+    host.innerHTML='<div class="zs-vuoto">Nessuno zaino. Apri il menu ZAINO in alto e scegli «Crea uno zaino».</div>';
     return;
   }
   // Un autosalvataggio dell'appunto può aggiornare la sidebar mentre si trascina:
@@ -11492,9 +11493,9 @@ async function setZainiDisegna(){
   var lista=[];
   try{ lista=await window.vault.zaino.list()||[]; }
   catch(e){ host.innerHTML='<div class="set-note">'+UiIcone.svg('triangle-alert','Errore di lettura')+' Non riesco a leggere gli zaini: '+escHtml((e&&e.message)||String(e))+'</div>'; return; }
-  if(!lista.length){ host.innerHTML='<div class="set-note">Nessuno zaino. Apri il menu ZAINO in alto e scegli «+ Crea uno zaino nuovo».</div>'; return; }
+  if(!lista.length){ host.innerHTML='<div class="set-note">Nessuno zaino. Apri il menu ZAINO in alto e scegli «Crea uno zaino».</div>'; return; }
   host.innerHTML=lista.map(function(z){
-    var conto=z.documenti ? (z.documenti+(z.documenti===1?' documento':' documenti')) : 'vuoto';
+    var conto=z.documenti==null?'Conteggio non disponibile':z.documenti+' PDF';
     var nome=escHtml(z.title||z.id);
     /* ✎ prima di 🗑, come nella barra degli appunti e in quella della mappa:
        rinominare e eliminare stanno sempre in quest'ordine, e la mano lo sa. */
@@ -11643,11 +11644,8 @@ async function zainoCrea(nome){
 (function(){
   var b=document.getElementById('modoBtn');
   if(b && b.tagName==='BUTTON') b.addEventListener('click', function(){ modoUsato(); cambiaModo(modoAttivo()==='zaino' ? 'corso' : 'zaino'); });
-  var sel=document.getElementById('zainoSelect');
-  if(sel) sel.addEventListener('change', function(e){
-    if(e.target.value==='__nuovo__'){ sel.value=MODO.zaino||''; zainoPopApri(sel); }
-    else cambiaZaino(e.target.value);
-  });
+  var scegli=document.getElementById('zainoScegli');
+  if(scegli)scegli.addEventListener('click',function(){zainiMenuApri();});
   /* ⚠️ I comandi del pannellino si ascoltano per DELEGA, non sull'elemento.
      Non è una preferenza di stile: `#zainoPop` sta in fondo al documento, dopo
      questo script, quindi qui `getElementById` torna `null` e un listener
@@ -11893,7 +11891,13 @@ window.aggiornaVarianti=aggiornaVarianti;   // il composer la richiama dopo aver
 function caricaMateriali(){
   if(!(window.vault && window.vault.corpus)) return Promise.resolve([]);
   if(MATERIALI.lista) return Promise.resolve(MATERIALI.lista);
-  return window.vault.corpus.list(corsoAttivo()).then(function(l){ MATERIALI.lista=l||[]; return MATERIALI.lista; });
+  var id=MATERIALI.zaino||corsoAttivo();
+  return window.vault.corpus.list(id).then(function(l){
+    if(!Array.isArray(l))throw Error(l?.error||'Fonti non disponibili');
+    if(id!==(MATERIALI.zaino||corsoAttivo()))return [];
+    MATERIALI.lista=id===corsoAttivo()?l:l.filter(function(m){return m.tipo==='pdf';});
+    return MATERIALI.lista;
+  });
 }
 
 /** Filtra per testo su numero, nome e tipo. */
@@ -11925,42 +11929,47 @@ function misuraMateriale(m){
 function disegnaMateriali(){
   var grid=$('#matLista'); if(!grid) return;
   var lista=filtraMateriali(MATERIALI.lista||[], MATERIALI.filtro);
-  if(!lista.length){ grid.innerHTML='<div class="ep-empty">Nessun materiale per «'+escHtml(MATERIALI.filtro)+'»</div>'; return; }
+  if(!lista.length){ grid.innerHTML='<div class="ep-empty">'+(MATERIALI.filtro?'Nessun materiale per «'+escHtml(MATERIALI.filtro)+'»':'Nessun materiale disponibile in questo zaino.')+'</div>'; return; }
   var gruppi=raggruppaMateriali(lista);
   var html='';
   Object.keys(RUOLI_ETICHETTA).forEach(function(k){
     var g=gruppi[k]; if(!g || !g.length) return;
-    html+='<div class="ep-cat">'+escHtml(RUOLI_ETICHETTA[k])+'</div>';
+    html+='<div class="ep-cat">'+escHtml(modoAttivo()==='zaino'&&k===''?'Materiali':RUOLI_ETICHETTA[k])+'</div>';
     html+=g.map(function(m){
       return '<button type="button" class="mat-voce" data-mat="'+escHtml(m.name)+'" data-tipo="'+escHtml(m.tipo)+'" data-num="'+escHtml(m.num||'')+'">'+
         '<span class="mat-num">'+escHtml(m.num||'--')+'</span>'+
         '<span class="mat-nome">'+escHtml(m.name)+'</span>'+
-        '<span class="mat-tipo">'+escHtml(misuraMateriale(m))+(m.fatto?'':' · non elaborato')+'</span></button>';
+        '<span class="mat-tipo">'+escHtml(misuraMateriale(m))+(m.fatto||modoAttivo()==='zaino'?'':' · non elaborato')+'</span></button>';
     }).join('');
   });
   grid.innerHTML=html;
 }
 
 function apriMateriali(anchorEl, destinazione){
-  MATERIALI.destinazione=noteBersaglio(destinazione);
+  MATERIALI.destinazione=noteBersaglio(destinazione);MATERIALI.zaino=corsoAttivo();MATERIALI.lista=null;
+  var zs=$('#matZaino');zs.innerHTML=(MODO.zaini||[]).map(function(z){return '<option value="'+escHtml(z.id)+'">'+escHtml(z.title)+'</option>';}).join('');zs.value=MATERIALI.zaino;
   var pop=$('#matPop'); if(!pop) return;
   var s=$('#matCerca'); if(s) s.value=''; MATERIALI.filtro='';
   $('#matLista').innerHTML='<div class="ep-empty">Carico l’elenco…</div>';
   popAt(pop, anchorEl);
-  caricaMateriali().then(function(){ disegnaMateriali(); setTimeout(function(){ if(s) s.focus(); },20); });
+  caricaMateriali().then(function(){ disegnaMateriali(); setTimeout(function(){ if(s && pop.hasAttribute('open')) s.focus(); },20); }).catch(function(e){$('#matLista').textContent='Non riesco a leggere i materiali: '+e.message;});
 }
 
 /** Scelto un materiale: chiede minuto o pagina, prefillati con l'anteprima se combacia. */
 function scegliMateriale(nome, tipo, num){
-  var bersaglio=MATERIALI.destinazione||noteBersaglio();
+  var bersaglio=MATERIALI.destinazione||noteBersaglio(),origineZaino=MATERIALI.zaino||corsoAttivo();
   closePops();
   if(tipo==='pdf'){
-    var pDef = (ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file===nome) ? ANTEPRIMA.page : 1;
-    askText('Pagina di «'+nome+'»', String(pDef)).then(function(v){
+    var pDef = (origineZaino===corsoAttivo() && ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file===nome) ? ANTEPRIMA.page : 1;
+    askText('Pagina di «'+nome+'»', String(pDef)).then(async function(v){
       if(v===null) return;
     if(!noteBersaglioValido(bersaglio)){ toast('L’appunto di destinazione è cambiato', false); return; }
-      citaPdf(num, v, null, bersaglio.stato);
-    });
+      if(origineZaino!==corsoAttivo()){
+        var r=await window.vault.citazioni.crea(origineZaino,nome,Number(v),'');
+        if(r.error){toast(r.error,false);return;}if(!noteBersaglioValido(bersaglio)){toast('L’appunto di destinazione è cambiato',false);return;}
+        noteScriviAlCursore(r.markdown,bersaglio.stato);
+      }else citaPdf(num, v, null, bersaglio.stato);
+    }).catch(function(e){toast('Non riesco a creare la citazione: '+e.message,false);});
     return;
   }
   if(tipo==='html'){ toast('Le pagine web si citano con il link https',false); return; }
@@ -12168,7 +12177,7 @@ function ensureMde(s){
        }); }},
       '|',
       {name:'cita',title:'Cita il punto che stai guardando (⌘⇧C)',className:'ncb-cita',action:function(){ citaCorrente(s); }},
-      {name:'materiali',title:'Cita un materiale di questo contenitore',className:'ncb-mat',action:function(){ apriMateriali(host.querySelector('.ncb-mat'),s); }},
+      {name:'materiali',title:'Cita un materiale, anche da un altro zaino',className:'ncb-mat',action:function(){ apriMateriali(host.querySelector('.ncb-mat'),s); }},
       '|','link','code','|','preview','side-by-side',
       {name:'guida',title:'Come si scrive in StudIA',className:'ncb-guida',action:function(){ apriGuida(); }}],
     shortcuts:{toggleFullScreen:null,toggleSideBySide:'F9',togglePreview:null},
@@ -13852,6 +13861,7 @@ function siStaRidimensionando(){
  * allo stesso posto passano per la stessa porta.
  */
 function selMenuHTML(sel){
+  if(sel.soloCitazione)return '<button type="button" class="ctx-item" role="menuitem" data-az="cita-pdf">Copia citazione</button><button type="button" class="ctx-item" role="menuitem" data-az="copia">Copia</button>';
   var conVault=!!(notesApi() && curMeta());
   /* Le voci non ancora costruite si dichiarano e si spengono, come fa il
      registro degli strumenti del banco: se comparissero solo quando esistono,
@@ -13915,6 +13925,7 @@ function selMenuHTML(sel){
     voce('cancella','Cancella evidenziatura', sopra? '' : 'qui non ce n’è')+
     '<div class="ctx-sep"></div>'+
     (modoAttivo()==='zaino'?voce('interrogami','Interrogami su questo',''):'')+
+    (origineMenu?.tipo==='pdf'?voce('cita-pdf','Copia citazione',''):'')+
     voce('copia','Copia','');
 }
 function selMenuApri(x, y, sel){
@@ -13958,6 +13969,7 @@ document.addEventListener('contextmenu', function(e){
  * una delle due dimentica di fare un pezzo.
  */
 function selAzione(az, testo, range){
+  if(az==='cita-pdf'){var origine=citazioneOriginePdf(range);if(origine)citazioneCopiaPdf(zainoAttivo(),origine.file,origine.pagina,testo);else toast('Seleziona un passaggio di una sola pagina per citarlo.',false);return;}
   if(az==='interrogami'){var sup=evSupDaRange(range);window.zainoInterrogami?.({text:testo,file:sup && sup.tipo==='pdf'?ANTEPRIMA.file:''});return;}
   if(az==='copia'){
     if(!navigator.clipboard){ toast('Copia non disponibile',false); return; }
@@ -15055,6 +15067,7 @@ var SBIRCIA={ timer:null, su:null };
  *  risolto. `null` se quel link non è un rimando dell'app. */
 function rimandoDaLink(a){
   if(!a || !a.classList) return null;
+  if(a.dataset.citazioneZaino) return null;
   if(a.dataset.sourceId) return null; // Prima va verificata la revisione; mai mostrare una pagina sostituita.
   if(a.classList.contains('plink') && !a.classList.contains('figlink')){
     return { tipo:'pdf', numero:a.getAttribute('data-file'),
@@ -16484,7 +16497,7 @@ document.addEventListener('click', function(e){
   var a=e.target.closest?e.target.closest('a.vlink,a.plink,a.wlink,a.clink'):null; if(!a) return;
   e.preventDefault();
   if(a.classList.contains('vlink')){ openVideo(a.getAttribute('data-file'), parseInt(a.getAttribute('data-t'),10), a.getAttribute('data-label')); }
-  else if(a.classList.contains('plink')){ var pf=a.getAttribute('data-file');
+  else if(a.classList.contains('plink')){ if(a.dataset.citazioneZaino){citazioneZainoApri(a.dataset.citazioneZaino);return;}var pf=a.getAttribute('data-file');
     if(a.dataset.sourceId){
       var z=zainoAttivo();
       window.vault.chat.resolveSource(z,{sourceId:a.dataset.sourceId,revision:a.dataset.sourceRevision,page:parseInt(a.dataset.page,10)||1}).then(function(r){
@@ -22326,7 +22339,8 @@ window.addEventListener('keydown', function(e){
 <div id="calloutMenu" class="popmenu" role="menu" aria-label="Tipo di riquadro"></div>
 <div id="helpPop" class="popmenu" role="dialog" aria-label="Esempi di cosa scrivere"></div>
 <div id="matPop" class="popmenu" role="dialog" aria-label="Cita un materiale">
-  <input id="matCerca" type="search" placeholder="Cerca fra i materiali: numero, nome, tipo…" autocomplete="off">
+  <label for="matZaino">Zaino della fonte</label><select id="matZaino" aria-label="Zaino della fonte"></select>
+  <label for="matCerca">Cerca un materiale</label><input id="matCerca" type="search" placeholder="Cerca fra i materiali: numero, nome, tipo…" autocomplete="off">
   <div id="matLista"></div>
 </div>
 
@@ -22890,5 +22904,14 @@ window.addEventListener('keydown', function(e){
 <script src="assets/chat/citazioni.js"></script>
 <script src="assets/chat/ui.js"></script>
 <script src="assets/sicurezza/impostazioni.js"></script>
+<div id="zainiMenu" class="popmenu" role="dialog" aria-label="Scegli uno zaino"></div>
+<dialog id="citazioneDialog" aria-labelledby="citazioneTitolo">
+  <div class="tbar"><strong id="citazioneTitolo">Citazione PDF</strong><span class="tbspazio"></span><button type="button" id="citazioneChiudi" class="tbtn" title="Chiudi la fonte" aria-label="Chiudi la fonte"></button></div>
+  <div class="tbar"><button type="button" id="citazionePrima" class="tbtn" title="Pagina precedente" aria-label="Pagina precedente"></button><span id="citazioneConto">− DI −</span><button type="button" id="citazioneDopo" class="tbtn" title="Pagina successiva" aria-label="Pagina successiva"></button><span class="tbsep"></span><button type="button" id="citazioneCopia" class="tbtn">Copia citazione</button><span class="tbsep"></span><button type="button" id="citazioneVai" class="tbtn">Vai allo zaino di origine</button></div>
+  <p id="citazioneStato" role="status"></p>
+  <div id="citazionePdf"><div id="citazioneFrame"><div id="citazionePagine" class="pdfViewer"></div></div></div>
+</dialog>
+<script src="assets/rimandi/citazioni-ui.js"></script>
+<script src="assets/interfaccia/zaini-menu.js"></script>
 </body>
 </html>

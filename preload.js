@@ -226,6 +226,10 @@ const vaultApi = {
      perché lo è il concetto — un contenitore e i suoi PDF. Appunti, mappe e
      album dello zaino NON passano da qui: usano i loro canali di sempre con
      l'id dello zaino al posto di quello del corso. */
+  citazioni: {
+    crea:(zaino,file,pagina,testo)=>ipcRenderer.invoke('citazioni:crea',{zaino,file,pagina,testo}),
+    risolvi:rimando=>ipcRenderer.invoke('citazioni:risolvi',{rimando})
+  },
   zaino: {
     gruppiLeggi: (corso, sezione) => ipcRenderer.invoke('zaino:gruppi-leggi', { corso, sezione }),
     gruppiSalva: (corso, stato, sezione) => ipcRenderer.invoke('zaino:gruppi-salva', { corso, stato, sezione }),

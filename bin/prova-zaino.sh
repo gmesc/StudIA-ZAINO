@@ -36,7 +36,7 @@ for _ in $(seq 1 40); do if curl -sf "http://127.0.0.1:$PORTA/json/version" >/de
 # ⚠️ IL REGISTRO delle prove sullo zaino sintetico (chat, fonti e appunti). Una prova nuova va
 # scritta QUI, o non la lancia nessuno: `con-vault-di-prova.sh` gira sul vault
 # vero copiato e non conosce lo zaino «biologia» che questo script fabbrica.
-PROVE=(prova-sicurezza.js prova-sicurezza-impostazioni.js prova-album-unificato.js prova-topbar-zaino.js prova-chat-zaino.js prova-chat-stile.js prova-gruppi-fonti.js prova-callout-bolla.js prova-editor-pari.js prova-spostamento-split.js prova-banco-riduzione.js prova-cronologia-citazioni.js prova-chat-fonti.js prova-rag-download.js prova-studio-zaino.js prova-indice-adattivo.js prova-rag-locale.js prova-percorso-studio.js prova-studio-essenziale.js prova-ripasso-elenco.js prova-schede-citazioni.js prova-chiusura-split.js prova-toolbar-essenziali.js)
+PROVE=(prova-citazioni-zaini.js prova-sicurezza.js prova-sicurezza-impostazioni.js prova-album-unificato.js prova-topbar-zaino.js prova-chat-zaino.js prova-chat-stile.js prova-gruppi-fonti.js prova-callout-bolla.js prova-editor-pari.js prova-spostamento-split.js prova-banco-riduzione.js prova-cronologia-citazioni.js prova-chat-fonti.js prova-rag-download.js prova-studio-zaino.js prova-indice-adattivo.js prova-rag-locale.js prova-percorso-studio.js prova-studio-essenziale.js prova-ripasso-elenco.js prova-schede-citazioni.js prova-chiusura-split.js prova-toolbar-essenziali.js)
 # Un sottoinsieme mirato: bash bin/prova-zaino.sh prova-callout-bolla.js
 if [ "$#" -gt 0 ]; then PROVE=("$@"); fi
 KO=0

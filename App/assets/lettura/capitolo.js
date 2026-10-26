@@ -386,6 +386,7 @@
          forma delle mappe NN→file — dimenticare quel `padStart` era il modo in
          cui un rimando smetteva di aprire senza sollevare niente. */
       var rif=Rimandi.leggi(urlv);
+      if(rif && rif.tipo==='pdf-zaino') return '<a href="#" class="plink" data-citazione-zaino="'+g.esc(Rimandi.scriviPdfZaino(rif.zainoId,rif.sourceId,rif.pagina,rif.revision))+'" title="Consulta la fonte nello zaino di origine">'+txt+'</a>';
       if(rif && rif.tipo==='video'){ var f=g.mediaNum()[rif.numero]||'';
         return '<a href="#" class="vlink" data-file="'+g.esc(f)+'" data-t="'+rif.t+'" data-label="'+txt+'">'+txt+'</a>'; }
       if(rif && rif.tipo==='pdf'){ var pf=g.pdfNum()[rif.numero]||'';

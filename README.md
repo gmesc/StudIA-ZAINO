@@ -49,6 +49,16 @@ Il riepilogo **Materiali usati** compare nella ricerca e nella scelta o creazion
 
 Le domande di ciascuna scheda si possono comprimere dal titolo con il chevron e il conteggio. Le domande create singolarmente restano visibili; apertura e chiusura dei gruppi si conservano mentre usi i filtri o torni all’elenco nello stesso zaino. Le domande della scheda sono rientrate, senza linea; le domande singole hanno una linea verde chiara, più marcata su quella aperta. L’etichetta **Aperta** indica il punto del ripasso. La matita accanto a **Domande** attiva le spunte e **Elimina selezionate**: puoi scegliere più domande, un gruppo o l’elenco filtrato. Le rimozioni restano salvate nello zaino; non alterano le schede originali. **Annulla** ripristina l’ultima eliminazione con i tentativi precedenti, anche dopo la riapertura dell’app.
 
+## Citazioni fra zaini
+
+Seleziona un passaggio nel PDF e scegli **Copia citazione**, poi incollalo in un appunto di un altro zaino dello stesso vault. Nel secondo lettore il comando è nel menu del tasto destro. La toolbar Appunti → **Cita un materiale** permette anche di scegliere lo **Zaino della fonte** e inserire il rimando alla pagina.
+
+Il link mostra **Zaino › PDF · pagina** e apre una consultazione in sola lettura senza cambiare lo zaino attivo. **Vai allo zaino di origine** cambia invece il contesto esplicitamente. Identità permanenti e revisione proteggono da rinomine, spostamenti tra gruppi e sostituzioni; fonti mancanti, cambiate o zaini con identità duplicata vengono segnalati. Il registro delle fonti ammette PDF fino a 40 MB. Esportare solo lo zaino con gli appunti conserva testo e riferimenti, ma non copia i PDF degli altri zaini.
+
+Le citazioni non ampliano il recupero AI: l’AI non consulta lo zaino di origine. Il testo già copiato in un appunto locale può essere usato se quell’appunto rientra nelle fonti scelte, con attribuzione all’appunto.
+
+Il menu degli zaini è una bolla con conteggi dei PDF riletti a ogni apertura, anche nei gruppi. AZ/ZA inverte l’ordine alfabetico; calendario ↑ ordina dal meno recente al più recente, ↓ dal più recente al meno recente. L’ordine scelto si conserva. Uno zaino vuoto mostra **0 PDF**; un conteggio fallito viene dichiarato.
+
 ## Materiali in parallelo
 
 I pulsanti delle azioni hanno sfondo trasparente e hover verde, anche nelle toolbar e sulle superfici colorate. Spazi e linee verticali separano i gruppi di comandi. Il verde persistente indica una selezione o un comando acceso, come la raccolta di Album; Album e Impostazioni non aggiungono una barra sotto il tab selezionato. Nella sidebar, ordinamento e matita compaiono solo nelle sezioni aperte, con testo verde scuro; nelle sezioni chiuse restano nome e chevron.

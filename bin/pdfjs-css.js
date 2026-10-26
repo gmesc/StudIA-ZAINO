@@ -52,7 +52,7 @@ const USCITA = path.join(__dirname, '..', 'App', 'assets', 'pdfjs', 'pdf_viewer.
    e un guscio che ne copre uno solo lascia l'altro con 266 pagine ad altezza
    ZERO — misurato: `_getVisiblePages()` vuota, nessun rendering, nessun
    errore da nessuna parte. Chi aggiunge un terzo riquadro lo aggiunge QUI. */
-const GUSCIO = ':is(#pdfPane, #pdfPane2)';
+const GUSCIO = ':is(#pdfPane, #pdfPane2, #citazionePdf)';
 /* Il selettore con cui rinascono i blocchi `:root` DENTRO il guscio: «il guscio stesso». */
 const RADICE = '&';
 

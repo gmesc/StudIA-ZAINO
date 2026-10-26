@@ -84,7 +84,7 @@
         <h3 id="creare-passi">I passi, uno alla volta</h3>
         <ol class="passi">
           <li>Guarda la barra in alto. Accanto al marchio STUDIA trovi la tendina <strong>«ZAINO ▾»</strong>. Aprila.</li>
-          <li>Scegli <strong>«+ Crea uno zaino nuovo»</strong>, in fondo al menu. Si apre un pannello con un campo: <strong>«Nome della materia»</strong>. Nel campo c'è un esempio: «es. Diritto pubblico».</li>
+          <li>Scegli <strong>«Crea uno zaino»</strong>, in fondo al menu. Si apre un pannello con un campo: <strong>«Nome della materia»</strong>. Nel campo c'è un esempio: «es. Diritto pubblico».</li>
           <li>Scrivi il nome. In questa guida scriviamo <em>Sistema solare</em>.</li>
           <li>Premi <strong>«Crea»</strong>, oppure premi <kbd>Invio</kbd>.</li>
           <li>In basso compare l'avviso «Zaino creato: Sistema solare». Lo zaino è vuoto ed è pronto.</li>
@@ -92,12 +92,12 @@
 
         <div class="griglia2">
           <figure class="fig-pannello">
-            <img src="img/03-sidebar-vuota.png" alt="La sidebar dice: Nessuno zaino. Apri il menu ZAINO in alto e scegli + Crea uno zaino nuovo." loading="lazy">
+            <img src="img/03-sidebar-vuota.png" alt="La sidebar dice: Nessuno zaino. Apri il menu ZAINO in alto e scegli Crea uno zaino." loading="lazy">
             <figcaption><b>Passo 1.</b> Senza zaini, la sidebar dice che cosa fare.</figcaption>
           </figure>
           <figure class="fig-pannello">
-            <img src="img/04-pop-crea-zaino.png" alt="Il pannello «Nome della materia», aperto dalla voce + Crea uno zaino nuovo" loading="lazy">
-            <figcaption><b>Passo 2.</b> La voce «+ Crea uno zaino nuovo» apre il pannello. Puoi scrivere subito: il cursore è già nel campo.</figcaption>
+            <img src="img/04-pop-crea-zaino.png" alt="Il pannello «Nome della materia», aperto dalla voce Crea uno zaino" loading="lazy">
+            <figcaption><b>Passo 2.</b> La voce «Crea uno zaino» apre il pannello. Puoi scrivere subito: il cursore è già nel campo.</figcaption>
           </figure>
           <figure class="fig-pannello">
             <img src="img/05-pop-nome-scritto.png" alt="Il nome «Sistema solare» scritto nel campo e il puntatore sul pulsante Crea" loading="lazy">
@@ -129,10 +129,10 @@
         </ul>
 
         <h3 id="creare-piu">Più zaini, e come si cambia zaino</h3>
-        <p>Puoi creare quanti zaini vuoi. Di solito se ne crea uno per materia. La tendina accanto a <strong>STUDIA</strong> mostra <strong>«ZAINO» e il nome dello zaino aperto</strong>. Aprila per vedere tutti gli zaini. Accanto a ogni nome c'è quanti documenti contiene. Scegli uno zaino e l'app lo apre. In basso compare l'avviso «Zaino: Storia romana».</p>
+        <p>Puoi creare quanti zaini vuoi. Di solito se ne crea uno per materia. La tendina accanto a <strong>STUDIA</strong> mostra <strong>«ZAINO» e il nome dello zaino aperto</strong>. Aprila per vedere tutti gli zaini. Accanto a ogni nome trovi il numero aggiornato dei PDF, compresi quelli nei gruppi. In alto, AZ/ZA cambia l’ordine alfabetico; il calendario ordina per creazione, ↑ dal meno recente al più recente e ↓ dal più recente al meno recente. La scelta viene ricordata. Scegli uno zaino e l'app lo apre. In basso compare l'avviso «Zaino: Storia romana».</p>
         <figure class="fig-pannello">
-          <img src="img/08-tendina-zaini.png" alt="La tendina ZAINO aperta con due zaini: «Sistema solare · 1 documento» e «Storia romana»" loading="lazy">
-          <figcaption><b>La tendina degli zaini.</b> Il numero accanto al nome conta solo i documenti PDF. I video, gli audio e le immagini non si contano.</figcaption>
+          <img src="img/08-tendina-zaini.png" alt="Menu degli zaini con conteggi dei PDF e pulsanti per ordinare per nome o data" loading="lazy">
+          <figcaption><b>Il menu degli zaini.</b> Il numero accanto al nome conta solo i documenti PDF. I video, gli audio e le immagini non si contano.</figcaption>
         </figure>
 
         <div class="callout fonte">
@@ -537,7 +537,7 @@
           <figcaption><b>La barra di StudIA - ZAINO.</b> Sei comandi.</figcaption>
         </figure>
         <ol class="legenda">
-          <li data-n="1"><strong>«ZAINO [nome] ▾»</strong> — mostra lo zaino aperto. Apri il menu per cambiare zaino. L’ultima voce, <strong>«+ Crea uno zaino nuovo»</strong>, serve a crearne uno.</li>
+          <li data-n="1"><strong>«ZAINO [nome] ▾»</strong> — mostra lo zaino aperto. Apri il menu per cambiare zaino. L’ultima voce, <strong>«Crea uno zaino»</strong>, serve a crearne uno.</li>
           <li data-n="2"><strong>La lente</strong> — cerca in tutto lo zaino. Anche <kbd>⌘F</kbd>.</li>
           <li data-n="3"><strong>Il rettangolo diviso in due</strong> — apre Banco, per scegliere in quanti blocchi dividere lo schermo.</li>
           <li data-n="4"><strong>Il fumetto</strong> — apre Chat AI, il tutor.</li>
@@ -1352,6 +1352,16 @@
           <figure class="fig-pannello"><img src="img/59-cita-materiale.png" alt="Il pannello «Cita un materiale» con l'elenco dei materiali" loading="lazy"><figcaption><b>📎 Cita un materiale.</b> Scegli il materiale, poi la pagina o il minuto.</figcaption></figure>
           <figure class="fig-intera"><img src="img/59b-guida-notazioni.png" alt="La finestra «Come si scrive in StudIA» con la tabella delle notazioni" loading="lazy"><figcaption><b>? Come si scrive in StudIA.</b> Tutte le notazioni, con un esempio per ognuna.</figcaption></figure>
         </div>
+        <!-- I materiali originali restano nello zaino di origine. -->
+        <h3 id="citazioni-zaini">Citare un PDF di un altro zaino</h3>
+        <ol class="passi">
+          <li>Seleziona un passaggio nel PDF e scegli <strong>Copia citazione</strong>. Nel secondo lettore il comando è nel menu del tasto destro.</li>
+          <li>Apri lo zaino di destinazione e incolla nell’appunto. Il testo mantiene il riferimento <strong>Zaino › PDF · pagina</strong>.</li>
+          <li>Oppure, nella toolbar Appunti, apri <strong>Cita un materiale</strong>, scegli lo <strong>Zaino della fonte</strong>, il PDF e la pagina.</li>
+          <li>Apri il riferimento nell’anteprima dell’appunto: la fonte appare in sola lettura. Lo zaino attivo resta lo stesso. <strong>Vai allo zaino di origine</strong> lo cambia esplicitamente.</li>
+        </ol>
+        <p>Le citazioni funzionano fra zaini dello stesso vault, conservano il legame dopo le rinomine e segnalano fonti mancanti o modificate. L’AI non segue i collegamenti verso altri zaini. Può leggere il testo già copiato nell’appunto, quando quell’appunto è tra le fonti ammesse. I PDF citabili hanno il limite di 40 MB del registro delle fonti.</p>
+        <figure class="fig-intera"><img src="img/211-citazione-zaino.png" alt="Anteprima in sola lettura di un PDF citato da un altro zaino" loading="lazy"><figcaption><b>Consulta la fonte.</b> Puoi cambiare pagina e copiare un altro estratto senza cambiare lo zaino attivo.</figcaption></figure>
       </section>
 
       <!-- ============================================================ -->

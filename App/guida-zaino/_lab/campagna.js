@@ -61,7 +61,7 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
 
     await L.scatta('03-sidebar-vuota', { clip: { x: 0, y: 40, width: 280, height: 140 }, scala: 3 });
     await L.scatta('03b-zaino-senza-zaini');
-    await L.val(`(()=>{const s=document.getElementById('zainoSelect');s.value='__nuovo__';s.dispatchEvent(new Event('change',{bubbles:true}));})()`); const p = await L.centro('#zainoScegli'); await L.pausa(500);
+    await L.val(`zainoPopApri(document.getElementById('zainoScegli'))`); const p = await L.centro('#zainoScegli'); await L.pausa(500);
     await L.puntatore(p.x, p.y);
     const zp = await L.rect('#zainoPop');
     await L.scatta('04-pop-crea-zaino', { clip: { x: Math.max(0,zp.x - 90), y: 0, width: 470, height: zp.y + zp.h + 16 }, scala: 3 });
@@ -80,7 +80,7 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
   await passo('02 topbar numerata', async () => {
     const tb = await L.rect('header.topbar');
     await L.banda({ x: 0, y: tb.y + tb.h, w: W, h: 0 }, { altezza: 34 });
-    await L.numeri(['#zainoSelect','#searchBtn','#bancoBtn','#chatBtn','#settingsBtn','#themeToggle'].map((sel,i)=>({sel,n:i+1,dove:'b'})), { filo: tb.y + tb.h + 5 });
+    await L.numeri(['#zainoScegli','#searchBtn','#bancoBtn','#chatBtn','#settingsBtn','#themeToggle'].map((sel,i)=>({sel,n:i+1,dove:'b'})), { filo: tb.y + tb.h + 5 });
     await L.scatta('02-topbar-zaino', { clip: { x: 0, y: 0, width: W, height: tb.h + 36 }, scala: 3 });
     await L.overlayPulisci();
   });
@@ -549,9 +549,9 @@ async function noteFileChe(re) { const f = await L.val(`window.vault.notes.leggi
     await L.val(`(async()=>{ await zainoCrea('Storia romana'); return 1; })()`); await L.pausa(1200);
     await L.val(`(async()=>{ await cambiaZaino('sistema-solare'); return 1; })()`); await L.pausa(1000);
     await toastVia();
-    await L.tendinaFinta('#zainoSelect', { largh: 260 });
-    const zs = await L.rect('#zainoSelect');
-    await L.scatta('08-tendina-zaini', { clip: { x: zs.x - 120, y: 0, width: 420, height: 130 }, scala: 3 });
+    await L.clicca('#zainoScegli');await L.finoA(`!!document.querySelector('#zainiMenu[open] .zaini-voce')`,8000);
+    const zs = await L.rect('#zainoScegli');
+    await L.scatta('08-tendina-zaini', { sel:'#zainiMenu',margine:16,scala:2 });await L.val('closePops()');
     await L.overlayPulisci();
     await L.clicca('#settingsBtn'); await L.pausa(600);
     await L.clicca('.set-tab[data-tab="zaino"]'); await L.pausa(700);

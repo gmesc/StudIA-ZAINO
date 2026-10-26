@@ -11,7 +11,7 @@ async function shot(nome,sel){await L.muovi(10,940);await L.pausa(500);await L.s
  await wait(`!!PDFJS.doc && PDFJS.pronto`);await L.pausa(1200);await L.muovi(10,940);
  await barre.fonti(L);
  const tb=await L.rect('header.topbar');await L.banda({x:0,y:tb.y+tb.h,w:1470,h:0},{altezza:34});
- await L.numeri(['#zainoSelect','#searchBtn','#bancoBtn','#chatBtn','#settingsBtn','#themeToggle'].map((sel,i)=>({sel,n:i+1,dove:'b'})),{filo:tb.y+tb.h+5});
+ await L.numeri(['#zainoScegli','#searchBtn','#bancoBtn','#chatBtn','#settingsBtn','#themeToggle'].map((sel,i)=>({sel,n:i+1,dove:'b'})),{filo:tb.y+tb.h+5});
  await L.scatta('02-topbar-zaino',{clip:{x:0,y:0,width:1470,height:tb.h+36},scala:3});await L.overlayPulisci();
  await shot('23a-zoom-larghezza','#pdfZoom');await L.val('pdfZoomAdatta()');await L.pausa(500);await shot('23b-zoom-pagina','#pdfZoom');await L.val('pdfZoomPasso(true)');await L.pausa(500);await shot('23c-zoom-percento','#pdfZoom');
  await L.val(`bancoAssegna('A','appunti');notesReload();noteOpen(NOTES.list[0].file,NOTES)`);await wait(`!!NOTES.cur`);await L.pausa(500);await barre.appunti(L);

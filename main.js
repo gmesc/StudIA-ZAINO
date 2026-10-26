@@ -440,6 +440,17 @@ ipcMain.handle('course:list', () => {
  * vorrebbe dire due regole che invecchiano separate.
  */
 const zainiLib = require('./lib/zaini');
+const citazioniZaini=require('./lib/citazioni-zaini');
+ipcMain.handle('citazioni:crea',(_e,o={})=>citazioniZaini.crea(vaultDir(),o.zaino,o.file,o.pagina,o.testo));
+ipcMain.handle('citazioni:risolvi',async(_e,o={})=>{
+  const r=citazioniZaini.risolvi(vaultDir(),o.rimando);
+  if(r.status!=='available')return r;
+  const esito=(await sicurezzaPdf.controlla([r.path])).esiti[0];
+  if(!esito?.ok)throw Error(esito?.error||'PDF non verificato.');
+  const bytes=citazioniZaini.leggi(r);
+  if(esito.hash&&require('./lib/fonti-ai').hash(bytes)!==esito.hash)throw Error('Il PDF è cambiato dopo il controllo di sicurezza.');
+  const {path:percorso,...info}=r;return {...info,bytes};
+});
 ipcMain.handle('zaino:list', () => zainiLib.elenco(vaultDir()));
 const gruppiFontiLib = require('./lib/gruppi-fonti');
 ipcMain.handle('zaino:gruppi-leggi', (e, { corso, sezione } = {}) => gruppiFontiLib.leggi(vaultDir(), corso, sezione));

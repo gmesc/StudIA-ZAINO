@@ -161,7 +161,7 @@ esac
 #     questo elenco non ci sono.
 # Cioè: questo non è un insieme, è una CATENA. Chi ne toglie o sposta un pezzo la rilancia.
 #
-# ⚠️ Per la stessa ragione i due registri seguono l'ORDINE di `PROVE=(`, non l'alfabeto: le
+# ⚠️ Per la stessa ragione i due registri seguono l'ORDINE di `PROVE=(prova-citazioni-zaini.js `, non l'alfabeto: le
 # prove si preparano il terreno a vicenda, e riordinarle le rompe. Misurato — con gli stessi
 # 43 nomi in ordine alfabetico, `STUDIA_SUITE=corsi` sull'app originale dava 4 rosse; nel
 # loro ordine, nessuna.

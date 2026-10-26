@@ -26,14 +26,14 @@ const primo = stato('primo.md'), secondo = stato('secondo.md');
 let attivo = primo, corso = 'biologia', rispondi;
 const elementi = new Map();
 const $ = id => {
-  if (!elementi.has(id)) elementi.set(id, {value:'', innerHTML:'', focus(){}});
+  if (!elementi.has(id)) elementi.set(id, {value:'', innerHTML:'', focus(){},hasAttribute:()=>true});
   return elementi.get(id);
 };
 const messaggi = [], chiusi = [];
 const ctx = {NOTES:primo, noteStatoAttivo:()=>attivo, corsoAttivo:()=>corso,
   mdbChiudi:(_,s)=>chiusi.push(s), toast:t=>messaggi.push(t), $,
   renderNoteMd:t=>t, escHtml:t=>t, noteDove:()=>'',
-  MATERIALI:{}, ANTEPRIMA:{tipo:'pdf',file:'01 Botanica.pdf',page:1},
+  MATERIALI:{}, MODO:{zaini:[{id:'biologia',title:'Biologia'},{id:'storia',title:'Storia'}]}, ANTEPRIMA:{tipo:'pdf',file:'01 Botanica.pdf',page:1},
   RimandiSintassi:require('../App/assets/rimandi/sintassi'),
   closePops(){}, popAt(){}, caricaMateriali:()=>Promise.resolve(), disegnaMateriali(){},
   askText:()=>new Promise(r=>{rispondi=r;}), setTimeout:f=>f(),
@@ -67,6 +67,20 @@ vm.createContext(ctx);
   secondo.cur={file:'cambiato.md'};rispondi('5');await Promise.resolve();
   assert(!secondo.mde.value().includes('pdf:01#p=5'),'un cambio documento annulla il vecchio destinatario');
   assert(messaggi.at(-1).includes('destinazione è cambiato'));
+
+  // Il tempo di verificare una fonte esterna non autorizza a scrivere nel nuovo appunto.
+  let fontePronta,richiesta;
+  ctx.window={vault:{citazioni:{crea:(...args)=>{richiesta=args;return new Promise(r=>{fontePronta=r;});}}}};
+  ctx.noteScriviAlCursore=(t,s)=>s.mde.codemirror.replaceSelection(t);
+  ctx.apriMateriali(null,secondo);ctx.MATERIALI.zaino='storia';
+  ctx.scegliMateriale('01 Fonte esterna.pdf','pdf','01');rispondi('2');await Promise.resolve();
+  assert.deepEqual(richiesta,['storia','01 Fonte esterna.pdf',2,'']);
+  attivo=primo;fontePronta({markdown:'[Citazione esterna](zaino-pdf:esempio)'});await new Promise(setImmediate);
+  assert(secondo.mde.value().includes('[Citazione esterna]'));assert.equal(primo.mde.value(),'primo.md');
+  ctx.apriMateriali(null,secondo);ctx.MATERIALI.zaino='storia';
+  ctx.scegliMateriale('01 Fonte esterna.pdf','pdf','01');rispondi('3');await Promise.resolve();
+  secondo.cur={file:'altra-destinazione.md'};fontePronta({markdown:'NON_INSERIRE'});await new Promise(setImmediate);
+  assert(!secondo.mde.value().includes('NON_INSERIRE'));
 
   attivo=secondo;ctx.openEmojiPop(null);attivo=primo;ctx.emojiScelta('🌱');
   assert(secondo.mde.value().includes('🌱'));assert(!primo.mde.value().includes('🌱'));

@@ -1,0 +1,74 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),c=require('./cdp'),q=JSON.stringify;
+async function wait(expr){for(let i=0;i<180;i++){if(await c.val(expr))return;await c.pausa(100);}throw Error('Attesa: '+expr+'; '+JSON.stringify(await c.val(`({dialog:document.getElementById('citazioneDialog').open,stato:document.getElementById('citazioneStato').textContent})`)));}
+(async()=>{
+ await c.collega();await wait(`typeof zainiMenuApri==='function'&&!!zainoAttivo()`);await c.partiPulito();
+ const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
+ let fileCreato;
+ const letture=['biologia','storia'].map(z=>{const p=path.join(vault,'Zaini',z,'_lettura.json');return [p,fs.existsSync(p)?fs.readFileSync(p):null];});
+ const prima=await c.val(`({z:zainoAttivo(),banco:bancoStato(),storage:{...localStorage},tema:document.documentElement.dataset.theme})`);
+ const gruppo=path.join(vault,'Zaini/biologia/MATERIALI/PDF/Gruppi/Nuovi'),extra=path.join(gruppo,'03 Aggiunta.pdf');fs.mkdirSync(gruppo,{recursive:true});
+ try{
+  await c.clicca('#zainoScegli');await wait(`!!document.querySelector('#zainiMenu[open] .zaini-voce')`);
+  assert((await c.val(`document.querySelector('[data-zaino-scegli="biologia"] .zaini-conto').textContent`)).includes('2 PDF'));
+  await c.val('closePops()');fs.copyFileSync(path.join(vault,'Zaini/biologia/MATERIALI/PDF/01 Botanica.pdf'),extra);
+  await c.clicca('#zainoScegli');await wait(`document.querySelector('[data-zaino-scegli="biologia"] .zaini-conto')?.textContent==='3 PDF'`);
+  assert.equal(await c.val(`document.querySelector('[data-zaino-scegli="storia"] .zaini-conto').textContent`),'0 PDF');
+  assert(await c.val(`parseFloat(getComputedStyle(document.getElementById('zainoScegli')).paddingLeft)>=8`),'area del bottone più larga del titolo');
+  await c.clicca('#zainiAlfa');assert.equal(await c.val(`document.getElementById('zainiAlfa').textContent`),'AZ');
+  await c.clicca('#zainiData');assert.equal(await c.val(`document.querySelector('#zainiData svg:last-child').dataset.icona`),'chevron-down');
+  await c.clicca('#zainiData');assert.equal(await c.val(`document.querySelector('#zainiData svg:last-child').dataset.icona`),'chevron-up');
+  for(const tema of ['chiaro','scuro']){await c.val(`document.documentElement.dataset.theme=${q(tema)}`);assert(await c.val(`document.getElementById('zainiMenu').getBoundingClientRect().right<=innerWidth`));}
+  await c.val(`document.documentElement.dataset.theme='chiaro'`);
+  let shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-menu-citazioni.png',Buffer.from(shot.result.data,'base64'));
+  await c.clicca('[data-zaino-scegli="biologia"]');
+  await c.val(`bancoForma('due-col');bancoAssegna('A','fonte');bancoAssegna('C','appunti');openPdf('01 Botanica.pdf',2,'Botanica',true)`);
+  await wait(`!!document.querySelector('#pdfHost .page[data-page-number="2"] .textLayer span')`);
+  await c.val(`window.__copiaPrima=navigator.clipboard.writeText;navigator.clipboard.writeText=async t=>{window.__citazioneCopiata=t;};window.__selezionaPdf=()=>{const n=document.querySelector('#pdfHost .page[data-page-number="2"] .textLayer span').firstChild,r=document.createRange();r.selectNodeContents(n);const s=getSelection();s.removeAllRanges();s.addRange(r);return r;};selMenuApri(350,250,{range:window.__selezionaPdf(),testo:'Botanica - pagina 2'});`);
+  await c.clicca('#selMenu [data-az="cita-pdf"]');await wait(`window.__citazioneCopiata?.includes('zaino-pdf:')`);
+  assert((await c.val('window.__citazioneCopiata')).includes('> Botanica - pagina 2'));
+  const cita=await c.val(`window.vault.citazioni.crea('biologia','01 Botanica.pdf',2,'Botanica - pagina 2')`);
+  assert(cita.markdown?.includes('Biologia › 01 Botanica.pdf · p. 2'),JSON.stringify(cita));
+  await c.val(`cambiaZaino('storia',true);bancoForma('due-col');bancoAssegna('A','appunti');bancoAssegna('C','fonte')`);
+  const nota=await c.val(`window.vault.notes.save('storia',null,{title:'Citazione incrociata'},${q(cita.markdown)})`);assert(!nota.error,JSON.stringify(nota));fileCreato=path.join(vault,'Zaini/storia/APPUNTI',nota.file);
+  await c.val(`notesReload();noteOpen(${q(nota.file)},NOTES)`);await wait(`NOTES.cur?.file===${q(nota.file)}`);
+  // Lo stesso parser usato nell'anteprima e nella stampa deve mantenere il riferimento qualificato.
+  const html=await c.val(`renderNoteMd(${q(cita.markdown)})`);assert(html.includes('data-citazione-zaino'));
+  await c.val(`window.__linkProva=document.createElement('div');window.__linkProva.innerHTML=${q(html)};document.body.append(window.__linkProva);window.__linkProva.querySelector('a').click();window.__linkProva.remove()`);
+  await wait(`document.getElementById('citazioneConto').textContent==='2 DI 3'`);
+  assert.equal(await c.val('zainoAttivo()'),'storia');assert.equal(await c.val('NOTES.cur.file'),nota.file);
+  await wait(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] canvas')`);
+  await wait(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span')`);
+  assert((await c.val(`document.getElementById('citazioneTitolo').textContent`)).includes('Biologia'));
+  assert(await c.val(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] canvas').getBoundingClientRect().height`));
+  await c.val(`(()=>{const r=document.createRange();r.selectNodeContents(document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span'));getSelection().removeAllRanges();getSelection().addRange(r);window.__citazioneCopiata='';})()`);
+  await c.clicca('#citazioneCopia');await wait(`window.__citazioneCopiata?.includes('> Botanica - pagina 2')`);
+  shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-citazione-anteprima.png',Buffer.from(shot.result.data,'base64'));
+  await c.clicca('#citazioneDopo');await wait(`document.getElementById('citazioneConto').textContent==='3 DI 3'`);
+  // Riapri nello stesso gesto: l'evento close precedente non deve cancellare la nuova richiesta.
+  await c.val(`document.getElementById('citazioneChiudi').click();citazioneZainoApri(${q(cita.rimando.replace(/r=[a-f0-9]+/,'r='+'0'.repeat(64)))})`);
+  assert.equal(await c.val('zainoAttivo()'),'storia');
+  await wait(`document.getElementById('citazioneStato').textContent.includes('La fonte è cambiata')`);
+  assert.equal(await c.val(`document.querySelectorAll('#citazionePagine canvas').length`),0);await c.clicca('#citazioneChiudi');
+  // Il selettore dell'editor legge A ma scrive nell'appunto B catturato all'apertura.
+  await c.val(`apriMateriali(document.querySelector('#noteHost .ncb-mat'),NOTES)`);await wait(`!!document.getElementById('matZaino')`);
+  await c.val(`document.getElementById('matZaino').value='biologia';document.getElementById('matZaino').dispatchEvent(new Event('change',{bubbles:true}))`);
+  await wait(`!!document.querySelector('#matLista [data-mat="01 Botanica.pdf"]')`);
+  await c.val(`window.__askCross=askText;askText=()=>Promise.resolve('1');scegliMateriale('01 Botanica.pdf','pdf','01')`);
+  await wait(`NOTES.mde.value().includes('p. 1]')`);await c.val(`askText=window.__askCross;noteFlushStato(NOTES)`);
+  assert(fs.readFileSync(path.join(vault,'Zaini/storia/APPUNTI',nota.file),'utf8').includes('zaino-pdf:'));
+  // Riapertura della citazione dopo rinomina del PDF: identità, non nome o numero.
+  const old=path.join(vault,'Zaini/biologia/MATERIALI/PDF/01 Botanica.pdf'),ren=path.join(gruppo,'01 Botanica rinominata.pdf');fs.renameSync(old,ren);
+  try{await c.val(`citazioneZainoApri(${q(cita.rimando)})`);await wait(`document.getElementById('citazioneTitolo').textContent.includes('rinominata')`);await c.clicca('#citazioneChiudi');}
+  finally{fs.renameSync(ren,old);}
+  await c.clicca('#noteClose');
+ }finally{
+  fs.rmSync(extra,{force:true});
+  await c.val(`if(document.getElementById('citazioneDialog').open)document.getElementById('citazioneDialog').close();if(window.__askCross)askText=window.__askCross;if(window.__copiaPrima)navigator.clipboard.writeText=window.__copiaPrima;closePops();localStorage.clear();Object.entries(${q(prima.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));cambiaZaino(${q(prima.z)},true);BANCO.stato=${q(prima.banco)};bancoSalva();bancoDisegna();document.documentElement.dataset.theme=${q(prima.tema)}`);
+  if(fileCreato)fs.rmSync(fileCreato,{force:true});
+  await c.val(`closePdf();clearTimeout(LETTURA.timer);LETTURA.timer=null;LETTURA.attesa=null;`);await c.pausa(150);
+  for(const [p,b] of letture){if(b)fs.writeFileSync(p,b);else fs.rmSync(p,{force:true});}
+  await c.val(`letturaCarica()`);
+ }
+ console.log('citazioni tra zaini: menu aggiornato, ordine, inserimento e anteprima senza cambio del contesto OK');process.exit(0);
+})().catch(e=>{console.error(e);process.exit(1);});

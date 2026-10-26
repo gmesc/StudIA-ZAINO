@@ -45,6 +45,7 @@
      è una svista: la stringa arriva già passata dall'escape dell'HTML, e
      cercare solo `&` la mancherebbe. */
   const RE = {
+    pdfZaino: /^zaino-pdf:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})#p=([1-9]\d{0,5})(?:&amp;|&)r=([0-9a-f]{64})$/,
     video: /^video:(\d+)#t=(\d+)$/,
     pdf: /^pdf:(\d+)#p=(\d+)$/,
     pdfSenzaPagina: /^pdf:(\d+)$/,
@@ -87,6 +88,18 @@
       ? base + '&s=' + fonte.sourceId + '&r=' + fonte.revision : base;
   }
 
+  /** Identità portabili: il nome dello zaino e quello del PDF possono cambiare. */
+  function scriviPdfZaino(zainoId, sourceId, pagina, revision) {
+    const s='zaino-pdf:'+zainoId+'/'+sourceId+'#p='+pagina+'&r='+revision;
+    return RE.pdfZaino.test(s) ? s : '';
+  }
+  function citazionePdfZaino(info, testo) {
+    if(!leggi(info.rimando) || leggi(info.rimando).tipo!=='pdf-zaino')return '';
+    const label=String(info.zainoTitolo+' › '+info.file+' · p. '+info.pagina).replace(/[\[\]\r\n]/g,'');
+    const estratto=String(testo||'').trim();
+    return (estratto?estratto.split(/\r?\n/).map(l=>'> '+l).join('\n')+'\n\n':'')+link(label,info.rimando);
+  }
+
   function scriviCap(capitoloId) {
     const id = String(capitoloId == null ? '' : capitoloId);
     return RE.cap.test('cap:' + id) ? 'cap:' + id : '';
@@ -118,6 +131,7 @@
   function leggi(url) {
     const s = String(url == null ? '' : url).trim();
     let m;
+    if ((m = RE.pdfZaino.exec(s))) return {tipo:'pdf-zaino',zainoId:m[1],sourceId:m[2],pagina:Number(m[3]),revision:m[4]};
     // I rimandi AI conservano la revisione: il numero da solo non autorizza l'apertura.
     const snap = /^(pdf:\d+(?:#p=\d+)?)(?:&amp;|&)s=([a-zA-Z0-9_-]{1,100})(?:&amp;|&)r=([0-9a-f]{64})$/.exec(s);
     if (snap) return Object.assign(leggi(snap[1]), { sourceId:snap[2], revision:snap[3] });
@@ -144,8 +158,8 @@
 
   return {
     RE: RE, nn: nn, numeroDi: numeroDi,
-    scriviVideo: scriviVideo, scriviPdf: scriviPdf, scriviCap: scriviCap,
-    scriviEv: scriviEv,
+    scriviVideo: scriviVideo, scriviPdf: scriviPdf, scriviPdfZaino:scriviPdfZaino, scriviCap: scriviCap,
+    scriviEv: scriviEv, citazionePdfZaino:citazionePdfZaino,
     link: link, leggi: leggi
   };
 }));

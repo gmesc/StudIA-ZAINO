@@ -20,4 +20,5 @@ GUIDA_VAULT="$LAVORO/vault" STUDIA_PORTA="$PORTA" node App/guida-zaino/_lab/camp
 GUIDA_VAULT="$LAVORO/vault" STUDIA_PORTA="$PORTA" node App/guida-zaino/_lab/fork.js
 GUIDA_VAULT="$LAVORO/vault" STUDIA_PORTA="$PORTA" node App/guida-zaino/_lab/novita.js
 GUIDA_VAULT="$LAVORO/vault" STUDIA_PORTA="$PORTA" node App/guida-zaino/_lab/ripasso-elenco.js
+GUIDA_VAULT="$LAVORO/vault" STUDIA_PORTA="$PORTA" node App/guida-zaino/_lab/citazioni-zaini.js
 GUIDA_VAULT="$LAVORO/vault" STUDIA_PORTA="$PORTA" node App/guida-zaino/_lab/verifica.js

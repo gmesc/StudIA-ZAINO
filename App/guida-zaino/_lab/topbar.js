@@ -1,6 +1,6 @@
 'use strict';
 const L=require('./lab'),fs=require('fs'),assert=require('assert');
-const seleziona=v=>L.val(`(()=>{const s=document.getElementById('zainoSelect');s.value=${JSON.stringify(v)};s.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+const seleziona=async v=>{await L.clicca('#zainoScegli');await L.finoA(`!!document.getElementById('zainiCrea')`,8000);await L.clicca(v==='__nuovo__'?'#zainiCrea':'[data-zaino-scegli="'+v+'"]');};
 (async()=>{
  await L.collega();const vault=process.env.GUIDA_VAULT;
  assert(vault && fs.realpathSync(vault).startsWith('/private/tmp/studia-guida-'));assert.equal(await L.val('window.vault.path'),vault);
@@ -16,7 +16,7 @@ const seleziona=v=>L.val(`(()=>{const s=document.getElementById('zainoSelect');s
  await L.clicca('#zainoCrea');await L.finoA(`zainoAttivo()==='sistema-solare'`,8000);await L.pausa(700);await L.scatta('06-zaino-appena-creato');
  await L.pausa(4000);await L.scatta('188-topbar-fork',{sel:'header.topbar',scala:3});
  const tb=await L.rect('header.topbar');await L.banda({x:0,y:tb.h,w:1470,h:0},{altezza:34});
- await L.numeri(['#zainoSelect','#searchBtn','#bancoBtn','#chatBtn','#settingsBtn','#themeToggle'].map((sel,i)=>({sel,n:i+1,dove:'b'})),{filo:tb.h+5});
+ await L.numeri(['#zainoScegli','#searchBtn','#bancoBtn','#chatBtn','#settingsBtn','#themeToggle'].map((sel,i)=>({sel,n:i+1,dove:'b'})),{filo:tb.h+5});
  await L.scatta('02-topbar-zaino',{clip:{x:0,y:0,width:1470,height:tb.h+36},scala:3});await L.overlayPulisci();
  await L.val(`document.documentElement.dataset.theme='scuro'`);await L.scatta('49-tema-scuro');
  console.log('Guida: aggiornate le schermate dei nuovi comandi della topbar.');process.exit(0);

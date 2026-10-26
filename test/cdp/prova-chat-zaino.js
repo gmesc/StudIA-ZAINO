@@ -19,7 +19,7 @@ async function click(sel){
  for(let i=0,prima=await dove();i<25;i++){await c.pausa(100);const ora=await dove();if(ora&&ora===prima)break;prima=ora;}
  await c.val(`document.querySelector(${JSON.stringify(sel)}).scrollIntoView({block:'center'})`);await c.pausa(80);return c.clicca(sel);}
 async function testo(id, value){await c.val(`(()=>{const el=document.getElementById(${JSON.stringify(id)});el.value=${JSON.stringify(value)};el.dispatchEvent(new Event('input',{bubbles:true}));return true;})()`);}
-async function scegli(id,value){await c.val(`(()=>{const el=document.getElementById(${JSON.stringify(id)});el.value=${JSON.stringify(value)};el.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`);}
+async function scegli(id,value){if(id==='zainoSelect'){await c.clicca('#zainoScegli');await aspetta(`!!document.querySelector('#zainiMenu[open] [data-zaino-scegli="${value}"]')`);await c.clicca('[data-zaino-scegli="'+value+'"]');return;}await c.val(`(()=>{const el=document.getElementById(${JSON.stringify(id)});el.value=${JSON.stringify(value)};el.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`);}
 (async()=>{
  await c.collega();await aspetta(`!!document.getElementById('chatBtn') && zainoAttivo()==='biologia'`);
  assert.equal(await c.val('typeof EasyMDE'),'function');
