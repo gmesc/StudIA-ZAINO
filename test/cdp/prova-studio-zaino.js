@@ -80,12 +80,13 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  assert.equal(await c.val(`document.getElementById('zstudyQueue').hidden`),true);
  await click('#zstudyScope [data-source-id="'+selected.id+'"]');await wait(`!!document.getElementById('zstudyAttempt')`);
  assert.equal(await c.val(`document.getElementById('zstudyAttempt').value`),'Bozza da preservare');await click('#zstudyScopeButton');
- await set('zstudyAttempt','La fotosintesi.');await c.val(`document.querySelector('#zstudyQuestion form').requestSubmit()`);await wait(`document.getElementById('zstudyQuestion').textContent.includes('Il tentativo è coerente')`);
- await c.val(`[...document.querySelectorAll('#zstudyQuestion button')].find(b=>b.textContent==='Conserva nel ripasso').click()`);await wait(`document.getElementById('zstudyCount').textContent.startsWith('1 domanda')`);
+ await set('zstudyAttempt','La fotosintesi.');await c.val(`document.querySelector('#zstudyQuestion form').requestSubmit()`);await wait(`document.getElementById('zstudyQuestion').textContent.includes('Il tentativo è coerente') && document.getElementById('zstudyCancel').hidden`);
+ // Il conteggio cambia prima che Conserva finisca di aggiornare il raccoglitore: attendere anche i comandi abilitati.
+ await c.val(`[...document.querySelectorAll('#zstudyQuestion button')].find(b=>b.textContent==='Conserva nel ripasso').click()`);await wait(`document.getElementById('zstudyCount').textContent.startsWith('1 domanda') && document.getElementById('zstudyCancel').hidden`);
  await c.val(`[...document.querySelectorAll('#zstudyQuestion button')].find(b=>b.textContent.startsWith('buono')).click()`);await wait(`document.getElementById('zstudyQuestion').textContent.includes('prossimo:')`);
  const state=await c.val(`window.vault.studio.state('biologia')`),q=state.questions.find(q=>q.saved);assert(q);assert.equal(q.attempts.length,1);assert.equal(q.esito,'buono');assert.deepEqual(q.scope.sourceIds,[selected.id]);assert(q.sources.every(s=>s.sourceId===selected.id));
  await c.val(`window.vault.rag.reset('biologia')`);assert.equal((await c.val(`window.vault.studio.state('biologia')`)).questions.find(x=>x.id===q.id).attempts.length,1);
- await c.val('location.reload()');await c.pausa(800);await c.collega();await wait(`!!document.getElementById('zstudyBrowse') && typeof bancoMostra==='function'`);await c.val(`bancoMostra('flashcard')`);await c.val(`window.zainoRipasso.refresh()`);await wait(`document.getElementById('zstudyQuestion').textContent.includes('Il tentativo è coerente')`);
+ await c.val('location.reload()');await c.pausa(800);await c.collega();await wait(`!!document.getElementById('zstudyBrowse') && typeof bancoMostra==='function'`);await c.val(`bancoMostra('flashcard')`);await c.val(`window.zainoRipasso.refresh()`);await wait(`document.getElementById('zstudyQuestion').textContent.includes('Il tentativo è coerente') && document.getElementById('zstudyCancel').hidden`);
  assert.equal(await c.val(`document.querySelector('#zstudyScopeButton span').textContent`),'Fonti: 1');
  await click('#zstudyQueueFilter [data-filter="all"]');
  for(const theme of ['chiaro','scuro']){
