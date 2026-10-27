@@ -19,7 +19,7 @@ function stato(file) {
   return {courseId:'biologia', cur:{file, title:file}, mde:{
     value:()=>body,
     codemirror:{getValue:()=>body, setValue:v=>{body=v;}, getSelection:()=>'',
-      replaceSelection:v=>{body+=v;}, focus(){}}
+      replaceSelection:v=>{body+=v;}, getCursor:()=>({line:0,ch:0}), focus(){}}
   }};
 }
 const primo = stato('primo.md'), secondo = stato('secondo.md');
@@ -57,30 +57,24 @@ vm.createContext(ctx);
   assert.equal(ctx.foglioAppunto(secondo).html,secondo.mde.value(),'anche la stampa legge il secondo');
   assert.equal(chiusi.at(-1),secondo,'la stampa consolida l’anteprima giusta');
 
-  ctx.apriMateriali(null,secondo);
-  ctx.scegliMateriale('01 Botanica.pdf','pdf','01');
-  attivo=primo;rispondi('4');await Promise.resolve();
-  assert(secondo.mde.value().includes('pdf:01#p=4'),'il dialogo conserva lo split d’origine');
-  assert.equal(primo.mde.value(),'primo.md');
-  ctx.apriMateriali(null,secondo);
-  ctx.scegliMateriale('01 Botanica.pdf','pdf','01');
-  secondo.cur={file:'cambiato.md'};rispondi('5');await Promise.resolve();
-  assert(!secondo.mde.value().includes('pdf:01#p=5'),'un cambio documento annulla il vecchio destinatario');
-  assert(messaggi.at(-1).includes('destinazione è cambiato'));
-
-  // Il tempo di verificare una fonte esterna non autorizza a scrivere nel nuovo appunto.
-  let fontePronta,richiesta;
+  // Si esegue la preparazione reale: il renderer cattura il destinatario prima
+  // dell'IPC e apre l'anteprima; nessun link viene ancora scritto nell'appunto.
+  let fontePronta,richiesta,anteprima;
   ctx.window={vault:{citazioni:{crea:(...args)=>{richiesta=args;return new Promise(r=>{fontePronta=r;});}}}};
-  ctx.noteScriviAlCursore=(t,s)=>s.mde.codemirror.replaceSelection(t);
-  ctx.apriMateriali(null,secondo);ctx.MATERIALI.zaino='storia';
-  ctx.scegliMateriale('01 Fonte esterna.pdf','pdf','01');rispondi('2');await Promise.resolve();
-  assert.deepEqual(richiesta,['storia','01 Fonte esterna.pdf',2,'']);
-  attivo=primo;fontePronta({markdown:'[Citazione esterna](zaino-pdf:esempio)'});await new Promise(setImmediate);
-  assert(secondo.mde.value().includes('[Citazione esterna]'));assert.equal(primo.mde.value(),'primo.md');
-  ctx.apriMateriali(null,secondo);ctx.MATERIALI.zaino='storia';
-  ctx.scegliMateriale('01 Fonte esterna.pdf','pdf','01');rispondi('3');await Promise.resolve();
-  secondo.cur={file:'altra-destinazione.md'};fontePronta({markdown:'NON_INSERIRE'});await new Promise(setImmediate);
-  assert(!secondo.mde.value().includes('NON_INSERIRE'));
+  ctx.citazioneZainoApri=(r,b)=>{anteprima={rimando:r,dest:b};};
+  const ui=fs.readFileSync(path.join(__dirname,'../App/assets/rimandi/citazioni-ui.js'),'utf8');
+  const da=ui.indexOf(' window.citazionePrepara=async function'),a=ui.indexOf('async function',da),fine=ui.indexOf('\n };',a);
+  vm.runInContext('citazionePrepara='+ui.slice(a,fine+4),ctx);
+  ctx.apriMateriali(null,secondo);ctx.scegliMateriale('01 Botanica.pdf','pdf','01');
+  assert.deepEqual(richiesta,['biologia','01 Botanica.pdf',1,'']);
+  const corpoPrima=secondo.mde.value();attivo=primo;fontePronta({rimando:'RIMANDO_PDF'});await new Promise(setImmediate);
+  assert.equal(anteprima.dest.stato,secondo);assert.equal(secondo.mde.value(),corpoPrima,'nessun inserimento prima della scelta in anteprima');
+  anteprima=null;ctx.apriMateriali(null,secondo);ctx.scegliMateriale('01 Botanica.pdf','pdf','01');
+  secondo.cur={file:'cambiato.md'};fontePronta({rimando:'VECCHIO_DESTINATARIO'});await new Promise(setImmediate);
+  assert.equal(anteprima,null,'cambio documento annulla la preparazione');assert(messaggi.at(-1).includes('destinazione è cambiato'));
+  ctx.apriMateriali(null,secondo);ctx.MATERIALI.zaino='storia';ctx.scegliMateriale('01 Fonte esterna.pdf','pdf','01');
+  assert.deepEqual(richiesta,['storia','01 Fonte esterna.pdf',1,'']);attivo=primo;fontePronta({rimando:'ALTRO_ZAINO'});await new Promise(setImmediate);
+  assert.equal(anteprima.dest.stato,secondo);assert.equal(anteprima.rimando,'ALTRO_ZAINO');assert.equal(primo.mde.value(),'primo.md');
 
   attivo=secondo;ctx.openEmojiPop(null);attivo=primo;ctx.emojiScelta('🌱');
   assert(secondo.mde.value().includes('🌱'));assert(!primo.mde.value().includes('🌱'));

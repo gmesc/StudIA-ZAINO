@@ -45,7 +45,7 @@
      è una svista: la stringa arriva già passata dall'escape dell'HTML, e
      cercare solo `&` la mancherebbe. */
   const RE = {
-    pdfZaino: /^zaino-pdf:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})#p=([1-9]\d{0,5})(?:&amp;|&)r=([0-9a-f]{64})$/,
+    pdfZaino: /^zaino-pdf:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})#(?:p=([1-9]\d{0,5})(?:&amp;|&))?r=([0-9a-f]{64})(?:(?:&amp;|&)q=([A-Za-z0-9._~%\-]+)(?:&amp;|&)o=(0|[1-9]\d{0,7}))?$/,
     video: /^video:(\d+)#t=(\d+)$/,
     pdf: /^pdf:(\d+)#p=(\d+)$/,
     pdfSenzaPagina: /^pdf:(\d+)$/,
@@ -88,16 +88,50 @@
       ? base + '&s=' + fonte.sourceId + '&r=' + fonte.revision : base;
   }
 
-  /** Identità portabili: il nome dello zaino e quello del PDF possono cambiare. */
-  function scriviPdfZaino(zainoId, sourceId, pagina, revision) {
-    const s='zaino-pdf:'+zainoId+'/'+sourceId+'#p='+pagina+'&r='+revision;
-    return RE.pdfZaino.test(s) ? s : '';
+  /** Identità portabili; pagina null indica l'intero PDF. La selezione non è un'annotazione. */
+  function scriviPdfZaino(zainoId, sourceId, pagina, revision, selezione) {
+    let s='zaino-pdf:'+zainoId+'/'+sourceId+'#'+(pagina===null?'':'p='+pagina+'&')+'r='+revision;
+    if(selezione){
+      if(!Number.isInteger(selezione.inizio)||selezione.inizio<0||selezione.inizio>10000000||typeof selezione.testo!=='string'||!selezione.testo.length||selezione.testo.length>100000||selezione.testo.includes('\0'))return '';
+      try{s+='&q='+encodeURIComponent(selezione.testo).replace(/[!'()*]/g,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase())+'&o='+selezione.inizio;}catch(e){return '';}
+    }
+    return leggi(s)?.tipo==='pdf-zaino'?s:'';
   }
+  function letterale(s){return String(s||'').replace(/[\\`*\[\]#_!|>]/g,'\\$&');}
   function citazionePdfZaino(info, testo) {
-    if(!leggi(info.rimando) || leggi(info.rimando).tipo!=='pdf-zaino')return '';
-    const label=String(info.zainoTitolo+' › '+info.file+' · p. '+info.pagina).replace(/[\[\]\r\n]/g,'');
-    const estratto=String(testo||'').trim();
-    return (estratto?estratto.split(/\r?\n/).map(l=>'> '+l).join('\n')+'\n\n':'')+link(label,info.rimando);
+    const r=leggi(info.rimando);if(!r||r.tipo!=='pdf-zaino')return '';
+    const titolo=String(info.file||'PDF').replace(/[\r\n]/g,' '),pagina=r.intero?'':'; p. '+r.pagina;
+    const label=String(info.zainoTitolo+' › '+titolo+(r.intero?'':' · p. '+r.pagina)).replace(/[\[\]\r\n]/g,'');
+    const estratto=String(testo||'').trim(),righe=[];
+    if(estratto)estratto.split(/\r?\n/).forEach(l=>righe.push(l?'*'+letterale(l)+'*':''));
+    righe.push(letterale(titolo+pagina),link(letterale(label),info.rimando));
+    return righe.map(l=>'> '+l).join('  \n');
+  }
+  /** Offset verificato sul testo; se il layout cambia si accetta solo un riscontro univoco. */
+  function trovaSelezione(pagina, selezione){
+    if(!selezione||!selezione.testo)return null;
+    const t=String(pagina),q=selezione.testo,o=selezione.inizio;
+    if(t.slice(o,o+q.length)===q)return {inizio:o,fine:o+q.length};
+    const i=t.indexOf(q);return i>=0&&t.indexOf(q,i+1)<0?{inizio:i,fine:i+q.length}:null;
+  }
+  /** Solo resa: le vecchie citazioni includono il link nella barra senza riscrivere gli appunti.
+   *  Il numero di righe resta identico, perché l'editor usa quelle coordinate. */
+  function normalizzaCitazioni(md){
+    const righe=String(md||'').split('\n');let recinto='';
+    for(let i=0;i<righe.length;i++){
+      const f=/^\s*(`{3,}|~{3,})/.exec(righe[i]);
+      if(f){if(!recinto)recinto=f[1][0];else if(recinto===f[1][0])recinto='';continue;}
+      if(recinto)continue;
+      const m=/^\[([^\]]+)\]\((zaino-pdf:[^)]+)\)\s*$/.exec(righe[i]);
+      if(!m||leggi(m[2])?.tipo!=='pdf-zaino')continue;
+      let j=i-1;while(j>=0&&!righe[j].trim())j--;
+      if(j>=0&&/^>/.test(righe[j])){
+        let a=j;while(a>0&&/^>/.test(righe[a-1]))a--;
+        if(!/^>\s*\[!/.test(righe[a]))for(let k=j+1;k<i;k++)righe[k]='>';
+      }
+      righe[i]='> '+righe[i];
+    }
+    return righe.join('\n');
   }
 
   function scriviCap(capitoloId) {
@@ -131,7 +165,15 @@
   function leggi(url) {
     const s = String(url == null ? '' : url).trim();
     let m;
-    if ((m = RE.pdfZaino.exec(s))) return {tipo:'pdf-zaino',zainoId:m[1],sourceId:m[2],pagina:Number(m[3]),revision:m[4]};
+    if(s.length<=1000000 && (m = RE.pdfZaino.exec(s))){
+      const r={tipo:'pdf-zaino',zainoId:m[1],sourceId:m[2],pagina:Number(m[3]||1),revision:m[4]};
+      if(!m[3])r.intero=true;
+      if(m[5]){try{const testo=decodeURIComponent(m[5]),inizio=Number(m[6]);
+        if(r.intero||!testo.length||testo.length>100000||testo.includes('\0')||inizio>10000000)return null;
+        r.selezione={testo:testo,inizio:inizio};
+      }catch(e){return null;}}
+      return r;
+    }
     // I rimandi AI conservano la revisione: il numero da solo non autorizza l'apertura.
     const snap = /^(pdf:\d+(?:#p=\d+)?)(?:&amp;|&)s=([a-zA-Z0-9_-]{1,100})(?:&amp;|&)r=([0-9a-f]{64})$/.exec(s);
     if (snap) return Object.assign(leggi(snap[1]), { sourceId:snap[2], revision:snap[3] });
@@ -159,7 +201,7 @@
   return {
     RE: RE, nn: nn, numeroDi: numeroDi,
     scriviVideo: scriviVideo, scriviPdf: scriviPdf, scriviPdfZaino:scriviPdfZaino, scriviCap: scriviCap,
-    scriviEv: scriviEv, citazionePdfZaino:citazionePdfZaino,
+    scriviEv: scriviEv, citazionePdfZaino:citazionePdfZaino, trovaSelezione:trovaSelezione, normalizzaCitazioni:normalizzaCitazioni,
     link: link, leggi: leggi
   };
 }));

@@ -172,15 +172,15 @@ async function pulisci() {
 
     await scrivi(1, '\n');await click('#noteHost2 .ncb-mat');
     await click('#matLista [data-mat="01 Botanica.pdf"]');
-    await aspetta(`!!document.querySelector('#uiModal[open]')`);
-    await campo('#umInput', '2');
-    // Un evento di focus concorrente non deve dirottare la risposta della modale già aperta.
+    await aspetta(`document.getElementById('citazioneDialog').open&&document.querySelector('#citazionePagine .page .textLayer span')`);
+    await click('#citazioneConto');await campo('#citazionePaginaIn','2');await tasto('Enter','Enter',13);
+    // Un focus concorrente conserva il destinatario catturato prima dell'anteprima.
     await c.val('__pariStati()[0].mde.codemirror.focus()');
-    await click('#umOk');
-    await aspetta(`__pariStati()[1].mde.value().includes('pdf:01#p=2')`);
+    await click('#citazioneCitaPagina');
+    await aspetta(`__pariStati()[1].mde.value().includes('#p=2&r=')`);
     assert.equal(await corpo(0), primo);
-    await salva(1);assert(disco(file[1]).includes('pdf:01#p=2'));
-    console.log('  ok  la citazione conserva il destinatario attraverso il dialogo pagina');
+    await salva(1);assert(disco(file[1]).includes('#p=2&r='));
+    console.log('  ok  la citazione conserva il destinatario attraverso l’anteprima PDF');
 
     await click('#noteHost2 .preview');
     await click('#noteHost2 .editor-preview-active .mdb > p');

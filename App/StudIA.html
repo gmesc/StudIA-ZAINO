@@ -1512,8 +1512,8 @@
     font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; }
   #pdfFindCount.vuoto{ color:var(--red-strong,#b91c1c); }
   :is(#pdfPane,#pdfPane2,#citazioneDialog) .pdfzoom{ display:flex; align-items:center; gap:0; }
-  :is(#pdfPane,#pdfPane2) .pdfpag{ display:flex; align-items:center; gap:0; }
-  :is(#pdfPane,#pdfPane2) .pdfpag :is(#pdfPagN,#pdf2PagN){ font-size:11px; font-variant-numeric:tabular-nums; padding:0 .3rem;
+  :is(#pdfPane,#pdfPane2,#citazioneDialog) .pdfpag{ display:flex; align-items:center; gap:0; }
+  :is(#pdfPane,#pdfPane2,#citazioneDialog) .pdfpag :is(#pdfPagN,#pdf2PagN,#citazioneConto){ font-size:11px; font-variant-numeric:tabular-nums; padding:0 .3rem;
     white-space:nowrap; color:var(--muted); }
   /* Il selettore del documento vive nello ZAINO: in un corso i documenti si
      aprono dai rimandi del capitolo, che dicono anche la pagina. */
@@ -2504,11 +2504,11 @@
      che va a capo può voler dire un comando che scende di riga nell'istante in
      cui uno sta per premerlo. La stessa lezione del conto della ricerca, che
      tiene la sua fessura anche da vuoto. */
-  .pdfpag #pdfPagIn{ width:var(--tb-min); min-width:44px; height:var(--tb-h); box-sizing:border-box;
+  .pdfpag :is(#pdfPagIn,#citazionePaginaIn){ width:var(--tb-min); min-width:44px; height:var(--tb-h); box-sizing:border-box;
     font-size:11px; font-weight:700; text-align:center; font-variant-numeric:tabular-nums;
     background:var(--bg); border:1px solid var(--line); color:var(--ink);
     font-family:inherit; padding:0 .2rem; }
-  .pdfpag #pdfPagIn[hidden]{ display:none; }
+  .pdfpag :is(#pdfPagIn,#citazionePaginaIn)[hidden]{ display:none; }
   /* selettore dei materiali da citare */
   #matPop{ width:min(460px,94vw); padding:.5rem; }
   #matPop input{ width:100%; border:1px solid var(--line); background:var(--bg); color:var(--ink); padding:.4rem .5rem; font-size:13px; margin-bottom:.4rem; }
@@ -3102,6 +3102,7 @@
   #citazioneDialog[open]{display:flex;flex-direction:column;isolation:isolate;}
   #citazioneDialog::backdrop{background:rgba(0,0,0,.35);}
   #citazioneDialog .tbar{flex-shrink:0;flex-wrap:wrap;}
+  #citazioneTorna{max-width:32vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   #citazioneTitolo{min-width:0;overflow-wrap:anywhere;flex:1;}
   #citazioneStato{margin:.5rem .75rem;font-size:13px;color:var(--muted);}
   #citazionePdf{position:relative;flex:1;min-height:0;}
@@ -3128,6 +3129,7 @@
     <span class="zainorow">
       <button type="button" class="tendina" id="zainoScegli" aria-haspopup="dialog" aria-expanded="false" aria-controls="zainiMenu" title="Scegli o crea uno zaino"><span class="tlab" id="zainoEtichetta">ZAINO</span></button>
     </span>
+    <button type="button" class="tbtn" id="citazioneTorna" hidden></button>
   </div>
   <div class="controls">
     <!-- Corso e variante stanno PRIMA della lezione: si legge da sinistra a destra
@@ -9163,7 +9165,7 @@ function calloutInserisci(k){
 function vuota(l){ return !String(l).replace(/[ \t\r]+/g, '').length; }
 function renderNoteMd(md, opt){
   var mappa=!!(opt && opt.mappa);
-  var lines=String(md==null?'':md).split('\n');
+  var lines=RimandiSintassi.normalizzaCitazioni(md).split('\n');
   var out='', i=0;
   function avvolgi(html, da, a){
     if(!mappa || !html) return html||'';
@@ -10979,11 +10981,12 @@ function cambiaZaino(id, silenzioso){
   /* La disposizione è del CONTENITORE: prima si rilegge il banco del nuovo
      zaino, poi il suo contenuto ci si appoggia sopra. */
   bancoRicarica();
-  apertoRipristina();
+  var ripristino=apertoRipristina();
   if(!silenzioso){
     var z=MODO.zaini.filter(function(x){ return x.id===id; })[0];
     toast('Zaino: ' + ((z&&z.title)||id), true);
   }
+  return ripristino;
 }
 
 /**
@@ -11898,17 +11901,8 @@ function scegliMateriale(nome, tipo, num){
   var bersaglio=MATERIALI.destinazione||noteBersaglio(),origineZaino=MATERIALI.zaino||corsoAttivo();
   closePops();
   if(tipo==='pdf'){
-    var pDef = (origineZaino===corsoAttivo() && ANTEPRIMA.tipo==='pdf' && ANTEPRIMA.file===nome) ? ANTEPRIMA.page : 1;
-    askText('Pagina di «'+nome+'»', String(pDef)).then(async function(v){
-      if(v===null) return;
-    if(!noteBersaglioValido(bersaglio)){ toast('L’appunto di destinazione è cambiato', false); return; }
-      if(origineZaino!==corsoAttivo()){
-        var r=await window.vault.citazioni.crea(origineZaino,nome,Number(v),'');
-        if(r.error){toast(r.error,false);return;}if(!noteBersaglioValido(bersaglio)){toast('L’appunto di destinazione è cambiato',false);return;}
-        noteScriviAlCursore(r.markdown,bersaglio.stato);
-      }else citaPdf(num, v, null, bersaglio.stato);
-    }).catch(function(e){toast('Non riesco a creare la citazione: '+e.message,false);});
-    return;
+    var pDef=(origineZaino===corsoAttivo()&&ANTEPRIMA.tipo==='pdf'&&ANTEPRIMA.file===nome)?ANTEPRIMA.page:1;
+    citazionePrepara(origineZaino,nome,bersaglio,pDef);return;
   }
   if(tipo==='html'){ toast('Le pagine web si citano con il link https',false); return; }
   var sDef = (typeof playerAperto==='function' && playerAperto() && PLAYER.file===nome) ? secondoCorrente() : 0;
@@ -13924,7 +13918,7 @@ document.addEventListener('contextmenu', function(e){
  */
 function selAzione(az, testo, range){
   if(az==='inserisci-citazione'){citazioneInserisciDaRange(range);return;}
-  if(az==='cita-pdf'){if(window.citazioneSelezione?.(range)){citazioneCopiaDaRange(range);return;}var origine=citazioneOriginePdf(range);if(origine)citazioneCopiaPdf(zainoAttivo(),origine.file,origine.pagina,testo);else toast('Seleziona un passaggio di una sola pagina per citarlo.',false);return;}
+  if(az==='cita-pdf'){if(window.citazioneSelezione?.(range)){citazioneCopiaDaRange(range);return;}var origine=citazioneOriginePdf(range);if(origine)citazioneCopiaPdf(zainoAttivo(),origine.file,origine.pagina,testo,range);else toast('Seleziona un passaggio di una sola pagina per citarlo.',false);return;}
   if(az==='interrogami'){var sup=evSupDaRange(range);window.zainoInterrogami?.({text:testo,file:sup && sup.tipo==='pdf'?ANTEPRIMA.file:''});return;}
   if(az==='copia'){
     if(!navigator.clipboard){ toast('Copia non disponibile',false); return; }
@@ -22863,7 +22857,8 @@ window.addEventListener('keydown', function(e){
 <div id="zainiMenu" class="popmenu" role="dialog" aria-label="Scegli uno zaino"></div>
 <dialog id="citazioneDialog" aria-labelledby="citazioneTitolo">
   <div class="tbar"><strong id="citazioneTitolo">Citazione PDF</strong><span class="tbspazio"></span><button type="button" id="citazioneChiudi" class="tbtn" title="Chiudi la fonte" aria-label="Chiudi la fonte"></button></div>
-  <div class="tbar"><button type="button" id="citazionePrima" class="tbtn" title="Pagina precedente" aria-label="Pagina precedente"></button><span id="citazioneConto">− DI −</span><button type="button" id="citazioneDopo" class="tbtn" title="Pagina successiva" aria-label="Pagina successiva"></button><span class="tbsep"></span><span class="pdfzoom" id="citazioneZoom" role="group" aria-label="Zoom del PDF"><button type="button" class="tbtn" id="citazioneZoomOut" title="Riduci" aria-label="Riduci" disabled></button><button type="button" class="tbtn" id="citazioneZoomLvl" title="Adattata alla larghezza — segue il riquadro; clicca per adattare alla pagina intera" disabled></button><button type="button" class="tbtn" id="citazioneZoomIn" title="Ingrandisci" aria-label="Ingrandisci" disabled></button></span><span class="tbsep"></span><button type="button" id="citazioneCopia" class="tbtn">Copia testo con fonte</button><span class="tbsep"></span><button type="button" id="citazioneVai" class="tbtn">Vai allo zaino di origine</button></div>
+  <div class="tbar"><span class="pdfpag" id="citazionePag"><button type="button" id="citazionePrima" class="tbtn" title="Pagina precedente" aria-label="Pagina precedente"></button><button type="button" class="tbtn" id="citazioneConto" aria-expanded="false" aria-controls="citazionePaginaIn" title="Vai a una pagina: premi e scrivi il numero">− DI −</button><input id="citazionePaginaIn" type="text" inputmode="numeric" autocomplete="off" aria-label="Vai a una pagina" hidden><button type="button" id="citazioneDopo" class="tbtn" title="Pagina successiva" aria-label="Pagina successiva"></button></span><span class="tbsep"></span><span class="pdfzoom" id="citazioneZoom" role="group" aria-label="Zoom del PDF"><button type="button" class="tbtn" id="citazioneZoomOut" title="Riduci" aria-label="Riduci" disabled></button><button type="button" class="tbtn" id="citazioneZoomLvl" title="Adattata alla larghezza — segue il riquadro; clicca per adattare alla pagina intera" disabled></button><button type="button" class="tbtn" id="citazioneZoomIn" title="Ingrandisci" aria-label="Ingrandisci" disabled></button></span><span class="tbsep"></span><button type="button" id="citazioneCopia" class="tbtn">Copia testo con fonte</button><span class="tbsep"></span><button type="button" id="citazioneVai" class="tbtn">Apri zaino di origine</button></div>
+  <div class="tbar"><button type="button" class="tbtn" id="citazioneCitaPdf" title="Inserisci nell’appunto il riferimento all’intero PDF">Cita PDF</button><span class="tbsep"></span><button type="button" class="tbtn" id="citazioneCitaPagina" title="Inserisci nell’appunto il riferimento alla pagina corrente">Cita pagina PDF</button><span class="tbsep"></span><button type="button" class="tbtn" id="citazioneCitaEstratto" title="Seleziona un passaggio di questa pagina e inseriscilo nell’appunto con il riferimento">Cita dalla pagina</button></div>
   <p id="citazioneStato" role="status"></p>
   <div id="citazionePdf"><div id="citazioneFrame" tabindex="0" autofocus aria-label="PDF citato da un altro zaino" title="Pinch: zoom · Spazio + trascina: sposta · Tre clic: adatta alla larghezza"><div id="citazionePagine" class="pdfViewer"></div></div></div>
 </dialog>
