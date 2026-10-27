@@ -2,6 +2,10 @@
 (function(){
  'use strict';
  var stato=null,sequenza=0;
+ var frame=document.getElementById('citazioneFrame');
+ function adattaLarghezza(){if(stato?.doc){stato.viewer.currentScaleValue='page-width';stato.larghezza=frame.clientWidth;}}
+ FontiGesti.registra('citazioneFrame',function(){return stato?.doc&&document.getElementById('citazioneDialog').open?
+  {viewer:stato.viewer,adatta:adattaLarghezza}:null;});
  function icona(id,nome){document.getElementById(id).innerHTML=UiIcone.svg(nome);}
  function messaggio(t){document.getElementById('citazioneStato').textContent=t;}
  function pulisci(){
@@ -80,8 +84,8 @@
    var viewer=new pdfjsViewer.PDFViewer({container:document.getElementById('citazioneFrame'),viewer:document.getElementById('citazionePagine'),eventBus:bus,linkService:link,textLayerMode:1,annotationMode:0,annotationEditorMode:-1,removePageBorders:true});
    link.setViewer(viewer);
    var task=pdfjsLib.getDocument({data:new Uint8Array(r.bytes),isEvalSupported:false,enableXfa:false});delete r.bytes;
-   var s={info:r,viewer:viewer,task:task,doc:null,destinazione:bersaglio};stato=s;
-   bus.on('pagesinit',function(){if(stato!==s)return;viewer.currentScaleValue='page-width';viewer.currentPageNumber=r.pagina;controlli();});
+   var s={info:r,viewer:viewer,task:task,doc:null,destinazione:bersaglio,larghezza:0};stato=s;
+   bus.on('pagesinit',function(){if(stato!==s)return;adattaLarghezza();viewer.currentPageNumber=r.pagina;controlli();});
    bus.on('pagechanging',controlli);
    var doc=await task.promise;
    if(turno!==sequenza||!dialog.open){await doc.destroy();return;}
@@ -146,5 +150,9 @@
   if(zainoAttivo()===r.zaino)openPdf(r.file,r.pagina,r.file);
  };
  window.addEventListener('studia:zaino-changed',function(){if(dialog.open)chiudi();});
- new ResizeObserver(function(){if(stato?.doc)stato.viewer.currentScaleValue='page-width';}).observe(document.getElementById('citazioneFrame'));
+ new ResizeObserver(function(){
+  if(!stato?.doc)return;
+  var v=stato.viewer.currentScaleValue,w=frame.clientWidth;
+  if(FontiZoom.daRiadattare(v,w,stato.larghezza)){stato.larghezza=w;stato.viewer.currentScaleValue=v;}
+ }).observe(frame);
 }());

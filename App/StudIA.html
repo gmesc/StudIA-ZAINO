@@ -1257,8 +1257,8 @@
      coprivano l'oscillazione per caso. */
   #pdfFrame{ position:absolute; inset:0; overflow:auto; outline:0; scrollbar-gutter:stable; }
   #pdfFrame .pdfViewer{ margin:0 auto; }
-  :is(#pdfFrame,#pdf2Frame).pdf-spazio, :is(#pdfFrame,#pdf2Frame).pdf-spazio *{ cursor:grab !important; }
-  :is(#pdfFrame,#pdf2Frame).pdf-trascina, :is(#pdfFrame,#pdf2Frame).pdf-trascina *{ cursor:grabbing !important; user-select:none !important; }
+  :is(#pdfFrame,#pdf2Frame,#citazioneFrame).pdf-spazio, :is(#pdfFrame,#pdf2Frame,#citazioneFrame).pdf-spazio *{ cursor:grab !important; }
+  :is(#pdfFrame,#pdf2Frame,#citazioneFrame).pdf-trascina, :is(#pdfFrame,#pdf2Frame,#citazioneFrame).pdf-trascina *{ cursor:grabbing !important; user-select:none !important; }
   /* Il documento non c'è ancora, o si sta caricando: si dice, invece di
      lasciare un rettangolo grigio che sembra un guasto. */
   #pdfHost[data-stato]::after{ content:attr(data-stato); position:absolute; inset:0;
@@ -22865,7 +22865,7 @@ window.addEventListener('keydown', function(e){
   <div class="tbar"><strong id="citazioneTitolo">Citazione PDF</strong><span class="tbspazio"></span><button type="button" id="citazioneChiudi" class="tbtn" title="Chiudi la fonte" aria-label="Chiudi la fonte"></button></div>
   <div class="tbar"><button type="button" id="citazionePrima" class="tbtn" title="Pagina precedente" aria-label="Pagina precedente"></button><span id="citazioneConto">− DI −</span><button type="button" id="citazioneDopo" class="tbtn" title="Pagina successiva" aria-label="Pagina successiva"></button><span class="tbsep"></span><button type="button" id="citazioneCopia" class="tbtn">Copia testo con fonte</button><span class="tbsep"></span><button type="button" id="citazioneVai" class="tbtn">Vai allo zaino di origine</button></div>
   <p id="citazioneStato" role="status"></p>
-  <div id="citazionePdf"><div id="citazioneFrame"><div id="citazionePagine" class="pdfViewer"></div></div></div>
+  <div id="citazionePdf"><div id="citazioneFrame" tabindex="0" autofocus aria-label="PDF citato da un altro zaino" title="Pinch: zoom · Spazio + trascina: sposta · Tre clic: adatta alla larghezza"><div id="citazionePagine" class="pdfViewer"></div></div></div>
 </dialog>
 <script src="assets/fonti/gesti.js"></script>
 <script src="assets/rimandi/citazioni-ui.js"></script>

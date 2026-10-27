@@ -61,6 +61,54 @@ async function provaGesti(){
  console.log('Fonti: pinch ancorato, scroll, Spazio+trascina, tre clic e riadattamento in entrambi gli split OK');
 }
 
+async function provaGestiCitazione(rimando){
+ const mouse=(type,p,extra={})=>c.invia('Input.dispatchMouseEvent',{type,...p,...extra});
+ const spazio=type=>c.invia('Input.dispatchKeyEvent',{type,key:' ',code:'Space',windowsVirtualKeyCode:32});
+ const pagina=`document.querySelector('#citazionePagine .page[data-page-number="2"]')`;
+ const larghezza=()=>c.val(`${pagina}.getBoundingClientRect().width`);
+ const originale=await larghezza(),locale=await c.val('PDFJS.viewer.currentScale');
+ assert.equal(await c.val('document.activeElement.id'),'citazioneFrame','focus iniziale sul PDF, pronto a ricevere Spazio');
+ const p=await c.val(`(()=>{const h=document.getElementById('citazioneFrame');const r=h.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/3};})()`);
+ const ancora=()=>c.val(`(()=>{const r=${pagina}.getBoundingClientRect();return {x:(${p.x}-r.x)/r.width,y:(${p.y}-r.y)/r.width};})()`);
+ const prima=await ancora();await mouse('mouseWheel',p,{deltaX:0,deltaY:-45,modifiers:2});await c.pausa(500);
+ const ingrandita=await larghezza();assert(ingrandita>originale*1.4,'pinch nell’anteprima della citazione: '+JSON.stringify({originale,ingrandita}));
+ const dopo=await ancora();assert(Math.hypot(prima.x-dopo.x,prima.y-dopo.y)<.003,'pinch ancorato al puntatore');
+ // Uno zoom scelto a mano resiste al resize; solo tre clic riattivano la larghezza.
+ await c.val(`document.getElementById('citazioneFrame').style.right='100px'`);await c.pausa(200);
+ assert(Math.abs(await larghezza()-ingrandita)<2,'resize conserva lo zoom manuale');
+ await c.val(`document.getElementById('citazioneFrame').style.right=''`);await c.pausa(200);
+ await c.val(`document.getElementById('citazioneFrame').scrollLeft=120`);
+ const scroll=()=>c.val(`(()=>{const h=document.getElementById('citazioneFrame');return {x:h.scrollLeft,y:h.scrollTop};})()`);
+ const s0=await scroll();await mouse('mouseWheel',p,{deltaX:30,deltaY:60});await c.pausa(250);const s1=await scroll();
+ assert(s1.x>s0.x&&s1.y>s0.y,'due dita scorrono su entrambi gli assi');
+ await mouse('mouseMoved',p);await spazio('keyDown');assert(await c.val(`document.getElementById('citazioneFrame').classList.contains('pdf-spazio')`),'Spazio funziona nel dialogo modale');
+ await mouse('mousePressed',p,{button:'left',buttons:1,clickCount:1});await mouse('mouseMoved',{x:p.x-60,y:p.y-70},{button:'left',buttons:1});
+ await mouse('mouseReleased',{x:p.x-60,y:p.y-70},{button:'left',buttons:0,clickCount:1});await spazio('keyUp');
+ const s2=await scroll();assert(Math.abs(s2.x-s1.x-60)<2&&Math.abs(s2.y-s1.y-70)<2,'Spazio + trascina nell’anteprima');
+ assert.equal(await c.val('getSelection().toString()'),'','pan senza selezionare testo');
+ assert(await c.val(`!document.querySelector('.pdf-spazio,.pdf-trascina')`),'rilascio pulisce i cursori');
+ for(let giro=0;giro<2;giro++){
+  for(let n=1;n<=3;n++)for(const type of ['mousePressed','mouseReleased'])await mouse(type,p,{button:'left',clickCount:n});
+  await c.pausa(150);assert(Math.abs(await larghezza()-originale)<2,'tre clic ripristinano sempre la larghezza');
+ }
+ await c.val(`document.getElementById('citazioneFrame').style.right='100px'`);await c.pausa(200);
+ assert(await larghezza()<originale-80,'dopo il reset segue la larghezza della finestra');
+ await c.val(`document.getElementById('citazioneFrame').style.right='';${pagina}.querySelector('.textLayer span').scrollIntoView({block:'center'});`);await c.pausa(300);
+ const r=await c.val(`(()=>{const r=${pagina}.querySelector('.textLayer span').getBoundingClientRect();return {x:r.x+2,y:r.y+r.height/2,end:r.right-2};})()`);
+ await mouse('mousePressed',{x:r.x,y:r.y},{button:'left',buttons:1,clickCount:1});await mouse('mouseMoved',{x:r.end,y:r.y},{button:'left',buttons:1});await mouse('mouseReleased',{x:r.end,y:r.y},{button:'left',buttons:0,clickCount:1});
+ assert((await c.val('getSelection().toString()')).includes('Botanica'),'il drag normale seleziona ancora il testo');
+ await wait('selBarraAperta()');assert(await c.val(`document.getElementById('selBarra').parentElement.id==='citazioneDialog'`));
+ assert.equal(await c.val('PDFJS.viewer.currentScale'),locale,'il PDF sotto la finestra non cambia zoom');
+ const shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-gesti-citazione.png',Buffer.from(shot.result.data,'base64'));
+ // Chiudere tenendo Spazio non deve lasciare la mano attiva alla riapertura.
+ await c.val(`selBarraChiudi();getSelection().removeAllRanges();document.getElementById('citazioneFrame').focus()`);await spazio('keyDown');
+ await c.val(`document.getElementById('citazioneChiudi').click()`);await c.pausa(100);
+ assert(await c.val(`!document.querySelector('.pdf-spazio,.pdf-trascina')`),'chiusura ripulisce il gesto');await spazio('keyUp');
+ await c.val(`citazioneZainoApri(${q(rimando)},NOTES)`);await wait(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span')`);
+ assert(Math.abs(await larghezza()-originale)<2,'riapertura adattata alla larghezza');
+ console.log('Anteprima citazioni: pinch, scroll, Spazio+trascina, tre clic, resize, selezione e riapertura OK');
+}
+
 (async()=>{
  await c.collega();await wait(`typeof zainiMenuApri==='function'&&!!zainoAttivo()`);await c.partiPulito();
  const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
@@ -105,6 +153,7 @@ async function provaGesti(){
   await wait(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span')`);
   assert((await c.val(`document.getElementById('citazioneTitolo').textContent`)).includes('Biologia'));
   assert(await c.val(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] canvas').getBoundingClientRect().height`));
+  await provaGestiCitazione(cita.rimando);
   // Opt-in: copia del sistema e gesto Incolla reali, senza il doppio usato dalle altre prove.
   // Il lanciatore locale conserva e ripristina la pasteboard del Mac in memoria.
   if(process.env.STUDIA_PROVA_CLIPBOARD==='1'){
