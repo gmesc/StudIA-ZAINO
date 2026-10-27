@@ -107,6 +107,38 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(ro
  fs.writeFileSync(path.join(d,'RIPASSO/domande',q.id+'.json'),savedBefore);
  fs.writeFileSync(excludedPath,'{rotto');assert.throws(()=>I.stato(root,'test'));fs.unlinkSync(excludedPath);
  fs.symlinkSync(cardPath,excludedPath);assert.throws(()=>I.elimina(root,'test',[q.id]),/simbolico/);fs.unlinkSync(excludedPath);
+ // Anche le schede si eliminano in un lotto recuperabile, senza toccare copie o tentativi.
+ const schedePrima=S.elenco(root,'test').cards,schedeScelte=schedePrima.filter(c=>['domande','sintesi'].includes(c.preset)),idsSchede=schedeScelte.map(c=>c.id);
+ assert.equal(idsSchede.length,2);assert(idsSchede.every(id=>/^[a-f0-9]{64}$/.test(id)));
+ const registroSchede=path.join(d,'_lavorazione/rag/schede-rimosse.json'),copiePrima=fs.readdirSync(path.join(d,'APPUNTI')).map(f=>[f,fs.readFileSync(path.join(d,'APPUNTI',f))]),ripassoPrima=JSON.stringify(I.stato(root,'test').questions);
+ const handlers=new Map(),sender={id:71,isDestroyed:()=>false,send:()=>{}};
+ require('../lib/studio-ipc').registra({ipcMain:{handle:(name,fn)=>handlers.set(name,fn)},app:{on:()=>{}},vaultDir:()=>root,readCfg:()=>({chat:{provider:'openai',model:'finto'}}),readKey:()=> 'chiave-finta-del-test'});
+ const preparando=handlers.get('studio:estimate')({sender},{zaino:'test',sourceId:source.id,preset:'sintesi'});
+ for(const action of ['removeCards','undoRemoveCards']){const r=await handlers.get('studio:'+action)({sender},{zaino:'test',ids:idsSchede,token:'invalido'});assert.equal(r.ok,false);assert.match(r.error,/operazione di studio/);}
+ assert((await preparando).ok);assert(!fs.existsSync(registroSchede),'Un job attivo blocca la rimozione prima di scrivere');
+ assert.throws(()=>S.elimina(root,'test',[idsSchede[0],'../../fuori']),/valide/);
+ assert.throws(()=>S.elimina(root,'test',[idsSchede[0],'f'.repeat(64)]),/disponibile/);assert(!fs.existsSync(registroSchede));
+ const schedeRimosse=guarded('removeCards',()=>S.elimina(root,'test',[...idsSchede,idsSchede[0]]));assert.equal(schedeRimosse.count,2);
+ assert.equal(S.elenco(root,'test').cards.length,schedePrima.length-2);assert.equal(S.elenco(root,'test').rimozione.token,schedeRimosse.token);
+ assert.equal(S.leggi(root,'test',source.id,'domande').status,'deleted');assert.equal(S.leggi(root,'test',source.id,'sintesi').card,null);
+ assert.throws(()=>S.copia(root,'test',source.id,'domande'),/prima la scheda/);assert.equal(I.stato(root,'test').cardQuestions.length,0);
+ assert.equal(JSON.stringify(I.stato(root,'test').questions),ripassoPrima,'Le domande salvate restano nel Ripasso');
+ assert(fs.readFileSync(cardPath).equals(originale),'La scheda eliminata conserva tutti i dati originali');
+ for(const [file,data] of copiePrima)assert(fs.readFileSync(path.join(d,'APPUNTI',file)).equals(data));
+ R.ricostruisci(root,'test');assert.equal(S.elenco(root,'test').cards.length,schedePrima.length-2,'Ricostruire l’indice non annulla l’eliminazione');
+ assert.throws(()=>S.annullaEliminazione(root,'altro',schedeRimosse.token),/non disponibile/);
+ assert.throws(()=>S.annullaEliminazione(root,'test','token-vecchio'),/non disponibile/);
+ assert.equal(guarded('undoRemoveCards',()=>S.annullaEliminazione(root,'test',schedeRimosse.token)).count,2);
+ assert.equal(S.elenco(root,'test').cards.length,schedePrima.length);assert.equal(S.elenco(root,'test').rimozione,null);assert.equal(I.stato(root,'test').cardQuestions.length,1);
+ const rimosseDiNuovo=S.elimina(root,'test',idsSchede),sintesiPath=path.join(d,'_lavorazione/rag/schede',source.id+'-sintesi.json'),sintesiPrima=fs.readFileSync(sintesiPath),nuovaSintesi=JSON.parse(sintesiPrima);
+ nuovaSintesi.createdAt='2099-01-01T00:00:00.000Z';nuovaSintesi.items[0].text+=' Nuova versione.';fs.writeFileSync(sintesiPath,JSON.stringify(nuovaSintesi));
+ assert(S.elenco(root,'test').cards.some(c=>c.preset==='sintesi'),'Una nuova versione non resta esclusa');
+ assert.throws(()=>S.elimina(root,'test',[idsSchede[1]]),/disponibile/,'Una selezione precedente non elimina la versione nuova');
+ assert.equal(S.annullaEliminazione(root,'test',rimosseDiNuovo.token).count,1);assert.deepEqual(S.leggi(root,'test',source.id,'sintesi').card,nuovaSintesi,'Annulla non sovrascrive una rigenerazione');
+ fs.writeFileSync(sintesiPath,sintesiPrima);const vecchiaEliminazione=S.elimina(root,'test',[idsSchede[0]]),ultimaEliminazione=S.elimina(root,'test',[idsSchede[1]]);
+ assert.throws(()=>S.annullaEliminazione(root,'test',vecchiaEliminazione.token),/non disponibile/);S.annullaEliminazione(root,'test',ultimaEliminazione.token);assert.equal(S.elenco(root,'test').cards.length,schedePrima.length-1);
+ fs.writeFileSync(registroSchede,'{rotto');assert.throws(()=>S.elenco(root,'test'));fs.unlinkSync(registroSchede);
+ fs.symlinkSync(cardPath,registroSchede);assert.throws(()=>S.elimina(root,'test',idsSchede),/simbolico/);fs.unlinkSync(registroSchede);
  assert.equal(calls,n,'Eliminare e annullare non usano AI');
  fs.writeFileSync(path.join(d,source.file),'Contenuto sostituito.');
  assert(S.elenco(root,'test').cards.every(c=>c.status==='changed'));

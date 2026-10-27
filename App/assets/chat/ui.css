@@ -284,6 +284,8 @@
 #zstudyQuestion label { margin:.4rem 0; }
 #zstudyProgress { margin:.3rem 0; }
 #zschedeCollectionStatus { margin:.35rem 0; }
+.znav .zs-schede-selection { display:flex; flex-wrap:wrap; align-items:center; gap:.25rem .5rem; padding:.3rem .8rem; font-size:12px; }
+.znav .zs-schede-selection .zs-seleziona-area { gap:.35rem; }
 #zstudyNavigation { border-top:1px solid var(--line); }
 #zstudySession:empty,#zschedeStatus:empty { display:none; }
 #zstudyBody :is(h2,h3):focus-visible,#zschedeResult h3:focus-visible { outline:2px solid var(--focus); outline-offset:3px; }

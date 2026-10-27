@@ -8,6 +8,12 @@ for (const u of ['file:///etc/passwd','javascript:alert(1)','data:text/html,x','
 assert.throws(()=>S.privilegi('ignoto:leggi',{},base),/non autorizzat/);
 const fromCard=S.privilegi('studio:fromCard',{zaino:'biologia'},base);
 assert(fromCard.scrittura.includes('/vault/Zaini/biologia/RIPASSO'));assert(!fromCard.scrittura.includes('/vault/Zaini/biologia/APPUNTI'));assert(!fromCard.scrittura.includes('/vault/Costi'));
+for(const action of ['removeCards','undoRemoveCards']){
+ const p=S.privilegi('studio:'+action,{zaino:'biologia'},base);
+ assert(p.scrittura.includes('/vault/Zaini/biologia/_lavorazione/rag'));
+ for(const area of ['APPUNTI','MATERIALI','RIPASSO'])assert(!p.scrittura.includes('/vault/Zaini/biologia/'+area));
+ assert(!p.scrittura.includes('/vault/Costi'));
+}
 const r = S.privilegi('rag:index',{zaino:'biologia'},base);
 assert(r.lettura.includes('/vault/Zaini/biologia'));
 assert(!r.scrittura.includes('/vault/Zaini/biologia/APPUNTI'));

@@ -2,7 +2,7 @@
 // Dati solo nel vault sintetico; nessuna generazione o richiesta cloud.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),c=require('./cdp');
 const S=require('../../lib/schede-zaino'),F=require('../../lib/fonti-ai');
-const q=JSON.stringify,base='#zs-schede';let folder,backup,keys;
+const q=JSON.stringify,base='#zs-schede';let folder,backup,keys,registro,registroPrima;
 async function wait(expr){for(let n=0;n<160;n++){if(await c.val(expr))return;await c.pausa(100);}throw Error('Attesa: '+expr);}
 async function click(sel){await c.val(`document.querySelector(${q(sel)}).scrollIntoView({block:'nearest'})`);await c.clicca(sel);}
 async function reload(){await c.val('location.reload()');await c.pausa(700);await c.collega();await wait(`!!document.getElementById('zschedeBack') && !ZNAV.carico && document.getElementById('zainoNav').dataset.zaino===zainoAttivo()`);}
@@ -14,8 +14,9 @@ function saveCard(plan,preset,n=1){const {chunks,...info}=plan,card={...info,pre
  const before=await c.val(`({banco:localStorage.getItem(bancoChiave()),theme:document.documentElement.dataset.theme,sidebar:document.documentElement.dataset.sidebar})`);
  keys=await c.val(`Object.fromEntries(Object.entries(localStorage).filter(([k])=>k.startsWith('studia-zaino.sezione.')))`) ;
  folder=path.join(vault,'Zaini/biologia/_lavorazione/rag/schede');backup=fs.existsSync(folder)?Object.fromEntries(fs.readdirSync(folder).map(f=>[f,fs.readFileSync(path.join(folder,f))])):{};
+ registro=path.join(path.dirname(folder),'schede-rimosse.json');registroPrima=fs.existsSync(registro)?fs.readFileSync(registro):null;
  try{
-  fs.rmSync(folder,{recursive:true,force:true});await reload();
+  fs.rmSync(folder,{recursive:true,force:true});fs.rmSync(registro,{force:true});await reload();
   await c.val(`bancoForma('uno');bancoAssegna('A','studio');document.documentElement.dataset.sidebar='';document.documentElement.dataset.theme='chiaro'`);
   await refresh();await wait(`document.getElementById('zschedeCollectionStatus').textContent.startsWith('0 schede')`);
   assert.equal(await c.val(`!!document.querySelector('${base}')`),false);assert(await c.val(`!document.getElementById('zschedeNewButton').hidden`));
@@ -53,16 +54,46 @@ function saveCard(plan,preset,n=1){const {chunks,...info}=plan,card={...info,pre
   for(const theme of ['chiaro','scuro']){
    await c.val(`document.documentElement.dataset.theme=${q(theme)}`);
    await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:900,y:300});
-   assert(await c.val(`[...document.querySelectorAll('${base} button')].every(b=>b.title && (!b.querySelector('svg') || b.hasAttribute('aria-expanded')))`));
+   assert(await c.val(`[...document.querySelectorAll('${base} button')].every(b=>b.title)`));
    const shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-sidebar-schede-'+theme+'.png',Buffer.from(shot.result.data,'base64'));
   }
-  assert.equal(fs.existsSync(requests)?fs.readFileSync(requests,'utf8'):'',sent,'Aprire e navigare non chiama il provider');
+  assert.equal(await c.val(`document.querySelectorAll('${base} input').length`),0);
+  assert(await c.val(`document.getElementById('zs-schede-delete').hidden && !!document.querySelector('#zs-schede-edit svg[data-icona="pencil"]')`));
+  await click(open);await wait(`!document.getElementById('zschedeResult').hidden && !document.getElementById('zschedeNewButton').disabled`);
+  await click('#zs-schede-edit');assert.equal(await c.val(`document.getElementById('zs-schede-edit').getAttribute('aria-pressed')`),'true');
+  assert(await c.val(`!document.getElementById('zs-schede-delete').hidden && document.getElementById('zs-schede-delete').disabled`));
+  const firstCheck=firstSource+' .zs-item:has([data-preset="sintesi"]) input',groupCheck=firstSource+' .zs-gruppo-testa input';
+  await click(firstCheck);assert(await c.val(`document.querySelector(${q(groupCheck)}).indeterminate`));
+  await click(groupCheck);assert.equal(await c.val(`document.getElementById('zs-schede-selected').textContent`),'2 selezionate');
+  await click(group);assert.equal(await c.val(`document.querySelector(${q(group)}).getAttribute('aria-expanded')`),'false');
+  const shotEdit=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-schede-selezionate.png',Buffer.from(shotEdit.result.data,'base64'));
+  await click('#zs-schede-delete');await wait(`document.querySelectorAll('${base} .zn-scheda').length===1 && !document.getElementById('zschedeUndoBar').hidden && !document.getElementById('zschedeUndo').disabled`);
+  assert(await c.val(`document.getElementById('zschedeResult').hidden && !document.getElementById('zschedeLibrary').hidden`),'La scheda eliminata si chiude');
+  assert.equal((await c.val(`window.vault.studio.card('biologia',${q(first.sourceId)},'sintesi')`)).status,'deleted');
+  assert.equal((await c.val(`window.vault.studio.cards('biologia')`)).cards.length,1);
+  await click('#zschedeUndo');await wait(`document.querySelectorAll('${base} .zn-scheda').length===3 && document.getElementById('zschedeUndoBar').hidden && !document.getElementById('zschedeNewButton').disabled`);
+  assert.equal(await c.val(`document.getElementById('zs-schede-selected').textContent`),'0 selezionate');
+  await reload();await wait(`document.querySelectorAll('${base} .zn-scheda').length===3`);
+  assert.equal(await c.val(`document.querySelectorAll('${base} input').length`),0);
+  await click('#zs-schede-edit');await click(base+' .zs-schede-selection input');
+  assert.equal(await c.val(`document.getElementById('zs-schede-selected').textContent`),'3 selezionate');
+  assert(await c.val(`[...document.querySelectorAll('${base} input')].every(c=>c.checked && !c.indeterminate)`),'Seleziona tutte comprende i gruppi chiusi');
+  await click('#zs-schede-delete');await wait(`!document.querySelector('${base}') && !document.getElementById('zschedeUndoBar').hidden && !document.getElementById('zschedeUndo').disabled`);
+  assert.equal((await c.val(`window.vault.studio.cards('biologia')`)).cards.length,0);assert(await c.val(`!document.getElementById('zschedeNewButton').hidden`));
+  await reload();await wait(`!document.getElementById('zschedeUndoBar').hidden`);assert.equal(await c.val(`!!document.querySelector('${base}')`),false);
+  await c.val(`cambiaZaino('storia',true)`);await wait(`document.getElementById('zainoNav').dataset.zaino==='storia'`);assert(await c.val(`document.getElementById('zschedeUndoBar').hidden`));
+  await c.val(`cambiaZaino('biologia',true)`);await wait(`!document.getElementById('zschedeUndoBar').hidden && document.getElementById('zainoNav').dataset.zaino==='biologia'`);
+  await click('#zschedeUndo');await wait(`document.querySelectorAll('${base} .zn-scheda').length===3 && document.getElementById('zschedeUndoBar').hidden && !document.getElementById('zschedeNewButton').disabled`);
+  await click('#zs-schede-edit');await click(base+' .zs-schede-selection input');await click('#zs-schede-edit');
+  assert.equal(await c.val(`document.querySelectorAll('${base} input').length`),0);await click('#zs-schede-edit');assert(await c.val(`document.getElementById('zs-schede-delete').disabled`));await click('#zs-schede-edit');
+  assert.equal(fs.existsSync(requests)?fs.readFileSync(requests,'utf8'):'',sent,'Aprire, eliminare e annullare non chiamano il provider');
   fs.rmSync(folder,{recursive:true,force:true});await refresh();await wait(`document.getElementById('zschedeCollectionStatus').textContent.startsWith('0 schede')`);
   assert.equal(await c.val(`!!document.querySelector('${base}')`),false,'L’ultima scheda rimossa nasconde la sezione');
   assert(await c.val(`!document.getElementById('zschedeNewButton').hidden`));
  }finally{
   fs.rmSync(folder,{recursive:true,force:true});fs.mkdirSync(folder,{recursive:true});for(const [f,data] of Object.entries(backup))fs.writeFileSync(path.join(folder,f),data);
+  if(registroPrima)fs.writeFileSync(registro,registroPrima);else fs.rmSync(registro,{force:true});
   await c.val(`(()=>{for(const k of Object.keys(localStorage))if(k.startsWith('studia-zaino.sezione.'))localStorage.removeItem(k);for(const [k,v] of Object.entries(${q(keys)}))localStorage.setItem(k,v);document.documentElement.dataset.theme=${q(before.theme)};document.documentElement.dataset.sidebar=${q(before.sidebar||'')};if(${q(before.banco)}===null)localStorage.removeItem(bancoChiave());else localStorage.setItem(bancoChiave(),${q(before.banco)});bancoRicarica();document.getElementById('zschedeBack').click();})()`);
  }
- console.log('✓ Sidebar Schede: comparsa, fonti, conteggi, collasso persistente, apertura senza AI, cambio zaino e scomparsa');process.exit(0);
+ console.log('✓ Sidebar Schede: gruppi, collasso, apertura, matita, selezione multipla, eliminazione e Annulla persistenti, isolamento e zero AI');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

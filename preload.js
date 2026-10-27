@@ -471,6 +471,7 @@ vaultApi.studio = (function ponte(ipc){const call=(n,o)=>ipc.invoke('studio:'+n,
  fromCard:(zaino,sourceId,index,revision,expectedId)=>call('fromCard',{zaino,sourceId,index,revision,expectedId}),
  card:(zaino,sourceId,preset)=>call('card',{zaino,sourceId,preset}),analyze:(zaino,o)=>call('analyze',{zaino,...o}),copyCard:(zaino,sourceId,preset)=>call('copyCard',{zaino,sourceId,preset}),
  remove:(zaino,ids)=>call('remove',{zaino,ids}),undoRemove:(zaino,token)=>call('undoRemove',{zaino,token}),
+ removeCards:(zaino,ids)=>call('removeCards',{zaino,ids}),undoRemoveCards:(zaino,token)=>call('undoRemoveCards',{zaino,token}),
  state:(zaino,scope)=>call('state',{zaino,scope}),start:(zaino,o)=>call('start',{zaino,...o}),
  answer:(zaino,id,o)=>call('answer',{zaino,id,...o}),keep:(zaino,id)=>call('keep',{zaino,id}),
  outcome:(zaino,id,attemptId,outcome)=>call('outcome',{zaino,id,attemptId,outcome}),resume:(zaino,id)=>call('resume',{zaino,id}),cancel:()=>call('cancel')

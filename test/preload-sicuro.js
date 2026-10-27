@@ -53,7 +53,7 @@ try {
   assert.equal(api.fonti.verifica('/etc/passwd').ok,false);
   assert.equal(api.fonti.verifica(realFile).error,'PDF contraffatto');
   assert(api.notes.leggi('scienze').notes.some(n=>n.body==='Testo conservato\n'));
-  assert.equal(typeof api.chat.saveAnswer,'function'); assert.equal(typeof api.rag.watch,'function'); assert.equal(typeof api.studio.copyCard,'function');
+  assert.equal(typeof api.chat.saveAnswer,'function'); assert.equal(typeof api.rag.watch,'function'); assert.equal(typeof api.studio.copyCard,'function');assert.equal(typeof api.studio.removeCards,'function');assert.equal(typeof api.studio.undoRemoveCards,'function');
   assert.deepEqual(api.profile.read(),{});
   console.log('OK: preload sandbox, whitelist sincrona, note conservate e grant solo da File.');
 } finally {fs.rmSync(v,{recursive:true,force:true});}
