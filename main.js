@@ -2290,5 +2290,5 @@ ipcMain.handle('mappe:semina', (e, { corso, grafo, meta } = {}) => {
 });
 
 const ragLocale=require('./lib/rag-ipc').registra({ipcMain,app,vaultDir});
-require('./lib/studio-ipc').registra({ipcMain,app,vaultDir,readCfg,readKey,recupera:ragLocale.recupera});
+require('./lib/studio-ipc').registra({ipcMain,app,vaultDir,readCfg,readKey,recupera:ragLocale.recupera,runtime:ragLocale.runtime});
 require('./lib/chat-ipc').registra({ recupera:ragLocale.recupera, ipcMain, app, vaultDir, readCfg, writeCfg, readKey, keysStatus });

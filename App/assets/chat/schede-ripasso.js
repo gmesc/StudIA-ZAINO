@@ -101,6 +101,7 @@
    vistaSchede('card');const target=$('zschedeResult');target.replaceChildren();if(!c){target.append(el('p','Nessuna scheda disponibile.'));return;}
    target.append(el('h3',(cards.find(s=>s.sourceId===c.sourceId&&s.preset===c.preset)?.title||c.preset)+' — '+window.ZainoCitazioni.nome(c)));
    target.append(el('p',(st==='changed'?'Fonte modificata. ':st==='removed'?'Fonte rimossa. ':'')+'Copertura: '+c.covered+'/'+c.total+' passaggi'+(c.partial?' · analisi parziale':'')+' · '+c.provider+' / '+c.model));
+   if(c.dedup?.mode==='local')target.append(el('p','Ricerca dei doppioni con AI locale · verifiche cloud: '+c.dedup.cloudCalls+' anziché '+c.dedup.fullCalls+'. Tutte le citazioni sono conservate.','zchat-hint'));
    if(c.warnings?.length)target.append(el('p',c.warnings.join(' '),'zchat-hint'));
    const heading=target.querySelector('h3');heading.tabIndex=-1;heading.focus();
    for(const [index,item] of c.items.entries()){const row=el('article'),body=el('div',undefined,'zstudio-card-text'),template=document.createElement('template');
@@ -124,7 +125,7 @@
   }
   for(const id of ['zschedeInputPrice','zschedeOutputPrice'])$(id).oninput=()=>{if(!estimate)return;disegnaCosto();if(plan.costo(estimate,prezzi()))try{localStorage.setItem(tariffKey(),JSON.stringify(prezzi()));}catch(_){};};
   $('zschedeCancel').onclick=()=>api.cancel();
-  api.onProgress(p=>{if(p.zaino!==state.zaino)return;studio.status((p.phase==='analysis'?'Analisi della fonte: ':'Unione senza ripetizioni: ')+p.done+'/'+p.total+' parti.',false,'zschedeStatus');});
+  api.onProgress(p=>{if(p.zaino!==state.zaino)return;const fase={analysis:['Analisi della fonte: ','parti'],embedding:['Ricerca locale dei doppioni: ','elementi'],merge:['Verifica dei possibili doppioni: ','gruppi']}[p.phase];if(fase)studio.status(fase[0]+p.done+'/'+p.total+' '+fase[1]+'.',false,'zschedeStatus');});
   async function prepare(current,sourceId,preset){
    invalidateEstimate();vistaSchede('new');
    if(!await studio.ensureAI('zschedeStatus')||!current())return;
@@ -133,8 +134,8 @@
    $('zschedeSource').value=sourceId;$('zschedePreset').value=preset;
    estimate=r;let rates=r.prices,personalizzate=false;try{const saved=JSON.parse(localStorage.getItem(tariffKey()));if(saved){rates=saved;personalizzate=true;}}catch(_){}$('zschedeInputPrice').value=rates?.input??'';$('zschedeOutputPrice').value=rates?.output??'';
    const tariffInfo=$('zschedeTariffInfo');tariffInfo.textContent=personalizzate?'Tariffe personalizzate ricordate per questo modello. Puoi aggiornarle qui. ':r.prices?'Tariffe standard verificate il '+r.prices.verifiedAt+'. Puoi adattarle al tuo account. ':'Inserisci le tariffe del tuo account. Nessun prezzo viene inventato per modelli non presenti nel listino. ';if(r.prices?.url){const link=el('a','Listino del provider');link.href=r.prices.url;link.target='_blank';link.rel='noopener noreferrer';tariffInfo.append(link);}
-   studio.status('',false,'zschedeStatus');$('zschedeCost').hidden=false;$('zschedeEstimate').textContent='Ricalcola stima';$('zschedeEstimate').classList.remove('acc');$('zschedeEstimateText').textContent='Materiale: '+window.ZainoCitazioni.nome(r)+' · '+r.covered+'/'+r.total+' passaggi'+(r.partial?' · analisi parziale':'')+' · '+r.parts+(r.parts===1?' parte da analizzare':' parti da analizzare')+'. AI cloud: '+r.provider+' / '+r.model+'. La conferma genera e salva la scheda nel raccoglitore. '+r.warnings.join(' ');
-   $('zschedeTokens').textContent='Stima prudenziale: circa '+r.estimatedInputTokens+' token in ingresso e fino a '+r.estimatedOutputTokens+' token in uscita, complessivi per analisi e unione. Fino a '+r.maxCalls+' chiamate includendo una correzione per richiesta. La stima monetaria più alta include queste correzioni; non è un tetto di spesa garantito.';$('zschedeGenerate').hidden=false;$('zschedeCost').open=!plan.costo(r,prezzi());disegnaCosto();$('zschedePrice').scrollIntoView({block:'nearest'});
+   studio.status('',false,'zschedeStatus');$('zschedeCost').hidden=false;$('zschedeEstimate').textContent='Ricalcola stima';$('zschedeEstimate').classList.remove('acc');$('zschedeEstimateText').textContent='Materiale: '+window.ZainoCitazioni.nome(r)+' · '+r.covered+'/'+r.total+' passaggi'+(r.partial?' · analisi parziale':'')+' · '+r.parts+(r.parts===1?' parte da analizzare':' parti da analizzare')+'. AI cloud: '+r.provider+' / '+r.model+'. '+(r.dedupPlan?.mode==='local'?'I possibili doppioni vengono individuati con AI locale e verificati con AI cloud. ':r.dedupPlan?.mode==='cloud'?'AI locale non disponibile: il confronto dei doppioni usa AI cloud. ':'')+'La conferma genera e salva la scheda nel raccoglitore. '+r.warnings.join(' ');
+   $('zschedeTokens').textContent='Stima prudenziale: circa '+r.estimatedInputTokens+' token in ingresso e fino a '+r.estimatedOutputTokens+' token in uscita, complessivi per analisi e unione. Fino a '+r.maxCalls+' chiamate includendo una correzione per richiesta. La fascia prudente include il confronto cloud completo, anche se l’AI locale riduce i candidati, e possibili correzioni. Il risparmio nei confronti viene mostrato dopo l’analisi. Non è un tetto di spesa garantito.';$('zschedeGenerate').hidden=false;$('zschedeCost').open=!plan.costo(r,prezzi());disegnaCosto();$('zschedePrice').scrollIntoView({block:'nearest'});
 
   }
   $('zschedeEstimate').onclick=()=>studio.action(current=>prepare(current,$('zschedeSource').value,$('zschedePreset').value),'zschedeStatus');

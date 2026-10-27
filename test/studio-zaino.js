@@ -160,5 +160,46 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(ro
  assert.equal(Plan.costo(piano,null),null);assert.equal(Plan.tariffa('openai','sconosciuto'),null);
  assert.equal(Plan.tariffa('google','gemini-4-argon','2026-11-30').input,2);assert.equal(Plan.tariffa('google','gemini-4-argon','2026-12-01').input,4);
  assert.deepEqual(Plan.unisci([{title:'A',text:'Uno',refs:['1']},{title:'B',text:'Due',refs:['2']},{title:'C',text:'Tre',refs:['3']}],[[0,1],[1,2]])[0].refs,['1','2','3']);
+ // L’embedder riduce i candidati cloud, mai i passaggi letti o le citazioni.
+ let indiceLocale=0,cloudLocale=0,embeddingLocale=0,passaggiLocali=[];
+ const mockLocale=async req=>{
+  const data=JSON.parse(req.messages[0].content);
+  if(data.porzioni){const n=indiceLocale++;passaggiLocali.push(...data.porzioni.map(p=>p.chunkId));return {text:JSON.stringify({items:[
+   {title:n%2?'Come si produce ATP?':'Quale processo produce ATP?',text:n%2?'La respirazione cellulare produce ATP.':'L’ATP viene prodotto dalla respirazione cellulare.',refs:[data.porzioni[0].chunkId]},
+   ...[n*2,n*2+1].map(i=>({title:'Argomento '+i,text:'Spiegazione specifica '+i+': '+('contenuto '.repeat(150)).trim(),refs:[data.porzioni.at(-1).chunkId]})),
+   ...(n===0?[{title:'Affermazione opposta',text:'La respirazione cellulare non produce ATP.',refs:[data.porzioni[1].chunkId]}]:[])
+  ]})};}
+  cloudLocale++;const ids=data.candidati.filter(i=>['Come si produce ATP?','Quale processo produce ATP?'].includes(i.title)).map(i=>i.id);
+  return {text:JSON.stringify({groups:ids.length>1?[ids]:[]})};
+ };
+ const confrontoCompleto=await S.genera(root,'test',intera.id,'domande',{...opts,chiama:mockLocale}),chiamateComplete=cloudLocale;
+ assert(chiamateComplete>1);
+ indiceLocale=0;cloudLocale=0;passaggiLocali=[];
+ const runtimeLocale={ready:()=>true,embed:async(text,o)=>{embeddingLocale++;assert.equal(o.query,false);const v=Array(768).fill(0),indice=text.match(/^Argomento (\d+)/);v[indice?Number(indice[1])+1:0]=1;return {vector:v};}};
+ const locale=await S.genera(root,'test',intera.id,'domande',{...opts,runtime:runtimeLocale,chiama:mockLocale});
+ assert(embeddingLocale>0,'La generazione deve usare davvero l’embedder locale');
+ assert(cloudLocale<chiamateComplete,'La selezione locale deve ridurre le richieste cloud');
+ assert.deepEqual(passaggiLocali,piano.chunks.map(p=>p.chunkId));assert.equal(locale.covered,locale.total);
+ const tutteLeProve=card=>[...new Set(card.items.flatMap(i=>i.refs))].sort();assert.deepEqual(tutteLeProve(locale),tutteLeProve(confrontoCompleto));
+ assert.equal(locale.items.length,confrontoCompleto.items.length);assert(locale.items.some(i=>i.title==='Affermazione opposta'),'Similarità massima non autorizza a unire risposte opposte');
+ assert.equal(locale.dedup.mode,'local');assert.equal(locale.dedup.cloudCalls,cloudLocale);assert(locale.dedup.savedCalls>0);
+ assert.deepEqual(locale.sources,confrontoCompleto.sources);
+ indiceLocale=0;cloudLocale=0;
+ const ripiego=await S.genera(root,'test',intera.id,'domande',{...opts,chiama:mockLocale,runtime:{ready:()=>true,embed:async()=>{throw Error('Motore locale non disponibile');}}});
+ assert.equal(ripiego.dedup.mode,'fallback');assert.equal(cloudLocale,chiamateComplete);assert(ripiego.warnings.some(w=>w.includes('confronto cloud completo')));assert.deepEqual(tutteLeProve(ripiego),tutteLeProve(locale));
+ const primaDelloStop=fs.readFileSync(completaPath);indiceLocale=0;cloudLocale=0;
+ const stopLocale=new AbortController();await assert.rejects(S.genera(root,'test',intera.id,'domande',{...opts,chiama:mockLocale,signal:stopLocale.signal,runtime:{ready:()=>true,embed:async()=>{stopLocale.abort();throw Error('Interrotto');}}}),/interrott/i);
+ assert.equal(cloudLocale,0,'L’annullamento locale non deve avviare il ripiego cloud');assert(fs.readFileSync(completaPath).equals(primaDelloStop));
+ const stimaLocale=await S.prepara(root,'test',intera.id,'domande',{runtime:runtimeLocale});assert.equal(stimaLocale.dedupPlan.mode,'local');assert.equal(stimaLocale.estimatedInputTokens,piano.estimatedInputTokens,'La fascia prudente deve includere anche il ripiego cloud completo');
+ const vettoriCampione=campione.map((_,i)=>Array.from({length:768},(_,k)=>k===i%17?1:0)),selezione=Plan.confrontiLocali(campione,vettoriCampione);
+ assert(selezione.jobs.length<=confronti.length);
+ for(let a=0;a<campione.length;a++)for(let b=a+1;b<campione.length;b++)if(a%17===b%17)assert(selezione.jobs.some(g=>g.some(i=>i.id===a)&&g.some(i=>i.id===b)),'Ogni coppia candidata deve arrivare a una verifica anche fra gruppi lontani');
+ assert.throws(()=>Plan.confrontiLocali(campione,[[1]]),/incompleti/);
+ assert.throws(()=>Plan.confrontiLocali([campione[0]],[Array(768).fill(0)]),/non valido/);
+ const sparso=Array(768);sparso[0]=1;assert.throws(()=>Plan.confrontiLocali([campione[0]],[sparso]),/non valido/);
+ indiceLocale=0;cloudLocale=0;
+ const errati=await S.genera(root,'test',intera.id,'domande',{...opts,chiama:mockLocale,runtime:{ready:()=>true,embed:async()=>({vector:[NaN]})}});
+ assert.equal(errati.dedup.mode,'fallback');assert.equal(cloudLocale,chiamateComplete);assert.deepEqual(tutteLeProve(errati),tutteLeProve(locale));
+ console.log('duplicati locali: '+chiamateComplete+'→'+locale.dedup.cloudCalls+' confronti cloud; fonte intera, negazioni, tutte le prove e stop conservati');
  console.log('studio-zaino: cinque preset, prove vincolate, copia personale, soluzione nascosta, ripresa, idempotenza, correzioni e fonti obsolete OK');
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>fs.rmSync(root,{recursive:true,force:true}));

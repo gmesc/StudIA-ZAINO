@@ -70,7 +70,7 @@ runtime.crea=dir=>{
  return {...real,ready:()=>finto()||real.ready(),embed:async(text,opts)=>{
   if(!finto())return real.embed(text,opts);
   await new Promise(resolve=>setTimeout(resolve,100));if(opts.signal?.aborted)throw Error('Indicizzazione interrotta.');
-  return {vector:[1,...Array(767).fill(0)]};
+  const indice=text.match(/^Parte didattica (\d+)/),vector=Array(768).fill(0);vector[indice?Number(indice[1])%768:0]=1;return {vector};
  }};
 };
 require('./sicurezza-adattatore');
