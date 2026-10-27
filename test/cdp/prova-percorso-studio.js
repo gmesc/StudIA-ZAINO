@@ -11,10 +11,41 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  const ripasso=path.join(vault,'Zaini/biologia/RIPASSO'),active=path.join(ripasso,'active.json'),activeBefore=fs.existsSync(active)?fs.readFileSync(active):null;
  const initial=await c.val(`({banco:JSON.parse(JSON.stringify(bancoStato())),theme:document.documentElement.dataset.theme,storage:{...localStorage}})`);
  await c.val(`cambiaZaino('biologia',true);bancoForma('uno');bancoAssegna('A','studio')`);
+ assert.equal(await c.val(`bancoStrumenti().studio.nome`),'Raccoglitore');
+ assert.deepEqual(await c.val(`[...document.querySelectorAll('#zragToolbar button')].filter(b=>b.getClientRects().length).map(b=>b.id)`),['zschedeNewButton','zschedeBack'],'due comandi principali sempre visibili');
+ assert(await c.val(`!!document.querySelector('#zschedeNewButton svg[data-icona="plus"]')&&!!document.getElementById('zschedeNewButton').title`),'più Lucide con tooltip');
+ assert(await c.val(`!!document.getElementById('zragSearchButton').closest('#zschedeLibrary')&&!document.getElementById('zragOpenReview')`),'ricerca nella vista del raccoglitore, Ripasso dalla scelta degli split');
  const requests=path.join(path.dirname(vault),'dati/chat-requests.jsonl'),sent=()=>fs.existsSync(requests)?fs.readFileSync(requests,'utf8'):'';
  const previousState=await c.val(`window.vault.studio.state('biologia')`),old=previousState.questions.length,savedCount=previousState.questions.filter(q=>q.saved).length;
+ // Sul pacchetto reale si prova la navigazione senza credenziali né invii AI.
+ if(process.env.STUDIA_SOLO_NAVIGAZIONE==='1'){
+  try{
+   await click('#zschedeNewButton');await wait(`document.getElementById('zschedeNew').open`);
+   assert(await c.val(`document.getElementById('zragScopeButton').hidden&&document.getElementById('zragScopeHost').hidden`));
+   const ids=await c.val(`[...document.getElementById('zschedeSource').options].map(o=>o.value)`);assert(ids.length>1);
+   await set('zschedeSource',ids.at(-1));await set('zschedePreset','prerequisiti');
+   await c.val(`window.zainoStudio.usaFonti({mode:'selected',sourceIds:[${JSON.stringify(ids[0])}],wikipedia:false})`);await c.pausa(150);
+   assert.equal(await c.val(`document.getElementById('zragStatus').textContent`),'','la scheda non mostra messaggi sul filtro della ricerca');
+   assert.deepEqual(await c.val(`[...document.getElementById('zschedeSource').options].map(o=>o.value)`),ids);assert.equal(await c.val(`document.getElementById('zschedeSource').value`),ids.at(-1));
+   await click('#zschedeNewButton');assert.equal(await c.val(`document.getElementById('zschedePreset').value`),'prerequisiti');await screenshot('nuova');
+   await click('#zschedeBack');await screenshot('elenco');await click('#zragSearchButton');assert(!await c.val(`document.getElementById('zragScopeButton').hidden`));
+   await click('#zragScopeButton');assert(!await c.val(`document.getElementById('zragScope').hidden`));await screenshot('ricerca');await click('#zragScopeButton');
+   await c.val(`bancoMostra('flashcard')`);await click('#zstudyNewButton');await c.val(`document.getElementById('zstudyUseSources').closest('details').open=true`);await click('#zstudyUseSources');
+   await wait(`document.querySelector('#zstudyScopeButton span').textContent==='Fonti: 1'`);assert.equal(sent(),'','nessuna chiamata AI durante la navigazione');
+  }finally{await c.val(`localStorage.clear();Object.entries(${JSON.stringify(initial.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));BANCO.stato=${JSON.stringify(initial.banco)};bancoSalva();bancoDisegna()`);}
+  console.log('Raccoglitore: barra stabile, fonte singola indipendente, filtro solo nella ricerca e riuso nel Ripasso senza AI OK');process.exit(0);
+ }
  await c.val(`window.vault.chat.clearKey({provider:'openai'});window.vault.chat.saveSettings({provider:'openai',model:'modello-locale-di-prova'})`);
  await click('#zschedeNewButton');await wait(`document.getElementById('zschedeNew').open`);const source=await c.val(`document.getElementById('zschedeSource').value`);
+ assert(await c.val(`document.getElementById('zragScopeButton').hidden&&document.getElementById('zragScopeHost').hidden`),'Nuova scheda usa solo il selettore Fonte');
+ const tutte=await c.val(`[...document.getElementById('zschedeSource').options].map(o=>o.value)`);assert(tutte.length>1);
+ const altra=tutte.find(id=>id!==source);await set('zschedeSource',altra);
+ await c.val(`window.zainoStudio.usaFonti({mode:'selected',sourceIds:[${JSON.stringify(source)}],wikipedia:false})`);
+ await c.pausa(250);
+ assert.deepEqual(await c.val(`[...document.getElementById('zschedeSource').options].map(o=>o.value)`),tutte,'il filtro della ricerca non limita la fonte singola della scheda');
+ assert.equal(await c.val(`document.getElementById('zschedeSource').value`),altra,'il filtro della ricerca non cambia la fonte scelta per la scheda');
+ await click('#zschedeNewButton');assert.equal(await c.val(`document.getElementById('zschedeSource').value`),altra,'ripremere + Scheda conserva la bozza');
+ await c.val(`window.zainoStudio.usaFonti({mode:'all',sourceIds:[],wikipedia:false})`);await set('zschedeSource',source);
  await set('zschedePreset','domande');await click('#zschedeEstimate');await wait(`!!document.querySelector('#zschedeStatusConfig button') && !document.getElementById('zschedeEstimate').disabled`);
  assert.equal(await c.val(`document.getElementById('zschedeGenerate').hidden`),true);
  await screenshot('configurazione');const before=sent();await click('#zschedeStatusConfig button');assert.equal(await c.val(`document.documentElement.dataset.settings`),'1');
@@ -45,7 +76,8 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await click('#zschedeNewButton');await wait(`document.getElementById('zschedeSource').selectedOptions[0].textContent.includes('Fotosintesi')`);
  assert(await c.val(`document.getElementById('zragScopeSummary').hidden`),'La scheda usa solo la fonte scelta nel modulo');
  // Selezione trasferita esplicitamente a Ripasso e chat, nomi leggibili fuori dal menu.
- await c.val(`window.zainoStudio.usaFonti({mode:'selected',sourceIds:[${JSON.stringify(source)}],wikipedia:false})`);await click('#zragOpenReview');await wait(`document.querySelector('#zstudyScopeButton span').textContent==='Fonti: 1'`);
+ await c.val(`window.zainoStudio.usaFonti({mode:'selected',sourceIds:[${JSON.stringify(source)}],wikipedia:false});bancoMostra('flashcard')`);await click('#zstudyNewButton');await c.val(`document.getElementById('zstudyUseSources').closest('details').open=true`);await click('#zstudyUseSources');await wait(`document.querySelector('#zstudyScopeButton span').textContent==='Fonti: 1'`);
+ assert.equal(await c.val(`document.getElementById('zstudyUseSources').textContent`),'Usa fonti della ricerca');
  await click('#chatBtn');await click('#zchatScopeButton');await click('#zchatUseStudySources');await wait(`document.getElementById('zchatContext').textContent.includes('Materiali della chat:')`);assert.equal(await c.val(`document.getElementById('zchatScopeCount').textContent`),'1');
  await c.val(`document.getElementById('zchatWindow').hidden=true`);
  // Scorciatoie di attività non perdono documenti. Finestra compatta, poi entrambe le palette.

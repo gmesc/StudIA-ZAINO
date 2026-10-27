@@ -26,12 +26,12 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await click('#zschedeBack');await click('#zschedeNewButton');await wait(`document.getElementById('zschedeNew').open`);await set('zschedeSource',other.id);await set('zschedePreset','concetti');await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);await click('#zschedeGenerate');
  await wait(`document.getElementById('zschedeCollectionStatus').textContent.includes('2 schede') && !document.getElementById('zschedeNewButton').disabled`);
  await set('zschedeFilter','');assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),2);
- await click('#zragScopeButton');await click('#zragScope input');await click('#zragScope [data-source-id="'+other.id+'"]');await click('#zragScopeButton');
- await wait(`document.getElementById('zschedeSource').options.length===1`);assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),2);
+ await click('#zschedeBack');await click('#zragSearchButton');await click('#zragScopeButton');await click('#zragScope input');await click('#zragScope [data-source-id="'+other.id+'"]');await click('#zragScopeButton');
+ assert(await c.val(`document.getElementById('zschedeSource').options.length>1`),'il filtro della ricerca non limita la scheda');assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),2);await click('#zschedeBack');
  await set('zschedeFilter',firstCard.file);assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),1);
  const requests=path.join(path.dirname(vault),'dati/chat-requests.jsonl'),sent=fs.readFileSync(requests,'utf8');
  await click('#zschedeCollection .zstudio-card-open');await wait(`!!document.querySelector('#zschedeResult article') && !document.getElementById('zschedeNewButton').disabled`);assert.equal(fs.readFileSync(requests,'utf8'),sent,'Aprire una scheda salvata non chiama il provider');
- await click('#zragScopeButton');await click('#zragScope input');await click('#zragScopeButton');await wait(`document.getElementById('zschedeSource').options.length>1`);
+ await click('#zschedeBack');await click('#zragSearchButton');await click('#zragScopeButton');await click('#zragScope input');await click('#zragScopeButton');await click('#zschedeBack');
  // Una modifica esterna aggiorna il raccoglitore aperto; la stima non rigenera.
  const cached=(await c.val(`window.vault.studio.cards('biologia')`)).cards.find(c=>c.preset==='sintesi');
  const sourceFile=path.join(vault,'Zaini/biologia',cached.file),original=fs.readFileSync(sourceFile),cacheFile=path.join(vault,'Zaini/biologia/_lavorazione/rag/schede',cached.sourceId+'-'+cached.preset+'.json'),before=fs.readFileSync(cacheFile,'utf8');
@@ -54,7 +54,7 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await c.val(`noteHost(noteStatoAttivo()).querySelector('.ncb-undo').click()`);assert.equal(await c.val(`noteStatoAttivo().mde.value()`),copied);
  await c.val(`noteHost(noteStatoAttivo()).querySelector('.ncb-redo').click()`);assert((await c.val(`noteStatoAttivo().mde.value()`)).endsWith('Verifica cronologia RAG.'));
  await c.val(`noteHost(noteStatoAttivo()).querySelector('.ncb-undo').click()`);assert.equal(await c.val(`noteStatoAttivo().mde.value()`),copied);
- assert.equal(await c.val(`document.getElementById('zragOpenReview').textContent`),'Apri Ripasso');
+ assert.equal(await c.val(`document.getElementById('zragOpenReview')`),null);
  await click('#zstudyQueueFilter [data-filter="all"]');
  for(const theme of ['chiaro','scuro']){
   await c.val(`document.documentElement.dataset.theme=${JSON.stringify(theme)}`);

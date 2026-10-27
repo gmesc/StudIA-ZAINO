@@ -157,7 +157,7 @@
         <label><input id="zchatScopeAll" type="checkbox" checked> Tutto lo zaino</label>
         <div id="zchatScopeList" class="zchat-scope-list"></div>
         <label><input id="zchatScopeWiki" type="checkbox" checked> Consenti Wikipedia in Spiegamelo</label>
-        <button type="button" class="tbtn" id="zchatUseStudySources">Usa fonti di Cerca e studia</button><p id="zchatScopeStatus" class="zchat-hint" role="status"></p>
+        <button type="button" class="tbtn" id="zchatUseStudySources" title="Usa in questa chat le fonti scelte in Cerca nei materiali">Usa fonti della ricerca</button><p id="zchatScopeStatus" class="zchat-hint" role="status"></p>
       </section>
       <p id="zchatContext" class="zstudio-context" role="status"></p><div id="zchatMessages" class="zchat-messages" role="log" aria-label="Messaggi" aria-live="polite" aria-relevant="additions"></div>
       <form id="zchatForm" class="zchat-composer">

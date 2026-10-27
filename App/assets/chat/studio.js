@@ -16,7 +16,7 @@
  function crea(){
   const host=document.getElementById('studioPane');if(!host||host.children.length)return;
   const state={zaino:null,scope:{mode:'all',sourceIds:[],wikipedia:false},sources:[]},api=window.vault.rag;
-  host.innerHTML=`<div class="tbar" id="zragToolbar" role="group" aria-label="Strumenti di studio"><span class="tbsep"></span><button class="tbtn" id="zragIndex" type="button" disabled>Crea indice</button><span class="tbsep"></span><button class="tbtn" id="zragOpenReview" type="button" title="Apre lo split Ripasso: scegli le fonti e allenati con domande e risposte.">Apri Ripasso</button></div><div id="zragScopeHost"></div>
+  host.innerHTML=`<div class="tbar" id="zragToolbar" role="group" aria-label="Strumenti del raccoglitore"><button class="tbtn" id="zragIndex" type="button" disabled>Crea indice</button></div><div id="zragScopeHost"></div>
    <div id="zstudio" class="zstudio zstudio-banco"><details id="zragSearch" class="zstudio-section"><summary>Cerca nei materiali</summary>
    <p class="zchat-hint">Trova passaggi nei documenti e negli appunti selezionati. I risultati rimandano alle fonti originali.</p>
    <form id="zragForm" class="zstudio-actions"><label class="zchat-sr" for="zragQuery">Cerca nei materiali per parole o significato</label><input class="ctl-input" id="zragQuery" placeholder="Che cosa vuoi trovare?" maxlength="12000"><button class="tbtn acc" type="submit">Cerca</button></form>
@@ -80,9 +80,8 @@
    else status(r.source.file+': '+(source.text||source.quote||''));
   }
   function riferimento(source,area='zragStatus'){const b=el('button',source.file.split('/').pop()+(source.page?' · p. '+source.page:''),'tbtn zchat-citation');b.type='button';b.title=source.file;b.onclick=()=>apri(source).catch(e=>status(e.message,true,area));return b;}
-  const picker=window.ZainoSceltaFonti.crea({prefix:'zragScope',bar:$('zragToolbar'),host:$('zragScopeHost'),state,onChange(){epoch++;api.cancel('index');$('zragResults').replaceChildren();study?.scopeChanged();status('Fonti della ricerca aggiornate.');}});
+  const picker=window.ZainoSceltaFonti.crea({prefix:'zragScope',bar:$('zragToolbar'),host:$('zragScopeHost'),state,onChange(){epoch++;api.cancel('index');$('zragResults').replaceChildren();if(box.dataset.vista==='search')status('Fonti della ricerca aggiornate.');}});
   api.onAuto(autoState);
-  $('zragOpenReview').onclick=()=>study.openReview();
   downloads.querySelectorAll('[data-download]').forEach(b=>{b.onclick=async()=>{
    if(downloadBusy)return;downloadBusy=true;
    downloads.querySelectorAll('button[data-download]').forEach(b=>b.disabled=true);
