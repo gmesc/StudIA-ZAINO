@@ -34,6 +34,7 @@ const {PDFDocument,StandardFonts}=require('pdf-lib');
  await L.pausa(600);
  await L.val(`(()=>{const el=[...document.querySelectorAll('#citazionePagine .page[data-page-number="2"] .textLayer span')].find(e=>e.textContent.startsWith('Le piante trasformano')),r=document.createRange();r.selectNodeContents(el);getSelection().removeAllRanges();getSelection().addRange(r);const b=r.getBoundingClientRect();el.dispatchEvent(new MouseEvent('mouseup',{bubbles:true,button:0,clientX:b.x+4,clientY:b.y+4}));})()`);
  assert(await L.finoA(`!!document.querySelector('#selBarra.aperta [data-az="inserisci-citazione"]:not([disabled])')`));
+ assert.deepEqual(await L.val(`[...document.querySelectorAll('#selBarra .ctx-item')].map(b=>b.textContent)`),['Copia','Cita dalla pagina']);
  await L.muovi(1450,940);await L.scatta('211-citazione-zaino',{scala:1});
  await L.clicca('#citazioneChiudi');assert.equal(await L.val('zainoAttivo()'),'storia');
  console.log('Menu zaini, selettore della fonte e anteprima della citazione acquisiti.');process.exit(0);

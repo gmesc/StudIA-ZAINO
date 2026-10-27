@@ -24,9 +24,9 @@ const v=fs.mkdtempSync(path.join(os.tmpdir(),'zaino-citazioni-'));
  assert.deepEqual(R.trovaSelezione('prima DAG dopo DAG',{inizio:15,testo:'DAG'}),{inizio:15,fine:18},'riconosce la seconda occorrenza');
  assert.equal(R.trovaSelezione('DAG e DAG',{inizio:30,testo:'DAG'}),null,'mai scegliere una frase ambigua');
  assert.deepEqual(R.trovaSelezione('prima DAG dopo',{inizio:0,testo:'DAG'}),{inizio:6,fine:9},'ripiego univoco');
- for(const [rimando,testo,titolo] of [[intero,'','01 Fonte.pdf'],[cita.rimando,'','01 Fonte.pdf; p. 3'],[puntuale,'DAG su due\nrighe','01 Fonte.pdf; p. 3']]){
+ for(const [rimando,testo,titolo] of [[intero,'','Fonte.pdf'],[cita.rimando,'','Fonte.pdf; p. 3'],[puntuale,'DAG su due\nrighe','Fonte.pdf; p. 3']]){
   const md=R.citazionePdfZaino({...cita,rimando},testo);
-  assert(md.split('\n').every(l=>l.startsWith('> ')),'un blocco unico include anche il link');assert(md.includes(titolo));
+  assert(md.split('\n').every(l=>l.startsWith('> ')),'un blocco unico include anche il link');assert.equal(md.split('\n').at(-2).trimEnd(),'> '+titolo,'titolo senza numero d’importazione');
   const html=require('../lib/reader-parser').load().mdToHtml(md,true);
   assert(/<blockquote>[\s\S]*data-citazione-zaino=[\s\S]*<\/blockquote>/.test(html),'link dentro la stessa barra');
   if(testo)assert(html.includes('<em>DAG su due</em>'),'estratto in corsivo');
@@ -37,6 +37,11 @@ const v=fs.mkdtempSync(path.join(os.tmpdir(),'zaino-citazioni-'));
  assert.equal(normalizzata.split('\n').length,vecchia.split('\n').length,'coordinate degli appunti conservate');
  assert(normalizzata.split('\n').every(l=>l.startsWith('>')),'barra continua anche sulle citazioni precedenti');
  const codice='```\n'+vecchia+'\n```';assert.equal(R.normalizzaCitazioni(codice),codice,'codice letterale invariato');
+ const precedente='> *Estratto*  \n> 01 Fonte.pdf; p. 3  \n> '+R.link('Origine › 01 Fonte.pdf · p. 3',cita.rimando);
+ const resa=R.normalizzaCitazioni(precedente);assert.equal(resa.split('\n')[1],'> Fonte.pdf; p. 3  ','anche il titolo delle citazioni esistenti perde solo il numero interno');assert.equal(resa.split('\n')[2],precedente.split('\n')[2],'link originale invariato');
+ assert.equal(resa.split('\n').length,precedente.split('\n').length,'righe conservate');assert.equal(R.normalizzaCitazioni(resa),resa,'resa idempotente');
+ assert.equal(R.normalizzaCitazioni('```\n'+precedente+'\n```'),'```\n'+precedente+'\n```','nessuna normalizzazione nel codice');
+ for(const [file,titolo] of [['0001 - 2026 orario.pdf','2026 orario.pdf'],['1984.pdf','1984.pdf'],['12 orario 1C.pdf','orario 1C.pdf']])assert.equal(R.citazionePdfZaino({...cita,file},'').split('\n')[0].trimEnd(),'> '+titolo+'; p. 3');
 
  assert.equal(R.leggi(cita.rimando.replace('#p=3','#p=0')),null);
  assert.equal(R.leggi(cita.rimando.replace(rif.zainoId,'../fuori')),null);

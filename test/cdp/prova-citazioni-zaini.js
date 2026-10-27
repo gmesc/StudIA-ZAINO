@@ -149,18 +149,18 @@ async function provaCitazioniClip(fileNota){
   await c.invia('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
   await wait(`document.getElementById('citazioneConto').textContent==='${n} DI 3'`);
  };
- await apri();assert(await c.val(`document.getElementById('citazioneCitaEstratto').disabled`),'estratto richiede selezione');
+ await apri();assert(await c.val(`!document.getElementById('citazioneCitaEstratto')`),'estratto solo nel menu della selezione');
  await c.clicca('#citazioneCitaPdf');await wait(`!document.getElementById('citazioneDialog').open`);
  assert.equal((await ultima()).intero,true);assert(await c.val('NOTES.mde.isPreviewActive()'));
  await apri();await pagina(3);await c.clicca('#citazioneCitaPagina');await wait(`!document.getElementById('citazioneDialog').open`);
  assert.equal((await ultima()).pagina,3);assert(!(await ultima()).intero);
  await apri();await pagina(2);await wait(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span')`);
- await c.val(`(()=>{const n=document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span').firstChild,r=document.createRange(),i=n.textContent.indexOf('pagina');r.setStart(n,i);r.setEnd(n,i+6);getSelection().removeAllRanges();getSelection().addRange(r);})()`);
- await wait(`!document.getElementById('citazioneCitaEstratto').disabled`);await c.clicca('#citazioneCitaEstratto');await wait(`!document.getElementById('citazioneDialog').open`);
+ await c.val(`(()=>{const n=document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span').firstChild,r=document.createRange(),i=n.textContent.indexOf('pagina');r.setStart(n,i);r.setEnd(n,i+6);getSelection().removeAllRanges();getSelection().addRange(r);const b=r.getBoundingClientRect();n.parentElement.dispatchEvent(new MouseEvent('mouseup',{bubbles:true,button:0,clientX:b.x+4,clientY:b.y+4}));})()`);
+ await wait(`selBarraAperta()`);await c.clicca('#selBarra [data-az="inserisci-citazione"]');await wait(`!document.getElementById('citazioneDialog').open`);
  const ref=await ultima();assert.equal(ref.pagina,2);assert.equal(ref.selezione.testo,'pagina');
  assert((await c.val('NOTES.mde.value()')).includes('> *pagina*'));
  await c.val(`noteAnteprimaRidisegna(NOTES)`);
- assert(await c.val(`(()=>{const a=[...document.querySelectorAll('#noteHost .editor-preview-active a[data-citazione-zaino]')].at(-1),q=a.closest('blockquote');return !!q?.querySelector('em')&&q.textContent.includes('01 Botanica.pdf; p. 2')&&getComputedStyle(q).borderLeftWidth!=='0px';})()`),'testo corsivo, titolo e link dentro un’unica barra');
+ assert(await c.val(`(()=>{const a=[...document.querySelectorAll('#noteHost .editor-preview-active a[data-citazione-zaino]')].at(-1),q=a.closest('blockquote');return !!q?.querySelector('em')&&q.textContent.includes('Botanica.pdf; p. 2')&&!q.textContent.includes('01 Botanica.pdf; p. 2')&&getComputedStyle(q).borderLeftWidth!=='0px';})()`),'testo corsivo, titolo senza numero e link dentro un’unica barra');
  await c.val(`(()=>{const a=[...document.querySelectorAll('#noteHost .editor-preview-active a[data-citazione-zaino]')].at(-1);a.dataset.provaCitazione='1';a.scrollIntoView({block:'center',behavior:'instant'});})()`);
  // Un link inline può avere più rettangoli: il centro del loro inviluppo
  // può cadere fra due righe. Si preme una porzione di testo davvero raggiungibile.
@@ -235,15 +235,19 @@ async function provaCitazioniClip(fileNota){
   await wait(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] canvas')`);
   await wait(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span')`);
   assert((await c.val(`document.getElementById('citazioneTitolo').textContent`)).includes('Biologia'));
+  assert.equal(await c.val(`document.getElementById('citazioneCopia')`),null,'niente copia con fonte nella toolbar dell’anteprima');
+  assert(await c.val(`document.getElementById('citazioneCitaPagina').parentElement===document.getElementById('citazioneConto').closest('.tbar')`),'citazioni nella stessa toolbar di pagine e zoom');
+  assert.equal(await c.val(`document.getElementById('citazioneCitaPagina').textContent`),'Cita la pagina');
+  assert.equal(await c.val(`document.getElementById('citazioneCitaEstratto')`),null,'il passaggio si cita dal menu della selezione');
+  assert.equal(await c.val(`document.querySelectorAll('#citazioneDialog > .tbar').length`),2,'testata e una sola toolbar');
   assert(await c.val(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] canvas').getBoundingClientRect().height`));
   await provaGestiCitazione(cita.rimando);
   // Opt-in: copia del sistema e gesto Incolla reali, senza il doppio usato dalle altre prove.
   // Il lanciatore locale conserva e ripristina la pasteboard del Mac in memoria.
   if(process.env.STUDIA_PROVA_CLIPBOARD==='1'){
    await c.val(`navigator.clipboard.writeText=window.__copiaPrima;NOTES.mde.codemirror.setCursor(NOTES.mde.codemirror.lineCount(),0);if(!NOTES.mde.isPreviewActive())NOTES.mde.togglePreview();`);
-   await c.val(`(()=>{const r=document.createRange();r.selectNodeContents(document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span'));getSelection().removeAllRanges();getSelection().addRange(r);})()`);
-   await c.clicca('#citazioneCopia');await c.pausa(200);
-   assert((await c.val(`document.getElementById('citazioneStato').textContent`)).startsWith('Citazione copiata.'),'la copia reale deve riuscire: '+await c.val(`document.getElementById('citazioneStato').textContent`));
+   await c.val(`(()=>{const el=document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span'),r=document.createRange();r.selectNodeContents(el);getSelection().removeAllRanges();getSelection().addRange(r);const b=r.getBoundingClientRect();el.dispatchEvent(new MouseEvent('mouseup',{bubbles:true,button:0,clientX:b.x+4,clientY:b.y+4}));})()`);
+   await wait('selBarraAperta()');await c.clicca('#selBarra [data-az="copia"]');await c.pausa(200);
    assert(await c.val('navigator.clipboard.readText().then(()=>false,()=>true)'), 'la lettura automatica della clipboard resta negata');
    await c.clicca('#citazioneChiudi');await c.clicca('#noteHost .editor-toolbar .preview');
    const primaIncolla=await c.val('NOTES.mde.value()');
@@ -251,7 +255,8 @@ async function provaCitazioniClip(fileNota){
    await c.invia('Input.dispatchKeyEvent',{type:'keyDown',modifiers:4,key:'v',code:'KeyV',windowsVirtualKeyCode:86,commands:['paste']});
    await c.invia('Input.dispatchKeyEvent',{type:'keyUp',modifiers:4,key:'v',code:'KeyV',windowsVirtualKeyCode:86});
    await wait(`NOTES.mde.value()!==${q(primaIncolla)}`);
-   assert.equal((await c.val('NOTES.mde.value()')).split('> *Botanica - pagina 2*').length,3,'incolla dopo uscita da anteprima');
+   assert.equal((await c.val('NOTES.mde.value()')).split('Botanica - pagina 2').length,primaIncolla.split('Botanica - pagina 2').length+1,'Copia incolla il solo testo selezionato dopo uscita da anteprima');
+   assert.equal((await c.val('NOTES.mde.value()')).split('zaino-pdf:').length,primaIncolla.split('zaino-pdf:').length,'Copia non aggiunge la fonte');
    await c.val(`navigator.clipboard.writeText=async t=>{window.__citazioneCopiata=t;};citazioneZainoApri(${q(cita.rimando)})`);
    await wait(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span')`);
   }
@@ -261,21 +266,17 @@ async function provaCitazioniClip(fileNota){
   shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-citazione-menu.png',Buffer.from(shot.result.data,'base64'));
   const livello=await c.val(`(()=>{const b=document.querySelector('#selBarra .ctx-item'),r=b.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return {raggiungibile:!!hit?.closest('#selBarra'),sopra:hit?.outerHTML.slice(0,180),contenitore:document.getElementById('selBarra').parentElement.id};})()`);
   assert(livello.raggiungibile,'Menu della citazione davanti al PDF e cliccabile: '+JSON.stringify(livello));
-  assert.deepEqual(await c.val(`[...document.querySelectorAll('#selBarra .ctx-item')].map(b=>b.textContent)`),['Inserisci nell’appunto','Copia testo con fonte','Copia']);
+  assert.deepEqual(await c.val(`[...document.querySelectorAll('#selBarra .ctx-item')].map(b=>b.textContent)`),['Copia','Cita dalla pagina']);
   assert.equal(await c.val(`evSupDaRange(SELMENU.range)`),null,'nessuna annotazione sulla fonte sottostante');
-  await c.val(`window.__citazioneCopiata=''`);await c.clicca('#selBarra [data-az="cita-pdf"]');
-  await wait(`window.__citazioneCopiata?.includes('Biologia › 01 Botanica.pdf · p. 2')`);
-  assert(!(await c.val('window.__citazioneCopiata')).includes('Fonte locale'));
   // Anche senza un PDF sottostante, il tasto destro apre il menu dentro il dialogo.
   await c.val(`closePdf();window.__selezionaCitazione()`);await wait(`selBarraAperta()`);
   const punto=await c.val(`(()=>{const r=getSelection().getRangeAt(0).getBoundingClientRect();return {x:r.x+4,y:r.y+4};})()`);
   for(const type of ['mousePressed','mouseReleased'])await c.invia('Input.dispatchMouseEvent',{type,...punto,button:'right',clickCount:1});
   await wait(`selMenuAperto()`);
+  assert.deepEqual(await c.val(`[...document.querySelectorAll('#selMenu .ctx-item')].map(b=>b.textContent)`),['Copia','Cita dalla pagina'],'menu automatico e tasto destro coerenti');
   assert(await c.val(`(()=>{const b=document.querySelector('#selMenu [data-az="copia"]'),r=b.getBoundingClientRect();return !!document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('#selMenu');})()`));
   await c.val(`window.__citazioneCopiata=''`);await c.clicca('#selMenu [data-az="copia"]');
   await wait(`window.__citazioneCopiata==='Botanica - pagina 2'`);
-  await c.val(`(()=>{const r=document.createRange();r.selectNodeContents(document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span'));getSelection().removeAllRanges();getSelection().addRange(r);window.__citazioneCopiata='';})()`);
-  await c.clicca('#citazioneCopia');await wait(`window.__citazioneCopiata?.includes('> *Botanica - pagina 2*')`);
   shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-citazione-anteprima.png',Buffer.from(shot.result.data,'base64'));
   // Gesto reale dal secondo appunto in anteprima: destinazione stabile, inserimento
   // senza sostituire il testo selezionato e un solo Annulla per tornare all'originale.

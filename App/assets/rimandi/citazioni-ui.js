@@ -42,7 +42,6 @@
   s.selezioneApplicata=true;
   if(!citazioneSelezionaLayer(layer,s.info.selezione))messaggio('Pagina aperta. Non riesco a individuare esattamente il passaggio citato.');
  }
- function selezioneCorrente(){var sel=getSelection();return sel?.rangeCount&&!sel.isCollapsed&&citazioneSelezione(sel.getRangeAt(0))?sel.getRangeAt(0):null;}
  function markdownCitazione(modo,range){
   if(!stato?.doc)return '';
   var s=stato,ref=RimandiSintassi.leggi(s.info.rimando),pagina=modo==='pdf'?null:s.viewer.currentPageNumber,testo='',ancora;
@@ -125,13 +124,11 @@
   document.getElementById('citazioneConto').textContent=pronto?p+' DI '+s.doc.numPages:'− DI −';
   document.getElementById('citazionePrima').disabled=!pronto||p<=1;
   document.getElementById('citazioneDopo').disabled=!pronto||p>=s.doc.numPages;
-  document.getElementById('citazioneCopia').disabled=!pronto;
   document.getElementById('citazioneVai').disabled=!pronto;
   var conto=document.getElementById('citazioneConto');conto.disabled=!pronto;conto.title=FontiPagina.suggerimento(p,{etichette:s?.etichette});
   var b=s?.destinazione,puoi=pronto&&b?.file&&noteBersaglioValido(b);
   document.getElementById('citazioneCitaPdf').disabled=!puoi;
   document.getElementById('citazioneCitaPagina').disabled=!puoi;
-  document.getElementById('citazioneCitaEstratto').disabled=!puoi||!selezioneCorrente();
   document.querySelectorAll('#citazioneZoom button').forEach(function(b){b.disabled=!pronto;});
   var lvl=document.getElementById('citazioneZoomLvl');
   var e=FontiZoom.comandoPdf(s?.viewer.currentScaleValue,s?.viewer.currentScale,pronto);
@@ -217,27 +214,15 @@
   if(e.key==='Enter'){e.preventDefault();e.stopPropagation();campoVai();}
  });
  document.getElementById('citazionePaginaIn').addEventListener('blur',campoChiudi);
- document.addEventListener('selectionchange',function(){if(stato?.doc&&dialog.open)controlli();});
  window.addEventListener('keydown',function(e){if(e.key!=='Escape'||!dialog.open)return;e.preventDefault();e.stopPropagation();
   if(!document.getElementById('citazionePaginaIn').hidden){campoChiudi();frame.focus({preventScroll:true});}else chiudi();
  },true);
  document.getElementById('citazioneCitaPdf').onclick=function(){var md=markdownCitazione('pdf');if(md)inserisciMarkdown(md);};
  document.getElementById('citazioneCitaPagina').onclick=function(){var md=markdownCitazione('pagina');if(md)inserisciMarkdown(md);};
- document.getElementById('citazioneCitaEstratto').addEventListener('mousedown',function(e){e.preventDefault();});
- document.getElementById('citazioneCitaEstratto').onclick=function(){var md=markdownCitazione('estratto',selezioneCorrente());if(md)inserisciMarkdown(md);};
  document.getElementById('citazionePrima').onclick=function(){if(stato?.doc)stato.viewer.currentPageNumber--;};
  document.getElementById('citazioneDopo').onclick=function(){if(stato?.doc)stato.viewer.currentPageNumber++;};
- document.getElementById('citazioneCopia').addEventListener('mousedown',function(e){e.preventDefault();});
- function markdownDaRange(range){return markdownCitazione(citazioneSelezione(range)?'estratto':'pagina',range);}
- window.citazioneCopiaDaRange=async function(range){
-  var md=markdownDaRange(range);if(!md)return;
-  try{await navigator.clipboard.writeText(md);messaggio('Citazione copiata. Chiudi l’anteprima e incollala nel tuo appunto.');}catch(e){messaggio('Copia non riuscita: '+e.message);}
- };
  window.citazioneInserisciDaRange=function(range){
   if(!citazioneSelezione(range))return;var md=markdownCitazione('estratto',range);if(md)inserisciMarkdown(md);
- };
- document.getElementById('citazioneCopia').onclick=function(){
-  var sel=window.getSelection();citazioneCopiaDaRange(sel?.rangeCount&&!sel.isCollapsed?sel.getRangeAt(0):null);
  };
  document.getElementById('citazioneVai').onclick=apriOrigine;
  window.addEventListener('studia:zaino-changed',function(){if(dialog.open)chiudi();});

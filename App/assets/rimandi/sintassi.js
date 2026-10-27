@@ -36,9 +36,9 @@
    dati alla stringa, e viceversa.
    ============================================================================ */
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.RimandiSintassi = factory();
-}(typeof self !== 'undefined' ? self : this, function () {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('../fonti/nomi'));
+  else root.RimandiSintassi = factory(root.FontiNomi);
+}(typeof self !== 'undefined' ? self : this, function (FontiNomi) {
   'use strict';
 
   /* Le tre forme, in un posto solo. ⚠️ `&amp;` fra i parametri della figura non
@@ -104,7 +104,7 @@
     const label=String(info.zainoTitolo+' › '+titolo+(r.intero?'':' · p. '+r.pagina)).replace(/[\[\]\r\n]/g,'');
     const estratto=String(testo||'').trim(),righe=[];
     if(estratto)estratto.split(/\r?\n/).forEach(l=>righe.push(l?'*'+letterale(l)+'*':''));
-    righe.push(letterale(titolo+pagina),link(letterale(label),info.rimando));
+    righe.push(letterale(FontiNomi.visibile(titolo)+pagina),link(letterale(label),info.rimando));
     return righe.map(l=>'> '+l).join('  \n');
   }
   /** Offset verificato sul testo; se il layout cambia si accetta solo un riscontro univoco. */
@@ -122,8 +122,13 @@
       const f=/^\s*(`{3,}|~{3,})/.exec(righe[i]);
       if(f){if(!recinto)recinto=f[1][0];else if(recinto===f[1][0])recinto='';continue;}
       if(recinto)continue;
-      const m=/^\[([^\]]+)\]\((zaino-pdf:[^)]+)\)\s*$/.exec(righe[i]);
-      if(!m||leggi(m[2])?.tipo!=='pdf-zaino')continue;
+      const m=/^(>\s*)?\[([^\]]+)\]\((zaino-pdf:[^)]+)\)\s*$/.exec(righe[i]);
+      const ref=m&&leggi(m[3]);if(ref?.tipo!=='pdf-zaino')continue;
+      // Solo la riga di titolo riconoscibile della citazione: il link conserva
+      // il nome interno, e il testo scritto dall'utente non viene riscritto.
+      const t=/^(>\s*)(.+?\.pdf)(; p\. \d+)?([ \t]*)$/i.exec(righe[i-1]||'');
+      if(t&&(t[3]||'')===(ref.intero?'':'; p. '+ref.pagina)&&m[2].endsWith(' › '+t[2]+(ref.intero?'':' · p. '+ref.pagina)))righe[i-1]=t[1]+FontiNomi.visibile(t[2])+(t[3]||'')+t[4];
+      if(m[1])continue;
       let j=i-1;while(j>=0&&!righe[j].trim())j--;
       if(j>=0&&/^>/.test(righe[j])){
         let a=j;while(a>0&&/^>/.test(righe[a-1]))a--;
