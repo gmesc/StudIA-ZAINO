@@ -52,6 +52,45 @@
   window.UiIcone.imposta($('zstudyEdit'),'pencil');
   const call=async(n,...args)=>{const r=await api[n](...args);if(!r?.ok)throw Error(r?.error || 'Operazione non riuscita.');return r;};
   const button=(text,fn,principale=false)=>{const b=el('button',text,principale?'tbtn acc':'tbtn');b.type='button';b.onclick=fn;return b;};
+  let schedaAperta=null;
+  function sidebarSchede(){
+   const host=$('zainoNav'),old=$('zs-schede');
+   const focus=old?.contains(document.activeElement)?document.activeElement.dataset.schedaFocus:null;
+   old?.remove();
+   const z=state.zaino;if(!host||host.hidden||host.dataset.zaino!==z||z!==window.zainoAttivo?.()||!cards.length)return;
+   const section=el('section',undefined,'zs-raccolta');section.id='zs-schede';section.dataset.sezione='schede';
+   const key='studia-zaino.sezione.'+window.vault.path+'.'+z+'.schede';
+   function collassa(b,body,label,storageKey){
+    let closed=false;try{closed=localStorage.getItem(storageKey)==='chiusa';}catch(_){}
+    const icon=el('span');icon.setAttribute('aria-hidden','true');b.prepend(icon);b.setAttribute('aria-controls',body.id);
+    const draw=()=>{body.hidden=closed;b.setAttribute('aria-expanded',String(!closed));b.title=(closed?'Espandi ':'Comprimi ')+label;icon.innerHTML=window.UiIcone.svg(closed?'chevron-right':'chevron-down');};
+    b.onclick=()=>{closed=!closed;draw();try{localStorage.setItem(storageKey,closed?'chiusa':'aperta');}catch(_){}};draw();
+   }
+   const heading=el('div',undefined,'zs-tit'),toggle=button('',()=>{}),body=el('div',undefined,'zs-corpo');
+   toggle.className='zs-collapse';toggle.dataset.schedaFocus='section';body.id='zs-corpo-schede';
+   toggle.append(el('span','Schede'),el('span',String(cards.length),'zs-n'));collassa(toggle,body,'Schede',key);heading.append(toggle);section.append(heading,body);
+   const groups=new Map();for(const c of cards){if(!groups.has(c.sourceId))groups.set(c.sourceId,[]);groups.get(c.sourceId).push(c);}
+   for(const [sourceId,items] of [...groups].sort((a,b)=>window.ZainoCitazioni.nome(a[1][0]).localeCompare(window.ZainoCitazioni.nome(b[1][0]),'it'))){
+    const group=el('section',undefined,'zs-gruppo'),head=el('div',undefined,'zs-gruppo-testa'),list=el('ul'),name=window.ZainoCitazioni.nome(items[0]),expand=button('',()=>{});
+    group.dataset.schedeFonte=sourceId;list.id='zs-schede-'+sourceId;expand.className='';expand.dataset.schedaFocus='group:'+sourceId;
+    expand.append(el('span',name,'zs-nome'),el('span',String(items.length),'zs-n'));collassa(expand,list,name,key+'.'+sourceId);head.append(expand);group.append(head,list);
+    for(const c of items.sort((a,b)=>a.title.localeCompare(b.title,'it'))){
+     const row=el('li',undefined,'zs-item'),open=button(c.title,()=>apriScheda(c.sourceId,c.preset));
+     open.className='zn-scheda';open.dataset.sourceId=c.sourceId;open.dataset.preset=c.preset;open.dataset.schedaFocus='card:'+c.sourceId+':'+c.preset;
+     open.title='Apri '+c.title+' — '+name+(c.status==='changed'?' · Fonte modificata':c.status==='removed'?' · Fonte non disponibile':'');
+     open.setAttribute('aria-label',open.title);
+     if(schedeView==='card'&&schedaAperta?.sourceId===c.sourceId&&schedaAperta?.preset===c.preset){open.classList.add('attivo');open.setAttribute('aria-current','page');}
+     row.append(open);list.append(row);
+    }
+    body.append(group);
+   }
+   const fonti=host.querySelector('[data-sezione="fonti"]');if(fonti)fonti.after(section);else host.append(section);
+   if(focus){const target=[...section.querySelectorAll('button')].find(b=>b.dataset.schedaFocus===focus&&b.getClientRects().length);(target||toggle).focus({preventScroll:true});}
+  }
+  window.addEventListener('studia:sidebar-updated',sidebarSchede);
+  function apriScheda(sourceId,preset){
+   window.bancoMostra('studio');return studio.action(async current=>{const r=await call('card',state.zaino,sourceId,preset);if(current()){drawCard(r.card,r.status);if(!r.card)await collection();$('zschedeResult').scrollIntoView({block:'nearest'});}});
+  }
   // Una sola attività per superficie; il DOM nascosto conserva filtri e risposte in corso.
   function vistaSchede(view,focus){
    if(view!==schedeView){studio.status('');$('zschedeStatusConfig')?.setAttribute('hidden','');}schedeView=view;box.dataset.vista=view;
@@ -60,7 +99,7 @@
    $('zragScopeButton').hidden=view!=='search';$('zragScopeHost').hidden=view!=='search';$('zragScopeSummary').hidden=view!=='search';
    for(const [id,attivo] of [['zschedeBack',view==='library'],['zschedeNewButton',view==='new']]){const b=$(id);b.hidden=false;b.classList.toggle('acc',attivo);if(attivo)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}
    $('zragScopeSep').hidden=view!=='search';
-   box.scrollTop=0;if(focus)$(focus)?.focus();
+   box.scrollTop=0;sidebarSchede();if(focus)$(focus)?.focus();
   }
   function vistaRipasso(view,focus){
    if(view!=='queue'){modifica=false;selezionate.clear();}ripassoView=view;$('zstudyBody').dataset.vista=view;
@@ -86,19 +125,19 @@
    for(const c of found){
     if(c.tipo==='domanda'){const row=el('article');row.dataset.questionId=c.id;const b=button(c.question,()=>openQuestion(c.id));b.setAttribute('aria-label','Apri domanda: '+c.question);b.title=c.question;row.append(el('span','Domanda','zstudio-item-type'));b.classList.add('zstudio-card-open');row.append(b,el('p',[...new Set(c.sources.map(s=>window.ZainoCitazioni.nome(s)))].join(' · ')+' · '+c.attempts.length+' tentativi'+(c.prossimo?' · prossimo: '+new Date(c.prossimo).toLocaleString('it-IT'):' · Nuova')+(c.sourcesCurrent===false?' · Fonti modificate o non disponibili':''),'zchat-hint'));target.append(row);continue;}
 
-    const row=el('article'),open=button(window.ZainoCitazioni.nome(c),()=>studio.action(async current=>{const r=await call('card',state.zaino,c.sourceId,c.preset);if(current()){drawCard(r.card,r.status);$('zschedeResult').scrollIntoView({block:'nearest'});}}));open.classList.add('zstudio-card-open');open.title=c.title+' — '+window.ZainoCitazioni.nome(c);open.setAttribute('aria-label','Apri '+c.title+': '+window.ZainoCitazioni.nome(c));
+    const row=el('article'),open=button(window.ZainoCitazioni.nome(c),()=>apriScheda(c.sourceId,c.preset));open.classList.add('zstudio-card-open');open.title=c.title+' — '+window.ZainoCitazioni.nome(c);open.setAttribute('aria-label','Apri '+c.title+': '+window.ZainoCitazioni.nome(c));
     const label={current:'Aggiornata',changed:'Fonte modificata · da aggiornare',removed:'Fonte non disponibile'}[c.status];
     row.append(el('span',c.title,'zstudio-item-type'),open,el('p',label+(c.partial?' · analisi parziale':' · analisi completa'),'zchat-hint'));target.append(row);
    }
   }
   async function collection(){const z=state.zaino,run=++collectionRun;const [r,q]=await Promise.allSettled([call('cards',z),call('state',z)]);if(z!==state.zaino||run!==collectionRun)return;
-   cards=r.status==='fulfilled'?r.value.cards:[];savedQuestions=q.status==='fulfilled'?q.value.questions:[];collectionWarnings=[...(r.status==='fulfilled'?r.value.warnings:['Schede non leggibili: '+r.reason.message]),...(q.status==='fulfilled'?[]:['Domande non leggibili: '+q.reason.message])];drawCollection();}
+   cards=r.status==='fulfilled'?r.value.cards:[];savedQuestions=q.status==='fulfilled'?q.value.questions:[];collectionWarnings=[...(r.status==='fulfilled'?r.value.warnings:['Schede non leggibili: '+r.reason.message]),...(q.status==='fulfilled'?[]:['Domande non leggibili: '+q.reason.message])];drawCollection();sidebarSchede();}
   window.vault.rag.onAuto(s=>{if(s.zaino!==state.zaino||!['queued','waiting-model','ready','warning','error'].includes(s.phase))return;clearTimeout(collectionTimer);collectionTimer=setTimeout(()=>Promise.all([collection(),refresh()]).catch(e=>studio.status(e.message,true,'zschedeCollectionStatus')),250);});
   $('zschedeFilter').oninput=drawCollection;$('zschedeKind').onchange=drawCollection;
   function mostraRaccolta(){vistaSchede('library','zschedeFilter');collection().catch(e=>studio.status(e.message,true,'zschedeCollectionStatus'));}
   async function sources(prefer=false){const z=state.zaino,result=await window.vault.chat.sources(z);if(z!==state.zaino)return;if(!result?.ok)throw Error(result?.error);const old=$('zschedeSource').value,available=result.sources;$('zschedeSource').replaceChildren();for(const source of available)$('zschedeSource').append(new Option(window.ZainoCitazioni.nome(source),source.id));const choice=P.fontePreferita(available,prefer?[studio.documento()]:[],old);if(choice)$('zschedeSource').value=choice;if(old!==$('zschedeSource').value)invalidateEstimate();$('zschedeEstimate').disabled=!$('zschedeSource').options.length;$('zschedeSourceStatus').textContent=$('zschedeSource').options.length?'':'Nessuna fonte disponibile nello zaino.';}
   function drawCard(c,st){
-   vistaSchede('card');const target=$('zschedeResult');target.replaceChildren();if(!c){target.append(el('p','Nessuna scheda disponibile.'));return;}
+   schedaAperta=c;vistaSchede('card');const target=$('zschedeResult');target.replaceChildren();if(!c){target.append(el('p','Nessuna scheda disponibile.'));return;}
    target.append(el('h3',(cards.find(s=>s.sourceId===c.sourceId&&s.preset===c.preset)?.title||c.preset)+' — '+window.ZainoCitazioni.nome(c)));
    target.append(el('p',(st==='changed'?'Fonte modificata. ':st==='removed'?'Fonte rimossa. ':'')+'Copertura: '+c.covered+'/'+c.total+' passaggi'+(c.partial?' · analisi parziale':' · analisi completa')+' · '+c.provider+' / '+c.model));
    if(c.blankPages?.length)target.append(el('p','Pagine bianche: '+c.blankPages.join(', ')+'.','zchat-hint'));
@@ -277,6 +316,6 @@
    }catch(e){status(e.message,true);}
   };
   vistaSchede('library');vistaRipasso('home');
-  return {settled(){drawQueue();disegnaCosto();$('zschedeEstimate').disabled=!$('zschedeSource').options.length;},async sync(){reviewState.zaino=state.zaino;await picker.sync();if(state.zaino){await Promise.all([refresh(),sources(),collection()]);if(!$('zschedePreset').options.length){const r=await call('presets');for(const [id,label] of Object.entries(r.presets))$('zschedePreset').append(new Option(label,id));}}},reset(){api.cancel();clearTimeout(collectionTimer);collectionRun++;cards=[];savedQuestions=[];queueState={questions:[],due:[]};collectionWarnings=[];$('zschedeKind').value='all';queueFilter='all';$('zstudySearch').value='';$('zstudyOrigin').replaceChildren(new Option('Tutte le origini','all'));$('zstudyQueueCount').textContent='';$('zstudyNew').open=false;$('zstudySession').textContent='';$('zstudyQueueEmpty').textContent='';document.querySelectorAll('.zstudio-config').forEach(e=>{e.hidden=true;});$('zschedeStatus').textContent='';$('zstudyStatus').textContent='';$('zschedeTokens').textContent='';$('zschedeCollection').replaceChildren();$('zschedeCollectionStatus').textContent='';$('zschedeFilter').value='';estimate=null;$('zschedePrice').textContent='';$('zschedeCost').hidden=true;$('zschedeCancel').hidden=true;question=null;drafts.clear();visitati.clear();schedeChiuse.clear();selezionate.clear();modifica=false;selezioneDisegna();paused=false;pausedId=null;review=false;selection='';vistaSchede('library');vistaRipasso('home');$('zschedeResult').replaceChildren();$('zschedeSource').replaceChildren();$('zschedeSourceStatus').textContent='';$('zschedeGenerate').hidden=true;$('zschedeEstimateText').textContent='';$('zstudyQuestion').replaceChildren();$('zstudyQueue').replaceChildren();$('zstudyQueue').hidden=true;$('zstudyTopic').value='';$('zstudyCount').textContent='';window.RIPCONTO={mai:0,oggi:0,attesa:0,totale:0,corso:state.zaino};window.ripassoContoDisegna?.();},refresh};
+  return {settled(){drawQueue();disegnaCosto();$('zschedeEstimate').disabled=!$('zschedeSource').options.length;},async sync(){reviewState.zaino=state.zaino;await picker.sync();if(state.zaino){await Promise.all([refresh(),sources(),collection()]);if(!$('zschedePreset').options.length){const r=await call('presets');for(const [id,label] of Object.entries(r.presets))$('zschedePreset').append(new Option(label,id));}}},reset(){api.cancel();clearTimeout(collectionTimer);collectionRun++;cards=[];schedaAperta=null;savedQuestions=[];queueState={questions:[],due:[]};collectionWarnings=[];$('zschedeKind').value='all';queueFilter='all';$('zstudySearch').value='';$('zstudyOrigin').replaceChildren(new Option('Tutte le origini','all'));$('zstudyQueueCount').textContent='';$('zstudyNew').open=false;$('zstudySession').textContent='';$('zstudyQueueEmpty').textContent='';document.querySelectorAll('.zstudio-config').forEach(e=>{e.hidden=true;});$('zschedeStatus').textContent='';$('zstudyStatus').textContent='';$('zschedeTokens').textContent='';$('zschedeCollection').replaceChildren();$('zschedeCollectionStatus').textContent='';$('zschedeFilter').value='';estimate=null;$('zschedePrice').textContent='';$('zschedeCost').hidden=true;$('zschedeCancel').hidden=true;question=null;drafts.clear();visitati.clear();schedeChiuse.clear();selezionate.clear();modifica=false;selezioneDisegna();paused=false;pausedId=null;review=false;selection='';vistaSchede('library');vistaRipasso('home');$('zschedeResult').replaceChildren();$('zschedeSource').replaceChildren();$('zschedeSourceStatus').textContent='';$('zschedeGenerate').hidden=true;$('zschedeEstimateText').textContent='';$('zstudyQuestion').replaceChildren();$('zstudyQueue').replaceChildren();$('zstudyQueue').hidden=true;$('zstudyTopic').value='';$('zstudyCount').textContent='';window.RIPCONTO={mai:0,oggi:0,attesa:0,totale:0,corso:state.zaino};window.ripassoContoDisegna?.();},refresh};
  }};
 }(typeof self!=='undefined'?self:this));

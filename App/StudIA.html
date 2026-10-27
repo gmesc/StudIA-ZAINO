@@ -11396,6 +11396,8 @@ async function zainoNavAggiorna(){
       return {tipo:'immagini',classe:'zn-immagine',quale:'album:'+v.id,testo:v.didascalia||v.materiale,attivo:FOTOV.aperta===v.id};
     }).concat(fonti.filter(function(f){return f.tipo==='media';}).map(fonteVoce)),
       'Nessun media in questo zaino.',[eFonti,eImmagini].filter(Boolean).join(' · '),eGruppi.media);
+  host.dataset.zaino=id;
+  window.dispatchEvent(new CustomEvent('studia:sidebar-updated',{detail:{id:id}}));
   if(bancoVisibile('album')) AlbumSpazio.aggiorna();
 }
 
