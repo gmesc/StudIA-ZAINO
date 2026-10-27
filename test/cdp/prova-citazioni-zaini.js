@@ -162,15 +162,21 @@ async function provaCitazioniClip(fileNota){
  await wait(`selBarraAperta()`);await c.clicca('#selBarra [data-az="inserisci-citazione"]');await wait(`!document.getElementById('citazioneDialog').open`);
  const ref=await ultima();assert.equal(ref.pagina,2);assert.equal(ref.selezione.testo,'pagina');
  assert((await c.val('NOTES.mde.value()')).includes('> *pagina*'));
- await c.val(`noteAnteprimaRidisegna(NOTES)`);
+ // Il salvataggio può ridisegnare l'anteprima e invalidare le coordinate del
+ // link. Prima si consolida il testo, poi si misura il bersaglio del clic.
+ await c.val(`noteFlushStato(NOTES);noteAnteprimaRidisegna(NOTES)`);
+ await wait(`!NOTES.dirty&&!NOTES.timer`);
  assert(await c.val(`(()=>{const a=[...document.querySelectorAll('#noteHost .editor-preview-active a[data-citazione-zaino]')].at(-1),q=a.closest('blockquote');return !!q?.querySelector('em')&&q.textContent.includes('Botanica.pdf; p. 2')&&!q.textContent.includes('01 Botanica.pdf; p. 2')&&getComputedStyle(q).borderLeftWidth!=='0px';})()`),'testo corsivo, titolo senza numero e link dentro un’unica barra');
- await c.val(`(()=>{const a=[...document.querySelectorAll('#noteHost .editor-preview-active a[data-citazione-zaino]')].at(-1);a.dataset.provaCitazione='1';a.scrollIntoView({block:'center',behavior:'instant'});})()`);
+ await c.val(`(()=>{const a=[...document.querySelectorAll('#noteHost .editor-preview-active a[data-citazione-zaino]')].at(-1);a.dataset.provaCitazione='1';a.focus({preventScroll:true});a.scrollIntoView({block:'center',behavior:'instant'});})()`);
  // Un link inline può avere più rettangoli: il centro del loro inviluppo
  // può cadere fra due righe. Si preme una porzione di testo davvero raggiungibile.
- const puntoLink=await c.val(`(()=>{const a=document.querySelector('[data-prova-citazione]'),r=a.getClientRects()[0];const p={x:r.x+Math.min(30,r.width/2),y:r.y+r.height/2};return {...p,hit:!!document.elementFromPoint(p.x,p.y)?.closest('[data-prova-citazione]')};})()`);
+ const misuraLink=()=>c.val(`(()=>{const a=document.querySelector('[data-prova-citazione]'),r=a.getClientRects()[0];const p={x:r.x+Math.min(30,r.width/2),y:r.y+r.height/2};return {...p,hit:!!document.elementFromPoint(p.x,p.y)?.closest('[data-prova-citazione]')};})()`);
+ const primaLink=await misuraLink();await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:primaLink.x,y:primaLink.y});const puntoLink=await misuraLink();
  assert(puntoLink.hit,'testo del rimando raggiungibile prima del clic: '+JSON.stringify(puntoLink));
+ await c.val(`window.__eventiLink=[];window.__ascoltaLink=new AbortController();for(const tipo of ['pointerdown','pointerup','click'])window.addEventListener(tipo,e=>{const a=document.querySelector('[data-prova-citazione]'),r=a?.getBoundingClientRect();window.__eventiLink.push({tipo,target:e.target.outerHTML?.slice(0,220),n:e.detail,x:e.clientX,y:e.clientY,rect:r&&{x:r.x,y:r.y,width:r.width,height:r.height}})},{capture:true,signal:window.__ascoltaLink.signal})`);
  for(const type of ['mousePressed','mouseReleased'])await c.invia('Input.dispatchMouseEvent',{type,x:puntoLink.x,y:puntoLink.y,button:'left',clickCount:1});
- await wait(`document.getElementById('citazioneDialog').open&&getSelection().toString()==='pagina'`);
+ try{await wait(`document.getElementById('citazioneDialog').open&&getSelection().toString()==='pagina'`);}catch(e){const shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-citazione-link-debug.png',Buffer.from(shot.result.data,'base64'));throw Error(e.message+'; '+JSON.stringify(await c.val(`({eventi:window.__eventiLink,link:document.querySelector('[data-prova-citazione]')?.outerHTML,focus:document.activeElement.outerHTML.slice(0,150),sel:getSelection().toString()})`)));}
+ await c.val('window.__ascoltaLink.abort();delete window.__ascoltaLink;delete window.__eventiLink');
  assert.equal(await c.val(`document.querySelectorAll('#citazionePagine mark').length`),0,'solo selezione, nessuna evidenziatura');
  let shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-citazioni-selezione.png',Buffer.from(shot.result.data,'base64'));
  const testo=await c.val('NOTES.mde.value()');await c.clicca('#citazioneVai');await wait(`zainoAttivo()==='biologia'&&!document.getElementById('citazioneTorna').hidden`);
@@ -223,7 +229,7 @@ async function provaCitazioniClip(fileNota){
   await c.clicca('#selMenu [data-az="cita-pdf"]');await wait(`window.__citazioneCopiata?.includes('zaino-pdf:')`);
   assert((await c.val('window.__citazioneCopiata')).includes('> *Botanica - pagina 2*'));
   const cita=await c.val(`window.vault.citazioni.crea('biologia','01 Botanica.pdf',2,'Botanica - pagina 2')`);
-  assert(cita.markdown?.includes('Biologia › 01 Botanica.pdf · p. 2'),JSON.stringify(cita));
+  assert(cita.markdown?.includes('Biologia › Botanica.pdf · p. 2'),JSON.stringify(cita));
   await c.val(`cambiaZaino('storia',true);bancoForma('due-col');bancoAssegna('A','appunti');bancoAssegna('C','fonte')`);
   fs.copyFileSync(path.join(vault,'Zaini/biologia/MATERIALI/PDF/02 Biologia cellulare.pdf'),locale);
   await c.val(`openPdf('01 Fonte locale.pdf',1,'Fonte locale',true)`);
@@ -237,7 +243,7 @@ async function provaCitazioniClip(fileNota){
   assert.equal(await c.val('zainoAttivo()'),'storia');assert.equal(await c.val('NOTES.cur.file'),nota.file);
   await wait(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] canvas')`);
   await wait(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span')`);
-  assert((await c.val(`document.getElementById('citazioneTitolo').textContent`)).includes('Biologia'));
+  assert.equal(await c.val(`document.getElementById('citazioneTitolo').textContent`),'Biologia › Botanica.pdf','titolo dell’anteprima senza numero interno');
   assert.equal(await c.val(`document.getElementById('citazioneCopia')`),null,'niente copia con fonte nella toolbar dell’anteprima');
   assert(await c.val(`document.getElementById('citazioneCitaPagina').parentElement===document.getElementById('citazioneConto').closest('.tbar')`),'citazioni nella stessa toolbar di pagine e zoom');
   assert.equal(await c.val(`document.getElementById('citazioneCitaPagina').textContent`),'Cita la pagina');
@@ -329,7 +335,7 @@ async function provaCitazioniClip(fileNota){
   await provaCitazioniClip(nota.file);
   // Riapertura della citazione dopo rinomina del PDF: identità, non nome o numero.
   const old=path.join(vault,'Zaini/biologia/MATERIALI/PDF/01 Botanica.pdf'),ren=path.join(gruppo,'01 Botanica rinominata.pdf');fs.renameSync(old,ren);
-  try{await c.val(`citazioneZainoApri(${q(cita.rimando)})`);await wait(`document.getElementById('citazioneTitolo').textContent.includes('rinominata')`);await c.clicca('#citazioneChiudi');}
+  try{await c.val(`citazioneZainoApri(${q(cita.rimando)})`);await wait(`document.getElementById('citazioneTitolo').textContent.includes('rinominata')`);assert.equal(await c.val(`document.getElementById('citazioneTitolo').textContent`),'Biologia › Botanica rinominata.pdf');await c.clicca('#citazioneChiudi');}
   finally{fs.renameSync(ren,old);}
   await c.clicca('#noteClose');
   await provaGesti();

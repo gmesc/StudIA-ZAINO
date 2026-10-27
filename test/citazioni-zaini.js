@@ -11,7 +11,7 @@ const v=fs.mkdtempSync(path.join(os.tmpdir(),'zaino-citazioni-'));
  const p=path.join(v,'Zaini/origine/MATERIALI/PDF/01 Fonte.pdf');
  fs.writeFileSync(p,'%PDF-1.4\ncontenuto originale');
  const cita=esegui('crea',{zaino:'origine'},()=>C.crea(v,'origine',path.basename(p),3,'Estratto scelto.'));
- assert.equal(cita.status,'available');assert(cita.markdown.includes('Origine › 01 Fonte.pdf · p. 3'));
+ assert.equal(cita.status,'available');assert(cita.markdown.includes('Origine › Fonte.pdf · p. 3'));assert(!cita.markdown.includes('01 Fonte.pdf'));
  const rif=R.leggi(cita.rimando);assert.equal(rif.tipo,'pdf-zaino');assert.equal(rif.pagina,3);
  const intero=R.scriviPdfZaino(rif.zainoId,rif.sourceId,null,rif.revision);
  assert.equal(R.leggi(intero)?.intero,true,'rimando al documento intero');
@@ -38,10 +38,14 @@ const v=fs.mkdtempSync(path.join(os.tmpdir(),'zaino-citazioni-'));
  assert(normalizzata.split('\n').every(l=>l.startsWith('>')),'barra continua anche sulle citazioni precedenti');
  const codice='```\n'+vecchia+'\n```';assert.equal(R.normalizzaCitazioni(codice),codice,'codice letterale invariato');
  const precedente='> *Estratto*  \n> 01 Fonte.pdf; p. 3  \n> '+R.link('Origine › 01 Fonte.pdf · p. 3',cita.rimando);
- const resa=R.normalizzaCitazioni(precedente);assert.equal(resa.split('\n')[1],'> Fonte.pdf; p. 3  ','anche il titolo delle citazioni esistenti perde solo il numero interno');assert.equal(resa.split('\n')[2],precedente.split('\n')[2],'link originale invariato');
+ const resa=R.normalizzaCitazioni(precedente);assert.equal(resa.split('\n')[1],'> Fonte.pdf; p. 3  ','anche il titolo delle citazioni esistenti perde solo il numero interno');assert.equal(resa.split('\n')[2],'> '+R.link('Origine › Fonte.pdf · p. 3',cita.rimando),'testo del link pulito, indirizzo originale invariato');
  assert.equal(resa.split('\n').length,precedente.split('\n').length,'righe conservate');assert.equal(R.normalizzaCitazioni(resa),resa,'resa idempotente');
  assert.equal(R.normalizzaCitazioni('```\n'+precedente+'\n```'),'```\n'+precedente+'\n```','nessuna normalizzazione nel codice');
- for(const [file,titolo] of [['0001 - 2026 orario.pdf','2026 orario.pdf'],['1984.pdf','1984.pdf'],['12 orario 1C.pdf','orario 1C.pdf']])assert.equal(R.citazionePdfZaino({...cita,file},'').split('\n')[0].trimEnd(),'> '+titolo+'; p. 3');
+ for(const [file,titolo] of [['0001 - 2026 orario.pdf','2026 orario.pdf'],['1984.pdf','1984.pdf'],['12 orario 1C.pdf','orario 1C.pdf'],['12 Budget $&.pdf','Budget $&.pdf']]){
+  const md=R.citazionePdfZaino({...cita,file},'');assert.equal(md.split('\n')[0].trimEnd(),'> '+titolo+'; p. 3');assert.equal(md.split('\n')[1],'> '+R.link('Origine › '+titolo+' · p. 3',cita.rimando));
+  for(const rimando of [intero,puntuale]){const ref=R.leggi(rimando),label='Origine › '+file+(ref.intero?'':' · p. 3'),old=R.link(label,rimando);const nuovo=R.normalizzaCitazioni(old);assert.equal(nuovo,'> '+R.link('Origine › '+titolo+(ref.intero?'':' · p. 3'),rimando),'nomi puliti anche nelle citazioni precedenti, senza toccare la destinazione');assert.deepEqual(R.leggi(/\]\((.+)\)/.exec(nuovo)[1]),ref);}
+ }
+ const personale=R.link('Un titolo scelto da me',cita.rimando);assert.equal(R.normalizzaCitazioni(personale),'> '+personale,'etichetta personalizzata conservata');
 
  assert.equal(R.leggi(cita.rimando.replace('#p=3','#p=0')),null);
  assert.equal(R.leggi(cita.rimando.replace(rif.zainoId,'../fuori')),null);

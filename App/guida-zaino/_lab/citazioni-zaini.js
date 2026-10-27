@@ -31,6 +31,7 @@ const {PDFDocument,StandardFonts}=require('pdf-lib');
  await L.scatta('59-cita-materiale',{sel:'#matPop',scala:2});await L.pulito();
  await L.val(`citazioneZainoApri(${JSON.stringify(cita.rimando)})`);
  assert(await L.finoA(`document.getElementById('citazioneConto').textContent==='2 DI 3'&&!!document.querySelector('#citazionePagine .page[data-page-number="2"] canvas')`));
+ assert.equal(await L.val(`document.getElementById('citazioneTitolo').textContent`),'Biologia › Botanica.pdf');
  await L.pausa(600);
  await L.val(`(()=>{const el=[...document.querySelectorAll('#citazionePagine .page[data-page-number="2"] .textLayer span')].find(e=>e.textContent.startsWith('Le piante trasformano')),r=document.createRange();r.selectNodeContents(el);getSelection().removeAllRanges();getSelection().addRange(r);const b=r.getBoundingClientRect();el.dispatchEvent(new MouseEvent('mouseup',{bubbles:true,button:0,clientX:b.x+4,clientY:b.y+4}));})()`);
  assert(await L.finoA(`!!document.querySelector('#selBarra.aperta [data-az="inserisci-citazione"]:not([disabled])')`));

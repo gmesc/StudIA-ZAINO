@@ -100,11 +100,11 @@
   function letterale(s){return String(s||'').replace(/[\\`*\[\]#_!|>]/g,'\\$&');}
   function citazionePdfZaino(info, testo) {
     const r=leggi(info.rimando);if(!r||r.tipo!=='pdf-zaino')return '';
-    const titolo=String(info.file||'PDF').replace(/[\r\n]/g,' '),pagina=r.intero?'':'; p. '+r.pagina;
+    const titolo=FontiNomi.visibile(String(info.file||'PDF').replace(/[\r\n]/g,' ')),pagina=r.intero?'':'; p. '+r.pagina;
     const label=String(info.zainoTitolo+' › '+titolo+(r.intero?'':' · p. '+r.pagina)).replace(/[\[\]\r\n]/g,'');
     const estratto=String(testo||'').trim(),righe=[];
     if(estratto)estratto.split(/\r?\n/).forEach(l=>righe.push(l?'*'+letterale(l)+'*':''));
-    righe.push(letterale(FontiNomi.visibile(titolo)+pagina),link(letterale(label),info.rimando));
+    righe.push(letterale(titolo+pagina),link(letterale(label),info.rimando));
     return righe.map(l=>'> '+l).join('  \n');
   }
   /** Offset verificato sul testo; se il layout cambia si accetta solo un riscontro univoco. */
@@ -124,10 +124,12 @@
       if(recinto)continue;
       const m=/^(>\s*)?\[([^\]]+)\]\((zaino-pdf:[^)]+)\)\s*$/.exec(righe[i]);
       const ref=m&&leggi(m[3]);if(ref?.tipo!=='pdf-zaino')continue;
-      // Solo la riga di titolo riconoscibile della citazione: il link conserva
-      // il nome interno, e il testo scritto dall'utente non viene riscritto.
+      // Solo nomi riconoscibili della citazione: la destinazione del link e
+      // il testo scritto dall'utente non vengono riscritti.
       const t=/^(>\s*)(.+?\.pdf)(; p\. \d+)?([ \t]*)$/i.exec(righe[i-1]||'');
       if(t&&(t[3]||'')===(ref.intero?'':'; p. '+ref.pagina)&&m[2].endsWith(' › '+t[2]+(ref.intero?'':' · p. '+ref.pagina)))righe[i-1]=t[1]+FontiNomi.visibile(t[2])+(t[3]||'')+t[4];
+      const l=/^(.* › )(.+?\.pdf)( · p\. \d+)?$/i.exec(m[2]);
+      if(l&&(l[3]||'')===(ref.intero?'':' · p. '+ref.pagina))righe[i]=righe[i].replace('['+m[2]+'](',()=> '['+l[1]+FontiNomi.visibile(l[2])+(l[3]||'')+'](');
       if(m[1])continue;
       let j=i-1;while(j>=0&&!righe[j].trim())j--;
       if(j>=0&&/^>/.test(righe[j])){

@@ -182,7 +182,7 @@
    if(turno!==sequenza||!dialog.open)return;
    if(r.error)throw Error(r.error);
    if(r.status!=='available')throw Error({changed:'La fonte è cambiata: il PDF non corrisponde più alla versione citata. La pagina originale non è disponibile.',ambiguous:'Due zaini hanno la stessa identità. Non posso scegliere la fonte corretta.',removed:'Fonte non disponibile: lo zaino o il PDF sono stati rimossi.'}[r.status]||'Fonte non disponibile.');
-   document.getElementById('citazioneTitolo').textContent=r.zainoTitolo+' › '+r.file;
+   document.getElementById('citazioneTitolo').textContent=r.zainoTitolo+' › '+FontiNomi.visibile(r.file);
    pdfjsLib.GlobalWorkerOptions.workerSrc='assets/pdfjs/pdf.worker.min.mjs';
    var bus=new pdfjsViewer.EventBus(),link=new pdfjsViewer.PDFLinkService({eventBus:bus});
    var viewer=new pdfjsViewer.PDFViewer({container:document.getElementById('citazioneFrame'),viewer:document.getElementById('citazionePagine'),eventBus:bus,linkService:link,textLayerMode:1,annotationMode:0,annotationEditorMode:-1,removePageBorders:true});
