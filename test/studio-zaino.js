@@ -121,6 +121,27 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(ro
  for(const preset of Object.keys(S.PRESET)){const card=await S.genera(root,'test',edizione.id,preset,didattico);assert.equal(card.excluded,4);assert.equal(card.covered,2);assert.equal(card.partial,false);assert.deepEqual(card.sources.map(s=>s.page),[3,4]);assert.equal(card.promptVersion,3);}
  // Un PDF vero oltre pagina 250 deve raggiungere l’ultima pagina, con cache dedicata.
  const {PDFDocument,StandardFonts}=require('pdf-lib'),pdfIntero=await PDFDocument.create(),font=await pdfIntero.embedFont(StandardFonts.Helvetica);
+ // Una pagina bianca non è contenuto saltato; una pagina grafica senza testo sì.
+ const bianca=await PDFDocument.create();bianca.addPage();bianca.addPage().drawText('La respirazione cellulare produce energia.');
+ fs.writeFileSync(path.join(d,'MATERIALI','05 Con pagina bianca.pdf'),await bianca.save());
+ const fonteBianca=F.sincronizza(root,'test').sources.find(s=>s.file.endsWith('05 Con pagina bianca.pdf'));
+ const pianoBianco=await S.prepara(root,'test',fonteBianca.id,'domande');
+ assert.equal(pianoBianco.partial,false,'Le pagine realmente bianche non rendono parziale l’analisi');assert.deepEqual(pianoBianco.blankPages,[1]);assert.deepEqual(pianoBianco.unreadPages,[]);
+ const schedaBianca=await S.genera(root,'test',fonteBianca.id,'domande',opts),fileBianca=path.join(d,'_lavorazione/rag/schede',fonteBianca.id+'-domande.json');
+ const legacy={...schedaBianca,partial:true,warnings:['Due pagine senza testo estraibile.']};delete legacy.readingVersion;
+ fs.writeFileSync(fileBianca,JSON.stringify(legacy));
+ const cacheBianca=path.join(d,'_lavorazione/rag/estratti',fonteBianca.id+'-'+fonteBianca.revision+'-intera-v1.json'),cacheVecchia=JSON.parse(fs.readFileSync(cacheBianca));delete cacheVecchia.pages[0].blank;fs.writeFileSync(cacheBianca,JSON.stringify(cacheVecchia));
+ const riletta=await S.aggiornaLettura(root,'test',fonteBianca.id,'domande',{chiama:()=>{throw Error('La verifica locale non deve chiamare il cloud');}});
+ assert(!riletta.card.partial);assert.deepEqual(riletta.card.blankPages,[1]);assert.equal(riletta.card.createdAt,schedaBianca.createdAt);assert.deepEqual(riletta.card.items,schedaBianca.items);assert.deepEqual(riletta.card.sources,schedaBianca.sources);assert(!riletta.card.warnings.some(w=>/senza testo estraibile/.test(w)));
+ assert.equal(JSON.parse(fs.readFileSync(cacheBianca)).pages[0].blank,true,'La vecchia cache viene verificata sul PDF, senza assumere che sia bianco');
+ const incompleta={...legacy,sources:[],covered:0};fs.writeFileSync(fileBianca,JSON.stringify(incompleta));const rilettaParziale=await S.aggiornaLettura(root,'test',fonteBianca.id,'domande');assert(rilettaParziale.card.partial);assert.equal(rilettaParziale.card.unreadChunks,1,'I passaggi non analizzati non diventano completi per la sola presenza di pagine bianche');
+ const grafico=await PDFDocument.create();grafico.addPage();grafico.addPage().drawText('La respirazione cellulare produce energia.');
+ const png=await grafico.embedPng(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==','base64'));grafico.addPage().drawImage(png,{x:10,y:10,width:200,height:200});
+ grafico.addPage().drawRectangle({x:10,y:10,width:200,height:100});
+ const annotata=grafico.addPage(),{PDFName,PDFString}=require('pdf-lib');annotata.node.set(PDFName.of('Annots'),grafico.context.obj([grafico.context.register(grafico.context.obj({Type:'Annot',Subtype:'Text',Rect:[10,10,100,100],Contents:PDFString.of('Contenuto in annotazione.')}))]));
+ fs.writeFileSync(path.join(d,'MATERIALI','06 Contenuti senza testo.pdf'),await grafico.save());
+ const fonteGrafica=F.sincronizza(root,'test').sources.find(s=>s.file.endsWith('06 Contenuti senza testo.pdf')),pianoGrafico=await S.prepara(root,'test',fonteGrafica.id,'domande');
+ assert(pianoGrafico.partial);assert.deepEqual(pianoGrafico.blankPages,[1]);assert.deepEqual(pianoGrafico.unreadPages,[3,4,5],'Immagini, disegni e annotazioni non sono pagine bianche');assert(pianoGrafico.warnings.some(w=>w.includes('contenuti non letti nelle pagine 3, 4, 5')));
  for(let page=1;page<=260;page++)pdfIntero.addPage().drawText('Contenuto didattico della pagina '+page+'. Le cellule trasformano energia.',{x:30,y:600,font,size:12});
  fs.writeFileSync(path.join(d,'MATERIALI','04 Libro intero.pdf'),await pdfIntero.save());
  const libro=F.sincronizza(root,'test').sources.find(s=>s.file.endsWith('04 Libro intero.pdf'));

@@ -33,7 +33,8 @@ async function main() {
     let ctx = await C.contesto(vault, 'scienze', 'fotosintesi');
     assert(ctx.excerpts.some((s) => s.file.endsWith('Botanica.pdf') && s.page === 1 && /anidride/.test(s.text)), 'estrae PDF mai aperti');
     assert(ctx.excerpts.some((s) => s.kind === 'appunto'));
-    assert(ctx.warnings.some((s) => /senza testo/.test(s)), 'segnala pagine senza testo senza OCR');
+    assert.deepEqual(ctx.blankPages.map(p=>p.page),[2],'segnala separatamente la pagina bianca');
+    assert(!ctx.warnings.some(s=>/non lett|senza testo/.test(s)),'Una pagina bianca non è un contenuto non letto');
     assert(!fs.existsSync(path.join(d, 'MATERIALI', 'Indici-PDF')), 'non crea indici o pipeline');
 
     const s = C.crea(vault, 'scienze', { role: 'spiegamelo', profileId: 'eli5' });

@@ -135,5 +135,16 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
   if(flagPrima)fs.writeFileSync(flagLocale,flagPrima);else fs.rmSync(flagLocale,{force:true});fs.rmSync(grande,{force:true});if(sourceLong)fs.rmSync(path.join(vault,'Zaini/biologia/_lavorazione/rag/schede',sourceLong.id+'-domande.json'),{force:true});
   await c.val(`window.vault.chat.saveSettings({provider:'openai',model:'modello-locale-di-prova'})`);
  }
+ // La lettura di una scheda precedente riclassifica le pagine bianche senza nuove richieste AI.
+ const {PDFDocument}=require('pdf-lib'),pdfBianco=await PDFDocument.create();pdfBianco.addPage();pdfBianco.addPage().drawText('La respirazione cellulare produce energia.');
+ const fBianco=path.join(vault,'Zaini/biologia/MATERIALI/PDF','04 Pagine bianche.pdf');fs.writeFileSync(fBianco,await pdfBianco.save());
+ const F=require('../../lib/fonti-ai'),S=require('../../lib/schede-zaino'),sBianco=F.sincronizza(vault,'biologia').sources.find(s=>s.file.endsWith('04 Pagine bianche.pdf')),pBianco=await S.prepara(vault,'biologia',sBianco.id,'sintesi');
+ const {chunks,...infoBianco}=pBianco,cBianco={...infoBianco,version:1,partial:true,createdAt:new Date().toISOString(),provider:'prova',model:'finto',sources:chunks,items:[{title:'Energia',text:'La respirazione produce energia.',refs:[chunks[0].chunkId]}]};delete cBianco.readingVersion;delete cBianco.blankPages;
+ fs.writeFileSync(path.join(vault,'Zaini/biologia/_lavorazione/rag/schede',sBianco.id+'-sintesi.json'),JSON.stringify(cBianco));const nessunaAi=fs.readFileSync(requests,'utf8');
+ await click('#zschedeBack');await wait(`document.getElementById('zschedeCollection').textContent.includes('Pagine bianche.pdf')`);
+ assert((await c.val(`document.querySelector('#zschedeCollection [aria-label="Apri Sintesi: Pagine bianche.pdf"]').parentElement.textContent`)).includes('analisi completa'));
+ await click('#zschedeCollection [aria-label="Apri Sintesi: Pagine bianche.pdf"]');await wait(`document.getElementById('zschedeResult').textContent.includes('Pagine bianche: 1.')`);
+ assert((await c.val(`document.getElementById('zschedeResult').textContent`)).includes('analisi completa'));assert(!(await c.val(`document.getElementById('zschedeResult').textContent`)).includes('analisi parziale'));assert.equal(fs.readFileSync(requests,'utf8'),nessunaAi);
+ const shotBlank=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-scheda-pagine-bianche.png',Buffer.from(shotBlank.result.data,'base64'));
  console.log('studio UI: ricerca, stima, scheda, copia, Banco, tentativo, esito, persistenza e cache indipendente OK');process.exit(0);
 })().catch(async e=>{console.error(e);try{console.error(await c.val(`({rag:document.getElementById('zragStatus')?.textContent,studio:document.getElementById('zstudyStatus')?.textContent,chat:document.getElementById('zchatStatus')?.textContent})`));}catch(_){}process.exit(1);});
