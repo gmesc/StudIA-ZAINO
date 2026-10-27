@@ -28,11 +28,14 @@ async function provaGesti(){
   const s2=await scroll();assert(Math.abs(s2.x-s1.x-65)<2&&Math.abs(s2.y-s1.y-80)<2,'Spazio+trascina sposta il documento '+JSON.stringify({s1,s2}));
   assert.equal(await c.val(`getSelection().toString()`),'','pan senza selezione');
   assert(await c.val(`!document.querySelector('.pdf-spazio,.pdf-trascina')`),'rilascio pulisce il cursore');
+  await mouse('mouseMoved',p);
+  await c.val(`window.__clicGesti=[];window.__ascoltaClic=new AbortController();window.addEventListener('click',e=>window.__clicGesti.push({n:e.detail,target:e.target.className,tempo:e.timeStamp}),{capture:true,signal:window.__ascoltaClic.signal})`);
   // Tre clic da scala manuale e da larghezza: sempre larghezza, mai pagina intera.
   for(let giro=0;giro<2;giro++){
-   for(let n=1;n<=3;n++)for(const type of ['mousePressed','mouseReleased'])await mouse(type,p,{button:'left',clickCount:n});
-   await c.pausa(150);assert.equal(await c.val(`${v}.currentScaleValue`),'page-width','triplo click nel '+id);
+   for(let n=1;n<=3;n++)for(const type of ['mousePressed','mouseReleased'])await mouse(type,p,{button:'left',buttons:type==='mousePressed'?1:0,clickCount:n});
+   await c.pausa(150);assert.equal(await c.val(`${v}.currentScaleValue`),'page-width','triplo click nel '+id+': '+JSON.stringify(await c.val(`({clic:window.__clicGesti,hit:document.elementFromPoint(${p.x},${p.y})?.outerHTML.slice(0,180)})`)));
   }
+  await c.val('window.__ascoltaClic.abort();delete window.__ascoltaClic;delete window.__clicGesti');
   assert.equal(await c.val(`localStorage.getItem('${chiave}')`),'page-width','adattamento salvato');
   assert.equal(await c.val(`${altro}.currentScale`),fermo,'reset indipendente');
   const adattata=await c.val(`${v}.currentScale`);
@@ -105,7 +108,7 @@ async function provaGestiCitazione(rimando){
  await mouse('mouseMoved',p);
  await c.val(`window.__clicGesti=[];window.__ascoltaClic=new AbortController();window.addEventListener('click',e=>window.__clicGesti.push({n:e.detail,target:e.target.className,tempo:e.timeStamp}),{capture:true,signal:window.__ascoltaClic.signal})`);
  for(let giro=0;giro<2;giro++){
-  for(let n=1;n<=3;n++)for(const type of ['mousePressed','mouseReleased'])await mouse(type,p,{button:'left',clickCount:n});
+  for(let n=1;n<=3;n++)for(const type of ['mousePressed','mouseReleased'])await mouse(type,p,{button:'left',buttons:type==='mousePressed'?1:0,clickCount:n});
   await c.pausa(150);const dopoTre=await larghezza();
   if(Math.abs(dopoTre-originale)>=2){const shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-treclick-debug.png',Buffer.from(shot.result.data,'base64'));}
   assert(Math.abs(dopoTre-originale)<2,'tre clic ripristinano sempre la larghezza: '+JSON.stringify({giro,originale,dopoTre,stato:await c.val(`({hit:document.elementFromPoint(${p.x},${p.y})?.outerHTML.slice(0,180),frame:document.getElementById('citazioneFrame').clientWidth,tooltip:document.getElementById('citazioneZoomLvl').title,menu:selBarraAperta(),clic:window.__clicGesti})`)}));
