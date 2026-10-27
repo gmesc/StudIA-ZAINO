@@ -94,6 +94,12 @@ function sse(...data) {
   assert.ok(calls[0].url.endsWith('/models/gemini-test:generateContent'));
   assert.deepEqual(calls[0].json.contents.map(m => m.role), ['user', 'model', 'user']);
   assert.equal(calls[0].json.systemInstruction.parts[0].text, 'Istruzioni riservate al tutor');
+  assert(!calls[0].json.generationConfig.responseSchema,'La chat libera conserva il formato testuale');
+  const schemaRefs={type:'object',additionalProperties:false,properties:{title:{type:'string',minLength:1},refs:{type:'array',uniqueItems:true,items:{type:'string',enum:['R1','R2']}}},required:['title','refs']};
+  mock({candidates:[{content:{parts:[{text:'{"title":"Fiducia","refs":["R2"]}'}]}}]});
+  await require('../lib/ai-strutturata').chiedi({schema:schemaRefs,system:'Usa solo i riferimenti forniti.',messages:[{role:'user',content:'R1 e R2'}],chiama:r=>request('google',r)});
+  const nativo=calls[0].json.generationConfig;
+  assert.equal(nativo.responseMimeType,'application/json');assert.deepEqual(nativo.responseSchema.properties.refs.items.enum,['R1','R2']);assert(nativo.responseSchema.properties.title,'Il campo title rimane nel contratto');assert(!nativo.responseSchema.additionalProperties);assert(!nativo.responseSchema.properties.refs.uniqueItems);
 
   mock({ output: [{ type: 'reasoning', summary: [{ text: 'NON MOSTRARE' }] }, { type: 'message', content: [{ type: 'output_text', text: 'OpenAI risponde' }] }], usage: { input_tokens: 8, output_tokens: 6 } });
   assert.equal((await request('openai', { model: 'gpt-6-test' })).text, 'OpenAI risponde');

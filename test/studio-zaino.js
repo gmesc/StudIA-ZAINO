@@ -5,6 +5,21 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(ro
 (async()=>{
  fs.mkdirSync(path.join(d,'MATERIALI'),{recursive:true});fs.writeFileSync(path.join(d,'_zaino.md'),'# Test');fs.writeFileSync(path.join(d,'MATERIALI','bio.txt'),'I mitocondri producono ATP. La respirazione cellulare fornisce energia.');
  const source=F.sincronizza(root,'test').sources[0],scope={mode:'selected',sourceIds:[source.id],wikipedia:false};
+ // Il modello deve scegliere riferimenti vincolati, senza ricopiare hash o numeri di pagina.
+ const schemaScheda=require('../schema/scheda-zaino.schema.json'),contrattoPrima=JSON.stringify(schemaScheda);
+ const vincolata=await require('../lib/schede').analizzaEsplicite([{chunkId:'a'.repeat(64),kind:'pdf',file:'MATERIALI/PDF/02 Fonte.pdf',page:7,text:'La fiducia rende possibili le relazioni sociali.'}],{schema:schemaScheda,preset:'Domande per capire',profile:{},chiama:async req=>{
+  const contract=req.schema||JSON.parse(req.system.split('Rispondi soltanto con JSON conforme a questo schema:\n')[1]);
+  const refs=contract.properties.items.items.properties.refs.items.enum;
+  return {text:JSON.stringify({items:[{title:'Qual è il ruolo della fiducia?',text:'Rende possibili le relazioni sociali.',refs:[refs?.[0]||'p. 7']}]})};
+ }});
+ assert.deepEqual(vincolata.items[0].refs,['a'.repeat(64)]);assert.equal(JSON.stringify(schemaScheda),contrattoPrima,'Il contratto condiviso non viene mutato');
+ let correzioniRefs=0;
+ const corretta=await require('../lib/schede').analizzaEsplicite([{chunkId:'b'.repeat(64),kind:'pdf',file:'MATERIALI/PDF/02 Fonte.pdf',page:30,text:'La fiducia rende possibili le relazioni sociali.'}],{schema:schemaScheda,preset:'Domande per capire',profile:{},chiama:async req=>{
+  correzioniRefs++;assert.deepEqual(req.schema.properties.items.items.properties.refs.items.enum,['R1']);
+  if(correzioniRefs===2)assert(req.messages.at(-1).content.includes('Errori di validazione'));
+  return {text:JSON.stringify({items:[{title:'Fiducia',text:'Rende possibili le relazioni sociali.',refs:[correzioniRefs===1?'R999':'R1']}]})};
+ }});
+ assert.equal(correzioniRefs,2);assert.deepEqual(corretta.items[0].refs,['b'.repeat(64)],'Un alias uguale di un’altra parte torna al suo hash, senza creare citazioni spurie');
  let calls=0;
  const opts={provider:'openai',model:'finto',chiama:async req=>{calls++;const data=JSON.parse(req.messages[0].content);if(data.porzioni)return {text:JSON.stringify({items:[{title:'Mitocondri',text:'Producono ATP.\n- Concetti: ATP.\n- Prerequisiti: energia.',refs:[data.porzioni[0].chunkId]}]})};if(data.proofs && data.topic)return {text:JSON.stringify({question:'Quale organello produce ATP?',answer:'I mitocondri.',rubric:['Identifica i mitocondri.'],hint:'Pensa alla respirazione cellulare.',refs:[data.proofs[0].chunkId]})};assert.equal(data.question,'Quale organello produce ATP?');assert(data.proofs[0].text.includes('mitocondri'));return {text:JSON.stringify({correct:['Hai indicato i mitocondri.'],missing:[],contradictory:[],summary:'La risposta è coerente con il materiale.',assessable:true})};}};
  for(const preset of Object.keys(S.PRESET)){const card=await S.genera(root,'test',source.id,preset,opts);assert(card.items[0].refs.length);assert.equal(S.leggi(root,'test',source.id,preset).status,'current');}
@@ -31,6 +46,7 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(ro
  const note=require('../lib/appunti').parse(fs.readFileSync(path.join(d,'APPUNTI',copy.file),'utf8'));
  assert.equal(note.meta.title,'Sintesi — bio.txt');assert(note.body.startsWith('### Sintesi — bio.txt\n'));assert(!note.body.includes('Risposta del tutor AI'));assert(note.body.includes('- **Concetti:** ATP.'));assert(note.body.includes('- **Prerequisiti:** energia.'));
  const T=require('../App/assets/chat/schede-testo');
+ for(const text of ['Opera originale:\nAutore Esempio, Titolo originale\nISBN 978-00-000-000-0, Presses universitaires, Paris 2016.','Autore Esempio\nTitolo del libro\nNome Traduttore\nTraduzione di','Copyright © MMXVI\nEditrice Esempio S.r.l.\nI diritti di traduzione, di memorizzazione elettronica, di\nriproduzione e di adattamento anche parziale,\ncon qualsiasi mezzo, sono riservati per tutti i paesi.\nI edizione italiana: dicembre 2016','.\nIndice\n1.1. La cellula, 23 / 1.2. La respirazione, 30 /\n1.3. I mitocondri, 34 / 1.4. Il metabolismo, 38.'])assert(T.soloParatesto(text),'frontespizio, colophon romano e indice con numeri di sezione vanno riconosciuti');
  for(const text of ['Indice\nIntroduzione ........ 3\nLa cellula ........ 7\nLa respirazione ........ 18','© 2026 Editore Esempio\nTutti i diritti riservati.\nISBN 978-88-0000-000-0\nPrima edizione: 2026\nStampato in Italia'])assert(T.soloParatesto(text),'indice e colophon non sono contenuto didattico');
  for(const text of ['L’indice di rifrazione è il rapporto fra due velocità.','Il copyright tutela le opere. In questo capitolo analizziamo la durata del diritto d’autore e i limiti posti alla riproduzione delle opere.','Indice\nL’indice di rifrazione descrive come la luce attraversa un mezzo. Il rapporto fra la velocità nel vuoto e quella nel materiale ne determina il valore.'])assert(!T.soloParatesto(text),'i concetti didattici non vanno cancellati da una parola ambigua');
  assert(!T.soloParatesto('© 2026 Editore. La respirazione cellulare produce ATP e rende disponibile l’energia dei nutrienti. Nelle cellule i mitocondri sono gli organelli in cui si svolgono molte fasi di questo processo.'),'una pagina mista senza a capo resta disponibile al modello');
@@ -100,9 +116,9 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(ro
  // Tutti i preset ricevono contenuti di studio, senza usare indice e colophon come prove.
  fs.writeFileSync(path.join(d,'MATERIALI','02 Edizione.pdf'),'%PDF-prova');
  const edizione=F.sincronizza(root,'test').sources.find(s=>s.file.endsWith('02 Edizione.pdf'));
- const estratto={numPages:4,truncated:false,pages:[{page:1,text:'© 2026 Editore Esempio\nTutti i diritti riservati.\nISBN 978-88-0000-000-0\nPrima edizione: 2026'},{page:2,text:'Indice\nIntroduzione ........ 3\nLa cellula ........ 7\nLa respirazione ........ 18'},{page:3,text:'La respirazione cellulare produce ATP e rende disponibile l’energia dei nutrienti.'},{page:4,text:'Il copyright tutela le opere. In questo capitolo analizziamo la durata del diritto d’autore e i limiti posti alla riproduzione delle opere.'}]};
+ const estratto={numPages:5,truncated:false,pages:[{page:1,text:'© 2026 Editore Esempio\nTutti i diritti riservati.\nISBN 978-88-0000-000-0\nPrima edizione: 2026'},{page:2,text:'Indice\nIntroduzione ........ 3\nLa cellula ........ 7\nLa respirazione ........ 18'},{page:3,text:'La respirazione cellulare produce ATP e rende disponibile l’energia dei nutrienti.'},{page:4,text:'Il copyright tutela le opere. In questo capitolo analizziamo la durata del diritto d’autore e i limiti posti alla riproduzione delle opere.'},{page:5,text:'- Indice\n'+Array.from({length:50},(_,i)=>'1.'+(i+1)+'. Argomento della trattazione, '+(i+20)).join(' / ')}]};
  const didattico={...opts,estraePdf:async()=>estratto,chiama:async req=>{const data=JSON.parse(req.messages[0].content);assert.deepEqual(data.porzioni.map(p=>p.page),[3,4]);assert(data.porzioni.every(p=>p.file==='Edizione.pdf'&&!p.citation&&!p.label));assert(req.system.includes('Ignora indice, sommario, frontespizio, colophon e dati editoriali'));return {text:JSON.stringify({items:[{title:'Energia',text:'La respirazione produce ATP.',refs:[data.porzioni[0].chunkId]}]})};}};
- for(const preset of Object.keys(S.PRESET)){const card=await S.genera(root,'test',edizione.id,preset,didattico);assert.equal(card.excluded,2);assert.equal(card.covered,2);assert.equal(card.partial,false);assert.deepEqual(card.sources.map(s=>s.page),[3,4]);assert.equal(card.promptVersion,3);}
+ for(const preset of Object.keys(S.PRESET)){const card=await S.genera(root,'test',edizione.id,preset,didattico);assert.equal(card.excluded,4);assert.equal(card.covered,2);assert.equal(card.partial,false);assert.deepEqual(card.sources.map(s=>s.page),[3,4]);assert.equal(card.promptVersion,3);}
  // Un PDF vero oltre pagina 250 deve raggiungere l’ultima pagina, con cache dedicata.
  const {PDFDocument,StandardFonts}=require('pdf-lib'),pdfIntero=await PDFDocument.create(),font=await pdfIntero.embedFont(StandardFonts.Helvetica);
  for(let page=1;page<=260;page++)pdfIntero.addPage().drawText('Contenuto didattico della pagina '+page+'. Le cellule trasformano energia.',{x:30,y:600,font,size:12});
@@ -128,12 +144,12 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(ro
  let letti=[],fusioni=0,progressi=[],partiLette=0;
  const completa={...opts,onProgress:p=>progressi.push(p),chiama:async req=>{
   const data=JSON.parse(req.messages[0].content);
-  if(data.porzioni){letti.push(...data.porzioni.map(p=>p.chunkId));const n=letti.length;return {text:JSON.stringify({items:[{title:++partiLette%2?'Come producono energia le cellule?':'In quale modo le cellule ottengono energia?',text:'Le cellule trasformano energia attraverso le reazioni metaboliche.',refs:[data.porzioni[0].chunkId]},{title:'Tema specifico '+n,text:'Risposta specifica alla parte '+n,refs:[data.porzioni.at(-1).chunkId]}]})};}
+  if(data.porzioni){letti.push(...data.porzioni.map(p=>p.text));const n=letti.length;return {text:JSON.stringify({items:[{title:++partiLette%2?'Come producono energia le cellule?':'In quale modo le cellule ottengono energia?',text:'Le cellule trasformano energia attraverso le reazioni metaboliche.',refs:[data.porzioni[0].chunkId]},{title:'Tema specifico '+n,text:'Risposta specifica alla parte '+n,refs:[data.porzioni.at(-1).chunkId]}]})};}
   assert(Array.isArray(data.candidati));fusioni++;const doppie=data.candidati.filter(i=>i.text==='Le cellule trasformano energia attraverso le reazioni metaboliche.').map(i=>i.id);
   return {text:JSON.stringify({groups:doppie.length>1?[doppie]:[]})};
  }};
  const completaCard=await S.genera(root,'test',intera.id,'domande',completa);
- assert.deepEqual(letti,piano.chunks.map(p=>p.chunkId));assert(fusioni>0);
+ assert.deepEqual(letti,piano.chunks.map(p=>p.text));assert(fusioni>0);
  assert.equal(completaCard.covered,completaCard.total);assert.equal(completaCard.items.filter(i=>i.text==='Le cellule trasformano energia attraverso le reazioni metaboliche.').length,1);
  assert(completaCard.items.length>12,'L’unione non deve troncare a dodici gli argomenti di tutte le parti');
  assert(completaCard.items[0].refs.length>1,'Le prove delle ripetizioni vengono conservate');
@@ -164,7 +180,7 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(ro
  let indiceLocale=0,cloudLocale=0,embeddingLocale=0,passaggiLocali=[];
  const mockLocale=async req=>{
   const data=JSON.parse(req.messages[0].content);
-  if(data.porzioni){const n=indiceLocale++;passaggiLocali.push(...data.porzioni.map(p=>p.chunkId));return {text:JSON.stringify({items:[
+  if(data.porzioni){const n=indiceLocale++;passaggiLocali.push(...data.porzioni.map(p=>p.text));return {text:JSON.stringify({items:[
    {title:n%2?'Come si produce ATP?':'Quale processo produce ATP?',text:n%2?'La respirazione cellulare produce ATP.':'L’ATP viene prodotto dalla respirazione cellulare.',refs:[data.porzioni[0].chunkId]},
    ...[n*2,n*2+1].map(i=>({title:'Argomento '+i,text:'Spiegazione specifica '+i+': '+('contenuto '.repeat(150)).trim(),refs:[data.porzioni.at(-1).chunkId]})),
    ...(n===0?[{title:'Affermazione opposta',text:'La respirazione cellulare non produce ATP.',refs:[data.porzioni[1].chunkId]}]:[])
@@ -179,7 +195,7 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(ro
  const locale=await S.genera(root,'test',intera.id,'domande',{...opts,runtime:runtimeLocale,chiama:mockLocale});
  assert(embeddingLocale>0,'La generazione deve usare davvero l’embedder locale');
  assert(cloudLocale<chiamateComplete,'La selezione locale deve ridurre le richieste cloud');
- assert.deepEqual(passaggiLocali,piano.chunks.map(p=>p.chunkId));assert.equal(locale.covered,locale.total);
+ assert.deepEqual(passaggiLocali,piano.chunks.map(p=>p.text));assert.equal(locale.covered,locale.total);
  const tutteLeProve=card=>[...new Set(card.items.flatMap(i=>i.refs))].sort();assert.deepEqual(tutteLeProve(locale),tutteLeProve(confrontoCompleto));
  assert.equal(locale.items.length,confrontoCompleto.items.length);assert(locale.items.some(i=>i.title==='Affermazione opposta'),'Similarità massima non autorizza a unire risposte opposte');
  assert.equal(locale.dedup.mode,'local');assert.equal(locale.dedup.cloudCalls,cloudLocale);assert(locale.dedup.savedCalls>0);
