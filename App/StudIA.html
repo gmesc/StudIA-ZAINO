@@ -16467,7 +16467,7 @@ document.addEventListener('click', function(e){
       window.vault.chat.resolveSource(z,{sourceId:a.dataset.sourceId,revision:a.dataset.sourceRevision,page:parseInt(a.dataset.page,10)||1}).then(function(r){
         if(z!==zainoAttivo()) return;
         if(!r.ok || r.status!=='available'){toast(r.error || (r.status==='changed'?'La fonte è cambiata: il rimando conserva la versione precedente.':'Fonte non più disponibile.'),false);return;}
-        openPdf(r.source.file.split('/').pop(),r.page,a.getAttribute('data-label'));
+        openPdf(r.source.file.split('/').pop(),r.page,a.getAttribute('data-label'),false,a.dataset.sourceTesto?{testo:a.dataset.sourceTesto,inizio:Number(a.dataset.sourceInizio)}:null);
       }).catch(function(e){toast(e.message,false);}); return;
     }
     /* ⚠️ `_pdfNum()[NN]||''` lascia il link con `data-file` vuoto quando il

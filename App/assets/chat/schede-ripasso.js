@@ -8,17 +8,17 @@
   const reviewState={zaino:state.zaino,scope:{mode:'all',sourceIds:[],wikipedia:false},sources:[]};
   const extra=el('div');extra.innerHTML=`
    <section id="zschede" aria-label="Schede dello zaino">
-    <section id="zschedeLibrary" aria-labelledby="zschedeTitle">
-     <div class="zstudio-heading"><h2 id="zschedeTitle">Raccoglitore</h2></div>
+    <section id="zschedeLibrary" aria-label="Schede e domande salvate">
+     <div class="zstudio-heading"></div>
      <div class="zstudio-filters"><label for="zschedeFilter">Cerca<input id="zschedeFilter" class="ctl-input" placeholder="Titolo o fonte"></label><label for="zschedeKind">Tipo<select id="zschedeKind"><option value="all">Tutto</option><option value="scheda">Schede</option><option value="domanda">Domande</option></select></label></div>
      <p id="zschedeCollectionStatus" class="zchat-hint" role="status"></p><div id="zschedeCollection" class="zstudio-collection"></div>
     </section>
     <div id="zschedeResult" class="zstudio-results" hidden></div>
-    <details id="zschedeNew" class="zstudio-section zstudio-view" hidden><summary>Nuova scheda</summary><p class="zchat-hint">Scegli la fonte e la scheda. Vedrai una stima prima di confermare l’uso dell’AI.</p>
+    <section id="zschedeNew" class="zstudio-section zstudio-view" aria-label="Nuova scheda" hidden><p class="zchat-hint">Scegli la fonte e la scheda. Vedrai una stima prima di confermare l’uso dell’AI.</p>
      <label>Fonte<select id="zschedeSource"></select></label><label>Tipo di scheda<select id="zschedePreset"></select></label>
      <p id="zschedeSourceStatus" class="zchat-hint" role="status"></p><p id="zschedeStatus" class="zchat-hint" role="status"></p><div class="zstudio-actions"><button class="tbtn acc" id="zschedeEstimate" type="button">Prepara analisi</button></div>
      <p id="zschedeEstimateText" class="zchat-hint"></p><details id="zschedeCost" hidden><summary>Dettagli del consumo</summary><p id="zschedeTokens" class="zchat-hint"></p></details><button class="tbtn acc" id="zschedeGenerate" type="button" hidden>Genera e salva scheda</button>
-    </details>
+    </section>
    </section>
    <section id="zinterroga" class="zstudio-panel" aria-label="Interrogazione e ripasso">
     <div class="tbar" id="zstudyToolbar" role="group" aria-label="Strumenti del ripasso"><button class="tbtn" id="zstudyBack" type="button" hidden>Torna alla domanda</button><button class="tbtn" id="zstudyBrowse" type="button">Domande</button><button class="tbtn" id="zstudyNewButton" type="button">Nuova domanda</button><button class="tbtn" id="zstudyCollection" type="button">Raccoglitore</button><button class="tbtn" id="zstudyCancel" type="button" hidden>Interrompi</button></div>
@@ -56,7 +56,7 @@
   function vistaSchede(view,focus){
    if(view!==schedeView){studio.status('');$('zschedeStatusConfig')?.setAttribute('hidden','');}schedeView=view;box.dataset.vista=view;
    for(const [id,v] of [['zschedeLibrary','library'],['zschedeResult','card'],['zschedeNew','new'],['zragSearch','search']])$(id).hidden=view!==v;
-   $('zschedeNew').open=view==='new';$('zragSearch').open=view==='search';
+   $('zragSearch').open=view==='search';
    $('zragScopeButton').hidden=view!=='search';$('zragScopeHost').hidden=view!=='search';$('zragScopeSummary').hidden=view!=='search';
    for(const [id,attivo] of [['zschedeBack',view==='library'],['zschedeNewButton',view==='new']]){const b=$(id);b.hidden=false;b.classList.toggle('acc',attivo);if(attivo)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}
    $('zragScopeSep').hidden=view!=='search';
@@ -77,16 +77,16 @@
   $('zstudyNewButton').onclick=()=>{pulisciAvvisoRipasso();vistaRipasso('new','zstudyTopic');};$('zstudyBack').onclick=tornaRipasso;
   $('zstudyBegin').onclick=()=>{const q=P.riprendi(domandeDisponibili(),queueState.due,pausedId);if(q)openQuestion(q.id);else {queueFilter='all';drawQueue();vistaRipasso('queue','zstudySearch');}};
   // Mantiene compatibili i collegamenti diretti che aprono una sezione.
-  for(const [id,view] of [['zschedeNew','new'],['zragSearch','search']])$(id).addEventListener('toggle',()=>{if($(id).open&&schedeView!==view)vistaSchede(view);else if(!$(id).open&&schedeView===view)vistaSchede('library');});
+  for(const [id,view] of [['zragSearch','search']])$(id).addEventListener('toggle',()=>{if($(id).open&&schedeView!==view)vistaSchede(view);else if(!$(id).open&&schedeView===view)vistaSchede('library');});
   $('zstudyNew').addEventListener('toggle',()=>{if($('zstudyNew').open&&ripassoView!=='new')vistaRipasso('new');else if(!$('zstudyNew').open&&ripassoView==='new')tornaRipasso();});
   function drawCollection(){
    const query=$('zschedeFilter').value.trim(),found=P.filtra(P.raccolta(cards,savedQuestions),query,$('zschedeKind').value),target=$('zschedeCollection');target.replaceChildren();
    $('zschedeCollectionStatus').textContent=cards.length+(cards.length===1?' scheda · ':' schede · ')+savedQuestions.filter(q=>q.saved).length+' domande'+(query?' · mostrate: '+found.length:'')+(collectionWarnings.length?' · '+collectionWarnings.join(' '):'');
-   if(!found.length){target.append(el('p',cards.length||savedQuestions.some(q=>q.saved)?'Nessun contenuto corrisponde al filtro.':'Non ci sono ancora schede o domande conservate. Premi «Nuova scheda» per iniziare.','zchat-hint'));return;}
+   if(!found.length){target.append(el('p',cards.length||savedQuestions.some(q=>q.saved)?'Nessun contenuto corrisponde al filtro.':'Non ci sono ancora schede o domande conservate. Premi «+ Scheda» per iniziare.','zchat-hint'));return;}
    for(const c of found){
-    if(c.tipo==='domanda'){const row=el('article');row.dataset.questionId=c.id;const b=button(c.question,()=>openQuestion(c.id));b.setAttribute('aria-label','Apri domanda: '+c.question);b.title=c.question;row.append(el('span','Domanda','zstudio-item-type'));b.classList.add('zstudio-card-open');row.append(b,el('p',[...new Set(c.sources.map(s=>s.file.split('/').pop()))].join(' · ')+' · '+c.attempts.length+' tentativi'+(c.prossimo?' · prossimo: '+new Date(c.prossimo).toLocaleString('it-IT'):' · Nuova')+(c.sourcesCurrent===false?' · Fonti modificate o non disponibili':''),'zchat-hint'));target.append(row);continue;}
+    if(c.tipo==='domanda'){const row=el('article');row.dataset.questionId=c.id;const b=button(c.question,()=>openQuestion(c.id));b.setAttribute('aria-label','Apri domanda: '+c.question);b.title=c.question;row.append(el('span','Domanda','zstudio-item-type'));b.classList.add('zstudio-card-open');row.append(b,el('p',[...new Set(c.sources.map(s=>window.ZainoCitazioni.nome(s)))].join(' · ')+' · '+c.attempts.length+' tentativi'+(c.prossimo?' · prossimo: '+new Date(c.prossimo).toLocaleString('it-IT'):' · Nuova')+(c.sourcesCurrent===false?' · Fonti modificate o non disponibili':''),'zchat-hint'));target.append(row);continue;}
 
-    const row=el('article'),open=button(c.file.split('/').pop(),()=>studio.action(async current=>{const r=await call('card',state.zaino,c.sourceId,c.preset);if(current()){drawCard(r.card,r.status);$('zschedeResult').scrollIntoView({block:'nearest'});}}));open.classList.add('zstudio-card-open');open.title=c.title+' — '+c.file;open.setAttribute('aria-label','Apri '+c.title+': '+c.file.split('/').pop());
+    const row=el('article'),open=button(window.ZainoCitazioni.nome(c),()=>studio.action(async current=>{const r=await call('card',state.zaino,c.sourceId,c.preset);if(current()){drawCard(r.card,r.status);$('zschedeResult').scrollIntoView({block:'nearest'});}}));open.classList.add('zstudio-card-open');open.title=c.title+' — '+window.ZainoCitazioni.nome(c);open.setAttribute('aria-label','Apri '+c.title+': '+window.ZainoCitazioni.nome(c));
     const label={current:'Aggiornata',changed:'Fonte modificata · da aggiornare',removed:'Fonte non disponibile'}[c.status];
     row.append(el('span',c.title,'zstudio-item-type'),open,el('p',label+(c.partial?' · analisi parziale':''),'zchat-hint'));target.append(row);
    }
@@ -99,7 +99,7 @@
   async function sources(prefer=false){const z=state.zaino,result=await window.vault.chat.sources(z);if(z!==state.zaino)return;if(!result?.ok)throw Error(result?.error);const old=$('zschedeSource').value,available=result.sources;$('zschedeSource').replaceChildren();for(const source of available)$('zschedeSource').append(new Option(source.file,source.id));const choice=P.fontePreferita(available,prefer?[studio.documento()]:[],old);if(choice)$('zschedeSource').value=choice;if(old!==$('zschedeSource').value)invalidateEstimate();$('zschedeEstimate').disabled=!$('zschedeSource').options.length;$('zschedeSourceStatus').textContent=$('zschedeSource').options.length?'':'Nessuna fonte disponibile nello zaino.';}
   function drawCard(c,st){
    vistaSchede('card');const target=$('zschedeResult');target.replaceChildren();if(!c){target.append(el('p','Nessuna scheda disponibile.'));return;}
-   target.append(el('h3',(cards.find(s=>s.sourceId===c.sourceId&&s.preset===c.preset)?.title||c.preset)+' — '+c.file.split('/').pop()));
+   target.append(el('h3',(cards.find(s=>s.sourceId===c.sourceId&&s.preset===c.preset)?.title||c.preset)+' — '+window.ZainoCitazioni.nome(c)));
    target.append(el('p',(st==='changed'?'Fonte modificata. ':st==='removed'?'Fonte rimossa. ':'')+'Copertura: '+c.covered+'/'+c.total+' passaggi'+(c.partial?' · analisi parziale':'')+' · '+c.provider+' / '+c.model));
    const heading=target.querySelector('h3');heading.tabIndex=-1;heading.focus();
    for(const [index,item] of c.items.entries()){const row=el('article'),body=el('div',undefined,'zstudio-card-text'),template=document.createElement('template');
@@ -119,15 +119,15 @@
    if(!window.noteFlush())throw Error('Salva prima gli appunti aperti.');const r=await call('estimate',state.zaino,sourceId,preset);if(!current())return;
    if(![...$('zschedeSource').options].some(o=>o.value===sourceId))$('zschedeSource').append(new Option(r.file,sourceId));
    $('zschedeSource').value=sourceId;$('zschedePreset').value=preset;
-   estimate=r;studio.status('',false,'zschedeStatus');$('zschedeCost').hidden=false;$('zschedeEstimate').textContent='Ricalcola stima';$('zschedeEstimate').classList.remove('acc');$('zschedeEstimateText').textContent='Materiale: '+r.file.split('/').pop()+' · '+r.covered+'/'+r.total+' passaggi'+(r.partial?' · analisi parziale':'')+'. AI cloud: '+r.provider+' / '+r.model+'. La conferma genera e salva la scheda nel raccoglitore. '+r.warnings.join(' ');
+   estimate=r;studio.status('',false,'zschedeStatus');$('zschedeCost').hidden=false;$('zschedeEstimate').textContent='Ricalcola stima';$('zschedeEstimate').classList.remove('acc');$('zschedeEstimateText').textContent='Materiale: '+window.ZainoCitazioni.nome(r)+' · '+r.covered+'/'+r.total+' passaggi'+(r.partial?' · analisi parziale':'')+'. AI cloud: '+r.provider+' / '+r.model+'. La conferma genera e salva la scheda nel raccoglitore. '+r.warnings.join(' ');
    $('zschedeTokens').textContent='Circa '+r.estimatedInputTokens+' token in ingresso per richiesta (risposta esclusa); un’eventuale correzione può richiedere una seconda chiamata.';$('zschedeGenerate').hidden=false;$('zschedeGenerate').scrollIntoView({block:'nearest'});
 
   }
   $('zschedeEstimate').onclick=()=>studio.action(current=>prepare(current,$('zschedeSource').value,$('zschedePreset').value),'zschedeStatus');
-  $('zschedeGenerate').onclick=()=>studio.action(async current=>{if(!estimate)throw Error('Prepara prima l’analisi.');if(!await studio.ensureAI('zschedeStatus')||!current())return;const r=await call('analyze',state.zaino,{sourceId:estimate.sourceId,preset:estimate.preset,expectedRevision:estimate.revision,expectedProvider:estimate.provider,expectedModel:estimate.model});if(current()){await collection();await refresh();drawCard(r.card,'current');$('zschedeNew').open=false;$('zschedeResult').scrollIntoView({block:'nearest'});studio.status('Scheda generata e aggiunta al raccoglitore.');}},'zschedeStatus');
+  $('zschedeGenerate').onclick=()=>studio.action(async current=>{if(!estimate)throw Error('Prepara prima l’analisi.');if(!await studio.ensureAI('zschedeStatus')||!current())return;const r=await call('analyze',state.zaino,{sourceId:estimate.sourceId,preset:estimate.preset,expectedRevision:estimate.revision,expectedProvider:estimate.provider,expectedModel:estimate.model});if(current()){await collection();await refresh();drawCard(r.card,'current');$('zschedeResult').scrollIntoView({block:'nearest'});studio.status('Scheda generata e aggiunta al raccoglitore.');}},'zschedeStatus');
   function drawQuestion(q,navigate=true){
    if(question && $('zstudyAttempt'))drafts.set(question.id,$('zstudyAttempt').value);question=q;const target=$('zstudyQuestion');target.replaceChildren();if(!q){if(ripassoView==='question')vistaRipasso('home');return;}if(navigate)vistaRipasso('question');
-   const heading=el('h3',q.question);heading.tabIndex=-1;target.append(heading);target.append(el('p','Materiali della domanda: '+[...new Set(q.sources.map(s=>s.file.split('/').pop()))].join(' · '),'zchat-hint'));
+   const heading=el('h3',q.question);heading.tabIndex=-1;target.append(heading);target.append(el('p','Materiali della domanda: '+[...new Set(q.sources.map(s=>window.ZainoCitazioni.nome(s)))].join(' · '),'zchat-hint'));
    const aids=el('div',undefined,'zstudy-aids');target.append(aids);const hint=el('details');hint.append(el('summary','Indizio'),el('p',q.hint));aids.append(hint);
    const proofs=el('details');proofs.append(el('summary','Fonti della domanda'));for(const s of q.sources)proofs.append(riferimento(s));aids.append(proofs);
    if(q.sourcesCurrent===false)target.append(el('p','Fonti cambiate o non disponibili: la valutazione automatica sarà sospesa.'));
@@ -190,7 +190,7 @@
    $('zstudyBegin').hidden=!all.length;$('zstudyHomeEmpty').hidden=!!all.length;
    const origin=$('zstudyOrigin'),selected=origin.value,origins=new Map();for(const q of all)if(q.scheda)origins.set(q.scheda.sourceId,q.scheda);
    origin.replaceChildren(new Option('Tutte le origini','all'));
-   for(const s of [...origins.values()].sort((a,b)=>a.file.localeCompare(b.file,'it')))origin.append(new Option(s.title+' — '+s.file.split('/').pop(),s.sourceId));
+   for(const s of [...origins.values()].sort((a,b)=>a.file.localeCompare(b.file,'it')))origin.append(new Option(s.title+' — '+window.ZainoCitazioni.nome(s),s.sourceId));
    if(all.some(q=>!q.scheda))origin.append(new Option('Senza scheda','none'));
    // Un filtro su una scheda rimossa resta esplicito, senza passare in silenzio a tutte.
    if(selected && ![...origin.options].some(o=>o.value===selected))origin.append(new Option('Scheda non disponibile nelle fonti scelte',selected));
@@ -206,7 +206,7 @@
      if(modifica){row.classList.add('zstudy-editing');const check=spunta([q.id],'Seleziona domanda: '+q.question);check.querySelector('input').dataset.selectionId=q.id;row.append(check);}row.append(open);
      const meta=el('div',undefined,'zstudy-question-meta');
      if(current)meta.append(el('span','Aperta','zstudy-current'));
-     if(q.scheda){const chip=el('span','Scheda · '+q.scheda.title,'zstudy-origin-chip');chip.title=q.scheda.title+' — '+q.scheda.file;meta.append(chip);}
+     if(q.scheda){const chip=el('span','Scheda · '+q.scheda.title,'zstudy-origin-chip');chip.title=q.scheda.title+' — '+window.ZainoCitazioni.nome(q.scheda);meta.append(chip);}
      const due=queueState.due.includes(q.id),label=!q.esito?'Nuova':due?'Da ripassare':'Più avanti';
      meta.append(el('span',label+' · '+q.attempts.length+(q.attempts.length===1?' tentativo':' tentativi')+(q.prossimo&&!due?' · '+new Date(q.prossimo).toLocaleDateString('it-IT'):'')));
      if(q.sourcesCurrent===false)meta.append(el('span','Fonti modificate o non disponibili'));
@@ -214,7 +214,7 @@
     }return list;
    }
    for(const group of P.gruppiDomande(rows)){
-    const section=el('section',undefined,'zstudy-source-group'),heading=el('h3',group.files.map(f=>f.split('/').pop()).join(' · '));heading.title=group.files.join(' · ');section.append(heading);
+    const section=el('section',undefined,'zstudy-source-group'),heading=el('h3',group.files.map(file=>window.ZainoCitazioni.nome({file})).join(' · '));heading.title=heading.textContent;section.append(heading);
     for(const card of group.schede){
      const details=el('details',undefined,'zstudy-card-group'),summary=el('summary');summary.append(el('span',card.title+' · '+card.questions.length+(card.questions.length===1?' domanda':' domande')));
      if(modifica)summary.append(spunta(card.questions.map(q=>q.id),'Seleziona le domande della scheda '+card.title+' nell’elenco'));
@@ -261,6 +261,6 @@
    }catch(e){status(e.message,true);}
   };
   vistaSchede('library');vistaRipasso('home');
-  return {settled(){drawQueue();$('zschedeEstimate').disabled=!$('zschedeSource').options.length;},async sync(){reviewState.zaino=state.zaino;await picker.sync();if(state.zaino){await Promise.all([refresh(),sources(),collection()]);if(!$('zschedePreset').options.length){const r=await call('presets');for(const [id,label] of Object.entries(r.presets))$('zschedePreset').append(new Option(label,id));}}},reset(){api.cancel();clearTimeout(collectionTimer);collectionRun++;cards=[];savedQuestions=[];queueState={questions:[],due:[]};collectionWarnings=[];$('zschedeKind').value='all';queueFilter='all';$('zstudySearch').value='';$('zstudyOrigin').replaceChildren(new Option('Tutte le origini','all'));$('zstudyQueueCount').textContent='';$('zstudyNew').open=false;$('zstudySession').textContent='';$('zstudyQueueEmpty').textContent='';document.querySelectorAll('.zstudio-config').forEach(e=>{e.hidden=true;});$('zschedeStatus').textContent='';$('zstudyStatus').textContent='';$('zschedeTokens').textContent='';$('zschedeCollection').replaceChildren();$('zschedeCollectionStatus').textContent='';$('zschedeFilter').value='';$('zschedeNew').open=false;estimate=null;question=null;drafts.clear();visitati.clear();schedeChiuse.clear();selezionate.clear();modifica=false;selezioneDisegna();paused=false;pausedId=null;review=false;selection='';vistaSchede('library');vistaRipasso('home');$('zschedeResult').replaceChildren();$('zschedeSource').replaceChildren();$('zschedeSourceStatus').textContent='';$('zschedeGenerate').hidden=true;$('zschedeEstimateText').textContent='';$('zstudyQuestion').replaceChildren();$('zstudyQueue').replaceChildren();$('zstudyQueue').hidden=true;$('zstudyTopic').value='';$('zstudyCount').textContent='';window.RIPCONTO={mai:0,oggi:0,attesa:0,totale:0,corso:state.zaino};window.ripassoContoDisegna?.();},refresh};
+  return {settled(){drawQueue();$('zschedeEstimate').disabled=!$('zschedeSource').options.length;},async sync(){reviewState.zaino=state.zaino;await picker.sync();if(state.zaino){await Promise.all([refresh(),sources(),collection()]);if(!$('zschedePreset').options.length){const r=await call('presets');for(const [id,label] of Object.entries(r.presets))$('zschedePreset').append(new Option(label,id));}}},reset(){api.cancel();clearTimeout(collectionTimer);collectionRun++;cards=[];savedQuestions=[];queueState={questions:[],due:[]};collectionWarnings=[];$('zschedeKind').value='all';queueFilter='all';$('zstudySearch').value='';$('zstudyOrigin').replaceChildren(new Option('Tutte le origini','all'));$('zstudyQueueCount').textContent='';$('zstudyNew').open=false;$('zstudySession').textContent='';$('zstudyQueueEmpty').textContent='';document.querySelectorAll('.zstudio-config').forEach(e=>{e.hidden=true;});$('zschedeStatus').textContent='';$('zstudyStatus').textContent='';$('zschedeTokens').textContent='';$('zschedeCollection').replaceChildren();$('zschedeCollectionStatus').textContent='';$('zschedeFilter').value='';estimate=null;question=null;drafts.clear();visitati.clear();schedeChiuse.clear();selezionate.clear();modifica=false;selezioneDisegna();paused=false;pausedId=null;review=false;selection='';vistaSchede('library');vistaRipasso('home');$('zschedeResult').replaceChildren();$('zschedeSource').replaceChildren();$('zschedeSourceStatus').textContent='';$('zschedeGenerate').hidden=true;$('zschedeEstimateText').textContent='';$('zstudyQuestion').replaceChildren();$('zstudyQueue').replaceChildren();$('zstudyQueue').hidden=true;$('zstudyTopic').value='';$('zstudyCount').textContent='';window.RIPCONTO={mai:0,oggi:0,attesa:0,totale:0,corso:state.zaino};window.ripassoContoDisegna?.();},refresh};
  }};
 }(typeof self!=='undefined'?self:this));

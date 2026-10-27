@@ -1,11 +1,13 @@
 /* La stessa citazione si riconosce nella chat, nel main e nella copia personale.
  * I nomi restituiti dal modello valgono solo se presenti nel contesto salvato. */
 (function(root,factory){
-  if(typeof module==='object' && module.exports)module.exports=factory();
-  else root.ZainoCitazioni=factory();
-}(typeof self!=='undefined'?self:this,function(){
+  if(typeof module==='object' && module.exports)module.exports=factory(require('../fonti/nomi'));
+  else root.ZainoCitazioni=factory(root.FontiNomi);
+}(typeof self!=='undefined'?self:this,function(FontiNomi){
   'use strict';
   const escape=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  function nome(s){const file=String(s.file||s.title||'').split('/').pop();return s.kind==='appunto'||String(s.file||'').startsWith('APPUNTI/')?file:FontiNomi.visibile(file);}
+  function selezione(s){if(s.selezione)return s.selezione;const testo=String(s.text||s.quote||'').trim();return testo?{testo,inizio:Number.isInteger(s.offset)&&s.offset>=0?s.offset:0}:null;}
   function chiave(s){return JSON.stringify([s.sourceId || s.url || s.file || s.citation,s.revision || '',s.page || null]);}
   // I passaggi restano prove distinte; il lettore apre una sola volta la stessa pagina.
   function perRiferimenti(refs,sources){
@@ -52,5 +54,5 @@
     }
     return found;
   }
-  return {analizza,citate,normalizza,numerata,chiave,perRiferimenti};
+  return {nome,selezione,analizza,citate,normalizza,numerata,chiave,perRiferimenti};
 }));

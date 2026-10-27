@@ -9,24 +9,43 @@ async function hover(sel){await c.val(`document.querySelector(${q(sel)}).scrollI
  const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
  const initial=await c.val(`({banco:bancoStato(),tema:document.documentElement.dataset.theme,storage:{...localStorage}})`);
  await c.val(`cambiaZaino('biologia',true);bancoForma('uno');bancoAssegna('A','studio')`);
+ assert(!await c.val(`!!document.querySelector('#zschedeLibrary h2')`),'nessun titolo Raccoglitore ripetuto nel tab');
+ await click('#zschedeNewButton');
+ assert(!await c.val(`!!document.querySelector('#zschedeNew>summary,#zschedeNew>h2')`),'nessuna fascia Nuova scheda che chiude il modulo');
  const source=(await c.val(`window.vault.chat.sources('biologia')`)).sources.find(s=>s.file.endsWith('01 Botanica.pdf'));assert(source);
  const cache=path.join(vault,'Zaini/biologia/_lavorazione/rag/schede',source.id+'-domande.json'),old=fs.existsSync(cache)?fs.readFileSync(cache):null;
- const pagina={sourceId:source.id,revision:source.revision,file:source.file,kind:'pdf',page:1,chunkId:'uno',quote:'Prima prova.',quoteComplete:true};
- const card={version:1,preset:'domande',sourceId:source.id,revision:source.revision,file:source.file,createdAt:new Date().toISOString(),provider:'prova',model:'sintetico',covered:3,total:3,partial:false,sources:[pagina,{...pagina,chunkId:'due',quote:'Seconda prova.'},{...pagina,chunkId:'tre',page:2}],items:[{title:'Come utilizzano la luce le piante?',text:'La luce permette la fotosintesi.\n**Prerequisiti:** energia.',refs:['uno','due','tre','tre']}]};
+ const pagina={sourceId:source.id,revision:source.revision,file:source.file,kind:'pdf',page:1,chunkId:'uno',quote:'Botanica - pagina 1',offset:0,quoteComplete:true};
+ const card={version:1,preset:'domande',sourceId:source.id,revision:source.revision,file:source.file,createdAt:new Date().toISOString(),provider:'prova',model:'sintetico',covered:3,total:3,partial:false,sources:[pagina,{...pagina,chunkId:'due',quote:'Seconda prova.'},{...pagina,chunkId:'tre',page:2,quote:'Botanica - pagina 2'}],items:[{title:'Come utilizzano la luce le piante?',text:'La luce permette la fotosintesi.\n**Prerequisiti:** energia.',refs:['uno','due','tre','tre']}]};
  fs.mkdirSync(path.dirname(cache),{recursive:true});fs.writeFileSync(cache,JSON.stringify(card));
  const noteDir=path.join(vault,'Zaini/biologia/APPUNTI'),notePrima=new Set(fs.readdirSync(noteDir));
  try{
   await click('#zschedeBack');await c.val(`document.getElementById('zschedeKind').value='scheda';document.getElementById('zschedeFilter').value='Botanica.pdf Domande per capire';`);await click('#zschedeBack');await wait(`document.querySelectorAll('#zschedeCollection article').length===1 && !document.getElementById('zschedeNewButton').disabled`);
   await click('#zschedeCollection button');await wait(`!!document.querySelector('#zschedeResult article') && !document.getElementById('zschedeNewButton').disabled`);
   assert.equal(await c.val(`document.querySelector('#zschedeResult article').firstElementChild.tagName`),'H4');
-  assert.deepEqual(await c.val(`[...document.querySelectorAll('#zschedeResult article .zchat-citation')].map(b=>b.textContent)`),['01 Botanica.pdf · p. 1','01 Botanica.pdf · p. 2']);
+  assert.deepEqual(await c.val(`[...document.querySelectorAll('#zschedeResult article .zchat-citation')].map(b=>b.textContent)`),['Botanica.pdf · p. 1','Botanica.pdf · p. 2']);
+  const evidenze=await c.val('JSON.stringify(EVIDENZE.elenco)');
+  for(const pagina of [1,2]){
+   await c.val(`document.querySelectorAll('#zschedeResult article .zchat-citation')[${pagina-1}].click()`);
+   await wait(`ANTEPRIMA.file==='01 Botanica.pdf'&&PDFJS.viewer.currentPageNumber===${pagina}&&getSelection().toString()==='Botanica - pagina ${pagina}'`);
+   await c.pausa(200);assert.equal(await c.val('getSelection().toString()'),'Botanica - pagina '+pagina,'selezione stabile dopo il disegno delle pagine');
+   assert(await c.val(`document.getElementById('pdfFrame').contains(getSelection().anchorNode)`),'selezione nel PDF, non nel testo della scheda');
+   await c.val(`bancoForma('uno');bancoAssegna('A','studio')`);
+  }
+  assert.equal(await c.val('JSON.stringify(EVIDENZE.elenco)'),evidenze,'nessuna sottolineatura salvata dal richiamo');
   assert.equal(await c.val(`document.querySelector('#zschedeResult article>button:last-child').textContent`),'Rispondi');
   assert.deepEqual(await c.val(`[...document.querySelectorAll('#zschedeResult>button')].map(b=>b.textContent)`),['Crea appunti da domanda','Rigenera…']);
   assert(await c.val(`(()=>{const ref=document.createElement('button');ref.className='tbtn acc';ref.textContent='Verifica risposta';document.getElementById('zschedeResult').append(ref);const a=getComputedStyle(ref),ok=[...document.querySelectorAll('#zschedeResult>button,#zschedeResult article>button:last-child')].every(b=>{const s=getComputedStyle(b);return s.backgroundColor===a.backgroundColor&&s.color===a.color&&s.fontSize===a.fontSize&&s.fontWeight===a.fontWeight;});ref.remove();return ok;})()`));
   assert(await c.val(`(()=>{const t=document.querySelector('#zschedeResult h4'),p=document.createElement('span');p.style.fontSize='var(--tit-4)';t.append(p);const ok=getComputedStyle(t).fontSize===getComputedStyle(p).fontSize;p.remove();return ok;})()`));
   const shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-scheda-citazioni.png',Buffer.from(shot.result.data,'base64'));
   await click('#zschedeResult>button');await wait(`noteStatoAttivo().cur?.title?.startsWith('Domande per capire')`);
-  const body=await c.val(`noteStatoAttivo().mde.value()`);assert(body.startsWith('###### Domande per capire'));assert(body.includes('\n\n[01 Botanica.pdf · p. 1](pdf:01#p=1'));assert(body.includes('\n\n[01 Botanica.pdf · p. 2](pdf:01#p=2'));assert(!body.includes('[¹]'));
+  const body=await c.val(`noteStatoAttivo().mde.value()`);assert(body.startsWith('###### Domande per capire'));assert(body.includes('\n\n[Botanica.pdf · p. 1](pdf:01#p=1'));assert(body.includes('\n\n[Botanica.pdf · p. 2](pdf:01#p=2'));assert(!body.includes('[¹]'));
+  await c.pausa(120); // noteOpen termina il montaggio e il posizionamento del cursore.
+  await c.val(`(()=>{const s=noteStatoAttivo();if(!s.mde.isPreviewActive())s.mde.togglePreview();getSelection().removeAllRanges();})()`);
+  await wait(`!!noteHost(noteStatoAttivo()).querySelector('.editor-preview-active a.plink[data-source-testo]')`);
+  await c.val(`noteHost(noteStatoAttivo()).querySelector('.editor-preview-active a.plink[data-source-testo]').click()`);
+  await wait(`PDFJS.viewer.currentPageNumber===1&&getSelection().toString()==='Botanica - pagina 1'`);
+  await c.pausa(200);assert.equal(await c.val('getSelection().toString()'),'Botanica - pagina 1');
+  assert(await c.val(`document.getElementById('pdfFrame').contains(getSelection().anchorNode)`),'anche la copia negli appunti richiama il testo nel PDF');
   await c.val(`bancoForma('uno');bancoAssegna('A','studio');document.getElementById('zschedeBack').click();zainoNavAggiorna()`);await wait(`document.querySelectorAll('#zainoNav .zs-raccolta').length===4`);
   for(const sezione of ['appunti','mappe','fonti','media']){
    const base='#zainoNav [data-sezione="'+sezione+'"]';

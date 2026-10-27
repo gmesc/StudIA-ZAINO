@@ -13,7 +13,7 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  assert(await c.val(`document.getElementById('zstudio').firstElementChild.id==='zschede' && !document.getElementById('zschedeRead')`));
  await c.val(`bancoMostra('studio');document.getElementById('zragSearch').open=true`);await wait(`bancoVisibile('studio')`);assert.equal(await c.val(`!!document.querySelector('#zchatWindow #zstudio')`),false);await set('zragQuery','energia');await c.val(`document.getElementById('zragForm').requestSubmit()`);
  await wait(`document.querySelectorAll('#zragResults article').length>0`);assert(/Ricerca (lessicale|ibrida)/.test(await c.val(`document.getElementById('zragStatus').textContent`)));
- await wait(`document.getElementById('zschedePreset').options.length===5`);await click('#zschedeBack');await click('#zschedeNewButton');await wait(`document.getElementById('zschedeNew').open`);assert.equal(await c.val(`document.getElementById('zschedeNew').open`),true);
+ await wait(`document.getElementById('zschedePreset').options.length===5`);await click('#zschedeBack');await click('#zschedeNewButton');await wait(`!document.getElementById('zschedeNew').hidden`);assert.equal(await c.val(`!document.getElementById('zschedeNew').hidden`),true);
  await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden`);assert((await c.val(`document.getElementById('zschedeTokens').textContent`)).includes('token'));
  await click('#zschedeGenerate');await wait(`document.querySelectorAll('#zschedeResult article').length===1`);
  assert.equal(await c.val(`document.querySelector('#zschedeResult strong').textContent`),'Energia cellulare');
@@ -23,7 +23,7 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  assert.deepEqual(await c.val(`[...document.querySelectorAll('#zschedeResult .zstudio-card-text strong')].map(e=>e.textContent)`),['Concetti:','Prerequisiti:','Esempi:']);
  // Il raccoglitore resta generale anche quando la ricerca ammette una sola fonte.
  const firstCard=(await c.val(`window.vault.studio.cards('biologia')`)).cards[0],other=(await c.val(`window.vault.chat.sources('biologia')`)).sources.find(s=>s.kind==='appunto'&&s.id!==firstCard.sourceId);assert(other);
- await click('#zschedeBack');await click('#zschedeNewButton');await wait(`document.getElementById('zschedeNew').open`);await set('zschedeSource',other.id);await set('zschedePreset','concetti');await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);await click('#zschedeGenerate');
+ await click('#zschedeBack');await click('#zschedeNewButton');await wait(`!document.getElementById('zschedeNew').hidden`);await set('zschedeSource',other.id);await set('zschedePreset','concetti');await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);await click('#zschedeGenerate');
  await wait(`document.getElementById('zschedeCollectionStatus').textContent.includes('2 schede') && !document.getElementById('zschedeNewButton').disabled`);
  await set('zschedeFilter','');assert.equal(await c.val(`document.querySelectorAll('#zschedeCollection article').length`),2);
  await click('#zschedeBack');await click('#zragSearchButton');await click('#zragScopeButton');await click('#zragScope input');await click('#zragScope [data-source-id="'+other.id+'"]');await click('#zragScopeButton');

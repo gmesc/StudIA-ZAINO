@@ -84,17 +84,29 @@
     const n = nn(numero); if (!n) return '';
     const p = parseInt(pagina, 10);
     const base = 'pdf:' + n + (p > 0 ? '#p=' + p : '');
-    return fonte && /^[a-zA-Z0-9_-]{1,100}$/.test(fonte.sourceId) && /^[0-9a-f]{64}$/.test(fonte.revision)
-      ? base + '&s=' + fonte.sourceId + '&r=' + fonte.revision : base;
+    if(!fonte || !/^[a-zA-Z0-9_-]{1,100}$/.test(fonte.sourceId) || !/^[0-9a-f]{64}$/.test(fonte.revision))return base;
+    const selezione=parametriSelezione(fonte.selezione);
+    return selezione===null?'':base+'&s='+fonte.sourceId+'&r='+fonte.revision+selezione;
+  }
+
+  function parametriSelezione(s){
+    if(!s)return '';
+    if(!Number.isInteger(s.inizio)||s.inizio<0||s.inizio>10000000||typeof s.testo!=='string'||!s.testo.length||s.testo.length>100000||s.testo.includes('\0'))return null;
+    try{return '&q='+encodeURIComponent(s.testo).replace(/[!'()*]/g,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase())+'&o='+s.inizio;}catch(e){return null;}
+  }
+  function leggiSelezione(t,o){
+    try{const s={testo:decodeURIComponent(t),inizio:Number(o)};return parametriSelezione(s)!==null?s:null;}catch(e){return null;}
+  }
+  /** Si riconosce il nome interno, senza togliere due volte un numero del titolo. */
+  function etichettaFonte(testo,numero,file){
+    const originale=String(file||'').split('/').pop(),nome=String(testo).replace(/^MATERIALI\/(?:PDF\/)?/,'');
+    return originale&&FontiNomi.numero(originale)===nn(numero)&&nome.startsWith(originale)&&/^(?:$|[ ,;·])/.test(nome.slice(originale.length))?FontiNomi.visibile(originale)+nome.slice(originale.length):testo;
   }
 
   /** Identità portabili; pagina null indica l'intero PDF. La selezione non è un'annotazione. */
   function scriviPdfZaino(zainoId, sourceId, pagina, revision, selezione) {
     let s='zaino-pdf:'+zainoId+'/'+sourceId+'#'+(pagina===null?'':'p='+pagina+'&')+'r='+revision;
-    if(selezione){
-      if(!Number.isInteger(selezione.inizio)||selezione.inizio<0||selezione.inizio>10000000||typeof selezione.testo!=='string'||!selezione.testo.length||selezione.testo.length>100000||selezione.testo.includes('\0'))return '';
-      try{s+='&q='+encodeURIComponent(selezione.testo).replace(/[!'()*]/g,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase())+'&o='+selezione.inizio;}catch(e){return '';}
-    }
+    const parametri=parametriSelezione(selezione);if(parametri===null)return '';s+=parametri;
     return leggi(s)?.tipo==='pdf-zaino'?s:'';
   }
   function letterale(s){return String(s||'').replace(/[\\`*\[\]#_!|>]/g,'\\$&');}
@@ -112,7 +124,11 @@
     if(!selezione||!selezione.testo)return null;
     const t=String(pagina),q=selezione.testo,o=selezione.inizio;
     if(t.slice(o,o+q.length)===q)return {inizio:o,fine:o+q.length};
-    const i=t.indexOf(q);return i>=0&&t.indexOf(q,i+1)<0?{inizio:i,fine:i+q.length}:null;
+    // Estrazione e textLayer possono separare parole e righe con spazi diversi.
+    // Il ripiego conserva le coordinate originali e rifiuta corrispondenze ambigue.
+    const pos=[],parti=[];for(let n=0;n<t.length;n++)if(!/\s/.test(t[n])){pos.push(n);parti.push(t[n]);}
+    const testo=parti.join(''),cerca=q.replace(/\s/g,'');if(!cerca)return null;
+    const i=testo.indexOf(cerca);return i>=0&&testo.indexOf(cerca,i+1)<0?{inizio:pos[i],fine:pos[i+cerca.length-1]+1}:null;
   }
   /** Solo resa: le vecchie citazioni includono il link nella barra senza riscrivere gli appunti.
    *  Il numero di righe resta identico, perché l'editor usa quelle coordinate. */
@@ -175,15 +191,12 @@
     if(s.length<=1000000 && (m = RE.pdfZaino.exec(s))){
       const r={tipo:'pdf-zaino',zainoId:m[1],sourceId:m[2],pagina:Number(m[3]||1),revision:m[4]};
       if(!m[3])r.intero=true;
-      if(m[5]){try{const testo=decodeURIComponent(m[5]),inizio=Number(m[6]);
-        if(r.intero||!testo.length||testo.length>100000||testo.includes('\0')||inizio>10000000)return null;
-        r.selezione={testo:testo,inizio:inizio};
-      }catch(e){return null;}}
+      if(m[5]){r.selezione=leggiSelezione(m[5],m[6]);if(r.intero||!r.selezione)return null;}
       return r;
     }
     // I rimandi AI conservano la revisione: il numero da solo non autorizza l'apertura.
-    const snap = /^(pdf:\d+(?:#p=\d+)?)(?:&amp;|&)s=([a-zA-Z0-9_-]{1,100})(?:&amp;|&)r=([0-9a-f]{64})$/.exec(s);
-    if (snap) return Object.assign(leggi(snap[1]), { sourceId:snap[2], revision:snap[3] });
+    const snap = s.length<=1000000 && /^(pdf:\d+(?:#p=\d+)?)(?:&amp;|&)s=([a-zA-Z0-9_-]{1,100})(?:&amp;|&)r=([0-9a-f]{64})(?:(?:&amp;|&)q=([A-Za-z0-9._~%\-]+)(?:&amp;|&)o=(0|[1-9]\d{0,7}))?$/.exec(s);
+    if(snap){const r=Object.assign(leggi(snap[1]),{sourceId:snap[2],revision:snap[3]});if(snap[4]){r.selezione=leggiSelezione(snap[4],snap[5]);if(!r.selezione)return null;}return r;}
     if ((m = RE.video.exec(s))) return { tipo: 'video', numero: nn(m[1]), t: parseInt(m[2], 10) };
     if ((m = RE.pdf.exec(s))) return { tipo: 'pdf', numero: nn(m[1]), pagina: parseInt(m[2], 10) };
     if ((m = RE.pdfSenzaPagina.exec(s))) return { tipo: 'pdf', numero: nn(m[1]), pagina: 1 };
@@ -208,7 +221,7 @@
   return {
     RE: RE, nn: nn, numeroDi: numeroDi,
     scriviVideo: scriviVideo, scriviPdf: scriviPdf, scriviPdfZaino:scriviPdfZaino, scriviCap: scriviCap,
-    scriviEv: scriviEv, citazionePdfZaino:citazionePdfZaino, trovaSelezione:trovaSelezione, normalizzaCitazioni:normalizzaCitazioni,
+    scriviEv: scriviEv, etichettaFonte:etichettaFonte, citazionePdfZaino:citazionePdfZaino, trovaSelezione:trovaSelezione, normalizzaCitazioni:normalizzaCitazioni,
     link: link, leggi: leggi
   };
 }));

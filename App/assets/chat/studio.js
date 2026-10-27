@@ -75,11 +75,11 @@
   }
   async function apri(source){const z=state.zaino,r=await call('resolve',z,source);if(z!==state.zaino)return;
    if(r.status!=='available')throw Error(r.status==='changed'?'Fonte modificata: il riferimento conserva la versione precedente.':'Fonte non più disponibile.');
-   if(r.source.kind==='pdf')window.openPdf(r.source.file.split('/').pop(),source.page||1,r.source.file.split('/').pop());
+   if(r.source.kind==='pdf')window.openPdf(r.source.file.split('/').pop(),source.page||1,window.ZainoCitazioni.nome(r.source),false,window.ZainoCitazioni.selezione(source));
    else if(r.source.kind==='appunto')window.noteApriAttivo(r.source.file.slice('APPUNTI/'.length));
    else status(r.source.file+': '+(source.text||source.quote||''));
   }
-  function riferimento(source,area='zragStatus'){const b=el('button',source.file.split('/').pop()+(source.page?' · p. '+source.page:''),'tbtn zchat-citation');b.type='button';b.title=source.file;b.onclick=()=>apri(source).catch(e=>status(e.message,true,area));return b;}
+  function riferimento(source,area='zragStatus'){const b=el('button',window.ZainoCitazioni.nome(source)+(source.page?' · p. '+source.page:''),'tbtn zchat-citation');b.type='button';b.title=b.textContent;b.onclick=()=>apri(source).catch(e=>status(e.message,true,area));return b;}
   const picker=window.ZainoSceltaFonti.crea({prefix:'zragScope',bar:$('zragToolbar'),host:$('zragScopeHost'),state,onChange(){epoch++;api.cancel('index');$('zragResults').replaceChildren();if(box.dataset.vista==='search')status('Fonti della ricerca aggiornate.');}});
   api.onAuto(autoState);
   downloads.querySelectorAll('[data-download]').forEach(b=>{b.onclick=async()=>{

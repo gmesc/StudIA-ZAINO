@@ -31,6 +31,10 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(ro
  const note=require('../lib/appunti').parse(fs.readFileSync(path.join(d,'APPUNTI',copy.file),'utf8'));
  assert.equal(note.meta.title,'Sintesi — bio.txt');assert(note.body.startsWith('### Sintesi — bio.txt\n'));assert(!note.body.includes('Risposta del tutor AI'));assert(note.body.includes('- **Concetti:** ATP.'));assert(note.body.includes('- **Prerequisiti:** energia.'));
  const T=require('../App/assets/chat/schede-testo');
+ for(const text of ['Indice\nIntroduzione ........ 3\nLa cellula ........ 7\nLa respirazione ........ 18','© 2026 Editore Esempio\nTutti i diritti riservati.\nISBN 978-88-0000-000-0\nPrima edizione: 2026\nStampato in Italia'])assert(T.soloParatesto(text),'indice e colophon non sono contenuto didattico');
+ for(const text of ['L’indice di rifrazione è il rapporto fra due velocità.','Il copyright tutela le opere. In questo capitolo analizziamo la durata del diritto d’autore e i limiti posti alla riproduzione delle opere.','Indice\nL’indice di rifrazione descrive come la luce attraversa un mezzo. Il rapporto fra la velocità nel vuoto e quella nel materiale ne determina il valore.'])assert(!T.soloParatesto(text),'i concetti didattici non vanno cancellati da una parola ambigua');
+ assert(!T.soloParatesto('© 2026 Editore. La respirazione cellulare produce ATP e rende disponibile l’energia dei nutrienti. Nelle cellule i mitocondri sono gli organelli in cui si svolgono molte fasi di questo processo.'),'una pagina mista senza a capo resta disponibile al modello');
+ assert(!T.soloParatesto('Dati sperimentali\nTemperatura 20\nPressione 100\nVolume 15'),'le tabelle didattiche non sono indici');
  assert.equal(T.etichette('- Concetti: ATP.\n- Prerequisiti: energia.\nEsempi: batteria.\n- **Limiti:** nessuno.\nhttps://example.org'),'- **Concetti:** ATP.\n- **Prerequisiti:** energia.\n**Esempi:** batteria.\n- **Limiti:** nessuno.\nhttps://example.org');
  fs.appendFileSync(path.join(d,'APPUNTI',copy.file),'\nModifica personale');assert(S.copia(root,'test',source.id,'sintesi').duplicate);assert(fs.readFileSync(path.join(d,'APPUNTI',copy.file),'utf8').includes('Modifica personale'));
  // Più passaggi della stessa pagina producono un solo rimando per domanda.
@@ -44,11 +48,11 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(ro
  const legacyFile='Scheda AI '+F.hash(JSON.stringify(pdfCard)).slice(0,24)+'.md';fs.writeFileSync(path.join(d,'APPUNTI',legacyFile),'La mia copia precedente, modificata.');
  const copiaPdf=S.copia(root,'test',source.id,'domande'),bodyPdf=require('../lib/appunti').parse(fs.readFileSync(path.join(d,'APPUNTI',copiaPdf.file),'utf8')).body;
  assert.notEqual(copiaPdf.file,legacyFile);assert.equal(fs.readFileSync(path.join(d,'APPUNTI',legacyFile),'utf8'),'La mia copia precedente, modificata.');
- assert(bodyPdf.startsWith('###### Domande per capire — 01 Sistema\\_solare.pdf\n'));
+ assert(bodyPdf.startsWith('###### Domande per capire — Sistema\\_solare.pdf\n'));
  const blocchi=bodyPdf.split(/^#### /m).slice(1);assert.equal(blocchi.length,2);assert(bodyPdf.includes('Prima prova.'));assert(bodyPdf.includes('Seconda prova.'));
- assert.equal((blocchi[0].match(/\[01 Sistema_solare.pdf · p. 3\]/g)||[]).length,1);
- assert.equal((blocchi[0].match(/\[01 Sistema_solare.pdf · p. 4\]/g)||[]).length,1);
- assert.match(blocchi[0],/gravità\.\n\n\[01 Sistema_solare.pdf · p. 3\]\(pdf:01#p=3&s=[^\n]+\)\n\n\[01 Sistema_solare.pdf · p. 4\]/);
+ assert.equal((blocchi[0].match(/\[Sistema_solare.pdf · p. 3\]/g)||[]).length,1);
+ assert.equal((blocchi[0].match(/\[Sistema_solare.pdf · p. 4\]/g)||[]).length,1);
+ assert.match(blocchi[0],/gravità\.\n\n\[Sistema_solare.pdf · p. 3\]\(pdf:01#p=3&s=[^\n]+\)\n\n\[Sistema_solare.pdf · p. 4\]/);
  assert(S.copia(root,'test',source.id,'domande').duplicate);fs.writeFileSync(cardPath,originale);
  const q=await I.avvia(root,'test',{scope,topic:'ATP'},opts);assert(!Object.hasOwn(q,'answer'),'la soluzione non va al renderer prima del tentativo');assert.equal(I.stato(root,'test',scope).active.id,q.id);
  let answered=await I.rispondi(root,'test',q.id,{attemptId:'attempt-one',text:'I mitocondri.'},opts);assert.equal(answered.answer,'I mitocondri.');assert(answered.attempts[0].feedback.assessable);
@@ -93,5 +97,14 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(ro
  answered=await I.rispondi(root,'test',q.id,{attemptId:'attempt-two',text:'Un altro tentativo.'},opts);assert.equal(answered.attempts.at(-1).feedback.assessable,false);assert.equal(calls,n);
  const empty=I.stato(root,'test',{mode:'selected',sourceIds:[],wikipedia:false});assert.equal(empty.questions.length,0);
  let invalid=0;await assert.rejects(S.genera(root,'test',source.id,'sintesi',{...opts,chiama:async()=>{invalid++;return {text:'{"items":[{"title":"Falso","text":"Inventato","refs":["inesistente"]}]}'};}}),/due tentativi/);assert.equal(invalid,2);
+ // Tutti i preset ricevono contenuti di studio, senza usare indice e colophon come prove.
+ fs.writeFileSync(path.join(d,'MATERIALI','02 Edizione.pdf'),'%PDF-prova');
+ const edizione=F.sincronizza(root,'test').sources.find(s=>s.file.endsWith('02 Edizione.pdf'));
+ const estratto={numPages:4,truncated:false,pages:[{page:1,text:'© 2026 Editore Esempio\nTutti i diritti riservati.\nISBN 978-88-0000-000-0\nPrima edizione: 2026'},{page:2,text:'Indice\nIntroduzione ........ 3\nLa cellula ........ 7\nLa respirazione ........ 18'},{page:3,text:'La respirazione cellulare produce ATP e rende disponibile l’energia dei nutrienti.'},{page:4,text:'Il copyright tutela le opere. In questo capitolo analizziamo la durata del diritto d’autore e i limiti posti alla riproduzione delle opere.'}]};
+ const didattico={...opts,estraePdf:async()=>estratto,chiama:async req=>{const data=JSON.parse(req.messages[0].content);assert.deepEqual(data.porzioni.map(p=>p.page),[3,4]);assert(data.porzioni.every(p=>p.file==='Edizione.pdf'&&!p.citation&&!p.label));assert(req.system.includes('Ignora indice, sommario, frontespizio, colophon e dati editoriali'));return {text:JSON.stringify({items:[{title:'Energia',text:'La respirazione produce ATP.',refs:[data.porzioni[0].chunkId]}]})};}};
+ for(const preset of Object.keys(S.PRESET)){const card=await S.genera(root,'test',edizione.id,preset,didattico);assert.equal(card.excluded,2);assert.equal(card.covered,2);assert.equal(card.partial,false);assert.deepEqual(card.sources.map(s=>s.page),[3,4]);assert.equal(card.promptVersion,2);}
+ const indice='Indice\nIntroduzione ........ 3\nLa cellula ........ 7\nLa respirazione ........ 18';fs.writeFileSync(path.join(d,'MATERIALI','solo-indice.txt'),indice);
+ const soloIndice=F.sincronizza(root,'test').sources.find(s=>s.file.endsWith('solo-indice.txt'));let invii=0;
+ await assert.rejects(S.genera(root,'test',soloIndice.id,'domande',{...opts,chiama:async()=>{invii++;}}),/contenuti didattici.*indice e dati editoriali/);assert.equal(invii,0,'una fonte con il solo indice non avvia la generazione');
  console.log('studio-zaino: cinque preset, prove vincolate, copia personale, soluzione nascosta, ripresa, idempotenza, correzioni e fonti obsolete OK');
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>fs.rmSync(root,{recursive:true,force:true}));

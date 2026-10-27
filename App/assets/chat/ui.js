@@ -20,8 +20,9 @@
   }
   const citedSources = citations.citate;
   function sourceLabel(source) {
-    const name = source.file || source.title || '';
-    const citation = source.citation || '';
+    const name = citations.nome(source);
+    const raw = source.file || source.title || '';
+    const citation = raw ? (source.citation || '').replace(raw,name).replace(raw.split('/').pop(),name) : source.citation || '';
     return [citation, name && !citation.includes(name) ? name : '', source.page && !citation.includes('p. ' + source.page) ? 'pagina ' + source.page : ''].filter(Boolean).join(' · ') || 'Fonte';
   }
   function datedTitle(value) {
@@ -226,10 +227,10 @@
           status('zchatStatus', (result.status === 'changed' ? 'Fonte aggiornata: la risposta cita la versione precedente.' : result.status === 'removed' ? 'Fonte non più disponibile.' : 'Citazione storica senza identità verificabile.') + (result.quote ? ' Estratto: ' + result.quote : ''), true); return;
         }
         const target = result.source;
-        if (target.kind === 'pdf') window.openPdf?.(target.file.split('/').pop(), result.page || 1, target.file.split('/').pop());
+        if (target.kind === 'pdf') window.openPdf?.(target.file.split('/').pop(), result.page || 1, citations.nome(target),false,citations.selezione(source));
         else if (target.kind === 'appunto') { window.noteApriAttivo?.(target.file.slice('APPUNTI/'.length)); }
         else { status('zchatStatus', target.file + ': ' + result.quote); return; }
-        status('zchatStatus', 'Fonte aperta: ' + target.file.split('/').pop() + (result.page ? ' · p. '+result.page : '') + '.');
+        status('zchatStatus', 'Fonte aperta: ' + citations.nome(target) + (result.page ? ' · p. '+result.page : '') + '.');
       } catch (error) { if (current(epoch, zaino)) status('zchatStatus', errorText(error), true); }
     }
     function citationButton(message, source, number) {
@@ -455,7 +456,7 @@
         const list = el('ol');
         sources.forEach(source => {
           const li = el('li'); const href = safeLink(source.url);
-          const label = (source.file || source.title || 'Fonte').split('/').pop() + (source.page ? ' · p. ' + source.page : '');
+          const label = (citations.nome(source)||'Fonte') + (source.page ? ' · p. ' + source.page : '');
           if (href) { const a = el('a', label); a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; li.appendChild(a); }
           else if (source.sourceId) { const button = citationButton(message, source); button.textContent = label; li.appendChild(button); }
           else li.textContent = sourceLabel(source);

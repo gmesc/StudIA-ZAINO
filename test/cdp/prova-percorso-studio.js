@@ -20,7 +20,7 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  // Sul pacchetto reale si prova la navigazione senza credenziali né invii AI.
  if(process.env.STUDIA_SOLO_NAVIGAZIONE==='1'){
   try{
-   await click('#zschedeNewButton');await wait(`document.getElementById('zschedeNew').open`);
+   await click('#zschedeNewButton');await wait(`!document.getElementById('zschedeNew').hidden`);
    assert(await c.val(`document.getElementById('zragScopeButton').hidden&&document.getElementById('zragScopeHost').hidden`));
    const ids=await c.val(`[...document.getElementById('zschedeSource').options].map(o=>o.value)`);assert(ids.length>1);
    await set('zschedeSource',ids.at(-1));await set('zschedePreset','prerequisiti');
@@ -36,7 +36,7 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
   console.log('Raccoglitore: barra stabile, fonte singola indipendente, filtro solo nella ricerca e riuso nel Ripasso senza AI OK');process.exit(0);
  }
  await c.val(`window.vault.chat.clearKey({provider:'openai'});window.vault.chat.saveSettings({provider:'openai',model:'modello-locale-di-prova'})`);
- await click('#zschedeNewButton');await wait(`document.getElementById('zschedeNew').open`);const source=await c.val(`document.getElementById('zschedeSource').value`);
+ await click('#zschedeNewButton');await wait(`!document.getElementById('zschedeNew').hidden`);const source=await c.val(`document.getElementById('zschedeSource').value`);
  assert(await c.val(`document.getElementById('zragScopeButton').hidden&&document.getElementById('zragScopeHost').hidden`),'Nuova scheda usa solo il selettore Fonte');
  const tutte=await c.val(`[...document.getElementById('zschedeSource').options].map(o=>o.value)`);assert(tutte.length>1);
  const altra=tutte.find(id=>id!==source);await set('zschedeSource',altra);

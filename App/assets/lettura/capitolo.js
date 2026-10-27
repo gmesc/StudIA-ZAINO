@@ -387,10 +387,13 @@
          cui un rimando smetteva di aprire senza sollevare niente. */
       var rif=Rimandi.leggi(urlv);
       if(rif && rif.tipo==='pdf-zaino') return '<a href="#" class="plink" data-citazione-zaino="'+g.esc(Rimandi.scriviPdfZaino(rif.zainoId,rif.sourceId,rif.intero?null:rif.pagina,rif.revision,rif.selezione))+'" title="Consulta la fonte nello zaino di origine">'+txt+'</a>';
+      if(rif && (rif.tipo==='pdf'||rif.tipo==='video'))txt=Rimandi.etichettaFonte(txt,rif.numero,g.esc((rif.tipo==='pdf'?g.pdfNum():g.mediaNum())[rif.numero]||''));
       if(rif && rif.tipo==='video'){ var f=g.mediaNum()[rif.numero]||'';
         return '<a href="#" class="vlink" data-file="'+g.esc(f)+'" data-t="'+rif.t+'" data-label="'+txt+'">'+txt+'</a>'; }
       if(rif && rif.tipo==='pdf'){ var pf=g.pdfNum()[rif.numero]||'';
-        return '<a href="#" class="plink"'+(rif.sourceId?' data-source-id="'+rif.sourceId+'" data-source-revision="'+rif.revision+'"':'')+' data-file="'+g.esc(pf)+'" data-page="'+rif.pagina+'" data-label="'+txt+'">'+txt+'</a>'; }
+        // La formattazione inline successiva non deve interpretare l'ancora del PDF.
+        var citato=rif.selezione?g.esc(rif.selezione.testo).replace(/[\\`*\[\]]/g,function(c){return '&#'+c.charCodeAt(0)+';';}):'';
+        return '<a href="#" class="plink"'+(rif.sourceId?' data-source-id="'+rif.sourceId+'" data-source-revision="'+rif.revision+'"':'')+(rif.selezione?' data-source-testo="'+citato+'" data-source-inizio="'+rif.selezione.inizio+'"':'')+' data-file="'+g.esc(pf)+'" data-page="'+rif.pagina+'" data-label="'+txt+'">'+txt+'</a>'; }
       /* Rimando a un CAPITOLO preciso, che è cosa diversa dal wiki-link: `[[…]]`
          arriva alla lezione e `loadLesson` riparte dal primo capitolo, quindi non
          sa dire «quel punto lì». Serviva perché ogni frammento che si estrae dal

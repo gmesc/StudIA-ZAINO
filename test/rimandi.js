@@ -18,6 +18,11 @@
  */
 
 const R = require('../App/assets/rimandi/sintassi.js');
+const assert = require('node:assert/strict');
+const ancora={testo:'Energia e ATP',inizio:23},fonte={sourceId:'fonte-1',revision:'a'.repeat(64),selezione:ancora};
+assert.deepEqual(R.leggi(R.scriviPdf(1,3,fonte)).selezione,ancora,'anche la citazione locale conserva il passaggio');
+assert.deepEqual(R.trovaSelezione('Energia\ne ATP',ancora),{inizio:0,fine:13},'il testo estratto e il layer PDF possono separare diversamente le righe');
+assert.equal(R.trovaSelezione('Energia e ATP / Energia\ne ATP',ancora),null,'nessuna selezione indovinata fra passaggi duplicati');
 
 let ko = 0, ok = 0;
 function check(nome, atteso, avuto) {

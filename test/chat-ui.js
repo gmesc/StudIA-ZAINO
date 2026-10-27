@@ -15,6 +15,9 @@ assert.equal(safeLink('https://platform.openai.com/api-keys'), 'https://platform
 assert.equal(sourceLabel({file: 'Biologia.pdf', page: 3, citation: '[F1]'}), '[F1] · Biologia.pdf · pagina 3');
 assert.equal(sourceLabel({file: 'Biologia.pdf', page: 3, citation: '[Biologia.pdf, p. 3]'}), '[Biologia.pdf, p. 3]');
 assert.equal(sourceLabel({}), 'Fonte');
+assert.equal(sourceLabel({file:'MATERIALI/PDF/01 1984.pdf',kind:'pdf',page:3,citation:'[S1]'}),'[S1] · 1984.pdf · pagina 3');
+assert.equal(sourceLabel({file:'MATERIALI/PDF/0001 - 1984.pdf',kind:'pdf',page:3,citation:'[MATERIALI/PDF/0001 - 1984.pdf, p. 3]'}),'[1984.pdf, p. 3]');
+assert.equal(sourceLabel({file:'APPUNTI/16 ottobre.md',kind:'appunto',citation:'[S1]'}),'[S1] · 16 ottobre.md','i numeri del titolo di un appunto sono personali');
 // Il riquadro «Fonti» elenca solo i file e le pagine che la risposta nomina.
 const inviate = [
   {file: 'MATERIALI/Biologia.pdf', page: 3, citation: '[MATERIALI/Biologia.pdf, p. 3]'},

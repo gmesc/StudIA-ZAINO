@@ -20,7 +20,7 @@ async function shot(name,sel){await L.muovi(10,940);await L.pausa(600);await L.s
  await click('#settingsBtn');await click('.set-tab[data-tab="ai"]');await L.val(`document.getElementById('zragIndexOptions').open=true;document.getElementById('zragIndexOptions').scrollIntoView({block:'start'})`);await shot('194-indice-dispositivo','#zragIndexOptions');
  await L.val(`document.getElementById('zragIndexOptions').open=false;document.getElementById('zchatLocalSettings').scrollIntoView({block:'start'})`);await shot('203-impostazioni-ai-locale','#zchatLocalSettings');await click('#settingsClose');
  await click('#zschedeBack');await click('#zschedeNewButton');
- await wait(`document.getElementById('zschedeNew').open && !document.getElementById('zschedeNewButton').disabled && document.getElementById('zschedePreset').options.length===5 && !document.getElementById('zschedeEstimate').disabled`);
+ await wait(`!document.getElementById('zschedeNew').hidden && !document.getElementById('zschedeNewButton').disabled && document.getElementById('zschedePreset').options.length===5 && !document.getElementById('zschedeEstimate').disabled`);
  const sources=(await L.val(`window.vault.chat.sources('biologia')`)).sources,source=sources.find(s=>s.file.endsWith('01 Botanica.pdf'));assert(source);
  await set('zschedeSource',source.id);await set('zschedePreset','sintesi');await click('#zschedeEstimate');
  await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);
