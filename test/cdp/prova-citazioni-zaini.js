@@ -158,8 +158,13 @@ async function provaCitazioniClip(fileNota){
  assert((await c.val('NOTES.mde.value()')).includes('> *pagina*'));
  await c.val(`noteAnteprimaRidisegna(NOTES)`);
  assert(await c.val(`(()=>{const a=[...document.querySelectorAll('#noteHost .editor-preview-active a[data-citazione-zaino]')].at(-1),q=a.closest('blockquote');return !!q?.querySelector('em')&&q.textContent.includes('01 Botanica.pdf; p. 2')&&getComputedStyle(q).borderLeftWidth!=='0px';})()`),'testo corsivo, titolo e link dentro un’unica barra');
- await c.val(`(()=>{const a=[...document.querySelectorAll('#noteHost .editor-preview-active a[data-citazione-zaino]')].at(-1);a.dataset.provaCitazione='1';a.scrollIntoView({block:'center'});})()`);
- await c.clicca('[data-prova-citazione]');await wait(`document.getElementById('citazioneDialog').open&&getSelection().toString()==='pagina'`);
+ await c.val(`(()=>{const a=[...document.querySelectorAll('#noteHost .editor-preview-active a[data-citazione-zaino]')].at(-1);a.dataset.provaCitazione='1';a.scrollIntoView({block:'center',behavior:'instant'});})()`);
+ // Un link inline può avere più rettangoli: il centro del loro inviluppo
+ // può cadere fra due righe. Si preme una porzione di testo davvero raggiungibile.
+ const puntoLink=await c.val(`(()=>{const a=document.querySelector('[data-prova-citazione]'),r=a.getClientRects()[0];const p={x:r.x+Math.min(30,r.width/2),y:r.y+r.height/2};return {...p,hit:!!document.elementFromPoint(p.x,p.y)?.closest('[data-prova-citazione]')};})()`);
+ assert(puntoLink.hit,'testo del rimando raggiungibile prima del clic: '+JSON.stringify(puntoLink));
+ for(const type of ['mousePressed','mouseReleased'])await c.invia('Input.dispatchMouseEvent',{type,x:puntoLink.x,y:puntoLink.y,button:'left',clickCount:1});
+ await wait(`document.getElementById('citazioneDialog').open&&getSelection().toString()==='pagina'`);
  assert.equal(await c.val(`document.querySelectorAll('#citazionePagine mark').length`),0,'solo selezione, nessuna evidenziatura');
  let shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-citazioni-selezione.png',Buffer.from(shot.result.data,'base64'));
  const testo=await c.val('NOTES.mde.value()');await c.clicca('#citazioneVai');await wait(`zainoAttivo()==='biologia'&&!document.getElementById('citazioneTorna').hidden`);
