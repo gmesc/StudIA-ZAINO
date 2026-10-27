@@ -15,6 +15,11 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  assert.deepEqual(await c.val(`[...document.querySelectorAll('#zragToolbar button')].filter(b=>b.getClientRects().length).map(b=>b.id)`),['zschedeNewButton','zschedeBack'],'due comandi principali sempre visibili');
  assert(await c.val(`!!document.querySelector('#zschedeNewButton svg[data-icona="plus"]')&&!!document.getElementById('zschedeNewButton').title`),'più Lucide con tooltip');
  assert(await c.val(`!!document.getElementById('zragSearchButton').closest('#zschedeLibrary')&&!document.getElementById('zragOpenReview')`),'ricerca nella vista del raccoglitore, Ripasso dalla scelta degli split');
+ await click('#zschedeNewButton');await wait(`!document.getElementById('zschedeNew').hidden`);
+ const fonti=(await c.val(`window.vault.chat.sources('biologia')`)).sources;
+ const voci=new Map((await c.val(`[...document.getElementById('zschedeSource').options].map(o=>[o.value,o.textContent])`)));
+ for(const [interno,nome] of [['01 Botanica.pdf','Botanica.pdf'],['02 Biologia cellulare.pdf','Biologia cellulare.pdf']])assert.equal(voci.get(fonti.find(s=>s.file.endsWith(interno)).id),nome,'nome leggibile e identità invariata nel selettore Fonte');
+ await click('#zschedeBack');
  const requests=path.join(path.dirname(vault),'dati/chat-requests.jsonl'),sent=()=>fs.existsSync(requests)?fs.readFileSync(requests,'utf8'):'';
  const previousState=await c.val(`window.vault.studio.state('biologia')`),old=previousState.questions.length,savedCount=previousState.questions.filter(q=>q.saved).length;
  // Sul pacchetto reale si prova la navigazione senza credenziali né invii AI.

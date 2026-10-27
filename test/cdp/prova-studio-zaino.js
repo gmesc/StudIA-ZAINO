@@ -38,8 +38,11 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  try{
   fs.appendFileSync(sourceFile,'\nNuovo paragrafo di prova: energia conservata nei legami chimici.\n');
   await wait(`document.getElementById('zschedeCollection').textContent.includes('Fonte modificata')`);
+  await c.val(`[...document.getElementById('zschedeSource').options].find(o=>o.value===${JSON.stringify(cached.sourceId)}).remove()`);
   await click('#zschedeBack');await click('#zschedeCollection .zstudio-card-open');await wait(`!document.getElementById('zschedeNewButton').disabled`);await click('#zschedeResult .zstudio-card-regenerate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);
   assert.equal(fs.readFileSync(cacheFile,'utf8'),before,'Mostrare la stima non deve chiamare il provider o modificare la scheda');
+  const voce=await c.val(`({id:document.getElementById('zschedeSource').value,nome:document.getElementById('zschedeSource').selectedOptions[0].textContent})`);
+  assert.equal(voce.id,cached.sourceId);assert(!voce.nome.includes('/')&&!/^\d+ /.test(voce.nome),'anche la voce reinserita durante Rigenera mostra il nome leggibile');
   assert((await c.val(`document.getElementById('zschedeEstimateText').textContent`)).includes(cached.file.split('/').pop()));
   await click('#zschedeGenerate');await wait(`!document.getElementById('zschedeNewButton').disabled && document.getElementById('zschedeCollection').textContent.includes('Aggiornata') && !document.getElementById('zschedeCollection').textContent.includes('Fonte modificata')`);
   assert.notEqual(fs.readFileSync(cacheFile,'utf8'),before,'La conferma rigenera la scheda');
