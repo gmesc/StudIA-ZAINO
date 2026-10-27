@@ -6226,6 +6226,7 @@ function pdfjsAvvia(){
         pdfSpaziaLayer(e && e.pageNumber);
         evPdfScade(e && e.pageNumber);
         evidenzeDisegna();
+        pdfSelezionaPassaggio(e.pageNumber,e.source);
       }catch(err){ console.error('evidenze/pdf:', err); }
     });
     /* Il conto dei risultati arriva a pezzi, mentre le pagine vengono scandite. */
@@ -8509,6 +8510,17 @@ window.addEventListener('keydown', function(e){
   }
 });
 
+/** Il passaggio si richiama solo nel layer completo della pagina corrente:
+ *  un evento tardivo del documento precedente non deve selezionare altro testo. */
+function pdfSelezionaPassaggio(pagina,origine){
+  if(!ANTEPRIMA.selezione||ANTEPRIMA.page!==pagina)return;
+  var vista=PDFJS.viewer?.getPageView(pagina-1),layer=vista?.textLayer?.div;
+  if((origine&&origine!==vista)||!layer?.isConnected||layer.hidden||!layer.querySelector('.endOfContent'))return;
+  var ancora=ANTEPRIMA.selezione;delete ANTEPRIMA.selezione;
+  document.getElementById('pdfFrame').focus({preventScroll:true});
+  if(!citazioneSelezionaLayer(layer,ancora))toast('Pagina aperta. Non riesco a individuare esattamente il passaggio citato.',false);
+}
+
 /**
  * Apre un documento nell'anteprima.
  *
@@ -8522,7 +8534,7 @@ window.addEventListener('keydown', function(e){
  * rimando con la pagina dentro (`pdf:03#p=7`) la passa e vince lui, perché
  * quella pagina è il senso del rimando.
  */
-function openPdf(pdf,page,label,conservaBanco){
+function openPdf(pdf,page,label,conservaBanco,selezione){
   if(!pdf) return;
   var pg=parseInt(page,10)||0;
   if(!pg) pg=letturaPagina(pdf)||1;
@@ -8534,7 +8546,7 @@ function openPdf(pdf,page,label,conservaBanco){
      buttano qui, dove il file cambia, e non al primo disegno — o le evidenze del
      documento precedente si cercherebbero nel testo di questo. */
   if(ANTEPRIMA.file!==pdf) evPdfScade();
-  ANTEPRIMA={ tipo:'pdf', file:pdf, num:numDiFile(pdf, (typeof _pdfNum==='function'?_pdfNum():PDF_BY_NUM)), label:label||pdf, page:pg };
+  ANTEPRIMA={ tipo:'pdf', file:pdf, num:numDiFile(pdf, (typeof _pdfNum==='function'?_pdfNum():PDF_BY_NUM)), label:label||pdf, page:pg, selezione:selezione };
   /* ⚠️ Qui il media si fermava. Era giusto finché documento e video vivevano
      nello stesso riquadro; adesso sono due strumenti, e aprire la dispensa di
      cui la lezione sta parlando non deve zittire la lezione. */
@@ -8568,7 +8580,7 @@ function openPdf(pdf,page,label,conservaBanco){
   try{ refreshNoteUI(); }catch(e){}
 
   // stesso documento, altra pagina: ci si sposta, non si ricarica
-  if(stesso){ vaiAPagina(pg); return; }
+  if(stesso){ vaiAPagina(pg); pdfSelezionaPassaggio(ANTEPRIMA.page); return; }
   /* ⚠️ Documento nuovo, ricerca vecchia: le occorrenze evidenziate appartengono
      al documento di prima, e il conto pure. Si chiude, invece di lasciarla
      appesa a un testo che non c'è più. */
@@ -8606,6 +8618,7 @@ function openPdf(pdf,page,label,conservaBanco){
     pdfZoomAggiorna();
   }).catch(function(err){
     if(mio!==PDFJS.seq) return;
+    delete ANTEPRIMA.selezione;
     console.error('pdf.js: apertura fallita', err);
     pdfStato('Non riesco ad aprire questo documento: '+((err&&err.message)||err));
     pdfZoomAggiorna();

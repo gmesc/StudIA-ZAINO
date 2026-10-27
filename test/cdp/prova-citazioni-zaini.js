@@ -102,13 +102,16 @@ async function provaGestiCitazione(rimando){
  const s2=await scroll();assert(Math.abs(s2.x-s1.x-60)<2&&Math.abs(s2.y-s1.y-70)<2,'Spazio + trascina nell’anteprima');
  assert.equal(await c.val('getSelection().toString()'),'','pan senza selezionare testo');
  assert(await c.val(`!document.querySelector('.pdf-spazio,.pdf-trascina')`),'rilascio pulisce i cursori');
+ await mouse('mouseMoved',p);
+ await c.val(`window.__clicGesti=[];window.__ascoltaClic=new AbortController();window.addEventListener('click',e=>window.__clicGesti.push({n:e.detail,target:e.target.className,tempo:e.timeStamp}),{capture:true,signal:window.__ascoltaClic.signal})`);
  for(let giro=0;giro<2;giro++){
   for(let n=1;n<=3;n++)for(const type of ['mousePressed','mouseReleased'])await mouse(type,p,{button:'left',clickCount:n});
   await c.pausa(150);const dopoTre=await larghezza();
   if(Math.abs(dopoTre-originale)>=2){const shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-treclick-debug.png',Buffer.from(shot.result.data,'base64'));}
-  assert(Math.abs(dopoTre-originale)<2,'tre clic ripristinano sempre la larghezza: '+JSON.stringify({giro,originale,dopoTre,stato:await c.val(`({hit:document.elementFromPoint(${p.x},${p.y})?.outerHTML.slice(0,180),frame:document.getElementById('citazioneFrame').clientWidth,tooltip:document.getElementById('citazioneZoomLvl').title,menu:selBarraAperta()})`)}));
+  assert(Math.abs(dopoTre-originale)<2,'tre clic ripristinano sempre la larghezza: '+JSON.stringify({giro,originale,dopoTre,stato:await c.val(`({hit:document.elementFromPoint(${p.x},${p.y})?.outerHTML.slice(0,180),frame:document.getElementById('citazioneFrame').clientWidth,tooltip:document.getElementById('citazioneZoomLvl').title,menu:selBarraAperta(),clic:window.__clicGesti})`)}));
   assert((await c.val(`document.getElementById('citazioneZoomLvl').title`)).startsWith('Adattata alla larghezza'),'tre clic aggiornano il tooltip');
  }
+ await c.val('window.__ascoltaClic.abort();delete window.__ascoltaClic;delete window.__clicGesti');
  await c.val(`document.getElementById('citazioneFrame').style.right='100px'`);await c.pausa(200);
  assert(await larghezza()<originale-80,'dopo il reset segue la larghezza della finestra');
  await c.val(`document.getElementById('citazioneFrame').style.right='';${pagina}.querySelector('.textLayer span').scrollIntoView({block:'center'});`);await c.pausa(300);
@@ -169,7 +172,17 @@ async function provaCitazioniClip(fileNota){
  let shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-citazioni-selezione.png',Buffer.from(shot.result.data,'base64'));
  const testo=await c.val('NOTES.mde.value()');await c.clicca('#citazioneVai');await wait(`zainoAttivo()==='biologia'&&!document.getElementById('citazioneTorna').hidden`);
  assert.equal(await c.val(`document.getElementById('citazioneTorna').textContent`),'Torna a Storia');
+ await wait(`ANTEPRIMA.file==='01 Botanica.pdf'&&PDFJS.viewer?.currentPageNumber===2&&!!document.querySelector('#pdfFrame .page[data-page-number="2"] .textLayer span')`);
+ assert(await c.val(`(()=>{const s=getSelection(),r=s.rangeCount&&s.getRangeAt(0),p=document.querySelector('#pdfFrame .page[data-page-number="2"] .textLayer');return s.toString()==='pagina'&&p.contains(r.startContainer)&&p.contains(r.endContainer);})()`),'Apri zaino di origine seleziona il passaggio nella pagina citata di Fonti');
  shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-citazioni-ritorno.png',Buffer.from(shot.result.data,'base64'));
+ // Anche se si sta già consultando lo zaino di origine, il rimando prevale
+ // sulla pagina corrente senza ricaricare il documento né creare evidenze.
+ const evidenze=await c.val('JSON.stringify(EVIDENZE.elenco)'),url=await c.val(`RimandiSintassi.scriviPdfZaino(${q(ref.zainoId)},${q(ref.sourceId)},2,${q(ref.revision)},${q(ref.selezione)})`);
+ await c.val(`window.__docOrigine=PDFJS.doc;vaiAPagina(1);citazioneZainoApri(${q(url)})`);
+ await wait(`document.getElementById('citazioneDialog').open&&getSelection().toString()==='pagina'&&!!document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span')`);
+ await c.clicca('#citazioneVai');await wait(`!document.getElementById('citazioneDialog').open&&PDFJS.viewer.currentPageNumber===2&&getSelection().toString()==='pagina'`);
+ assert(await c.val(`PDFJS.doc===window.__docOrigine&&document.getElementById('pdfFrame').contains(getSelection().anchorNode)`),'PDF già aperto riusato, selezione nel lettore Fonti');
+ assert.equal(await c.val('JSON.stringify(EVIDENZE.elenco)'),evidenze,'richiamo senza sottolineature salvate');await c.val('delete window.__docOrigine');
  await c.clicca('#citazioneTorna');await wait(`zainoAttivo()==='storia'&&NOTES.cur?.file===${q(fileNota)}`);await c.pausa(180);
  assert.equal((await c.val('NOTES.mde.value()')).trimEnd(),testo.trimEnd(),'ritorno conserva appunto e testo');assert(await c.val('NOTES.mde.isPreviewActive()'),'ritorno conserva l’anteprima');
  shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-citazioni-blocchi.png',Buffer.from(shot.result.data,'base64'));

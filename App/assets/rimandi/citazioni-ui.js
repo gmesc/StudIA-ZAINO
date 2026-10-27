@@ -23,12 +23,9 @@
   var prima=document.createRange();prima.selectNodeContents(layer);prima.setEnd(range.startContainer,range.startOffset);
   return {testo:range.toString(),inizio:prima.toString().length};
  }
- function selezionaPassaggio(s,n){
-  if(stato!==s||s.selezioneApplicata||!s.info.selezione||n!==s.info.pagina)return;
-  var layer=document.querySelector('#citazionePagine .page[data-page-number="'+n+'"] .textLayer');if(!layer)return;
-  s.selezioneApplicata=true;
-  var pos=RimandiSintassi.trovaSelezione(layer.textContent,s.info.selezione);
-  if(!pos){messaggio('Pagina aperta. Non riesco a individuare esattamente il passaggio citato.');return;}
+ window.citazioneSelezionaLayer=function(layer,ancora){
+  var pos=RimandiSintassi.trovaSelezione(layer.textContent,ancora);
+  if(!pos)return false;
   var walk=document.createTreeWalker(layer,NodeFilter.SHOW_TEXT),el,offset=0,r=document.createRange(),inizio=false;
   while((el=walk.nextNode())){
    var fine=offset+el.textContent.length;
@@ -37,6 +34,13 @@
   }
   getSelection().removeAllRanges();getSelection().addRange(r);
   r.startContainer.parentElement.scrollIntoView({block:'center',behavior:'instant'});
+  return true;
+ };
+ function selezionaPassaggio(s,n){
+  if(stato!==s||s.selezioneApplicata||!s.info.selezione||n!==s.info.pagina)return;
+  var layer=document.querySelector('#citazionePagine .page[data-page-number="'+n+'"] .textLayer');if(!layer)return;
+  s.selezioneApplicata=true;
+  if(!citazioneSelezionaLayer(layer,s.info.selezione))messaggio('Pagina aperta. Non riesco a individuare esattamente il passaggio citato.');
  }
  function selezioneCorrente(){var sel=getSelection();return sel?.rangeCount&&!sel.isCollapsed&&citazioneSelezione(sel.getRangeAt(0))?sel.getRangeAt(0):null;}
  function markdownCitazione(modo,range){
@@ -83,7 +87,7 @@
   if(info.zaino!==zainoAttivo())ritorno={zaino:zainoAttivo(),origine:info.zaino,attivo:noteStatoAttivo().id,
    note:noteStati().map(function(s){return {id:s.id,file:s.cur?.file,preview:!!s.mde?.isPreviewActive(),punto:s.mde?.codemirror.getCursor(),scroll:noteHost(s).querySelector('.editor-preview-active')?.scrollTop||0};})};
   chiudi();await cambiaZaino(info.zaino);
-  if(zainoAttivo()===info.zaino){ritornoAggiorna();openPdf(info.file,info.pagina,info.file);}
+  if(zainoAttivo()===info.zaino){ritornoAggiorna();openPdf(info.file,info.pagina,info.file,false,info.selezione);}
   else{ritorno=null;ritornoAggiorna();}
  }
  document.getElementById('citazioneTorna').onclick=async function(e){
