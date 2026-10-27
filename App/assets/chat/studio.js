@@ -67,8 +67,8 @@
   async function action(fn,area='zragStatus'){
    if(busy){status('Attendi il termine dell’operazione in corso.',false,area);return;}if(!state.zaino){status('Apri uno zaino.',true,area);return;}
    const run=epoch,z=state.zaino,origin=document.activeElement;busy=true;indiceButton();
-   const controls=[...document.querySelectorAll('#studioPane button,#studioPane input,#studioPane select,#zinterroga button,#zinterroga input,#zinterroga select,#zinterroga textarea')].filter(e=>!['zragCancel','zstudyCancel'].includes(e.id)).map(e=>[e,e.disabled]);controls.forEach(([e])=>{e.disabled=true;});
-   const cancel=$(area==='zstudyStatus'?'zstudyCancel':'zragCancel');cancel.hidden=false;
+   const controls=[...document.querySelectorAll('#studioPane button,#studioPane input,#studioPane select,#zinterroga button,#zinterroga input,#zinterroga select,#zinterroga textarea')].filter(e=>!['zragCancel','zstudyCancel','zschedeCancel'].includes(e.id)).map(e=>[e,e.disabled]);controls.forEach(([e])=>{e.disabled=true;});
+   const cancel=$(area==='zstudyStatus'?'zstudyCancel':area==='zschedeStatus'?'zschedeCancel':'zragCancel');cancel.hidden=false;
    const poll=area==='zragStatus'?setInterval(()=>stato().catch(()=>{}),750):null;
    try{await fn(()=>run===epoch && z===state.zaino);}catch(e){if(run===epoch)status(e.message,true,area);}
    finally{clearInterval(poll);busy=false;cancel.hidden=true;controls.forEach(([e,disabled])=>{e.disabled=disabled;});study?.settled();if(document.activeElement===document.body&&origin?.isConnected&&origin.getClientRects().length)origin.focus();await stato().catch(()=>{});}

@@ -101,5 +101,30 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  }
  await c.val(`document.documentElement.dataset.theme='chiaro'`);
  const shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/private/tmp/zaino-rag-ripasso.png',Buffer.from(shot.result.data,'base64'));
+ // Fonte lunga: nessun invio prima della stima, tariffa sconosciuta esplicita e Stop operativo.
+ const grande=path.join(vault,'Zaini/biologia/MATERIALI','03 Fonte completa.txt');let sourceLong;
+ try{
+  fs.writeFileSync(grande,Array.from({length:1000},(_,i)=>'CONTENUTO_INTERO '+i+': la respirazione cellulare trasforma energia chimica in ATP.').join('\n'));
+  sourceLong=(await c.val(`window.vault.chat.sources('biologia')`)).sources.find(s=>s.file.endsWith('03 Fonte completa.txt'));assert(sourceLong);
+  await c.val(`bancoForma('uno');bancoAssegna('A','studio')`);await click('#zschedeBack');await click('#zschedeNewButton');await wait(`!document.getElementById('zschedeNewButton').disabled`);
+  await set('zschedeSource',sourceLong.id);await set('zschedePreset','domande');
+  await c.val(`window.vault.chat.saveSettings({provider:'openai',model:'tariffa-sconosciuta-di-prova'})`);
+  const reqBefore=fs.readFileSync(requests,'utf8');await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeNewButton').disabled`);
+  assert((await c.val(`document.getElementById('zschedePrice').textContent`)).includes('Costo monetario non disponibile'));
+  assert(await c.val(`document.getElementById('zschedeGenerate').disabled`));assert.equal(fs.readFileSync(requests,'utf8'),reqBefore);
+  await set('zschedeInputPrice','2');await set('zschedeOutputPrice','10');assert(!await c.val(`document.getElementById('zschedeGenerate').disabled`));
+  assert((await c.val(`document.getElementById('zschedePrice').textContent`)).includes('USD'));
+  const shotPrice=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-fonte-intera-stima.png',Buffer.from(shotPrice.result.data,'base64'));
+  await click('#zschedeGenerate');await wait(`document.getElementById('zschedeStatus').textContent.includes('Analisi della fonte:')`);
+  assert(await c.val(`!document.getElementById('zschedeCancel').hidden&&!document.getElementById('zschedeCancel').disabled`));await click('#zschedeCancel');
+  await wait(`document.getElementById('zschedeCancel').hidden`);assert.equal((await c.val(`window.vault.studio.card('biologia',${JSON.stringify(sourceLong.id)},'domande')`)).card,null);
+  await click('#zschedeGenerate');await wait(`!document.getElementById('zschedeNewButton').disabled&&document.querySelector('#zschedeResult h3').textContent.includes('Fonte completa.txt')`);
+  const full=(await c.val(`window.vault.studio.card('biologia',${JSON.stringify(sourceLong.id)},'domande')`)).card;
+  assert(full.parts>1);assert.equal(full.covered,full.total);assert.equal(full.items.length,full.parts);
+  assert(full.sources.at(-1).text.includes('CONTENUTO_INTERO 999'));
+ }finally{
+  fs.rmSync(grande,{force:true});if(sourceLong)fs.rmSync(path.join(vault,'Zaini/biologia/_lavorazione/rag/schede',sourceLong.id+'-domande.json'),{force:true});
+  await c.val(`window.vault.chat.saveSettings({provider:'openai',model:'modello-locale-di-prova'})`);
+ }
  console.log('studio UI: ricerca, stima, scheda, copia, Banco, tentativo, esito, persistenza e cache indipendente OK');process.exit(0);
 })().catch(async e=>{console.error(e);try{console.error(await c.val(`({rag:document.getElementById('zragStatus')?.textContent,studio:document.getElementById('zstudyStatus')?.textContent,chat:document.getElementById('zchatStatus')?.textContent})`));}catch(_){}process.exit(1);});

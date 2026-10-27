@@ -102,9 +102,63 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'studio-zaino-')),d=path.join(ro
  const edizione=F.sincronizza(root,'test').sources.find(s=>s.file.endsWith('02 Edizione.pdf'));
  const estratto={numPages:4,truncated:false,pages:[{page:1,text:'© 2026 Editore Esempio\nTutti i diritti riservati.\nISBN 978-88-0000-000-0\nPrima edizione: 2026'},{page:2,text:'Indice\nIntroduzione ........ 3\nLa cellula ........ 7\nLa respirazione ........ 18'},{page:3,text:'La respirazione cellulare produce ATP e rende disponibile l’energia dei nutrienti.'},{page:4,text:'Il copyright tutela le opere. In questo capitolo analizziamo la durata del diritto d’autore e i limiti posti alla riproduzione delle opere.'}]};
  const didattico={...opts,estraePdf:async()=>estratto,chiama:async req=>{const data=JSON.parse(req.messages[0].content);assert.deepEqual(data.porzioni.map(p=>p.page),[3,4]);assert(data.porzioni.every(p=>p.file==='Edizione.pdf'&&!p.citation&&!p.label));assert(req.system.includes('Ignora indice, sommario, frontespizio, colophon e dati editoriali'));return {text:JSON.stringify({items:[{title:'Energia',text:'La respirazione produce ATP.',refs:[data.porzioni[0].chunkId]}]})};}};
- for(const preset of Object.keys(S.PRESET)){const card=await S.genera(root,'test',edizione.id,preset,didattico);assert.equal(card.excluded,2);assert.equal(card.covered,2);assert.equal(card.partial,false);assert.deepEqual(card.sources.map(s=>s.page),[3,4]);assert.equal(card.promptVersion,2);}
+ for(const preset of Object.keys(S.PRESET)){const card=await S.genera(root,'test',edizione.id,preset,didattico);assert.equal(card.excluded,2);assert.equal(card.covered,2);assert.equal(card.partial,false);assert.deepEqual(card.sources.map(s=>s.page),[3,4]);assert.equal(card.promptVersion,3);}
+ // Un PDF vero oltre pagina 250 deve raggiungere l’ultima pagina, con cache dedicata.
+ const {PDFDocument,StandardFonts}=require('pdf-lib'),pdfIntero=await PDFDocument.create(),font=await pdfIntero.embedFont(StandardFonts.Helvetica);
+ for(let page=1;page<=260;page++)pdfIntero.addPage().drawText('Contenuto didattico della pagina '+page+'. Le cellule trasformano energia.',{x:30,y:600,font,size:12});
+ fs.writeFileSync(path.join(d,'MATERIALI','04 Libro intero.pdf'),await pdfIntero.save());
+ const libro=F.sincronizza(root,'test').sources.find(s=>s.file.endsWith('04 Libro intero.pdf'));
+ const intero=await S.prepara(root,'test',libro.id,'domande');assert.equal(intero.chunks.at(-1).page,260);assert(!intero.partial);
+ fs.writeFileSync(path.join(d,'MATERIALI','05 Oltre limite.pdf'),'%PDF-prova');
+ const oltre=F.sincronizza(root,'test').sources.find(s=>s.file.endsWith('05 Oltre limite.pdf'));let remote=0;
+ await assert.rejects(S.genera(root,'test',oltre.id,'domande',{...opts,estraePdf:async()=>({pages:[{page:1,text:'Le cellule producono energia.'}],truncated:true}),chiama:async()=>{remote++;}}),/limite di lettura sicura/);assert.equal(remote,0);
  const indice='Indice\nIntroduzione ........ 3\nLa cellula ........ 7\nLa respirazione ........ 18';fs.writeFileSync(path.join(d,'MATERIALI','solo-indice.txt'),indice);
  const soloIndice=F.sincronizza(root,'test').sources.find(s=>s.file.endsWith('solo-indice.txt'));let invii=0;
  await assert.rejects(S.genera(root,'test',soloIndice.id,'domande',{...opts,chiama:async()=>{invii++;}}),/contenuti didattici.*indice e dati editoriali/);assert.equal(invii,0,'una fonte con il solo indice non avvia la generazione');
+ // Regressione: il vecchio tetto di 24.000 caratteri non leggeva la coda della fonte.
+ const lungo=Array.from({length:5000},(_,i)=>'Tema '+i+': le cellule trasformano energia e materia durante le reazioni metaboliche.').join('\n');
+ fs.writeFileSync(path.join(d,'MATERIALI','03 Fonte intera.txt'),lungo);
+ const intera=F.sincronizza(root,'test').sources.find(s=>s.file.endsWith('03 Fonte intera.txt'));
+ const vecchio=await require('../lib/chat').contesto(root,'test','',{scope:{mode:'selected',sourceIds:[intera.id]},allChunks:true});
+ assert(vecchio.chunks.at(-1).offset<lungo.length-100000,'La cache chat della prova è deliberatamente limitata');
+ const piano=await S.prepara(root,'test',intera.id,'domande');
+ assert.equal(piano.covered,piano.total,'Tutti i passaggi devono entrare nel piano');
+ assert(piano.chunks.at(-1).text.includes('Tema 4999'),'La scheda deve leggere oltre il vecchio limite di estrazione');
+ assert(piano.parts>1);assert(piano.maxCalls>=piano.parts);assert(!piano.partial);
+ let letti=[],fusioni=0,progressi=[],partiLette=0;
+ const completa={...opts,onProgress:p=>progressi.push(p),chiama:async req=>{
+  const data=JSON.parse(req.messages[0].content);
+  if(data.porzioni){letti.push(...data.porzioni.map(p=>p.chunkId));const n=letti.length;return {text:JSON.stringify({items:[{title:++partiLette%2?'Come producono energia le cellule?':'In quale modo le cellule ottengono energia?',text:'Le cellule trasformano energia attraverso le reazioni metaboliche.',refs:[data.porzioni[0].chunkId]},{title:'Tema specifico '+n,text:'Risposta specifica alla parte '+n,refs:[data.porzioni.at(-1).chunkId]}]})};}
+  assert(Array.isArray(data.candidati));fusioni++;const doppie=data.candidati.filter(i=>i.text==='Le cellule trasformano energia attraverso le reazioni metaboliche.').map(i=>i.id);
+  return {text:JSON.stringify({groups:doppie.length>1?[doppie]:[]})};
+ }};
+ const completaCard=await S.genera(root,'test',intera.id,'domande',completa);
+ assert.deepEqual(letti,piano.chunks.map(p=>p.chunkId));assert(fusioni>0);
+ assert.equal(completaCard.covered,completaCard.total);assert.equal(completaCard.items.filter(i=>i.text==='Le cellule trasformano energia attraverso le reazioni metaboliche.').length,1);
+ assert(completaCard.items.length>12,'L’unione non deve troncare a dodici gli argomenti di tutte le parti');
+ assert(completaCard.items[0].refs.length>1,'Le prove delle ripetizioni vengono conservate');
+ assert(progressi.some(p=>p.phase==='analysis'&&p.done===piano.parts));
+ const completaPath=path.join(d,'_lavorazione/rag/schede',intera.id+'-domande.json'),salvata=fs.readFileSync(completaPath);
+ const ctrl=new AbortController();let iniziate=0;
+ await assert.rejects(S.genera(root,'test',intera.id,'domande',{...completa,signal:ctrl.signal,chiama:async req=>{iniziate++;const r=await completa.chiama(req);ctrl.abort();return r;}}),/interrott|annullat/);
+ assert.equal(iniziate,1);assert(fs.readFileSync(completaPath).equals(salvata),'Interrompere non sostituisce la scheda precedente');
+ let tentate=0;
+ await assert.rejects(S.genera(root,'test',intera.id,'domande',{...completa,chiama:async req=>{if(++tentate===2)throw Error('Rete interrotta nella seconda parte');return completa.chiama(req);}}),/seconda parte/);
+ assert(fs.readFileSync(completaPath).equals(salvata),'Un errore intermedio non pubblica una scheda incompleta');
+ const Plan=require('../App/assets/chat/schede-piano'),cost=Plan.costo(piano,{input:2,output:10});assert(cost.max>cost.min&&cost.min>0);
+ assert.equal(Plan.unisci([{title:'Formula',text:'a+b',refs:['1']},{title:'Formula',text:'a-b',refs:['2']}]).length,2,'La rimozione dei doppioni identici deve conservare segni e formule');
+ const campione=Array.from({length:100},(_,i)=>({title:String(i)+'a'.repeat(195),text:'b'.repeat(1800),refs:['c'+i]})),confronti=Plan.confronti(campione);
+ for(let a=0;a<campione.length;a++)for(let b=a+1;b<campione.length;b++)assert(confronti.some(g=>g.some(i=>i.id===a)&&g.some(i=>i.id===b)),'Anche le ripetizioni fra gruppi lontani devono poter essere unite');
+ assert(confronti.every(g=>JSON.stringify(g).length<65000));
+ assert.equal(Plan.unisci([{title:'A|B',text:'C',refs:['1']},{title:'A',text:'B|C',refs:['2']}]).length,2);
+ let erroreFusione=0;
+ await assert.rejects(S.genera(root,'test',intera.id,'domande',{...completa,chiama:async req=>{const data=JSON.parse(req.messages[0].content);if(data.candidati){erroreFusione++;return {text:JSON.stringify({groups:[[data.candidati[0].id,999999]]})};}return completa.chiama(req);}}),/due tentativi/);
+ assert.equal(erroreFusione,2);assert(fs.readFileSync(completaPath).equals(salvata),'Un errore di unione non pubblica solo le parti');
+ let cambiata=false;
+ try{await assert.rejects(S.genera(root,'test',intera.id,'domande',{...completa,chiama:async req=>{if(!cambiata){fs.appendFileSync(path.join(d,intera.file),'\nFonte cambiata.');cambiata=true;}return completa.chiama(req);}}),/Fonte cambiata/);assert(fs.readFileSync(completaPath).equals(salvata));}
+ finally{fs.writeFileSync(path.join(d,intera.file),lungo);}
+ assert.equal(Plan.costo(piano,null),null);assert.equal(Plan.tariffa('openai','sconosciuto'),null);
+ assert.equal(Plan.tariffa('google','gemini-4-argon','2026-11-30').input,2);assert.equal(Plan.tariffa('google','gemini-4-argon','2026-12-01').input,4);
+ assert.deepEqual(Plan.unisci([{title:'A',text:'Uno',refs:['1']},{title:'B',text:'Due',refs:['2']},{title:'C',text:'Tre',refs:['3']}],[[0,1],[1,2]])[0].refs,['1','2','3']);
  console.log('studio-zaino: cinque preset, prove vincolate, copia personale, soluzione nascosta, ripresa, idempotenza, correzioni e fonti obsolete OK');
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>fs.rmSync(root,{recursive:true,force:true}));

@@ -13,11 +13,19 @@ app.on('web-contents-created',(_,contents)=>contents.once('did-finish-load',()=>
  fs.appendFileSync(path.join(app.getPath('userData'),'finestre-sicurezza.jsonl'),JSON.stringify({sandbox:p.sandbox,contextIsolation:p.contextIsolation,nodeIntegration:p.nodeIntegration,preload:p.preload})+'\n');
 }));
 const registra = (nome, dati) => fs.appendFileSync(path.join(app.getPath('userData'), nome), JSON.stringify(dati) + '\n');
+const pianoSchede=require('../App/assets/chat/schede-piano'),tariffaReale=pianoSchede.tariffa;
+pianoSchede.tariffa=(provider,model)=>model==='modello-locale-di-prova'?{input:.30,output:2.50,verifiedAt:'simulata nella prova'}:tariffaReale(provider,model);
 provider.modelli = async () => [{id:'modello-locale-di-prova',nome:'Modello locale di prova'}];
 provider.rispondi = async ({messages,signal,system}) => {
   const ultimo=messages.at(-1).content;
   registra('chat-requests.jsonl', { messages, system });
   let strutturata;try{strutturata=JSON.parse(messages[0].content);}catch(_){}
+  if(strutturata?.candidati)return {text:JSON.stringify({groups:[]})};
+  if(strutturata?.porzioni?.some(p=>p.text.includes('CONTENUTO_INTERO'))){
+   await new Promise((resolve,reject)=>{const timer=setTimeout(resolve,250);const stop=()=>{clearTimeout(timer);reject(Error('Analisi interrotta nella prova'));};if(signal.aborted)stop();else signal.addEventListener('abort',stop,{once:true});});
+   const n=system.match(/Questa è la parte (\d+)/)?.[1]||'1';
+   return {text:JSON.stringify({items:[{title:'Parte didattica '+n,text:'Contenuto specifico della parte '+n,refs:[strutturata.porzioni.at(-1).chunkId]}]})};
+  }
   if(strutturata?.porzioni)return {text:JSON.stringify({items:[{title:'Energia cellulare',text:'La fonte descrive energia e cellule.\n- Concetti: energia.\n- Prerequisiti: cellule.\nEsempi: ATP.',refs:[strutturata.porzioni[0].chunkId]}]})};
   if(strutturata?.proofs && strutturata.topic)return {text:JSON.stringify({question:'Quale processo converte la luce?',answer:'La fotosintesi.',rubric:['Nomina la fotosintesi.'],hint:'Pensa alle piante.',refs:[strutturata.proofs[0].chunkId]})};
   if(strutturata?.expected)return {text:JSON.stringify({correct:['Hai nominato la fotosintesi.'],missing:[],contradictory:[],summary:'Il tentativo è coerente con la fonte.',assessable:true})};

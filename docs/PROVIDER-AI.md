@@ -29,3 +29,19 @@ Il modulo `lib/chat-provider.js` non salva chiavi, non esegue strumenti del mode
 Contratto: `catalogo() → [{id,nome,keyUrl,nota?}]`; `modelli(provider,apiKey,{signal?,timeoutMs?,productId?}) → [{id,nome,contesto,maxOutput}]`; `rispondi({provider,apiKey,model,system,messages,signal?,timeoutMs?,productId?}) → {text,usage,reasoningContent?}`. `productId` è facoltativo e riguarda soltanto Infomaniak. I messaggi contengono `role: user|assistant`, `content` testuale e, soltanto per assistant Kimi, l’eventuale `reasoningContent`.
 
 Verifica locale: `node test/chat-provider.js`. I test simulano tutte le risposte con `fetch`: non richiedono segreti, connessioni o costi. Il funzionamento con account reali, relativi permessi e credito va verificato inserendo le proprie chiavi nell’app.
+
+
+### Stima delle schede complete — 27 ottobre 2026
+
+Le tariffe standard per la stima stanno in `App/assets/chat/schede-piano.js`,
+separate dal vecchio listino della pipeline CORSI. Fonti verificate:
+- Google: https://ai.google.dev/gemini-api/docs/pricing
+- OpenAI: https://developers.openai.com/api/docs/models/gpt-4.1-mini
+- Anthropic: https://platform.claude.com/docs/en/about-claude/pricing
+
+Gemini 4 Argon: 2/10 USD per milione di token in ingresso/uscita fino al
+30 novembre 2026; 4/20 dal 1 dicembre. Niente sconti caching o gratuità
+presunti. La stima comprende le parti, il confronto dei duplicati e una possibile
+correzione per richiesta. I token sono stimati dai caratteri, quindi la fascia
+non è un massimale garantito. Per modelli assenti non si inventa un prezzo:
+l’utente inserisce le tariffe del proprio account prima della conferma.
