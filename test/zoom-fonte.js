@@ -91,6 +91,12 @@ ok('senza la percentuale nel suggerimento', false, /100%/.test(Z.etichetta('page
    lo fa `updateScale({origin})` di pdf.js, e sta nella prova sull'app viva. Con
    le IMMAGINI invece sì: `puntoFisso`, qui sotto. */
 
+sezione('Tooltip PDF condivisi fra split e anteprima delle citazioni');
+ok('il comando dichiara scala e prossimo adattamento', true, /144%.*alla pagina intera/.test(Z.comandoPdf('page-width',1.44,true).titolo));
+ok('il gesto dei tre clic è spiegato anche quando la scala è manuale', true, /Zoom scelto a mano.*Tre clic sul PDF: adatta alla larghezza/.test(Z.comandoPdf('1.44',1.44,true).titolo));
+ok('l’icona segue il modo pagina intera', 'maximize', Z.comandoPdf('page-fit',.8,true).icona);
+ok('il modo larghezza ha la stessa icona nei tre lettori', 'move-horizontal', Z.comandoPdf('page-width',1.44,true).icona);
+
 sezione('La scala che realizza un modo — per le immagini, dove non c\'è pdf.js');
 const GRANDE = { larghezza: 1000, altezza: 500, riquadroL: 600, riquadroH: 400 };
 ok('alla larghezza riempie il riquadro', 0.6, Z.scalaPer('page-width', GRANDE));

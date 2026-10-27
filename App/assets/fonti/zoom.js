@@ -142,6 +142,14 @@
     };
   }
 
+  /** Stesso comando e stessi suggerimenti nei due split e nel PDF citato. */
+  function comandoPdf(valore, scala, pronta) {
+    return {
+      icona: valore === 'page-fit' ? 'maximize' : 'move-horizontal',
+      titolo: etichetta(valore, scala, pronta).titolo + ' · Tre clic sul PDF: adatta alla larghezza · Pinch: zoom · Spazio + trascina: sposta'
+    };
+  }
+
   /**
    * La scala che realizza un modo, date le misure vere e quelle del riquadro.
    *
@@ -252,7 +260,7 @@
   return {
     MIN: MIN, MAX: MAX, PASSO: PASSO, MODI: MODI, MODI_NOTI: MODI_NOTI, SEGNI: SEGNI,
     modo: modo, valido: valido, passo: passo, prossimoAdatta: prossimoAdatta,
-    etichetta: etichetta, verso: verso, daRotella: daRotella, daRiadattare: daRiadattare,
+    etichetta: etichetta, comandoPdf: comandoPdf, verso: verso, daRotella: daRotella, daRiadattare: daRiadattare,
     scalaPer: scalaPer, puntoFisso: puntoFisso
   };
 }));

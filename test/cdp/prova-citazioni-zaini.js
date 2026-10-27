@@ -68,9 +68,24 @@ async function provaGestiCitazione(rimando){
  const larghezza=()=>c.val(`${pagina}.getBoundingClientRect().width`);
  const originale=await larghezza(),locale=await c.val('PDFJS.viewer.currentScale');
  assert.equal(await c.val('document.activeElement.id'),'citazioneFrame','focus iniziale sul PDF, pronto a ricevere Spazio');
+ assert.equal(await c.val(`document.querySelectorAll('#citazioneZoom button:not([disabled])').length`),3,'tre controlli di zoom pronti');
+ assert.deepEqual(await c.val(`[...document.querySelectorAll('#citazioneZoom svg')].map(e=>e.dataset.icona)`),['minus','move-horizontal','plus'],'stesse icone di Fonti');
+ for(const [nuovo,fonte] of [['citazioneZoomOut','pdfZoomOut'],['citazioneZoomIn','pdfZoomIn']])assert.equal(await c.val(`document.getElementById('${nuovo}').title`),await c.val(`document.getElementById('${fonte}').title`),'stesso tooltip');
+ const titoloAdatta=await c.val(`document.getElementById('citazioneZoomLvl').title.replace(/\\d+%/g,'N%')`);
+ assert.equal(titoloAdatta,await c.val(`document.getElementById('pdfZoomLvl').title.replace(/\\d+%/g,'N%')`),'stesso tooltip dinamico di Fonti');
+ await c.clicca('#citazioneZoomIn');await c.pausa(150);const piu=await larghezza();assert(piu>originale,'più ingrandisce');
+ assert((await c.val(`document.getElementById('citazioneZoomLvl').title`)).includes('Zoom scelto a mano'),'tooltip aggiornato sullo zoom manuale');
+ await c.clicca('#citazioneZoomOut');await c.pausa(150);assert(await larghezza()<piu,'meno riduce');
+ await c.clicca('#citazioneZoomLvl');await c.pausa(150);assert(Math.abs(await larghezza()-originale)<2,'il bottone rientra dalla larghezza');
+ await c.clicca('#citazioneZoomLvl');await c.pausa(150);assert(await larghezza()<originale,'stesso ciclo di Fonti: pagina intera');
+ assert.equal(await c.val(`document.querySelector('#citazioneZoomLvl svg').dataset.icona`),'maximize');
+ await c.clicca('#citazioneZoomLvl');await c.pausa(150);assert(Math.abs(await larghezza()-originale)<2,'ritorno alla larghezza');
+ await c.val(`document.getElementById('citazioneFrame').focus()`);
+
  const p=await c.val(`(()=>{const h=document.getElementById('citazioneFrame');const r=h.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/3};})()`);
  const ancora=()=>c.val(`(()=>{const r=${pagina}.getBoundingClientRect();return {x:(${p.x}-r.x)/r.width,y:(${p.y}-r.y)/r.width};})()`);
  const prima=await ancora();await mouse('mouseWheel',p,{deltaX:0,deltaY:-45,modifiers:2});await c.pausa(500);
+ assert((await c.val(`document.getElementById('citazioneZoomLvl').title`)).includes('Zoom scelto a mano'),'pinch aggiorna il tooltip del bottone');
  const ingrandita=await larghezza();assert(ingrandita>originale*1.4,'pinch nell’anteprima della citazione: '+JSON.stringify({originale,ingrandita}));
  const dopo=await ancora();assert(Math.hypot(prima.x-dopo.x,prima.y-dopo.y)<.003,'pinch ancorato al puntatore');
  // Uno zoom scelto a mano resiste al resize; solo tre clic riattivano la larghezza.
@@ -90,6 +105,7 @@ async function provaGestiCitazione(rimando){
  for(let giro=0;giro<2;giro++){
   for(let n=1;n<=3;n++)for(const type of ['mousePressed','mouseReleased'])await mouse(type,p,{button:'left',clickCount:n});
   await c.pausa(150);assert(Math.abs(await larghezza()-originale)<2,'tre clic ripristinano sempre la larghezza');
+  assert((await c.val(`document.getElementById('citazioneZoomLvl').title`)).startsWith('Adattata alla larghezza'),'tre clic aggiornano il tooltip');
  }
  await c.val(`document.getElementById('citazioneFrame').style.right='100px'`);await c.pausa(200);
  assert(await larghezza()<originale-80,'dopo il reset segue la larghezza della finestra');
@@ -236,6 +252,7 @@ async function provaGestiCitazione(rimando){
   await c.val(`document.getElementById('citazioneChiudi').click();citazioneZainoApri(${q(cita.rimando.replace(/r=[a-f0-9]+/,'r='+'0'.repeat(64)))})`);
   assert.equal(await c.val('zainoAttivo()'),'storia');
   await wait(`document.getElementById('citazioneStato').textContent.includes('La fonte è cambiata')`);
+  assert.equal(await c.val(`document.querySelectorAll('#citazioneZoom button[disabled]').length`),3,'zoom disabilitato quando la fonte non è disponibile');
   assert.equal(await c.val(`document.querySelectorAll('#citazionePagine canvas').length`),0);await c.clicca('#citazioneChiudi');
   await wait(`document.getElementById('selBarra').parentElement===document.body&&document.getElementById('selMenu').parentElement===document.body`);
   // Il selettore dell'editor legge A ma scrive nell'appunto B catturato all'apertura.

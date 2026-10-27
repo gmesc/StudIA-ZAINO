@@ -1511,7 +1511,7 @@
   #pdfFindCount{ flex:0 0 132px; padding:0 .3rem; text-align:center;
     font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; }
   #pdfFindCount.vuoto{ color:var(--red-strong,#b91c1c); }
-  :is(#pdfPane,#pdfPane2) .pdfzoom{ display:flex; align-items:center; gap:0; }
+  :is(#pdfPane,#pdfPane2,#citazioneDialog) .pdfzoom{ display:flex; align-items:center; gap:0; }
   :is(#pdfPane,#pdfPane2) .pdfpag{ display:flex; align-items:center; gap:0; }
   :is(#pdfPane,#pdfPane2) .pdfpag :is(#pdfPagN,#pdf2PagN){ font-size:11px; font-variant-numeric:tabular-nums; padding:0 .3rem;
     white-space:nowrap; color:var(--muted); }
@@ -1542,7 +1542,7 @@
      occupano più di quattro larghezze di cifra. Misurato a schermo — 4,3ch dava
      39px contro i 46 che «500%» chiede davvero: il numero giusto è **5,5ch**,
      che con l'imbottitura fa esattamente la larghezza del caso peggiore. */
-  :is(#pdfPane,#pdfPane2) .pdfzoom :is(#pdfZoomLvl,#pdf2ZoomLvl){ width:auto; padding:0 .4rem; font-size:11px; font-weight:700;
+  :is(#pdfPane,#pdfPane2,#citazioneDialog) .pdfzoom :is(#pdfZoomLvl,#pdf2ZoomLvl,#citazioneZoomLvl){ width:auto; padding:0 .4rem; font-size:11px; font-weight:700;
     font-variant-numeric:tabular-nums; min-width:calc(5.5ch + .8rem); }
   #searchInput{ height:var(--ctl-h); width:min(420px,80vw); background:var(--panel); color:var(--ink);
     border:1px solid var(--line); border-radius:0; padding:0 .6rem; font-size:12px; font-family:inherit; }
@@ -6430,9 +6430,9 @@ function fonte2Aggiorna(){
   if(!aperta)return;
   var lvl=$('#pdf2ZoomLvl');
   if(lvl){
-    var e=FontiZoom.etichetta(FONTE2.viewer && FONTE2.viewer.currentScaleValue,
+    var e=FontiZoom.comandoPdf(FONTE2.viewer && FONTE2.viewer.currentScaleValue,
                               FONTE2.viewer && FONTE2.viewer.currentScale, true);
-    UiIcone.imposta(lvl,(FONTE2.viewer && FONTE2.viewer.currentScaleValue)==='page-fit'?'maximize':'move-horizontal');lvl.title=e.titolo+' · Tre clic sul PDF: adatta alla larghezza · Pinch: zoom · Spazio + trascina: sposta';lvl.setAttribute('aria-label',lvl.title);
+    UiIcone.imposta(lvl,e.icona);lvl.title=e.titolo;lvl.setAttribute('aria-label',e.titolo);
   }
 }
 function fonte2Pagina(avanti){
@@ -6573,10 +6573,10 @@ function pdfZoomAggiorna(){
      l'ha scelto una mano. Il `title` dice sempre tutte e due le cose — dove si
      è e dove porta il click — perché da un glifo non si deduce nessuna delle
      due. */
-  var e=FontiZoom.etichetta(PDFJS.viewer && PDFJS.viewer.currentScaleValue,
+  var e=FontiZoom.comandoPdf(PDFJS.viewer && PDFJS.viewer.currentScaleValue,
                             PDFJS.viewer && PDFJS.viewer.currentScale,
                             PDFFIND.scalaPronta);
-  UiIcone.imposta(lvl,(PDFJS.viewer && PDFJS.viewer.currentScaleValue)==='page-fit'?'maximize':'move-horizontal');lvl.title=e.titolo+' · Tre clic sul PDF: adatta alla larghezza · Pinch: zoom · Spazio + trascina: sposta';lvl.setAttribute('aria-label',lvl.title);
+  UiIcone.imposta(lvl,e.icona);lvl.title=e.titolo;lvl.setAttribute('aria-label',e.titolo);
 }
 
 /** Ingrandisce o riduce partendo dalla scala vera: un gesto a mano, che ESCE
@@ -22863,7 +22863,7 @@ window.addEventListener('keydown', function(e){
 <div id="zainiMenu" class="popmenu" role="dialog" aria-label="Scegli uno zaino"></div>
 <dialog id="citazioneDialog" aria-labelledby="citazioneTitolo">
   <div class="tbar"><strong id="citazioneTitolo">Citazione PDF</strong><span class="tbspazio"></span><button type="button" id="citazioneChiudi" class="tbtn" title="Chiudi la fonte" aria-label="Chiudi la fonte"></button></div>
-  <div class="tbar"><button type="button" id="citazionePrima" class="tbtn" title="Pagina precedente" aria-label="Pagina precedente"></button><span id="citazioneConto">− DI −</span><button type="button" id="citazioneDopo" class="tbtn" title="Pagina successiva" aria-label="Pagina successiva"></button><span class="tbsep"></span><button type="button" id="citazioneCopia" class="tbtn">Copia testo con fonte</button><span class="tbsep"></span><button type="button" id="citazioneVai" class="tbtn">Vai allo zaino di origine</button></div>
+  <div class="tbar"><button type="button" id="citazionePrima" class="tbtn" title="Pagina precedente" aria-label="Pagina precedente"></button><span id="citazioneConto">− DI −</span><button type="button" id="citazioneDopo" class="tbtn" title="Pagina successiva" aria-label="Pagina successiva"></button><span class="tbsep"></span><span class="pdfzoom" id="citazioneZoom" role="group" aria-label="Zoom del PDF"><button type="button" class="tbtn" id="citazioneZoomOut" title="Riduci" aria-label="Riduci" disabled></button><button type="button" class="tbtn" id="citazioneZoomLvl" title="Adattata alla larghezza — segue il riquadro; clicca per adattare alla pagina intera" disabled></button><button type="button" class="tbtn" id="citazioneZoomIn" title="Ingrandisci" aria-label="Ingrandisci" disabled></button></span><span class="tbsep"></span><button type="button" id="citazioneCopia" class="tbtn">Copia testo con fonte</button><span class="tbsep"></span><button type="button" id="citazioneVai" class="tbtn">Vai allo zaino di origine</button></div>
   <p id="citazioneStato" role="status"></p>
   <div id="citazionePdf"><div id="citazioneFrame" tabindex="0" autofocus aria-label="PDF citato da un altro zaino" title="Pinch: zoom · Spazio + trascina: sposta · Tre clic: adatta alla larghezza"><div id="citazionePagine" class="pdfViewer"></div></div></div>
 </dialog>
