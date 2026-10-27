@@ -124,11 +124,17 @@
   var md=markdownDaRange(range);if(!md)return;
   var s=b.stato;
   chiudi();openEditor(s);mdbChiudi(true,s);
-  if(s.mde.isPreviewActive())s.mde.togglePreview();
   // Inserire non deve cancellare un'eventuale selezione rimasta nell'appunto.
   s.mde.codemirror.setCursor(b.punto);
+  var riga=s.mde.codemirror.getCursor().line+2;
   if(noteScriviAlCursore('\n\n'+md+'\n\n',s)){
    noteAnteprimaRidisegna(s);
+   // Le .mdb sono display:contents: si scorre il blocco visibile, non il wrapper.
+   // La riga distingue il nuovo estratto da una citazione identica già presente.
+   var pv=noteHost(s).querySelector('.editor-preview-active-side, .editor-preview-active');
+   var blocco=pv && Array.from(pv.querySelectorAll('.mdb')).find(function(el){return Number(el.dataset.da)<=riga && Number(el.dataset.a)>=riga;});
+   var visibile=blocco?.firstElementChild;
+   if(visibile){visibile.tabIndex=-1;visibile.focus({preventScroll:true});visibile.scrollIntoView({block:'center',behavior:'instant'});}
    toast('Testo con fonte inserito in «'+(s.cur.title||s.cur.file)+'».',true);
   }
  };

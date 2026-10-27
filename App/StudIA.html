@@ -1257,6 +1257,8 @@
      coprivano l'oscillazione per caso. */
   #pdfFrame{ position:absolute; inset:0; overflow:auto; outline:0; scrollbar-gutter:stable; }
   #pdfFrame .pdfViewer{ margin:0 auto; }
+  :is(#pdfFrame,#pdf2Frame).pdf-spazio, :is(#pdfFrame,#pdf2Frame).pdf-spazio *{ cursor:grab !important; }
+  :is(#pdfFrame,#pdf2Frame).pdf-trascina, :is(#pdfFrame,#pdf2Frame).pdf-trascina *{ cursor:grabbing !important; user-select:none !important; }
   /* Il documento non c'è ancora, o si sta caricando: si dice, invece di
      lasciare un rettangolo grigio che sembra un guasto. */
   #pdfHost[data-stato]::after{ content:attr(data-stato); position:absolute; inset:0;
@@ -6430,7 +6432,7 @@ function fonte2Aggiorna(){
   if(lvl){
     var e=FontiZoom.etichetta(FONTE2.viewer && FONTE2.viewer.currentScaleValue,
                               FONTE2.viewer && FONTE2.viewer.currentScale, true);
-    UiIcone.imposta(lvl,(FONTE2.viewer && FONTE2.viewer.currentScaleValue)==='page-fit'?'maximize':'move-horizontal');lvl.title=e.titolo;lvl.setAttribute('aria-label',e.titolo);
+    UiIcone.imposta(lvl,(FONTE2.viewer && FONTE2.viewer.currentScaleValue)==='page-fit'?'maximize':'move-horizontal');lvl.title=e.titolo+' · Tre clic sul PDF: adatta alla larghezza · Pinch: zoom · Spazio + trascina: sposta';lvl.setAttribute('aria-label',lvl.title);
   }
 }
 function fonte2Pagina(avanti){
@@ -6446,9 +6448,9 @@ function fonte2ZoomPasso(su){
   try{ FONTE2.viewer.currentScaleValue=String(n); }catch(e){ return; }
   fonte2ZoomRicorda(n); fonte2Aggiorna();
 }
-function fonte2ZoomAdatta(){
+function fonte2ZoomAdatta(larghezza){
   if(!fonte2Aperta()) return;
-  var nuovo=FontiZoom.prossimoAdatta(FONTE2.viewer.currentScaleValue);
+  var nuovo=larghezza===true?'page-width':FontiZoom.prossimoAdatta(FONTE2.viewer.currentScaleValue);
   try{ FONTE2.viewer.currentScaleValue=nuovo; }catch(e){ return; }
   FONTE2.larghezza=$('#pdf2Frame') ? $('#pdf2Frame').clientWidth : 0;
   fonte2ZoomRicorda(nuovo); fonte2Aggiorna();
@@ -6513,23 +6515,7 @@ async function fonte2Pannello(btn){
     if(e.target.closest('#pdf2ZoomLvl')){ fonte2ZoomAdatta(); return; }
     if(e.target.closest('#pdf2Close')){ fonte2Chiudi(); return; }
   });
-  /* ⇧+rotella sotto il puntatore, come la Fonte: `origin` va convertito nel
-     sistema di `offsetTop/offsetLeft` — stessa trappola, stessa correzione. */
-  document.addEventListener('wheel', function(e){
-    if(!e.shiftKey || !fonte2Aperta()) return;
-    if(!e.target.closest || !e.target.closest('#pdf2Frame')) return;
-    var verso=FontiZoom.verso(e); if(!verso) return;
-    e.preventDefault();
-    var host=$('#pdf2Frame'); if(!host) return;
-    var s=FONTE2.viewer.currentScale || 1;
-    var n=FontiZoom.passo(s, verso>0); if(n===null) return;
-    var r=host.getBoundingClientRect();
-    var origine=[ (e.clientX-r.left)+host.offsetLeft, (e.clientY-r.top)+host.offsetTop ];
-    try{ FONTE2.viewer.updateScale({ scaleFactor:n/s, origin:origine, drawingDelay:400 }); }
-    catch(err){ return; }
-    fonte2ZoomRicorda(FONTE2.viewer.currentScale || n);
-    fonte2Aggiorna();
-  }, {passive:false});
+
 })();
 
 /* ===== Zoom e ricerca dentro il documento ================================
@@ -6590,7 +6576,7 @@ function pdfZoomAggiorna(){
   var e=FontiZoom.etichetta(PDFJS.viewer && PDFJS.viewer.currentScaleValue,
                             PDFJS.viewer && PDFJS.viewer.currentScale,
                             PDFFIND.scalaPronta);
-  UiIcone.imposta(lvl,(PDFJS.viewer && PDFJS.viewer.currentScaleValue)==='page-fit'?'maximize':'move-horizontal');lvl.title=e.titolo;lvl.setAttribute('aria-label',e.titolo);
+  UiIcone.imposta(lvl,(PDFJS.viewer && PDFJS.viewer.currentScaleValue)==='page-fit'?'maximize':'move-horizontal');lvl.title=e.titolo+' · Tre clic sul PDF: adatta alla larghezza · Pinch: zoom · Spazio + trascina: sposta';lvl.setAttribute('aria-label',lvl.title);
 }
 
 /** Ingrandisce o riduce partendo dalla scala vera: un gesto a mano, che ESCE
@@ -6606,9 +6592,9 @@ function pdfZoomPasso(su){
 /** Il click sul bottone cicla i due adattamenti: larghezza → pagina intera →
  *  larghezza. Da una percentuale si rientra sempre dalla larghezza. Sono
  *  DINAMICI: `pdfZoomRiadatta` li rifà a ogni cambio di misura del riquadro. */
-function pdfZoomAdatta(){
+function pdfZoomAdatta(larghezza){
   if(!PDFJS.pronto || !PDFJS.doc) return;
-  var nuovo=FontiZoom.prossimoAdatta(PDFJS.viewer.currentScaleValue);
+  var nuovo=larghezza===true?'page-width':FontiZoom.prossimoAdatta(PDFJS.viewer.currentScaleValue);
   try{ PDFJS.viewer.currentScaleValue=nuovo; }catch(e){ return; }
   PDFZOOM.larghezza=pdfFrameLargo();
   pdfZoomRicorda(nuovo); pdfZoomAggiorna();
@@ -6659,54 +6645,6 @@ function pdfZoomRiadatta(){
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', attacca); else attacca();
 })();
-
-/* ---- SHIFT + rotella: si ingrandisce SOTTO IL PUNTATORE ------------------
-   Zoomare sul centro allontana proprio la riga che si sta leggendo: è la stessa
-   regola già pagata sulle mappe. Qui però il conto non lo facciamo noi —
-   `updateScale({origin})` di pdf.js corregge lo scorrimento DOPO il suo
-   `scrollPageIntoView`, che è l'ordine giusto e che rifacendolo a mano si
-   sbaglierebbe. Il `factor` invece lo decidiamo noi, perché i limiti nostri
-   (0,25×–5×) sono più stretti dei suoi (0,1×–25×).
-
-   ⚠️ Serve SHIFT: la rotella nuda deve continuare a scorrere il documento, che
-   è il gesto per cui la rotella esiste. E `{passive:false}` o il
-   `preventDefault` non varrebbe niente — il documento scorrerebbe lo stesso
-   mentre la scala cambia. */
-document.addEventListener('wheel', function(e){
-  if(!e.shiftKey) return;
-  if(!e.target || !e.target.closest || !e.target.closest('#pdfFrame')) return;
-  if(!PDFJS.pronto || !PDFJS.doc || !PDFJS.viewer) return;
-  /* Mentre si sta disegnando un ritaglio la scala non si tocca: il rettangolo è
-     in coordinate di schermo, e sotto gli cambierebbe la pagina. */
-  if(typeof ALBUM!=='undefined' && ALBUM && ALBUM.giu) return;
-  var verso=FontiZoom.verso(e); if(!verso) return;
-  e.preventDefault();
-  var host=$('#pdfFrame'); if(!host) return;
-  var s=PDFJS.viewer.currentScale || 1;
-  var n=FontiZoom.passo(s, verso>0); if(n===null) return;
-  /* ⚠️ `origin` NON è in coordinate di schermo, anche se il visualizzatore
-     ufficiale gli passa `clientX/clientY`. pdf.js lo confronta con
-     `containerTopLeft`, che è `offsetTop/offsetLeft` — cioè la distanza dal
-     primo antenato POSIZIONATO. Nel viewer ufficiale il contenitore sta subito
-     sotto la barra e i due sistemi quasi coincidono; qui `#pdfFrame` è
-     `inset:0` dentro un blocco del banco, quindi `offsetLeft` è 0 mentre a
-     schermo il riquadro comincia a metà finestra. Passando le coordinate del
-     mouse la correzione veniva fatta a METÀ: misurato, il punto sotto il
-     puntatore scappava di 29px (dx −25 · dy −15) invece dei 2 di adesso.
-     Si converte: distanza dal bordo del riquadro, riportata nel sistema che
-     pdf.js userà per sottrarre. */
-  var r=host.getBoundingClientRect();
-  var origine=[ (e.clientX-r.left)+host.offsetLeft, (e.clientY-r.top)+host.offsetTop ];
-  try{
-    /* `drawingDelay` è il ritardo con cui si ridisegna a piena definizione: nel
-       frattempo la pagina è ingrandita via CSS. È quello che fa il
-       visualizzatore ufficiale sulla rotella, e senza, una rotellata lunga
-       chiederebbe una ventina di disegni veri. */
-    PDFJS.viewer.updateScale({ scaleFactor: n/s, origin:origine, drawingDelay:400 });
-  }catch(err){ return; }
-  pdfZoomRicorda(PDFJS.viewer.currentScale || n);
-  pdfZoomAggiorna();
-}, {passive:false});
 
 /* ---- la ricerca nel documento ----
    ⚠️ Non si cerca a mano nel layer di testo: pdf.js ha un `PDFFindController`
@@ -22929,6 +22867,7 @@ window.addEventListener('keydown', function(e){
   <p id="citazioneStato" role="status"></p>
   <div id="citazionePdf"><div id="citazioneFrame"><div id="citazionePagine" class="pdfViewer"></div></div></div>
 </dialog>
+<script src="assets/fonti/gesti.js"></script>
 <script src="assets/rimandi/citazioni-ui.js"></script>
 <script src="assets/interfaccia/zaini-menu.js"></script>
 </body>

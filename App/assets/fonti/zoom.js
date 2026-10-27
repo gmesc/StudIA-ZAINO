@@ -11,7 +11,7 @@
    I primi due sono DINAMICI: il riquadro cambia misura (si trascina il divisore,
    si allarga la finestra, il blocco del banco cambia forma) e la scala li segue.
    Il terzo no: chi ha scelto 144% vuole 144% anche in un riquadro più stretto.
-   Il click sul bottone cicla fra i due modi; «+», «−» e SHIFT+rotella portano al
+   Il click sul bottone cicla fra i due modi; «+», «−», pinch e SHIFT+rotella portano al
    numero.
 
    ⚠️ PERCHÉ QUESTO FILE ESISTE. Il modo attivo NON è una variabile nostra: è
@@ -219,6 +219,19 @@
     return d < 0 ? 1 : -1;
   }
 
+  /** Chromium traduce il pinch in wheel+Ctrl: si conserva il delta continuo,
+   *  mentre Shift mantiene il passo della rotella. Due dita senza Ctrl scorrono. */
+  function daRotella(scala, e) {
+    if (!e || (!e.ctrlKey && !e.shiftKey)) return null;
+    if (!e.ctrlKey) return verso(e) ? passo(scala, verso(e) > 0) : null;
+    var d = Number(e.deltaY), s = Number(scala);
+    if (!isFinite(d) || !d) return null;
+    if (!isFinite(s) || s <= 0) s = 1;
+    if ((d < 0 && s >= MAX) || (d > 0 && s <= MIN)) return null;
+    d *= e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 800 : 1;
+    return Math.max(MIN, Math.min(MAX, s * Math.exp(-d * 0.01)));
+  }
+
   /**
    * Vale la pena riadattare per questo cambio di larghezza?
    *
@@ -239,7 +252,7 @@
   return {
     MIN: MIN, MAX: MAX, PASSO: PASSO, MODI: MODI, MODI_NOTI: MODI_NOTI, SEGNI: SEGNI,
     modo: modo, valido: valido, passo: passo, prossimoAdatta: prossimoAdatta,
-    etichetta: etichetta, verso: verso, daRiadattare: daRiadattare,
+    etichetta: etichetta, verso: verso, daRotella: daRotella, daRiadattare: daRiadattare,
     scalaPer: scalaPer, puntoFisso: puntoFisso
   };
 }));

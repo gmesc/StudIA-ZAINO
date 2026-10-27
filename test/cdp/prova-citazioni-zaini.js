@@ -1,6 +1,66 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),c=require('./cdp'),q=JSON.stringify;
 async function wait(expr){for(let i=0;i<180;i++){if(await c.val(expr))return;await c.pausa(100);}throw Error('Attesa: '+expr+'; '+JSON.stringify(await c.val(`({dialog:document.getElementById('citazioneDialog').open,stato:document.getElementById('citazioneStato').textContent})`)));}
+async function provaGesti(){
+ await c.val(`cambiaZaino('biologia',true);bancoForma('due-col');bancoAssegna('A','fonte');bancoAssegna('C','fonte2');openPdf('01 Botanica.pdf',1,'Botanica',true);fonte2Apri('02 Biologia cellulare.pdf',1)`);
+ await wait(`PDFJS.pronto&&!!PDFJS.doc&&!!FONTE2.doc&&document.querySelector('#pdf2Frame .textLayer span')`);
+ const mouse=(type,p,extra={})=>c.invia('Input.dispatchMouseEvent',{type,...p,...extra});
+ const spazio=type=>c.invia('Input.dispatchKeyEvent',{type,key:' ',code:'Space',windowsVirtualKeyCode:32});
+ for(const [id,v,altro,chiave] of [['pdfFrame','PDFJS.viewer','FONTE2.viewer','studia.pdf.zoom'],['pdf2Frame','FONTE2.viewer','PDFJS.viewer','studia.pdf2.zoom']]){
+  await c.val(`${v}.currentScaleValue='1.8'`);await c.pausa(500);
+  await c.val(`(()=>{const h=document.getElementById('${id}');h.scrollLeft=120;h.scrollTop=200;h.focus();})()`);
+  const p=await c.val(`(()=>{const r=document.getElementById('${id}').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/3};})()`);
+  const fermo=await c.val(`${altro}.currentScale`);
+  const ancora=()=>c.val(`(()=>{const r=document.querySelector('#${id} .page').getBoundingClientRect();return {x:(${p.x}-r.x)/${v}.currentScale,y:(${p.y}-r.y)/${v}.currentScale};})()`);
+  const prima=await ancora();
+  await mouse('mouseWheel',p,{deltaX:0,deltaY:-12,modifiers:2});await c.pausa(500);
+  const scala=await c.val(`${v}.currentScale`);assert(scala>1.8&&scala<2.1,'pinch continuo nel '+id+': '+scala);
+  const dopo=await ancora();assert(Math.hypot(prima.x-dopo.x,prima.y-dopo.y)<3,'ancora del pinch nel '+id+': '+JSON.stringify({prima,dopo}));
+  assert.equal(await c.val(`${altro}.currentScale`),fermo,'pinch indipendente');
+  const scroll=()=>c.val(`(()=>{const h=document.getElementById('${id}');return {x:h.scrollLeft,y:h.scrollTop};})()`);
+  const s0=await scroll();await mouse('mouseWheel',p,{deltaX:45,deltaY:70});await c.pausa(250);const s1=await scroll();
+  assert(s1.x>s0.x&&s1.y>s0.y,'scorrimento nativo su entrambi gli assi');assert.equal(await c.val(`${v}.currentScale`),scala);
+  await mouse('mouseMoved',p);await spazio('keyDown');
+  assert(await c.val(`document.getElementById('${id}').classList.contains('pdf-spazio')`),'Spazio arma solo il lettore');
+  await mouse('mousePressed',p,{button:'left',buttons:1,clickCount:1});
+  await mouse('mouseMoved',{x:p.x-65,y:p.y-80},{button:'left',buttons:1});
+  await mouse('mouseReleased',{x:p.x-65,y:p.y-80},{button:'left',buttons:0,clickCount:1});await spazio('keyUp');
+  const s2=await scroll();assert(Math.abs(s2.x-s1.x-65)<2&&Math.abs(s2.y-s1.y-80)<2,'Spazio+trascina sposta il documento '+JSON.stringify({s1,s2}));
+  assert.equal(await c.val(`getSelection().toString()`),'','pan senza selezione');
+  assert(await c.val(`!document.querySelector('.pdf-spazio,.pdf-trascina')`),'rilascio pulisce il cursore');
+  // Tre clic da scala manuale e da larghezza: sempre larghezza, mai pagina intera.
+  for(let giro=0;giro<2;giro++){
+   for(let n=1;n<=3;n++)for(const type of ['mousePressed','mouseReleased'])await mouse(type,p,{button:'left',clickCount:n});
+   await c.pausa(150);assert.equal(await c.val(`${v}.currentScaleValue`),'page-width','triplo click nel '+id);
+  }
+  assert.equal(await c.val(`localStorage.getItem('${chiave}')`),'page-width','adattamento salvato');
+  assert.equal(await c.val(`${altro}.currentScale`),fermo,'reset indipendente');
+  const adattata=await c.val(`${v}.currentScale`);
+  await c.val(`document.getElementById('${id}').style.right='100px'`);await c.pausa(200);
+  assert(await c.val(`${v}.currentScale<${adattata}`),'dopo tre clic segue la nuova larghezza');
+  await c.val(`document.getElementById('${id}').style.right=''`);await c.pausa(200);
+  // Perdita del focus: nessuna mano rimane attiva al ritorno.
+  await c.val(`document.getElementById('${id}').focus()`);await spazio('keyDown');await c.val(`window.dispatchEvent(new Event('blur'))`);
+  assert(await c.val(`!document.querySelector('.pdf-spazio,.pdf-trascina')`));await spazio('keyUp');
+ }
+ // Il trascinamento normale sul testo mantiene selezione e menu.
+ await c.val(`PDFJS.viewer.currentPageNumber=1;document.getElementById('pdfFrame').scrollTop=0;document.getElementById('pdfFrame').scrollLeft=0;`);await c.pausa(300);
+ const r=await c.val(`(()=>{const r=document.querySelector('#pdfFrame .textLayer span').getBoundingClientRect();return {x:r.x+2,y:r.y+r.height/2,end:r.right-2};})()`);
+ await mouse('mousePressed',{x:r.x,y:r.y},{button:'left',buttons:1,clickCount:1});
+ await mouse('mouseMoved',{x:r.end,y:r.y},{button:'left',buttons:1});await mouse('mouseReleased',{x:r.end,y:r.y},{button:'left',buttons:0,clickCount:1});
+ assert((await c.val('getSelection().toString()')).includes('Botanica'),'trascinamento normale seleziona il testo');
+ for(let n=1;n<=3;n++)for(const type of ['mousePressed','mouseReleased'])await mouse(type,{x:r.x+12,y:r.y},{button:'left',clickCount:n});
+ await c.pausa(100);assert.equal(await c.val('getSelection().toString()'),'','tre clic sul testo non lasciano una selezione');
+ assert(!await c.val('selBarraAperta()'),'tre clic non aprono il menu di selezione');
+ const shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-gesti-fonti.png',Buffer.from(shot.result.data,'base64'));
+
+ await c.val(`getSelection().removeAllRanges();selMenuChiudi();selBarraChiudi();window.__campoProva=document.createElement('input');document.body.append(window.__campoProva);window.__campoProva.focus()`);
+ await mouse('mouseMoved',{x:r.x,y:r.y});await c.invia('Input.dispatchKeyEvent',{type:'keyDown',key:' ',code:'Space',windowsVirtualKeyCode:32,text:' '});await spazio('keyUp');
+ assert.equal(await c.val('window.__campoProva.value'),' ','lo spazio scritto non viene rubato dal PDF');
+ assert(await c.val(`!document.querySelector('.pdf-spazio,.pdf-trascina')`));await c.val('window.__campoProva.remove();fonte2Chiudi();closePdf()');
+ console.log('Fonti: pinch ancorato, scroll, Spazio+trascina, tre clic e riadattamento in entrambi gli split OK');
+}
+
 (async()=>{
  await c.collega();await wait(`typeof zainiMenuApri==='function'&&!!zainoAttivo()`);await c.partiPulito();
  const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
@@ -88,29 +148,32 @@ async function wait(expr){for(let i=0;i<180;i++){if(await c.val(expr))return;awa
   // Gesto reale dal secondo appunto in anteprima: destinazione stabile, inserimento
   // senza sostituire il testo selezionato e un solo Annulla per tornare all'originale.
   await c.clicca('#citazioneChiudi');
-  const primoPrima=await c.val('NOTES.mde.value()'),corpoSecondo='Inizio\n\n'+cita.markdown+'\n\nFine';
+  const primoPrima=await c.val('NOTES.mde.value()'),corpoSecondo='Inizio\n\n'+cita.markdown+'\n\n'+Array.from({length:30},(_,i)=>'Paragrafo di studio '+(i+1)+'.').join('\n\n')+'\n\nFine';
   const seconda=await c.val(`window.vault.notes.save('storia',null,{title:'Appunto di destinazione'},${q(corpoSecondo)})`);
   assert(!seconda.error,JSON.stringify(seconda));secondoCreato=path.join(vault,'Zaini/storia/APPUNTI',seconda.file);
   await c.val(`bancoAssegna('C','appunti2');notesReload();noteOpen(${q(seconda.file)},NOTE_ISTANZE[1])`);await c.pausa(120);
   const secondoPrima=await c.val('NOTE_ISTANZE[1].mde.value()');
-  await c.val(`(()=>{const s=NOTE_ISTANZE[1];if(s.mde.isPreviewActive())s.mde.togglePreview();s.mde.codemirror.setSelection({line:0,ch:0},{line:0,ch:6});s.mde.togglePreview();})()`);
+  await c.val(`(()=>{const s=NOTE_ISTANZE[1];if(s.mde.isPreviewActive())s.mde.togglePreview();const ultima=s.mde.value().split('\\n').findIndex(r=>r==='Fine');s.mde.codemirror.setSelection({line:ultima,ch:0},{line:ultima,ch:4});s.mde.togglePreview();})()`);
   await wait(`!!document.querySelector('#noteHost2 .editor-preview-active a[data-citazione-zaino]')`);
   await c.clicca('#noteHost2 .editor-preview-active a[data-citazione-zaino]');
   await wait(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span')`);
   await c.val(`noteAttiva(NOTES);window.__selezionaCitazione()`);await wait(`selBarraAperta()`);
   assert((await c.val(`document.querySelector('#selBarra [data-az="inserisci-citazione"]').title`)).includes('Appunto di destinazione'));
   await c.clicca('#selBarra [data-az="inserisci-citazione"]');
-  await wait(`!document.getElementById('citazioneDialog').open && NOTE_ISTANZE[1].mde.codemirror.hasFocus()`);
+  await wait(`!document.getElementById('citazioneDialog').open`);
   const inserito=await c.val('NOTE_ISTANZE[1].mde.value()');
-  assert(inserito.startsWith('Inizio\n\n> Botanica - pagina 2'),'non sostituisce la selezione precedente');
+  assert(inserito.includes('Fine\n\n> Botanica - pagina 2'),'non sostituisce la selezione precedente: '+inserito.slice(-300));
   assert.equal(inserito.split(cita.rimando).length,3,'testo con origine e pagina corrette');
-  assert.equal(await c.val('NOTE_ISTANZE[1].mde.isPreviewActive()'),false,'inserimento visibile nella scrittura');
+  await c.pausa(300);
+  assert.equal(await c.val('NOTE_ISTANZE[1].mde.isPreviewActive()'),true,'resta in anteprima');
+  assert(await c.val(`(()=>{const pv=document.querySelector('#noteHost2 .editor-preview-active'),b=[...pv.querySelectorAll('blockquote')].at(-1),r=b.getBoundingClientRect(),v=pv.getBoundingClientRect();return r.top>=v.top && r.bottom<=v.bottom && document.activeElement===b;})()`),'il nuovo estratto, non quello identico già presente, è visibile e riceve il focus');
   assert.equal(await c.val('NOTES.mde.value()'),primoPrima,'il primo appunto resta intatto');
   assert.equal(await c.val('zainoAttivo()'),'storia');
+  shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-citazione-inserita.png',Buffer.from(shot.result.data,'base64'));
   await c.val('noteCronologia(NOTE_ISTANZE[1],false)');assert.equal(await c.val('NOTE_ISTANZE[1].mde.value()'),secondoPrima,'un solo Annulla');
   await c.val('noteCronologia(NOTE_ISTANZE[1],true);noteFlushStato(NOTE_ISTANZE[1])');
-  assert(fs.readFileSync(secondoCreato,'utf8').includes(inserito),'inserimento salvato sul disco');
-  shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-citazione-inserita.png',Buffer.from(shot.result.data,'base64'));
+  assert(fs.readFileSync(secondoCreato,'utf8').includes(inserito.trimEnd()),'inserimento salvato sul disco');
+
   // La destinazione chiusa mentre il PDF carica non autorizza la scrittura altrove.
   await c.val(`citazioneZainoApri(${q(cita.rimando)},NOTE_ISTANZE[1]);closeEditor(NOTE_ISTANZE[1])`);
   await wait(`!!document.querySelector('#citazionePagine .page[data-page-number="2"] .textLayer span')`);
@@ -138,6 +201,7 @@ async function wait(expr){for(let i=0;i<180;i++){if(await c.val(expr))return;awa
   try{await c.val(`citazioneZainoApri(${q(cita.rimando)})`);await wait(`document.getElementById('citazioneTitolo').textContent.includes('rinominata')`);await c.clicca('#citazioneChiudi');}
   finally{fs.renameSync(ren,old);}
   await c.clicca('#noteClose');
+  await provaGesti();
  }finally{
   fs.rmSync(extra,{force:true});
   fs.rmSync(locale,{force:true});

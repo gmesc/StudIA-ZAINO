@@ -133,6 +133,20 @@ ok('e nell’altro verso pure', -1, Z.verso({ deltaY: 0, deltaX: 40 }));
 ok('una rotellata vuota non tocca la scala', 0, Z.verso({ deltaY: 0, deltaX: 0 }));
 ok('e nemmeno un evento senza delta', 0, Z.verso({}));
 
+sezione('Pinch continuo: solo il documento sotto il puntatore');
+ok('due dita senza pinch scorrono senza zoom', null, Z.daRotella(1, {deltaY:-20}));
+ok('Shift mantiene il passo anche su deltaX', 1.1, Z.daRotella(1, {shiftKey:true,deltaX:-20}));
+const piccolo=Z.daRotella(1, {ctrlKey:true,deltaY:-0.2});
+ok('un delta piccolo non salta del dieci per cento', true, piccolo>1 && piccolo<1.01);
+ok('pinch opposti si compensano', true, Math.abs(Z.daRotella(piccolo,{ctrlKey:true,deltaY:0.2})-1)<1e-10);
+ok('unità in righe normalizzate', Z.daRotella(1,{ctrlKey:true,deltaY:-16}), Z.daRotella(1,{ctrlKey:true,deltaY:-1,deltaMode:1}));
+ok('pinch grande si ferma al tetto', Z.MAX, Z.daRotella(1,{ctrlKey:true,deltaY:-10000}));
+ok('pinch in riduzione si ferma al minimo', Z.MIN, Z.daRotella(1,{ctrlKey:true,deltaY:10000}));
+ok('nessuna inversione oltre il tetto', null, Z.daRotella(6,{ctrlKey:true,deltaY:-10}));
+ok('nessuna inversione sotto il minimo', null, Z.daRotella(.1,{ctrlKey:true,deltaY:10}));
+ok('un evento vuoto non cambia il modo', null, Z.daRotella(1,{ctrlKey:true,deltaY:0}));
+ok('delta non finito ignorato', null, Z.daRotella(1,{ctrlKey:true,deltaY:Infinity}));
+
 sezione('⚠️ L’isteresi che rompe il ping-pong della barra di scorrimento');
 ok('a mano non si riadatta mai', false, Z.daRiadattare('1.44', 800, 600));
 ok('la prima volta si adatta sempre', true, Z.daRiadattare('page-width', 800, 0));

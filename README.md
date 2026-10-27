@@ -53,7 +53,7 @@ Le domande di ciascuna scheda si possono comprimere dal titolo con il chevron e 
 
 Seleziona un passaggio nel PDF e scegli **Copia testo con fonte**, poi incollalo in un appunto di un altro zaino dello stesso vault. Nel secondo lettore il comando è nel menu del tasto destro. La toolbar Appunti → **Cita un materiale** permette anche di scegliere lo **Zaino della fonte** e inserire il rimando alla pagina.
 
-Nell’anteprima del PDF, seleziona un passaggio e scegli **Inserisci nell’appunto**: testo e fonte entrano al cursore dell’appunto da cui hai aperto il riferimento, anche nel secondo split. L’app torna alla scrittura; **⌘Z** annulla l’inserimento. Se non c’è un appunto aperto, il comando è disabilitato.
+Nell’anteprima del PDF, seleziona un passaggio e scegli **Inserisci nell’appunto**: testo e fonte entrano al cursore dell’appunto da cui hai aperto il riferimento, anche nel secondo split. L’appunto resta in anteprima e mostra subito il nuovo estratto; **⌘Z** annulla l’inserimento. Se non c’è un appunto aperto, il comando è disabilitato.
 
 Il link mostra **Zaino › PDF · pagina** e apre una consultazione in sola lettura senza cambiare lo zaino attivo. **Vai allo zaino di origine** cambia invece il contesto esplicitamente. Identità permanenti e revisione proteggono da rinomine, spostamenti tra gruppi e sostituzioni; fonti mancanti, cambiate o zaini con identità duplicata vengono segnalati. Il registro delle fonti ammette PDF fino a 40 MB. Esportare solo lo zaino con gli appunti conserva testo e riferimenti, ma non copia i PDF degli altri zaini.
 
@@ -82,7 +82,7 @@ Il menu **Banco** offre le disposizioni **Leggi e annota**, **Prepara schede** e
 
 Ogni tendina nella testata del banco offre **Appunti** e **Fonti**. Scegli la stessa voce in un secondo riquadro per aprire un altro materiale: sono disponibili due editor e due visualizzatori PDF indipendenti, anche insieme nella forma a quattro riquadri. Il menu del materiale in ciascun riquadro sceglie il file. Posizioni e materiali aperti vengono ripristinati per zaino.
 
-I due appunti si salvano separatamente e vengono salvati prima dell’invio alla chat. Lo stesso appunto non può essere modificato nei due editor contemporaneamente. La seconda fonte permette lettura, selezione/copia, pagina e zoom indipendenti; gli strumenti avanzati di annotazione e ritaglio restano nella prima fonte.
+I due appunti si salvano separatamente e vengono salvati prima dell’invio alla chat. Lo stesso appunto non può essere modificato nei due editor contemporaneamente. In entrambi gli split Fonti puoi ingrandire con il pinch, scorrere con due dita o con **Spazio + trascinamento**. **Tre clic sul PDF** ripristinano l’adattamento automatico alla larghezza dello split. La seconda fonte permette lettura, selezione/copia, pagina e zoom indipendenti; gli strumenti avanzati di annotazione e ritaglio restano nella prima fonte.
 
 I due editor degli appunti hanno gli stessi comandi: formattazione, callout, emoji, citazioni, materiali, anteprima modificabile, immagini, rinomina con fonte associata, eliminazione, stampa e PDF. Il riquadro usato per ultimo riceve **Appunta**, parole chiave e aperture dalla sidebar; **⌘/Ctrl+S** salva quel riquadro e **⌘/Ctrl+J** ne cambia l’anteprima. Ogni appunto conserva il proprio testo, cursore e salvataggio. Scrivi `> ` e scegli un callout: il cursore si posiziona subito nel corpo vuoto, dopo `> `.
 
