@@ -42,11 +42,14 @@ function verificaFile(file) {
 }
 const vaultApi = {
   hasElectron: true,
+  lim: {comando:o=>ipcRenderer.invoke('lim:comando',o),flush:o=>ipcRenderer.sendSync('lim:flush',o),onCambiata:fn=>{const h=(_e,d)=>fn(d);ipcRenderer.on('lim:cambiata',h);return ()=>ipcRenderer.removeListener('lim:cambiata',h);}},
   presentazione: {
     intero:attivo=>ipcRenderer.invoke('presentazione:intero',{attivo}),
-    apri:()=>ipcRenderer.invoke('proiezione:apri'),
+    apri:o=>ipcRenderer.invoke('proiezione:apri',o),
     aggiorna:o=>ipcRenderer.invoke('proiezione:aggiorna',o),
+    lavagna:o=>ipcRenderer.invoke('proiezione:lavagna',o),
     chiudi:()=>ipcRenderer.invoke('proiezione:chiudi'),
+    onFonte:fn=>{const h=(_e,d)=>fn(d);ipcRenderer.on('proiezione:fonte',h);return ()=>ipcRenderer.removeListener('proiezione:fonte',h);},
     onSposta:fn=>{const h=(_e,d)=>fn(d);ipcRenderer.on('proiezione:sposta',h);return ()=>ipcRenderer.removeListener('proiezione:sposta',h);},
     onVista:fn=>{const h=(_e,d)=>fn(d);ipcRenderer.on('proiezione:vista',h);return ()=>ipcRenderer.removeListener('proiezione:vista',h);},
     onChiusa:fn=>{const h=(_e,d)=>fn(d);ipcRenderer.on('proiezione:chiusa',h);return ()=>ipcRenderer.removeListener('proiezione:chiusa',h);},

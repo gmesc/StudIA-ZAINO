@@ -27,8 +27,8 @@
  }
  function allinea(){
   if(tipo==='clone'&&layout){
-   const k=innerWidth/layout.width;
-   $('vista').style.clipPath='inset(0 0 '+Math.max(0,innerHeight-layout.height*k)+'px 0)';
+   const k=$('vista').clientWidth/layout.width;
+   $('vista').style.clipPath='inset(0 0 '+Math.max(0,$('vista').clientHeight-layout.height*k)+'px 0)';
    Object.assign($('contenuto').style,{left:layout.x*k+'px',top:layout.y*k+'px',transform:'scale('+k+')'});
    return;
   }
@@ -37,7 +37,7 @@
   const r=el.getBoundingClientRect(),v=$('vista');
   v.scrollTop=L.posizione({top:r.top+v.scrollTop,height:r.height},ancora)-64;
  }
- function inviaVista(ancora){comando({ancora,azione:'vista',width:innerWidth,height:innerHeight,scala,dpr:devicePixelRatio});}
+ function inviaVista(ancora){comando({ancora,azione:'vista',width:$('vista').clientWidth,height:$('vista').clientHeight,scala,dpr:devicePixelRatio});}
  function ingrandisci(n,ancora){scala=Math.max(100,L.scala(n));document.documentElement.style.setProperty('--zoom',scala/100);$('scala').textContent=Math.round(scala)+'%';$('meno').disabled=scala<=100;$('piu').disabled=scala>=300;
   inviaVista(ancora);requestAnimationFrame(allinea);
  }
@@ -49,10 +49,11 @@
  api.intero(value=>{annullaGesti();intero=value;$('intero').title=value?'Esci dallo schermo intero (Esc)':'Schermo intero (Esc per uscire)';$('intero').setAttribute('aria-label',$('intero').title);mostraBarra();});
  api.schermi(({schermi,corrente})=>{$('schermiLabel').hidden=schermi.length<2;$('schermi').replaceChildren();for(const s of schermi){const o=document.createElement('option');o.value=s.id;o.textContent=s.nome;$('schermi').append(o);}$('schermi').value=corrente;});
  api.quadro(q=>{
+  window.ProiezioneLavagna?.quadro(q);
   document.documentElement.dataset.theme=q.tema;$('titolo').textContent=q.titolo;document.title=q.titolo+' — Proiezione';
   if(tipo!==q.tipo){tipo=q.tipo;ingrandisci(100);}
   if(tipo!=='clone')$('vista').style.clipPath='';
-  document.body.dataset.tipo=['pdf','mappa'].includes(tipo)?'immagine':tipo;$('contenuto').hidden=!['testo','clone'].includes(tipo);$('figura').hidden=!['pdf','mappa','immagine'].includes(tipo);
+  document.body.dataset.tipo=['pdf','mappa','lavagna'].includes(tipo)?'immagine':tipo;$('contenuto').hidden=!['testo','clone'].includes(tipo);$('figura').hidden=!['pdf','mappa','lavagna','immagine'].includes(tipo);
   if(q.html!=null&&q.html!==ultimoHtml){
    ultimoHtml=q.html;$('contenuto').replaceChildren(pulisci(q.html));
    $('contenuto').querySelectorAll('[data-sy]').forEach(el=>{el.scrollLeft=Number(el.dataset.sx)||0;el.scrollTop=Number(el.dataset.sy)||0;});
@@ -66,5 +67,6 @@
  window.addEventListener('keydown',e=>{if(e.key==='Tab')mostraBarra();if(e.key==='Escape'&&intero)comando({azione:'intero'});});
  function densita(){const media=matchMedia('(resolution: '+devicePixelRatio+'dppx)');media.addEventListener('change',()=>{inviaVista();densita();},{once:true});}
  annullaGesti=ProiezioneGesti.collega($('vista'),{leggiScala:()=>scala,zoom:ingrandisci,sposta:(dx,dy)=>comando({azione:'sposta',dx,dy}),adatta:()=>ingrandisci(100)});
+ new ResizeObserver(()=>{inviaVista();requestAnimationFrame(allinea);}).observe($('vista'));
  densita();ingrandisci(100);mostraBarra();
 }());

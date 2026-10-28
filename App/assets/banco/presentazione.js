@@ -132,7 +132,7 @@
   const el=perId(p.id),b=blocco(p.id);if(!b||b.hidden||p.zaino!==window.corsoAttivo()){await chiudiProiezione();return;}
   try{
    let quadro={sessione:p.sessione,titolo:titolo(p.id),tema:document.documentElement.dataset.theme==='scuro'?'dark':'light'};
-   const target=testuali.has(p.id)?testo(p.id):el.querySelector('#pdfFrame,#pdf2Frame,#mappaSvg')||el;
+   const target=testuali.has(p.id)?testo(p.id):el.querySelector('#pdfFrame,#pdf2Frame,#mappaSvg,.lim-editor')||el;
    const r=target.getBoundingClientRect(),misure=[r.x,r.y,r.width,r.height].join(',');
    if(!p.dirty&&p.misure===misure){p.timer=setTimeout(()=>aggiornaProiezione(p),250);return;}
    p.dirty=false;p.misure=misure;
@@ -147,12 +147,17 @@
     if(viewer?.pdfDocument){
      const immagine=await ProiezioneContenuti.pdf(viewer,target,p.ritaglio,p.vista,p);
      if(p.annullato||proiezione!==p)return;
-     quadro={...quadro,tipo:'pdf',immagine};
+     const pagina=[...target.querySelectorAll('.page')].find(e=>{const r=e.getBoundingClientRect();return r.bottom>p.ritaglio.y&&r.top<p.ritaglio.y+p.ritaglio.height;});
+     const n=Number(pagina?.dataset.pageNumber)||viewer.currentPageNumber,sorgente=p.id==='fonte'?window.ANTEPRIMA:window.FONTE2;
+     const spans=[...(pagina?.querySelectorAll('.textLayer span')||[])].filter(e=>{const r=e.getBoundingClientRect();return r.bottom>p.ritaglio.y&&r.top<p.ritaglio.y+p.ritaglio.height&&r.right>p.ritaglio.x&&r.left<p.ritaglio.x+p.ritaglio.width;});
+     const chiave=sorgente.file+'#'+n;
+     if(p.fonteChiave!==chiave){const f=await window.vault.citazioni.crea(p.zaino,sorgente.file,n,'');if(f.error)throw Error(f.error);p.fonteChiave=chiave;p.fonteLink=f.rimando;}
+     quadro={...quadro,tipo:'pdf',immagine,fonte:{titolo:FontiNomi.visibile(sorgente.file)+'; p. '+n,link:p.fonteLink,testo:spans.map(e=>e.textContent).join(' ').slice(0,100000)}};
     }else if(p.id==='mappa'){
      const immagine=await ProiezioneContenuti.mappa(target,p.ritaglio,p.vista,p);
      if(p.annullato||proiezione!==p)return;
      quadro={...quadro,tipo:'mappa',immagine};
-    }else quadro={...quadro,tipo:'immagine',area:p.ritaglio};
+    }else if(p.id==='lim'){quadro={...quadro,tipo:'lavagna',immagine:await window.ZainoLim.editor.immagine(p.ritaglio,p.vista)};}else quadro={...quadro,tipo:'immagine',area:p.ritaglio};
    }
    const risposta=await api.aggiorna(quadro);if(risposta.error)throw Error(risposta.error);if(risposta.chiusa){if(proiezione===p){libera(p);proiezione=null;controlli();}return;}
   }catch(e){if(proiezione!==p||p.annullato)return;avvisa(e);await chiudiProiezione();return;}
@@ -162,7 +167,7 @@
   if(aprendo)return;if(!api){avvisa('La proiezione richiede l’app desktop.');return;}
   if(proiezione?.id===id)return;aprendo=true;
   try{
-   if(proiezione)await chiudiProiezione();const r=await api.apri();if(r.error)throw Error(r.error);
+   if(proiezione)await chiudiProiezione();const r=await api.apri({corso:window.corsoAttivo()});if(r.error)throw Error(r.error);
    proiezione={id,zaino:window.corsoAttivo(),sessione:r.sessione,vista:r.vista,punto:{x:0,y:0},html:null,md:null,dirty:true};
    const p=proiezione,s=nota(id);
    if(s?.mde){
@@ -193,14 +198,15 @@
    const mosso=L.spostaVista(p.area,p.vista,p.punto,d.dx,d.dy);p.punto=mosso.punto;gestoAggiornato(p);
    // Alla fine del ritaglio si continua nel documento: dalla LIM non serve
    // tornare al portatile per raggiungere il passaggio successivo.
-   const el=perId(p.id),target=testuali.has(p.id)?testo(p.id):el.querySelector('#pdfFrame,#pdf2Frame,#mappaSvg');
+   const el=perId(p.id),target=testuali.has(p.id)?testo(p.id):el.querySelector('#pdfFrame,#pdf2Frame,#mappaSvg,.lim-editor');
    if(p.id==='mappa'){
     const matrice=target?.getScreenCTM();if(matrice&&window.MAPPA?.z){MAPPA.z.x-=mosso.resto.x/matrice.a;MAPPA.z.y-=mosso.resto.y/matrice.d;window.mappaApplicaZoom();}
-   }else if(target){target.scrollLeft+=mosso.resto.x;target.scrollTop+=mosso.resto.y;}
+   }else if(p.id==='lim'&&window.ZainoLim.editor.api){const a=window.ZainoLim.editor.api,s=a.getAppState();a.updateScene({appState:{scrollX:s.scrollX-mosso.resto.x/s.zoom.value,scrollY:s.scrollY-mosso.resto.y/s.zoom.value}});}else if(target){target.scrollLeft+=mosso.resto.x;target.scrollTop+=mosso.resto.y;}
   });
   api?.onChiusa(d=>{if(proiezione?.sessione===d.sessione){libera(proiezione);proiezione=null;controlli();}});
   api?.onUscita(ripristinaIntero);
   window.addEventListener('pointermove',e=>{if(intero&&e.clientY<56)mostraBarra();});
+  window.addEventListener('studia:lim-disegno',()=>{if(proiezione?.id==='lim')proiezione.dirty=true;});
   document.addEventListener('input',()=>{if(proiezione)proiezione.dirty=true;},true);
   document.addEventListener('scroll',()=>{if(proiezione)proiezione.dirty=true;},true);
   document.addEventListener('selectionchange',()=>{if(proiezione)proiezione.dirty=true;});

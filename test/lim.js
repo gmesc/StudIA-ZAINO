@@ -1,0 +1,37 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),M=require('../App/assets/lim/modello'),L=require('../lib/lim');
+const v=fs.mkdtempSync(path.join(os.tmpdir(),'studia-lim-'));
+try{
+ require('../lib/zaini').crea(v,'Scienze');require('../lib/zaini').crea(v,'Storia');
+ assert.deepEqual(L.elenco(v,'scienze'),[]);assert(!fs.existsSync(path.join(v,'Zaini/scienze/LIM')));
+ const d=L.comando(v,'scienze',{azione:'crea',titolo:'La cellula'}).lavagna,id=d.studia.id;
+ const el=(id,version,text)=>({id,type:'text',x:10,y:20,width:200,height:30,version,versionNonce:1,text});
+ const a={elements:[el('a',1,'Nucleo')],files:{},appState:{scrollX:3}};
+ L.comando(v,'scienze',{azione:'salva',id,scena:a});L.comando(v,'scienze',{azione:'salva',id,scena:{...a,elements:[el('b',1,'Membrana')]}});
+ assert.equal(L.leggi(v,'scienze',id).elements.length,2,'modifiche concorrenti conservate');
+ L.comando(v,'scienze',{azione:'salva',id,scena:{...a,elements:[{...el('a',2,'Nucleo'),isDeleted:true}]}});
+ L.comando(v,'scienze',{azione:'salva',id,scena:a});assert(L.leggi(v,'scienze',id).elements.find(e=>e.id==='a').isDeleted,'salvataggio vecchio non resuscita un segno');
+ assert.throws(()=>L.leggi(v,'storia',id));assert.throws(()=>L.leggi(v,'scienze','../a'));
+ assert.throws(()=>M.scena({...a,elements:[{...el('a',1,'x'),link:'javascript:alert(1)'}]}));
+ assert.throws(()=>M.scena({...a,files:{x:{id:'x',mimeType:'image/png',dataURL:'https://example.com/x'}}}));
+ L.comando(v,'scienze',{azione:'rinomina',id,titolo:'Cellule'});assert.equal(L.elenco(v,'scienze')[0].title,'Cellule');
+ L.comando(v,'scienze',{azione:'elimina',ids:[id]});assert.deepEqual(L.elenco(v,'scienze'),[]);L.comando(v,'scienze',{azione:'ripristina',ids:[id]});assert.equal(L.leggi(v,'scienze',id).elements.length,2);
+ assert.equal(M.rapporto(0.1),.25);assert.equal(M.rapporto(.9),.75);
+ const livelli=M.unisci({...a,elements:[{...el('a',1,'Davanti'),index:'a0'},{...el('b',1,'Dietro'),index:'a1'}]}, {...a,elements:[{...el('a',2,'Davanti'),index:'a2'}]});
+ assert.deepEqual(livelli.elements.map(e=>e.id),['b','a'],'ordine davanti/dietro conservato alla riapertura');
+ const {EventEmitter}=require('node:events'),D=require('../lib/permessi-disco');
+ function finestra(url){const w=new EventEmitter();w.isDestroyed=()=>false;w.messages=[];w.handlers={};w.webContents={mainFrame:{url},send:(...a)=>w.messages.push(a),ipc:{handle:(k,f)=>w.handlers[k]=f,on:(k,f)=>w.handlers[k]=f}};return w;}
+ const main=finestra('file:///app/StudIA.html'),proj=finestra('file:///app/proiezione/index.html');
+ const service=L.installa({win:main,appDir:'/app',vaultDir:()=>v});service.collega(proj,proj.webContents.mainFrame.url,'scienze');
+ const invoke=(w,o,e={sender:w.webContents,senderFrame:w.webContents.mainFrame})=>w.handlers['lim:comando'](e,o);
+ assert.equal(invoke(proj,{azione:'elenco',corso:'storia'}).corso,'scienze','proiezione vincolata allo zaino di apertura');
+ assert(!invoke(proj,{azione:'elenco'},{sender:main.webContents,senderFrame:main.webContents.mainFrame}).ok);
+ assert(!invoke(proj,{azione:'elenco'},{sender:proj.webContents,senderFrame:{url:proj.webContents.mainFrame.url}}).ok,'iframe senza poteri');
+ assert(invoke(main,{azione:'crea',corso:'scienze',titolo:'Permessi verificati'}).ok,'scrittura scoped in LIM');
+ assert(main.messages.some(m=>m[0]==='lim:cambiata'));assert(proj.messages.some(m=>m[0]==='lim:cambiata'));
+ const esterno=path.join(v,'fuori.excalidraw'),symlink=path.join(v,'Zaini/scienze/LIM',id+'.excalidraw');fs.copyFileSync(symlink,esterno);fs.unlinkSync(symlink);fs.symlinkSync(esterno,symlink);
+ assert(!invoke(main,{azione:'rinomina',corso:'scienze',id,titolo:'Non deve uscire'}).ok,'symlink non attraversa i permessi');
+ assert(require('../lib/pacchetto').esclusioni('scienze',{appunti:true}).includes('scienze/LIM/_cestino/*'));
+ assert(require('../lib/pacchetto').esclusioni('scienze',{appunti:false}).includes('scienze/LIM/*'));
+ console.log('✓ LIM: salvataggio, riapertura, conflitti, cestino, isolamento e dati sicuri');
+}finally{fs.rmSync(v,{recursive:true,force:true});}

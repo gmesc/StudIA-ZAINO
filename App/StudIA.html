@@ -7575,6 +7575,7 @@ function albumBolla(voce, x, y){
   m.innerHTML='<div class="ctx-head">Ritaglio salvato</div>'+
     it('album','Mostra nell’album','')+
     it('appunti','Metti nell’appunto aperto', (noteStatoAttivo().cur && noteStatoAttivo().mde)? '' : 'nessun appunto aperto')+
+    it('lim','Porta nella lavagna LIM','')+
     it('mappa','Metti nella mappa', (typeof mappaMie==='function' && mappaMie())? '' : 'serve una mappa tua aperta')+
     '<div class="ctx-sep"></div>'+
     it('rinomina','Dai una didascalia…','');
@@ -7596,6 +7597,7 @@ function albumMenu(id, x, y){
     it('fonte','Alla fonte', v.origine==='foto' ? 'l’hai portata dentro tu'
                              : (v.materiale ? '' : 'non si sa da dove viene'))+
     it('appunti','Metti nell’appunto aperto', (noteStatoAttivo().cur && noteStatoAttivo().mde)? '' : 'nessun appunto aperto')+
+    it('lim','Porta nella lavagna LIM','')+
     it('mappa','Metti nella mappa', (typeof mappaMie==='function' && mappaMie())? '' : 'serve una mappa tua aperta')+
     '<div class="ctx-sep"></div>'+
     it('rinomina','Rinomina la didascalia','')+
@@ -7619,6 +7621,7 @@ function albumVistaDi(v){ return (v && v.origine==='foto') ? 'foto' : 'album'; }
 function albumRidisegna(v){ albumDisegnaVista(albumVistaDi(v)); }
 
 function albumAzione(az, id){
+  if(az==='lim'){albumChiudiMenu();window.ZainoLim?.ritaglio(id);return;}
   albumChiudiMenu();
   var corso=corsoAttivo(), v=albumVoce(id);
   if(!v && az!=='album'){ toast('Immagine non trovata nell’album', false); return; }
@@ -13868,6 +13871,7 @@ function selMenuHTML(sel){
        «Keyword»: stesso posto, stesso patto — scegliere fa il gesto e diventa
        il modo di farlo. */
     appuntaRiga(origineMenu, !conVault)+
+    voce('lim','Porta nella lavagna LIM', origineMenu?.tipo==='pdf'?'':'seleziona un passaggio PDF')+
     voce('mappa','Alla mappa', (mappeApi() && corsoAttivo() && mappaPronta())? '' : 'serve un corso aperto')+
     voce('keyword', sopra? 'Ricolora la parola chiave' : 'Keyword',
          conEvidenze? '' : 'serve un capitolo o un documento')+
@@ -13934,6 +13938,7 @@ document.addEventListener('contextmenu', function(e){
  * una delle due dimentica di fare un pezzo.
  */
 function selAzione(az, testo, range){
+  if(az==='lim'){window.ZainoLim?.citazione(testo,range);return;}
   if(az==='inserisci-citazione'){citazioneInserisciDaRange(range);return;}
   if(az==='cita-pdf'){var origine=citazioneOriginePdf(range);if(origine)citazioneCopiaPdf(zainoAttivo(),origine.file,origine.pagina,testo,range);else toast('Seleziona un passaggio di una sola pagina per citarlo.',false);return;}
   if(az==='interrogami'){var sup=evSupDaRange(range);window.zainoInterrogami?.({text:testo,file:sup && sup.tipo==='pdf'?ANTEPRIMA.file:''});return;}
@@ -17805,6 +17810,7 @@ function bancoStrumenti(){
        scritta nelle disposizioni già salvate, e cambiarla svuoterebbe il blocco
        a chi l'aveva scelto. Il nome in tendina dice che cosa si fa. */
     flashcard: { nome:'Ripasso',         famiglia:'quaderno', sel:'#ripassoPane' },
+    lim:       { nome:'LIM', famiglia:'quaderno', sel:'#limPane' },
     studio:    { nome:'Raccoglitore',  famiglia:'fonte',    sel:'#studioPane' },
     /* Le POSTILLE: il perche' delle proprie sottolineature, tutte insieme.
        Sta nella famiglia del quaderno perche' e' roba scritta dall'utente, come
@@ -18086,6 +18092,7 @@ function bancoAggiornaDocumenti(){
       var nota=(noteStati()||[]).find(function(s){return s.id===id;});
       if(nota && nota.cur) nome=nota.cur.title || nota.cur.file;
     }
+    if(id==='lim')nome=window.ZainoLim?.doc?.studia.title||'';
     var el=h.querySelector('.bdoc');
     if(!el){el=document.createElement('span');el.className='bdoc';h.appendChild(el);}
     el.textContent=nome;el.title=nome;el.hidden=!nome;
@@ -22048,6 +22055,7 @@ window.addEventListener('keydown', function(e){
      quattro esiti coi tempi previsti sopra. È uno strumento del banco come gli
      appunti e la mappa — sta a livello di pagina e `bancoMonta` lo sposta nel
      blocco che lo ospita, così si può ripassare TENENDO IL CAPITOLO ACCANTO. -->
+<section id="limPane" aria-label="Lavagnate LIM"></section>
 <section id="studioPane" aria-label="Raccoglitore di schede e ricerca nei materiali"></section>
 <section id="ripassoPane" aria-label="Ripasso">
   <div class="tbar ripbar">
@@ -22886,5 +22894,9 @@ window.addEventListener('keydown', function(e){
 <script src="assets/banco/lettura.js"></script>
 <script src="assets/banco/proiezione-contenuti.js"></script>
 <script src="assets/banco/presentazione.js"></script>
+<link rel="stylesheet" href="assets/lim/lim.css">
+<script src="assets/lim/modello.js"></script>
+<script src="assets/lim/ui.js"></script>
+<script src="assets/lim/banco.js"></script>
 </body>
 </html>

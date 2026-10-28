@@ -19,3 +19,15 @@ body[data-tipo=clone] #contenuto *{scrollbar-color:auto;}
 #immagine{-webkit-user-drag:none;}
 #vista.gesto-mano{cursor:grab;}
 #vista.gesto-presa{cursor:grabbing;}
+
+body[data-lavagna] #vista{right:calc(100% - var(--lim-ratio,50%));}
+#limProiezione{position:fixed;top:0;right:0;bottom:0;width:calc(100% - var(--lim-ratio,50%) - 6px);padding-top:48px;}
+#limProiezione>.lim-bar{position:relative;inset:auto;transition:none;}
+#limDivisore{position:fixed;top:0;bottom:0;left:var(--lim-ratio,50%);width:6px;background:var(--line);cursor:col-resize;z-index:1;touch-action:none;}
+#limDivisore:hover,#limDivisore:focus-visible{background:var(--verde);outline:2px solid var(--focus);outline-offset:-2px;}
+#limRitaglio{position:fixed;inset:0 auto 0 0;z-index:4;cursor:crosshair;touch-action:none;}
+#limRitaglio>div{position:absolute;border:2px solid var(--verde);background:#0d766e1a;pointer-events:none;}
+#limCitazione{color:var(--ink);background:var(--panel);border:1px solid var(--line);width:min(700px,90vw);padding:24px;}
+#limCitazione textarea{display:block;box-sizing:border-box;width:100%;font:inherit;line-height:1.5;margin-block:16px;resize:vertical;}
+#limCitazione::backdrop{background:#20232866;}
+#limProiezione .excalidraw p,#limProiezione .excalidraw h2{margin:0;}

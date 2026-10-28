@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="it"><head><meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' file:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Proiezione — StudIA ZAINO</title>
-<link rel="stylesheet" href="proiezione.css"><script src="../assets/interfaccia/icone.js" defer></script><script src="../assets/banco/lettura.js" defer></script><script src="gesti.js" defer></script><script src="proiezione.js" defer></script>
+<link rel="stylesheet" href="proiezione.css"><script src="../assets/interfaccia/icone.js" defer></script><script src="../assets/banco/lettura.js" defer></script><script src="gesti.js" defer></script><script src="../assets/rimandi/sintassi.js" defer></script><script src="../assets/lim/modello.js" defer></script><script src="../assets/lim/ui.js" defer></script><script src="proiezione.js" defer></script><script src="lavagna.js" defer></script><link rel="stylesheet" href="../assets/lim/lim.css">
 </head><body>
 <header class="tbar" id="barra" aria-label="Controlli della proiezione">
  <span id="titolo">Proiezione</span>
@@ -10,9 +10,15 @@
  <button id="scala" title="Adatta alla larghezza · Tre clic sul contenuto" aria-label="Adatta alla larghezza · Tre clic sul contenuto">100%</button>
  <button id="piu" data-icon="plus" title="Ingrandisci il contenuto" aria-label="Ingrandisci il contenuto"></button>
  <label id="schermiLabel" hidden><span class="sr">Schermo di proiezione</span><select id="schermi" title="Sposta la proiezione su un altro schermo"></select></label>
+ <button id="affianca" data-icon="columns-2" title="Affianca lavagna" aria-label="Affianca lavagna" aria-pressed="false"></button>
+ <button id="citaLim" data-icon="quote" title="Porta una citazione nella lavagna" aria-label="Porta una citazione nella lavagna" hidden></button>
+ <button id="ritagliaLim" data-icon="scissors" title="Ritaglia nella lavagna" aria-label="Ritaglia nella lavagna" hidden></button>
  <button id="intero" data-icon="maximize" title="Schermo intero (Esc per uscire)" aria-label="Schermo intero"></button>
  <button id="chiudi" data-icon="x" title="Chiudi la finestra di proiezione" aria-label="Chiudi la finestra di proiezione"></button>
 </header>
 <main id="vista" tabindex="0" aria-label="Contenuto proiettato" title="Dito o penna: trascina · Mouse: Spazio + trascina · Pinch: zoom · Tre clic o tocchi: adatta alla larghezza"><article id="contenuto"><p>Preparazione del contenuto…</p></article><div id="figura" hidden><img id="immagine" alt="Vista sincronizzata dello split"></div></main>
+<div id="limDivisore" role="separator" aria-label="Larghezza del contenuto e della lavagna" aria-orientation="vertical" aria-valuemin="25" aria-valuemax="75" aria-valuenow="50" tabindex="0" hidden></div><section id="limProiezione" aria-label="Lavagna affiancata" hidden></section>
+<div id="limRitaglio" hidden aria-label="Trascina il ritaglio"><div></div></div>
+<dialog id="limCitazione"><form method="dialog"><h2>Porta una citazione nella lavagna</h2><label for="limTestoCitazione">Seleziona il passaggio da inserire, oppure inserisci tutto il testo visibile.</label><textarea id="limTestoCitazione" readonly rows="8"></textarea><p id="limFonteCitazione"></p><button value="annulla">Annulla</button><button id="limInserisciCitazione" value="inserisci">Inserisci nella lavagna</button></form></dialog>
 <p id="errore" role="status" hidden></p>
 </body></html>

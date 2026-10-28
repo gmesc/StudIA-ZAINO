@@ -5,7 +5,7 @@
  function collega(host,azioni){
   let spazio=false,pan=null,tocchi=new Map(),multiplo=false,tap=null,ignoraClick=false;
   const interattivo=n=>!!n.closest?.('button,input,textarea,select,a,[contenteditable="true"]');
-  const ancora=(x,y)=>({x:Math.max(0,Math.min(1,x/innerWidth)),y:Math.max(0,Math.min(1,y/innerHeight))});
+  const ancora=(x,y)=>{const r=host.getBoundingClientRect();return {x:Math.max(0,Math.min(1,(x-r.x)/r.width)),y:Math.max(0,Math.min(1,(y-r.y)/r.height))};};
   function cursore(){host.classList.toggle('gesto-mano',spazio);host.classList.toggle('gesto-presa',!!pan||tocchi.size>1||[...tocchi.values()].some(p=>p.trascina));}
   function annulla(){const ids=[...tocchi.keys(),...(pan?[pan.id]:[])];tocchi.clear();pan=null;spazio=false;multiplo=false;tap=null;for(const id of ids)if(host.hasPointerCapture(id))host.releasePointerCapture(id);cursore();}
   function coppia(){const p=[...tocchi.values()];if(p.length!==2||p.some(t=>t.tipo!=='touch'))return null;return {x:(p[0].x+p[1].x)/2,y:(p[0].y+p[1].y)/2,d:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)};}
@@ -13,7 +13,7 @@
    if(!e.ctrlKey)return;e.preventDefault();
    if(Number.isFinite(e.deltaY))azioni.zoom(BancoLettura.pinch(azioni.leggiScala(),e.deltaY,e.deltaMode),ancora(e.clientX,e.clientY));
   },{passive:false});
-  window.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!interattivo(e.target)){e.preventDefault();spazio=true;cursore();}if(e.key==='Escape')annulla();});
+  window.addEventListener('keydown',e=>{if((host.contains(e.target)||e.target===document.body)&&e.code==='Space'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!interattivo(e.target)){e.preventDefault();spazio=true;cursore();}if(e.key==='Escape')annulla();});
   window.addEventListener('keyup',e=>{if(e.code==='Space'){spazio=false;pan=null;cursore();}});
   host.addEventListener('pointerdown',e=>{
    if(interattivo(e.target))return;

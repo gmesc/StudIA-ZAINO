@@ -274,6 +274,16 @@
       "copyright": "Copyright (c) 2026 Lucide Icons and Contributors",
       "url": "https://lucide.dev",
       "licenzaFile": "lucide.txt"
+    },
+    {
+      "nome": "Font della lavagna Excalidraw",
+      "versione": "distribuiti con Excalidraw 0.18.1",
+      "categoria": "font",
+      "ruolo": "Excalifont, Virgil, Assistant, Cascadia, Comic Shanns, Liberation, Lilita, Nunito e Xiaolai per la lavagna offline.",
+      "licenza": "SIL Open Font License 1.1 e MIT (testi per famiglia)",
+      "copyright": "Autori indicati nei testi originali delle singole famiglie.",
+      "url": "https://github.com/excalidraw/excalidraw/tree/v0.18.1/packages/excalidraw/fonts",
+      "licenzaFile": "excalidraw-fonts.txt"
     }
   ]
 }
