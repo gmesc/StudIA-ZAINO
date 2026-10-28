@@ -5,12 +5,40 @@ async function wait(expr,client=c){for(let n=0;n<150;n++){if(await client.val(ex
 async function collega(){let t;for(let n=0;n<50&&!t;n++){t=(await(await fetch('http://localhost:'+(process.env.STUDIA_PORTA||9467)+'/json')).json()).find(t=>t.url.includes('/proiezione/index.html'));if(!t)await c.pausa(100);}assert(t);const ws=new WS(t.webSocketDebuggerUrl),pending=new Map();let id=0;await new Promise(r=>ws.once('open',r));ws.on('message',s=>{const o=JSON.parse(s);if(pending.has(o.id)){pending.get(o.id)(o);pending.delete(o.id);}});const invia=(method,params)=>new Promise(r=>{pending.set(++id,r);ws.send(JSON.stringify({id,method,params}));});return {ws,invia,val:async expression=>{const r=await invia('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.result.exceptionDetails)throw Error(JSON.stringify(r.result.exceptionDetails));return r.result.result.value;}};}
 async function clicca(sel,client){const p=await client.val(`(()=>{const r=document.querySelector(${JSON.stringify(sel)}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);for(const type of ['mousePressed','mouseReleased'])await client.invia('Input.dispatchMouseEvent',{type,...p,button:'left',clickCount:1});}
 async function shot(nome,client=c){const r=await client.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-lim-'+nome+'.png',Buffer.from(r.result.data,'base64'));}
+async function menuContestuale(client,host,tema){
+ const p=await client.val(`(()=>{const r=document.querySelector('${host} .lim-editor').getBoundingClientRect();return {x:r.right-80,y:r.top+r.height*.55};})()`);
+ for(const type of ['mousePressed','mouseReleased'])await client.invia('Input.dispatchMouseEvent',{type,...p,button:'right',clickCount:1});
+ try{await wait(`!!document.querySelector('${host} .context-menu')`,client);}catch(e){await shot('menu-assente',client);console.log(await client.val(`({target:document.elementFromPoint(${p.x},${p.y})?.outerHTML.slice(0,400),menus:[...document.querySelectorAll('.context-menu')].map(m=>m.parentElement.outerHTML.slice(0,400))})`));throw e;}
+ await c.pausa(150);
+ const misura=await client.val(`(()=>{const m=document.querySelector('${host} .context-menu').getBoundingClientRect(),h=document.querySelector('${host} .lim-editor').getBoundingClientRect(),p=document.querySelector('${host} .context-menu').parentElement;return {m:m.toJSON(),h:h.toJSON(),height:innerHeight,pop:p.style.cssText};})()`);
+ await shot('contestuale-'+tema,client);
+ assert(misura.m.width>=190&&misura.m.left>=misura.h.left&&misura.m.right<=misura.h.right&&misura.m.top>=misura.h.top&&misura.m.bottom<=Math.min(misura.h.bottom,misura.height),'bolla leggibile e interamente visibile nello split: '+JSON.stringify(misura));
+ const stile=await client.val(`(()=>{const m=document.querySelector('${host} .context-menu'),s=getComputedStyle(m),b=getComputedStyle(document.querySelector('${host} .lim-menu')),it=getComputedStyle(m.querySelector('button'));return {r:s.borderRadius,bg:s.backgroundColor,panel:b.backgroundColor,shadow:s.boxShadow,ombra:b.boxShadow,font:it.fontSize};})()`);
+ assert.equal(stile.r,'0px');assert.equal(stile.bg,stile.panel);assert.equal(stile.shadow,stile.ombra);assert.equal(stile.font,'12px');
+ await shot('contestuale-'+tema,client);
+ await client.invia('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab'});
+ assert(await client.val(`!!document.activeElement.closest('${host} .context-menu')`),'menu utilizzabile da tastiera');
+ await client.invia('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape'});
+ await wait(`!document.querySelector('${host} .context-menu')`,client);
+}
 (async()=>{
  await c.collega();await wait('!!window.ZainoLim');const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
  await c.val("cambiaZaino('biologia',true);bancoForma('due-col');bancoAssegna('A','lim')");await c.pausa(400);assert(await c.val("document.querySelector('#limPane [aria-label=\"Elimina lavagnata\"]').disabled"),'cestino inattivo senza lavagnata');assert.equal(await c.val("!!document.querySelector('#zs-lim')"),false,'sidebar assente prima della prima lavagnata');
  assert.equal(await c.val("document.querySelector('#limPane .lim-scegli span').textContent"),'-','lavagna non salvata senza titolo');
  assert.equal(await c.val("!!document.querySelector('#limPane [aria-label=\"Rinomina lavagnata\"]')"),false,'nessuna matita nella toolbar');
  await wait('!!ZainoLim.editor.api');
+ await c.clicca('#limPane .main-menu-trigger');
+ assert(await c.val("!!document.querySelector('#limPane [aria-label=\"Sfondo nero\"]')"),'nero disponibile fra gli sfondi della lavagna');
+ await shot('sfondi');
+ await c.clicca('#limPane [aria-label="Sfondo nero"]');
+ await wait("ZainoLim.editor.api.getAppState().viewBackgroundColor==='#000000'");
+ await wait("!document.querySelector('#limPane [data-testid=button-undo]').disabled");
+ await c.clicca('#limPane [data-testid=button-undo]');
+ await wait("ZainoLim.editor.api.getAppState().viewBackgroundColor==='#ffffff'");
+ await c.clicca('#limPane [data-testid=button-redo]');
+ await wait("ZainoLim.editor.api.getAppState().viewBackgroundColor==='#000000'");
+ for(const tema of ['chiaro','scuro']){await c.val(`document.documentElement.dataset.theme='${tema}'`);await menuContestuale(c,'#limPane',tema);}
+ await c.val("document.documentElement.dataset.theme='chiaro'");
  await c.val("ZainoLim.editor.api.updateScene({elements:LimEditor.converti([{type:'text',x:50,y:50,text:'Prima del salvataggio',fontSize:24}])})");await c.pausa(500);
  assert.equal(await c.val('ZainoLim.doc'),null,'il disegno aspetta il primo salvataggio');
  assert.equal(await c.val("!!document.querySelector('#zs-lim')"),false,'nessun file prima del floppy');
@@ -30,9 +58,18 @@ async function shot(nome,client=c){const r=await client.invia('Page.captureScree
  await c.val("ZainoLim.editor.inserisci({testo:'Nucleo e membrana',titolo:'Botanica.pdf; p. 1',link:'pdf:01#p=1'})");
  await wait("ZainoLim.editor.api.getSceneElements().some(e=>e.text?.includes('Nucleo'))");
  const file=path.join(vault,'Zaini/biologia/LIM',id+'.excalidraw');assert(fs.existsSync(file));assert(JSON.parse(fs.readFileSync(file)).elements.some(e=>e.text?.includes('Nucleo')));
+ assert.equal(JSON.parse(fs.readFileSync(file)).appState.viewBackgroundColor,'#000000','sfondo salvato nel file della lavagnata');
  await shot('banco');
  await c.val("bancoAssegna('C','fonte');openPdf('01 Botanica.pdf',1)");await wait('PDFJS.pronto&&!!PDFJS.viewer?.pdfDocument');assert(await c.val("['fontSize','fontWeight','textTransform','letterSpacing'].every(k=>getComputedStyle(document.querySelector('#limPane .lim-scegli'))[k]===getComputedStyle(document.getElementById('pdfDoc'))[k])"),'tipografia uguale al selettore Fonti');await c.val("BancoPresentazione.apriProiezione('fonte')");peer=await collega();await wait("document.body.dataset.tipo==='immagine'",peer);await wait("!!document.querySelector('.proiezione-area')");
  await peer.val('ProiezioneLavagna.apri()');await wait('!!ProiezioneLavagna.editor?.api',peer);assert.equal(await peer.val('ProiezioneLavagna.editor.doc.studia.id'),id);
+ assert.equal(await peer.val('ProiezioneLavagna.editor.api.getAppState().viewBackgroundColor'),'#000000','riapertura con lo stesso fondo');
+ await clicca('#limProiezione .main-menu-trigger',peer);
+ await clicca('#limProiezione [data-testid="color-top-pick-#ffffff"]',peer);
+ await wait("ZainoLim.editor.api.getAppState().viewBackgroundColor==='#ffffff'");
+ await clicca('#limProiezione [aria-label="Sfondo nero"]',peer);
+ await wait("ProiezioneLavagna.editor.api.getAppState().viewBackgroundColor==='#000000'",peer);
+ await wait("ZainoLim.editor.api.getAppState().viewBackgroundColor==='#000000'");
+ await menuContestuale(peer,'#limProiezione','proiezione');
  await peer.val("document.querySelector('.lim-scegli').click()");await wait("!!document.querySelector('.lim-menu:popover-open')",peer);
  assert.equal(await peer.val("document.querySelector('.lim-menu [aria-checked=true]').dataset.limId"),id);
  await shot('menu-proiezione',peer);

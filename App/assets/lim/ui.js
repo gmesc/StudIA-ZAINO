@@ -83,7 +83,12 @@
   async function sincronizza(d){if(d.corso!==corso||d.mittente===mittente)return;if(d.rimossi?.length)ultimo=d.rimossi;await elenco();if(!doc)return;
    if(d.id!==doc.studia.id||!editor?.api)return;const id=doc.studia.id,r=await richiesta({azione:'apri',id});if(doc?.studia.id!==id)return;
    const a=editor.api,remoto=r.lavagna;doc.studia=remoto.studia;
-   a.addFiles(Object.values(remoto.files));a.updateScene({elements:LimEditor.reconcile(a.getSceneElementsIncludingDeleted(),LimEditor.restore(remoto.elements,null),a.getAppState()),captureUpdate:LimEditor.CaptureUpdateAction.NEVER});opt.cambiata?.(doc);
+   // Il fondo appartiene alla lavagnata; zoom e scorrimento restano locali alla finestra.
+   const elements=LimEditor.reconcile(a.getSceneElementsIncludingDeleted(),LimEditor.restore(remoto.elements,null),a.getAppState()),appState={viewBackgroundColor:remoto.appState.viewBackgroundColor||'#ffffff'};
+   // Un aggiornamento ricevuto non deve risalvarsi come gesto locale: l'eco potrebbe
+   // sovrascrivere un colore scelto subito dopo nell'altra finestra.
+   impronta=JSON.stringify(LimModello.scena({elements,files:{...a.getFiles(),...remoto.files},appState:{...a.getAppState(),...appState}}));
+   a.addFiles(Object.values(remoto.files));a.updateScene({elements,appState,captureUpdate:LimEditor.CaptureUpdateAction.NEVER});opt.cambiata?.(doc);
   }
   const off=api.onCambiata(d=>azione(()=>sincronizza(d)));
   async function immagine(area,vista){const a=editor?.api;if(!a)throw Error('Apri una lavagnata da proiettare.');const s=a.getAppState(),r=canvas.getBoundingClientRect(),z=s.zoom.value,m=BancoLettura.raster(area,vista);

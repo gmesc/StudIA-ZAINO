@@ -4,7 +4,7 @@
 .lim-scegli .ui-documento{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .lim-scegli svg.ui-icon{width:1.15em;height:1.15em;flex:none;}
 .lim-scegli:focus-visible,.lim-menu button:focus-visible{outline:2px solid var(--focus,#3b82f6);outline-offset:-2px;}
-.lim-menu{position:fixed;inset:auto;margin:0;padding:.3rem;width:min(360px,92vw);max-height:60vh;overflow:auto;border:1px solid var(--line,#ddd);background:var(--panel,#fafafa);color:var(--ink,#202328);box-shadow:var(--sh-3d,0 8px 24px #20232826);}
+.lim-menu{position:fixed;inset:auto;margin:0;padding:.3rem;width:min(360px,92vw);max-height:60vh;overflow:auto;border:1px solid var(--line,#ddd);background:var(--panel,#fafafa);color:var(--ink,#202328);box-shadow:var(--sh-3d,-5px 6px 12px #787c8261);}
 .lim-menu::backdrop{background:transparent;}
 .lim-menu .lim-menu-voce{display:block;width:100%;min-height:36px;padding:.5rem .6rem;border:0;border-left:3px solid transparent;border-bottom:1px solid var(--line-weak,var(--line,#ddd));border-radius:0;background:transparent;color:inherit;font:13px var(--font-text,"Helvetica Neue"),Helvetica,Arial,sans-serif;text-align:left;letter-spacing:normal;text-transform:none;white-space:normal;overflow-wrap:anywhere;cursor:pointer;}
 .lim-menu .lim-menu-voce:last-child{border-bottom:0;}
@@ -16,6 +16,28 @@
 .lim-editor .excalidraw{--color-primary:#117b72;--color-primary-darker:#08665f;--color-primary-light:#dcf4ef;--color-primary-light-darker:#c5ebe4;}
 .lim-editor .excalidraw button{letter-spacing:normal;text-transform:none;}
 .lim-editor .excalidraw .App-toolbar{max-width:100%;}
+/* Adattatore del menu: comandi e posizionamento restano di Excalidraw,
+   il vestito usa gli stessi token delle bolle ZAINO, anche in proiezione. */
+.lim-editor .excalidraw :is(.context-menu,.dropdown-menu-container){
+ border:1px solid var(--line,#ddd);border-radius:0;padding:.3rem;margin:0;
+ background:var(--panel,#fafafa);color:var(--ink,#202328);box-shadow:var(--sh-3d,-5px 6px 12px #787c8261);
+ font:12px/1.5 var(--font-text,"Helvetica Neue"),Helvetica,Arial,sans-serif;
+ --color-on-surface:var(--ink,#202328);--popup-text-color:var(--ink,#202328);
+ --button-hover-bg:var(--hover,#dff7f3);--color-primary-light:var(--hover,#dff7f3);
+}
+.lim-editor .excalidraw :is(.context-menu-item,.dropdown-menu-item){
+ border:0;border-radius:0;background:transparent;color:var(--ink,#202328);font:inherit;
+ width:100%;height:auto;min-height:32px;margin:0;padding:.45rem .6rem;cursor:pointer;
+}
+.lim-editor .excalidraw .context-menu-item.checkmark{padding-left:1.25rem;}
+.lim-editor .excalidraw .context-menu-item{min-width:0;white-space:normal;}
+.lim-editor .excalidraw .context-menu{min-width:0;max-width:100%;}
+.lim-editor .excalidraw :is(.context-menu-item,.dropdown-menu-item):hover{background:var(--hover,#dff7f3);color:var(--ink,#202328);}
+.lim-editor .excalidraw .context-menu-item.dangerous:hover .context-menu-item__label{color:var(--ink,#202328);}
+.lim-editor .excalidraw :is(.context-menu-item,.dropdown-menu-item):focus-visible{outline:2px solid var(--focus,#3b82f6);outline-offset:-2px;}
+.lim-editor .excalidraw :is(.context-menu-item__shortcut,.dropdown-menu-item__shortcut){font:10px var(--font-text,"Helvetica Neue"),Helvetica,Arial,sans-serif;color:var(--muted,#62666d);opacity:1;}
+.lim-editor .excalidraw .context-menu-item-separator{height:1px;border:0;background:var(--line-weak,var(--line,#ddd));margin:.3rem 0;}
+.lim-editor .lim-campione-nero{display:block;width:18px;height:18px;background:#000;border:1px solid var(--line,#ddd);}
 #limPane{height:100%;min-height:0;}
 /* Le azioni della voce restano centrate anche quando il nome va a capo. */
 .znav .zs-item>.zs-azioni{display:flex;align-items:center;}
