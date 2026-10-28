@@ -782,7 +782,8 @@
      niente, e una numerazione direbbe un ordine che non esiste. */
   .znav[hidden]{ display:none!important; }
   .znav{ --znav-titolo:12px; }
-  .znav .zs-tit{ display:flex; align-items:center; gap:.4rem; margin:0; padding:.3rem .6rem .3rem .8rem;
+  /* Sidebar e split condividono l’altezza, anche quando i comandi sono nascosti. */
+  .znav .zs-tit{ display:flex; align-items:center; gap:.4rem; margin:0; padding:0 .6rem 0 .8rem; min-height:var(--tb-blocco-h);
     font-size:var(--znav-titolo); font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--teal-strong); }
   .znav .zs-raccolta + .zs-raccolta .zs-tit{ margin-top:.8rem; }
   .znav .zs-n{ font-size:10px; letter-spacing:.06em; color:var(--muted); font-variant-numeric:tabular-nums; }
@@ -1563,7 +1564,7 @@
   .bhead, .znav .zs-tit, .zchat-ai-section > .set-sec-h, .sicurezza-section > .set-sec-h, :is(#searchRes, #albumCercaRisultati) .sr-lesson{
     --testata-bg:color-mix(in srgb, var(--teal) 10%, var(--panel));
     background:var(--testata-bg); }
-  .blocco[data-attivo="1"] > .bhead{ --testata-bg:color-mix(in srgb, var(--teal) 23.958%, var(--panel)); }
+  .blocco[data-attivo="1"] > .bhead{ --testata-bg:color-mix(in srgb, var(--teal) 33%, var(--panel)); }
   :is(.bhead, .znav .zs-tit, :is(#searchRes, #albumCercaRisultati) .sr-lesson) button[aria-pressed="true"]{
     --testata-bg:color-mix(in srgb, var(--teal) 26%, var(--panel)); }
   .znav .zs-tit, :is(#searchRes, #albumCercaRisultati) .sr-lesson{
