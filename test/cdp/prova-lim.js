@@ -107,16 +107,23 @@ async function menuContestuale(client,host,tema){
  await peer.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:270,y:180,button:'left',buttons:1,pointerType:'pen'});
  await peer.invia('Input.dispatchMouseEvent',{type:'mouseReleased',x:270,y:180,button:'left',buttons:0,clickCount:1,pointerType:'pen'});
  await wait("ProiezioneLavagna.editor.api.getSceneElements().some(e=>e.type==='image')",peer);await wait("ZainoLim.editor.api.getSceneElements().some(e=>e.type==='image')");
- // Cestino recuperabile anche dalla LIM: segni e immagini restano nello stesso file.
- await clicca('#limProiezione [aria-label="Elimina lavagnata"]',peer);
- await wait("!ProiezioneLavagna.editor.doc&&!!document.querySelector('.lim-annulla:not([hidden])')",peer);
- await wait("!ZainoLim.doc&&!document.getElementById('zs-lim')&&!!document.querySelector('#limPane .lim-annulla:not([hidden])')");
- const nelCestino=path.join(path.dirname(file),'_cestino',id+'.excalidraw');assert(!fs.existsSync(file));
- const salvata=JSON.parse(fs.readFileSync(nelCestino));assert(salvata.elements.some(e=>e.type==='image'));assert(Object.values(salvata.files).some(f=>f.dataURL.startsWith('data:image/png;base64,')),'ritaglio incorporato nel file recuperabile');
- await clicca('#limProiezione .lim-annulla',peer);await wait(`ProiezioneLavagna.editor.doc?.studia.id===${JSON.stringify(id)}&&!!ProiezioneLavagna.editor.api`,peer);
- await wait("!!document.getElementById('zs-lim')&&document.querySelector('#limPane .lim-annulla').hidden");
- assert.equal(await peer.val('ProiezioneLavagna.editor.doc.studia.id'),id);assert(fs.existsSync(file));
- assert(await peer.val("ProiezioneLavagna.editor.api.getSceneElements().some(e=>e.type==='freedraw')&&ProiezioneLavagna.editor.api.getSceneElements().some(e=>e.type==='image')"),'annulla ripristina segni e ritagli');
+ // Conferma anche in proiezione; il rifiuto lascia scena e file invariati.
+ await peer.val("window.__confermaOriginale=window.confirm;window.__conferme=[];window.__risposta=false;window.confirm=m=>{window.__conferme.push(m);return window.__risposta;}");
+ await peer.val('ProiezioneLavagna.editor.salva()');const salvata=fs.readFileSync(file);
+ await clicca('#limProiezione [aria-label="Elimina lavagnata"]',peer);await c.pausa(250);
+ assert.equal(await peer.val('window.__conferme.length'),1,'il cestino della proiezione chiede conferma');
+ assert.match(await peer.val('window.__conferme[0]'),/Cestino del Mac/);assert.equal(await peer.val('ProiezioneLavagna.editor.doc.studia.id'),id);assert(fs.readFileSync(file).equals(salvata),'annullare conserva il file');
+ await peer.val('window.__risposta=true');await clicca('#limProiezione [aria-label="Elimina lavagnata"]',peer);
+ await wait("!ProiezioneLavagna.editor.doc",peer);await wait("!ZainoLim.doc&&!document.getElementById('zs-lim')");
+ assert.equal(await peer.val('window.__conferme.length'),2,'ogni clic richiede una nuova conferma');
+ assert(!fs.existsSync(file));assert(!fs.existsSync(path.join(path.dirname(file),'_cestino')),'non usa più un cestino nel vault');
+ assert.equal(await peer.val("!!document.querySelector('.lim-annulla')"),false,'nessun falso Annulla per il Cestino del Mac');
+ const scenaSalvata=JSON.parse(salvata);assert(scenaSalvata.elements.some(e=>e.type==='image'));assert(Object.values(scenaSalvata.files).some(f=>f.dataURL.startsWith('data:image/png;base64,')),'ritagli incorporati nel file consegnato al Cestino');
+ // Simula il ritorno dal Finder soltanto nel vault sintetico della prova.
+ fs.writeFileSync(file,salvata);await peer.val(`ProiezioneLavagna.editor.apri(${JSON.stringify(id)})`);
+ await c.val(`ZainoLim.apri(${JSON.stringify(id)})`);await wait("!!document.getElementById('zs-lim')&&!!ZainoLim.editor.api");
+ assert(await peer.val("ProiezioneLavagna.editor.api.getSceneElements().some(e=>e.type==='freedraw')&&ProiezioneLavagna.editor.api.getSceneElements().some(e=>e.type==='image')"),'riapertura conserva segni e ritagli');
+ await peer.val('window.confirm=window.__confermaOriginale');
  await c.val('BancoPresentazione.chiudiProiezione()');peer.ws.close();peer=null;
  await c.val("cambiaZaino('storia',true)");await c.pausa(350);assert.equal(await c.val("!!document.getElementById('zs-lim')"),false);
  await c.val("cambiaZaino('biologia',true)");await wait("!!document.getElementById('zs-lim')");await c.val(`ZainoLim.apri(${JSON.stringify(id)})`);await wait('!!ZainoLim.editor.api');assert(await c.val("ZainoLim.editor.api.getSceneElements().some(e=>e.text?.includes('Disegnato'))"));
@@ -129,8 +136,12 @@ async function menuContestuale(client,host,tema){
  await wait(`ZainoLim.doc?.studia.id===${JSON.stringify(id)}&&!!ZainoLim.editor.api`);
  assert.equal(await c.val("document.querySelector('#limPane .lim-scegli span').textContent"),titolo,'il nome della lavagnata resta indipendente dalla fonte');
  assert(await c.val("ZainoLim.editor.api.getSceneElements().some(e=>e.type==='freedraw')"),'cambio dal menu conserva il disegno salvato');
- await c.clicca('#limPane [aria-label="Elimina lavagnata"]');await wait("document.querySelectorAll('#zs-lim .zs-item').length===1&&ZainoLim.doc===null");
- await c.clicca('#limPane .lim-annulla');await wait(`ZainoLim.doc?.studia.id===${JSON.stringify(id)}&&document.querySelectorAll('#zs-lim .zs-item').length===2`);
+ await c.val("window.__confermaOriginale=window.confirm;window.__conferme=[];window.__risposta=false;window.confirm=m=>{window.__conferme.push(m);return window.__risposta;}");
+ await c.val('ZainoLim.editor.salva()');const primaCestino=fs.readFileSync(file);
+ await c.clicca('#limPane [aria-label="Elimina lavagnata"]');await c.pausa(250);assert.equal(await c.val('window.__conferme.length'),1,'conferma nel banco');assert.equal(await c.val('ZainoLim.doc.studia.id'),id);assert(fs.existsSync(file));
+ await c.val('window.__risposta=true');await c.clicca('#limPane [aria-label="Elimina lavagnata"]');await wait("document.querySelectorAll('#zs-lim .zs-item').length===1&&ZainoLim.doc===null");
+ assert.equal(await c.val('window.__conferme.length'),2);assert(!fs.existsSync(file));
+ fs.writeFileSync(file,primaCestino);await c.val(`ZainoLim.apri(${JSON.stringify(id)})`);await wait("document.querySelectorAll('#zs-lim .zs-item').length===2");
  await c.val("document.querySelector('#zs-lim [aria-label=\"Modifica elenco LIM\"]').click();document.querySelector('[data-sezione=appunti] [data-znav=organizza]').click()");
  await wait("!!document.querySelector('[data-sezione=appunti] .zs-item input')&&!!document.querySelector('#zs-lim .zs-item input')");
  for(const tema of ['chiaro','scuro']){
@@ -142,11 +153,17 @@ async function menuContestuale(client,host,tema){
  await c.val("document.documentElement.dataset.theme='chiaro';document.querySelector('[data-sezione=appunti] [data-znav=organizza]').click()");
  await c.val(`document.querySelector('#zs-lim [data-lim-focus="rename:${id}"]').click()`);await wait("document.getElementById('uiModal').hasAttribute('open')");
  await c.val("document.getElementById('umInput').value='Lezione di scienze';document.getElementById('umOk').click()");await wait("document.querySelector('#limPane .lim-scegli span').textContent==='Lezione di scienze'");
- await c.val("document.querySelector('#zs-lim [aria-label=\"Seleziona tutte le lavagnate\"]').click();document.querySelector('#zs-lim [aria-label=\"Elimina selezionate\"]').click()");
- await wait("!document.getElementById('zs-lim')&&!!document.querySelector('#limPane .lim-annulla:not([hidden])')");await c.val("document.querySelector('#limPane .lim-annulla').click()");await wait("document.querySelectorAll('#zs-lim .zs-item').length===2");
+ const primaMultipla=fs.readdirSync(path.dirname(file)).filter(n=>n.endsWith('.excalidraw')).map(n=>[n,fs.readFileSync(path.join(path.dirname(file),n))]);
+ await c.val("window.__risposta=false;document.querySelector('#zs-lim [aria-label=\"Seleziona tutte le lavagnate\"]').click();document.querySelector('#zs-lim [aria-label=\"Elimina selezionate\"]').click()");await c.pausa(250);
+ assert.equal(await c.val('window.__conferme.length'),3);assert.match(await c.val('window.__conferme[2]'),/2 lavagnate/);
+ assert.equal(await c.val("document.querySelectorAll('#zs-lim .zs-item input:checked').length"),2,'annullare conserva anche la selezione');assert(primaMultipla.every(([n])=>fs.existsSync(path.join(path.dirname(file),n))));
+ await c.val("window.__risposta=true;document.querySelector('#zs-lim [aria-label=\"Elimina selezionate\"]').click()");await wait("!document.getElementById('zs-lim')");
+ assert.equal(await c.val('window.__conferme.length'),4);assert(primaMultipla.every(([n])=>!fs.existsSync(path.join(path.dirname(file),n))));assert(!fs.existsSync(path.join(path.dirname(file),'_cestino')));
+ for(const [n,dati] of primaMultipla)fs.writeFileSync(path.join(path.dirname(file),n),dati);
+ await c.val(`ZainoLim.apri(${JSON.stringify(id)})`);await wait("document.querySelectorAll('#zs-lim .zs-item').length===2");await c.val('window.confirm=window.__confermaOriginale');
  await c.val("ZainoLim.editor.nuova()");await wait('!!ZainoLim.editor.api');
  await c.val("ZainoLim.editor.api.updateScene({elements:LimEditor.converti([{type:'text',x:50,y:50,text:'Da conservare al cambio zaino',fontSize:24}])})");await c.pausa(100);await c.val("cambiaZaino('storia',true)");await wait("document.getElementById('zainoNav').dataset.zaino==='storia'");
  const bozze=fs.readdirSync(path.dirname(file)).filter(n=>n.endsWith('.excalidraw')).map(n=>JSON.parse(fs.readFileSync(path.join(path.dirname(file),n))));
  assert(bozze.some(d=>d.studia.numero===3&&d.elements.some(e=>e.text==='Da conservare al cambio zaino')),'cambio zaino non perde il disegno non ancora salvato');
  console.log('✓ LIM: editor, persistenza, fonte/citazione, divisore, sincronizzazione, riapertura e zaini');
-})().catch(async e=>{console.error(e);try{await shot('errore');if(peer)await shot('errore-proiezione',peer);}catch(_){}process.exitCode=1;}).finally(async()=>{peer?.ws.close();try{await c.val('BancoPresentazione.chiudiProiezione()');}catch(_){}process.exit(process.exitCode||0);});
+})().catch(async e=>{console.error(e);try{await shot('errore');if(peer)await shot('errore-proiezione',peer);}catch(_){}process.exitCode=1;}).finally(async()=>{peer?.ws.close();try{await c.val('if(window.__confermaOriginale)window.confirm=window.__confermaOriginale;BancoPresentazione.chiudiProiezione()');}catch(_){}process.exit(process.exitCode||0);});

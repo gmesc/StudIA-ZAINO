@@ -179,7 +179,7 @@ function createWindow() {
   const finestre=require('./lib/sicurezza-finestre');
   finestre.installaSessione(win.webContents.session,{appDir:path.join(__dirname,'App'),vaultDir:()=>readCfg().vaultPath,temporanei,verificaPdf:file=>sicurezzaPdf.urlVerificata(file)});
   finestre.proteggiFinestra(win,{file:appFile,shell});
-  const lim=require('./lib/lim').installa({win,appDir:path.join(__dirname,'App'),vaultDir});
+  const lim=require('./lib/lim').installa({win,appDir:path.join(__dirname,'App'),vaultDir,cestina:p=>shell.trashItem(p)});
   require('./lib/proiezione').installa({lim,win,BrowserWindow,screen:require('electron').screen,appDir:path.join(__dirname,'App')});
   win.loadFile(appFile);
 }

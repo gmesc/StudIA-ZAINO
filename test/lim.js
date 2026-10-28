@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),M=require('../App/assets/lim/modello'),L=require('../lib/lim');
-const v=fs.mkdtempSync(path.join(os.tmpdir(),'studia-lim-'));
-try{
+const v=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'studia-lim-')));
+(async()=>{try{
  require('../lib/zaini').crea(v,'Scienze');require('../lib/zaini').crea(v,'Storia');
  assert.deepEqual(L.elenco(v,'scienze'),[]);assert(!fs.existsSync(path.join(v,'Zaini/scienze/LIM')));
  const d=L.comando(v,'scienze',{azione:'crea',titolo:'La cellula'}).lavagna,id=d.studia.id;
@@ -15,22 +15,45 @@ try{
  assert.throws(()=>M.scena({...a,elements:[{...el('a',1,'x'),link:'javascript:alert(1)'}]}));
  assert.throws(()=>M.scena({...a,files:{x:{id:'x',mimeType:'image/png',dataURL:'https://example.com/x'}}}));
  L.comando(v,'scienze',{azione:'rinomina',id,titolo:'Cellule'});assert.equal(L.elenco(v,'scienze')[0].title,'Cellule');
- L.comando(v,'scienze',{azione:'elimina',ids:[id]});assert.deepEqual(L.elenco(v,'scienze'),[]);L.comando(v,'scienze',{azione:'ripristina',ids:[id]});assert.equal(L.leggi(v,'scienze',id).elements.length,2);
+ const cestino=path.join(v,'cestino-di-sistema');fs.mkdirSync(cestino);const chiamate=[];
+ const opzioni={cestina:async p=>{require('../lib/permessi-disco').verifica(p,'scrittura');await Promise.resolve();chiamate.push(p);fs.renameSync(p,path.join(cestino,path.basename(p)));}};
+ const originale=path.join(v,'Zaini/scienze/LIM',id+'.excalidraw'),contenuto=fs.readFileSync(originale,'utf8');
+ assert.deepEqual(await L.comando(v,'scienze',{azione:'elimina',ids:[id,id]},opzioni),{rimossi:[id]});
+ assert.deepEqual(chiamate,[originale],'usa una volta il Cestino di sistema');
+ assert.equal(fs.readFileSync(path.join(cestino,path.basename(originale)),'utf8'),contenuto,'scena e allegati conservati integralmente');
+ assert.deepEqual(L.elenco(v,'scienze'),[]);assert(!fs.existsSync(path.join(path.dirname(originale),'_cestino')),'nessun nuovo cestino interno');
+ fs.renameSync(path.join(cestino,path.basename(originale)),originale);
+ await assert.rejects(async()=>L.comando(v,'scienze',{azione:'elimina',ids:[id]}),/Cestino/,'senza Cestino di sistema non cancella');
+ const guasto=await L.comando(v,'scienze',{azione:'elimina',ids:[id]},{cestina:async()=>{throw Error('Volume non disponibile');}});
+ assert.deepEqual(guasto.rimossi,[]);assert.match(guasto.error,/Volume non disponibile/);assert.equal(fs.readFileSync(originale,'utf8'),contenuto,'un errore non ripiega sulla cancellazione permanente');
+ await assert.rejects(async()=>L.comando(v,'scienze',{azione:'elimina',ids:[id,'../fuori']},opzioni));assert(fs.existsSync(originale),'valida tutta la selezione prima di cestinare');
+ const altro=L.comando(v,'scienze',{azione:'crea',titolo:'Seconda lavagna'}).lavagna.studia.id;
+ const parziale=await L.comando(v,'scienze',{azione:'elimina',ids:[id,altro]},{cestina:async p=>{if(p.endsWith(altro+'.excalidraw'))throw Error('Non scrivibile');await opzioni.cestina(p);}});
+ assert.deepEqual(parziale.rimossi,[id]);assert.match(parziale.error,/1.*2/,'dice quanti file ha già spostato');assert(L.leggi(v,'scienze',altro));
+ fs.renameSync(path.join(cestino,path.basename(originale)),originale);
+ // I vecchi file nel cestino interno restano recuperabili, senza migrazioni implicite.
+ fs.mkdirSync(path.join(path.dirname(originale),'_cestino'));fs.renameSync(originale,path.join(path.dirname(originale),'_cestino',path.basename(originale)));
+ L.comando(v,'scienze',{azione:'ripristina',ids:[id]});assert.equal(L.leggi(v,'scienze',id).elements.length,2);
  assert.equal(M.rapporto(0.1),.25);assert.equal(M.rapporto(.9),.75);
  const livelli=M.unisci({...a,elements:[{...el('a',1,'Davanti'),index:'a0'},{...el('b',1,'Dietro'),index:'a1'}]}, {...a,elements:[{...el('a',2,'Davanti'),index:'a2'}]});
  assert.deepEqual(livelli.elements.map(e=>e.id),['b','a'],'ordine davanti/dietro conservato alla riapertura');
  const {EventEmitter}=require('node:events'),D=require('../lib/permessi-disco');
  function finestra(url){const w=new EventEmitter();w.isDestroyed=()=>false;w.messages=[];w.handlers={};w.webContents={mainFrame:{url},send:(...a)=>w.messages.push(a),ipc:{handle:(k,f)=>w.handlers[k]=f,on:(k,f)=>w.handlers[k]=f}};return w;}
  const main=finestra('file:///app/StudIA.html'),proj=finestra('file:///app/proiezione/index.html');
- const service=L.installa({win:main,appDir:'/app',vaultDir:()=>v});service.collega(proj,proj.webContents.mainFrame.url,'scienze');
+ const service=L.installa({win:main,appDir:'/app',vaultDir:()=>v,...opzioni});service.collega(proj,proj.webContents.mainFrame.url,'scienze');
  const invoke=(w,o,e={sender:w.webContents,senderFrame:w.webContents.mainFrame})=>w.handlers['lim:comando'](e,o);
- assert.equal(invoke(proj,{azione:'elenco',corso:'storia'}).corso,'scienze','proiezione vincolata allo zaino di apertura');
- assert(!invoke(proj,{azione:'elenco'},{sender:main.webContents,senderFrame:main.webContents.mainFrame}).ok);
- assert(!invoke(proj,{azione:'elenco'},{sender:proj.webContents,senderFrame:{url:proj.webContents.mainFrame.url}}).ok,'iframe senza poteri');
- assert(invoke(main,{azione:'crea',corso:'scienze',titolo:'Permessi verificati'}).ok,'scrittura scoped in LIM');
+ assert.equal((await invoke(proj,{azione:'elenco',corso:'storia'})).corso,'scienze','proiezione vincolata allo zaino di apertura');
+ assert(!(await invoke(proj,{azione:'elenco'},{sender:main.webContents,senderFrame:main.webContents.mainFrame})).ok);
+ assert(!(await invoke(proj,{azione:'elenco'},{sender:proj.webContents,senderFrame:{url:proj.webContents.mainFrame.url}})).ok,'iframe senza poteri');
+ assert((await invoke(main,{azione:'crea',corso:'scienze',titolo:'Permessi verificati'})).ok,'scrittura scoped in LIM');
+ const ev={sender:main.webContents,senderFrame:main.webContents.mainFrame};
+ main.handlers['lim:flush'](ev,{azione:'elimina',corso:'scienze',ids:[altro]});assert.equal(ev.returnValue.ok,false,'flush non permette cancellazioni asincrone');assert(L.leggi(v,'scienze',altro));
+ const cancellata=await invoke(proj,{azione:'elimina',corso:'storia',ids:[altro]});assert(cancellata.ok);assert.deepEqual(cancellata.rimossi,[altro]);
+ assert(main.messages.some(m=>m[1].rimossi?.includes(altro))&&proj.messages.some(m=>m[1].rimossi?.includes(altro)),'notifica soltanto dopo il completamento del Cestino');
  assert(main.messages.some(m=>m[0]==='lim:cambiata'));assert(proj.messages.some(m=>m[0]==='lim:cambiata'));
  const esterno=path.join(v,'fuori.excalidraw'),symlink=path.join(v,'Zaini/scienze/LIM',id+'.excalidraw');fs.copyFileSync(symlink,esterno);fs.unlinkSync(symlink);fs.symlinkSync(esterno,symlink);
- assert(!invoke(main,{azione:'rinomina',corso:'scienze',id,titolo:'Non deve uscire'}).ok,'symlink non attraversa i permessi');
+ assert(!(await invoke(main,{azione:'rinomina',corso:'scienze',id,titolo:'Non deve uscire'})).ok,'symlink non attraversa i permessi');
+ assert(!(await invoke(main,{azione:'elimina',corso:'scienze',ids:[id]})).ok,'neanche il Cestino attraversa symlink');assert(fs.existsSync(esterno));
  assert(require('../lib/pacchetto').esclusioni('scienze',{appunti:true}).includes('scienze/LIM/_cestino/*'));
  assert(require('../lib/pacchetto').esclusioni('scienze',{appunti:false}).includes('scienze/LIM/*'));
  const giorno=new Date(2026,9,28),domani=new Date(2026,9,29);
@@ -40,11 +63,11 @@ try{
  assert.equal(prima.studia.numero,1);assert.match(prima.studia.title,/^LAVAGNA 001 \[\d{2}\/\d{2}\/\d{4}\]$/);
  assert.deepEqual(prima.elements,a.elements,'primo salvataggio conserva subito la scena');
  L.comando(v,'storia',{azione:'rinomina',id:prima.studia.id,titolo:'Lezione precedente'});
- L.comando(v,'storia',{azione:'elimina',ids:[prima.studia.id]});
+ await L.comando(v,'storia',{azione:'elimina',ids:[prima.studia.id]},opzioni);
  const seconda=L.comando(v,'storia',{azione:'crea'}).lavagna;
  assert.equal(seconda.studia.numero,2,'rinomina e cestino non riciclano il progressivo');
  assert.match(seconda.studia.title,/^LAVAGNA 002 /);
  assert.throws(()=>L.comando(v,'storia',{azione:'crea',scena:{elements:'errato'}}));
  assert.equal(L.elenco(v,'storia').length,1,'scena non valida non crea file vuoti');
  console.log('✓ LIM: salvataggio, riapertura, conflitti, cestino, isolamento e dati sicuri');
-}finally{fs.rmSync(v,{recursive:true,force:true});}
+}finally{fs.rmSync(v,{recursive:true,force:true});}})().catch(e=>{console.error(e);process.exitCode=1;});
