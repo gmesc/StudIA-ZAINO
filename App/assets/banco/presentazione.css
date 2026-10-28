@@ -27,8 +27,8 @@
 .lettura-pop { padding:8px; margin:0; border:1px solid var(--line); color:var(--ink); background:var(--panel); box-shadow:var(--sh-3d); }
 .lettura-pop .tbar { border:0; padding:0; }
 .lettura-pop output { min-width:4.5ch; text-align:center; font-variant-numeric:tabular-nums; }
-.blocco[data-proiezione] { isolation:isolate; }
-.blocco[data-proiezione]::after { content:''; position:absolute; inset:0; border:2px solid var(--orange); pointer-events:none; z-index:6; }
+.blocco[data-proiezione] { position:relative; isolation:isolate; }
+.blocco[data-proiezione]::after { box-sizing:border-box; content:''; position:absolute; inset:0; border:2px solid var(--orange); pointer-events:none; z-index:6; }
 .presentazione-bar { position:fixed; inset:0 0 auto; z-index:7; background:var(--panel); border-bottom:1px solid var(--line); transition:transform 160ms ease-out; }
 .presentazione-bar .presentazione-titolo { flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:var(--tb-fs); }
 .presentazione-bar[data-nascosta] { transform:translateY(-100%); visibility:hidden; }
@@ -47,3 +47,11 @@ html[data-presentazione] .blocco[data-presentazione] .editor-preview { padding-b
 @media (prefers-reduced-motion:reduce) { .presentazione-bar { transition:none; } }
 
 html[data-presentazione] .blocco[data-presentazione] .zstudio-banco { padding-top:16px; }
+
+/* Il contorno resta fuori dai pixel catturati: il pubblico non lo vede. */
+.proiezione-area { position:fixed; outline:2px solid var(--orange); pointer-events:none; z-index:21; }
+.proiezione-area button { position:absolute; right:0; bottom:100%; margin-bottom:2px; pointer-events:auto; cursor:move; touch-action:none; background:var(--panel); color:var(--orange); border:1px solid var(--orange); font-size:12px; padding:2px 8px; }
+.proiezione-area button:focus-visible { outline:2px solid var(--focus); }
+
+.proiezione-area button:hover { background:var(--hover); }
+.proiezione-area button:active { cursor:grabbing; }

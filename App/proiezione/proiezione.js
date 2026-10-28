@@ -28,8 +28,9 @@
   const r=el.getBoundingClientRect(),v=$('vista');
   v.scrollTop=L.posizione({top:r.top+v.scrollTop,height:r.height},ancora)-64;
  }
- function ingrandisci(n){scala=L.scala(n);document.documentElement.style.setProperty('--zoom',scala/100);$('scala').textContent=scala+'%';$('meno').disabled=scala<=75;$('piu').disabled=scala>=300;
-  $('immagine').style.width=scala+'%';$('immagine').style.height=scala+'%';requestAnimationFrame(allinea);
+ function inviaVista(){if(tipo==='immagine')comando({azione:'vista',width:innerWidth,height:innerHeight,scala});}
+ function ingrandisci(n){scala=tipo==='immagine'?Math.max(100,L.scala(n)):L.scala(n);document.documentElement.style.setProperty('--zoom',scala/100);$('scala').textContent=scala+'%';$('meno').disabled=scala<=(tipo==='immagine'?100:75);$('piu').disabled=scala>=300;
+  inviaVista();requestAnimationFrame(allinea);
  }
  function mostraBarra(){delete $('barra').dataset.nascosta;clearTimeout(timer);timer=setTimeout(()=>{if(!$('barra').matches(':hover,:focus-within'))$('barra').dataset.nascosta='1';},2200);}
  async function comando(o){const r=await api.comando(o);if(r?.error){$('errore').hidden=false;$('errore').textContent=r.error;}}
@@ -46,7 +47,7 @@
   if(q.immagine&&$('immagine').getAttribute('src')!==q.immagine)$('immagine').src=q.immagine;
   if(q.ancora){ancora=q.ancora;requestAnimationFrame(allinea);}
  });
- $('contenuto').addEventListener('load',allinea,true);window.addEventListener('resize',()=>requestAnimationFrame(allinea));
+ $('contenuto').addEventListener('load',allinea,true);window.addEventListener('resize',()=>{inviaVista();requestAnimationFrame(allinea);});
  window.addEventListener('pointermove',e=>{if(e.clientY<56)mostraBarra();});$('barra').addEventListener('pointerleave',mostraBarra);$('barra').addEventListener('focusout',mostraBarra);
  window.addEventListener('keydown',e=>{if(e.key==='Tab')mostraBarra();if(e.key==='Escape'&&intero)comando({azione:'intero'});});
  ingrandisci(200);mostraBarra();

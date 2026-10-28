@@ -62,6 +62,7 @@ async function click(s){await c.clicca(s);await c.pausa(120);}
  assert.equal(await c.val(`BancoPresentazione.percentuale('appunti')`),125);assert.equal(await c.val(`BancoPresentazione.percentuale('appunti2')`),75);
  await c.val(`bancoScambia('A','C')`);
  assert.equal(await c.val(`document.querySelector('[data-proiezione]').dataset.blocco`),'C','la cornice segue lo split spostato');
+ assert(await c.val(`(()=>{const b=document.querySelector('[data-proiezione]'),s=getComputedStyle(b,'::after');return Math.abs(parseFloat(s.width)-b.clientWidth)<3;})()`),'la cornice misura il solo split, non tutto il banco');
  await peer.val(`window.proiezione.comando({azione:'intero'})`);await wait(`document.getElementById('intero').title.startsWith('Esci')`,peer);
  await peer.invia('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
  await peer.invia('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
@@ -70,12 +71,36 @@ async function click(s){await c.clicca(s);await c.pausa(120);}
  // La chiusura della finestra libera la cornice senza chiudere l'appunto.
  await peer.val(`void window.proiezione.comando({azione:'chiudi'})`);peer.ws.close();peer=null;await wait(`!document.querySelector('[data-proiezione]')`);assert(await c.val('!!NOTES.cur'));
  // Il PDF usa la vista reale: pagina, zoom e selezione vengono rispecchiati.
- await c.val(`bancoForma('uno');bancoAssegna('A','fonte');openPdf('01 Botanica.pdf',1)`);await wait(`!!document.querySelector('#pdfFrame canvas')`);
+ await c.val(`bancoForma('due-col');bancoAssegna('A','fonte');bancoAssegna('C','fonte2');openPdf('01 Botanica.pdf',1)`);await wait(`!!document.querySelector('#pdfFrame canvas')`);
  await click('[data-proietta]');peer=await collegaProiezione();await wait(`document.getElementById('immagine').src.startsWith('data:image/')`,peer);
  const png=await peer.val(`document.getElementById('immagine').src`);await c.val('PDFJS.viewer.currentPageNumber=2');await c.pausa(1000);
  assert.notEqual(await peer.val(`document.getElementById('immagine').src`),png,'pagina PDF aggiornata sul proiettore');await shot('pdf',peer);
- await peer.val(`document.getElementById('piu').click()`);assert(await peer.val(`document.getElementById('figura').scrollWidth>document.getElementById('figura').clientWidth`),'ingrandimento immagine scorrevole senza taglio dei bordi');
+ await peer.invia('Emulation.setDeviceMetricsOverride',{width:1440,height:600,deviceScaleFactor:1,mobile:false});
+ await wait(`(()=>{const b=document.querySelector('.proiezione-area');return b&&Math.abs(b.offsetWidth/b.offsetHeight-2.4)<.03;})()`);
+ await c.pausa(500);
+ const cornice=await c.val(`(()=>{const r=document.querySelector('.proiezione-area').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};})()`);
+ const dimensioni=await peer.val(`(()=>{const i=document.getElementById('immagine'),r=i.getBoundingClientRect();return {width:r.width,height:r.height,nw:i.naturalWidth,nh:i.naturalHeight};})()`);
+ assert.equal(dimensioni.width,1440,'nessun margine laterale aggiunto alla cattura');
+ assert(Math.abs(dimensioni.nw/dimensioni.nh-cornice.width/cornice.height)<.01,'il pubblico vede il rettangolo indicato');
+ assert(dimensioni.height<=601,'ritaglio verticale, senza deformazione');
+ assert.equal(await peer.val(`(()=>{const i=document.getElementById('immagine'),c=document.createElement('canvas');c.width=i.naturalWidth;c.height=i.naturalHeight;const x=c.getContext('2d');x.drawImage(i,0,0);const d=x.getImageData(0,0,c.width,c.height).data;let arancioni=0;for(let n=0;n<d.length;n+=4)if(d[n]===249&&d[n+1]===115&&d[n+2]===22)arancioni++;return arancioni;})()`),0,'cornice e maniglia rimangono sul Mac, fuori dalla cattura');
+ await peer.val(`document.getElementById('piu').click()`);
+ await wait(`document.querySelector('.proiezione-area').offsetWidth<${cornice.width}*.81`);
+ const yPrima=await c.val(`document.querySelector('.proiezione-area').getBoundingClientRect().y`);
+ await c.val(`document.querySelector('.proiezione-area button').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}))`);
+ await wait(`document.querySelector('.proiezione-area').getBoundingClientRect().y>${yPrima}`);
+ const handle=await c.val(`(()=>{const r=document.querySelector('.proiezione-area button').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+ const yDrag=await c.val(`document.querySelector('.proiezione-area').getBoundingClientRect().y`);
+ await c.invia('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...handle});
+ await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',button:'left',buttons:1,x:handle.x,y:handle.y+40});
+ await c.invia('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,x:handle.x,y:handle.y+40});
+ await wait(`document.querySelector('.proiezione-area').getBoundingClientRect().y>${yDrag}+30`);
+ await peer.invia('Emulation.setDeviceMetricsOverride',{width:1200,height:800,deviceScaleFactor:1,mobile:false});
+ await wait(`Math.abs(document.querySelector('.proiezione-area').offsetWidth/document.querySelector('.proiezione-area').offsetHeight-1.5)<.02`);
+ await shot('inquadratura-origine');await shot('inquadratura-destinazione',peer);
+ await peer.invia('Emulation.clearDeviceMetricsOverride');
  await c.val(`BancoPresentazione.chiudiProiezione()`);peer.ws.close();peer=null;
+ assert.equal(await c.val(`document.querySelector('.proiezione-area')===null`),true);
  const pdfPrima=await c.val(`({scala:PDFJS.viewer.currentScaleValue,pagina:PDFJS.viewer.currentPageNumber})`);
  await click('[data-intero]');await c.pausa(900);await click('.presentazione-bar button[title="Adatta alla larghezza"]');
  assert.equal(await c.val('PDFJS.viewer.currentScaleValue'),'page-width');await shot('pdf-intero');

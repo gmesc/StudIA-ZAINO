@@ -12,11 +12,20 @@
   if(width<1||height<1)throw Error('Lo split da proiettare non è visibile.');
   return {x,y,width,height};
  }
+ // Il ritaglio segue la larghezza, senza deformare il documento. Se lo split
+ // è più basso della destinazione, si proiettano soltanto i pixel disponibili.
+ function inquadratura(area,vista,punto={}){
+  if(!vista||!['width','height'].every(k=>Number.isFinite(vista[k])&&vista[k]>0))throw Error('Misure della proiezione non valide.');
+  const width=Math.max(1,Math.floor(area.width/(Math.max(100,scala(vista.scala))/100)));
+  const height=Math.max(1,Math.min(Math.floor(area.height),Math.floor(width*vista.height/vista.width)));
+  const frazione=n=>Number.isFinite(n)?Math.max(0,Math.min(1,n)):0;
+  return {x:Math.floor(area.x+(area.width-width)*frazione(punto.x)),y:Math.floor(area.y+(area.height-height)*frazione(punto.y)),width,height};
+ }
  function ancora(elementi,top){
   const e=elementi.find(e=>e.top+e.height>top&&e.height>0)||elementi.at(-1);
   return e?{id:String(e.id),frazione:Math.max(0,Math.min(1,(top-e.top)/Math.max(1,e.height)))}:null;
  }
  function posizione(e,a){return e.top+Math.max(0,Math.min(1,Number(a?.frazione)||0))*e.height;}
  function mittente(e,w,url){return !!w&&!w.isDestroyed()&&e.sender===w.webContents&&e.senderFrame===w.webContents.mainFrame&&e.senderFrame.url.split('#')[0]===url;}
- return {PASSI,TAGS_TESTO,scala,passo,rettangolo,ancora,posizione,mittente};
+ return {PASSI,TAGS_TESTO,scala,passo,rettangolo,inquadratura,ancora,posizione,mittente};
 }));

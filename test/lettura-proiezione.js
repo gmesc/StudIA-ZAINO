@@ -6,6 +6,10 @@ assert.deepEqual(L.rettangolo({x:100,y:20,width:1000,height:700},{width:800,heig
 assert.deepEqual(L.rettangolo({x:-20,y:-10,width:100,height:80},{width:800,height:600}),{x:0,y:0,width:80,height:70});
 assert.throws(()=>L.rettangolo({x:900,y:0,width:50,height:30},{width:800,height:600}));
 assert.throws(()=>L.rettangolo({x:0,y:NaN,width:50,height:30},{width:800,height:600}));
+assert.deepEqual(L.inquadratura({x:10,y:20,width:600,height:900},{width:1600,height:900,scala:100}),{x:10,y:20,width:600,height:337});
+assert.deepEqual(L.inquadratura({x:10,y:20,width:600,height:900},{width:1600,height:900,scala:200},{x:1,y:1}),{x:310,y:752,width:300,height:168});
+assert.deepEqual(L.inquadratura({x:0,y:0,width:600,height:300},{width:600,height:900,scala:100}),{x:0,y:0,width:600,height:300});
+assert.throws(()=>L.inquadratura({x:0,y:0,width:600,height:300},{width:0,height:900,scala:100}));
 const a=L.ancora([{id:0,top:-100,height:80},{id:1,top:-20,height:100},{id:2,top:80,height:200}],0);
 assert.deepEqual(a,{id:'1',frazione:.2});assert.equal(L.posizione({top:500,height:200},a),540,'stesso passaggio in una colonna di misura diversa');
 const w={isDestroyed:()=>false,webContents:{mainFrame:{url:'file:///app.html'}}};
@@ -41,6 +45,10 @@ console.log('Lettura: scala, ancore, ritaglio e confine della finestra verificat
  assert.equal(p.messaggi.at(-1)[1].html,'<p>Prova</p>');
  assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'immagine',area:{x:10,y:10,width:900,height:700}})).ok,true);
  assert.deepEqual(win.capture,{x:10,y:10,width:790,height:590});
+ await p.call('proiezione:comando',{azione:'vista',width:1600,height:900,scala:125});
+ assert.deepEqual(win.messaggi.at(-1),['proiezione:vista',{sessione:first.sessione,vista:{width:1600,height:900,scala:125}}]);
+ assert.equal((await p.call('proiezione:comando',{azione:'vista',width:NaN,height:900,scala:100})).ok,false);
+ assert.equal((await p.call('proiezione:comando',{azione:'vista',width:0,height:900,scala:100})).ok,false);
  await new Promise(ok=>p.request({url:'file:///segreto.txt'},r=>{assert(r.cancel);ok();}));
  await new Promise(ok=>p.request({url:'https://example.com'},r=>{assert(r.cancel);ok();}));
  await p.call('proiezione:comando',{azione:'schermo',id:2});assert.equal(p.bounds.x,800);
