@@ -1,0 +1,49 @@
+/* Il corpo del testo possiede la misura in ch: ingrandire il font allarga
+   anche la colonna, senza cambiare le misure delle barre. */
+.bcorpo { --lettura-scala:1; --lettura-fs:calc(17px * var(--lettura-scala)); }
+.bcorpo .zstudio-banco {
+ font-size:var(--lettura-fs); line-height:1.6;
+ padding:16px max(16px,calc((100% - 68ch)/2)); overflow-wrap:anywhere;
+}
+.bcorpo .zstudio :is(h2,h3) { font-size:1.2em; }
+.bcorpo .zstudio h4 { font-size:1.2em; }
+.bcorpo .zstudio :is(input,select,textarea) { font-size:var(--lettura-fs); }
+.bcorpo .zstudio :is(input,select) { min-height:2.5em; height:auto; }
+.bcorpo .zstudio :is(summary,label,.zchat-hint,.zstudio-item-type) { font-size:.9em; }
+.bcorpo .zstudio .zchat-citation { font-size:1em; white-space:normal; height:auto; }
+.bcorpo :is(#noteHost,#noteHost2) :is(.CodeMirror,.editor-preview,.mdb-edit) {
+ font-size:var(--lettura-fs); line-height:1.65;
+}
+.bcorpo :is(#noteHost,#noteHost2) .CodeMirror-lines { max-width:68ch; margin-inline:auto; padding-inline:16px; }
+.bcorpo :is(#noteHost,#noteHost2) .editor-preview { padding:16px max(16px,calc((100% - 68ch)/2)); overflow-wrap:anywhere; }
+.bcorpo :is(#noteHost,#noteHost2) :is(.editor-preview,.CodeMirror) { --tit-1:2em; --tit-2:1.7em; --tit-3:1.4em; --tit-4:1.2em; --tit-5:1.1em; --tit-6:1em; }
+.bcorpo :is(#noteHost,#noteHost2) .editor-preview :is(img,svg,video) { max-width:100%; }
+.blettura { display:flex; flex:none; order:2; margin-left:auto; align-items:center; }
+.bhead .blettura .tbtn { padding-inline:.3rem; min-width:var(--tb-h); }
+.bhead .bdoc { order:1; }
+.bhead .bchiudi { margin-left:0; }
+.blettura svg,.lettura-pop svg,.presentazione-bar svg { width:1.2em; height:1.2em; }
+.blettura button[aria-pressed="true"] { color:var(--orange); }
+.lettura-pop { padding:8px; margin:0; border:1px solid var(--line); color:var(--ink); background:var(--panel); box-shadow:var(--sh-3d); }
+.lettura-pop .tbar { border:0; padding:0; }
+.lettura-pop output { min-width:4.5ch; text-align:center; font-variant-numeric:tabular-nums; }
+.blocco[data-proiezione] { isolation:isolate; }
+.blocco[data-proiezione]::after { content:''; position:absolute; inset:0; border:2px solid var(--orange); pointer-events:none; z-index:6; }
+.presentazione-bar { position:fixed; inset:0 0 auto; z-index:7; background:var(--panel); border-bottom:1px solid var(--line); transition:transform 160ms ease-out; }
+.presentazione-bar .presentazione-titolo { flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:var(--tb-fs); }
+.presentazione-bar[data-nascosta] { transform:translateY(-100%); visibility:hidden; }
+.presentazione-bar:focus-within { transform:none; visibility:visible; }
+html[data-presentazione] #banco { position:fixed!important; inset:0!important; width:100%!important; height:100%!important; max-width:none!important; margin:0!important; display:block!important; z-index:20; background:var(--panel); }
+html[data-presentazione] #banco>.blocco:not([data-presentazione]) { display:none!important; }
+html[data-presentazione] :is(body>.topbar,#menuBtn,.sidebar,#navdots) { display:none!important; }
+html[data-presentazione] #banco>.blocco[data-presentazione] { position:absolute; inset:0; width:100%; height:100%; border:0; display:flex!important; }
+html[data-presentazione] .blocco[data-presentazione]>.bhead,
+html[data-presentazione] #banco>.bdiv,
+html[data-presentazione] #sideHandle { display:none!important; }
+html[data-presentazione] .blocco[data-presentazione]>.bcorpo { padding-top:48px; }
+html[data-presentazione] .blocco[data-presentazione] :is(.editor-toolbar,.mtoolbar,#zragToolbar,#zstudyToolbar,.pdftools,.pdf-toolbar,.phead) { display:none!important; }
+html[data-presentazione] .blocco[data-presentazione] [data-presentazione-toolbar] { display:none!important; }
+html[data-presentazione] .blocco[data-presentazione] .editor-preview { padding-block:16px 32px; }
+@media (prefers-reduced-motion:reduce) { .presentazione-bar { transition:none; } }
+
+html[data-presentazione] .blocco[data-presentazione] .zstudio-banco { padding-top:16px; }

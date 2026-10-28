@@ -14,6 +14,14 @@ Questa copia di lavoro riutilizza le dipendenze già installate in StudIA tramit
 
 Il fork ha identità `ch.insegnai.studia.zaino` e configurazione personale `studia-zaino`, separate da StudIA. Scegli una cartella per il vault al primo avvio. Un vault esistente può essere aperto: il fork mostra soltanto i suoi zaini. Il progetto originale rimane nella sua cartella.
 
+## Leggere e presentare
+
+Appunti, schede e Ripasso usano una colonna centrata di circa 68 caratteri. Nella testata dello split, **Dimensione del testo** regola l’ingrandimento dal 75% al 300%, indipendentemente dagli altri split. La larghezza massima cresce insieme al testo; la preferenza viene ricordata per strumento e zaino su questo Mac.
+
+**Schermo intero** mostra il contenuto dello split e nasconde l’interfaccia. Il testo parte almeno dal 200%; gli appunti vengono mostrati in anteprima. Porta il puntatore in alto o usa Tab per ritrovare i comandi. **Esc** ripristina la disposizione, l’ingrandimento e il punto di lettura precedenti. Nei PDF rimangono pinch, Spazio + trascinamento e tre clic per adattare alla larghezza.
+
+**Apri finestra di proiezione** apre una finestra separata, spostabile su un proiettore con scrivania estesa. Se è collegato un secondo schermo viene usato automaticamente; il selettore della finestra permette di cambiarlo. La vista segue contenuto e scorrimento dello split; i testi sono reimpaginati e hanno un ingrandimento indipendente. PDF e mappe rispecchiano l’area visibile del documento. Lo split di origine ha una **cornice arancione di 2px**. Chiudere la proiezione non chiude lo split; cambiarne il contenuto lo aggiorna, rimuoverlo dal banco o cambiare zaino chiude la proiezione. La finestra è di sola lettura, non genera chiamate AI e non salva copie dei materiali.
+
 ## Chat e profili
 
 Il pulsante **Chat AI** nella barra superiore apre una finestra flottante, spostabile e ridimensionabile. Sono disponibili **Tutor socratico**, **Spiegamelo** e **Chiedimelo**. Ogni invio rilegge documenti e appunti salvati dello zaino attivo; Spiegamelo può integrare estratti Wikipedia con collegamenti alle fonti.

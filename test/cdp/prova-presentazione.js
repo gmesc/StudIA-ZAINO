@@ -1,0 +1,111 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),WS=require('ws'),c=require('./cdp');
+const porta=process.env.STUDIA_PORTA||9458;
+setTimeout(()=>{console.error('Tempo massimo della prova di presentazione superato');process.exit(1);},180000).unref();
+let peer=null,initial=null;
+async function wait(expr,client=c){for(let i=0;i<160;i++){if(await client.val(expr))return;await c.pausa(100);}throw Error('Attesa scaduta: '+expr);}
+async function collegaProiezione(){
+ let target;for(let i=0;i<80&&!target;i++){target=(await (await fetch('http://localhost:'+porta+'/json')).json()).find(t=>t.url.includes('/proiezione/index.html'));if(!target)await c.pausa(100);}
+ assert(target,'finestra separata presente');const ws=new WS(target.webSocketDebuggerUrl),pending=new Map();let id=0;
+ await new Promise((ok,ko)=>{ws.once('open',ok);ws.once('error',ko);});ws.on('message',raw=>{const r=JSON.parse(raw);if(pending.has(r.id)){pending.get(r.id)(r);pending.delete(r.id);}});
+ const invia=(method,params)=>new Promise(resolve=>{pending.set(++id,resolve);ws.send(JSON.stringify({id,method,params}));});
+ return {ws,invia,val:async expression=>{const r=await invia('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.result.exceptionDetails)throw Error(JSON.stringify(r.result.exceptionDetails));return r.result.result.value;}};
+}
+async function shot(name,client=c){const r=await client.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-presentazione-'+name+'.png',Buffer.from(r.result.data,'base64'));}
+async function click(s){await c.clicca(s);await c.pausa(120);}
+(async()=>{
+ await c.collega();await wait('!!window.BancoPresentazione && !!window.zainoStudio');
+ const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
+ initial=await c.val('({banco:bancoStato(),storage:{...localStorage},theme:document.documentElement.dataset.theme,zaino:corsoAttivo()})');
+ await c.val(`cambiaZaino('biologia',true);bancoForma('uno');bancoAssegna('A','appunti')`);
+ const body=Array.from({length:28},(_,i)=>'## Capitolo '+i+'\n\n'+('Il paragrafo '+i+' spiega come la luce diventa energia nelle cellule. ').repeat(8)).join('\n\n')+'\n\n> *Passaggio citato*\n> Botanica.pdf; p. 2\n> [Botanica.pdf · p. 2](pdf:01#p=2)';
+ const file=require('../../lib/appunti').save(vault,'biologia',null,{title:'Proiezione di prova'},body).file;
+ await c.val(`notesReload();noteOpen(${JSON.stringify(file)},noteStati()[0])`);await wait(`!!NOTES.mde && NOTES.cur?.file===${JSON.stringify(file)}`);
+ await c.val('if(!NOTES.mde.isPreviewActive())NOTES.mde.togglePreview()');
+ await c.invia('Emulation.setDeviceMetricsOverride',{width:1720,height:1000,deviceScaleFactor:1,mobile:false});await c.pausa(400);
+ const geometry=()=>c.val(`(()=>{const e=document.querySelector('#noteHost .editor-preview-active'),s=getComputedStyle(e),p=e.querySelector('p');return {font:parseFloat(s.fontSize),width:p.getBoundingClientRect().width,available:e.clientWidth,overflow:e.scrollWidth>e.clientWidth+1};})()`);
+ await c.val(`BancoPresentazione.zoom('appunti',100)`);await c.pausa(100);const small=await geometry();
+ await click('[data-lettura]');await click('.lettura-pop [data-piu]');assert.equal(await c.val(`BancoPresentazione.percentuale('appunti')`),125);
+ await c.val(`document.querySelector('.lettura-pop').hidePopover();BancoPresentazione.zoom('appunti',200)`);await c.pausa(150);const large=await geometry();
+ assert.equal(large.font/small.font,2);assert(large.width>small.width*1.5,JSON.stringify({small,large}));assert(!large.overflow);assert(small.width<small.available*.8);
+ await shot('lettura');
+ await c.invia('Emulation.setDeviceMetricsOverride',{width:650,height:850,deviceScaleFactor:1,mobile:false});await c.pausa(200);
+ assert(!(await geometry()).overflow,'testo grande senza scorrimento laterale nello split stretto');
+ await c.invia('Emulation.clearDeviceMetricsOverride');await c.pausa(250);
+ await c.val(`BancoPresentazione.zoom('appunti',125)`);await c.pausa(200);await c.val(`document.querySelector('#noteHost .editor-preview-active').scrollTop=500`);
+ const original=await c.val(`({banco:JSON.stringify(bancoStato()),y:document.querySelector('#noteHost .editor-preview-active').scrollTop,body:NOTES.mde.value()})`);
+ await click('[data-intero]');await wait(`document.documentElement.dataset.presentazione==='1'`);await c.pausa(800);
+ assert(await c.val(`getComputedStyle(document.querySelector('body>.topbar')).display==='none'&&getComputedStyle(document.getElementById('menuBtn')).display==='none'`));
+ await shot('intero');await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:900,y:600});await c.pausa(2500);
+ assert(await c.val(`document.querySelector('.presentazione-bar').hasAttribute('data-nascosta')`),'barra si nasconde dopo inattività');
+ await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:100,y:10});await wait(`!document.querySelector('.presentazione-bar').hasAttribute('data-nascosta')`);
+ await c.invia('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await c.invia('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+ await wait(`!document.documentElement.hasAttribute('data-presentazione')`);await c.pausa(1200);
+ assert.equal(await c.val('JSON.stringify(bancoStato())'),original.banco);assert.equal(await c.val('NOTES.mde.value()'),original.body);assert.equal(await c.val(`BancoPresentazione.percentuale('appunti')`),125);
+ const returnedY=await c.val(`document.querySelector('#noteHost .editor-preview-active').scrollTop`);assert(Math.abs(returnedY-original.y)<3,JSON.stringify({returnedY,originalY:original.y}));
+ await click('[data-proietta]');await wait(`BancoPresentazione.stato().proiezione==='appunti'`);peer=await collegaProiezione();
+ await wait(`document.querySelector('#contenuto').textContent.includes('Capitolo 27')`,peer);
+ assert.equal(await peer.val('typeof window.vault'),'undefined','la proiezione non ha accesso al vault');
+ assert(await c.val(`!!document.querySelector('.blocco[data-proiezione]')`));
+ const border=await c.val(`(()=>{const s=getComputedStyle(document.querySelector('[data-proiezione]'),'::after');return {width:s.borderLeftWidth,color:s.borderLeftColor};})()`);
+ assert.equal(border.width,'2px');assert.equal(border.color,'rgb(249, 115, 22)');
+ assert(!await peer.val(`document.querySelector('#contenuto').textContent.includes('pdf:01')`),'collegamento leggibile senza URL markdown');
+ await peer.val(`document.getElementById('piu').click()`);assert.equal(await peer.val(`document.getElementById('scala').textContent`),'225%');assert.equal(await c.val(`BancoPresentazione.percentuale('appunti')`),125);
+ await c.val(String.raw`NOTES.mde.togglePreview();NOTES.mde.codemirror.replaceRange('\n\n## AGGIORNAMENTO DAL PORTATILE\n\nUn altro passaggio.',{line:NOTES.mde.codemirror.lastLine(),ch:NOTES.mde.codemirror.getLine(NOTES.mde.codemirror.lastLine()).length});`);
+ await wait(`document.querySelector('#contenuto').textContent.includes('AGGIORNAMENTO DAL PORTATILE')`,peer);
+ await c.val(`NOTES.mde.codemirror.scrollTo(null,NOTES.mde.codemirror.getScrollInfo().height)`);await c.pausa(500);
+ assert(await peer.val(`document.getElementById('vista').scrollTop>500`),'la proiezione segue il passaggio letto');
+ await shot('proiettore',peer);await shot('cornice');
+ await c.val(`document.documentElement.dataset.theme='scuro'`);await wait(`document.documentElement.dataset.theme==='dark'`,peer);
+ assert.equal(await peer.val(`getComputedStyle(document.documentElement).backgroundColor`),'rgb(23, 26, 33)');
+ await c.val(`document.documentElement.dataset.theme='chiaro';bancoForma('due-col');bancoAssegna('C','appunti2');BancoPresentazione.zoom('appunti2',75)`);
+ assert.equal(await c.val(`BancoPresentazione.percentuale('appunti')`),125);assert.equal(await c.val(`BancoPresentazione.percentuale('appunti2')`),75);
+ await c.val(`bancoScambia('A','C')`);
+ assert.equal(await c.val(`document.querySelector('[data-proiezione]').dataset.blocco`),'C','la cornice segue lo split spostato');
+ await peer.val(`window.proiezione.comando({azione:'intero'})`);await wait(`document.getElementById('intero').title.startsWith('Esci')`,peer);
+ await peer.invia('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+ await peer.invia('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+ await wait(`document.getElementById('intero').title.startsWith('Schermo')`,peer);
+ assert.equal((await peer.val(`window.proiezione.comando({azione:'leggiVault'})`)).ok,false);
+ // La chiusura della finestra libera la cornice senza chiudere l'appunto.
+ await peer.val(`void window.proiezione.comando({azione:'chiudi'})`);peer.ws.close();peer=null;await wait(`!document.querySelector('[data-proiezione]')`);assert(await c.val('!!NOTES.cur'));
+ // Il PDF usa la vista reale: pagina, zoom e selezione vengono rispecchiati.
+ await c.val(`bancoForma('uno');bancoAssegna('A','fonte');openPdf('01 Botanica.pdf',1)`);await wait(`!!document.querySelector('#pdfFrame canvas')`);
+ await click('[data-proietta]');peer=await collegaProiezione();await wait(`document.getElementById('immagine').src.startsWith('data:image/')`,peer);
+ const png=await peer.val(`document.getElementById('immagine').src`);await c.val('PDFJS.viewer.currentPageNumber=2');await c.pausa(1000);
+ assert.notEqual(await peer.val(`document.getElementById('immagine').src`),png,'pagina PDF aggiornata sul proiettore');await shot('pdf',peer);
+ await peer.val(`document.getElementById('piu').click()`);assert(await peer.val(`document.getElementById('figura').scrollWidth>document.getElementById('figura').clientWidth`),'ingrandimento immagine scorrevole senza taglio dei bordi');
+ await c.val(`BancoPresentazione.chiudiProiezione()`);peer.ws.close();peer=null;
+ const pdfPrima=await c.val(`({scala:PDFJS.viewer.currentScaleValue,pagina:PDFJS.viewer.currentPageNumber})`);
+ await click('[data-intero]');await c.pausa(900);await click('.presentazione-bar button[title="Adatta alla larghezza"]');
+ assert.equal(await c.val('PDFJS.viewer.currentScaleValue'),'page-width');await shot('pdf-intero');
+ await c.val(`BancoPresentazione.esciIntero()`);await c.pausa(1200);
+ assert.deepEqual(await c.val(`({scala:PDFJS.viewer.currentScaleValue,pagina:PDFJS.viewer.currentPageNumber})`),pdfPrima);
+ // Mappa reale: il disegno e i suoi spostamenti arrivano alla finestra separata.
+ const mapFile=await c.val(`(async()=>{const r=await mappeApi().salva(corsoAttivo(),null,{titolo:'Mappa proiettata',nodi:[{id:'a',testo:'Energia',x:0,y:0},{id:'b',testo:'Fotosintesi',x:300,y:150}],archi:[{da:'a',a:'b'}]});await mappaApriMia(r.file);return r.file;})()`);
+ await c.val(`bancoForma('uno');bancoAssegna('A','mappa')`);await wait(`!!document.querySelector('#mappaSvg .mzoom')`);
+ await c.val(`MAPPA.z={k:1.3,x:30,y:20};mappaApplicaZoom()`);const mapZoom=await c.val('MAPPA.z');
+ await click('[data-intero]');await c.pausa(900);await c.val(`MAPPA.z={k:2,x:90,y:40};mappaApplicaZoom()`);await shot('mappa-intera');
+ await c.val(`BancoPresentazione.esciIntero()`);await c.pausa(1200);assert.deepEqual(await c.val('MAPPA.z'),mapZoom);
+ await click('[data-proietta]');peer=await collegaProiezione();await wait(`document.getElementById('immagine').src.startsWith('data:image/')`,peer);const mapPng=await peer.val(`document.getElementById('immagine').src`);
+ await c.val(`MAPPA.z.x+=80;mappaApplicaZoom()`);await wait(`document.getElementById('immagine').src!==${JSON.stringify(mapPng)}`,peer);await shot('mappa',peer);
+ await c.val(`bancoAssegna('A','studio')`);await wait(`!document.querySelector('[data-proiezione]')`);peer.ws.close();peer=null;
+ // Il raccoglitore riformatta anche moduli e schede con la stessa misura.
+ await c.val(`document.getElementById('zschedeNewButton').click();BancoPresentazione.zoom('studio',200)`);await c.pausa(200);
+ assert.equal(await c.val(`getComputedStyle(document.getElementById('zschedeSource')).fontSize`),'34px');
+ await click('[data-proietta]');peer=await collegaProiezione();await wait(`document.querySelector('#contenuto').textContent.includes('Tipo di scheda')`,peer);
+ await c.val(`BancoPresentazione.chiudiProiezione()`);peer.ws.close();peer=null;
+ const reviewDir=path.join(vault,'Zaini/biologia/RIPASSO'),activeFile=path.join(reviewDir,'active.json'),activeBefore=fs.existsSync(activeFile)?fs.readFileSync(activeFile):null;
+ const questionFile=path.join(reviewDir,'domande/prova-proiezione-ripasso.json');fs.mkdirSync(path.dirname(questionFile),{recursive:true});
+ fs.writeFileSync(questionFile,JSON.stringify({id:'prova-proiezione-ripasso',question:'Quale funzione svolge la clorofilla nella fotosintesi?',createdAt:new Date().toISOString(),saved:true,attempts:[],sources:[],scope:{mode:'all',sourceIds:[],wikipedia:false}}));
+ await c.val(`zainoStudio.refresh();bancoAssegna('A','flashcard');document.getElementById('zstudyBrowse').click()`);await wait(`document.querySelector('[data-question-id="prova-proiezione-ripasso"]')`);
+ await click('[data-question-id="prova-proiezione-ripasso"]');await wait(`!!document.getElementById('zstudyAttempt')`);await c.val(`BancoPresentazione.zoom('flashcard',200)`);
+ await click('[data-proietta]');peer=await collegaProiezione();await wait(`document.querySelector('#contenuto').textContent.includes('Quale funzione svolge la clorofilla')`,peer);
+ await c.val(`document.getElementById('zstudyAttempt').value='Assorbe la luce per la fotosintesi';document.getElementById('zstudyAttempt').dispatchEvent(new Event('input',{bubbles:true}))`);
+ await wait(`document.querySelector('#contenuto').textContent.includes('Assorbe la luce')`,peer);await shot('ripasso',peer);
+ await c.val(`cambiaZaino('storia',true)`);await wait(`!document.querySelector('[data-proiezione]')`);peer.ws.close();peer=null;
+ fs.rmSync(questionFile);if(activeBefore)fs.writeFileSync(activeFile,activeBefore);else fs.rmSync(activeFile,{force:true});
+ await c.val(`cambiaZaino('biologia',true);noteStati().forEach(s=>{noteFlushStato(s);noteSvuota(s);});notesApi().remove('biologia',${JSON.stringify(file)});window.vault.mappe.rimuovi('biologia',${JSON.stringify(mapFile)});`);
+ await c.val(`document.documentElement.dataset.theme=${JSON.stringify(initial.theme)};localStorage.clear();Object.entries(${JSON.stringify(initial.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));BANCO.stato=${JSON.stringify(initial.banco)};bancoSalva();bancoDisegna();location.reload()`);await c.pausa(700);await c.collega();await wait('!!window.zainoStudio');
+ console.log('Lettura, zoom indipendente, fullscreen/Esc, cornice arancione e proiezione note/PDF/mappe, due temi, cambio banco e zaino: OK');process.exit(0);
+})().catch(async e=>{console.error(e);try{console.log(await c.val(`({stato:window.BancoPresentazione?.stato(),toast:document.querySelector('#toast')?.textContent,bar:document.querySelector('.blettura')?.textContent})`));await shot('errore');}catch(_){}process.exit(1);});

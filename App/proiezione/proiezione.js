@@ -1,0 +1,53 @@
+/* Finestra di sola lettura. L'HTML ricevuto viene ricostruito con una lista
+   positiva: nessun evento, stile, URL di navigazione o accesso al vault. */
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id),api=window.proiezione,L=window.BancoLettura;
+ let tipo='testo',scala=200,ancora=null,timer=null,intero=false,ultimoHtml='';
+ const tags=new Set(L.TAGS_TESTO);
+ function pulisci(html){
+  const template=document.createElement('template');template.innerHTML=html;
+  function copia(n){
+   if(n.nodeType===3)return document.createTextNode(n.textContent);
+   if(n.nodeType!==1||!tags.has(n.tagName))return document.createDocumentFragment();
+   const el=document.createElement(n.tagName);
+   if(n.hasAttribute('data-p-id'))el.dataset.pId=n.getAttribute('data-p-id');
+   if(n.classList.contains('rimando'))el.className='rimando';
+   if(n.tagName==='DETAILS'&&n.hasAttribute('open'))el.open=true;
+   if(n.tagName==='IMG'){
+    const src=n.getAttribute('src')||'';if(/^data:image\/(png|jpeg|webp);base64,/.test(src))el.src=src;
+    el.alt=n.getAttribute('alt')||'';
+   }
+   for(const child of n.childNodes)el.append(copia(child));return el;
+  }
+  const out=document.createDocumentFragment();for(const n of template.content.childNodes)out.append(copia(n));return out;
+ }
+ function allinea(){
+  if(tipo!=='testo'||!ancora)return;
+  const el=[...$('contenuto').querySelectorAll('[data-p-id]')].find(n=>n.dataset.pId===String(ancora.id));if(!el)return;
+  const r=el.getBoundingClientRect(),v=$('vista');
+  v.scrollTop=L.posizione({top:r.top+v.scrollTop,height:r.height},ancora)-64;
+ }
+ function ingrandisci(n){scala=L.scala(n);document.documentElement.style.setProperty('--zoom',scala/100);$('scala').textContent=scala+'%';$('meno').disabled=scala<=75;$('piu').disabled=scala>=300;
+  $('immagine').style.width=scala+'%';$('immagine').style.height=scala+'%';requestAnimationFrame(allinea);
+ }
+ function mostraBarra(){delete $('barra').dataset.nascosta;clearTimeout(timer);timer=setTimeout(()=>{if(!$('barra').matches(':hover,:focus-within'))$('barra').dataset.nascosta='1';},2200);}
+ async function comando(o){const r=await api.comando(o);if(r?.error){$('errore').hidden=false;$('errore').textContent=r.error;}}
+ document.querySelectorAll('[data-icon]').forEach(e=>{e.innerHTML=UiIcone.svg(e.dataset.icon);});
+ $('meno').onclick=()=>ingrandisci(L.passo(scala,-1));$('piu').onclick=()=>ingrandisci(L.passo(scala,1));$('scala').onclick=()=>ingrandisci(tipo==='testo'?200:100);
+ $('intero').onclick=()=>comando({azione:'intero'});$('chiudi').onclick=()=>comando({azione:'chiudi'});$('schermi').onchange=()=>comando({azione:'schermo',id:Number($('schermi').value)});
+ api.intero(value=>{intero=value;$('intero').title=value?'Esci dallo schermo intero (Esc)':'Schermo intero (Esc per uscire)';$('intero').setAttribute('aria-label',$('intero').title);mostraBarra();});
+ api.schermi(({schermi,corrente})=>{$('schermiLabel').hidden=schermi.length<2;$('schermi').replaceChildren();for(const s of schermi){const o=document.createElement('option');o.value=s.id;o.textContent=s.nome;$('schermi').append(o);}$('schermi').value=corrente;});
+ api.quadro(q=>{
+  document.documentElement.dataset.theme=q.tema;$('titolo').textContent=q.titolo;document.title=q.titolo+' — Proiezione';
+  if(tipo!==q.tipo){tipo=q.tipo;ingrandisci(tipo==='testo'?200:100);}
+  document.body.dataset.tipo=tipo;$('contenuto').hidden=tipo!=='testo';$('figura').hidden=tipo!=='immagine';
+  if(q.html!=null&&q.html!==ultimoHtml){ultimoHtml=q.html;$('contenuto').replaceChildren(pulisci(q.html));}
+  if(q.immagine&&$('immagine').getAttribute('src')!==q.immagine)$('immagine').src=q.immagine;
+  if(q.ancora){ancora=q.ancora;requestAnimationFrame(allinea);}
+ });
+ $('contenuto').addEventListener('load',allinea,true);window.addEventListener('resize',()=>requestAnimationFrame(allinea));
+ window.addEventListener('pointermove',e=>{if(e.clientY<56)mostraBarra();});$('barra').addEventListener('pointerleave',mostraBarra);$('barra').addEventListener('focusout',mostraBarra);
+ window.addEventListener('keydown',e=>{if(e.key==='Tab')mostraBarra();if(e.key==='Escape'&&intero)comando({azione:'intero'});});
+ ingrandisci(200);mostraBarra();
+}());

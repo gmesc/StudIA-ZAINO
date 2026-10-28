@@ -1,0 +1,13 @@
+:root{--panel:#fff;--ink:#16181d;--muted:#5b6069;--line:#dcdcdc;--verde:#0d766e;--hover:#dff7f3;--focus:#3b82f6;--zoom:2;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--panel);}
+:root[data-theme=dark]{--panel:#171a21;--ink:#eceef2;--muted:#a2a8b2;--line:#3a4048;--verde:#7eddd1;--hover:#253b3b;}
+*{box-sizing:border-box;}body{margin:0;}button,select{font:inherit;color:inherit;}button{border:0;background:transparent;cursor:pointer;padding:8px;min-width:36px;min-height:36px;}button:hover{background:var(--hover);color:var(--verde);}button:disabled{opacity:.4;cursor:default;}button:focus-visible,select:focus-visible,main:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;}svg.ui-icon{display:block;width:20px;height:20px;}[hidden]{display:none!important;}
+.tbar{position:fixed;inset:0 0 auto;z-index:2;display:flex;gap:4px;align-items:center;padding:4px 12px;background:var(--panel);border-bottom:1px solid var(--line);transition:transform 160ms ease-out;}
+#titolo{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;}#scala{font-variant-numeric:tabular-nums;min-width:6ch;}
+.tbar[data-nascosta]{transform:translateY(-100%);visibility:hidden;}.tbar:focus-within{transform:none;visibility:visible;}
+#vista{position:fixed;inset:0;overflow:auto;padding:64px 24px 48px;scrollbar-gutter:stable;}
+#contenuto{font-size:calc(17px * var(--zoom));line-height:1.65;max-width:68ch;margin-inline:auto;overflow-wrap:anywhere;}
+h1,h2,h3,h4,h5,h6{line-height:1.3;margin:1em 0 .6em;}h1{font-size:2em;}h2{font-size:1.7em;}h3{font-size:1.4em;}h4{font-size:1.2em;}h5,h6{font-size:1em;}p,ul,ol{margin:.65em 0;}blockquote{border-left:3px solid var(--line);margin:1em 0;padding-left:1em;}blockquote p{margin:.3em 0;}.rimando{color:var(--verde);text-decoration:underline;}img{max-width:100%;height:auto;}pre{white-space:pre-wrap;}table{width:100%;border-collapse:collapse;}th,td{padding:.5em;border:1px solid var(--line);}summary{font-weight:600;}article{margin-block:1em;}details:not([open])>:not(summary){display:none;}
+#figura{height:100%;width:100%;overflow:auto;}#immagine{display:block;width:100%;height:100%;object-fit:contain;max-width:none;}
+body[data-tipo=immagine] #vista{padding:0;overflow:hidden;}body[data-tipo=immagine] #figura{min-height:100%;}#errore{position:fixed;bottom:16px;left:16px;right:16px;background:var(--panel);border:1px solid var(--line);padding:16px;z-index:3;}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
+@media(prefers-reduced-motion:reduce){.tbar{transition:none;}}

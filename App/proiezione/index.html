@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Proiezione — StudIA ZAINO</title>
+<link rel="stylesheet" href="proiezione.css"><script src="../assets/interfaccia/icone.js" defer></script><script src="../assets/banco/lettura.js" defer></script><script src="proiezione.js" defer></script>
+</head><body>
+<header class="tbar" id="barra" aria-label="Controlli della proiezione">
+ <span id="titolo">Proiezione</span>
+ <button id="meno" data-icon="minus" title="Riduci il contenuto" aria-label="Riduci il contenuto"></button>
+ <button id="scala" title="Ripristina l’ingrandimento della proiezione" aria-label="Ripristina l’ingrandimento della proiezione">200%</button>
+ <button id="piu" data-icon="plus" title="Ingrandisci il contenuto" aria-label="Ingrandisci il contenuto"></button>
+ <label id="schermiLabel" hidden><span class="sr">Schermo di proiezione</span><select id="schermi" title="Sposta la proiezione su un altro schermo"></select></label>
+ <button id="intero" data-icon="maximize" title="Schermo intero (Esc per uscire)" aria-label="Schermo intero"></button>
+ <button id="chiudi" data-icon="x" title="Chiudi la finestra di proiezione" aria-label="Chiudi la finestra di proiezione"></button>
+</header>
+<main id="vista" tabindex="0" aria-label="Contenuto proiettato"><article id="contenuto"><p>Preparazione del contenuto…</p></article><div id="figura" hidden><img id="immagine" alt="Vista sincronizzata dello split"></div></main>
+<p id="errore" role="status" hidden></p>
+</body></html>

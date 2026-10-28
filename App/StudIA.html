@@ -3120,6 +3120,7 @@
 </style>
 <link rel="stylesheet" href="assets/sicurezza/impostazioni.css">
 <link rel="stylesheet" href="assets/comandi.css">
+<link rel="stylesheet" href="assets/banco/presentazione.css">
 </head>
 <body>
 <a class="skip" href="#content">Vai al contenuto</a>
@@ -18152,6 +18153,7 @@ function bancoDisegna(){
   bancoPosizionaDivisori();
   bancoSincronizzaMappa();
   bancoDopoLayout();
+  window.dispatchEvent(new Event('banco-layout'));
 }
 
 /**
@@ -18654,7 +18656,7 @@ document.addEventListener('change', function(e){
    dello strumento, non una richiesta di ingrandire il blocco. */
 document.addEventListener('dblclick', function(e){
   if(!e.target.closest) return;
-  if(e.target.closest('.tendina') || e.target.closest('.bsel') || e.target.closest('.bchiudi')) return;
+  if(e.target.closest('button,.blettura,.tendina,.bsel,.bchiudi')) return;
   var h=e.target.closest('.bhead'); if(!h) return;
   var blocco=h.closest('.blocco'); if(!blocco) return;
   bancoZoom(blocco.dataset.blocco);
@@ -22881,5 +22883,7 @@ window.addEventListener('keydown', function(e){
 <script src="assets/fonti/gesti.js"></script>
 <script src="assets/rimandi/citazioni-ui.js"></script>
 <script src="assets/interfaccia/zaini-menu.js"></script>
+<script src="assets/banco/lettura.js"></script>
+<script src="assets/banco/presentazione.js"></script>
 </body>
 </html>
