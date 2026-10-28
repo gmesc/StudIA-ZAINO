@@ -28,11 +28,25 @@
   const fattore=Math.min(vista.width*dpr/area.width,8192/area.width,8192/area.height,Math.sqrt(32000000/(area.width*area.height)));
   return {width:Math.max(1,Math.ceil(area.width*fattore)),height:Math.max(1,Math.ceil(area.height*fattore)),fattore};
  }
+ function puntoVista(area,crop,x,y){
+  const limita=(n,max)=>max>0?Math.max(0,Math.min(1,n/max)):0;
+  return {x:limita(x-area.x,area.width-crop.width),y:limita(y-area.y,area.height-crop.height)};
+ }
+ function spostaVista(area,vista,punto,dx,dy){
+  const crop=inquadratura(area,vista,punto),k=crop.width/vista.width,w=area.width-crop.width,h=area.height-crop.height;
+  const x=area.x+(punto.x||0)*w-dx*k,y=area.y+(punto.y||0)*h-dy*k,nuovo=puntoVista(area,crop,x,y);
+  return {punto:nuovo,resto:{x:x-area.x-nuovo.x*w,y:y-area.y-nuovo.y*h}};
+ }
+ function ancoraVista(area,prima,punto,dopo,a){
+  const old=inquadratura(area,prima,punto),crop=inquadratura(area,dopo,punto);
+  return puntoVista(area,crop,old.x+a.x*(old.width-crop.width),old.y+a.y*(old.height-crop.height));
+ }
+ function pinch(s,delta,modo=0){return Math.max(100,scala(s*Math.exp(-delta*(modo===1?16:modo===2?800:1)*.01)));}
  function ancora(elementi,top){
   const e=elementi.find(e=>e.top+e.height>top&&e.height>0)||elementi.at(-1);
   return e?{id:String(e.id),frazione:Math.max(0,Math.min(1,(top-e.top)/Math.max(1,e.height)))}:null;
  }
  function posizione(e,a){return e.top+Math.max(0,Math.min(1,Number(a?.frazione)||0))*e.height;}
  function mittente(e,w,url){return !!w&&!w.isDestroyed()&&e.sender===w.webContents&&e.senderFrame===w.webContents.mainFrame&&e.senderFrame.url.split('#')[0]===url;}
- return {PASSI,TAGS_TESTO,STILI_CLONE,stileSicuro,raster,scala,passo,rettangolo,inquadratura,ancora,posizione,mittente};
+ return {PASSI,TAGS_TESTO,STILI_CLONE,stileSicuro,raster,spostaVista,ancoraVista,pinch,scala,passo,rettangolo,inquadratura,ancora,posizione,mittente};
 }));

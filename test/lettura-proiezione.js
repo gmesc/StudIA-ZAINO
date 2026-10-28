@@ -13,6 +13,12 @@ assert.throws(()=>L.inquadratura({x:0,y:0,width:600,height:300},{width:0,height:
 assert.deepEqual(L.raster({width:400,height:225},{width:1920,dpr:2}),{width:3840,height:2160,fattore:9.6});
 const enorme=L.raster({width:400,height:1000},{width:16000,dpr:3});assert(enorme.width*enorme.height<=32020000);assert(enorme.width<=8193&&enorme.height<=8193);
 assert(!L.stileSicuro('url(file:///segreto)'));assert(!L.stileSicuro('expression(alert(1))'));assert(L.stileSicuro('rgb(1, 2, 3)'));
+const areaG={x:0,y:0,width:600,height:900},vistaG={width:1200,height:600,scala:100};
+assert.deepEqual(L.spostaVista(areaG,vistaG,{x:0,y:0},0,-100),{punto:{x:0,y:1/12},resto:{x:0,y:0}});
+assert.equal(L.spostaVista(areaG,vistaG,{x:0,y:1},0,-100).resto.y,50,'al bordo si muove il documento di origine');
+assert.deepEqual(L.ancoraVista(areaG,vistaG,{x:0,y:0},{...vistaG,scala:200},{x:.5,y:.5}),{x:.5,y:.1});
+let frazione={x:0,y:0};for(let i=0;i<10;i++){const r=L.spostaVista(areaG,vistaG,frazione,0,-.2);assert(Math.abs(r.resto.y)<1e-10);frazione=r.punto;}assert(Math.abs(frazione.y*600-1)<1e-10,'i piccoli movimenti si accumulano senza scorrimenti spurii');
+assert(L.pinch(100,-20)>100);assert.equal(L.pinch(300,-100),300);assert.equal(L.pinch(100,100),100);
 const a=L.ancora([{id:0,top:-100,height:80},{id:1,top:-20,height:100},{id:2,top:80,height:200}],0);
 assert.deepEqual(a,{id:'1',frazione:.2});assert.equal(L.posizione({top:500,height:200},a),540,'stesso passaggio in una colonna di misura diversa');
 const w={isDestroyed:()=>false,webContents:{mainFrame:{url:'file:///app.html'}}};
@@ -58,6 +64,10 @@ console.log('Lettura: scala, ancore, ritaglio e confine della finestra verificat
  assert.deepEqual(win.capture,{x:10,y:10,width:790,height:590});
  await p.call('proiezione:comando',{azione:'vista',width:1600,height:900,scala:125});
  assert.deepEqual(win.messaggi.at(-1),['proiezione:vista',{sessione:first.sessione,vista:{width:1600,height:900,scala:125,dpr:1}}]);
+ await p.call('proiezione:comando',{azione:'sposta',dx:30,dy:-20});
+ assert.deepEqual(win.messaggi.at(-1),['proiezione:sposta',{sessione:first.sessione,dx:30,dy:-20}]);
+ assert.equal((await p.call('proiezione:comando',{azione:'sposta',dx:Infinity,dy:0})).ok,false);
+ assert.equal((await p.call('proiezione:comando',{azione:'vista',width:1600,height:900,scala:125,ancora:{x:2,y:0}})).ok,false);
  assert.equal((await p.call('proiezione:comando',{azione:'vista',width:NaN,height:900,scala:100})).ok,false);
  assert.equal((await p.call('proiezione:comando',{azione:'vista',width:0,height:900,scala:100})).ok,false);
  await new Promise(ok=>p.request({url:'file:///segreto.txt'},r=>{assert(r.cancel);ok();}));

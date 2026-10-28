@@ -15,3 +15,7 @@ body[data-tipo=immagine] #vista{padding:0;overflow:hidden;scrollbar-gutter:auto;
 body[data-tipo=clone] #vista{padding:0;overflow:hidden;scrollbar-gutter:auto;}
 body[data-tipo=clone] #contenuto{position:absolute;max-width:none;margin:0;padding:0;transform-origin:0 0;pointer-events:none;}
 body[data-tipo=clone] #contenuto *{scrollbar-color:auto;}
+#vista{touch-action:none;user-select:none;}
+#immagine{-webkit-user-drag:none;}
+#vista.gesto-mano{cursor:grab;}
+#vista.gesto-presa{cursor:grabbing;}

@@ -128,6 +128,7 @@
  }
  async function aggiornaProiezione(p){
   if(proiezione!==p)return;
+  p.timer=null;
   const el=perId(p.id),b=blocco(p.id);if(!b||b.hidden||p.zaino!==window.corsoAttivo()){await chiudiProiezione();return;}
   try{
    let quadro={sessione:p.sessione,titolo:titolo(p.id),tema:document.documentElement.dataset.theme==='scuro'?'dark':'light'};
@@ -155,7 +156,7 @@
    }
    const risposta=await api.aggiorna(quadro);if(risposta.error)throw Error(risposta.error);if(risposta.chiusa){if(proiezione===p){libera(p);proiezione=null;controlli();}return;}
   }catch(e){if(proiezione!==p||p.annullato)return;avvisa(e);await chiudiProiezione();return;}
-  if(proiezione===p)p.timer=setTimeout(()=>aggiornaProiezione(p),250);
+  if(proiezione===p)p.timer=setTimeout(()=>aggiornaProiezione(p),p.dirty?16:250);
  }
  async function apriProiezione(id){
   if(aprendo)return;if(!api){avvisa('La proiezione richiede l’app desktop.');return;}
@@ -181,9 +182,22 @@
   }
  }
  async function chiudiProiezione(){const p=proiezione;proiezione=null;if(p)libera(p);controlli();await api?.chiudi();}
+ function gestoAggiornato(p){p.dirty=true;if(p.timer){clearTimeout(p.timer);p.timer=setTimeout(()=>aggiornaProiezione(p),16);}}
  function avvia(){
   controlli();window.addEventListener('banco-layout',controlli);
-  api?.onVista(d=>{if(proiezione?.sessione===d.sessione){proiezione.vista=d.vista;proiezione.dirty=true;}});
+  api?.onVista(d=>{const p=proiezione;if(p?.sessione===d.sessione){
+   if(d.ancora&&p.area)p.punto=L.ancoraVista(p.area,p.vista,p.punto,d.vista,d.ancora);
+   p.vista=d.vista;gestoAggiornato(p);
+  }});
+  api?.onSposta(d=>{const p=proiezione;if(p?.sessione!==d.sessione||!p.area)return;
+   const mosso=L.spostaVista(p.area,p.vista,p.punto,d.dx,d.dy);p.punto=mosso.punto;gestoAggiornato(p);
+   // Alla fine del ritaglio si continua nel documento: dalla LIM non serve
+   // tornare al portatile per raggiungere il passaggio successivo.
+   const el=perId(p.id),target=testuali.has(p.id)?testo(p.id):el.querySelector('#pdfFrame,#pdf2Frame,#mappaSvg');
+   if(p.id==='mappa'){
+    const matrice=target?.getScreenCTM();if(matrice&&window.MAPPA?.z){MAPPA.z.x-=mosso.resto.x/matrice.a;MAPPA.z.y-=mosso.resto.y/matrice.d;window.mappaApplicaZoom();}
+   }else if(target){target.scrollLeft+=mosso.resto.x;target.scrollTop+=mosso.resto.y;}
+  });
   api?.onChiusa(d=>{if(proiezione?.sessione===d.sessione){libera(proiezione);proiezione=null;controlli();}});
   api?.onUscita(ripristinaIntero);
   window.addEventListener('pointermove',e=>{if(intero&&e.clientY<56)mostraBarra();});

@@ -46,6 +46,7 @@ const vaultApi = {
     apri:()=>ipcRenderer.invoke('proiezione:apri'),
     aggiorna:o=>ipcRenderer.invoke('proiezione:aggiorna',o),
     chiudi:()=>ipcRenderer.invoke('proiezione:chiudi'),
+    onSposta:fn=>{const h=(_e,d)=>fn(d);ipcRenderer.on('proiezione:sposta',h);return ()=>ipcRenderer.removeListener('proiezione:sposta',h);},
     onVista:fn=>{const h=(_e,d)=>fn(d);ipcRenderer.on('proiezione:vista',h);return ()=>ipcRenderer.removeListener('proiezione:vista',h);},
     onChiusa:fn=>{const h=(_e,d)=>fn(d);ipcRenderer.on('proiezione:chiusa',h);return ()=>ipcRenderer.removeListener('proiezione:chiusa',h);},
     onUscita:fn=>{const h=()=>fn();ipcRenderer.on('presentazione:uscita',h);return ()=>ipcRenderer.removeListener('presentazione:uscita',h);}

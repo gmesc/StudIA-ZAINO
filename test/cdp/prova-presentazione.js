@@ -152,6 +152,35 @@ async function fedele(selector,tag){
  await wait(`document.getElementById('immagine').naturalWidth===1200`,peer);await geometriaMappa();
  const primaZoom=await peer.val(`document.getElementById('immagine').src`);
  await peer.val(`document.getElementById('piu').click()`);await wait(`document.getElementById('immagine').src!==${JSON.stringify(primaZoom)}`,peer);await geometriaMappa();
+ // Gesti reali sulla destinazione: nessuno zoom indipendente del browser.
+ const larghezzaPrima=await c.val(`document.querySelector('.proiezione-area').offsetWidth`);
+ await peer.invia('Input.dispatchMouseEvent',{type:'mouseWheel',x:400,y:300,deltaX:0,deltaY:-20,modifiers:2});
+ await wait(`document.querySelector('.proiezione-area').offsetWidth<${larghezzaPrima}`);
+ assert.equal(await peer.val('visualViewport.scale'),1,'il pinch modifica l’inquadratura, non lo zoom del browser');
+ const yGesto=await c.val(`document.querySelector('.proiezione-area').getBoundingClientRect().y`);
+ await peer.invia('Input.dispatchKeyEvent',{type:'keyDown',key:' ',code:'Space',windowsVirtualKeyCode:32});
+ await peer.invia('Input.dispatchMouseEvent',{type:'mousePressed',x:400,y:300,button:'left',clickCount:1});
+ await peer.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:400,y:220,button:'left',buttons:1});
+ await peer.invia('Input.dispatchMouseEvent',{type:'mouseReleased',x:400,y:220,button:'left',clickCount:1});
+ await peer.invia('Input.dispatchKeyEvent',{type:'keyUp',key:' ',code:'Space',windowsVirtualKeyCode:32});
+ await wait(`document.querySelector('.proiezione-area').getBoundingClientRect().y>${yGesto}`);
+ async function treClic(){for(let n=1;n<=3;n++){await peer.invia('Input.dispatchMouseEvent',{type:'mousePressed',x:400,y:300,button:'left',clickCount:n});await peer.invia('Input.dispatchMouseEvent',{type:'mouseReleased',x:400,y:300,button:'left',clickCount:n});}}
+ await treClic();await wait(`document.getElementById('scala').textContent==='100%'`,peer);
+ await wait(`document.querySelector('.proiezione-area').offsetWidth>${larghezzaPrima}`);
+ await peer.invia('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:300,y:300,id:1},{x:500,y:300,id:2}]});
+ await peer.invia('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:250,y:300,id:1},{x:550,y:300,id:2}]});
+ await peer.invia('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ await wait(`parseInt(document.getElementById('scala').textContent)>100`,peer);
+ for(let n=0;n<3;n++){await peer.invia('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:400,y:300,id:1}]});await peer.invia('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}
+ await wait(`document.getElementById('scala').textContent==='100%'`,peer);
+ const mappaPrimaPan=await c.val('MAPPA.z.x');
+ await peer.invia('Input.dispatchKeyEvent',{type:'keyDown',key:' ',code:'Space',windowsVirtualKeyCode:32});
+ await peer.invia('Input.dispatchMouseEvent',{type:'mousePressed',x:400,y:300,button:'left',clickCount:1});
+ await peer.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:480,y:300,button:'left',buttons:1});
+ await peer.invia('Input.dispatchMouseEvent',{type:'mouseReleased',x:480,y:300,button:'left',clickCount:1});
+ await peer.invia('Input.dispatchKeyEvent',{type:'keyUp',key:' ',code:'Space',windowsVirtualKeyCode:32});
+ await wait(`MAPPA.z.x>${mappaPrimaPan}`);
+ assert(!await peer.val(`document.getElementById('vista').classList.contains('gesto-mano')`));
  await c.val(`bancoAssegna('A','studio')`);await wait(`!document.querySelector('[data-proiezione]')`);peer.ws.close();peer=null;
  // Il raccoglitore riformatta anche moduli e schede con la stessa misura.
  await c.val(`document.getElementById('zschedeNewButton').click();BancoPresentazione.zoom('studio',200)`);await c.pausa(200);
