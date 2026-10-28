@@ -8,7 +8,7 @@
   const ancora=(x,y)=>({x:Math.max(0,Math.min(1,x/innerWidth)),y:Math.max(0,Math.min(1,y/innerHeight))});
   function cursore(){host.classList.toggle('gesto-mano',spazio);host.classList.toggle('gesto-presa',!!pan||tocchi.size>1||[...tocchi.values()].some(p=>p.trascina));}
   function annulla(){const ids=[...tocchi.keys(),...(pan?[pan.id]:[])];tocchi.clear();pan=null;spazio=false;multiplo=false;tap=null;for(const id of ids)if(host.hasPointerCapture(id))host.releasePointerCapture(id);cursore();}
-  function coppia(){const p=[...tocchi.values()];if(p.length!==2)return null;return {x:(p[0].x+p[1].x)/2,y:(p[0].y+p[1].y)/2,d:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)};}
+  function coppia(){const p=[...tocchi.values()];if(p.length!==2||p.some(t=>t.tipo!=='touch'))return null;return {x:(p[0].x+p[1].x)/2,y:(p[0].y+p[1].y)/2,d:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)};}
   host.addEventListener('wheel',e=>{
    if(!e.ctrlKey)return;e.preventDefault();
    if(Number.isFinite(e.deltaY))azioni.zoom(BancoLettura.pinch(azioni.leggiScala(),e.deltaY,e.deltaMode),ancora(e.clientX,e.clientY));
@@ -17,12 +17,12 @@
   window.addEventListener('keyup',e=>{if(e.code==='Space'){spazio=false;pan=null;cursore();}});
   host.addEventListener('pointerdown',e=>{
    if(interattivo(e.target))return;
-   if(e.pointerType==='touch'){
-    e.preventDefault();host.setPointerCapture(e.pointerId);tocchi.set(e.pointerId,{x:e.clientX,y:e.clientY,inizioX:e.clientX,inizioY:e.clientY});
+   if(e.pointerType==='touch'||(e.pointerType==='pen'&&e.button===0)){
+    e.preventDefault();ignoraClick=true;host.setPointerCapture(e.pointerId);tocchi.set(e.pointerId,{tipo:e.pointerType,x:e.clientX,y:e.clientY,inizioX:e.clientX,inizioY:e.clientY});
     if(tocchi.size>1){multiplo=true;tap=null;}cursore();return;
    }
    ignoraClick=false;
-   if((!spazio&&e.pointerType!=='pen')||e.button!==0)return;
+   if(!spazio||e.button!==0)return;
    e.preventDefault();host.focus({preventScroll:true});host.setPointerCapture(e.pointerId);pan={id:e.pointerId,x:e.clientX,y:e.clientY};ignoraClick=true;cursore();
   });
   host.addEventListener('pointermove',e=>{
@@ -42,7 +42,7 @@
    if(p){
     e.preventDefault();
     if(!multiplo&&!p.trascina&&Math.hypot(e.clientX-p.inizioX,e.clientY-p.inizioY)<8){
-     const ora=performance.now();tap=tap&&ora-tap.ora<500&&Math.hypot(e.clientX-tap.x,e.clientY-tap.y)<30?{...tap,n:tap.n+1,ora}:{n:1,ora,x:e.clientX,y:e.clientY};
+     const ora=performance.now();tap=tap&&tap.tipo===e.pointerType&&ora-tap.ora<500&&Math.hypot(e.clientX-tap.x,e.clientY-tap.y)<30?{...tap,n:tap.n+1,ora}:{n:1,tipo:e.pointerType,ora,x:e.clientX,y:e.clientY};
      if(tap.n===3){azioni.adatta();tap=null;}
     }else tap=null;
     tocchi.delete(e.pointerId);if(!tocchi.size)multiplo=false;
