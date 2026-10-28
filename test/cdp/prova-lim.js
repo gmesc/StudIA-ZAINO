@@ -8,7 +8,16 @@ async function shot(nome,client=c){const r=await client.invia('Page.captureScree
 (async()=>{
  await c.collega();await wait('!!window.ZainoLim');const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
  await c.val("cambiaZaino('biologia',true);bancoForma('due-col');bancoAssegna('A','lim')");await c.pausa(400);assert(await c.val("document.querySelector('#limPane [aria-label=\"Elimina lavagnata\"]').disabled"),'cestino inattivo senza lavagnata');assert.equal(await c.val("!!document.querySelector('#zs-lim')"),false,'sidebar assente prima della prima lavagnata');
- await c.val('ZainoLim.editor.nuova()');await wait('!!ZainoLim.editor.api');await wait("!!document.querySelector('#zs-lim')");
+ assert.equal(await c.val("document.querySelector('#limPane .lim-scegli span').textContent"),'-','lavagna non salvata senza titolo');
+ assert.equal(await c.val("!!document.querySelector('#limPane [aria-label=\"Rinomina lavagnata\"]')"),false,'nessuna matita nella toolbar');
+ await wait('!!ZainoLim.editor.api');
+ await c.val("ZainoLim.editor.api.updateScene({elements:LimEditor.converti([{type:'text',x:50,y:50,text:'Prima del salvataggio',fontSize:24}])})");await c.pausa(500);
+ assert.equal(await c.val('ZainoLim.doc'),null,'il disegno aspetta il primo salvataggio');
+ assert.equal(await c.val("!!document.querySelector('#zs-lim')"),false,'nessun file prima del floppy');
+ await c.clicca('#limPane [aria-label="Salva lavagnata"]');await wait('!!ZainoLim.doc');await wait("!!document.querySelector('#zs-lim')");
+ const titolo=await c.val('ZainoLim.doc.studia.title');assert.match(titolo,/^LAVAGNA 001 \[\d{2}\/\d{2}\/\d{4}\]$/);
+ assert(await c.val("ZainoLim.editor.api.getSceneElements().some(e=>e.text==='Prima del salvataggio')"),'primo salvataggio conserva il disegno');
+
  const id=await c.val('ZainoLim.doc.studia.id');
  assert(await c.val("!!document.querySelector('#limPane .lim-scegli')"),'selettore LIM compatto con bubble menu');
  assert.equal(await c.val("!!document.querySelector('#limPane .lim-bar select')"),false,'nessun select nativo nella barra LIM');
@@ -67,7 +76,7 @@ async function shot(nome,client=c){const r=await client.invia('Page.captureScree
  await wait("!ZainoLim.doc&&!document.getElementById('zs-lim')&&!!document.querySelector('#limPane .lim-annulla:not([hidden])')");
  const nelCestino=path.join(path.dirname(file),'_cestino',id+'.excalidraw');assert(!fs.existsSync(file));
  const salvata=JSON.parse(fs.readFileSync(nelCestino));assert(salvata.elements.some(e=>e.type==='image'));assert(Object.values(salvata.files).some(f=>f.dataURL.startsWith('data:image/png;base64,')),'ritaglio incorporato nel file recuperabile');
- await clicca('#limProiezione .lim-annulla',peer);await wait('!!ProiezioneLavagna.editor.api',peer);
+ await clicca('#limProiezione .lim-annulla',peer);await wait(`ProiezioneLavagna.editor.doc?.studia.id===${JSON.stringify(id)}&&!!ProiezioneLavagna.editor.api`,peer);
  await wait("!!document.getElementById('zs-lim')&&document.querySelector('#limPane .lim-annulla').hidden");
  assert.equal(await peer.val('ProiezioneLavagna.editor.doc.studia.id'),id);assert(fs.existsSync(file));
  assert(await peer.val("ProiezioneLavagna.editor.api.getSceneElements().some(e=>e.type==='freedraw')&&ProiezioneLavagna.editor.api.getSceneElements().some(e=>e.type==='image')"),'annulla ripristina segni e ritagli');
@@ -76,16 +85,31 @@ async function shot(nome,client=c){const r=await client.invia('Page.captureScree
  await c.val("cambiaZaino('biologia',true)");await wait("!!document.getElementById('zs-lim')");await c.val(`ZainoLim.apri(${JSON.stringify(id)})`);await wait('!!ZainoLim.editor.api');assert(await c.val("ZainoLim.editor.api.getSceneElements().some(e=>e.text?.includes('Disegnato'))"));
  await c.val("(async()=>{const r=document.querySelector('#limPane .lim-editor').getBoundingClientRect();return (await ZainoLim.editor.immagine({x:r.x,y:r.y,width:r.width,height:r.height},{width:800,height:600,dpr:2})).slice(0,22);})()");await c.val("BancoPresentazione.apriProiezione('lim')");peer=await collega();await wait("document.body.dataset.tipo==='immagine'",peer);assert(await peer.val("document.getElementById('immagine').naturalWidth>=document.getElementById('vista').clientWidth"));await shot('lavagna-proiettata',peer);
  await c.val('BancoPresentazione.chiudiProiezione()');peer.ws.close();peer=null;
- await c.val('ZainoLim.editor.nuova()');await wait('!!ZainoLim.editor.api');await wait("document.querySelectorAll('#zs-lim .lim-voce').length===2");
+ await c.val('ZainoLim.editor.nuova()');await wait('!!ZainoLim.editor.api');assert.equal(await c.val('ZainoLim.doc'),null);await c.clicca('#limPane [aria-label="Salva lavagnata"]');await wait("document.querySelectorAll('#zs-lim .zs-item').length===2");
  await c.clicca('#limPane .lim-scegli');await wait("document.querySelectorAll('#limPane .lim-menu button').length===2");
  await shot('menu-banco');
  await c.clicca(`#limPane .lim-menu [data-lim-id="${id}"]`);
  await wait(`ZainoLim.doc?.studia.id===${JSON.stringify(id)}&&!!ZainoLim.editor.api`);
- assert.equal(await c.val("document.querySelector('#limPane .lim-scegli span').textContent"),'Lavagnata 1','il nome della lavagnata resta indipendente dalla fonte');
+ assert.equal(await c.val("document.querySelector('#limPane .lim-scegli span').textContent"),titolo,'il nome della lavagnata resta indipendente dalla fonte');
  assert(await c.val("ZainoLim.editor.api.getSceneElements().some(e=>e.type==='freedraw')"),'cambio dal menu conserva il disegno salvato');
- await c.clicca('#limPane [aria-label="Elimina lavagnata"]');await wait("document.querySelectorAll('#zs-lim .lim-voce').length===1&&ZainoLim.doc===null");
- await c.clicca('#limPane .lim-annulla');await wait(`ZainoLim.doc?.studia.id===${JSON.stringify(id)}&&document.querySelectorAll('#zs-lim .lim-voce').length===2`);
- await c.val("document.querySelector('#zs-lim [aria-label=\"Modifica elenco LIM\"]').click();document.querySelector('#zs-lim [aria-label=\"Seleziona tutte le lavagnate\"]').click();document.querySelector('#zs-lim [aria-label=\"Elimina selezionate\"]').click()");
- await wait("!document.getElementById('zs-lim')&&!!document.querySelector('#limPane .lim-annulla:not([hidden])')");await c.val("document.querySelector('#limPane .lim-annulla').click()");await wait("document.querySelectorAll('#zs-lim .lim-voce').length===2");
+ await c.clicca('#limPane [aria-label="Elimina lavagnata"]');await wait("document.querySelectorAll('#zs-lim .zs-item').length===1&&ZainoLim.doc===null");
+ await c.clicca('#limPane .lim-annulla');await wait(`ZainoLim.doc?.studia.id===${JSON.stringify(id)}&&document.querySelectorAll('#zs-lim .zs-item').length===2`);
+ await c.val("document.querySelector('#zs-lim [aria-label=\"Modifica elenco LIM\"]').click();document.querySelector('[data-sezione=appunti] [data-znav=organizza]').click()");
+ await wait("!!document.querySelector('[data-sezione=appunti] .zs-item input')&&!!document.querySelector('#zs-lim .zs-item input')");
+ for(const tema of ['chiaro','scuro']){
+  await c.val(`document.documentElement.dataset.theme=${JSON.stringify(tema)}`);
+  assert(await c.val(`(()=>{const a=document.querySelector('[data-sezione=appunti] .zs-item>button'),b=document.querySelector('#zs-lim .zs-item>button');return ['fontSize','fontFamily','lineHeight','paddingLeft','paddingTop','paddingBottom','borderLeftWidth'].every(k=>getComputedStyle(a)[k]===getComputedStyle(b)[k]);})()`),'stessi caratteri, spazi e bordi delle altre voci');
+  assert(await c.val(`(()=>{const a=document.querySelector('[data-sezione=appunti] .zs-seleziona'),b=document.querySelector('#zs-lim .zs-seleziona');return ['width','height','accentColor'].every(k=>getComputedStyle(a)[k]===getComputedStyle(b)[k]);})()`),'checkbox della sidebar condivisi');
+  await shot('sidebar-'+tema);
+ }
+ await c.val("document.documentElement.dataset.theme='chiaro';document.querySelector('[data-sezione=appunti] [data-znav=organizza]').click()");
+ await c.val(`document.querySelector('#zs-lim [data-lim-focus="rename:${id}"]').click()`);await wait("document.getElementById('uiModal').hasAttribute('open')");
+ await c.val("document.getElementById('umInput').value='Lezione di scienze';document.getElementById('umOk').click()");await wait("document.querySelector('#limPane .lim-scegli span').textContent==='Lezione di scienze'");
+ await c.val("document.querySelector('#zs-lim [aria-label=\"Seleziona tutte le lavagnate\"]').click();document.querySelector('#zs-lim [aria-label=\"Elimina selezionate\"]').click()");
+ await wait("!document.getElementById('zs-lim')&&!!document.querySelector('#limPane .lim-annulla:not([hidden])')");await c.val("document.querySelector('#limPane .lim-annulla').click()");await wait("document.querySelectorAll('#zs-lim .zs-item').length===2");
+ await c.val("ZainoLim.editor.nuova()");await wait('!!ZainoLim.editor.api');
+ await c.val("ZainoLim.editor.api.updateScene({elements:LimEditor.converti([{type:'text',x:50,y:50,text:'Da conservare al cambio zaino',fontSize:24}])})");await c.pausa(100);await c.val("cambiaZaino('storia',true)");await wait("document.getElementById('zainoNav').dataset.zaino==='storia'");
+ const bozze=fs.readdirSync(path.dirname(file)).filter(n=>n.endsWith('.excalidraw')).map(n=>JSON.parse(fs.readFileSync(path.join(path.dirname(file),n))));
+ assert(bozze.some(d=>d.studia.numero===3&&d.elements.some(e=>e.text==='Da conservare al cambio zaino')),'cambio zaino non perde il disegno non ancora salvato');
  console.log('✓ LIM: editor, persistenza, fonte/citazione, divisore, sincronizzazione, riapertura e zaini');
 })().catch(async e=>{console.error(e);try{await shot('errore');if(peer)await shot('errore-proiezione',peer);}catch(_){}process.exitCode=1;}).finally(async()=>{peer?.ws.close();try{await c.val('BancoPresentazione.chiudiProiezione()');}catch(_){}process.exit(process.exitCode||0);});

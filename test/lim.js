@@ -33,5 +33,18 @@ try{
  assert(!invoke(main,{azione:'rinomina',corso:'scienze',id,titolo:'Non deve uscire'}).ok,'symlink non attraversa i permessi');
  assert(require('../lib/pacchetto').esclusioni('scienze',{appunti:true}).includes('scienze/LIM/_cestino/*'));
  assert(require('../lib/pacchetto').esclusioni('scienze',{appunti:false}).includes('scienze/LIM/*'));
+ const giorno=new Date(2026,9,28),domani=new Date(2026,9,29);
+ assert.equal(M.titoloAutomatico(1,giorno),'LAVAGNA 001 [28/10/2026]');
+ assert.equal(M.titoloAutomatico(1000,domani),'LAVAGNA 1000 [29/10/2026]');
+ const prima=L.comando(v,'storia',{azione:'crea',scena:a}).lavagna;
+ assert.equal(prima.studia.numero,1);assert.match(prima.studia.title,/^LAVAGNA 001 \[\d{2}\/\d{2}\/\d{4}\]$/);
+ assert.deepEqual(prima.elements,a.elements,'primo salvataggio conserva subito la scena');
+ L.comando(v,'storia',{azione:'rinomina',id:prima.studia.id,titolo:'Lezione precedente'});
+ L.comando(v,'storia',{azione:'elimina',ids:[prima.studia.id]});
+ const seconda=L.comando(v,'storia',{azione:'crea'}).lavagna;
+ assert.equal(seconda.studia.numero,2,'rinomina e cestino non riciclano il progressivo');
+ assert.match(seconda.studia.title,/^LAVAGNA 002 /);
+ assert.throws(()=>L.comando(v,'storia',{azione:'crea',scena:{elements:'errato'}}));
+ assert.equal(L.elenco(v,'storia').length,1,'scena non valida non crea file vuoti');
  console.log('✓ LIM: salvataggio, riapertura, conflitti, cestino, isolamento e dati sicuri');
 }finally{fs.rmSync(v,{recursive:true,force:true});}

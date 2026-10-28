@@ -27,5 +27,10 @@
   return {elements,appState:dopo.appState,files:{...prima.files,...dopo.files}};
  }
  function rapporto(n){return Math.max(.25,Math.min(.75,Number(n)||.5));}
- return {scena,unisci,rapporto};
+ function titoloAutomatico(numero,data){
+  if(!Number.isSafeInteger(numero)||numero<1||!Number.isFinite(data?.getTime()))throw Error('Numero o data della lavagna non validi.');
+  const due=n=>String(n).padStart(2,'0');
+  return 'LAVAGNA '+String(numero).padStart(3,'0')+' ['+due(data.getDate())+'/'+due(data.getMonth()+1)+'/'+data.getFullYear()+']';
+ }
+ return {scena,unisci,rapporto,titoloAutomatico};
 });
