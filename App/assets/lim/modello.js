@@ -27,10 +27,29 @@
   return {elements,appState:dopo.appState,files:{...prima.files,...dopo.files}};
  }
  function rapporto(n){return Math.max(.25,Math.min(.75,Number(n)||.5));}
+ const MIME='application/x-studia-lim';
+ function leggiTrasporto(t){
+  if(typeof t!=='string'||t.length>512)throw Error('Elemento trascinato non valido.');
+  let d;try{d=JSON.parse(t);}catch(_){throw Error('Elemento trascinato non valido.');}
+  if(!d||!['keyword','album'].includes(d.tipo)||typeof d.id!=='string'||! /^[0-9a-f]{6,40}$/.test(d.id)||typeof d.corso!=='string'||!d.corso||d.corso.length>100||d.corso.startsWith('.')||/[/\\\x00-\x1f]/.test(d.corso))throw Error('Elemento trascinato non valido.');
+  return {tipo:d.tipo,id:d.id,corso:d.corso};
+ }
+ function trasporto(tipo,id,corso){const t=JSON.stringify({tipo,id,corso});leggiTrasporto(t);return t;}
+ function punto(p,s){
+  const z=s.zoom?.value;if(![p.x,p.y,s.offsetLeft,s.offsetTop,s.scrollX,s.scrollY,z].every(Number.isFinite)||z<=0)throw Error('Posizione nella lavagna non valida.');
+  return {x:(p.x-s.offsetLeft)/z-s.scrollX,y:(p.y-s.offsetTop)/z-s.scrollY};
+ }
+ // Il testo trasferito resta leggibile anche su etichette o lavagne scure.
+ function coloreTesto(sfondo){
+  let h=String(sfondo||'').replace(/^#/,'');if(h.length===3)h=h.split('').map(c=>c+c).join('');
+  if(!/^[0-9a-f]{6}$/i.test(h))return '#000000';
+  const rgb=[0,2,4].map(i=>{const c=parseInt(h.slice(i,i+2),16)/255;return c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4);});
+  return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]>.179?'#000000':'#ffffff';
+ }
  function titoloAutomatico(numero,data){
   if(!Number.isSafeInteger(numero)||numero<1||!Number.isFinite(data?.getTime()))throw Error('Numero o data della lavagna non validi.');
   const due=n=>String(n).padStart(2,'0');
   return 'LAVAGNA '+String(numero).padStart(3,'0')+' ['+due(data.getDate())+'/'+due(data.getMonth()+1)+'/'+data.getFullYear()+']';
  }
- return {scena,unisci,rapporto,titoloAutomatico};
+ return {scena,unisci,rapporto,titoloAutomatico,coloreTesto,MIME,trasporto,leggiTrasporto,punto};
 });

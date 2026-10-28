@@ -41,3 +41,6 @@
 #limPane{height:100%;min-height:0;}
 /* Le azioni della voce restano centrate anche quando il nome va a capo. */
 .znav .zs-item>.zs-azioni{display:flex;align-items:center;}
+
+/* Il bordo indica il bersaglio senza coprire la tela durante il rilascio. */
+.lim-editor[data-rilascio]{outline:2px solid var(--teal,#117b72);outline-offset:-2px;}

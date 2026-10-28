@@ -7869,14 +7869,15 @@ function albumElimina(corso, v){
    * vault cambia posto, e sulla mappa non vuol dire niente. Qui si dichiara
    * l'IDENTITÀ del ritaglio (`application/x-studia-album`) e, per chi capisce
    * solo testo, il markdown col rimando `album:<id>` — lo stesso che scrive
-   * «Metti nell'appunto». Il file non si copia MAI: resta uno solo, e chi lo
-   * elimina sa dire in quanti posti è usato.
+   * «Metti nell'appunto». Appunti e mappe mantengono il rimando; la LIM incorpora
+   * una copia dell'originale per conservare la lavagnata anche da sola.
    */
   document.addEventListener('dragstart', function(e){
     var card=e.target.closest && e.target.closest(CARD_ALBUM);
     if(!card || !e.dataTransfer) return;
     var v=albumVoce(card.getAttribute('data-id')); if(!v) return;
     e.dataTransfer.setData('application/x-studia-album', v.id);
+    if(window.LimModello)e.dataTransfer.setData(LimModello.MIME,LimModello.trasporto('album',v.id,corsoAttivo()));
     /* ⚠️ `albumMarkdown`, non una seconda stesura della stessa riga. Erano due,
        uguali a occhio e diverse nei dettagli (la didascalia di ripiego), e la
        ripulitura della barra aggiunta il 18 agosto sarebbe entrata in una sola
@@ -14831,7 +14832,7 @@ function keywordDisegna(){
     return '<button class="kwchip'+(kwOrfana(e)?' orfana':'')+'" role="listitem" draggable="true"'+
       ' data-kw="'+escHtml(e.id)+'" style="--kw:'+escHtml(e.colore||'var(--line)')+'"'+
       ' title="'+escHtml(kwDove(e)+(kwOrfana(e)?' — il testo non è più lì':'')+
-      '\nDoppio click per andarci, trascina negli appunti o sulla mappa'+'\n'+ParoleOrdine.data(e.creato))+'">'+
+      '\nDoppio click per andarci, trascina negli appunti, sulla mappa o nella lavagna LIM'+'\n'+ParoleOrdine.data(e.creato))+'">'+
       '<span class="kwtxt">'+escHtml(e.exact)+'</span></button>';
   }).join('');
 }
@@ -14901,6 +14902,7 @@ document.addEventListener('dragstart', function(e){
   var ev=kwDaId(c.getAttribute('data-kw')); if(!ev) return;
   e.dataTransfer.setData('text/plain', kwMarkdown(ev));
   e.dataTransfer.setData('application/x-studia-evidenza', ev.id);
+  if(window.LimModello)e.dataTransfer.setData(LimModello.MIME,LimModello.trasporto('keyword',ev.id,corsoAttivo()));
   e.dataTransfer.effectAllowed='copy';
 });
 /* La tela della mappa accetta la caduta. `dragover` con `preventDefault` è
@@ -14973,6 +14975,7 @@ document.addEventListener('contextmenu', function(e){
      esiste: chi non l'ha scoperto per caso non sa che c'è. La voce di menu è la
      stessa strada con un cartello. */
   h+='<button class="ctx-item" role="menuitem" data-kwaz="appunti">Negli appunti</button>';
+  h+='<button class="ctx-item" role="menuitem" data-kwaz="lim">Porta nella lavagna LIM</button>';
   h+='<div class="ctx-sep"></div>';
   h+='<button class="ctx-item" role="menuitem" data-kwaz="togli">Togli dall’elenco</button>';
   m.innerHTML=h; m.dataset.kw=ev.id;
@@ -15225,6 +15228,7 @@ document.addEventListener('click', function(e){
   kwMenuChiudi(); if(!ev) return;
   if(az==='vai'){ evidenzaVai(ev); return; }
   if(az==='appunti'){ kwNegliAppunti(ev); return; }
+  if(az==='lim'){ window.ZainoLim?.parola(ev.id); return; }
   if(az==='togli'){
     var api=evidenzeApi(); if(!api) return;
     var r=api.rimuovi(corsoAttivo(), ev.id);

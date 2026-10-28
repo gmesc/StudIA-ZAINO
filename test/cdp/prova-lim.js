@@ -5,6 +5,28 @@ async function wait(expr,client=c){for(let n=0;n<150;n++){if(await client.val(ex
 async function collega(){let t;for(let n=0;n<50&&!t;n++){t=(await(await fetch('http://localhost:'+(process.env.STUDIA_PORTA||9467)+'/json')).json()).find(t=>t.url.includes('/proiezione/index.html'));if(!t)await c.pausa(100);}assert(t);const ws=new WS(t.webSocketDebuggerUrl),pending=new Map();let id=0;await new Promise(r=>ws.once('open',r));ws.on('message',s=>{const o=JSON.parse(s);if(pending.has(o.id)){pending.get(o.id)(o);pending.delete(o.id);}});const invia=(method,params)=>new Promise(r=>{pending.set(++id,r);ws.send(JSON.stringify({id,method,params}));});return {ws,invia,val:async expression=>{const r=await invia('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.result.exceptionDetails)throw Error(JSON.stringify(r.result.exceptionDetails));return r.result.result.value;}};}
 async function clicca(sel,client){const p=await client.val(`(()=>{const r=document.querySelector(${JSON.stringify(sel)}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);for(const type of ['mousePressed','mouseReleased'])await client.invia('Input.dispatchMouseEvent',{type,...p,button:'left',clickCount:1});}
 async function shot(nome,client=c){const r=await client.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-lim-'+nome+'.png',Buffer.from(r.result.data,'base64'));}
+// I dati provengono dal vero dragstart; CDP consegna il drop al canvas nella finestra scelta.
+async function trasporto(sel){
+ const d=await c.val(`(()=>{const dt=new DataTransfer();document.querySelector(${JSON.stringify(sel)}).dispatchEvent(new DragEvent('dragstart',{bubbles:true,cancelable:true,dataTransfer:dt}));return {tipi:[...dt.types],payload:dt.getData(LimModello.MIME),testo:dt.getData('text/plain')};})()`);
+ assert(d.tipi.includes('application/x-studia-lim'));assert(d.testo,'conserva il trascinamento negli appunti');return d;
+}
+async function rilascia(d,client,host,editor){
+ await client.val(`${editor}.api.updateScene({appState:{zoom:{value:1.4},scrollX:85,scrollY:-35,selectedElementIds:{}}})`);await c.pausa(150);
+ const prima=await client.val(`(()=>{const a=${editor}.api,s=a.getAppState(),r=document.querySelector('${host} .lim-editor').getBoundingClientRect();return {ids:a.getSceneElements().map(e=>e.id),x:r.x+r.width*.65,y:r.y+r.height*.6,s:{zoom:s.zoom.value,scrollX:s.scrollX,scrollY:s.scrollY,left:s.offsetLeft,top:s.offsetTop}};})()`);
+ const data={items:[{mimeType:'application/x-studia-lim',data:d.payload}],dragOperationsMask:1};
+ for(const type of ['dragEnter','dragOver','drop']){const r=await client.invia('Input.dispatchDragEvent',{type,x:prima.x,y:prima.y,data});assert(!r.error,JSON.stringify(r.error));}
+ await wait(`${editor}.api.getSceneElements().length>${prima.ids.length}`,client);await client.val(`${editor}.salva()`);
+ const dopo=await client.val(`(()=>{const a=${editor}.api,s=a.getAppState();return {nuovi:a.getSceneElements().filter(e=>!${JSON.stringify(prima.ids)}.includes(e.id)),zoom:s.zoom.value,scrollX:s.scrollX,scrollY:s.scrollY};})()`);
+ const base=dopo.nuovi.find(e=>['rectangle','image'].includes(e.type));assert(base,'oggetto visuale, non markdown incollato');
+ assert(Math.abs(base.x-((prima.x-prima.s.left)/prima.s.zoom-prima.s.scrollX))<1,'ascissa del rilascio con zoom e pan');
+ assert(Math.abs(base.y-((prima.y-prima.s.top)/prima.s.zoom-prima.s.scrollY))<1,'ordinata del rilascio con zoom e pan');
+ assert.deepEqual([dopo.zoom,dopo.scrollX,dopo.scrollY],[prima.s.zoom,prima.s.scrollX,prima.s.scrollY],'il drop conserva la vista');
+ if(base.type==='image'){
+  // Verifica i pixel sulla tela visibile: avere il file nello stato non basta.
+  await wait(`(()=>{const cv=document.querySelector('${host} canvas.static'),r=cv.getBoundingClientRect(),s=${editor}.api.getAppState(),x=(${base.x}+20+s.scrollX)*s.zoom.value+s.offsetLeft,y=(${base.y}+30+s.scrollY)*s.zoom.value+s.offsetTop,p=cv.getContext('2d').getImageData(Math.floor((x-r.x)*cv.width/r.width),Math.floor((y-r.y)*cv.height/r.height),1,1).data;return Math.abs(p[0]-16)<5&&Math.abs(p[1]-165)<5&&Math.abs(p[2]-148)<5;})()`,client);
+ }
+ return dopo.nuovi;
+}
 async function menuContestuale(client,host,tema){
  const p=await client.val(`(()=>{const r=document.querySelector('${host} .lim-editor').getBoundingClientRect();return {x:r.right-80,y:r.top+r.height*.55};})()`);
  for(const type of ['mousePressed','mouseReleased'])await client.invia('Input.dispatchMouseEvent',{type,...p,button:'right',clickCount:1});
@@ -59,6 +81,25 @@ async function menuContestuale(client,host,tema){
  await wait("ZainoLim.editor.api.getSceneElements().some(e=>e.text?.includes('Nucleo'))");
  const file=path.join(vault,'Zaini/biologia/LIM',id+'.excalidraw');assert(fs.existsSync(file));assert(JSON.parse(fs.readFileSync(file)).elements.some(e=>e.text?.includes('Nucleo')));
  assert.equal(JSON.parse(fs.readFileSync(file)).appState.viewBackgroundColor,'#000000','sfondo salvato nel file della lavagnata');
+ // Menu e drag delle parole chiave usano lo stesso inserimento modificabile, con fonte e colore.
+ const keyword=await c.val("(()=>{const r=window.vault.evidenze.aggiungi('biologia',{exact:'Clorofilla',prefix:'La ',suffix:' assorbe luce',materiale:'01 Botanica.pdf',pagina:1,colore:'#ffd966'});if(r.error)throw Error(r.error);evidenzeCarica();bancoAssegna('C','keyword');keywordDisegna();return r.evidenze.find(e=>e.exact==='Clorofilla').id;})()");
+ const chip=`.kwchip[data-kw="${keyword}"]`;await wait(`!!document.querySelector(${JSON.stringify(chip)})`);
+ await c.val(`(()=>{const e=document.querySelector(${JSON.stringify(chip)}),r=e.getBoundingClientRect();e.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:r.x+20,clientY:r.y+20}));})()`);
+ await c.clicca('#kwMenu [data-kwaz="lim"]');await wait("ZainoLim.editor.api.getSceneElements().some(e=>e.text==='Clorofilla')");await c.pausa(300);
+ const parolaDrag=await trasporto(chip);assert(parolaDrag.tipi.includes('application/x-studia-evidenza'));
+ const etichetta=await rilascia(parolaDrag,c,'#limPane','ZainoLim.editor');
+ const rettangolo=etichetta.find(e=>e.type==='rectangle'),testo=etichetta.find(e=>e.type==='text');assert.equal(rettangolo.backgroundColor,'#ffd966');assert.equal(testo.text,'Clorofilla');assert.equal(testo.containerId,rettangolo.id);assert(testo.link.startsWith('zaino-pdf:'));assert.equal(testo.link,rettangolo.link);
+ assert.equal(await c.val(`RimandiSintassi.leggi(${JSON.stringify(testo.link)}).selezione.testo`),'Clorofilla');
+ await shot('keyword-trascinata');
+ const immagini=await c.val(`(()=>{const c=document.createElement('canvas');c.width=1600;c.height=900;const g=c.getContext('2d');g.fillStyle='#10a594';g.fillRect(0,0,c.width,c.height);g.fillStyle='black';g.font='80px Arial';g.fillText('Originale 1600 × 900',60,180);window.__immagineLim=c.toDataURL();return ['ritaglio','foto'].map(origine=>{const r=window.vault.album.salva('biologia',{origine,materiale:origine==='ritaglio'?'01 Botanica.pdf':'Foglia.png',didascalia:'Foglia originale',pagina:1,rect:{x:0,y:0,w:1600,h:900},dati:window.__immagineLim});if(r.error)throw Error(r.error);return r.voce.id;});})()`);
+ await c.val("bancoAssegna('C','album');AlbumSpazio.scegli('ritagli');AlbumSpazio.aggiorna()");await wait(`!!document.querySelector('#albLista [data-id="${immagini[0]}"]')`);
+ const ritaglioDrag=await trasporto(`#albLista [data-id="${immagini[0]}"]`);assert(ritaglioDrag.tipi.includes('application/x-studia-album'));
+ const ritaglio=await rilascia(ritaglioDrag,c,'#limPane','ZainoLim.editor'),img=ritaglio.find(e=>e.type==='image');assert.equal(img.width/img.height,1600/900);assert(img.link.startsWith('zaino-pdf:'));
+ assert.equal(await c.val(`ZainoLim.editor.api.getFiles()[${JSON.stringify(img.fileId)}].dataURL===window.__immagineLim`),true,'incorpora l’originale, non la miniatura');
+ assert(ritaglio.some(e=>e.text==='Foglia originale\nBotanica.pdf; p. 1'));
+ await c.val("AlbumSpazio.scegli('immagini')");await wait(`!!document.querySelector('#fotoLista [data-id="${immagini[1]}"]')`);
+ const fotoDrag=await trasporto(`#fotoLista [data-id="${immagini[1]}"]`);
+ await shot('album-trascinato');
  await shot('banco');
  await c.val("bancoAssegna('C','fonte');openPdf('01 Botanica.pdf',1)");await wait('PDFJS.pronto&&!!PDFJS.viewer?.pdfDocument');assert(await c.val("['fontSize','fontWeight','textTransform','letterSpacing'].every(k=>getComputedStyle(document.querySelector('#limPane .lim-scegli'))[k]===getComputedStyle(document.getElementById('pdfDoc'))[k])"),'tipografia uguale al selettore Fonti');await c.val("BancoPresentazione.apriProiezione('fonte')");peer=await collega();await wait("document.body.dataset.tipo==='immagine'",peer);await wait("!!document.querySelector('.proiezione-area')");
  await peer.val('ProiezioneLavagna.apri()');await wait('!!ProiezioneLavagna.editor?.api',peer);assert.equal(await peer.val('ProiezioneLavagna.editor.doc.studia.id'),id);
@@ -69,6 +110,13 @@ async function menuContestuale(client,host,tema){
  await clicca('#limProiezione [aria-label="Sfondo nero"]',peer);
  await wait("ProiezioneLavagna.editor.api.getAppState().viewBackgroundColor==='#000000'",peer);
  await wait("ZainoLim.editor.api.getAppState().viewBackgroundColor==='#000000'");
+ const fotoLim=await rilascia(fotoDrag,peer,'#limProiezione','ProiezioneLavagna.editor'),foto=fotoLim.find(e=>e.type==='image');assert.equal(foto.link,'album:'+immagini[1]);
+ assert.equal(await peer.val(`ProiezioneLavagna.editor.api.getFiles()[${JSON.stringify(foto.fileId)}].dataURL`),await c.val('window.__immagineLim'));
+ await wait(`ZainoLim.editor.api.getSceneElements().some(e=>e.id===${JSON.stringify(foto.id)})`);
+ await rilascia(parolaDrag,peer,'#limProiezione','ProiezioneLavagna.editor');
+ await wait("ZainoLim.editor.api.getSceneElements().filter(e=>e.text==='Clorofilla').length===3");
+ assert.equal(await c.val("window.vault.evidenze.leggi('biologia').evidenze.length"),1);assert.equal(await c.val("window.vault.album.elenco('biologia').voci.length"),2,'trasferire non sposta gli originali');
+ await shot('trasferimenti-proiezione',peer);
  await menuContestuale(peer,'#limProiezione','proiezione');
  await peer.val("document.querySelector('.lim-scegli').click()");await wait("!!document.querySelector('.lim-menu:popover-open')",peer);
  assert.equal(await peer.val("document.querySelector('.lim-menu [aria-checked=true]').dataset.limId"),id);
@@ -102,11 +150,12 @@ async function menuContestuale(client,host,tema){
  assert(await peer.val("typeof window.vault==='undefined'"));const refused=await peer.val("proiezione.lim.comando({azione:'apri',corso:'storia',id:'../x'})");assert(!refused.ok);
  await peer.val("document.getElementById('citaLim').click()");await wait("document.getElementById('limCitazione').open",peer);await peer.val("document.getElementById('limInserisciCitazione').click()");await wait("ProiezioneLavagna.editor.api.getSceneElements().some(e=>e.text?.includes('Botanica'))",peer);
  await wait("ProiezioneLavagna.editor.api.getSceneElements().some(e=>e.link?.startsWith('zaino-pdf:'))",peer);
+ const immaginiPrima=await peer.val("ProiezioneLavagna.editor.api.getSceneElements().filter(e=>e.type==='image').length");
  await peer.val("document.getElementById('ritagliaLim').click()");
  await peer.invia('Input.dispatchMouseEvent',{type:'mousePressed',x:30,y:90,button:'left',buttons:1,clickCount:1,pointerType:'pen'});
  await peer.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:270,y:180,button:'left',buttons:1,pointerType:'pen'});
  await peer.invia('Input.dispatchMouseEvent',{type:'mouseReleased',x:270,y:180,button:'left',buttons:0,clickCount:1,pointerType:'pen'});
- await wait("ProiezioneLavagna.editor.api.getSceneElements().some(e=>e.type==='image')",peer);await wait("ZainoLim.editor.api.getSceneElements().some(e=>e.type==='image')");
+ await wait(`ProiezioneLavagna.editor.api.getSceneElements().filter(e=>e.type==='image').length>${immaginiPrima}`,peer);await wait(`ZainoLim.editor.api.getSceneElements().filter(e=>e.type==='image').length>${immaginiPrima}`);
  // Conferma anche in proiezione; il rifiuto lascia scena e file invariati.
  await peer.val("window.__confermaOriginale=window.confirm;window.__conferme=[];window.__risposta=false;window.confirm=m=>{window.__conferme.push(m);return window.__risposta;}");
  await peer.val('ProiezioneLavagna.editor.salva()');const salvata=fs.readFileSync(file);

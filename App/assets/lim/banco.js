@@ -30,7 +30,7 @@
   const r=await call({azione:'elenco'});if(n!==giro||z!==window.zainoAttivo())return;lista=r.elenco;for(const id of scelti)if(!lista.some(d=>d.id===id))scelti.delete(id);sidebar();nome();if(window.bancoVisibile('lim'))await ui.assicurati();
  }
  async function apri(id){bancoMostra('lim');await ui.apri(id);sidebar();nome();}
- async function trasferisci(d){await aggiorna();const r=await call({azione:'elenco'});if(r.attiva&&r.attiva!==ui.doc?.studia.id)await ui.apri(r.attiva);await ui.inserisci(d);await aggiorna();
+ async function trasferisci(d){await aggiorna();const r=await call({azione:'elenco'});if(r.attiva&&r.attiva!==ui.doc?.studia.id)await ui.apri(r.attiva);if(d.trasporto)await ui.importa(d.trasporto);else await ui.inserisci(d);await aggiorna();
   const p=await window.vault.presentazione.lavagna({id:ui.doc.studia.id});if(!p?.aperta)bancoMostra('lim');window.toast?.('Inserito in «'+ui.doc.studia.title+'»',true);
  }
  async function citazione(testo,range){const o=window.citazioneOriginePdf(range);if(!o)throw Error('Seleziona il testo di una sola pagina PDF.');
@@ -39,13 +39,11 @@
   if(layer){const pre=document.createRange();pre.selectNodeContents(layer);pre.setEnd(range.startContainer,range.startOffset);link=RimandiSintassi.scriviPdfZaino(ref.zainoId,ref.sourceId,o.pagina,ref.revision,{testo:range.toString(),inizio:pre.toString().length})||link;}
   await trasferisci({testo,titolo:FontiNomi.visibile(o.file)+'; p. '+o.pagina,link});
  }
- async function ritaglio(id){const v=window.albumVoce(id);if(!v)throw Error('Ritaglio non disponibile.');const img=new Image();img.src=window.vault.album.srcUrl(corso,id,'full');await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);
-  let link='',titolo=v.didascalia||'Ritaglio';if(v.materiale&&v.pagina){const r=await window.vault.citazioni.crea(corso,v.materiale,v.pagina,'');if(!r.error){link=r.rimando;titolo=FontiNomi.visibile(v.materiale)+'; p. '+v.pagina;}}
-  await trasferisci({immagine:c.toDataURL(),width:c.width,height:c.height,titolo,link});
- }
- function link(r){const d=RimandiSintassi.leggi(r);if(d?.tipo==='pdf-zaino')window.citazioneZainoApri(r);else if(d?.tipo==='pdf'){const file=window._pdfNum()[d.numero];if(file)window.openPdf(file,d.pagina);else window.toast?.('Fonte non disponibile nello zaino attivo.',false);}}
+ async function oggetto(tipo,id){const z=window.zainoAttivo?.();if(!z)throw Error('Apri uno zaino.');await trasferisci({trasporto:LimModello.trasporto(tipo,id,z)});}
+ async function ritaglio(id){return oggetto('album',id);}
+ function link(r){const d=RimandiSintassi.leggi(r);if(d?.tipo==='pdf-zaino')window.citazioneZainoApri(r);else if(d?.tipo==='pdf'){const file=window._pdfNum()[d.numero];if(file)window.openPdf(file,d.pagina);else window.toast?.('Fonte non disponibile nello zaino attivo.',false);}else if(d?.tipo==='ev'){const e=window.kwDaId?.(d.id);if(e)window.evidenzaVai(e);else window.toast?.('Parola chiave non più disponibile.',false);}else if(d?.tipo==='album'){if(window.albumVoce(d.id))window.fotoApri(d.id);else window.toast?.('Immagine originale non più disponibile.',false);}}
  function avvia(){if(!api)return;ui=LavagnaUI.monta($('limPane'),api,{link,cambiata:()=>{sidebar();nome();}});
-  window.ZainoLim={apri,trasferisci,citazione:(t,r)=>azione(()=>citazione(t,r.cloneRange())),ritaglio:id=>azione(()=>ritaglio(id)),get doc(){return ui.doc;},get editor(){return ui;},link};
+  window.ZainoLim={apri,trasferisci,citazione:(t,r)=>azione(()=>citazione(t,r.cloneRange())),ritaglio:id=>azione(()=>ritaglio(id)),parola:id=>azione(()=>oggetto('keyword',id)),get doc(){return ui.doc;},get editor(){return ui;},link};
   window.vault.presentazione.onFonte(d=>link(d.link));
   api.onCambiata(d=>{if(d.corso===corso)azione(aggiorna);});window.addEventListener('studia:zaino-changed',()=>azione(aggiorna));window.addEventListener('studia:sidebar-updated',sidebar);
   window.addEventListener('banco-layout',()=>{if(window.bancoVisibile('lim'))azione(async()=>{await aggiorna();await ui.assicurati();});});azione(aggiorna);

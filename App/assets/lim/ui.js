@@ -80,12 +80,40 @@
   }
   async function nuova(){await salva();await mostra(null);}
   async function assicurati(){if(!editor){if(!apertura)apertura=(async()=>{const r=await elenco();if(r.attiva||lista.length)await apri(r.attiva||lista[0].id);else await mostra(null);})().finally(()=>apertura=null);await apertura;}for(let n=0;!editor?.api&&n<100;n++)await new Promise(r=>setTimeout(r,30));if(!editor?.api)throw Error('La lavagna non è pronta.');return doc;}
-  async function inserisci(d){await assicurati();const a=editor.api,s=a.getAppState(),x=-s.scrollX+40/s.zoom.value,y=-s.scrollY+80/s.zoom.value;
-   let skeleton=[];
-   if(d.immagine){const id=crypto.randomUUID();a.addFiles([{id,dataURL:d.immagine,mimeType:'image/png',created:Date.now()}]);skeleton.push({type:'image',fileId:id,x,y,width:Math.min(720,d.width),height:Math.min(720,d.width)*d.height/d.width});}
-   const testo=[d.testo,d.titolo].filter(Boolean).join('\n\n');if(testo)skeleton.push({type:'text',x,y:y+(d.immagine?Math.min(720,d.width)*d.height/d.width+16:0),text:testo,fontSize:24,fontFamily:2,...(d.link?{link:d.link,customData:{fonte:d.link}}:{})});
-   const elementi=LimEditor.converti(skeleton);a.updateScene({elements:[...a.getSceneElementsIncludingDeleted(),...elementi],captureUpdate:LimEditor.CaptureUpdateAction.IMMEDIATELY});a.scrollToContent(elementi,{fitToViewport:true,maxZoom:1});cambiata();await salva();return doc.studia.id;
+  async function inserisci(d,punto){await assicurati();const a=editor.api,s=a.getAppState(),x=punto?.x??(-s.scrollX+40/s.zoom.value),y=punto?.y??(-s.scrollY+80/s.zoom.value);
+   let skeleton=[],file=null,altezza=0;
+   if(d.immagine){
+    const img=new Image();img.src=d.immagine;await img.decode();
+    if(a!==editor?.api||disposed)throw Error('La lavagna è cambiata: ripeti il trasferimento.');
+    if(!img.naturalWidth||img.naturalWidth*img.naturalHeight>40000000)throw Error('Immagine troppo grande per la lavagna (massimo 40 megapixel).');
+    let data=d.immagine;if(data.startsWith('data:image/gif;')){const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);data=c.toDataURL('image/png');c.width=c.height=0;}
+    const id=crypto.randomUUID(),width=Math.min(720,img.naturalWidth);altezza=width*img.naturalHeight/img.naturalWidth;
+    file={id,dataURL:data,mimeType:data.slice(5,data.indexOf(';')),created:Date.now()};
+    skeleton.push({type:'image',fileId:id,x,y,width,height:altezza});
+   }
+   if(d.tipo==='keyword'){
+    const colore=/^#[0-9a-f]{3,8}$/i.test(d.colore||'')?d.colore:'#ffd966';
+    skeleton.push({type:'rectangle',x,y,backgroundColor:colore,strokeColor:colore,fillStyle:'solid',roughness:0,label:{text:d.testo,fontSize:24,fontFamily:2,strokeColor:LimModello.coloreTesto(colore)}});
+   }else{const testo=[d.testo,d.titolo].filter(Boolean).join('\n\n');if(testo)skeleton.push({type:'text',x,y:y+(altezza?altezza+16:0),text:testo,fontSize:24,fontFamily:2,strokeColor:LimModello.coloreTesto(s.viewBackgroundColor)});}
+   const gruppo=crypto.randomUUID(),elementi=LimEditor.converti(skeleton).map(e=>({...e,groupIds:[gruppo],...(d.link?{link:d.link,customData:{fonte:d.link,titoloFonte:d.titolo||''}}:{})}));
+   // Valida prima di modificare la tela, anche dopo la conversione delle immagini.
+   LimModello.scena({elements:[...a.getSceneElementsIncludingDeleted(),...elementi],files:{...a.getFiles(),...(file?{[file.id]:file}:{})},appState:s});
+   if(file)a.addFiles([file]);
+   a.updateScene({elements:[...a.getSceneElementsIncludingDeleted(),...elementi],appState:{selectedElementIds:Object.fromEntries(elementi.map(e=>[e.id,true]))},captureUpdate:LimEditor.CaptureUpdateAction.IMMEDIATELY});
+   if(!punto)a.scrollToContent(elementi,{fitToViewport:true,maxZoom:1});cambiata();await salva();return doc.studia.id;
   }
+  async function importa(trasporto,punto){
+   await assicurati();const prima=editor,z=corso,id=doc?.studia.id;
+   const r=await api.comando({azione:'materiale',trasporto,corso,mittente});if(!r?.ok)throw Error(r?.error||'Trasferimento non riuscito.');
+   if(prima!==editor||z!==corso||id!==doc?.studia.id||disposed)throw Error('La lavagna è cambiata: ripeti il trasferimento.');
+   const risultato=await inserisci(r.materiale,punto);stato('Elemento inserito · salvato');return risultato;
+  }
+  function trasportoInterno(e){return Array.from(e.dataTransfer?.types||[]).includes(LimModello.MIME);}
+  canvas.addEventListener('dragover',e=>{if(!trasportoInterno(e))return;e.preventDefault();e.stopPropagation();e.dataTransfer.dropEffect='copy';canvas.dataset.rilascio='1';},true);
+  canvas.addEventListener('dragleave',e=>{if(!canvas.contains(e.relatedTarget))delete canvas.dataset.rilascio;});
+  canvas.addEventListener('drop',e=>{delete canvas.dataset.rilascio;if(!trasportoInterno(e))return;e.preventDefault();e.stopPropagation();
+   const t=e.dataTransfer.getData(LimModello.MIME);azione(async()=>{if(!editor?.api)throw Error('Attendi che la lavagna sia pronta.');const p=LimModello.punto({x:e.clientX,y:e.clientY},editor.api.getAppState());await importa(t,p);});
+  },true);
   async function sincronizza(d){if(d.corso!==corso||d.mittente===mittente)return;await elenco();if(!doc)return;
    if(d.id!==doc.studia.id||!editor?.api)return;const id=doc.studia.id,r=await richiesta({azione:'apri',id});if(doc?.studia.id!==id)return;
    const a=editor.api,remoto=r.lavagna;doc.studia=remoto.studia;
@@ -104,7 +132,7 @@
   }
   function primaDiUscire(e){if(!flush()){e.preventDefault();e.returnValue='';}}
   window.addEventListener('beforeunload',primaDiUscire);
-  return {apri,nuova,inserisci,assicurati,flush,salva,elenco,elimina,immagine,get doc(){return doc;},get api(){return editor?.api;},async contesto(z){if(z===corso)return;chiudiMenu();if(!flush())throw Error('Salva la lavagnata prima di cambiare zaino.');await coda;corso=z;giro++;editor?.smonta();editor=null;doc=null;sporco=false;canvas.replaceChildren();stato('');etichetta();await elenco();},smonta(){disposed=true;chiudiMenu();window.removeEventListener('keydown',escMenu,true);window.removeEventListener('resize',nascondiMenu);window.removeEventListener('banco-layout',nascondiMenu);flush();off();editor?.smonta();window.removeEventListener('beforeunload',primaDiUscire);}};
+  return {apri,nuova,inserisci,importa,assicurati,flush,salva,elenco,elimina,immagine,get doc(){return doc;},get api(){return editor?.api;},async contesto(z){if(z===corso)return;chiudiMenu();if(!flush())throw Error('Salva la lavagnata prima di cambiare zaino.');await coda;corso=z;giro++;editor?.smonta();editor=null;doc=null;sporco=false;canvas.replaceChildren();stato('');etichetta();await elenco();},smonta(){disposed=true;chiudiMenu();window.removeEventListener('keydown',escMenu,true);window.removeEventListener('resize',nascondiMenu);window.removeEventListener('banco-layout',nascondiMenu);flush();off();editor?.smonta();window.removeEventListener('beforeunload',primaDiUscire);}};
  }
  window.LavagnaUI={monta,carica};
 })();
