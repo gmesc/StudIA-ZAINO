@@ -183,6 +183,18 @@ async function fedele(selector,tag){
  assert.equal(await peer.val(`document.getElementById('scala').textContent`),'125%','un dito sposta senza cambiare zoom');
  for(let n=0;n<3;n++){await peer.invia('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:400,y:300,id:1}]});await peer.invia('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}
  await wait(`document.getElementById('scala').textContent==='100%'`,peer);
+ // La penna primaria trascina senza Spazio, il passaggio in aria non muove.
+ await peer.val(`document.getElementById('piu').click()`);await c.pausa(300);
+ const xPenna=await c.val(`document.querySelector('.proiezione-area').getBoundingClientRect().x`);
+ await peer.invia('Input.dispatchMouseEvent',{type:'mousePressed',x:400,y:300,button:'left',buttons:1,clickCount:1,pointerType:'pen',force:.5});
+ await peer.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:340,y:300,button:'left',buttons:1,pointerType:'pen',force:.5});
+ await peer.invia('Input.dispatchMouseEvent',{type:'mouseReleased',x:340,y:300,button:'left',buttons:0,clickCount:1,pointerType:'pen'});
+ await wait(`document.querySelector('.proiezione-area').getBoundingClientRect().x>${xPenna}+10`);
+ assert.equal(await peer.val(`document.getElementById('scala').textContent`),'125%','la penna sposta senza cambiare zoom');
+ const dopoPenna=await c.val(`document.querySelector('.proiezione-area').getBoundingClientRect().x`);
+ await peer.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:280,y:300,buttons:0,pointerType:'pen'});await c.pausa(200);
+ assert.equal(await c.val(`document.querySelector('.proiezione-area').getBoundingClientRect().x`),dopoPenna,'penna sollevata non trascina');
+ await treClic();await wait(`document.getElementById('scala').textContent==='100%'`,peer);
  const mappaPrimaPan=await c.val('MAPPA.z.x');
  await peer.invia('Input.dispatchKeyEvent',{type:'keyDown',key:' ',code:'Space',windowsVirtualKeyCode:32});
  await peer.invia('Input.dispatchMouseEvent',{type:'mousePressed',x:400,y:300,button:'left',clickCount:1});

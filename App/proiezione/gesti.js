@@ -22,7 +22,7 @@
     if(tocchi.size>1){multiplo=true;tap=null;}cursore();return;
    }
    ignoraClick=false;
-   if(!spazio||e.button!==0)return;
+   if((!spazio&&e.pointerType!=='pen')||e.button!==0)return;
    e.preventDefault();host.focus({preventScroll:true});host.setPointerCapture(e.pointerId);pan={id:e.pointerId,x:e.clientX,y:e.clientY};ignoraClick=true;cursore();
   });
   host.addEventListener('pointermove',e=>{
