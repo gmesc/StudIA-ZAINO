@@ -10,6 +10,9 @@ assert.deepEqual(L.inquadratura({x:10,y:20,width:600,height:900},{width:1600,hei
 assert.deepEqual(L.inquadratura({x:10,y:20,width:600,height:900},{width:1600,height:900,scala:200},{x:1,y:1}),{x:310,y:752,width:300,height:168});
 assert.deepEqual(L.inquadratura({x:0,y:0,width:600,height:300},{width:600,height:900,scala:100}),{x:0,y:0,width:600,height:300});
 assert.throws(()=>L.inquadratura({x:0,y:0,width:600,height:300},{width:0,height:900,scala:100}));
+assert.deepEqual(L.raster({width:400,height:225},{width:1920,dpr:2}),{width:3840,height:2160,fattore:9.6});
+const enorme=L.raster({width:400,height:1000},{width:16000,dpr:3});assert(enorme.width*enorme.height<=32020000);assert(enorme.width<=8193&&enorme.height<=8193);
+assert(!L.stileSicuro('url(file:///segreto)'));assert(!L.stileSicuro('expression(alert(1))'));assert(L.stileSicuro('rgb(1, 2, 3)'));
 const a=L.ancora([{id:0,top:-100,height:80},{id:1,top:-20,height:100},{id:2,top:80,height:200}],0);
 assert.deepEqual(a,{id:'1',frazione:.2});assert.equal(L.posizione({top:500,height:200},a),540,'stesso passaggio in una colonna di misura diversa');
 const w={isDestroyed:()=>false,webContents:{mainFrame:{url:'file:///app.html'}}};
@@ -43,10 +46,16 @@ console.log('Lettura: scala, ancore, ritaglio e confine della finestra verificat
  assert.equal((await win.call('proiezione:aggiorna',{sessione:'scaduta',tipo:'testo'})).chiusa,true);
  assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'testo',html:'<p>Prova</p>'})).ok,true);
  assert.equal(p.messaggi.at(-1)[1].html,'<p>Prova</p>');
+ const layout={x:-30,y:-10,width:400,height:300};
+ assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'clone',html:'<p>Righe originali</p>',layout})).ok,true);
+ assert.deepEqual(p.messaggi.at(-1)[1].layout,layout);
+ assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'clone',html:'<p>Righe</p>',layout:{...layout,width:NaN}})).ok,false);
+ assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'pdf',immagine:'file:///segreto'})).ok,false);
+ assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'pdf',immagine:'data:image/png;base64,cHJvdmE='})).ok,true);
  assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'immagine',area:{x:10,y:10,width:900,height:700}})).ok,true);
  assert.deepEqual(win.capture,{x:10,y:10,width:790,height:590});
  await p.call('proiezione:comando',{azione:'vista',width:1600,height:900,scala:125});
- assert.deepEqual(win.messaggi.at(-1),['proiezione:vista',{sessione:first.sessione,vista:{width:1600,height:900,scala:125}}]);
+ assert.deepEqual(win.messaggi.at(-1),['proiezione:vista',{sessione:first.sessione,vista:{width:1600,height:900,scala:125,dpr:1}}]);
  assert.equal((await p.call('proiezione:comando',{azione:'vista',width:NaN,height:900,scala:100})).ok,false);
  assert.equal((await p.call('proiezione:comando',{azione:'vista',width:0,height:900,scala:100})).ok,false);
  await new Promise(ok=>p.request({url:'file:///segreto.txt'},r=>{assert(r.cancel);ok();}));

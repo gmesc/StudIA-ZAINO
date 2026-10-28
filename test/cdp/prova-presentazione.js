@@ -13,6 +13,13 @@ async function collegaProiezione(){
 }
 async function shot(name,client=c){const r=await client.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-presentazione-'+name+'.png',Buffer.from(r.result.data,'base64'));}
 async function click(s){await c.clicca(s);await c.pausa(120);}
+async function fedele(selector,tag){
+ const origine=await c.val(`(()=>{const e=document.querySelector(${JSON.stringify(selector)}),r=e.getBoundingClientRect(),b=document.querySelector('.proiezione-area').getBoundingClientRect();return {x:r.x-b.x,y:r.y-b.y,width:r.width,height:r.height,base:b.width,text:e.textContent};})()`);
+ const destinazione=await peer.val(`(()=>{const e=[...document.querySelectorAll('#contenuto '+${JSON.stringify(tag)})].find(e=>e.textContent===${JSON.stringify(origine.text)}),r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,base:innerWidth};})()`);
+ const k=destinazione.base/origine.base;
+ for(const key of ['x','y','width','height'])assert(Math.abs(destinazione[key]-origine[key]*k)<3,JSON.stringify({selector,key,origine,destinazione,k}));
+}
+
 (async()=>{
  await c.collega();await wait('!!window.BancoPresentazione && !!window.zainoStudio');
  const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
@@ -43,18 +50,22 @@ async function click(s){await c.clicca(s);await c.pausa(120);}
  await wait(`!document.documentElement.hasAttribute('data-presentazione')`);await c.pausa(1200);
  assert.equal(await c.val('JSON.stringify(bancoStato())'),original.banco);assert.equal(await c.val('NOTES.mde.value()'),original.body);assert.equal(await c.val(`BancoPresentazione.percentuale('appunti')`),125);
  const returnedY=await c.val(`document.querySelector('#noteHost .editor-preview-active').scrollTop`);assert(Math.abs(returnedY-original.y)<3,JSON.stringify({returnedY,originalY:original.y}));
+ await c.val('NOTES.mde.togglePreview()');
  await click('[data-proietta]');await wait(`BancoPresentazione.stato().proiezione==='appunti'`);peer=await collegaProiezione();
  await wait(`document.querySelector('#contenuto').textContent.includes('Capitolo 27')`,peer);
  assert.equal(await peer.val('typeof window.vault'),'undefined','la proiezione non ha accesso al vault');
  assert(await c.val(`!!document.querySelector('.blocco[data-proiezione]')`));
+ await wait(`!!document.querySelector('.proiezione-area')`);
+ assert.equal(await peer.val(`document.body.dataset.tipo`),'clone');
+ await c.pausa(350);await fedele('#noteHost .editor-preview-active p','p');
  const border=await c.val(`(()=>{const s=getComputedStyle(document.querySelector('[data-proiezione]'),'::after');return {width:s.borderLeftWidth,color:s.borderLeftColor};})()`);
  assert.equal(border.width,'2px');assert.equal(border.color,'rgb(249, 115, 22)');
  assert(!await peer.val(`document.querySelector('#contenuto').textContent.includes('pdf:01')`),'collegamento leggibile senza URL markdown');
- await peer.val(`document.getElementById('piu').click()`);assert.equal(await peer.val(`document.getElementById('scala').textContent`),'225%');assert.equal(await c.val(`BancoPresentazione.percentuale('appunti')`),125);
- await c.val(String.raw`NOTES.mde.togglePreview();NOTES.mde.codemirror.replaceRange('\n\n## AGGIORNAMENTO DAL PORTATILE\n\nUn altro passaggio.',{line:NOTES.mde.codemirror.lastLine(),ch:NOTES.mde.codemirror.getLine(NOTES.mde.codemirror.lastLine()).length});`);
+ await peer.val(`document.getElementById('piu').click()`);assert.equal(await peer.val(`document.getElementById('scala').textContent`),'125%');assert.equal(await c.val(`BancoPresentazione.percentuale('appunti')`),125);
+ await c.val(String.raw`NOTES.mde.togglePreview();NOTES.mde.codemirror.replaceRange('\n\n## AGGIORNAMENTO DAL PORTATILE\n\nUn altro passaggio.',{line:NOTES.mde.codemirror.lastLine(),ch:NOTES.mde.codemirror.getLine(NOTES.mde.codemirror.lastLine()).length});NOTES.mde.togglePreview();`);
  await wait(`document.querySelector('#contenuto').textContent.includes('AGGIORNAMENTO DAL PORTATILE')`,peer);
- await c.val(`NOTES.mde.codemirror.scrollTo(null,NOTES.mde.codemirror.getScrollInfo().height)`);await c.pausa(500);
- assert(await peer.val(`document.getElementById('vista').scrollTop>500`),'la proiezione segue il passaggio letto');
+ await c.val(`document.querySelector('#noteHost .editor-preview-active').scrollTop=10000`);await c.pausa(500);
+ assert(await peer.val(`Number(document.querySelector('#contenuto>[data-sy]').dataset.sy)>500`),'la proiezione segue il passaggio letto');
  await shot('proiettore',peer);await shot('cornice');
  await c.val(`document.documentElement.dataset.theme='scuro'`);await wait(`document.documentElement.dataset.theme==='dark'`,peer);
  assert.equal(await peer.val(`getComputedStyle(document.documentElement).backgroundColor`),'rgb(23, 26, 33)');
@@ -69,7 +80,12 @@ async function click(s){await c.clicca(s);await c.pausa(120);}
  await wait(`document.getElementById('intero').title.startsWith('Schermo')`,peer);
  assert.equal((await peer.val(`window.proiezione.comando({azione:'leggiVault'})`)).ok,false);
  // La chiusura della finestra libera la cornice senza chiudere l'appunto.
- await peer.val(`void window.proiezione.comando({azione:'chiudi'})`);peer.ws.close();peer=null;await wait(`!document.querySelector('[data-proiezione]')`);assert(await c.val('!!NOTES.cur'));
+ await peer.val(`void window.proiezione.comando({azione:'chiudi'})`);peer.ws.close();peer=null;await wait(`!document.querySelector('[data-proiezione]')`);assert(await c.val('!!NOTES.cur'));assert.equal(await c.val('NOTES.mde.isPreviewActive()'),false,'ripristina la scrittura precedente alla proiezione');
+ // Il PDF contiene anche caratteri piccoli: vengono ridisegnati dall'originale.
+ const {PDFDocument,StandardFonts}=require('pdf-lib'),pdfFile=path.join(vault,'Zaini/biologia/MATERIALI/PDF/01 Botanica.pdf');
+ const doc=await PDFDocument.load(fs.readFileSync(pdfFile)),font=await doc.embedFont(StandardFonts.Helvetica);
+ for(let j=0;j<12;j++)doc.getPage(1).drawText('Testo vettoriale piccolo: cellule, fotosintesi e luce. Riga '+(j+1),{x:40,y:660-j*18,size:8,font});
+ fs.writeFileSync(pdfFile,await doc.save());
  // Il PDF usa la vista reale: pagina, zoom e selezione vengono rispecchiati.
  await c.val(`bancoForma('due-col');bancoAssegna('A','fonte');bancoAssegna('C','fonte2');openPdf('01 Botanica.pdf',1)`);await wait(`!!document.querySelector('#pdfFrame canvas')`);
  await click('[data-proietta]');peer=await collegaProiezione();await wait(`document.getElementById('immagine').src.startsWith('data:image/')`,peer);
@@ -83,7 +99,10 @@ async function click(s){await c.clicca(s);await c.pausa(120);}
  assert.equal(dimensioni.width,1440,'nessun margine laterale aggiunto alla cattura');
  assert(Math.abs(dimensioni.nw/dimensioni.nh-cornice.width/cornice.height)<.01,'il pubblico vede il rettangolo indicato');
  assert(dimensioni.height<=601,'ritaglio verticale, senza deformazione');
+ assert(dimensioni.nw>=1440,'PDF renderizzato almeno alla larghezza della destinazione, non screenshot dello split ingrandito');
  assert.equal(await peer.val(`(()=>{const i=document.getElementById('immagine'),c=document.createElement('canvas');c.width=i.naturalWidth;c.height=i.naturalHeight;const x=c.getContext('2d');x.drawImage(i,0,0);const d=x.getImageData(0,0,c.width,c.height).data;let arancioni=0;for(let n=0;n<d.length;n+=4)if(d[n]===249&&d[n+1]===115&&d[n+2]===22)arancioni++;return arancioni;})()`),0,'cornice e maniglia rimangono sul Mac, fuori dalla cattura');
+ await peer.invia('Emulation.setDeviceMetricsOverride',{width:1440,height:600,deviceScaleFactor:2,mobile:false});
+ await wait(`document.getElementById('immagine').naturalWidth>=2880`,peer);
  await peer.val(`document.getElementById('piu').click()`);
  await wait(`document.querySelector('.proiezione-area').offsetWidth<${cornice.width}*.81`);
  const yPrima=await c.val(`document.querySelector('.proiezione-area').getBoundingClientRect().y`);
@@ -118,14 +137,14 @@ async function click(s){await c.clicca(s);await c.pausa(120);}
  // Il raccoglitore riformatta anche moduli e schede con la stessa misura.
  await c.val(`document.getElementById('zschedeNewButton').click();BancoPresentazione.zoom('studio',200)`);await c.pausa(200);
  assert.equal(await c.val(`getComputedStyle(document.getElementById('zschedeSource')).fontSize`),'34px');
- await click('[data-proietta]');peer=await collegaProiezione();await wait(`document.querySelector('#contenuto').textContent.includes('Tipo di scheda')`,peer);
+ await click('[data-proietta]');peer=await collegaProiezione();await wait(`document.querySelector('#contenuto').textContent.includes('Tipo di scheda')`,peer);assert(await c.val(`!!document.querySelector('.proiezione-area')`));
  await c.val(`BancoPresentazione.chiudiProiezione()`);peer.ws.close();peer=null;
  const reviewDir=path.join(vault,'Zaini/biologia/RIPASSO'),activeFile=path.join(reviewDir,'active.json'),activeBefore=fs.existsSync(activeFile)?fs.readFileSync(activeFile):null;
  const questionFile=path.join(reviewDir,'domande/prova-proiezione-ripasso.json');fs.mkdirSync(path.dirname(questionFile),{recursive:true});
  fs.writeFileSync(questionFile,JSON.stringify({id:'prova-proiezione-ripasso',question:'Quale funzione svolge la clorofilla nella fotosintesi?',createdAt:new Date().toISOString(),saved:true,attempts:[],sources:[],scope:{mode:'all',sourceIds:[],wikipedia:false}}));
  await c.val(`zainoStudio.refresh();bancoAssegna('A','flashcard');document.getElementById('zstudyBrowse').click()`);await wait(`document.querySelector('[data-question-id="prova-proiezione-ripasso"]')`);
  await click('[data-question-id="prova-proiezione-ripasso"]');await wait(`!!document.getElementById('zstudyAttempt')`);await c.val(`BancoPresentazione.zoom('flashcard',200)`);
- await click('[data-proietta]');peer=await collegaProiezione();await wait(`document.querySelector('#contenuto').textContent.includes('Quale funzione svolge la clorofilla')`,peer);
+ await click('[data-proietta]');peer=await collegaProiezione();await wait(`document.querySelector('#contenuto').textContent.includes('Quale funzione svolge la clorofilla')`,peer);assert(await c.val(`!!document.querySelector('.proiezione-area')`));await c.pausa(400);await fedele('#zstudyQuestion h3','h3');
  await c.val(`document.getElementById('zstudyAttempt').value='Assorbe la luce per la fotosintesi';document.getElementById('zstudyAttempt').dispatchEvent(new Event('input',{bubbles:true}))`);
  await wait(`document.querySelector('#contenuto').textContent.includes('Assorbe la luce')`,peer);await shot('ripasso',peer);
  await c.val(`cambiaZaino('storia',true)`);await wait(`!document.querySelector('[data-proiezione]')`);peer.ws.close();peer=null;

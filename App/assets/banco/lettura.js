@@ -21,11 +21,18 @@
   const frazione=n=>Number.isFinite(n)?Math.max(0,Math.min(1,n)):0;
   return {x:Math.floor(area.x+(area.width-width)*frazione(punto.x)),y:Math.floor(area.y+(area.height-height)*frazione(punto.y)),width,height};
  }
+ const STILI_CLONE='display position top right bottom left box-sizing width height min-width min-height max-width max-height margin-top margin-right margin-bottom margin-left padding-top padding-right padding-bottom padding-left border-top border-right border-bottom border-left border-radius border-collapse border-spacing font-family font-size font-weight font-style font-variant line-height letter-spacing word-spacing text-align text-indent text-transform text-decoration white-space word-break overflow-wrap vertical-align list-style-type list-style-position color background-color opacity overflow-x overflow-y flex-direction flex-wrap flex-grow flex-shrink flex-basis align-items align-self justify-content gap row-gap column-gap grid-template-columns grid-template-rows grid-column grid-row transform transform-origin tab-size'.split(' ');
+ function stileSicuro(v){return typeof v==='string'&&v.length<500&&!/url\s*\(|expression|@import|[<>\\]/i.test(v);}
+ function raster(area,vista){
+  const dpr=Math.max(1,Math.min(3,Number(vista.dpr)||1));
+  const fattore=Math.min(vista.width*dpr/area.width,8192/area.width,8192/area.height,Math.sqrt(32000000/(area.width*area.height)));
+  return {width:Math.max(1,Math.ceil(area.width*fattore)),height:Math.max(1,Math.ceil(area.height*fattore)),fattore};
+ }
  function ancora(elementi,top){
   const e=elementi.find(e=>e.top+e.height>top&&e.height>0)||elementi.at(-1);
   return e?{id:String(e.id),frazione:Math.max(0,Math.min(1,(top-e.top)/Math.max(1,e.height)))}:null;
  }
  function posizione(e,a){return e.top+Math.max(0,Math.min(1,Number(a?.frazione)||0))*e.height;}
  function mittente(e,w,url){return !!w&&!w.isDestroyed()&&e.sender===w.webContents&&e.senderFrame===w.webContents.mainFrame&&e.senderFrame.url.split('#')[0]===url;}
- return {PASSI,TAGS_TESTO,scala,passo,rettangolo,inquadratura,ancora,posizione,mittente};
+ return {PASSI,TAGS_TESTO,STILI_CLONE,stileSicuro,raster,scala,passo,rettangolo,inquadratura,ancora,posizione,mittente};
 }));
