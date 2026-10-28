@@ -16,8 +16,8 @@
   const titolo=el('input');titolo.type='text';titolo.maxLength=140;titolo.setAttribute('aria-label','Titolo della lavagnata');titolo.title='Titolo della lavagnata';titolo.hidden=true;
   function btn(nome,icon,fn){const b=el('button',null,'tbtn');b.type='button';b.title=nome;b.setAttribute('aria-label',nome);b.innerHTML=UiIcone.svg(icon);b.onclick=()=>azione(fn);toolbar.append(b);return b;}
   toolbar.append(select);btn('Nuova lavagnata','plus',nuova);const edit=btn('Rinomina lavagnata','pencil',()=>{if(!doc)return;titolo.hidden=false;titolo.value=doc.studia.title;titolo.focus();titolo.select();});toolbar.append(titolo);
-  const save=btn('Salva lavagnata','save',()=>salva(true));toolbar.append(status);host.append(toolbar,menu,canvas);
-  let doc=null,editor=null,timer=null,sporco=false,impronta='',giro=0,corso='',lista=[],coda=Promise.resolve(),disposed=false;
+  const save=btn('Salva lavagnata','save',()=>salva(true)),cestino=btn('Elimina lavagnata','trash-2',()=>elimina([doc.studia.id])),undo=btn('Annulla eliminazione lavagnate','undo-2',ripristina);undo.classList.add('lim-annulla');undo.hidden=true;edit.disabled=save.disabled=cestino.disabled=true;toolbar.append(status);host.append(toolbar,menu,canvas);
+  let doc=null,editor=null,timer=null,sporco=false,impronta='',giro=0,corso='',lista=[],ultimo=[],coda=Promise.resolve(),disposed=false;
   const mittente=crypto.randomUUID();
   function stato(t,errore=false){status.textContent=t;status.dataset.errore=errore?'1':'';}
   async function richiesta(o){const r=await api.comando({...o,corso,mittente});if(!r?.ok)throw Error(r?.error||'Operazione LIM non riuscita.');corso=r.corso||corso;return r;}
@@ -35,7 +35,7 @@
    const s=scena();if(!sporco&&JSON.stringify(s)===impronta)return true;
    const r=api.flush({azione:'salva',corso,id:doc.studia.id,scena:s,mittente});if(!r?.ok){stato(r?.error||'Salvataggio non riuscito',true);return false;}sporco=false;impronta=JSON.stringify(s);return true;
   }
-  function etichetta(){const nome=lista.find(d=>d.id===doc?.studia.id)?.title||doc?.studia.title;label.textContent=nome||'Lavagnate';select.title=nome?'Lavagnata aperta: '+nome+' — premi per cambiarla':'Scegli una lavagnata';select.setAttribute('aria-label',select.title);edit.disabled=save.disabled=!doc;}
+  function etichetta(){const nome=lista.find(d=>d.id===doc?.studia.id)?.title||doc?.studia.title;label.textContent=nome||'Lavagnate';select.title=nome?'Lavagnata aperta: '+nome+' — premi per cambiarla':'Scegli una lavagnata';select.setAttribute('aria-label',select.title);edit.disabled=save.disabled=cestino.disabled=!doc;undo.hidden=!ultimo.length;}
   function voci(){const focus=menu.contains(document.activeElement),id=document.activeElement?.dataset.limId;menu.replaceChildren();
    for(const d of lista){const b=el('button',d.title,'lim-menu-voce');b.type='button';b.dataset.limId=d.id;b.title=d.title;b.setAttribute('role','menuitemradio');b.setAttribute('aria-checked',String(d.id===doc?.studia.id));b.onclick=()=>{chiudiMenu(true);azione(()=>apri(d.id));};menu.append(b);}
    if(!lista.length)menu.append(el('p','Nessuna lavagnata salvata. Usa + per crearne una.','lim-menu-vuoto'));
@@ -54,7 +54,13 @@
   function escMenu(e){if(e.key==='Escape'&&menu.matches(':popover-open')){e.preventDefault();e.stopImmediatePropagation();chiudiMenu(true);}}
   function nascondiMenu(){chiudiMenu();}
   window.addEventListener('keydown',escMenu,true);window.addEventListener('resize',nascondiMenu);window.addEventListener('banco-layout',nascondiMenu);
-  async function elenco(){const r=await richiesta({azione:'elenco'});lista=r.elenco;etichetta();voci();return r;}
+  async function elenco(){const r=await richiesta({azione:'elenco'});lista=r.elenco;ultimo=ultimo.filter(id=>!lista.some(d=>d.id===id));
+   if(doc&&!lista.some(d=>d.id===doc.studia.id)){giro++;clearTimeout(timer);editor?.smonta();editor=null;doc=null;sporco=false;canvas.replaceChildren();stato('Lavagnata eliminata.');opt.cambiata?.(null);}
+   etichetta();voci();return r;
+  }
+  // Toolbar e selezione multipla usano lo stesso cestino recuperabile dello zaino.
+  async function elimina(ids){await salva();const r=await richiesta({azione:'elimina',ids});ultimo=r.rimossi;await elenco();stato(r.rimossi.length===1?'Lavagnata eliminata. Puoi annullare.':'Lavagnate eliminate. Puoi annullare.');}
+  async function ripristina(){const ids=[...ultimo];await richiesta({azione:'ripristina',ids});ultimo=[];await elenco();if(!doc&&ids.length)await apri(ids[0]);stato('Eliminazione annullata.');}
   async function apri(id){await salva();const n=++giro,r=await richiesta({azione:'apri',id});if(n!==giro||disposed)return;await mostra(r.lavagna);await elenco();}
   async function mostra(d){await carica();editor?.smonta();editor=null;canvas.replaceChildren();doc=d;sporco=false;impronta='';
    editor=LimEditor.monta(canvas,{data:{...d,appState:{...d.appState,isLoading:false}},ready:()=>{stato('Salvata');opt.cambiata?.(doc);},onChange:()=>cambiata(),link:link=>opt.link?.(link)});
@@ -68,8 +74,7 @@
    const testo=[d.testo,d.titolo].filter(Boolean).join('\n\n');if(testo)skeleton.push({type:'text',x,y:y+(d.immagine?Math.min(720,d.width)*d.height/d.width+16:0),text:testo,fontSize:24,fontFamily:2,...(d.link?{link:d.link,customData:{fonte:d.link}}:{})});
    const elementi=LimEditor.converti(skeleton);a.updateScene({elements:[...a.getSceneElementsIncludingDeleted(),...elementi],captureUpdate:LimEditor.CaptureUpdateAction.IMMEDIATELY});a.scrollToContent(elementi,{fitToViewport:true,maxZoom:1});cambiata();await salva();return doc.studia.id;
   }
-  async function sincronizza(d){if(d.corso!==corso||d.mittente===mittente)return;await elenco();if(!doc)return;
-   if(d.rimossi?.includes(doc.studia.id)){giro++;editor?.smonta();editor=null;doc=null;sporco=false;canvas.replaceChildren();stato('Lavagnata eliminata.');etichetta();voci();opt.cambiata?.(null);return;}
+  async function sincronizza(d){if(d.corso!==corso||d.mittente===mittente)return;if(d.rimossi?.length)ultimo=d.rimossi;await elenco();if(!doc)return;
    if(d.id!==doc.studia.id||!editor?.api)return;const id=doc.studia.id,r=await richiesta({azione:'apri',id});if(doc?.studia.id!==id)return;
    const a=editor.api,remoto=r.lavagna;doc.studia=remoto.studia;
    a.addFiles(Object.values(remoto.files));a.updateScene({elements:LimEditor.reconcile(a.getSceneElementsIncludingDeleted(),LimEditor.restore(remoto.elements,null),a.getAppState()),captureUpdate:LimEditor.CaptureUpdateAction.NEVER});opt.cambiata?.(doc);
@@ -83,7 +88,7 @@
   }
   function primaDiUscire(e){if(!flush()){e.preventDefault();e.returnValue='';}}
   window.addEventListener('beforeunload',primaDiUscire);
-  return {apri,nuova,inserisci,assicurati,flush,salva,elenco,immagine,get doc(){return doc;},get api(){return editor?.api;},async contesto(z){if(z===corso)return;chiudiMenu();if(!flush())throw Error('Salva la lavagnata prima di cambiare zaino.');await coda;corso=z;giro++;editor?.smonta();editor=null;doc=null;sporco=false;canvas.replaceChildren();stato('Apri o crea una lavagnata.');await elenco();},smonta(){disposed=true;chiudiMenu();window.removeEventListener('keydown',escMenu,true);window.removeEventListener('resize',nascondiMenu);window.removeEventListener('banco-layout',nascondiMenu);flush();off();editor?.smonta();window.removeEventListener('beforeunload',primaDiUscire);}};
+  return {apri,nuova,inserisci,assicurati,flush,salva,elenco,elimina,immagine,get doc(){return doc;},get api(){return editor?.api;},async contesto(z){if(z===corso)return;chiudiMenu();if(!flush())throw Error('Salva la lavagnata prima di cambiare zaino.');await coda;corso=z;giro++;editor?.smonta();editor=null;doc=null;sporco=false;ultimo=[];canvas.replaceChildren();stato('Apri o crea una lavagnata.');await elenco();},smonta(){disposed=true;chiudiMenu();window.removeEventListener('keydown',escMenu,true);window.removeEventListener('resize',nascondiMenu);window.removeEventListener('banco-layout',nascondiMenu);flush();off();editor?.smonta();window.removeEventListener('beforeunload',primaDiUscire);}};
  }
  window.LavagnaUI={monta,carica};
 })();

@@ -21,7 +21,9 @@ body[data-tipo=clone] #contenuto *{scrollbar-color:auto;}
 #vista.gesto-presa{cursor:grabbing;}
 
 body[data-lavagna] #vista{right:calc(100% - var(--lim-ratio,50%));}
-#limProiezione{position:fixed;top:0;right:0;bottom:0;width:calc(100% - var(--lim-ratio,50%) - 6px);padding-top:48px;}
+#limProiezione{position:fixed;top:0;right:0;bottom:0;width:calc(100% - var(--lim-ratio,50%) - 6px);padding-bottom:var(--proiezione-barra-h,48px);transform:translateY(var(--proiezione-barra-h,48px));transition:transform 160ms ease-out;}
+#barra[data-nascosta]:not(:focus-within)~#limProiezione{padding-bottom:0;transform:translateY(0);}
+@media(prefers-reduced-motion:reduce){#limProiezione{transition:none;}}
 #limProiezione>.lim-bar{position:relative;inset:auto;transition:none;}
 #limDivisore{position:fixed;top:0;bottom:0;left:var(--lim-ratio,50%);width:6px;background:var(--line);cursor:col-resize;z-index:1;touch-action:none;}
 #limDivisore:hover,#limDivisore:focus-visible{background:var(--verde);outline:2px solid var(--focus);outline-offset:-2px;}

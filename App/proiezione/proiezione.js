@@ -63,10 +63,12 @@
   if(q.ancora){ancora=q.ancora;requestAnimationFrame(allinea);}
  });
  $('contenuto').addEventListener('load',allinea,true);window.addEventListener('resize',()=>{inviaVista();requestAnimationFrame(allinea);});
- window.addEventListener('pointermove',e=>{if(e.clientY<56)mostraBarra();});$('barra').addEventListener('pointerleave',mostraBarra);$('barra').addEventListener('focusout',mostraBarra);
+ // I comandi LIM risaliti fino al bordo devono restare sotto il dito/la penna.
+ window.addEventListener('pointermove',e=>{if(e.clientY<56&&!e.target.closest('#limProiezione'))mostraBarra();});$('barra').addEventListener('pointerleave',mostraBarra);$('barra').addEventListener('focusout',mostraBarra);
  window.addEventListener('keydown',e=>{if(e.key==='Tab')mostraBarra();if(e.key==='Escape'&&intero)comando({azione:'intero'});});
  function densita(){const media=matchMedia('(resolution: '+devicePixelRatio+'dppx)');media.addEventListener('change',()=>{inviaVista();densita();},{once:true});}
  annullaGesti=ProiezioneGesti.collega($('vista'),{leggiScala:()=>scala,zoom:ingrandisci,sposta:(dx,dy)=>comando({azione:'sposta',dx,dy}),adatta:()=>ingrandisci(100)});
  new ResizeObserver(()=>{inviaVista();requestAnimationFrame(allinea);}).observe($('vista'));
+ new ResizeObserver(()=>document.documentElement.style.setProperty('--proiezione-barra-h',$('barra').getBoundingClientRect().height+'px')).observe($('barra'));
  densita();ingrandisci(100);mostraBarra();
 }());
