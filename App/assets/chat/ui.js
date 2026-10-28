@@ -288,8 +288,40 @@
       <div class="zchat-profile-actions"><a id="zchatKeyLink" target="_blank" rel="noopener noreferrer">Crea una API key</a><button type="button" class="tbtn" id="zchatModelsRefresh">Aggiorna elenco modelli</button></div>
       <p id="zchatKeyStatus" class="set-note"></p><form id="zchatKeyForm"><label class="zchat-field">Nuova API key<input id="zchatKeyInput" class="ctl-input" type="password" autocomplete="new-password" spellcheck="false" placeholder="Incolla una nuova chiave" maxlength="1000"></label><div class="zchat-profile-actions"><button type="submit" class="tbtn acc" id="zchatKeySave">Salva chiave</button><button type="button" class="tbtn" id="zchatKeyRemove">Rimuovi chiave</button></div></form>
       <p id="zchatAIStatus" class="set-note" role="status" aria-live="polite"></p></section>
+      <section id="zchatCosts" class="zchat-ai-section" aria-labelledby="zchatCostsTitle"><div class="zstudio-heading set-sec-h"><h3 id="zchatCostsTitle" class="set-sec-h">Costi AI per zaino</h3><button id="zchatCostsRefresh" type="button" class="tbtn" title="Aggiorna il riepilogo dei costi" aria-label="Aggiorna il riepilogo dei costi"></button></div><p class="set-note">Stime delle elaborazioni cloud registrate: chat, schede e Ripasso. Si basano sui token comunicati dal provider e sulle tariffe integrate, non sono una fattura. I costi senza dati o tariffa sono indicati come non disponibili. L’AI locale non aggiunge costi cloud.</p><p class="set-note">Le elaborazioni precedenti a questo aggiornamento possono non essere registrate e non sono ricostruibili.</p><div id="zchatCostsSummary"></div><div class="zchat-profile-actions"><button id="zchatCostsReset" class="tbtn" type="button" title="Azzera lo storico visualizzato di tutti gli zaini; potrai annullare" disabled>Azzera storico</button><button id="zchatCostsUndo" class="tbtn" type="button" title="Ripristina lo storico precedente mantenendo i consumi successivi" hidden>Annulla azzeramento</button></div><p id="zchatCostsStatus" class="set-note" role="status" aria-live="polite"></p></section>
       <section id="zchatLocalSettings" class="zchat-ai-section" aria-labelledby="zchatLocalTitle"><h3 id="zchatLocalTitle" class="set-sec-h">AI locale</h3><p class="set-note">L’embedder permette di cercare per significato nei documenti e negli appunti, anche quando usano parole diverse dalla domanda. La ricerca avviene sul tuo computer.</p></section>`);
     window.zainoStudio?.impostazioni($('zchatLocalSettings'));
+    window.UiIcone.imposta($('zchatCostsRefresh'),'refresh-cw');
+    let costSummary=null,costBusy=false,costRun=0,costAgain=false;
+    const money=n=>n>0&&n<.000001?'< 0,000001 USD':n.toLocaleString('it-IT',{minimumFractionDigits:4,maximumFractionDigits:6})+' USD';
+    const costText=t=>t.unknownCosts?(t.calls===t.unknownCosts?'Stima non disponibile':money(t.costUsd)+' · parziale'):money(t.costUsd);
+    function costControls(){
+      $('zchatCostsReset').disabled=costBusy||!costSummary?.total.calls;$('zchatCostsUndo').hidden=!costSummary?.undo;
+      $('zchatCostsUndo').disabled=$('zchatCostsRefresh').disabled=costBusy;
+    }
+    function renderCosts(s){
+      costSummary=s;const host=$('zchatCostsSummary');host.replaceChildren();
+      const total=el('p',costText(s.total),'zchat-cost-total');total.id='zchatCostsTotal';host.append(total,el('p','Totale stimato registrato · '+s.total.calls+' chiamate cloud'+(s.total.unknownCosts?' · '+s.total.unknownCosts+' senza costo disponibile':''),'set-note'));
+      if(!s.byZaino.length)host.append(el('p','Crea uno zaino per iniziare.','set-note'));
+      for(const z of s.byZaino){
+        const d=el('details',undefined,'zchat-cost-zaino'),h=el('summary');d.dataset.zaino=z.id;h.innerHTML=window.UiIcone.svg('chevron-right');h.append(el('strong',z.title),el('span',costText(z)));h.title=z.title+' · '+z.calls+' chiamate registrate';d.append(h);
+        d.append(el('p',z.calls?z.calls+' chiamate cloud'+(z.unknownCosts?' · '+z.unknownCosts+' senza costo disponibile':''):'Nessuna chiamata registrata.','set-note'));
+        if(z.materials.length){const table=el('table'),head=el('tr');for(const label of ['Materiale','Chiamate','Stima'])head.append(el('th',label));const thead=el('thead');thead.append(head);table.append(thead);const body=el('tbody');
+          for(const m of z.materials){const row=el('tr');row.append(el('td',m.label),el('td',String(m.calls)),el('td',costText(m)));body.append(row);}table.append(body);d.append(table);}
+        host.append(d);
+      }costControls();
+    }
+    async function costsAction(method='summaryZaini'){
+      if(costBusy){if(method==='summaryZaini')costAgain=true;return;}const run=++costRun;costBusy=true;costControls();
+      try{const r=await window.vault.costs[method](costSummary?.undo?.token);if(!r?.ok)throw Error(r?.error||'Riepilogo non disponibile.');if(run!==costRun)return;renderCosts(r);
+        $('zchatCostsStatus').textContent=method==='resetZaini'?'Storico azzerato per tutti gli zaini. I materiali e il saldo del provider restano invariati.':method==='undoResetZaini'?'Storico ripristinato, compresi i consumi successivi all’azzeramento.':r.undo?'Storico visualizzato dall’ultimo azzeramento. Puoi annullarlo.':'';
+      }catch(e){costSummary=null;$('zchatCostsSummary').replaceChildren();$('zchatCostsStatus').textContent='Costi non disponibili: '+errorText(e);}
+      finally{costBusy=false;costControls();if(costAgain){costAgain=false;queueMicrotask(()=>costsAction());}}
+    }
+    $('zchatCostsRefresh').onclick=()=>costsAction();$('zchatCostsReset').onclick=()=>costsAction('resetZaini');$('zchatCostsUndo').onclick=()=>costsAction('undoResetZaini');
+    const costsVisible=()=>document.documentElement.dataset.settings==='1'&&!document.querySelector('.set-pane[data-pane="ai"]').hidden;
+    document.querySelector('.set-tab[data-tab="ai"]').addEventListener('click',()=>costsAction());
+    window.vault.costs.onUpdated?.(()=>{if(costsVisible())costsAction();});
     for (const [key, [labelText, choices]] of Object.entries(fields)) {
       const label = el('label', labelText); const select = el('select'); select.id = 'zchatField-' + key;
       choices.forEach(([value, label]) => select.appendChild(new Option(label, value))); label.appendChild(select); $('zchatProfileFields').appendChild(label);

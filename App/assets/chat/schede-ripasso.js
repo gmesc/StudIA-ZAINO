@@ -51,7 +51,7 @@
   let estimate=null,question=null,attemptId=null,review=false,selection='',cards=[],savedQuestions=[],queueState={questions:[],due:[]},collectionWarnings=[],collectionTimer,collectionRun=0;const drafts=new Map(),visitati=new Set();let paused=false,pausedId=null,schedeView='library',ripassoView='home',queueFilter='all';
   const schedeChiuse=new Set(),selezionate=new Set();let modifica=false;
   window.UiIcone.imposta($('zstudyEdit'),'pencil');
-  const call=async(n,...args)=>{const r=await api[n](...args);if(!r?.ok)throw Error(r?.error || 'Operazione non riuscita.');return r;};
+  const call=async(n,...args)=>{const r=await api[n](...args);if(!r?.ok)throw Error(r?.error || 'Operazione non riuscita.');if(r.costWarnings?.length)window.toast?.(r.costWarnings.join(' '),false);return r;};
   const button=(text,fn,principale=false)=>{const b=el('button',text,principale?'tbtn acc':'tbtn');b.type='button';b.onclick=fn;return b;};
   let schedaAperta=null,modificaSchede=false,rimozioneSchede=null,schedeBusy=false;const schedeSelezionate=new Set();
   function selezioneSchedeDisegna(){

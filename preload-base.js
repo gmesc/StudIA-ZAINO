@@ -116,6 +116,10 @@ const vaultApi = {
     clear: (provider) => ipcRenderer.invoke('keys:clear', { provider })
   },
   costs: {
+    summaryZaini: () => ipcRenderer.invoke('costs:summaryZaini'),
+    resetZaini: () => ipcRenderer.invoke('costs:resetZaini'),
+    undoResetZaini: token => ipcRenderer.invoke('costs:undoResetZaini', {token}),
+    onUpdated: fn => { const listener=()=>fn();ipcRenderer.on('costs:updated',listener);return ()=>ipcRenderer.removeListener('costs:updated',listener); },
     summary: () => ipcRenderer.invoke('costs:summary'),
     log: (entry) => ipcRenderer.invoke('costs:log', entry)
   },

@@ -237,6 +237,15 @@
 .zchat-ai-section + .zchat-ai-section { margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--line); }
 .zchat-ai-section > .set-sec-h { padding:.5em var(--tb-pad-x); color:var(--teal-strong); }
 .zchat-ai-section[hidden],#zchatInfomaniak[hidden],#zragDownloads[hidden],#zragDownloads [hidden] { display:none!important; }
+.zchat-cost-total { font-size:1.5rem; font-weight:700; margin:.75rem 0 0; font-variant-numeric:tabular-nums; }
+.zchat-cost-zaino { border-bottom:1px solid var(--line); padding:.6rem 0; }
+.zchat-cost-zaino summary { cursor:pointer; display:flex; flex-wrap:wrap; align-items:baseline; gap:.4rem 1rem; }
+.zchat-cost-zaino summary strong { flex:1; min-width:0; overflow-wrap:anywhere; }
+.zchat-cost-zaino summary span { font-variant-numeric:tabular-nums; }
+.zchat-cost-zaino summary .ui-icon { width:1em; height:1em; }
+.zchat-cost-zaino[open]>summary .ui-icon { transform:rotate(90deg); }
+.zchat-cost-zaino table { width:100%; border-collapse:collapse; margin:.6rem 0; }
+.zchat-cost-zaino :is(th,td) { padding:.4rem; text-align:left; overflow-wrap:anywhere; border-bottom:1px solid var(--line-weak); }
 #zragDownloads .zchat-hint { margin:.2rem 0; }
 #zragDownloads > .set-note { line-height:1.6; }
 #zragIndexOptions code { font-family:ui-monospace,SFMono-Regular,Menlo,var(--emoji-font),monospace; }
@@ -307,3 +316,5 @@
 .zstudy-source-group li.zstudy-editing { display:grid; grid-template-columns:28px minmax(0,1fr); column-gap:.5rem; }
 .zstudy-editing>.zstudy-selection { align-self:start; margin-block-start:.25rem; }
 .zstudy-editing>.zstudy-question-meta { grid-column:2; }
+
+#zchatCosts > .zstudio-heading h3 { margin:0; color:inherit; font:inherit; }

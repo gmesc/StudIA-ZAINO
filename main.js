@@ -121,6 +121,10 @@ ipcMain.handle('keys:set', (e, { provider, value }) => {
 ipcMain.handle('keys:clear', (e, { provider }) => { if (PROVIDERS.includes(provider)) storeKey(provider, ''); return { ok: true, status: keysStatus() }; });
 
 // ---- registro costi di generazione AI: Costi/usage.jsonl nel vault ----
+for(const [name,fn] of [['summaryZaini','summary'],['resetZaini','reset'],['undoResetZaini','annulla']])ipcMain.handle('costs:'+name,(_,o)=>{
+ try{const v=vaultDir();if(!v)throw Error('Scegli prima la cartella dei materiali.');return {ok:true,...require('./lib/costi-zaino')[fn](v,o?.token)};}
+ catch(e){return {ok:false,error:e.message};}
+});
 ipcMain.handle('costs:summary', () => {
   const empty = { total: { costUsd: 0, inputTokens: 0, outputTokens: 0, calls: 0 }, byProvider: [], byModel: [], byDay: [], recent: [], currency: 'USD' };
   const c = readCfg(); if (!c.vaultPath) return empty;

@@ -1,0 +1,32 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const C=require('../lib/costi-zaino'),Z=require('../lib/zaini'),F=require('../lib/fonti-ai'),D=require('../lib/permessi-disco'),security=require('../lib/sicurezza-app');
+const root=fs.mkdtempSync(path.join(os.tmpdir(),'costi-zaino-'));
+const ctx={vault:root,appDir:path.resolve(__dirname,'..'),userData:path.join(root,'dati'),temporanei:path.join(root,'tmp')};
+const run=(name,z,fn)=>D.esegui(security.privilegi(name,{zaino:z},ctx),fn),close=(a,b)=>assert(Math.abs(a-b)<1e-10,`${a} != ${b}`);
+(async()=>{try{
+ Z.crea(root,'Alfa');Z.crea(root,'Beta');assert.equal(C.summary(root).total.calls,0);assert.equal(C.summary(root).byZaino.length,2);
+ const sourceDir=path.join(root,'Zaini/alfa/MATERIALI');fs.writeFileSync(path.join(sourceDir,'01 Biologia.txt'),'La cellula contiene organelli.');
+ const source=F.sincronizza(root,'alfa').sources[0],meta={provider:'google',model:'gemini-2.5-flash',operation:'Scheda',sourceIds:[source.id],usage:{inputTokens:1000,outputTokens:100}};
+ const first=run('studio:analyze','alfa',()=>C.registra(root,'alfa',meta));close(first.costUsd,.00055);
+ run('chat:send','beta',()=>C.registra(root,'beta',{...meta,sourceIds:[],usage:{inputTokens:2000,outputTokens:200}}));
+ C.registra(root,'alfa',{...meta,model:'tariffa-sconosciuta'});C.registra(root,'beta',{...meta,usage:undefined});
+ let s=run('costs:summaryZaini',null,()=>C.summary(root));assert.equal(s.total.calls,4);assert.equal(s.total.unknownCosts,2);close(s.total.costUsd,.00165);assert.equal(s.byZaino[0].materials[0].label,'Biologia.txt');
+ const log=path.join(root,'Zaini/alfa/Costi/usage.jsonl'),bytes=fs.readFileSync(log),doc=fs.readFileSync(path.join(sourceDir,'01 Biologia.txt'));
+ const reset=run('costs:resetZaini',null,()=>C.reset(root));assert.equal(reset.total.calls,0);assert(reset.undo.token);assert(fs.readFileSync(log).equals(bytes));
+ assert.equal(C.summary(root).undo.token,reset.undo.token,'Annulla è persistente');
+ C.registra(root,'alfa',meta);assert.equal(C.summary(root).total.calls,1);
+ assert.throws(()=>C.annulla(root,'scaduto'),/non disponibile/);
+ s=run('costs:undoResetZaini',null,()=>C.annulla(root,reset.undo.token));assert.equal(s.total.calls,5);assert.equal(s.total.unknownCosts,2);close(s.total.costUsd,.0022);assert.equal(s.undo,null);
+ const r1=C.reset(root);C.registra(root,'alfa',meta);const r2=C.reset(root);assert.throws(()=>C.annulla(root,r1.undo.token),/non disponibile/);assert.equal(C.annulla(root,r2.undo.token).total.calls,1);
+ assert(!Z.rinomina(root,'alfa','Alfa nuova').error);assert.equal(C.summary(root).byZaino.find(z=>z.id==='alfa-nuova').calls,1,'Il costo segue la cartella rinominata');
+ assert(fs.readFileSync(path.join(root,'Zaini/alfa-nuova/MATERIALI/01 Biologia.txt')).equals(doc));
+ const unknown=await C.misura(root,'beta',{provider:'qwen',model:'non-noto',operation:'Chat'},async()=>({text:'Risposta',usage:{inputTokens:1,outputTokens:2}}));assert.equal(unknown.text,'Risposta');assert(!unknown.costWarning);
+ const ledger=path.join(root,'Zaini/beta/Costi/usage.jsonl'),saved=fs.readFileSync(ledger);fs.unlinkSync(ledger);fs.symlinkSync(path.join(root,'esterno'),ledger);fs.writeFileSync(path.join(root,'esterno'),'intatto');
+ const warning=await C.misura(root,'beta',meta,async()=>({text:'Risposta già pagata'}));assert.equal(warning.text,'Risposta già pagata');assert(warning.costWarning);assert.equal(fs.readFileSync(path.join(root,'esterno'),'utf8'),'intatto');fs.unlinkSync(ledger);fs.writeFileSync(ledger,saved);
+ await assert.rejects(C.misura(root,'beta',meta,async()=>{throw Error('Nessuna risposta');}),/Nessuna risposta/);assert(fs.readFileSync(ledger).equals(saved),'Una chiamata fallita senza dati non inventa costi');
+ const state=path.join(root,'Costi/storico-zaini.json');fs.writeFileSync(state,'{rotto');assert.throws(()=>C.reset(root));assert(fs.readFileSync(ledger).equals(saved));
+ fs.unlinkSync(state);fs.symlinkSync(path.join(root,'esterno'),state);assert.throws(()=>C.summary(root),/simbolico/);
+ for(const action of ['costs:resetZaini','costs:undoResetZaini']){const p=security.privilegi(action,{},ctx);assert.deepEqual(p.scrittura,[path.join(root,'Costi')]);}
+ console.log('costi zaini: token/tariffe, dati mancanti, materiali, isolamento, reset e undo persistenti, nuove chiamate, rinomina e percorsi sicuri OK');
+}finally{fs.rmSync(root,{recursive:true,force:true});}})().catch(e=>{console.error(e);process.exitCode=1;});
