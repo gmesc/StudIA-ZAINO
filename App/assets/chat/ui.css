@@ -207,8 +207,8 @@
 .zstudio-scope-button,#zschedeNewButton { display:inline-flex; align-items:center; gap:.4em; }
 .zstudio-scope-button svg,#zschedeNewButton svg { width:1.25em; height:1.25em; }
 .zstudio .zchat-citation { text-transform:none; letter-spacing:normal; font-weight:400; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.zstudy-filters { display:flex; flex-wrap:wrap; gap:.25rem; margin-block:.5rem; }
-.zstudy-source-group h3 { padding:.4rem var(--tb-pad-x); margin:.75rem 0 .25rem; background:var(--comando-hover); color:var(--teal-strong); font-size:inherit; overflow-wrap:anywhere; }
+.zstudy-filters { display:flex; flex-wrap:wrap; align-items:center; gap:0; margin-block:.5rem; }
+.zstudy-source-group h3 { padding:.4rem var(--tb-pad-x); margin:.75rem 0 .25rem; background:color-mix(in srgb,var(--teal) 7.5%,var(--panel)); color:var(--teal-strong); font-size:inherit; overflow-wrap:anywhere; }
 .zstudy-source-group ul { margin:0; padding:0; list-style:none; }
 .zstudy-source-group li { position:relative; padding:.5rem 0 .5rem var(--tb-pad-x); border-bottom:1px solid var(--line); }
 .zstudy-source-group>ul>li::before { content:""; position:absolute; inset-block:.5rem; inset-inline-start:0; width:3px; background:color-mix(in srgb,var(--teal) 38%,var(--panel)); }
@@ -317,4 +317,22 @@
 .zstudy-editing>.zstudy-selection { align-self:start; margin-block-start:.25rem; }
 .zstudy-editing>.zstudy-question-meta { grid-column:2; }
 
-#zchatCosts > .zstudio-heading h3 { margin:0; color:inherit; font:inherit; }
+#zchatCosts > summary h3 { margin:0; color:inherit; font:inherit; }
+
+/* Le tariffe occupano due colonne uguali, misurate dal titolo più lungo. */
+.zstudio-prices { display:inline-grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.7rem; width:max-content; max-width:100%; }
+.zstudio-prices label { min-width:0; }
+.zstudio-prices input { width:0; min-width:100%; }
+#zchatCosts > summary { display:flex; align-items:center; gap:.5em; cursor:pointer; list-style:none; }
+#zchatCosts > summary::-webkit-details-marker { display:none; }
+#zchatCosts > summary::before { content:""; flex:none; width:1em; height:1em; background:currentColor; mask:var(--icon-chevron-right) center/contain no-repeat; }
+#zchatCosts[open] > summary::before { transform:rotate(90deg); }
+#zchatCosts > summary:hover { background:var(--comando-hover); }
+#zchatCosts > summary:focus-visible { outline:2px solid var(--focus); outline-offset:-2px; }
+.zchat-cost-toolbar { float:right; margin-left:.7rem; }
+.zstudio-search-toolbar { padding:0; border:0; }
+#zragSearchButton.zstudio-search-active { color:var(--teal-strong); background:transparent; }
+#zragSearchButton.zstudio-search-active:hover:not(:disabled) { background:var(--comando-hover); }
+#zragScopeButton[aria-expanded="true"] svg { transform:rotate(90deg); }
+
+.zstudio .zchat-source-picker label { flex-direction:row; font-weight:400; }

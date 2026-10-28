@@ -61,7 +61,7 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await click('#zstudyQueueFilter [data-filter="all"]');
  for(const theme of ['chiaro','scuro']){
   await c.val(`document.documentElement.dataset.theme=${JSON.stringify(theme)}`);
-  assert(await c.val(`['#zragSearch>summary'].every(sel=>{const s=getComputedStyle(document.querySelector(sel));return s.backgroundColor!=='rgba(0, 0, 0, 0)' && parseFloat(s.fontWeight)>=600;})`));
+  await click('#zschedeBack');await click('#zragSearchButton');assert.match(await c.val(`getComputedStyle(document.getElementById('zragSearchButton')).backgroundColor`),/(?:, 0|\/ 0)\)$/);
  }
  await c.val(`document.documentElement.dataset.theme='chiaro'`);
  await c.val(`document.getElementById('zchatWindow').hidden=true;bancoMostra('flashcard')`);await wait(`bancoVisibile('flashcard')`);
@@ -70,7 +70,7 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  const sources=(await c.val(`window.vault.chat.sources('biologia')`)).sources,selected=sources.find(s=>s.file.includes('Fotosintesi'));
  await click('#zstudyScopeButton');await wait(`document.querySelectorAll('#zstudyScope input').length>1`);
  await click('#zstudyScope input');await click('#zstudyScope [data-source-id="'+selected.id+'"]');await click('#zstudyScopeButton');
- assert.equal(await c.val(`document.querySelector('#zragScopeButton span').textContent`),'Fonti: tutte');
+ const contoFonti=(await c.val(`window.vault.chat.sources('biologia')`)).sources.length;await wait(`document.querySelector('#zragScopeButton span').textContent==='Fonti: ${contoFonti}'`);
  await c.val(`document.getElementById('zstudyNew').open=true`);await set('zstudyTopic','fotosintesi');await click('#zstudyStart');await wait(`!!document.querySelector('#zstudyQuestion h3')`);
  assert.equal(await c.val(`document.querySelector('#zstudyQuestion h3').textContent`),'Quale processo converte la luce?');
  assert(!(await c.val(`document.getElementById('zstudyQuestion').textContent`)).includes('Risposta attesa e criteri'));

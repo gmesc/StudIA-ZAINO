@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),c=require('./cdp'),C=require('../../lib/costi-zaino'),F=require('../../lib/fonti-ai');
 const q=JSON.stringify;async function wait(expr){for(let i=0;i<160;i++){if(await c.val(expr))return;await c.pausa(100);}throw Error('Attesa: '+expr);}
 async function click(sel){await c.val(`document.querySelector(${q(sel)}).scrollIntoView({block:'nearest'})`);await c.clicca(sel);}
-async function open(){await click('#settingsBtn');await click('.set-tab[data-tab="ai"]');await wait(`!!document.getElementById('zchatCostsTotal') && !document.getElementById('zchatCostsRefresh').disabled`);}
+async function open(){await click('#settingsBtn');await click('.set-tab[data-tab="ai"]');assert.equal(await c.val(`document.getElementById('zchatCosts').tagName`),'DETAILS');assert.equal(await c.val(`document.getElementById('zchatCosts').open`),false,'Costi inizialmente collassati');await click('#zchatCosts>summary');await wait(`!!document.getElementById('zchatCostsTotal') && !document.getElementById('zchatCostsRefresh').disabled`);}
 (async()=>{
  await c.collega();await wait(`!!window.vault.costs.summaryZaini && !!document.getElementById('zchatCosts')`);
  const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
@@ -15,6 +15,7 @@ async function open(){await click('#settingsBtn');await click('.set-tab[data-tab
   C.registra(vault,'biologia',meta);C.registra(vault,'storia',{...meta,model:'senza-tariffa',sourceIds:[]});
   await open();assert((await c.val(`document.getElementById('zchatCostsTotal').textContent`)).includes('parziale'));
   assert.equal(await c.val(`document.querySelectorAll('#zchatCostsSummary details').length`),2);
+  await click('#zchatCosts>summary');assert.equal(await c.val(`document.getElementById('zchatCostsTotal').checkVisibility()`),false);await click('#zchatCosts>summary');await wait(`!document.getElementById('zchatCostsRefresh').disabled`);
   await click('#zchatCostsSummary [data-zaino="biologia"] summary');assert((await c.val(`document.querySelector('#zchatCostsSummary [data-zaino="biologia"]').textContent`)).includes('Botanica.pdf'));
   assert((await c.val(`document.querySelector('#zchatCostsSummary [data-zaino="storia"] summary').textContent`)).includes('Stima non disponibile'));
   if(process.env.STUDIA_SOLO_NAVIGAZIONE==='1'){

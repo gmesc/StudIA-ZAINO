@@ -4,16 +4,16 @@
 }(typeof self!=='undefined'?self:this,function(){
  'use strict';
  function normalizza(s){return {mode:s?.mode==='selected'?'selected':'all',sourceIds:[...new Set((Array.isArray(s?.sourceIds)?s.sourceIds:[]).filter(id=>typeof id==='string'))],wikipedia:false};}
- function crea({prefix,bar,host,state,onChange}){
+ function crea({prefix,bar,host,state,onChange,icona='list-filter',conteggio=false}){
   const button=document.createElement('button');button.type='button';button.className='tbtn zstudio-scope-button';button.id=prefix+'Button';
-  button.innerHTML=window.UiIcone.svg('list-filter')+'<span></span>';
+  button.innerHTML=window.UiIcone.svg(icona)+'<span></span>';
   button.title='Scegli una o più fonti per questo strumento';button.setAttribute('aria-expanded','false');button.setAttribute('aria-controls',prefix);bar.prepend(button);
   const panel=document.createElement('div');panel.id=prefix;panel.hidden=true;panel.className='zchat-scope zchat-source-picker';host.append(panel);
   const summary=document.createElement('p');summary.className='zstudio-context';summary.id=prefix+'Summary';summary.setAttribute('role','status');host.prepend(summary);
   let epoch=0;
   const key=()=> 'studia-zaino.fonti.'+prefix+'.'+window.vault.path+'.'+state.zaino;
   function draw(){
-   button.querySelector('span').textContent=state.scope.mode==='all'?'Fonti: tutte':'Fonti: '+state.scope.sourceIds.length;
+   button.querySelector('span').textContent=state.scope.mode==='all'?(conteggio?'Fonti: '+state.sources.length:'Fonti: tutte'):'Fonti: '+state.scope.sourceIds.length;
    summary.textContent='Materiali usati: '+window.ZainoPercorso.riassunto(state.scope,state.sources);
    panel.replaceChildren();
    function row(label,checked,fn,id){const l=document.createElement('label'),c=document.createElement('input'),t=document.createElement('span');c.type='checkbox';c.disabled=button.disabled;c.checked=checked;c.onchange=()=>fn(c.checked);if(id)c.dataset.sourceId=id;t.textContent=label.split('/').pop();t.title=label;l.append(c,t);panel.append(l);}

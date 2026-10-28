@@ -17,7 +17,7 @@
   const host=document.getElementById('studioPane');if(!host||host.children.length)return;
   const state={zaino:null,scope:{mode:'all',sourceIds:[],wikipedia:false},sources:[]},api=window.vault.rag;
   host.innerHTML=`<div class="tbar" id="zragToolbar" role="group" aria-label="Strumenti del raccoglitore"><button class="tbtn" id="zragIndex" type="button" disabled>Crea indice</button></div><div id="zragScopeHost"></div>
-   <div id="zstudio" class="zstudio zstudio-banco"><details id="zragSearch" class="zstudio-section"><summary>Cerca nei materiali</summary>
+   <div id="zstudio" class="zstudio zstudio-banco"><details id="zragSearch" class="zstudio-section" aria-label="Cerca nei materiali"><summary hidden>Cerca nei materiali</summary><div id="zragSearchToolbar" class="tbar zstudio-search-toolbar" role="group" aria-label="Strumenti della ricerca"></div>
    <p class="zchat-hint">Trova passaggi nei documenti e negli appunti selezionati. I risultati rimandano alle fonti originali.</p>
    <form id="zragForm" class="zstudio-actions"><label class="zchat-sr" for="zragQuery">Cerca nei materiali per parole o significato</label><input class="ctl-input" id="zragQuery" placeholder="Che cosa vuoi trovare?" maxlength="12000"><button class="tbtn acc" type="submit">Cerca</button></form>
    <div id="zragResults" class="zstudio-results"></div></details>
@@ -80,7 +80,8 @@
    else status(r.source.file+': '+(source.text||source.quote||''));
   }
   function riferimento(source,area='zragStatus'){const b=el('button',window.ZainoCitazioni.nome(source)+(source.page?' · p. '+source.page:''),'tbtn zchat-citation');b.type='button';b.title=b.textContent;b.onclick=()=>apri(source).catch(e=>status(e.message,true,area));return b;}
-  const picker=window.ZainoSceltaFonti.crea({prefix:'zragScope',bar:$('zragToolbar'),host:$('zragScopeHost'),state,onChange(){epoch++;api.cancel('index');$('zragResults').replaceChildren();if(box.dataset.vista==='search')status('Fonti della ricerca aggiornate.');}});
+  const picker=window.ZainoSceltaFonti.crea({prefix:'zragScope',icona:'chevron-right',conteggio:true,bar:$('zragSearchToolbar'),host:$('zragScopeHost'),state,onChange(){epoch++;api.cancel('index');$('zragResults').replaceChildren();if(box.dataset.vista==='search')status('Fonti della ricerca aggiornate.');}});
+  $('zragSearchToolbar').after($('zragScopeHost'));
   api.onAuto(autoState);
   downloads.querySelectorAll('[data-download]').forEach(b=>{b.onclick=async()=>{
    if(downloadBusy)return;downloadBusy=true;

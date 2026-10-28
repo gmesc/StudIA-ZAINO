@@ -18,7 +18,7 @@
     <section id="zschedeNew" class="zstudio-section zstudio-view" aria-label="Nuova scheda" hidden><p class="zchat-hint">Scegli la fonte e la scheda. Vedrai una stima prima di confermare l’uso dell’AI.</p>
      <label>Fonte<select id="zschedeSource"></select></label><label>Tipo di scheda<select id="zschedePreset"></select></label>
      <p id="zschedeSourceStatus" class="zchat-hint" role="status"></p><p id="zschedeStatus" class="zchat-hint" role="status"></p><div class="zstudio-actions"><button class="tbtn acc" id="zschedeEstimate" type="button">Prepara analisi</button></div>
-     <p id="zschedeEstimateText" class="zchat-hint"></p><p id="zschedePrice" class="zchat-hint" role="status"></p><details id="zschedeCost" hidden><summary>Dettagli del consumo</summary><p id="zschedeTokens" class="zchat-hint"></p><p id="zschedeTariffInfo" class="zchat-hint"></p><div class="zstudio-filters"><label>USD per milione di token in ingresso<input id="zschedeInputPrice" class="ctl-input" type="number" min="0" max="10000" step="any"></label><label>USD per milione di token in uscita<input id="zschedeOutputPrice" class="ctl-input" type="number" min="0" max="10000" step="any"></label></div></details><button class="tbtn acc" id="zschedeGenerate" type="button" hidden>Genera e salva scheda</button><button class="tbtn" id="zschedeCancel" type="button" hidden>Interrompi</button>
+     <p id="zschedeEstimateText" class="zchat-hint"></p><p id="zschedePrice" class="zchat-hint" role="status"></p><details id="zschedeCost" hidden><summary>Dettagli del consumo</summary><p id="zschedeTokens" class="zchat-hint"></p><p id="zschedeTariffInfo" class="zchat-hint"></p><div class="zstudio-prices"><label><span>$/M input token</span><input id="zschedeInputPrice" class="ctl-input" type="number" min="0" max="10000" step="any"></label><label><span>$/M output token</span><input id="zschedeOutputPrice" class="ctl-input" type="number" min="0" max="10000" step="any"></label></div></details><button class="tbtn acc" id="zschedeGenerate" type="button" hidden>Genera e salva scheda</button><button class="tbtn" id="zschedeCancel" type="button" hidden>Interrompi</button>
     </section>
    </section>
    <section id="zinterroga" class="zstudio-panel" aria-label="Interrogazione e ripasso">
@@ -51,6 +51,7 @@
   let estimate=null,question=null,attemptId=null,review=false,selection='',cards=[],savedQuestions=[],queueState={questions:[],due:[]},collectionWarnings=[],collectionTimer,collectionRun=0;const drafts=new Map(),visitati=new Set();let paused=false,pausedId=null,schedeView='library',ripassoView='home',queueFilter='all';
   const schedeChiuse=new Set(),selezionate=new Set();let modifica=false;
   window.UiIcone.imposta($('zstudyEdit'),'pencil');
+  for(const b of [...$('zstudyQueueFilter').querySelectorAll('button')].slice(1)){const sep=el('span',undefined,'tbsep');sep.setAttribute('aria-hidden','true');b.before(sep);}
   const call=async(n,...args)=>{const r=await api[n](...args);if(!r?.ok)throw Error(r?.error || 'Operazione non riuscita.');if(r.costWarnings?.length)window.toast?.(r.costWarnings.join(' '),false);return r;};
   const button=(text,fn,principale=false)=>{const b=el('button',text,principale?'tbtn acc':'tbtn');b.type='button';b.onclick=fn;return b;};
   let schedaAperta=null,modificaSchede=false,rimozioneSchede=null,schedeBusy=false;const schedeSelezionate=new Set();
@@ -130,7 +131,10 @@
    $('zragSearch').open=view==='search';
    $('zragScopeButton').hidden=view!=='search';$('zragScopeHost').hidden=view!=='search';$('zragScopeSummary').hidden=view!=='search';
    for(const [id,attivo] of [['zschedeBack',view==='library'],['zschedeNewButton',view==='new']]){const b=$(id);b.hidden=false;b.classList.toggle('acc',attivo);if(attivo)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}
-   $('zragScopeSep').hidden=view!=='search';
+   (view==='search'?$('zragSearchToolbar'):document.querySelector('#zschedeLibrary .zstudio-heading')).prepend($('zragSearchButton'));
+   $('zragSearchButton').classList.toggle('zstudio-search-active',view==='search');
+   if(view==='search')$('zragSearchButton').setAttribute('aria-current','page');else $('zragSearchButton').removeAttribute('aria-current');
+   if(view==='search')studio.picker.refresh().catch(e=>{if(schedeView==='search')studio.status(e.message,true);});
    box.scrollTop=0;sidebarSchede();if(focus)$(focus)?.focus();
   }
   function vistaRipasso(view,focus){
@@ -184,7 +188,7 @@
    if(st!=='removed'){const regenerate=button('Rigenera…',()=>studio.action(current=>prepare(current,c.sourceId,c.preset)),true);regenerate.classList.add('zstudio-card-regenerate');regenerate.title='Mostra la stima prima di confermare l’uso dell’AI.';target.append(regenerate);}
   }
   const nuova=button('Scheda',async()=>{if(schedeView==='new'){$('zschedeSource').focus();return;}nuova.disabled=true;try{await sources(true);vistaSchede('new','zschedeSource');}catch(e){vistaSchede('new');studio.status(e.message,true,'zschedeStatus');$('zschedeStatus').scrollIntoView({block:'nearest'});}finally{nuova.disabled=false;}});nuova.id='zschedeNewButton';nuova.title='Crea una nuova scheda da una fonte';nuova.setAttribute('aria-label','Nuova scheda');nuova.insertAdjacentHTML('afterbegin',window.UiIcone.svg('plus'));$('zragToolbar').prepend(nuova);
-  const back=button('Raccoglitore',mostraRaccolta);back.id='zschedeBack';back.title='Mostra le schede e le domande salvate';const sep=el('span',undefined,'tbsep');nuova.after(sep,back);const scopeSep=el('span',undefined,'tbsep');scopeSep.id='zragScopeSep';back.after(scopeSep);const search=button('Cerca nei materiali',()=>vistaSchede('search','zragQuery'));search.id='zragSearchButton';search.title='Cerca parole e passaggi nei documenti e negli appunti dello zaino';document.querySelector('#zschedeLibrary .zstudio-heading').append(search);
+  const back=button('Raccoglitore',mostraRaccolta);back.id='zschedeBack';back.title='Mostra le schede e le domande salvate';const sep=el('span',undefined,'tbsep');nuova.after(sep,back);const search=button('Cerca nei materiali',()=>vistaSchede('search','zragQuery'));search.id='zragSearchButton';search.title='Cerca parole e passaggi nei documenti e negli appunti dello zaino';document.querySelector('#zschedeLibrary .zstudio-heading').append(search);
   function invalidateEstimate(){estimate=null;$('zschedeGenerate').hidden=true;$('zschedeEstimateText').textContent='';$('zschedeTokens').textContent='';$('zschedePrice').textContent='';$('zschedeCost').open=false;$('zschedeCost').hidden=true;$('zschedeEstimate').textContent='Prepara analisi';$('zschedeEstimate').classList.add('acc');}
   for(const id of ['zschedeSource','zschedePreset'])$(id).onchange=invalidateEstimate;
   const plan=window.ZainoSchedePiano;

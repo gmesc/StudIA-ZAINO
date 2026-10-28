@@ -11,10 +11,17 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  const ripasso=path.join(vault,'Zaini/biologia/RIPASSO'),active=path.join(ripasso,'active.json'),activeBefore=fs.existsSync(active)?fs.readFileSync(active):null;
  const initial=await c.val(`({banco:JSON.parse(JSON.stringify(bancoStato())),theme:document.documentElement.dataset.theme,storage:{...localStorage}})`);
  await c.val(`cambiaZaino('biologia',true);bancoForma('uno');bancoAssegna('A','studio')`);
+ await wait(`!document.getElementById('zschedeNewButton').disabled && !document.getElementById('zschedeBack').disabled`);await click('#zschedeBack');
  assert.equal(await c.val(`bancoStrumenti().studio.nome`),'Raccoglitore');
  assert.deepEqual(await c.val(`[...document.querySelectorAll('#zragToolbar button')].filter(b=>b.getClientRects().length).map(b=>b.id)`),['zschedeNewButton','zschedeBack'],'due comandi principali sempre visibili');
  assert(await c.val(`!!document.querySelector('#zschedeNewButton svg[data-icona="plus"]')&&!!document.getElementById('zschedeNewButton').title`),'più Lucide con tooltip');
  assert(await c.val(`!!document.getElementById('zragSearchButton').closest('#zschedeLibrary')&&!document.getElementById('zragOpenReview')`),'ricerca nella vista del raccoglitore, Ripasso dalla scelta degli split');
+ // Comandi della ricerca sulla stessa riga, pannello Fonti subito sotto.
+ await click('#zragSearchButton');
+ assert(await c.val(`document.getElementById('zragSearchButton').closest('#zragSearchToolbar') && document.getElementById('zragScopeButton').closest('#zragSearchToolbar') && !!document.querySelector('#zragScopeButton svg[data-icona="chevron-right"]')`));
+ const ricercaStile=await c.val(`(()=>{const e=document.getElementById('zragSearchButton'),s=getComputedStyle(e);return {bg:s.backgroundColor,green:s.color===getComputedStyle(document.getElementById('zragScopeButton')).color};})()`);assert.match(ricercaStile.bg,/(?:, 0|\/ 0)\)$/);
+ assert(await c.val(`document.getElementById('zragSearchButton').getAttribute('aria-current')==='page'`));
+ await click('#zragScopeButton');assert(await c.val(`document.getElementById('zragScope').getBoundingClientRect().top>=document.getElementById('zragSearchToolbar').getBoundingClientRect().bottom`));assert(await c.val(`(()=>{const row=document.querySelector('#zragScope label'),check=row.querySelector('input').getBoundingClientRect(),text=row.querySelector('span').getBoundingClientRect();return text.left>=check.right && text.top<check.bottom;})()`),'Checkbox e nome della fonte sulla stessa riga');await screenshot('ricerca');await click('#zragScopeButton');await click('#zschedeBack');
  await click('#zschedeNewButton');await wait(`!document.getElementById('zschedeNew').hidden`);
  const fonti=(await c.val(`window.vault.chat.sources('biologia')`)).sources;
  const voci=new Map((await c.val(`[...document.getElementById('zschedeSource').options].map(o=>[o.value,o.textContent])`)));
@@ -56,7 +63,10 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await screenshot('configurazione');const before=sent();await click('#zschedeStatusConfig button');assert.equal(await c.val(`document.documentElement.dataset.settings`),'1');
  await c.val(`window.vault.chat.setKey({provider:'openai',value:'chiave-finta-ux'})`);await click('#settingsClose');await wait(`document.getElementById('zschedeStatusConfig').hidden`);
  assert.equal(await c.val(`document.getElementById('zschedeSource').value`),source);assert.equal(await c.val(`document.getElementById('zschedePreset').value`),'domande');assert.equal(sent(),before);assert.equal(await c.val(`document.activeElement.id`),'zschedeEstimate');
- await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);await screenshot('stima');await click('#zschedeGenerate');await wait(`!!document.querySelector('#zschedeResult article button') && !document.getElementById('zschedeNewButton').disabled`);
+ await click('#zschedeEstimate');await wait(`!document.getElementById('zschedeGenerate').hidden && !document.getElementById('zschedeGenerate').disabled`);await c.val(`document.getElementById('zschedeCost').open=true`);
+ const tariffe=await c.val(`(()=>{const fields=[...document.querySelectorAll('.zstudio-prices label')];return fields.map(e=>({title:e.querySelector('span').textContent,label:e.querySelector('span').getBoundingClientRect().width,width:e.querySelector('input').getBoundingClientRect().width}));})()`);
+ assert.deepEqual(tariffe.map(f=>f.title),['$/M input token','$/M output token']);assert(Math.abs(tariffe[0].width-tariffe[1].width)<1);assert(Math.abs(tariffe[0].width-Math.max(...tariffe.map(f=>f.label)))<2,JSON.stringify(tariffe));
+ await screenshot('stima');await click('#zschedeGenerate');await wait(`!!document.querySelector('#zschedeResult article button') && !document.getElementById('zschedeNewButton').disabled`);
  const exactTitle=await c.val(`document.querySelector('#zschedeResult h4').textContent`),afterGeneration=sent();
  await click('#zschedeResult article>button:last-child');
  await wait(`!!document.querySelector('#zstudyQuestion h3') && !document.getElementById('zstudyBrowse').disabled`);
