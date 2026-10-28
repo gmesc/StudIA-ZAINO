@@ -1,6 +1,16 @@
 .lim-superficie{display:flex;flex-direction:column;min-height:0;height:100%;position:relative;isolation:isolate;background:var(--panel,#fafafa);overflow:hidden;}
 .lim-bar{flex:none;flex-wrap:wrap;gap:4px;align-items:center;z-index:1;position:relative;}
-.lim-bar select{min-width:100px;max-width:240px;flex:1;font:inherit;border:1px solid var(--line,#ddd);background:var(--panel,#fafafa);color:var(--ink,#202328);padding:0 8px;line-height:normal;text-transform:none;letter-spacing:normal;}
+.lim-bar .lim-scegli{display:inline-flex;align-items:center;flex:0 1 auto;gap:2px;min-width:0;max-width:min(60%,260px);height:var(--tb-h,36px);padding:0 var(--tb-pad-x,8px);font-size:var(--tb-fs,14px);font-weight:600;line-height:normal;text-transform:none;letter-spacing:0;border:0;background:transparent;color:var(--ink,#202328);}
+.lim-scegli .ui-documento{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lim-scegli svg.ui-icon{width:1.15em;height:1.15em;flex:none;}
+.lim-scegli:focus-visible,.lim-menu button:focus-visible{outline:2px solid var(--focus,#3b82f6);outline-offset:-2px;}
+.lim-menu{position:fixed;inset:auto;margin:0;padding:.3rem;width:min(360px,92vw);max-height:60vh;overflow:auto;border:1px solid var(--line,#ddd);background:var(--panel,#fafafa);color:var(--ink,#202328);box-shadow:var(--sh-3d,0 8px 24px #20232826);}
+.lim-menu::backdrop{background:transparent;}
+.lim-menu .lim-menu-voce{display:block;width:100%;min-height:36px;padding:.5rem .6rem;border:0;border-left:3px solid transparent;border-bottom:1px solid var(--line-weak,var(--line,#ddd));border-radius:0;background:transparent;color:inherit;font:13px var(--font-text,"Helvetica Neue"),Helvetica,Arial,sans-serif;text-align:left;letter-spacing:normal;text-transform:none;white-space:normal;overflow-wrap:anywhere;cursor:pointer;}
+.lim-menu .lim-menu-voce:last-child{border-bottom:0;}
+.lim-menu .lim-menu-voce:hover,.lim-menu .lim-menu-voce:active{background:var(--hover,#dff7f3);}
+.lim-menu .lim-menu-voce[aria-checked="true"]{font-weight:700;border-left-color:var(--teal,var(--verde,#117b72));}
+.lim-menu-vuoto{margin:0;padding:.6rem;font-size:12px;color:var(--muted,#62666d);}
 .lim-bar input{width:180px;min-width:80px;font:inherit;padding:8px;}
 .lim-stato{font-size:12px;color:var(--muted,#62666d);padding:4px 8px;}.lim-stato[data-errore="1"]{color:#b42318;}
 .lim-editor{flex:1;min-height:120px;position:relative;isolation:isolate;overflow:hidden;}
