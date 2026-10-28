@@ -51,7 +51,7 @@
   document.documentElement.dataset.theme=q.tema;$('titolo').textContent=q.titolo;document.title=q.titolo+' — Proiezione';
   if(tipo!==q.tipo){tipo=q.tipo;ingrandisci(100);}
   if(tipo!=='clone')$('vista').style.clipPath='';
-  document.body.dataset.tipo=tipo==='pdf'?'immagine':tipo;$('contenuto').hidden=!['testo','clone'].includes(tipo);$('figura').hidden=!['pdf','immagine'].includes(tipo);
+  document.body.dataset.tipo=['pdf','mappa'].includes(tipo)?'immagine':tipo;$('contenuto').hidden=!['testo','clone'].includes(tipo);$('figura').hidden=!['pdf','mappa','immagine'].includes(tipo);
   if(q.html!=null&&q.html!==ultimoHtml){
    ultimoHtml=q.html;$('contenuto').replaceChildren(pulisci(q.html));
    $('contenuto').querySelectorAll('[data-sy]').forEach(el=>{el.scrollLeft=Number(el.dataset.sx)||0;el.scrollTop=Number(el.dataset.sy)||0;});

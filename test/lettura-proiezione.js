@@ -52,6 +52,8 @@ console.log('Lettura: scala, ancore, ritaglio e confine della finestra verificat
  assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'clone',html:'<p>Righe</p>',layout:{...layout,width:NaN}})).ok,false);
  assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'pdf',immagine:'file:///segreto'})).ok,false);
  assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'pdf',immagine:'data:image/png;base64,cHJvdmE='})).ok,true);
+ assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'mappa',immagine:'data:image/svg+xml,<svg/>'})).ok,false);
+ assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'mappa',immagine:'data:image/png;base64,cHJvdmE='})).ok,true);
  assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'immagine',area:{x:10,y:10,width:900,height:700}})).ok,true);
  assert.deepEqual(win.capture,{x:10,y:10,width:790,height:590});
  await p.call('proiezione:comando',{azione:'vista',width:1600,height:900,scala:125});

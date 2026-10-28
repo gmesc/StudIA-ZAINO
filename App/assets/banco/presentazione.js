@@ -147,6 +147,10 @@
      const immagine=await ProiezioneContenuti.pdf(viewer,target,p.ritaglio,p.vista,p);
      if(p.annullato||proiezione!==p)return;
      quadro={...quadro,tipo:'pdf',immagine};
+    }else if(p.id==='mappa'){
+     const immagine=await ProiezioneContenuti.mappa(target,p.ritaglio,p.vista,p);
+     if(p.annullato||proiezione!==p)return;
+     quadro={...quadro,tipo:'mappa',immagine};
     }else quadro={...quadro,tipo:'immagine',area:p.ritaglio};
    }
    const risposta=await api.aggiorna(quadro);if(risposta.error)throw Error(risposta.error);if(risposta.chiusa){if(proiezione===p){libera(p);proiezione=null;controlli();}return;}

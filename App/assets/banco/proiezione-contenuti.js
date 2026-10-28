@@ -75,5 +75,42 @@
   if(stato.annullato)return null;
   const dati=c.toDataURL();c.width=0;c.height=0;return dati;
  }
- window.ProiezioneContenuti={clone,pdf};
+ function caricaImmagine(src){
+  return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(Error('Immagine della mappa non disponibile per la proiezione.'));img.src=src;});
+ }
+ async function mappa(root,area,vista,stato){
+  const ns='http://www.w3.org/2000/svg',r=root.getBoundingClientRect(),misure=L.raster(area,vista);
+  // La SVG annidata conserva viewBox, rapporto e trasformazioni originali.
+  // La SVG esterna ritaglia in coordinate CSS, le stesse della cornice sul Mac.
+  const tela=document.createElementNS(ns,'svg');
+  tela.setAttribute('width',misure.width);tela.setAttribute('height',misure.height);
+  tela.setAttribute('viewBox',[area.x-r.x,area.y-r.y,area.width,area.height].join(' '));
+  tela.setAttribute('preserveAspectRatio','none');
+  const tag=new Set('svg g path rect circle ellipse line polyline polygon text tspan image title desc'.split(' '));
+  const attributi=new Set('id x y x1 y1 x2 y2 cx cy r rx ry width height d points viewBox preserveAspectRatio transform dx dy textLength lengthAdjust'.split(' '));
+  const stili='fill fill-opacity fill-rule stroke stroke-width stroke-opacity stroke-linecap stroke-linejoin stroke-dasharray stroke-dashoffset paint-order opacity visibility display font-family font-size font-weight font-style letter-spacing text-anchor dominant-baseline alignment-baseline white-space'.split(' ');
+  async function copia(n){
+   if(n.nodeType===3)return document.createTextNode(n.textContent);
+   if(n.nodeType!==1||!tag.has(n.localName))return document.createDocumentFragment();
+   const el=document.createElementNS(ns,n.localName),style=getComputedStyle(n);
+   for(const a of n.attributes)if(attributi.has(a.name))el.setAttribute(a.name,a.value);
+   for(const k of stili){const v=style.getPropertyValue(k);if(L.stileSicuro(v))el.style.setProperty(k,v);}
+   if(n.localName==='image'){
+    const src=n.getAttribute('href')||n.getAttributeNS('http://www.w3.org/1999/xlink','href');
+    if(src){const img=await caricaImmagine(src),c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);el.setAttribute('href',c.toDataURL());c.width=c.height=0;}
+   }
+   for(const child of n.childNodes)el.append(await copia(child));return el;
+  }
+  const disegno=await copia(root);disegno.setAttribute('width',r.width);disegno.setAttribute('height',r.height);tela.append(disegno);
+  if(stato.annullato)return null;
+  const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(tela)],{type:'image/svg+xml'}));
+  try{
+   const img=await caricaImmagine(url);if(stato.annullato)return null;
+   const canvas=document.createElement('canvas');canvas.width=misure.width;canvas.height=misure.height;const ctx=canvas.getContext('2d');
+   let bg='transparent';for(let el=root;el;el=el.parentElement){bg=getComputedStyle(el).backgroundColor;if(bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent')break;}
+   ctx.fillStyle=bg;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0);
+   const dati=canvas.toDataURL();canvas.width=canvas.height=0;return dati;
+  }finally{URL.revokeObjectURL(url);}
+ }
+ window.ProiezioneContenuti={clone,pdf,mappa};
 }());

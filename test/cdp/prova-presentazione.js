@@ -132,7 +132,26 @@ async function fedele(selector,tag){
  await click('[data-intero]');await c.pausa(900);await c.val(`MAPPA.z={k:2,x:90,y:40};mappaApplicaZoom()`);await shot('mappa-intera');
  await c.val(`BancoPresentazione.esciIntero()`);await c.pausa(1200);assert.deepEqual(await c.val('MAPPA.z'),mapZoom);
  await click('[data-proietta]');peer=await collegaProiezione();await wait(`document.getElementById('immagine').src.startsWith('data:image/')`,peer);const mapPng=await peer.val(`document.getElementById('immagine').src`);
- await c.val(`MAPPA.z.x+=80;mappaApplicaZoom()`);await wait(`document.getElementById('immagine').src!==${JSON.stringify(mapPng)}`,peer);await shot('mappa',peer);
+ await c.val(`MAPPA.z.x+=80;mappaApplicaZoom()`);await wait(`document.getElementById('immagine').src!==${JSON.stringify(mapPng)}`,peer);
+ await peer.invia('Emulation.setDeviceMetricsOverride',{width:1800,height:1000,deviceScaleFactor:2,mobile:false});
+ await c.pausa(700);
+ assert(await peer.val(`document.getElementById('immagine').naturalWidth>=3600`),'mappa ridisegnata alla risoluzione della destinazione Retina, senza ingrandire la cattura');
+ await shot('mappa',peer);
+ // Un'immagine incorporata funge anche da riferimento geometrico misurabile.
+ const primaImmagine=await peer.val(`document.getElementById('immagine').src`);
+ await c.val(`(()=>{const svg=document.getElementById('mappaSvg'),g=svg.querySelector('.mzoom'),b=document.querySelector('.proiezione-area').getBoundingClientRect(),pt=svg.createSVGPoint();pt.x=b.x+b.width/2;pt.y=b.y+b.height/2;const p=pt.matrixTransform(g.getScreenCTM().inverse()),n=document.createElementNS(svg.namespaceURI,'image'),c=document.createElement('canvas');c.width=c.height=32;const ctx=c.getContext('2d');ctx.fillStyle='rgb(17,190,103)';ctx.fillRect(0,0,32,32);n.id='immagine-prova';n.setAttribute('x',p.x);n.setAttribute('y',p.y);n.setAttribute('width','12');n.setAttribute('height','12');n.setAttribute('href',c.toDataURL());g.append(n);})()`);
+ await wait(`document.getElementById('immagine').src!==${JSON.stringify(primaImmagine)}`,peer);
+ async function geometriaMappa(){
+  const origine=await c.val(`(()=>{const r=document.getElementById('immagine-prova').getBoundingClientRect(),b=document.querySelector('.proiezione-area').getBoundingClientRect();return {x:r.x-b.x,y:r.y-b.y,w:r.width,h:r.height,base:b.width};})()`);
+  const pubblico=await peer.val(`(()=>{const i=document.getElementById('immagine'),c=document.createElement('canvas');c.width=i.naturalWidth;c.height=i.naturalHeight;const ctx=c.getContext('2d');ctx.drawImage(i,0,0);const d=ctx.getImageData(0,0,c.width,c.height).data;let minX=c.width,minY=c.height,maxX=-1,maxY=-1;for(let y=0;y<c.height;y++)for(let x=0;x<c.width;x++){const n=(y*c.width+x)*4;if(d[n]===17&&d[n+1]===190&&d[n+2]===103){minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);}}return {x:minX,y:minY,w:maxX-minX+1,h:maxY-minY+1,base:c.width};})()`);
+  assert(pubblico.w>0&&pubblico.h>0,'immagine della mappa conservata');
+  for(const key of ['x','y','w','h'])assert(Math.abs(pubblico[key]-origine[key]*pubblico.base/origine.base)<3,JSON.stringify({key,origine,pubblico}));
+ }
+ await geometriaMappa();
+ await peer.invia('Emulation.setDeviceMetricsOverride',{width:1200,height:700,deviceScaleFactor:1,mobile:false});
+ await wait(`document.getElementById('immagine').naturalWidth===1200`,peer);await geometriaMappa();
+ const primaZoom=await peer.val(`document.getElementById('immagine').src`);
+ await peer.val(`document.getElementById('piu').click()`);await wait(`document.getElementById('immagine').src!==${JSON.stringify(primaZoom)}`,peer);await geometriaMappa();
  await c.val(`bancoAssegna('A','studio')`);await wait(`!document.querySelector('[data-proiezione]')`);peer.ws.close();peer=null;
  // Il raccoglitore riformatta anche moduli e schede con la stessa misura.
  await c.val(`document.getElementById('zschedeNewButton').click();BancoPresentazione.zoom('studio',200)`);await c.pausa(200);
