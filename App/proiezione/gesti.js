@@ -6,7 +6,7 @@
   let spazio=false,pan=null,tocchi=new Map(),multiplo=false,tap=null,ignoraClick=false;
   const interattivo=n=>!!n.closest?.('button,input,textarea,select,a,[contenteditable="true"]');
   const ancora=(x,y)=>({x:Math.max(0,Math.min(1,x/innerWidth)),y:Math.max(0,Math.min(1,y/innerHeight))});
-  function cursore(){host.classList.toggle('gesto-mano',spazio);host.classList.toggle('gesto-presa',!!pan||tocchi.size>1);}
+  function cursore(){host.classList.toggle('gesto-mano',spazio);host.classList.toggle('gesto-presa',!!pan||tocchi.size>1||[...tocchi.values()].some(p=>p.trascina));}
   function annulla(){const ids=[...tocchi.keys(),...(pan?[pan.id]:[])];tocchi.clear();pan=null;spazio=false;multiplo=false;tap=null;for(const id of ids)if(host.hasPointerCapture(id))host.releasePointerCapture(id);cursore();}
   function coppia(){const p=[...tocchi.values()];if(p.length!==2)return null;return {x:(p[0].x+p[1].x)/2,y:(p[0].y+p[1].y)/2,d:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)};}
   host.addEventListener('wheel',e=>{
@@ -27,8 +27,13 @@
   });
   host.addEventListener('pointermove',e=>{
    if(tocchi.has(e.pointerId)){
-    e.preventDefault();const prima=coppia(),p=tocchi.get(e.pointerId);p.x=e.clientX;p.y=e.clientY;const dopo=coppia();
-    if(prima&&dopo&&prima.d>0){azioni.zoom(azioni.leggiScala()*dopo.d/prima.d,ancora(prima.x,prima.y));azioni.sposta(dopo.x-prima.x,dopo.y-prima.y);}return;
+    e.preventDefault();const prima=coppia(),p=tocchi.get(e.pointerId),dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;const dopo=coppia();
+    if(prima&&dopo&&prima.d>0){azioni.zoom(azioni.leggiScala()*dopo.d/prima.d,ancora(prima.x,prima.y));azioni.sposta(dopo.x-prima.x,dopo.y-prima.y);}
+    // La soglia protegge i tre tocchi. Dopo un pinch si aspetta il rilascio
+    // di tutte le dita: sollevarne una non deve avviare un nuovo trascinamento.
+    else if(tocchi.size===1&&!multiplo&&(p.trascina||Math.hypot(p.x-p.inizioX,p.y-p.inizioY)>=8)){
+     azioni.sposta(p.trascina?dx:p.x-p.inizioX,p.trascina?dy:p.y-p.inizioY);p.trascina=true;tap=null;cursore();
+    }return;
    }
    if(!pan||pan.id!==e.pointerId)return;e.preventDefault();azioni.sposta(e.clientX-pan.x,e.clientY-pan.y);pan.x=e.clientX;pan.y=e.clientY;
   });
@@ -36,7 +41,7 @@
    const p=tocchi.get(e.pointerId);
    if(p){
     e.preventDefault();
-    if(!multiplo&&Math.hypot(e.clientX-p.inizioX,e.clientY-p.inizioY)<8){
+    if(!multiplo&&!p.trascina&&Math.hypot(e.clientX-p.inizioX,e.clientY-p.inizioY)<8){
      const ora=performance.now();tap=tap&&ora-tap.ora<500&&Math.hypot(e.clientX-tap.x,e.clientY-tap.y)<30?{...tap,n:tap.n+1,ora}:{n:1,ora,x:e.clientX,y:e.clientY};
      if(tap.n===3){azioni.adatta();tap=null;}
     }else tap=null;

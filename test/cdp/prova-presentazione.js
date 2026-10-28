@@ -173,6 +173,16 @@ async function fedele(selector,tag){
  await wait(`parseInt(document.getElementById('scala').textContent)>100`,peer);
  for(let n=0;n<3;n++){await peer.invia('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:400,y:300,id:1}]});await peer.invia('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}
  await wait(`document.getElementById('scala').textContent==='100%'`,peer);
+ // Un dito trascina dalla LIM senza Spazio; un trascinamento non è un tap.
+ await peer.val(`document.getElementById('piu').click()`);await wait(`document.getElementById('scala').textContent==='125%'`,peer);await c.pausa(300);
+ const xDito=await c.val(`document.querySelector('.proiezione-area').getBoundingClientRect().x`);
+ await peer.invia('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:400,y:300,id:1}]});
+ await peer.invia('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:300,y:300,id:1}]});
+ await peer.invia('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ await wait(`document.querySelector('.proiezione-area').getBoundingClientRect().x>${xDito}+10`);
+ assert.equal(await peer.val(`document.getElementById('scala').textContent`),'125%','un dito sposta senza cambiare zoom');
+ for(let n=0;n<3;n++){await peer.invia('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:400,y:300,id:1}]});await peer.invia('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}
+ await wait(`document.getElementById('scala').textContent==='100%'`,peer);
  const mappaPrimaPan=await c.val('MAPPA.z.x');
  await peer.invia('Input.dispatchKeyEvent',{type:'keyDown',key:' ',code:'Space',windowsVirtualKeyCode:32});
  await peer.invia('Input.dispatchMouseEvent',{type:'mousePressed',x:400,y:300,button:'left',clickCount:1});
