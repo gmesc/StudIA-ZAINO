@@ -1,12 +1,40 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),c=require('./cdp'),q=JSON.stringify;
 async function wait(expr){for(let i=0;i<180;i++){if(await c.val(expr))return;await c.pausa(100);}throw Error('Attesa: '+expr+'; '+JSON.stringify(await c.val(`({dialog:document.getElementById('citazioneDialog').open,stato:document.getElementById('citazioneStato').textContent})`)));}
+async function provaTouch(id,v,altro){
+ const tocca=(type,touchPoints)=>c.invia('Input.dispatchTouchEvent',{type,touchPoints});
+ const scroll=()=>c.val(`(()=>{const h=document.getElementById('${id}');return {x:h.scrollLeft,y:h.scrollTop};})()`);
+ await c.val(`${v}.currentScaleValue='2';${v}.currentPageNumber=1`);await c.pausa(500);
+ await c.val(`(()=>{const h=document.getElementById('${id}');h.scrollLeft=120;h.scrollTop=40;})()`);
+ const p=await c.val(`(()=>{const h=document.getElementById('${id}').getBoundingClientRect(),r=document.querySelector('#${id} .textLayer span').getBoundingClientRect();return {x:Math.max(h.left+60,Math.min(r.left+40,h.right-100)),y:r.y+r.height/2,id:1};})()`);
+ const fermo=await c.val(`${altro}.currentScale`),s0=await scroll();
+ await tocca('touchStart',[p]);await tocca('touchMove',[{...p,x:p.x-35,y:p.y-50}]);await tocca('touchEnd',[]);await c.pausa(150);
+ const s1=await scroll();assert(Math.abs(s1.x-s0.x-35)<2&&Math.abs(s1.y-s0.y-50)<2,'un dito sul testo sposta il PDF senza Spazio nel '+id+': '+JSON.stringify({s0,s1}));
+ assert.equal(await c.val('getSelection().toString()'),'','il dito naviga senza selezionare testo');
+ const centro=await c.val(`(()=>{const r=document.getElementById('${id}').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+ const punti=[{x:centro.x-60,y:centro.y,id:1},{x:centro.x+60,y:centro.y,id:2}];
+ const scala=await c.val(`${v}.currentScale`);
+ await tocca('touchStart',punti);await tocca('touchMove',[{...punti[0],x:punti[0].x-20},{...punti[1],x:punti[1].x+20}]);await tocca('touchEnd',[]);await c.pausa(500);
+ assert(Math.abs(await c.val(`${v}.currentScale`)-scala*4/3)<.05,'pinch touchscreen sul solo PDF nel '+id);
+ // Sollevare un dito dopo il pinch non deve avviare un trascinamento.
+ const singolo={x:centro.x-80,y:centro.y,id:1};
+ await tocca('touchStart',[singolo,{x:centro.x+80,y:centro.y,id:2}]);await tocca('touchEnd',[singolo]);const fermoDopoPinch=await scroll();
+ await tocca('touchMove',[{...singolo,y:singolo.y-35}]);await tocca('touchEnd',[]);
+ assert.deepEqual(await scroll(),fermoDopoPinch,'nessun salto dopo aver sollevato un dito');
+ assert.equal(await c.val('visualViewport.scale'),1,'nessuno zoom dell’interfaccia');assert.equal(await c.val(`${altro}.currentScale`),fermo,'l’altro split resta fermo');
+ for(let n=0;n<3;n++){await tocca('touchStart',[{...centro,id:1}]);await tocca('touchEnd',[]);}
+ await c.pausa(200);assert.equal(await c.val(`${v}.currentScaleValue`),'page-width','tre tocchi adattano alla larghezza nel '+id);
+ assert(await c.val("!document.querySelector('.pdf-trascina')"),'rilascio touch pulisce il gesto');
+ await tocca('touchStart',[{...centro,id:1}]);await tocca('touchMove',[{x:centro.x,y:centro.y-30,id:1}]);await tocca('touchCancel',[]);
+ assert(await c.val("!document.querySelector('.pdf-trascina')"),'cancellazione touch libera la presa');
+}
 async function provaGesti(){
  await c.val(`cambiaZaino('biologia',true);bancoForma('due-col');bancoAssegna('A','fonte');bancoAssegna('C','fonte2');openPdf('01 Botanica.pdf',1,'Botanica',true);fonte2Apri('02 Biologia cellulare.pdf',1)`);
  await wait(`PDFJS.pronto&&!!PDFJS.doc&&!!FONTE2.doc&&document.querySelector('#pdf2Frame .textLayer span')`);
  const mouse=(type,p,extra={})=>c.invia('Input.dispatchMouseEvent',{type,...p,...extra});
  const spazio=type=>c.invia('Input.dispatchKeyEvent',{type,key:' ',code:'Space',windowsVirtualKeyCode:32});
  for(const [id,v,altro,chiave] of [['pdfFrame','PDFJS.viewer','FONTE2.viewer','studia.pdf.zoom'],['pdf2Frame','FONTE2.viewer','PDFJS.viewer','studia.pdf2.zoom']]){
+  await provaTouch(id,v,altro);
   await c.val(`${v}.currentScaleValue='1.8'`);await c.pausa(500);
   await c.val(`(()=>{const h=document.getElementById('${id}');h.scrollLeft=120;h.scrollTop=200;h.focus();})()`);
   const p=await c.val(`(()=>{const r=document.getElementById('${id}').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/3};})()`);
@@ -104,6 +132,15 @@ async function provaGestiCitazione(rimando){
  await mouse('mouseReleased',{x:p.x-60,y:p.y-70},{button:'left',buttons:0,clickCount:1});await spazio('keyUp');
  const s2=await scroll();assert(Math.abs(s2.x-s1.x-60)<2&&Math.abs(s2.y-s1.y-70)<2,'Spazio + trascina nell’anteprima');
  assert.equal(await c.val('getSelection().toString()'),'','pan senza selezionare testo');
+ const tocca=(type,touchPoints)=>c.invia('Input.dispatchTouchEvent',{type,touchPoints});
+ const t0=await scroll();
+ await tocca('touchStart',[{...p,id:1}]);await tocca('touchMove',[{x:p.x-25,y:p.y-35,id:1}]);await tocca('touchEnd',[]);
+ const t1=await scroll();assert(Math.abs(t1.x-t0.x-25)<2&&Math.abs(t1.y-t0.y-35)<2,'touch anche nell’anteprima citata');
+ for(let n=0;n<3;n++){await tocca('touchStart',[{...p,id:1}]);await tocca('touchEnd',[]);}
+ await c.pausa(200);assert(Math.abs(await larghezza()-originale)<2,'tre tocchi adattano anche l’anteprima');
+ // Ripristina lo zoom prima delle verifiche mouse già presenti.
+ await mouse('mouseWheel',p,{deltaX:0,deltaY:-45,modifiers:2});await c.pausa(500);
+
  assert(await c.val(`!document.querySelector('.pdf-spazio,.pdf-trascina')`),'rilascio pulisce i cursori');
  await mouse('mouseMoved',p);
  await c.val(`window.__clicGesti=[];window.__ascoltaClic=new AbortController();window.addEventListener('click',e=>window.__clicGesti.push({n:e.detail,target:e.target.className,tempo:e.timeStamp}),{capture:true,signal:window.__ascoltaClic.signal})`);

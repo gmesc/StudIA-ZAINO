@@ -146,7 +146,7 @@
   function comandoPdf(valore, scala, pronta) {
     return {
       icona: valore === 'page-fit' ? 'maximize' : 'move-horizontal',
-      titolo: etichetta(valore, scala, pronta).titolo + ' · Tre clic sul PDF: adatta alla larghezza · Pinch: zoom · Spazio + trascina: sposta'
+      titolo: etichetta(valore, scala, pronta).titolo + ' · Tre clic sul PDF: adatta alla larghezza · Pinch: zoom · Spazio + trascina: sposta · Touch: trascina con un dito; tre tocchi per adattare'
     };
   }
 

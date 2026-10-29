@@ -117,6 +117,16 @@ async function fedele(selector,tag){
  await peer.invia('Emulation.setDeviceMetricsOverride',{width:1200,height:800,deviceScaleFactor:1,mobile:false});
  await wait(`Math.abs(document.querySelector('.proiezione-area').offsetWidth/document.querySelector('.proiezione-area').offsetHeight-1.5)<.02`);
  await shot('inquadratura-origine');await shot('inquadratura-destinazione',peer);
+ // Navigare col dito sullo split di origine aggiorna anche ciò che vede il pubblico.
+ const primaTouch=await peer.val(`document.getElementById('immagine').src`);
+ const dito=await c.val(`(()=>{const r=document.getElementById('pdfFrame').getBoundingClientRect();return {x:r.x+r.width/2,y:r.bottom-80,id:1};})()`);
+ const scrollPrima=await c.val(`document.getElementById('pdfFrame').scrollTop`);
+ await c.invia('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[dito]});
+ await c.invia('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...dito,y:dito.y-60}]});
+ await c.invia('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ assert(Math.abs(await c.val(`document.getElementById('pdfFrame').scrollTop`)-scrollPrima-60)<2,'dito sul PDF di origine senza Spazio');
+ await wait(`document.getElementById('immagine').src!==${JSON.stringify(primaTouch)}`,peer);
+ assert(await c.val(`!!document.querySelector('.proiezione-area')`),'area proiettata ancora collegata dopo il touch');
  await peer.invia('Emulation.clearDeviceMetricsOverride');
  await c.val(`BancoPresentazione.chiudiProiezione()`);peer.ws.close();peer=null;
  assert.equal(await c.val(`document.querySelector('.proiezione-area')===null`),true);
