@@ -29,7 +29,11 @@ async function scarica(spec,cache){
  const[nome,base,sha]=spec,finale=path.join(cache,nome);fs.mkdirSync(cache,{recursive:true});
  if(fs.existsSync(finale)&&digest(finale)===sha)return finale;
  const tmp=finale+'.part';console.log('Download '+nome);
- const r=await fetch(base+nome,{signal:AbortSignal.timeout(15*60*1000)});if(!r.ok)throw Error('Download HTTP '+r.status+': '+nome);
+ let r;for(let tentativo=1;tentativo<=3;tentativo++){
+  try{r=await fetch(base+nome,{signal:AbortSignal.timeout(15*60*1000)});break;}
+  catch(e){if(tentativo===3)throw Error('Download non riuscito: '+nome+' ('+(e.cause?.code||e.message)+').');await new Promise(ok=>setTimeout(ok,1000*tentativo));}
+ }
+ if(!r.ok)throw Error('Download HTTP '+r.status+': '+nome);
  const fd=fs.openSync(tmp,'w',0o600);let n=0;
  try{for await(const b of r.body){n+=b.length;if(n>1024*1024*1024)throw Error('Download troppo grande.');fs.writeSync(fd,b);}}finally{fs.closeSync(fd);}
  if(digest(tmp)!==sha){fs.rmSync(tmp);throw Error('SHA-256 non valido: '+nome);}

@@ -1,10 +1,17 @@
 name: Pacchetti della release
 on:
   workflow_dispatch:
+    inputs:
+      piattaforma:
+        description: Pacchetti da preparare
+        type: choice
+        default: tutte
+        options: [tutte, windows, debian]
 permissions:
   contents: read
 jobs:
   windows:
+    if: inputs.piattaforma != 'debian'
     runs-on: windows-latest
     timeout-minutes: 35
     steps:
@@ -26,6 +33,7 @@ jobs:
           path: dist/*setup-x64.exe
           if-no-files-found: error
   debian:
+    if: inputs.piattaforma != 'windows'
     runs-on: ubuntu-latest
     container: debian:bookworm
     timeout-minutes: 40
