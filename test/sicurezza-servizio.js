@@ -92,6 +92,13 @@ const statoClam = () => servizio.stato().motori.find(m => m.id === 'clamav');
       assert.deepEqual(fs.readFileSync(consentito),copiaOriginale,'gli originali restano invariati');
       assert.deepEqual(fs.readdirSync(path.join(tempRoot,'pdf-approvati')),[path.basename(copia)],'il rifiuto non lascia una seconda copia');
     });
+    await new Promise(r=>setTimeout(r,300));
+    const avvisiPrima=notifiche.filter(n=>n.stato).length;
+    for(let i=0;i<12;i++)await D.esegui({lettura:[consentito]},()=>servizio.controlla([consentito]));
+    assert.equal(notifiche.filter(n=>n.stato).length,avvisiPrima,'un lotto di letture non ricalcola lo stato dei pacchetti per ogni PDF');
+    await new Promise(r=>setTimeout(r,300));
+    assert.equal(notifiche.filter(n=>n.stato).length,avvisiPrima+1,'il riepilogo aggiornato arriva una volta a fine lotto');
+    assert.equal(notifiche.at(-1).stato.inCorso,false);
     assert(notifiche.length > 0);
     console.log('✓ Servizio sicurezza: date firme, aggiornamento automatico, ambiti, copie verificate e budget temporanei');
   } finally { require('../lib/sicurezza-accesso').configura(null);fs.rmSync(tmp, { recursive: true, force: true }); }

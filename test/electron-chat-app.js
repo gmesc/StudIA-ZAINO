@@ -13,6 +13,21 @@ app.on('web-contents-created',(_,contents)=>contents.once('did-finish-load',()=>
  fs.appendFileSync(path.join(app.getPath('userData'),'finestre-sicurezza.jsonl'),JSON.stringify({sandbox:p.sandbox,contextIsolation:p.contextIsolation,nodeIntegration:p.nodeIntegration,preload:p.preload})+'\n');
 }));
 const registra = (nome, dati) => fs.appendFileSync(path.join(app.getPath('userData'), nome), JSON.stringify(dati) + '\n');
+// Conta il lavoro reale solo durante la prova dell’autosalvataggio, senza cronometri fragili.
+const fonti=require('../lib/fonti-ai'),sincronizza=fonti.sincronizza;
+fonti.sincronizza=(...args)=>{if(fs.existsSync(path.join(app.getPath('userData'),'misura-scansioni')))registra('scansioni.jsonl',{zaino:args[1]});return sincronizza(...args);};
+// Il disco rallentato è confinato al profilo sintetico del runner.
+const appunti=require('../lib/appunti'),salvaReale=appunti.saveAsync;
+appunti.saveAsync=async(...args)=>{
+ const marker=path.join(app.getPath('userData'),'appunti-salvataggio-lento');
+ if(fs.existsSync(marker)){
+  registra('appunti-salvataggi.jsonl',{fase:'inizio',file:args[2]});
+  await new Promise(r=>setTimeout(r,1000));
+ }
+ const r=await salvaReale(...args);
+ if(fs.existsSync(marker))registra('appunti-salvataggi.jsonl',{fase:'fine',file:args[2]});
+ return r;
+};
 const pianoSchede=require('../App/assets/chat/schede-piano'),tariffaReale=pianoSchede.tariffa;
 pianoSchede.tariffa=(provider,model)=>model==='modello-locale-di-prova'?{input:.30,output:2.50,verifiedAt:'simulata nella prova'}:tariffaReale(provider,model);
 provider.modelli = async () => [{id:'modello-locale-di-prova',nome:'Modello locale di prova'}];

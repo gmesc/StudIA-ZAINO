@@ -128,6 +128,7 @@ async function scegli(id,value){if(id==='zainoSelect'){await c.clicca('#zainoSce
  assert.equal(await c.val('noteStatoAttivo()===appuntiParalleli.stato'),true);
  const primoPrima=fs.readFileSync(path.join(nota,primo),'utf8');
  assert.equal(await c.val("noteInserisci('Citazione destinata al secondo riquadro.')"),true);
+ await aspetta('!appuntiParalleli.stato.dirty');
  assert(fs.readFileSync(path.join(nota,secondo),'utf8').includes('Citazione destinata al secondo riquadro.'));
  assert.equal(fs.readFileSync(path.join(nota,primo),'utf8'),primoPrima);
  for(let i=0;i<2;i++){

@@ -80,9 +80,22 @@ ipcMain.on('file:verifica',(e,{percorso}={})=>{
     return require('./lib/formati-sicuri').verificaFile(percorso);
   });
 });
+const appuntiCoda=require('./lib/appunti-coda').crea();
 ipcMain.on('vault:sync',(e,{gruppo,metodo,args}={})=>{
-  e.returnValue=require('./lib/vault-sincrono').esegui(readCfg().vaultPath,gruppo,metodo,args,{autorizzaLettura:f=>concessioni.ha(e.sender.id,f),tempRoot:temporanei()});
+  const v=readCfg().vaultPath;
+  const esegui=()=>require('./lib/vault-sincrono').esegui(v,gruppo,metodo,args,{autorizzaLettura:f=>concessioni.ha(e.sender.id,f),tempRoot:temporanei()});
+  // Rinomina, lettura e creazione vedono anche il precedente autosave in volo.
+  if(gruppo==='notes')return appuntiCoda.esegui(v,args?.[0],esegui).then(r=>{e.returnValue=r;},error=>{e.returnValue={error:error.message};});
+  e.returnValue=esegui();
 });
+function salvaNotaAsincrona({corso,file,meta,body,opt}={}){
+  const d=mappeDove(corso);if(d.error)return Promise.resolve({error:d.error});
+  if(!require('./lib/zaino-only').zainoValido(d.v,corso))return Promise.resolve({error:'Apri uno zaino valido.'});
+  return appuntiCoda.esegui(d.v,corso,()=>require('./lib/appunti').saveAsync(d.v,corso,file,meta||{},body||'',null,opt||{}));
+}
+ipcMain.handle('note:salva',(_e,o)=>salvaNotaAsincrona(o));
+// Solo le transizioni attendono la coda: durante la digitazione si usa invoke.
+ipcMain.on('note:flush',(e,o)=>salvaNotaAsincrona(o).then(r=>{e.returnValue=r;},error=>{e.returnValue={error:error.message};}));
 const mat = require('./lib/materiali');   // i materiali possono vivere dentro il corso
 // Un vault nuovo nasce con le sole cartelle che servono: i materiali di un
 // corso vivono dentro il corso (vedi lib/materiali.js), «Lezioni/» era il
@@ -2265,15 +2278,15 @@ ipcMain.handle('mappe:rimuovi', async (e, { corso, file } = {}) => {
 
 /* Le cancellazioni di appunti e album passano di qui — e non da preload, dove
    vive il resto delle loro API — per la sola ragione che `shell.trashItem`
-   esiste solo nel main. Tutto il resto (leggere, salvare, rinominare) resta
-   sincrono in preload, dov'era. `mappeDove` risponde solo di vault e corso,
+   esiste solo nel main. Gli appunti serializzano rimozione e salvataggi
+   nella stessa coda. `mappeDove` risponde solo di vault e corso,
    quindi vale anche per loro. */
 const appuntiLib = require('./lib/appunti');
 const albumLib = require('./lib/album');
 
 ipcMain.handle('note:rimuovi', async (e, { corso, file } = {}) => {
   const d = mappeDove(corso); if (d.error) return { ok: false, error: d.error };
-  return { ok: await appuntiLib.remove(d.v, corso, file, { cestina: (p) => shell.trashItem(p) }), error: '' };
+  return appuntiCoda.esegui(d.v,corso,async()=>({ ok: await appuntiLib.remove(d.v, corso, file, { cestina: (p) => shell.trashItem(p) }), error: '' }));
 });
 
 ipcMain.handle('album:rimuovi', async (e, { corso, id, opt } = {}) => {
