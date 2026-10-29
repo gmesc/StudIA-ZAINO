@@ -73,15 +73,15 @@ fi
 # notarizzazione che parla di credenziali invece che di team.
 TEAM="$(printf '%s' "$CERT" | sed -n 's/.*(\([A-Z0-9]\{10\}\)).*/\1/p')"
 echo "  certificato: $(printf '%s' "$CERT" | sed 's/^ *[0-9]*) *[0-9A-F]* *//')"
-if ! xcrun notarytool history --keychain-profile "$PROFILO" >/dev/null 2>&1; then
-  echo "✗ il profilo di notarizzazione «$PROFILO» non risponde. Si fa una volta sola:"
-  echo "    xcrun notarytool store-credentials $PROFILO \\"
+if ! xcrun notarytool history --keychain-profile "${PROFILO}" >/dev/null 2>&1; then
+  echo "✗ il profilo di notarizzazione «${PROFILO}» non risponde. Si fa una volta sola:"
+  echo "    xcrun notarytool store-credentials ${PROFILO} \\"
   echo "      --apple-id \"tua-apple-id\" --team-id ${TEAM:-TEAMID}"
   echo "  (la password è una app-specific password di appleid.apple.com → Accesso e sicurezza,"
   echo "   non quella dell'account: il profilo la tiene cifrata nel portachiavi)"
   exit 1
 fi
-echo "  profilo «$PROFILO»: risponde"
+echo "  profilo «${PROFILO}»: risponde"
 
 echo ""
 echo "── 1/5  il bundle, firmato con Developer ID ────────────"
@@ -112,7 +112,7 @@ echo "── 2/5  la notarizzazione dell'APP ───────────�
 # notarizzazione fallisce con un errore che parla d'altro.
 ZIP="$(mktemp -d "${TMPDIR:-/tmp}/studia-notarize-XXXXXX")/$NOME.zip"
 ditto -c -k --keepParent "$APP" "$ZIP"
-xcrun notarytool submit "$ZIP" --keychain-profile "$PROFILO" --wait
+xcrun notarytool submit "$ZIP" --keychain-profile "${PROFILO}" --wait
 xcrun stapler staple "$APP"
 xcrun stapler validate "$APP"
 echo "  ticket cucito all'app"
@@ -128,7 +128,7 @@ hdiutil create -volname "$NOME $VERSIONE" -srcfolder "$STAGE" -ov -format UDZO "
 
 echo ""
 echo "── 4/5  la notarizzazione del DMG ──────────────────────"
-xcrun notarytool submit "$DMG" --keychain-profile "$PROFILO" --wait
+xcrun notarytool submit "$DMG" --keychain-profile "${PROFILO}" --wait
 xcrun stapler staple "$DMG"
 xcrun stapler validate "$DMG"
 echo "  ticket cucito al dmg"
