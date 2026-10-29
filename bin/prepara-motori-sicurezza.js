@@ -13,11 +13,12 @@ const DOWNLOAD={
  'qpdf-win32-x64':['qpdf-12.4.2-msvc64.zip',Q,'db87077e683630c1217e0e8f9a20a9749d952ab676e881c3689187763a5de25d'],
  'clamav-darwin':['clamav-1.5.4.macos.universal.pkg',C,'df7fa753e2f9f67f3bc99b2a40a3be7ef559088c68ad6bdf66b4b5764e965bd6'],
  'clamav-win32-x64':['clamav-1.5.4.win.x64.zip',C,'0d9e0228b2674137ea1a2853566c98a0278ad52ab2582c3d6dbd75373848c395'],
+ 'clamav-linux-x64':['clamav-1.5.4.linux.x86_64.deb',C,'28d6efc5b4423e7830c3559339552eb53870a9eac51ac4efb37d60530d329886'],
  'qpdf-sorgenti':['qpdf-12.4.2.tar.gz',Q,'8a58af5b6141319287c1883bec8bd1bd545b7567b7fc5e6ce5d25a1c85f36397'],
  'clamav-sorgenti':['clamav-1.5.4.tar.gz',C,'1af1117a228f1b5bc7fa91a0dabc37848a99e7d25188e9be8043332ce721dfd3']
 };
 const digest=f=>crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
-function comando(bin,args){return execFileSync(bin,args,{encoding:'utf8',maxBuffer:8*1024*1024,timeout:180000});}
+function comando(bin,args,timeout=180000){return execFileSync(bin,args,{encoding:'utf8',maxBuffer:8*1024*1024,timeout});}
 function elenco(dir){return fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?elenco(path.join(dir,e.name)):[path.join(dir,e.name)]);}
 function copia(src,dst,radice){
  const reale=fs.realpathSync(src),rel=path.relative(fs.realpathSync(radice),reale);
@@ -56,16 +57,32 @@ function firmaMac(base){
 }
 async function prepara({piattaforma=process.platform,architettura=process.arch,cache=path.join(ROOT,'build','sicurezza-download'),destinazione=path.join(ROOT,'build','sicurezza-pacchetti')}={}){
  const target=piattaforma+'-'+architettura;
- if(!['darwin-arm64','darwin-x64','win32-x64'].includes(target))throw Error('Target dei motori non supportato: '+target);
+ if(!['darwin-arm64','darwin-x64','win32-x64','linux-x64'].includes(target))throw Error('Target dei motori non supportato: '+target);
  if(piattaforma==='darwin'&&process.platform!=='darwin')throw Error('I pacchetti macOS si preparano su macOS per relocare e firmare i binari.');
  const lavoro=fs.mkdtempSync(path.join(os.tmpdir(),'zaino-pacchetti-'));
  try{for(const id of ['qpdf','clamav']){
-  const spec=DOWNLOAD[id+'-'+(id==='clamav'&&piattaforma==='darwin'?'darwin':target)];
+  const spec=DOWNLOAD[piattaforma==='linux'&&id==='qpdf'?'qpdf-sorgenti':id+'-'+(id==='clamav'&&piattaforma==='darwin'?'darwin':target)];
   const archivio=await scarica(spec,cache),sorgenti=await scarica(DOWNLOAD[id+'-sorgenti'],cache);
   const base=path.join(lavoro,id),out=path.join(destinazione,target,id),src=path.join(lavoro,id+'-sorgenti');
   fs.mkdirSync(out,{recursive:true});if(fs.readdirSync(out).length)fs.rmSync(out,{recursive:true});fs.mkdirSync(out,{recursive:true});
   estrai(sorgenti,src);
-  if(piattaforma==='darwin'&&id==='clamav'){
+  if(piattaforma==='linux'){
+   if(process.platform!=='linux')throw Error('Il pacchetto Debian si prepara su Linux.');
+   if(id==='qpdf'){
+    // Compilare sulla distribuzione di destinazione evita di spedire librerie di un'altra distro.
+    const fonte=fs.readdirSync(src,{withFileTypes:true}).find(e=>e.isDirectory());
+    const build=path.join(base,'build');
+    comando('cmake',['-S',path.join(src,fonte.name),'-B',build,'-DCMAKE_BUILD_TYPE=Release','-DBUILD_SHARED_LIBS=OFF','-DBUILD_STATIC_LIBS=ON','-DBUILD_DOC=OFF','-DREQUIRE_CRYPTO_OPENSSL=ON']);
+    comando('cmake',['--build',build,'--target','qpdf','--parallel','2'],600000);
+    copia(path.join(build,'qpdf','qpdf'),path.join(out,'bin','qpdf'),base);
+   }else{
+    comando('dpkg-deb',['-x',archivio,base]);const prefix=path.join(base,'usr','local');
+    copia(path.join(prefix,'etc','certs','clamav.crt'),path.join(out,'etc','certs','clamav.crt'),base);
+    for(const nome of ['clamscan','freshclam','sigtool'])copia(path.join(prefix,'bin',nome),path.join(out,'bin',nome),base);
+    for(const nome of fs.readdirSync(path.join(prefix,'lib')).filter(n=>/^lib(clamav|clammspack|freshclam)\.so/.test(n)))copia(path.join(prefix,'lib',nome),path.join(out,'lib',nome),base);
+    for(const f of elenco(out).filter(f=>f.includes(path.sep+'bin'+path.sep)||/\.so(?:\.|$)/.test(f)))comando('patchelf',['--set-rpath',f.includes(path.sep+'bin'+path.sep)?'$ORIGIN/../lib':'$ORIGIN',f]);
+   }
+  }else if(piattaforma==='darwin'&&id==='clamav'){
    comando('/usr/sbin/pkgutil',['--expand-full',archivio,base]);
    const bin=path.join(base,'clamav-1.5.4.macos.universal-programs.pkg','Payload','usr','local','clamav');
    const lib=path.join(base,'clamav-1.5.4.macos.universal-libraries.pkg','Payload','usr','local','clamav','lib');
@@ -90,6 +107,8 @@ async function prepara({piattaforma=process.platform,architettura=process.arch,c
     for(const f of eseguibili.filter(f=>/(license|copying|notice)/i.test(path.basename(f))))copia(f,path.join(out,'licenze','binari-'+path.basename(f)),base);
    }
   }
+  // Conserva anche gli avvisi delle dipendenze native presenti nell'archivio ufficiale.
+  if(fs.existsSync(base))for(const f of elenco(base).filter(f=>/(license|copying|notice)/i.test(path.basename(f))))if(fs.lstatSync(f).isFile())copia(f,path.join(out,'licenze','upstream',path.relative(base,f)),base);
   const fonteDir=fs.readdirSync(src,{withFileTypes:true}).find(e=>e.isDirectory());const fonte=fonteDir?path.join(src,fonteDir.name):src;
   for(const f of fs.readdirSync(fonte).filter(f=>/^(license|copying|notice)/i.test(f)))if(fs.statSync(path.join(fonte,f)).isFile())copia(path.join(fonte,f),path.join(out,'licenze',f),src);
   fs.mkdirSync(path.join(out,'sorgenti'),{recursive:true});fs.copyFileSync(__filename,path.join(out,'sorgenti','ricetta-zaino.js'));fs.copyFileSync(sorgenti,path.join(out,'sorgenti',path.basename(sorgenti)));
@@ -99,7 +118,7 @@ async function prepara({piattaforma=process.platform,architettura=process.arch,c
   if(piattaforma===process.platform&&architettura===process.arch)for(const c of Object.values(comandi))console.log(comando(path.join(out,c),c.includes('freshclam')?['--config-file='+ (process.platform==='win32'?'NUL':'/dev/null'),'--version']:['--version']).split('\n')[0]);
   const files=elenco(out).sort().map(f=>({nome:path.relative(out,f).split(path.sep).join('/'),dimensione:fs.statSync(f).size,sha256:digest(f),eseguibile:Object.values(comandi).some(c=>path.join(out,c)===f)}));
   // I binari compressi non vengono rifirmati/modificati da electron-builder: gli hash restano validi.
-  for(const f of files.filter(f=>f.eseguibile||/\.(dylib|dll)$/i.test(f.nome))){const originale=path.join(out,f.nome);f.origine='payload/'+f.nome+'.gz';const compresso=path.join(out,f.origine);fs.mkdirSync(path.dirname(compresso),{recursive:true});fs.writeFileSync(compresso,gzipSync(fs.readFileSync(originale)));f.dimensioneOrigine=fs.statSync(compresso).size;f.sha256Origine=digest(compresso);fs.rmSync(originale);}
+  for(const f of files.filter(f=>f.eseguibile||/(\.(dylib|dll)$|\.so(?:\.|$))/i.test(f.nome))){const originale=path.join(out,f.nome);f.origine='payload/'+f.nome+'.gz';const compresso=path.join(out,f.origine);fs.mkdirSync(path.dirname(compresso),{recursive:true});fs.writeFileSync(compresso,gzipSync(fs.readFileSync(originale)));f.dimensioneOrigine=fs.statSync(compresso).size;f.sha256Origine=digest(compresso);fs.rmSync(originale);}
   fs.writeFileSync(path.join(out,'manifest.json'),JSON.stringify({formato:1,id,nome:id==='qpdf'?'qpdf':'ClamAV',versione:id==='qpdf'?'12.4.2':'1.5.4',piattaforma,architettura,comandi,files},null,2)+'\n');
 
   console.log('Preparato '+target+'/'+id);

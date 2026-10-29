@@ -1,0 +1,53 @@
+name: Pacchetti della release
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run preload
+      - run: npm run sicurezza:prepara -- --piattaforma win32 --arch x64
+      - run: node test/sicurezza-installazione.js
+      - run: npm run dist:win -- --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: dist/*setup-x64.exe
+          if-no-files-found: error
+  debian:
+    runs-on: ubuntu-latest
+    container: debian:bookworm
+    timeout-minutes: 40
+    steps:
+      - name: Strumenti di compilazione e dipendenze di sistema
+        run: apt-get update && apt-get install -y --no-install-recommends ca-certificates git curl build-essential cmake pkg-config libssl-dev libjpeg62-turbo-dev zlib1g-dev patchelf python3 libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 libgbm1 libasound2 xvfb xauth
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run preload
+      - run: npm run sicurezza:prepara -- --piattaforma linux --arch x64
+      - run: node test/sicurezza-installazione.js
+      - name: Icona derivata dall'icona Windows dello stesso zaino
+        run: node -e "const fs=require('fs'),b=fs.readFileSync('build/icon.ico'),n=b.readUInt16LE(4),v=Array.from({length:n},(_,i)=>({l:b[6+i*16]||256,size:b.readUInt32LE(14+i*16),off:b.readUInt32LE(18+i*16)})).sort((a,b)=>b.l-a.l)[0];fs.writeFileSync('build/icon.png',b.subarray(v.off,v.off+v.size))"
+      - run: npm run dist:deb -- --publish never
+      - name: Contenuto e dipendenze del pacchetto
+        run: dpkg-deb --info dist/*.deb && dpkg-deb --contents dist/*.deb > /tmp/contenuto-deb.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: debian-amd64
+          path: dist/*.deb
+          if-no-files-found: error
