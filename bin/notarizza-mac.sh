@@ -89,6 +89,9 @@ echo "── 1/5  il bundle, firmato con Developer ID ────────�
 # electron-builder cerca da sé il Developer ID Application del portachiavi. E
 # l'hardened runtime con gli entitlements è nella configurazione, non qui: una
 # riga di firma scritta in due posti diverge al primo ritocco.
+# Anche i payload compressi vengono aperti dal servizio Apple: firmarli prima degli hash.
+ID_CERT="$(printf '%s' "$CERT" | sed -n 's/^ *[0-9]*) *\([0-9A-F]*\) .*/\1/p')"
+node bin/prepara-motori-sicurezza.js --piattaforma darwin --arch "$ARCH" --identita "$ID_CERT"
 npx electron-builder --mac "--$ARCH"
 [ -d "$APP" ] || { echo "✗ manca $APP"; exit 1; }
 codesign --verify --strict --deep "$APP"
@@ -112,7 +115,8 @@ echo "── 2/5  la notarizzazione dell'APP ───────────�
 # notarizzazione fallisce con un errore che parla d'altro.
 ZIP="$(mktemp -d "${TMPDIR:-/tmp}/studia-notarize-XXXXXX")/$NOME.zip"
 ditto -c -k --keepParent "$APP" "$ZIP"
-xcrun notarytool submit "$ZIP" --keychain-profile "${PROFILO}" --wait
+xcrun notarytool submit "$ZIP" --keychain-profile "${PROFILO}" --wait --output-format json > "$ZIP.notary.json"
+node -e 'const r=require(process.argv[1]);console.log("Apple: "+r.status+" · "+r.id);if(r.status!=="Accepted")process.exit(1)' "$ZIP.notary.json"
 xcrun stapler staple "$APP"
 xcrun stapler validate "$APP"
 echo "  ticket cucito all'app"
@@ -128,7 +132,8 @@ hdiutil create -volname "$NOME $VERSIONE" -srcfolder "$STAGE" -ov -format UDZO "
 
 echo ""
 echo "── 4/5  la notarizzazione del DMG ──────────────────────"
-xcrun notarytool submit "$DMG" --keychain-profile "${PROFILO}" --wait
+xcrun notarytool submit "$DMG" --keychain-profile "${PROFILO}" --wait --output-format json > "$DMG.notary.json"
+node -e 'const r=require(process.argv[1]);console.log("Apple: "+r.status+" · "+r.id);if(r.status!=="Accepted")process.exit(1)' "$DMG.notary.json"
 xcrun stapler staple "$DMG"
 xcrun stapler validate "$DMG"
 echo "  ticket cucito al dmg"

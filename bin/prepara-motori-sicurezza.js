@@ -46,7 +46,7 @@ function estrai(archivio,dest){
  if(nomi.some(n=>n.startsWith('/')||n.includes('\\')||n.split('/').includes('..')||/^[A-Za-z]:/.test(n)))throw Error('Percorso non valido nell’archivio.');
  comando(process.platform==='win32'?'tar':'/usr/bin/tar',['-xf',archivio,'-C',dest]);
 }
-function firmaMac(base){
+function firmaMac(base,identita){
  const files=elenco(base).filter(f=>f.endsWith('.dylib')||path.dirname(f)===path.join(base,'bin'));
  for(const f of files){
   const rpath=path.dirname(f)===path.join(base,'bin')?'@executable_path/../lib':'@loader_path';
@@ -56,10 +56,13 @@ function firmaMac(base){
   if(!presenti.includes(rpath))comando('/usr/bin/install_name_tool',['-add_rpath',rpath,f]);
   const deps=comando('/usr/bin/otool',['-L',f]);
   for(const riga of deps.split('\n').filter(l=>l.startsWith('\t'))){const d=riga.trim().split(' (')[0];if(!(d.startsWith('/usr/lib/')||d.startsWith('/System/Library/')||d.startsWith('@rpath/')||d.startsWith('@loader_path/')))throw Error('Dipendenza non portabile: '+d);}
-  comando('/usr/bin/codesign',['--force','--sign','-','--timestamp=none',f]);
+  const firma=identita?['--sign',identita,'--timestamp','--options','runtime']:['--sign','-','--timestamp=none'];
+  if(identita&&['clamscan','freshclam','sigtool'].includes(path.basename(f)))firma.push('--entitlements',path.join(ROOT,'build/entitlements.motori.plist'));
+  comando('/usr/bin/codesign',['--force',...firma,f]);
+  comando('/usr/bin/codesign',['--verify','--strict',f]);
  }
 }
-async function prepara({piattaforma=process.platform,architettura=process.arch,cache=path.join(ROOT,'build','sicurezza-download'),destinazione=path.join(ROOT,'build','sicurezza-pacchetti')}={}){
+async function prepara({identita,piattaforma=process.platform,architettura=process.arch,cache=path.join(ROOT,'build','sicurezza-download'),destinazione=path.join(ROOT,'build','sicurezza-pacchetti')}={}){
  const target=piattaforma+'-'+architettura;
  if(!['darwin-arm64','darwin-x64','win32-x64','linux-x64'].includes(target))throw Error('Target dei motori non supportato: '+target);
  if(piattaforma==='darwin'&&process.platform!=='darwin')throw Error('I pacchetti macOS si preparano su macOS per relocare e firmare i binari.');
@@ -117,7 +120,7 @@ async function prepara({piattaforma=process.platform,architettura=process.arch,c
   for(const f of fs.readdirSync(fonte).filter(f=>/^(license|copying|notice)/i.test(f)))if(fs.statSync(path.join(fonte,f)).isFile())copia(path.join(fonte,f),path.join(out,'licenze',f),src);
   fs.mkdirSync(path.join(out,'sorgenti'),{recursive:true});fs.copyFileSync(__filename,path.join(out,'sorgenti','ricetta-zaino.js'));fs.copyFileSync(sorgenti,path.join(out,'sorgenti',path.basename(sorgenti)));
   fs.writeFileSync(path.join(out,'sorgenti','PROVENIENZA.json'),JSON.stringify({binario:{url:spec[1]+spec[0],sha256:spec[2]},sorgenti:{url:DOWNLOAD[id+'-sorgenti'][1]+DOWNLOAD[id+'-sorgenti'][0],sha256:DOWNLOAD[id+'-sorgenti'][2]},modifiche:piattaforma==='darwin'?'Selezione dei soli programmi necessari; librerie senza symlink; rpath relativo e firma ad hoc. Il codice sorgente non è modificato.':'Selezione degli eseguibili e DLL necessari, senza unrar. Il codice sorgente non è modificato.',ricetta:'bin/prepara-motori-sicurezza.js nella distribuzione sorgente di ZAINO.'},null,2)+'\n');
-  if(piattaforma==='darwin')firmaMac(out);
+  if(piattaforma==='darwin')firmaMac(out,identita);
   const comandi=Object.fromEntries((id==='qpdf'?['qpdf']:['clamscan','freshclam','sigtool']).map(n=>[n,'bin/'+n+(piattaforma==='win32'?'.exe':'')]));
   if(piattaforma===process.platform&&architettura===process.arch)for(const c of Object.values(comandi))console.log(comando(path.join(out,c),c.includes('freshclam')?['--config-file='+ (process.platform==='win32'?'NUL':'/dev/null'),'--version']:['--version']).split('\n')[0]);
   const files=elenco(out).sort().map(f=>({nome:path.relative(out,f).split(path.sep).join('/'),dimensione:fs.statSync(f).size,sha256:digest(f),eseguibile:Object.values(comandi).some(c=>path.join(out,c)===f)}));
@@ -136,6 +139,6 @@ function verificaTarget(piattaforma,architettura){
 module.exports={prepara,verificaTarget,DOWNLOAD};
 if(require.main===module){
  const args=process.argv.slice(2),leggi=(k,d)=>args.includes(k)?args[args.indexOf(k)+1]:d;
- const op={piattaforma:leggi('--piattaforma',process.platform),architettura:leggi('--arch',process.arch),cache:leggi('--cache',undefined)};
+ const op={piattaforma:leggi('--piattaforma',process.platform),architettura:leggi('--arch',process.arch),cache:leggi('--cache',undefined),identita:leggi('--identita',undefined)};
  Promise.resolve(args.includes('--verifica')?verificaTarget(op.piattaforma,op.architettura):prepara(op)).catch(e=>{console.error(e.message);process.exitCode=1;});
 }
