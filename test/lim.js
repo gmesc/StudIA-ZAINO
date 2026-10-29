@@ -1,5 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),M=require('../App/assets/lim/modello'),L=require('../lib/lim');
+// Il bundle locale non deve trascinare le credenziali dei servizi della demo upstream.
+assert.equal(/AIza[0-9A-Za-z_-]{35}/.test(fs.readFileSync(path.join(__dirname,'../App/assets/lim/vendor/excalidraw.js'),'utf8')),false,'il bundle LIM contiene una chiave Google incorporata');
 const v=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'studia-lim-')));
 (async()=>{try{
  require('../lib/zaini').crea(v,'Scienze');require('../lib/zaini').crea(v,'Storia');

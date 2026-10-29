@@ -22,6 +22,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run preload
+      - name: Ricostruisci la lavagna locale senza configurazione Firebase
+        run: npm run lim:build
       - run: npm run sicurezza:prepara -- --piattaforma win32 --arch x64
       - run: node test/sicurezza-installazione.js
       - run: npm run dist:win -- --publish never
@@ -47,6 +49,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run preload
+      - name: Ricostruisci la lavagna locale senza configurazione Firebase
+        run: npm run lim:build
       - run: npm run sicurezza:prepara -- --piattaforma linux --arch x64
       - run: node test/sicurezza-installazione.js
       - name: Icona derivata dall'icona Windows dello stesso zaino
