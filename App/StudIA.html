@@ -12009,9 +12009,10 @@ function noteEtichettaAltrove(n){ return AppuntiElenco.noteEtichettaAltrove(n, m
 function noteMateriale(n){ return AppuntiElenco.noteMateriale(n, titoloMateriale); }
 
 
-function notesReload(){
+function notesReload(opzioni){
   var api=notesApi(), m=curMeta();
   if(!api || !m){ NOTES.list=[]; NOTES.listCourse=null; NOTES.listError=''; return; }
+  var elencoPrima=JSON.stringify((NOTES.list||[]).map(function(n){return [n.file,n.title];})), corsoPrima=NOTES.listCourse;
   var res;
   try{ res=api.leggi ? (api.leggi(m.courseId)||{}) : { notes:(api.list(m.courseId)||[]), error:'' }; }
   catch(e){ res={notes:[],error:e.message}; }
@@ -12022,7 +12023,8 @@ function notesReload(){
   NOTES.listError=err;
   noteResync(); refreshNoteUI();
   SEARCH.docs=null;
-  if(modoAttivo()==='zaino'){ try{ zainoNavAggiorna(); }catch(e){} }
+  var elencoCambiato=corsoPrima!==NOTES.listCourse || elencoPrima!==JSON.stringify(NOTES.list.map(function(n){return [n.file,n.title];}));
+  if(modoAttivo()==='zaino' && (!opzioni?.soloTesto || elencoCambiato)){ try{ zainoNavAggiorna(); }catch(e){} }
   if(err) console.error('appunti/list:',err);
 }
 function noteResync(s){
@@ -13287,9 +13289,11 @@ function noteSave(silent,s){
     catch(e){ toast('Salvataggio fallito. Tieni aperto questo riquadro e copia il testo: '+e.message,false); }
     refreshNoteUI(s); return false;
   }
+  var stessoFile=!res.file || res.file===s.cur.file;
   s.cur.file=res.file||s.cur.file; s.cur.body=body; s.dirty=false;
   try{ noteRicorda(s,false); }catch(e){ console.error('appunti/posizione:',e); }
-  notesReload(); refreshMyNotes();
+  // Il testo non cambia l’elenco delle fonti: evitare una scansione di tutti i PDF ad ogni autosave.
+  notesReload({soloTesto:stessoFile}); refreshMyNotes();
   if(!silent) toast('Appunto salvato',true);
   return true;
 }
@@ -15879,7 +15883,7 @@ window.addEventListener('blur', function(){ try{ letturaFlush(); ascoltoFlush();
    senza bisogno di ricaricare l'app. */
 window.addEventListener('focus', function(){
   if(!notesApi() || !curMeta()) return;
-  notesReload(); noteResync();
+  notesReload({soloTesto:true}); noteResync();
   try{ refreshNoteUI(); refreshMyNotes(); }catch(e){}
 });
 
@@ -22881,6 +22885,7 @@ window.addEventListener('keydown', function(e){
 <script src="assets/chat/fonti-scelta.js"></script>
 <script src="assets/chat/schede-testo.js"></script>
 <script src="assets/chat/schede-piano.js"></script>
+<script src="assets/chat/aggiornamento-studio.js"></script>
 <script src="assets/chat/schede-ripasso.js"></script>
 <script src="assets/chat/studio.js"></script>
 <script src="assets/chat/citazioni.js"></script>
