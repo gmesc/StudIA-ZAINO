@@ -104,6 +104,7 @@
      divergono, e quello dimenticato fa cancellare storie alla potatura. -->
 <script src="assets/ripasso/sorgenti.js"></script>
 <script src="assets/appunti/elenco.js"></script>
+<script src="assets/appunti/salvataggio.js"></script>
 <script src="assets/appunti/scrivibile.js"></script>
 <script src="assets/appunti/citazione.js"></script>
 <script src="assets/onboarding/avvio.js"></script>
@@ -12057,7 +12058,8 @@ function noteFlushStato(s){
   if(s.eliminando) return false;
   mdbChiudi(true,s);
   clearTimeout(s.timer); s.timer=null;
-  if(s.dirty && !noteSave(true,s)) return false;
+  var inVolo=s.salvataggioInCorso&&AppuntiSalvataggio.attuale(s,s.salvataggioInCorso);
+  if((s.dirty||inVolo) && !noteSave(true,s,true)) return false;
   try{ noteRicorda(s,false); }catch(e){ toast('Posizione dell’appunto non salvata: '+e.message,false); }
   return true;
 }
@@ -13225,7 +13227,8 @@ function noteSalvaRispostaAI(zaino, sessionId, messageId, nuovo){
   if(!nuovo){
     var disco=notesApi().leggi(b.corso), notaDisco=(disco.notes||[]).find(function(n){return n.file===b.file;});
     var normalizza=function(t){return String(t||'').replace(/^\n+/,'').trimEnd();};
-    if(disco.error || !notaDisco || normalizza(notaDisco.body)!==normalizza(s.cur.body)) throw new Error('Appunto cambiato sul disco: riaprilo prima di aggiungere la risposta.');
+    var inVolo=s.salvataggioInCorso, atteso=inVolo&&AppuntiSalvataggio.attuale(s,inVolo)?inVolo.body:s.cur.body;
+    if(disco.error || !notaDisco || (normalizza(notaDisco.body)!==normalizza(s.cur.body)&&normalizza(notaDisco.body)!==normalizza(atteso))) throw new Error('Appunto cambiato sul disco: riaprilo prima di aggiungere la risposta.');
   }
   if(!noteFlush() || !appuntiParalleli.flush()) throw new Error('Salva prima gli appunti aperti.');
   var prima=!nuovo?s.mde.value():null;
@@ -13272,7 +13275,7 @@ function noteMeta(n){
    'materiale','pagina','anchor','creato'].forEach(function(k){ meta[k]=(n && n[k])||''; });
   return meta;
 }
-function noteSave(silent,s){
+function noteSave(silent,s,sincrono){
   s=s||noteStatoAttivo();
   if(s.eliminando) return false;
   mdbChiudi(true,s);
@@ -13280,22 +13283,33 @@ function noteSave(silent,s){
   var api=notesApi(), pid=s.courseId;
   if(!api || !pid){ toast('Nessun contenitore aperto: appunto non salvato',false); return false; }
   clearTimeout(s.timer); s.timer=null;
-  var body=s.mde.value(), res;
-  try{ res=api.save(pid,s.cur.file,noteMeta(s.cur),body,{svuota:!silent}); }
-  catch(e){ res={error:e.message}; }
-  if(!res || res.error){
-    s.dirty=true;
-    try{ noteRicorda(s,true); toast('Appunto non salvato nel vault: '+((res&&res.error)||'errore sconosciuto')+'. La bozza resta conservata in questa app.',false); }
-    catch(e){ toast('Salvataggio fallito. Tieni aperto questo riquadro e copia il testo: '+e.message,false); }
-    refreshNoteUI(s); return false;
+  var body=s.mde.value(), meta=noteMeta(s.cur), t=AppuntiSalvataggio.inizia(s,body);
+  function concludi(res){
+    if(!AppuntiSalvataggio.attuale(s,t))return !!res&&!res.error;
+    if(!res || res.error){
+      s.dirty=true;s.salvataggioInCorso=null;
+      try{ noteRicorda(s,true); toast('Appunto non salvato nel vault: '+((res&&res.error)||'errore sconosciuto')+'. La bozza resta conservata in questa app.',false); }
+      catch(e){ toast('Salvataggio fallito. Tieni aperto questo riquadro e copia il testo: '+e.message,false); }
+      refreshNoteUI(s);return false;
+    }
+    var nota=Object.assign({file:res.file||t.file,body:body},meta,res.nota||{});
+    AppuntiSalvataggio.completa(s,t,nota,s.mde.value());
+    // Il risultato contiene già l'appunto scritto: niente lettura della cartella o menu ricostruiti.
+    if(NOTES.listCourse===pid){
+      var i=NOTES.list.findIndex(function(n){return n.file===t.file;});
+      if(i>=0)NOTES.list[i]=nota;
+      SEARCH.docs=null;
+    }
+    var d=noteEl('noteDirty',s);if(d)d.hidden=!s.dirty;
+    try{ noteRicorda(s,s.dirty); }catch(e){ console.error('appunti/posizione:',e); }
+    refreshMyNotes(t.file);
+    if(res.avviso)toast(res.avviso,false);else if(!silent)toast('Appunto salvato',true);
+    return true;
   }
-  var stessoFile=!res.file || res.file===s.cur.file;
-  s.cur.file=res.file||s.cur.file; s.cur.body=body; s.dirty=false;
-  try{ noteRicorda(s,false); }catch(e){ console.error('appunti/posizione:',e); }
-  // Il testo non cambia l’elenco delle fonti: evitare una scansione di tutti i PDF ad ogni autosave.
-  notesReload({soloTesto:stessoFile}); refreshMyNotes();
-  if(!silent) toast('Appunto salvato',true);
-  return true;
+  try{
+    if(sincrono)return concludi(api.flush(pid,t.file,meta,body,{svuota:!silent}));
+    return api.saveAsync(pid,t.file,meta,body,{svuota:!silent}).then(concludi,function(e){return concludi({error:e.message});});
+  }catch(e){return concludi({error:e.message});}
 }
 async function noteDelete(s){
   s=s||noteStatoAttivo();
@@ -13532,7 +13546,7 @@ function myNotesInner(){
   else h+='<ul>'+mine.map(function(n){
     var snip=(n.anchor? '«'+n.anchor+'»' : (n.body||'').replace(/^>.*$/gm,'').split('\n').filter(function(s){return s.trim();})[0]||'');
     var body=''; try{ body=renderNoteMd(n.body||''); }catch(e){ body=escHtml(n.body||''); }
-    return '<li><details><summary><span class="nt-title">'+escHtml(n.title||n.file)+'</span>'+
+    return '<li data-appunto="'+escHtml(n.file)+'"><details><summary><span class="nt-title">'+escHtml(n.title||n.file)+'</span>'+
            (snip?'<br><span class="nt-snip">'+escHtml(snip.slice(0,110))+'</span>':'')+'</summary>'+
            '<div class="nt-body">'+body+'</div>'+
            '<a data-note="'+escHtml(n.file)+'" class="nt-edit">Apri nell’editor →</a></details></li>';
@@ -13540,7 +13554,19 @@ function myNotesInner(){
   h+='<button type="button" class="addnote" id="addNoteBtn">+ Nuovo appunto</button>';
   return h;
 }
-function refreshMyNotes(){ var b=$('#myNotesBox'); if(b) b.innerHTML=myNotesInner(); }
+function refreshMyNotes(file){
+  var b=$('#myNotesBox');if(!b)return;
+  if(!file){b.innerHTML=myNotesInner();return;}
+  var li=Array.from(b.querySelectorAll('li[data-appunto]')).find(function(el){return el.dataset.appunto===file;});
+  var n=NOTES.list.find(function(n){return n.file===file;});if(!li||!n)return;
+  var snip=n.anchor?'«'+n.anchor+'»':(n.body||'').replace(/^>.*$/gm,'').split('\n').find(function(s){return s.trim();})||'';
+  var summary=li.querySelector('summary'),snippet=li.querySelector('.nt-snip');
+  if(!snippet&&snip){summary.appendChild(document.createElement('br'));snippet=document.createElement('span');snippet.className='nt-snip';summary.appendChild(snippet);}
+  if(snippet)snippet.textContent=snip.slice(0,110);
+  var details=li.querySelector('details'),corpo=li.querySelector('.nt-body');
+  var aggiorna=function(){if(details.open){corpo.innerHTML=renderNoteMd(n.body||'');details.ontoggle=null;}};
+  details.ontoggle=aggiorna;aggiorna();
+}
 
 /* interazioni: click su un appunto, nuovo appunto, barra dell’editor */
 document.addEventListener('click',function(e){
@@ -15857,12 +15883,12 @@ document.addEventListener('keydown',function(e){
 });
 /* Il salvataggio automatico ha 1,8 s di ritardo: chiudere o ricaricare la finestra
    in quella finestra di tempo buttava via l'ultima riga scritta. Ora si sbriga prima. */
-window.addEventListener('beforeunload', function(){ noteFlush(); rigaFlush(); });
-document.addEventListener('visibilitychange', function(){ if(document.hidden) noteFlush(); });
+window.addEventListener('beforeunload', function(e){ if(!noteFlush()){e.preventDefault();e.returnValue=false;return;} rigaFlush(); });
+document.addEventListener('visibilitychange', function(){ if(document.hidden)noteStati().forEach(function(s){if(s.dirty)noteSave(true,s);}); });
 /* Le mappe si salvano PRIMA: quando la finestra passa in secondo piano e quando
    perde il fuoco, non alla chiusura.
    ⚠️ `noteFlush()` dentro `beforeunload` funziona solo perché gli appunti si
-   scrivono in modo sincrono dentro il preload. Le mappe passano da `invoke`, e
+   attendono la coda con note:flush prima di chiudere. Le mappe passano da `invoke`, e
    una promessa lanciata in `beforeunload` è una corsa che si perde sempre: la
    finestra si chiude prima della risposta. Meglio scrivere un attimo prima, e
    spesso, che credere di avere una rete all'ultimo istante. */

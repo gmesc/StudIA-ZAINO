@@ -74,7 +74,8 @@ function harness(){
     },
     rename(id,file,title){const n=files[id].find(n=>n.file===file);assert(n);n.title=title;n.file=title+'.md';return {file:n.file,nota:{...n}};},
     async remove(id,file){if(errore)return false;files[id]=files[id].filter(n=>n.file!==file);return true;}};
-  const ctx={console,UiIcone:require('../App/assets/interfaccia/icone'),UiToolbar:{appunti(){}},document:{getElementById:elemento,createElement(){return elemento('creato-'+elementi.size);},documentElement:{dataset:{}},
+  api.saveAsync=async(...args)=>api.save(...args);api.flush=(...args)=>api.save(...args);
+  const ctx={console,AppuntiSalvataggio:require('../App/assets/appunti/salvataggio'),UiIcone:require('../App/assets/interfaccia/icone'),UiToolbar:{appunti(){}},document:{getElementById:elemento,createElement(){return elemento('creato-'+elementi.size);},documentElement:{dataset:{}},
       addEventListener(t,f){(eventiDom[t]||(eventiDom[t]=[])).push(f);}},
     localStorage:{getItem:k=>dati.get(k)||null,setItem:(k,v)=>dati.set(k,v)},EasyMDE:Mde,
     setTimeout(f,ms){const id=++prossimoTimer;timers.set(id,{f,ms});return id;},clearTimeout:id=>timers.delete(id),
@@ -160,7 +161,7 @@ async function trasferimento(){
   const storia={done:[{testo:'prima'}],undone:[]};s1.mde.codemirror.setHistory(storia);
   const save=h.ctx.noteSave;
   for(const fallisce of [s1,s2]){
-    h.ctx.noteSave=(silent,s)=>s===fallisce?false:save(silent,s);
+    h.ctx.noteSave=(silent,s,sincrono)=>s===fallisce?false:save(silent,s,sincrono);
     assert.equal(h.api.open('a.md'),false);assert.equal(s1.cur.file,'a.md');assert.equal(s2.cur.file,'b.md');
     assert.equal(s1.mde.value(),'Origine modificata');assert.equal(s2.mde.value(),'Destinazione modificata');
     s1.dirty=s2.dirty=true;
@@ -260,7 +261,7 @@ async function eliminazioneInAttesa(){
     api.remove=()=>new Promise(r=>{completa=r;});
     const fallita=h.ctx.noteDelete(s);completa(false);assert.equal(await fallita,false);
     assert(s.cur && s.dirty);assert.equal(s.mde.codemirror.getOption('readOnly'),false);
-    h.scatti(1800);
+    h.scatti(1800);await Promise.resolve();
     assert.equal(h.files.uno.find(n=>n.file==='c.md').body,'Modifica che deve sopravvivere al fallimento','il salvataggio automatico riparte dopo un errore');
     assert.equal(s.dirty,false);
     h.ctx.noteMolla();

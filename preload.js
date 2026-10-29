@@ -146,6 +146,8 @@ const vaultApi = {
     notice: (percorso) => ipcRenderer.invoke('crediti:notice', { percorso: percorso || '' })
   },
   notes: {
+    saveAsync: (corso,file,meta,body,opt) => ipcRenderer.invoke('note:salva',{corso,file,meta,body,opt}),
+    flush: (corso,file,meta,body,opt) => ipcRenderer.sendSync('note:flush',{corso,file,meta,body,opt}),
     leggi: id => sync('notes','leggi',id), list: id => sync('notes','list',id),
     save: (id,file,meta,body,opt) => sync('notes','save',id,file,meta,body,opt),
     rename: (id,file,titolo) => sync('notes','rename',id,file,titolo),
