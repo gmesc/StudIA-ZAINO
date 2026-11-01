@@ -1,6 +1,6 @@
 # PRESENTA e GOBBO nel Banco
 
-PRESENTA è lo strumento del Banco per comporre le presentazioni. GOBBO è il pannello indipendente con note private, timer e comandi del relatore. Il primo percorso utilizzabile è collegato: creazione, modifica, autosave, riapertura, anteprima isolata, player nativo Reveal.js ed esportazione HTML offline. L’interfaccia usa i componenti ZAINO esistenti e resta una prima versione da affinare con i mockup richiesti.
+PRESENTA è lo strumento del Banco per comporre le presentazioni. GOBBO è il pannello indipendente con note private, timer e comandi del relatore. Il primo percorso utilizzabile è collegato: creazione, modifica, autosave, riapertura, anteprima isolata, player nativo Reveal.js ed esportazione HTML offline. L’editor usa il layout **B · Sul foglio**, scelto nel confronto dei mockup, con i componenti ZAINO esistenti: selezione e manipolazione sulla slide, elenco degli oggetti e proprietà contestuali sotto il foglio.
 
 ## Come provarlo nell’app
 
@@ -12,7 +12,7 @@ PRESENTA è lo strumento del Banco per comporre le presentazioni. GOBBO è il pa
 6. Scegliere **Presenta a schermo intero**. Aprire **GOBBO** in un altro split per leggere le note e comandare la sessione. `Esc` esce dallo schermo intero della finestra pubblica; un altro `Esc` chiude quella finestra. `F` commuta lo schermo intero.
 7. **Esporta presentazione HTML** apre il selettore della cartella e produce un pacchetto offline senza note.
 
-Il campo titolo modifica anche il titolo visibile nella slide. L’editor offre layout guidati, dimensione del testo, allineamento, colonne occupate e passaggi animati; **Stato successivo animato** collega le corrispondenze fra le due slide. Le formule usano LaTeX; il testo accetta Markdown e delimitatori matematici espliciti. I bottoni hanno etichette accessibili e tooltip italiani; `⌘/Ctrl+S`, `⌘/Ctrl+Z`, `⌘/Ctrl+Shift+Z` agiscono sull’editor.
+Il campo titolo modifica anche il titolo visibile nella slide. Selezionare un oggetto sul foglio o nell’elenco: i comandi sotto mostrano contenuto, dimensione e colore del testo, allineamento delle righe e posizione verticale nel riquadro. Trascinare per spostare; usare il quadratino nell’angolo per ridimensionare. Le frecce spostano, Maiusc aumenta il passo e Alt + frecce ridimensiona. La griglia di nove posizioni offre un’alternativa al trascinamento. **Slide e sfondo** mostra le disposizioni illustrate **Immagine a sinistra**, **Testo a sinistra** e **Immagine sopra**; **Sfondo della slide** offre colori pronti e selettore personalizzato, indipendenti dal tema dell’app. Il testo usa un colore automatico leggibile, salvo una scelta sul singolo oggetto. Animazioni e appunti privati rimangono nelle sezioni espandibili; **Stato successivo animato** collega le corrispondenze fra le due slide. Le formule usano LaTeX; il testo accetta Markdown e delimitatori matematici espliciti. I bottoni hanno etichette accessibili e tooltip italiani; `⌘/Ctrl+S`, `⌘/Ctrl+Z`, `⌘/Ctrl+Shift+Z` agiscono sull’editor.
 
 La testata di PRESENTA avvia il deck reale. GOBBO è marcato privato nel registro e non offre la proiezione generica, neppure nella barra a schermo intero. Una sessione usa la revisione fissata all’avvio: eventuali modifiche successive nell’editor non cambiano in silenzio le note o le slide già proiettate.
 
@@ -65,7 +65,7 @@ Limiti iniziali: 8 MiB di JSON, 300 slide totali, 200 blocchi per slide, 512 MiB
 
 ## Modello, animazioni e matematica
 
-`App/assets/presentazioni/modello.js` contiene operazioni pure e cronologia annulla/ripeti. Sono previsti titolo, testo Markdown, lista con ID stabili delle voci, formula, immagine, audio e video. Ogni blocco ha contenuto, posizione nella griglia, stile e provenienza separati. Un singolo comando di inserimento può portare insieme blocco e descrittore della risorsa.
+`App/assets/presentazioni/modello.js` contiene operazioni pure e cronologia annulla/ripeti. Sono previsti titolo, testo Markdown, lista con ID stabili delle voci, formula, immagine, audio e video. Ogni blocco ha contenuto, stile e provenienza separati. La disposizione libera usa `style.box` con x/y/larghezza/altezza in percentuale, validate entro il foglio. Sfondo della slide e posizione verticale del contenuto sono opzionali e seguono anche il player e l’export. Le disposizioni precedenti continuano ad aprirsi senza riscrittura: il primo gesto sul foglio converte le misure visualizzate in posizioni libere, con un’unica operazione annullabile. La selezione e i movimenti intermedi del mouse non scrivono sul disco; il rilascio registra il gesto nella cronologia. Un singolo comando di inserimento può portare insieme blocco e descrittore della risorsa.
 
 Le animazioni sono azioni ordinate, anche multiple sullo stesso bersaglio. Le azioni nello stesso passaggio sono simultanee; effetti successivi generano wrapper annidati. Gli indici visuali sono consecutivi e partono da 1; `indiceFragment` è l’adattatore verso gli indici Reveal, che partono da 0. L’eliminazione di un bersaglio ricompatta i gruppi rimasti.
 
@@ -115,7 +115,7 @@ npm test
 bash bin/prova-zaino.sh prova-presenta-fondazioni.js prova-presenta-editor.js prova-sicurezza.js
 ```
 
-La prova CDP attraversa il preload e l’IPC reali di ZAINO. È registrata nel runner sintetico; non simula un drag dell’utente. Il test esistente `prova-presentazione.js` si ferma sul passaggio nativo a schermo intero della finestra esterna, nello stesso punto sia sul ramo sia sulla copia del commit iniziale `20a314b`. Le altre verifiche passate non vengono presentate come collaudo di quel passaggio, degli schermi esterni, di Windows o degli installatori.
+La prova CDP attraversa il preload e l’IPC reali di ZAINO. È registrata nel runner sintetico e ora usa anche eventi nativi del mouse per spostamento e ridimensionamento degli oggetti. Il test esistente `prova-presentazione.js` si ferma sul passaggio nativo a schermo intero della finestra esterna, nello stesso punto sia sul ramo sia sulla copia del commit iniziale `20a314b`. Le altre verifiche passate non vengono presentate come collaudo di quel passaggio, degli schermi esterni, di Windows o degli installatori.
 
 ## Verifiche dell’integrazione e limiti
 
@@ -125,7 +125,7 @@ La prova CDP attraversa il preload e l’IPC reali di ZAINO. È registrata nel r
 
 `test/presentazioni-chiusura.js` chiude davvero la finestra con un disco guasto simulato, controlla che restino finestra, ultima revisione e bozza, poi riprova con una scrittura rallentata e controlla l’ultima battuta sul disco dopo la chiusura.
 
-Restano da affinare con i mockup l’editing direttamente sul canvas, le miniature, il ridimensionamento con maniglie e i controlli più articolati delle animazioni. I blocchi si modificano nei campi sotto l’anteprima; un click sul blocco porta al campo corrispondente. L’avviso di overflow segnala il contenuto troppo alto. Non è un editor a posizionamento libero equivalente a PowerPoint.
+La composizione libera è disponibile: il click seleziona l’oggetto, trascinamento e maniglia modificano il riquadro, i campi contestuali modificano il contenuto. Un gesto corrisponde a un solo Annulla e le coordinate sono indipendenti dalle dimensioni dello split. L’anteprima mostra tutti i passaggi animati per consentire la selezione; il pubblico mantiene la sequenza prevista. Un avviso segnala contenuto che non entra nel riquadro. Le note private non entrano neppure nei metadati dei messaggi dell’anteprima. Restano miniature grafiche nella scaletta, modifica del testo in linea sul foglio, rotazione, snap/guide e controlli più articolati delle animazioni.
 
 La riapertura di una finestra pubblica chiusa avvia una nuova sessione dall’inizio; il trasferimento dell’autorità fra un player locale e quello esterno, preservando il passaggio in corso, resta da aggiungere. GOBBO mostra le note della slide attuale, non un’anteprima grafica della successiva. La riparazione da UI di un archivio con JSON principale corrotto non è ancora offerta: l’errore è dichiarato e le copie restano sul disco.
 

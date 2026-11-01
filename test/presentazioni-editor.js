@@ -21,6 +21,28 @@ const differita=()=>{let resolve,reject;return {promise:new Promise((r,j)=>{reso
  rotto=false;await errore.flush();assert.equal(errore.sporco,false);errore.svuota();
  let d=M.applica(disco,{tipo:'aggiungiSlide',slideId:sid});const secondo=d.stacks[1].slides[0].id;
  d=M.applica(d,{tipo:'spostaArgomento',slideId:secondo,delta:-1});assert.equal(d.stacks[0].slides[0].id,secondo);assert.throws(()=>M.applica(d,{tipo:'spostaArgomento',slideId:secondo,delta:-1}));
+ // Il foglio usa percentuali: un gesto è una sola operazione, anche quando converte la griglia.
+ const {validatePresentazione}=require('../lib/validate'),Rivela=require('../App/assets/presentazioni/reveal-adapter');
+ let foglio=M.crea('00000000-0000-4000-8000-000000000001','Sul foglio'),fid=foglio.stacks[0].slides[0].id;
+ foglio=M.applica(foglio,{tipo:'titoloSlide',slideId:fid,title:'Demografia'});
+ foglio=M.applica(foglio,{tipo:'inserisciBlocco',slideId:fid,block:{type:'text',slot:'body',markdown:'Confederazione'}});
+ const slideFoglio=()=>M.trova(foglio,fid).slide,blocchi=slideFoglio().blocks;
+ assert.equal(slideFoglio().layout,'free');assert(blocchi.every(b=>M.riquadro(b.style.box)));
+ const box={x:7,y:30,width:40,height:55};assert.deepEqual(M.muovi(box,12,-9),{x:19,y:21,width:40,height:55});
+ assert.deepEqual(M.muovi(box,500,-500),{x:60,y:0,width:40,height:55});
+ assert.deepEqual(M.muovi(box,500,500,true),{x:7,y:30,width:93,height:70});assert.equal(M.muovi(box,-500,0,true).width,2);
+ assert.throws(()=>M.muovi(box,NaN,0));assert(!M.riquadro({...box,width:100}));assert.equal(box.x,7,'il gesto non muta il documento di partenza');
+ assert.deepEqual(M.ancora(box,'basso-destra'),{x:53,y:38,width:40,height:55});
+ foglio=M.applica(foglio,{tipo:'slide',slideId:fid,layout:'title-text'});const storiaFoglio=M.cronologia(foglio),boxes=blocchi.map((b,i)=>({id:b.id,box:i?M.muovi(box,12,-9):b.style.box,fontSize:b.type==='title'?54:32}));
+ storiaFoglio.applica({tipo:'posizionaBlocchi',slideId:fid,boxes});assert.equal(M.trova(storiaFoglio.documento,fid).slide.blocks[1].style.box.x,19);
+ assert.deepEqual(storiaFoglio.annulla(),foglio,'un annulla ripristina tutte le misure e la disposizione precedente');storiaFoglio.ripeti();foglio=storiaFoglio.documento;
+ assert.throws(()=>M.applica(foglio,{tipo:'posizionaBlocchi',slideId:fid,boxes:[boxes[0]]}),/Misure/);
+ assert.throws(()=>M.applica(foglio,{tipo:'posizionaBlocchi',slideId:fid,boxes:boxes.map(v=>({...v,box:{...v.box,x:99}}))}),/Riquadro/);
+ foglio=M.applica(foglio,{tipo:'slide',slideId:fid,background:'#0f1115'});assert(validatePresentazione(foglio).ok);
+ const pubblica=M.pubblica(foglio);assert.equal(pubblica.stacks[0].slides[0].background,'#0f1115');assert.deepEqual(pubblica.stacks[0].slides[0].blocks[1].style.box,boxes[1].box);
+ const htmlFoglio=Rivela.compila(foglio).html;assert(htmlFoglio.includes('left:19%'));assert(htmlFoglio.includes('background-color:#0f1115'));assert(htmlFoglio.includes('color:#fbfbfa'));
+ assert.throws(()=>M.applica(foglio,{tipo:'slide',slideId:fid,background:'red;url(http://example.com)'}),/Sfondo/);
+ const errato=M.copia(foglio);errato.stacks[0].slides[0].blocks[0].style.box.x=500;assert(!validatePresentazione(errato).ok);
  // Il protocollo non può diventare un lettore generico del vault.
  const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),P=require('../lib/presentazioni'),R=require('../lib/presentazioni-risorse'),V=require('../lib/presentazioni-vista');
  const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'zaino-presenta-vista-'));try{

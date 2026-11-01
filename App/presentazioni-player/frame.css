@@ -1,1 +1,10 @@
 html,body{width:100%;height:100%;margin:0;overflow:hidden}.reveal{height:100%}
+
+.reveal[data-editor="true"] .fragment{opacity:1!important;visibility:visible!important;transform:none!important}
+.reveal[data-editor="true"] .presenta-blocco{cursor:move;touch-action:none;outline-offset:-1px}
+.reveal[data-editor="true"] .presenta-blocco:hover,.reveal[data-editor="true"] .presenta-blocco:focus-visible{outline:2px solid var(--selezione)}
+.reveal[data-editor="true"] .presenta-blocco[data-selezionato="true"]{outline:3px solid var(--selezione);z-index:2}
+.reveal[data-editor="true"] :is(img,audio,video){pointer-events:none}
+.presenta-maniglia{display:block;position:absolute;right:0;bottom:0;width:22px;height:22px;background:var(--selezione);border:2px solid white;box-sizing:border-box;cursor:nwse-resize;z-index:3;touch-action:none}
+
+.reveal[data-editor="true"][data-bloccato="true"] .presenta-blocco{cursor:progress}

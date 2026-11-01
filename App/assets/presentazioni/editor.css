@@ -7,12 +7,12 @@
 .presenta-corpo{flex:1;min-height:0;overflow:auto;container-type:inline-size}
 .presenta-vuoto{padding:24px;max-width:56ch;line-height:1.5}
 .presenta-vuoto h2{font-size:18px;margin:0 0 8px}
-.presenta-editor{display:grid;grid-template-columns:128px minmax(0,1fr);min-height:100%}
+.presenta-editor{display:grid;grid-template-columns:160px minmax(0,1fr);min-height:100%}
 .presenta-scaletta{border-right:1px solid var(--line);padding:8px;display:flex;flex-direction:column;gap:4px;align-items:stretch}
 .presenta-scaletta .tbtn{height:auto;min-height:var(--tb-h);justify-content:flex-start;text-align:left;white-space:normal;text-transform:none;letter-spacing:normal;overflow-wrap:anywhere;padding-top:8px;padding-bottom:8px;flex:none}
 .presenta-scaletta .tbtn[data-verticale="true"]{margin-left:12px;border-left:2px solid var(--line)}
 .presenta-lavoro{min-width:0;padding:12px;display:flex;flex-direction:column;gap:12px}
-.presenta-anteprima{width:100%;aspect-ratio:16/9;min-height:160px;max-height:420px;border:1px solid var(--line);background:var(--bg)}
+.presenta-anteprima{width:100%;aspect-ratio:16/9;min-height:0;max-height:46vh;border:1px solid var(--line);background:var(--bg);display:block;box-sizing:border-box}
 .presenta-campi{display:flex;flex-direction:column;gap:12px;min-width:0}
 .presenta-campo{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;min-width:0}
 .presenta-campo :is(input,textarea,select){box-sizing:border-box;width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:14px/1.5 var(--font-text),sans-serif;border-radius:0;padding:8px;font-weight:400;min-width:0}
@@ -32,5 +32,29 @@
 .gobbo-titolo{font-size:20px;line-height:1.25;margin:0}
 .gobbo-note{white-space:pre-wrap;font-size:18px;line-height:1.6;overflow-wrap:anywhere;margin:0}
 .gobbo-tempo{font-variant-numeric:tabular-nums;font-size:20px;padding:0 8px}
-@container(max-width:420px){.presenta-editor{grid-template-columns:minmax(0,1fr)}.presenta-scaletta{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}.presenta-scaletta .tbtn{max-width:160px}.presenta-lavoro{padding:8px}.presenta-scaletta .tbtn[data-verticale="true"]{margin-left:0}}
 .presenta-materiali{inset:0;margin:auto;max-height:70vh}.presenta-materiali::backdrop{background:var(--overlay,rgba(0,0,0,.25))}
+/* B · Sul foglio: canvas sopra, proprietà contestuali sotto, scaletta a sinistra. */
+.presenta-navigazione{border-right:1px solid var(--line);background:var(--panel);min-width:0}
+.presenta-scaletta{border-right:0;border-bottom:1px solid var(--line)}
+.presenta-oggetti{padding:12px 8px;display:flex;flex-direction:column;gap:4px}
+.presenta-oggetti .tbtn{justify-content:flex-start;gap:8px;text-transform:none;letter-spacing:0}
+.presenta-sezione{font-size:13px;line-height:1.4;font-weight:600;margin:0 0 12px}
+.presenta-intestazione-campi{display:flex;align-items:end;gap:16px;flex-wrap:wrap}
+.presenta-intestazione-campi>.presenta-campo{flex:1;min-width:180px}
+.presenta-proprieta-foglio{display:grid;grid-template-columns:minmax(180px,1.2fr) minmax(180px,1fr) minmax(170px,.8fr);gap:20px;border-block:1px solid var(--line);padding:16px 0}
+.presenta-proprieta-foglio>section{min-width:0;display:flex;flex-direction:column;gap:12px}
+.presenta-proprieta-foglio .presenta-sezione{margin:0}
+.presenta-proprieta-foglio .presenta-blocco-editor{padding:0;border:0;display:flex;flex-direction:column;gap:12px}
+.presenta-proprieta-foglio .presenta-bar .tbtn{gap:.4rem}
+.presenta-posizioni{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.presenta-posizioni .tbtn{border:1px solid var(--line);text-transform:none;letter-spacing:0;white-space:normal;text-align:center;padding-inline:4px;font-weight:500}
+.presenta-modelli{display:flex;flex-wrap:wrap;gap:8px}
+.presenta-modello.tbtn{flex:1;min-width:100px;min-height:80px;height:auto;white-space:normal;flex-direction:column;gap:6px;border:1px solid var(--line);text-transform:none;letter-spacing:0;padding-block:8px;font-weight:500}
+.presenta-modello svg{width:72px;height:34px;flex:none}
+.presenta-campione{display:inline-block;width:16px;height:16px;flex:none;border:1px solid var(--line)}
+.presenta-campo input[type=color]{height:var(--tb-h);width:100%;padding:2px;cursor:pointer}
+.presenta-intestazione-campi>.tbar{border:0}
+@container(max-width:1000px){.presenta-proprieta-foglio{grid-template-columns:minmax(180px,1fr) minmax(170px,1fr)}.presenta-proprieta-foglio>section:last-child{grid-column:1/-1}.presenta-editor{grid-template-columns:130px minmax(0,1fr)}}
+@container(max-width:650px){.presenta-editor{grid-template-columns:minmax(0,1fr)}.presenta-navigazione{border-right:0;border-bottom:1px solid var(--line)}.presenta-scaletta,.presenta-oggetti{flex-direction:row;flex-wrap:nowrap;overflow-x:auto}.presenta-oggetti{padding:4px 8px;align-items:center}.presenta-oggetti .presenta-sezione{margin:0 8px 0 0}.presenta-oggetti .tbtn{flex:none}.presenta-proprieta-foglio{grid-template-columns:minmax(0,1fr)}.presenta-lavoro{padding:8px}.presenta-scaletta .tbtn{max-width:160px}}
+/* Il contenuto sotto il canvas deve contribuire all'altezza scrollabile dello split. */
+.presenta-lavoro>*{flex-shrink:0}

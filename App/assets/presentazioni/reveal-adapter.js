@@ -49,6 +49,7 @@
   const s=b.style||{},out=[];
   if(s.column)out.push('grid-column:'+s.column+' / span '+(s.span||6));else if(s.span)out.push('grid-column:span '+s.span);
   if(s.row)out.push('grid-row:'+s.row+' / span '+(s.rowSpan||1));if(s.fontSize)out.push('font-size:'+s.fontSize+'px');
+  if(s.box)out.push('left:'+s.box.x+'%','top:'+s.box.y+'%','width:'+s.box.width+'%','height:'+s.box.height+'%');if(s.verticalAlign)out.push('justify-content:'+({start:'flex-start',center:'center',end:'flex-end'})[s.verticalAlign]);
   if(s.color)out.push('color:'+s.color);if(s.align)out.push('text-align:'+s.align);return out.join(';');
  }
  function compila(documento){
@@ -68,10 +69,10 @@
    const identita=b.matchId?' data-id="'+esc(b.matchId)+'"':'';
    if(b.style?.highlight)contenuto='<mark style="background-color:'+b.style.highlight+';color:var(--ink)">'+contenuto+'</mark>';
    contenuto='<div class="presenta-contenuto"'+identita+(b.style?.scale?' style="transform:scale('+b.style.scale+')"':'')+'>'+contenuto+'</div>';
-   return '<div class="presenta-blocco" data-slot="'+b.slot+'" data-block-id="'+esc(b.id)+'" style="'+esc(stile(b))+'">'+fragments(contenuto,b.id,s)+'</div>';
+   return '<div class="presenta-blocco" data-slot="'+b.slot+'" data-block-id="'+esc(b.id)+'" style="'+esc(stile({...b,style:{...(s.layout==='free'&&b.type==='title'?{fontSize:54}:{}),...b.style,...(s.layout!=='free'?{box:undefined}:{})}}))+'">'+fragments(contenuto,b.id,s)+'</div>';
   }
   function slide(s){const animate=s.autoAnimate.enabled&&!d.settings.reducedMotion?' data-auto-animate data-auto-animate-id="'+esc(s.autoAnimate.groupId)+'" data-auto-animate-duration="'+s.autoAnimate.duration+'"':'';
-   return '<section'+animate+' aria-label="'+esc(s.title)+'"><div class="presenta-slide" data-layout="'+s.layout+'">'+s.blocks.map(b=>blocco(b,s)).join('')+'</div></section>';
+   return '<section'+animate+' aria-label="'+esc(s.title)+'"><div class="presenta-slide" data-layout="'+s.layout+'" style="--slide-height:'+d.settings.height+'px;'+(s.background?'background-color:'+s.background+';--ink:'+M.contrasto(s.background)+';--muted:'+M.contrasto(s.background)+';color:'+M.contrasto(s.background)+';':'')+'">'+s.blocks.map(b=>blocco(b,s)).join('')+'</div></section>';
   }
   const html=d.stacks.map(p=>p.slides.length>1?'<section>'+p.slides.map(slide).join('')+'</section>':slide(p.slides[0])).join('');
   return {html,errors,settings:d.settings,title:d.title};
