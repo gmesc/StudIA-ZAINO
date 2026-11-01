@@ -294,6 +294,26 @@
       "copyright": "Copyright (c) Tailwind Labs, Inc.",
       "url": "https://github.com/tailwindlabs/tailwindcss/tree/v3.4.17",
       "licenzaFile": "tailwindcss.txt"
+    },
+    {
+      "nome": "Atkinson Hyperlegible",
+      "versione": "1cb311624b2ddf88e9e37873999d165a8cd28b46",
+      "categoria": "font",
+      "ruolo": "Caratteri offline di PRESENTA e delle presentazioni esportate",
+      "licenza": "SIL Open Font License 1.1",
+      "copyright": "Copyright 2020 Braille Institute of America, Inc.",
+      "url": "https://github.com/googlefonts/atkinson-hyperlegible",
+      "licenzaFile": "presenta-atkinson.txt"
+    },
+    {
+      "nome": "TestMe Sans",
+      "versione": "4dfa8c20e7e767fb31a576c318215d906e6eaf29",
+      "categoria": "font",
+      "ruolo": "Caratteri offline di PRESENTA e delle presentazioni esportate",
+      "licenza": "SIL Open Font License 1.1",
+      "copyright": "Copyright (c) 2013 Luciano Perondi (www.synsemia.org|molotro@gmail.com)",
+      "url": "https://github.com/molotro/TestMe02",
+      "licenzaFile": "presenta-testme.txt"
     }
   ]
 }

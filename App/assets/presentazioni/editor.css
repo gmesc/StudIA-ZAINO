@@ -80,3 +80,27 @@
 .presenta-scelta-modello{padding:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);width:min(680px,90vw)}
 .presenta-scelta-modello .presenta-modelli{padding-top:12px}.presenta-schema-modello{width:96px;height:54px;border:1px solid var(--line);position:relative}
 .presenta-schema-modello i{position:absolute;background:var(--line)}.presenta-schema-modello i[data-titolo="true"]{background:var(--teal)}
+
+/* Un’unica scala di controlli: 40 px nei campi, 30 px nel bubble. */
+.presenta-tipografia .presenta-campo :is(input,select),.presenta-carattere>.tbtn{height:var(--tb-h);min-height:var(--tb-h);box-sizing:border-box}
+.presenta-carattere>.tbtn{justify-content:space-between;border:1px solid var(--line);background:var(--bg);text-transform:none;letter-spacing:0;font-size:var(--tb-fs);font-weight:400;overflow:hidden}
+.presenta-carattere>.tbtn::after{content:'▾';font-family:var(--font-text);margin-left:8px}
+.presenta-carattere>.tbtn:hover{background:var(--hover)}
+.presenta-menu-caratteri{max-height:70vh;overflow:auto}
+.presenta-lista-caratteri{display:flex;flex-direction:column;gap:4px}
+.presenta-font-opzione.tbtn{height:auto;min-height:var(--ctl-h);padding:8px;display:flex;flex-direction:column;align-items:flex-start;text-transform:none;letter-spacing:0;font-size:16px;line-height:1.3;gap:4px}
+.presenta-font-opzione[aria-checked="true"]{background:var(--teal-light);color:var(--teal-strong)}
+.presenta-font-esempio{font-size:18px;font-weight:400}
+.presenta-font-bubble .presenta-campo>span{display:none}
+.presenta-font-bubble .presenta-campo:has(input){width:64px}
+.presenta-bubble>.tbar{flex-wrap:wrap}
+
+.presenta-ritaglio-dialog{width:min(760px,90vw);padding:16px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.presenta-ritaglio-editor{position:relative;isolation:isolate;margin:16px auto;width:min(100%,560px);max-height:50vh;overflow:hidden;line-height:0}
+.presenta-ritaglio-editor>img{width:100%;height:100%;display:block;pointer-events:none;object-fit:fill}
+.presenta-area-ritaglio{position:absolute;box-sizing:border-box;border:2px solid var(--teal-strong);box-shadow:0 0 0 800px var(--overlay,rgba(0,0,0,.4));touch-action:none;cursor:move}
+.presenta-area-ritaglio:focus-visible{outline:2px solid var(--teal-strong);outline-offset:2px}
+.presenta-crop-maniglia{position:absolute;width:12px;height:12px;background:var(--teal-strong);border:1px solid var(--panel);box-sizing:border-box;transform:translate(-50%,-50%);left:50%;top:50%}
+.presenta-crop-maniglia[data-lato*=n]{top:0;cursor:ns-resize}.presenta-crop-maniglia[data-lato*=s]{top:100%;cursor:ns-resize}
+.presenta-crop-maniglia[data-lato*=w]{left:0;cursor:ew-resize}.presenta-crop-maniglia[data-lato*=e]{left:100%;cursor:ew-resize}
+.presenta-crop-maniglia:is([data-lato=nw],[data-lato=se]){cursor:nwse-resize}.presenta-crop-maniglia:is([data-lato=ne],[data-lato=sw]){cursor:nesw-resize}

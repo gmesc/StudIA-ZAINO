@@ -53,6 +53,17 @@
         },
         "reducedMotion": {
           "type": "boolean"
+        },
+        "fontFamily": {
+          "enum": [
+            "zaino",
+            "arial",
+            "verdana",
+            "georgia",
+            "courier",
+            "atkinson",
+            "testme"
+          ]
         }
       },
       "required": [
@@ -401,7 +412,9 @@
                               "arial",
                               "verdana",
                               "georgia",
-                              "courier"
+                              "courier",
+                              "atkinson",
+                              "testme"
                             ]
                           },
                           "bold": {
@@ -472,6 +485,44 @@
                         "type": "number",
                         "minimum": 0,
                         "maximum": 604800
+                      },
+                      "crop": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "x": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 100
+                          },
+                          "y": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 100
+                          },
+                          "width": {
+                            "type": "number",
+                            "minimum": 2,
+                            "maximum": 100
+                          },
+                          "height": {
+                            "type": "number",
+                            "minimum": 2,
+                            "maximum": 100
+                          },
+                          "aspect": {
+                            "type": "number",
+                            "minimum": 0.01,
+                            "maximum": 100
+                          }
+                        },
+                        "required": [
+                          "x",
+                          "y",
+                          "width",
+                          "height",
+                          "aspect"
+                        ]
                       }
                     },
                     "required": [

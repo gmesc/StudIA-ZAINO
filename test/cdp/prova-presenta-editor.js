@@ -20,7 +20,7 @@ const WS=require('ws');let frameClient=null;const clients=[];
 async function collegaTarget(target){
  const ws=new WS(target.webSocketDebuggerUrl,{perMessageDeflate:false});await new Promise((ok,ko)=>{ws.on('open',ok);ws.on('error',ko);});let id=0;const attesi=new Map();ws.on('message',raw=>{const m=JSON.parse(raw);if(m.id&&attesi.has(m.id)){attesi.get(m.id)(m);attesi.delete(m.id);}});
  const invia=(method,params)=>new Promise(resolve=>{const n=++id;attesi.set(n,resolve);ws.send(JSON.stringify({id:n,method,params}));});
- const client={id:target.id,ws,invia,val:async expression=>{const r=await invia('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.result.exceptionDetails)throw Error(JSON.stringify(r.result.exceptionDetails));return r.result.result.value;}};clients.push(client);return client;
+ const client={id:target.id,ws,invia,val:async expression=>{const r=await invia('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.result.exceptionDetails)throw Error(JSON.stringify(r.result.exceptionDetails));return r.result.result.value;}};clients.push(client);ws.on('message',raw=>{const m=JSON.parse(raw);if(m.method==='Network.loadingFailed'||m.method==='Log.entryAdded')console.log('frame-network',JSON.stringify(m.params));});await invia('Network.enable',{});await invia('Log.enable',{});return client;
 }
 async function frameVal(expr){
  const targets=await (await fetch('http://localhost:'+(process.env.STUDIA_PORTA||9333)+'/json')).json(),url=await c.val('document.querySelector("#presentaPane iframe").src');
@@ -77,7 +77,9 @@ async function riordinaMiniature(da,a){
   assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box.x'),7);
   assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style.box.x'),53);
   await frameWait('getComputedStyle(document.querySelector(".presenta-slide")).backgroundColor==="rgb(254, 249, 195)"');
+  const altriPrima=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.filter(b=>b.type!=="image")');
   await trascinaOggetto(imageId);await wait('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box.x>7');
+  assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.filter(b=>b.type!=="image")'),altriPrima,'il gesto conserva esattamente gli altri oggetti');
   const spostata=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box');
   await click('Annulla nella presentazione');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box.x'),7);
   await click('Ripeti nella presentazione');await frameWait('document.querySelector(".reveal").dataset.modificaPronta==="true" && !!document.querySelector(".presenta-maniglia")');
@@ -126,10 +128,20 @@ async function riordinaMiniature(da,a){
   assert(Math.abs(titoloPrima.x-titoloDopo.x)<2&&Math.abs(titoloPrima.y-titoloDopo.y)<2,'conversione della griglia senza spostare il titolo');
   // Stili reali: campo -> modello -> iframe isolato -> salvataggio/riapertura.
   await click('Testo');
-  await c.val(`(()=>{const e=document.querySelector('#presentaPane [aria-label="Carattere"]');e.value='georgia';e.dispatchEvent(new Event('change'));})()`);
+  await click('Carattere');await click('Georgia');
   await click('Grassetto');await click('Corsivo');await click('Sottolineato');
   await frameWait(`(()=>{const b=document.querySelector('[data-block-id="'+${q(textId)}+'"]'),s=getComputedStyle(b.querySelector('.presenta-contenuto'));return s.fontFamily.includes('Georgia')&&s.fontWeight==='700'&&s.fontStyle==='italic'&&getComputedStyle(b).textDecorationLine==='underline';})()`);
   assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="title").style.fontFamily'),undefined);
+  const misureFont=await c.val(`(()=>{const a=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect(),b=document.querySelector('#presentaPane [aria-label="Dimensione testo"]').getBoundingClientRect();return [a.height,b.height,a.y,b.y];})()`);assert.equal(misureFont[0],misureFont[1]);assert.equal(misureFont[2],misureFont[3]);
+  await click('Stile');await click('Carattere per tutte le slide');
+  assert.equal(await c.val('document.querySelectorAll(".presenta-font-opzione").length'),7);assert((await c.val(`getComputedStyle(document.querySelector('.presenta-font-opzione[aria-label="Atkinson Hyperlegible"]')).fontFamily`)).includes('Atkinson'));
+  fs.writeFileSync('/private/tmp/presenta-font-reale.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
+  await click('Atkinson Hyperlegible');await frameWait('getComputedStyle(document.querySelector(".presenta-slide")).fontFamily.includes("Atkinson")');
+  assert.equal(await frameVal(`document.fonts.load('32px "Atkinson Hyperlegible"').then(f=>f.length===1&&f[0].status==='loaded')`),true);assert.equal(await c.val('ZainoPresenta.documento.settings.fontFamily'),'atkinson');
+  await click('Carattere per tutte le slide');await click('TestMe Sans');await frameWait('getComputedStyle(document.querySelector(".presenta-slide")).fontFamily.includes("TestMe")');
+  assert.equal(await frameVal(`document.fonts.load('32px "TestMe Sans"').then(f=>f.length===1&&f[0].status==='loaded')`),true);
+  await c.val('ZainoPresenta.flush()');assert.equal(JSON.parse(fs.readFileSync(path.join(v,'Zaini/biologia/PRESENTAZIONI',id,'presentazione.json'),'utf8')).settings.fontFamily,'testme');
+  await click('Annulla nella presentazione');await click('Annulla nella presentazione');await click('Testo');
   const contaOggetti=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.length');
   await frameWait('document.querySelector(".reveal").dataset.bloccato==="false"');
   await frameVal(`document.querySelector('[data-block-id="'+${q(textId)}+'"]').focus()`);
@@ -137,15 +149,31 @@ async function riordinaMiniature(da,a){
   await wait('ZainoPresenta.documento.stacks[0].slides[0].blocks.length==='+String(contaOggetti+1));
   await click('Annulla nella presentazione');await click('Testo');
   assert.equal(await c.val(`(()=>{const e=document.querySelector('#presentaPane textarea'),k=new KeyboardEvent('keydown',{key:'Backspace',bubbles:true,cancelable:true});e.dispatchEvent(k);return k.defaultPrevented;})()`),false,'cancellare nel campo di testo non elimina l’oggetto');
-  await click('Anteprima pulita');await frameWait('document.querySelector(".reveal").dataset.pulita==="true"');
-  assert(await frameVal('[...document.querySelectorAll(".presenta-blocco")].every(e=>e.tabIndex===-1&&getComputedStyle(e).outlineWidth==="0px")'));
-  await click('Anteprima pulita');await click('Comandi dell’oggetto');await click('Copia oggetto');
+  // Escape funziona anche quando il fuoco è nel pannello delle proprietà.
+  await c.val(`document.querySelector('#presentaPane [aria-label="Dimensione testo"]').focus()`);
+  for(const type of ['keyDown','keyUp'])await c.invia('Input.dispatchKeyEvent',{type,key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  await frameWait(`!document.querySelector('.presenta-blocco[data-selezionato="true"]')`);assert(!await c.val(`!!document.querySelector(".presenta-bubble:popover-open")`));
+  await click('Testo');await frameVal('document.activeElement.blur()');
+  for(const type of ['keyDown','keyUp'])await frameClient.invia('Input.dispatchKeyEvent',{type,key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  await frameWait(`!document.querySelector('.presenta-blocco[data-selezionato="true"]')`);
+  await click('Testo');await click('Comandi dell’oggetto');await click('Copia oggetto');
   await c.val(`document.querySelector('.presenta-scaletta [aria-label="Nuova slide"]').scrollIntoView({block:"center"})`);await c.clicca('.presenta-scaletta [aria-label="Nuova slide"]');await wait('!!document.querySelector(".presenta-scelta-modello[open]")');
   await c.clicca('.presenta-scelta-modello [data-modello=colonne]');
   assert.equal(await c.val('ZainoPresenta.documento.stacks[1].slides[0].blocks.length'),3);
   await click('Incolla oggetto');assert.equal(await c.val('ZainoPresenta.documento.stacks[1].slides[0].blocks.at(-1).markdown'),'La clorofilla cattura la luce. Formula: \\(x^2\\)');
   assert.equal(await c.val('ZainoPresenta.documento.stacks[1].slides[0].blocks.at(-1).style.fontFamily'),'georgia');
   await click('Annulla nella presentazione');assert.equal(await c.val('ZainoPresenta.documento.stacks[1].slides[0].blocks.length'),3);await click('Annulla nella presentazione');assert.equal(await c.val('ZainoPresenta.documento.stacks.length'),1);await click('Testo');
+  await click('Immagine');await frameWait('document.querySelector(".reveal").dataset.bloccato==="false"');await click('Ritaglia immagine');
+  await wait('!!document.querySelector(".presenta-ritaglio-dialog[open]") && document.querySelector(".presenta-ritaglio-editor img").naturalWidth>0');
+  await click('1:1');await c.clicca('.presenta-area-ritaglio');
+  for(const type of ['keyDown','keyUp'])await c.invia('Input.dispatchKeyEvent',{type,key:'ArrowRight',code:'ArrowRight',modifiers:1,windowsVirtualKeyCode:39});
+  fs.writeFileSync('/private/tmp/presenta-ritaglio-reale.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
+  await click('Applica ritaglio');
+  const ritaglioSalvato=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").crop');assert(ritaglioSalvato);assert(Math.abs(ritaglioSalvato.width*ritaglioSalvato.aspect/ritaglioSalvato.height-1)>.001,'il bordo cambia le proporzioni del ritaglio');
+  await frameWait('!!document.querySelector(".presenta-immagine-ritagliata image") && document.querySelector(".reveal").dataset.bloccato==="false"');
+  assert((await frameVal('document.querySelector(".presenta-immagine-ritagliata image").getAttribute("href")')).startsWith('presenta:'));
+  await click('Ritaglia immagine');await wait('document.querySelector(".presenta-ritaglio-editor img").naturalWidth>0');await click('16:9');await click('Annulla ritaglio');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").crop'),ritaglioSalvato);
+  await click('Ritaglia immagine');await wait('document.querySelector(".presenta-ritaglio-editor img").naturalWidth>0');await click('Rimuovi ritaglio');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").crop'),undefined);await click('Annulla nella presentazione');
   const geometriaSalvata=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box');
 
   const audioDir=path.join(v,'Zaini/biologia/MATERIALI/Audio');fs.mkdirSync(audioDir,{recursive:true});fs.writeFileSync(path.join(audioDir,'03 Tono.wav'),require('../fixtures/presentazioni').audio());
@@ -159,7 +187,9 @@ async function riordinaMiniature(da,a){
   const ordinePrima=await c.val('ZainoPresenta.documento.stacks.map(s=>s.slides.map(s=>s.id))');await riordinaMiniature(ordinePrima[0][0],ordinePrima[1][0]);await wait('ZainoPresenta.documento.stacks[0].slides[0].id==='+q(ordinePrima[1][0]));assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides.length'),2);await click('Annulla nella presentazione');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks.map(s=>s.slides.map(s=>s.id))'),ordinePrima);
   await click('Duplica slide');assert.equal(await c.val('PresentaModello.posizioni(ZainoPresenta.documento).length'),4);await click('Annulla nella presentazione');assert.equal(await c.val('PresentaModello.posizioni(ZainoPresenta.documento).length'),3);await click('Ripeti nella presentazione');assert.equal(await c.val('PresentaModello.posizioni(ZainoPresenta.documento).length'),4);await click('Annulla nella presentazione');
   await c.val('ZainoPresenta.flush()');await click('Chiudi presentazione');await wait('!ZainoPresenta.documento');
-  await c.val(`ZainoPresenta.apri(${q(id)})`);assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style.fontFamily'),'georgia');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box'),geometriaSalvata);assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].notes.markdown'),'NOTA_PRIVATA_UI · Chiedere un esempio alla classe.');
+  await c.val(`ZainoPresenta.apri(${q(id)})`);assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style.fontFamily'),'georgia');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box'),geometriaSalvata);assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").crop'),ritaglioSalvato);assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].notes.markdown'),'NOTA_PRIVATA_UI · Chiedere un esempio alla classe.');
+  await click('Audio');await c.val(`(()=>{const e=document.querySelector('#presentaPane [aria-label="Fine (secondi)"]');e.value='.8';e.dispatchEvent(new Event('change'));})()`);await frameWait('document.querySelector("audio")?.getAttribute("src")?.endsWith("#t=0,0.8")');
+  await click('Usa media intero');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="audio").end'),undefined);
   // La disposizione cambia; il DOM dell'editor e la bozza restano gli stessi.
   await c.val(`window.__presentaPane=document.getElementById('presentaPane');bancoForma('quattro');bancoScambia('A','D');bancoForma('due-col');bancoMostra('presenta')`);
   assert(await c.val('window.__presentaPane===document.getElementById("presentaPane")'));assert.equal(await c.val('ZainoPresenta.documento.id'),id);
@@ -172,7 +202,7 @@ async function riordinaMiniature(da,a){
   const sid=await c.val('ZainoPresenta.regia.stato.sessionId');
   const target=(await (await fetch('http://localhost:'+(process.env.STUDIA_PORTA||9333)+'/json')).json()).find(t=>t.type==='page'&&t.url.endsWith('/presentazioni-player/index.html'));assert(target);const pubblico=await collegaTarget(target);
   assert.equal(await pubblico.val('typeof window.vault'),'undefined');assert(!await pubblico.val('document.documentElement.outerHTML.includes("NOTA_PRIVATA_UI")'));
-  await wait('document.querySelector("img")?.naturalWidth>0',pubblico);
+  assert(await pubblico.val(`(async()=>{const e=document.querySelector('.presenta-immagine-ritagliata image'),img=new Image();img.src=e.getAttribute('href');await img.decode();return img.naturalWidth>0;})()`),'la sorgente del ritaglio si decodifica nel player pubblico');
   await pubblico.val('document.querySelector("audio").play()');assert.equal(await pubblico.val('document.querySelector("audio").paused'),false);
 
   assert((await c.val(`window.vault.presentazioni.comando({azione:'sessione',corso:'biologia',sessionId:${q(sid)},comando:'avanti'})`)).ok);

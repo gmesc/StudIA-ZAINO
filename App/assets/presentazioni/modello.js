@@ -4,7 +4,7 @@
  const VERSIONE=1, STRUMENTI=Object.freeze({presenta:'PRESENTA',gobbo:'GOBBO'});
  const EFFETTI=Object.freeze({'fade-in':'Comparsa','fade-up':'Comparsa dal basso','fade-out':'Scomparsa',grow:'Ingrandimento',shrink:'Riduzione','highlight-red':'Evidenziazione'});
  const LAYOUT=Object.freeze(['free','title-text','text-image','image-caption','two-columns','formula-text','media']);
- const CARATTERI=Object.freeze({zaino:{nome:'ZAINO',css:'"Helvetica Neue",Helvetica,Arial,sans-serif'},arial:{nome:'Arial',css:'Arial,Helvetica,sans-serif'},verdana:{nome:'Verdana',css:'Verdana,Geneva,sans-serif'},georgia:{nome:'Georgia',css:'Georgia,"Times New Roman",serif'},courier:{nome:'Courier',css:'"Courier New",Courier,monospace'}});
+ const CARATTERI=Object.freeze({zaino:{nome:'ZAINO',css:'"Helvetica Neue",Helvetica,Arial,sans-serif'},arial:{nome:'Arial',css:'Arial,Helvetica,sans-serif'},verdana:{nome:'Verdana',css:'Verdana,Geneva,sans-serif'},georgia:{nome:'Georgia',css:'Georgia,"Times New Roman",serif'},atkinson:{nome:'Atkinson Hyperlegible',css:'"Atkinson Hyperlegible",Arial,sans-serif'},testme:{nome:'TestMe Sans',css:'"TestMe Sans",Arial,sans-serif'},courier:{nome:'Courier',css:'"Courier New",Courier,monospace'}});
  const MODELLI=Object.freeze({vuota:'Vuota',titolo:'Solo titolo',testo:'Titolo e testo',colonne:'Due colonne',domanda:'Domanda'});
  const TIPI=['title','text','list','math','image','audio','video'];
  const ID=/^[A-Za-z0-9_-]{1,100}$/;
@@ -20,6 +20,22 @@
  function stileSlide(s){return {layout:s.layout,background:s.background||null,blocks:s.blocks.map(b=>({type:b.type,style:copia(b.style||{})}))};}
  function contrasto(c){const rgb=[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]>.179?'#16181d':'#fbfbfa';}
  function riquadro(b){return !!b&&!Array.isArray(b)&&Object.keys(b).length===4&&['x','y','width','height'].every(k=>Number.isFinite(b[k]))&&b.x>=0&&b.y>=0&&b.width>=2&&b.height>=2&&b.x+b.width<=100.001&&b.y+b.height<=100.001;}
+ function selezioneObsoleta(o,corrente,gesto){return o.selezioneGiro<corrente?.selezioneGiro||!!gesto&&o.selezioneGiro<=gesto.generazione&&o.selezionato!==gesto.id;}
+ function ritaglioValido(c){return !!c&&Number.isFinite(c.aspect)&&c.aspect>=.01&&c.aspect<=100&&Object.keys(c).length===5&&riquadro({x:c.x,y:c.y,width:c.width,height:c.height});}
+ function ritaglia(c,dx,dy,lato){
+  if(!ritaglioValido(c)||!Number.isFinite(dx)||!Number.isFinite(dy)||!['sposta','n','s','e','w','ne','nw','se','sw'].includes(lato))throw Error('Ritaglio non valido.');
+  const lim=(v,a,b)=>Math.max(a,Math.min(b,v)),box={x:c.x,y:c.y,width:c.width,height:c.height};
+  if(lato==='sposta')return {...muovi(box,dx,dy),aspect:c.aspect};
+  let x=c.x,y=c.y,r=x+c.width,b=y+c.height;
+  if(lato.includes('w'))x=lim(x+dx,0,r-2);if(lato.includes('e'))r=lim(r+dx,x+2,100);
+  if(lato.includes('n'))y=lim(y+dy,0,b-2);if(lato.includes('s'))b=lim(b+dy,y+2,100);
+  return {x,y,width:r-x,height:b-y,aspect:c.aspect};
+ }
+ function proporzioneRitaglio(c,ratio){
+  if(!ritaglioValido(c)||!Number.isFinite(ratio)||ratio<=0)throw Error('Proporzione non valida.');
+  const width=Math.min(c.width,c.height*ratio/c.aspect),height=width*c.aspect/ratio;
+  const r={x:c.x+(c.width-width)/2,y:c.y+(c.height-height)/2,width,height,aspect:c.aspect};if(!ritaglioValido(r))throw Error('Allarga il ritaglio prima di cambiare proporzione.');return r;
+ }
  function muovi(b,dx,dy,ridimensiona=false){
   if(!riquadro(b)||!Number.isFinite(dx)||!Number.isFinite(dy))throw Error('Posizione non valida.');const r={...b},lim=(n,a,z)=>Math.max(a,Math.min(z,n));
   if(ridimensiona){r.width=lim(b.width+dx,2,100-b.x);r.height=lim(b.height+dy,2,100-b.y);}else{r.x=lim(b.x+dx,0,100-b.width);r.y=lim(b.y+dy,0,100-b.height);}
@@ -52,6 +68,7 @@
   if(typeof d.title!=='string'||!d.title.trim()||d.title.length>140)errors.push('Titolo non valido.');
   if(!Number.isSafeInteger(d.revision)||d.revision<0)errors.push('Revisione non valida.');
   if(!d.settings||!['default','grid'].includes(d.settings.navigationMode)||!Number.isFinite(d.settings.width)||!Number.isFinite(d.settings.height))errors.push('Impostazioni non valide.');
+  if(d.settings?.fontFamily!==undefined&&!Object.hasOwn(CARATTERI,d.settings.fontFamily))errors.push('Carattere della presentazione non disponibile.');
   if(!d.assets||typeof d.assets!=='object'||Array.isArray(d.assets))errors.push('Risorse non valide.');
   if(!Array.isArray(d.stacks)||!d.stacks.length||d.stacks.length>300)return {ok:false,errors:errors.concat('La presentazione deve contenere almeno una pila (massimo 300).')};
   const ids=new Set(),add=id=>{if(!ID.test(id||'')||ids.has(id))errors.push('Identità mancante o duplicata.');ids.add(id);};add(d.id);
@@ -71,7 +88,9 @@
      for(const item of b.items||[]){add(item.id);targets.add(item.id);}
      if(b.assetId&&!Object.hasOwn(d.assets||{},b.assetId))errors.push('Risorsa del blocco mancante.');
      if(['image','audio','video'].includes(b.type)&&d.assets?.[b.assetId]?.kind!==b.type)errors.push('Tipo del blocco e della risorsa non coerenti.');
-     if(b.start!==undefined&&b.end!==undefined&&b.end<=b.start)errors.push('Intervallo del media non valido.');
+     if(b.crop!==undefined&&(b.type!=='image'||!ritaglioValido(b.crop)))errors.push('Ritaglio dell’immagine non valido.');
+     for(const k of ['start','end'])if(b[k]!==undefined&&(!Number.isFinite(b[k])||b[k]<0||b[k]>604800))errors.push('Tempo del media non valido.');
+     if(b.end!==undefined&&b.end<=(b.start||0))errors.push('Intervallo del media non valido.');
      if(b.matchId){if(corrispondenze.has(b.matchId)||!s.autoAnimate?.enabled)errors.push('Corrispondenza Auto-Animate incoerente.');corrispondenze.add(b.matchId);}
     }
     const azioni=new Set();
@@ -100,6 +119,11 @@
  function applica(documento,o,id=nuovoId){
   esigi(documento);const d=copia(documento);if(!o||typeof o.tipo!=='string')throw Error('Operazione non valida.');
   if(o.tipo==='titolo'){d.title=o.title;return esigi(d);}
+  if(o.tipo==='caratterePresentazione'){
+   if(!Object.hasOwn(CARATTERI,o.fontFamily))throw Error('Carattere non disponibile.');
+   d.settings.fontFamily=o.fontFamily;for(const p of posizioni(d))for(const b of p.slide.blocks)if(b.style)delete b.style.fontFamily;
+   return esigi(d);
+  }
   const p=trova(d,o.slideId),s=p.slide;
   function inserisci(n){if(o.direzione==='sotto')p.stack.slides.splice(p.v+1,0,n);else d.stacks.splice(p.h+1,0,{id:id(),slides:[n]});}
   switch(o.tipo){
@@ -185,10 +209,10 @@
   esigi(d);const assets={};for(const id of risorseUsate(d)){const a=d.assets[id];assets[id]={kind:a.kind,path:a.path,mimeType:a.mimeType,size:a.size,sha256:a.sha256};}
   // Lista consentita: note, provenienza e identità del vault non arrivano al pubblico.
   const scegli=(o,chiavi)=>Object.fromEntries(chiavi.filter(k=>Object.hasOwn(o,k)).map(k=>[k,copia(o[k])]));
-  return {schemaVersion:VERSIONE,title:d.title,settings:scegli(d.settings,['width','height','theme','navigationMode','reducedMotion']),assets,stacks:d.stacks.map(p=>({slides:p.slides.map(s=>({title:s.title,layout:s.layout,...(s.background?{background:s.background}:{}),autoAnimate:scegli(s.autoAnimate,['enabled','groupId','duration']),animations:s.animations.map(a=>scegli(a,['targetId','step','effect'])),blocks:s.blocks.map(b=>{
-   const n=scegli(b,['id','type','slot','markdown','latex','display','assetId','alt','caption','matchId','autoplay','start','end']);
+  return {schemaVersion:VERSIONE,title:d.title,settings:scegli(d.settings,['width','height','theme','navigationMode','reducedMotion','fontFamily']),assets,stacks:d.stacks.map(p=>({slides:p.slides.map(s=>({title:s.title,layout:s.layout,...(s.background?{background:s.background}:{}),autoAnimate:scegli(s.autoAnimate,['enabled','groupId','duration']),animations:s.animations.map(a=>scegli(a,['targetId','step','effect'])),blocks:s.blocks.map(b=>{
+   const n=scegli(b,['id','type','slot','markdown','latex','display','assetId','alt','caption','matchId','autoplay','start','end','crop']);
    if(b.items)n.items=b.items.map(i=>scegli(i,['id','markdown']));if(b.style)n.style=scegli(b.style,['column','span','row','rowSpan','fontSize','color','highlight','align','scale','box','verticalAlign','fontFamily','bold','italic','underline','lineHeight']);return n;
   })}))}))};
  }
- return {CARATTERI,MODELLI,daModello,copiaOggetto,coloriPersonali,stileSlide,contrasto,riquadro,muovi,iniziale,disponi,ancora,VERSIONE,STRUMENTI,EFFETTI,LAYOUT,crea,slide,copia,posizioni,trova,bersagli,valida,esigi,applica,cronologia,indiceFragment,risorseUsate,pubblica};
+ return {selezioneObsoleta,ritaglioValido,ritaglia,proporzioneRitaglio,CARATTERI,MODELLI,daModello,copiaOggetto,coloriPersonali,stileSlide,contrasto,riquadro,muovi,iniziale,disponi,ancora,VERSIONE,STRUMENTI,EFFETTI,LAYOUT,crea,slide,copia,posizioni,trova,bersagli,valida,esigi,applica,cronologia,indiceFragment,risorseUsate,pubblica};
 });
