@@ -152,3 +152,13 @@ La riapertura di una finestra pubblica chiusa avvia una nuova sessione dall’in
 Restano i collaudi con trascinamento fisico, LIM, più monitor fisici, Windows e installatori. PDF, AI, PPTX e drop che crea nuove slide nella panoramica restano fuori da questa consegna. Non dichiarare P0 completo sulla sola base del percorso iniziale utilizzabile.
 
 Per riprodurre il controllo visuale sintetico con il CSS e l’editor veri: `./node_modules/.bin/electron docs/mockup-presenta/avvia.js`. Usa un profilo temporaneo e non apre un vault personale. Non sostituisce le prove della UI nell’app.
+
+## Correzioni dei gesti nel mockup Sul foglio
+
+Il prototipo `docs/mockup-presenta/prototipo-strumenti.html` conserva in memoria anche il markup del testo e le dimensioni dei riquadri. Il doppio clic entra nella scrittura; font, dimensione, colore e G/C/S rispettano la selezione sul foglio. Un clic sullo spazio libero o Escape chiude la modifica e nasconde la selezione e il bubble menu. I controlli contestuali conservano la selezione delle parole mentre vengono usati.
+
+Un solo gesto di puntatore può essere attivo: cattura immediata, soglia prima della modifica, fine su rilascio/cancellazione/perdita della cattura o del focus. Il bubble menu segue il riquadro anche durante lo spostamento e il ridimensionamento del foglio. Le modifiche alle proprietà conservano le coordinate e le dimensioni degli altri oggetti.
+
+Ritaglia offre otto maniglie libere e proporzioni Libero, 1:1, 4:3, 16:9 e 3:4. Conferma ritaglio nasconde le maniglie; Ritaglia riapre la stessa geometria. Ingrandimento e trascinamento all’interno spostano l’immagine nel riquadro; Adatta/Ripristina immagine riportano alla vista iniziale. Annulla e Ripeti comprendono il ritaglio. È ancora una dimostrazione SVG in memoria, senza modifica dei file originali o integrazione del crop nell’app.
+
+Verificati nel browser incorporato: deselezione, grassetto/font/colore/dimensione su una sola parola e conservazione dopo ridisegno, spostamento con menu solidale, coordinate degli altri oggetti invariate, rapporto quadrato/panoramico, maniglia laterale, conferma/riapertura e annullamento. Le prove dell’app descritte sopra si riferiscono alla tranche precedente; questa correzione interessa soltanto il prototipo.
