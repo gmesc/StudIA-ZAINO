@@ -52,6 +52,12 @@ const differita=()=>{let resolve,reject;return {promise:new Promise((r,j)=>{reso
  foglio=M.applica(foglio,{tipo:'riordinaSlide',slideId:secondoId,destinazione:fid});assert.equal(foglio.stacks[0].slides[0].id,secondoId);assert.equal(foglio.stacks[0].slides[1].id,dettaglio,'spostare l’argomento conserva gli approfondimenti');
  foglio=M.applica(foglio,{tipo:'riordinaSlide',slideId:dettaglio,destinazione:fid,dopo:true});assert.equal(foglio.stacks[2].slides[0].id,dettaglio);assert(validatePresentazione(foglio).ok);
  const palette=M.coloriPersonali({ultimo:'#ABCDEF',slots:['#123456','url(bad)',null,'#654321','#000000','#ffffff']});assert.equal(palette.ultimo,'#ABCDEF');assert.deepEqual(palette.slots,['#123456',null,null,'#654321','#000000']);assert.equal(M.coloriPersonali(null).slots.length,5);
+ const Colori=require('../App/assets/presentazioni/colori');
+ assert.equal(Colori.palette.length,242);assert.equal(new Set(Colori.palette.map(c=>c.id)).size,242);
+ assert.equal(Colori.palette.find(c=>c.id==='sky-500').hex,'#0ea5e9');assert.equal(Colori.palette.find(c=>c.id==='slate-950').hex,'#020617');
+ assert.equal(Colori.etichetta('#0EA5E9'),'sky-500');assert.equal(Colori.etichetta('#ffffff'),'white');assert.equal(Colori.etichetta('#000000'),'black');
+ assert.equal(Colori.etichetta('#0ea5e8'),'≈ sky-500');assert.equal(Colori.etichetta(null),'—');assert.equal(Colori.etichetta('url(bad)'),'—');
+ assert.equal(Colori.sfondoBianco('#ffffff','zaino-dark'),true);assert.equal(Colori.sfondoBianco(undefined,'zaino-light'),true);assert.equal(Colori.sfondoBianco(undefined,'zaino-dark'),false);assert.equal(Colori.sfondoBianco('#fefce8','zaino-light'),false);
  // Il protocollo non può diventare un lettore generico del vault.
  const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),P=require('../lib/presentazioni'),R=require('../lib/presentazioni-risorse'),V=require('../lib/presentazioni-vista');
  const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'zaino-presenta-vista-'));try{

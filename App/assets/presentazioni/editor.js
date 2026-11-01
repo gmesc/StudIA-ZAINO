@@ -1,6 +1,6 @@
 (function(){
  'use strict';
- const M=window.PresentaModello,api=window.vault?.presentazioni;
+ const M=window.PresentaModello,C=window.PresentaColori,api=window.vault?.presentazioni;
  if(!api||!M)return;
  const $=id=>document.getElementById(id),E=(tag,testo,classe)=>{const e=document.createElement(tag);if(testo!=null)e.textContent=testo;if(classe)e.className=classe;return e;};
  let selezioneGiro=0;
@@ -46,7 +46,8 @@
   bottoni.annulla.disabled=disabled||!D.annullabile;bottoni.ripeti.disabled=disabled||!D.ripetibile;
   bottoni.salva.disabled=disabled||!d;bottoni.nuova.disabled=disabled||!corso;
   const messaggio=listaErrore||D.errore;stato.textContent=messaggio?'Non salvato: '+messaggio:D.salvando?'Salvataggio…':D.sporco?'Modifiche da salvare':d?'Salvato':'PRESENTA';stato.dataset.errore=String(!!messaggio);
-  for(const e of campi.querySelectorAll('input,textarea,select,button'))e.disabled=disabled||!d;const eliminaSlide=campi.querySelector('[aria-label="Elimina slide"]');if(eliminaSlide)eliminaSlide.disabled=disabled||!d||M.posizioni(d).length===1;
+  for(const e of campi.querySelectorAll('input,textarea,select,button'))e.disabled=disabled||!d||e.dataset.vuoto==='true';const eliminaSlide=campi.querySelector('[aria-label="Elimina slide"]');if(eliminaSlide)eliminaSlide.disabled=disabled||!d||M.posizioni(d).length===1;
+  if(d&&p){frame.style.aspectRatio=d.settings.width+'/'+d.settings.height;frame.dataset.sfondoBianco=String(C.sfondoBianco(p.slide.background,d.settings.theme));}
   disegnaScaletta();
   oggetti();ricorda();sidebar();anteprima();sincronizzaSelezione();disegnaGobbo();
  }
@@ -78,18 +79,25 @@
   if(!manuale)menuAperto?.remove();const p=E('div',null,'popmenu presenta-menu '+classe);p.popover=manuale?'manual':'auto';p.append(contenuto);host.append(p);p.showPopover();const r=p.getBoundingClientRect();p.style.left=Math.max(8,Math.min(x,innerWidth-r.width-8))+'px';p.style.top=Math.max(8,Math.min(y,innerHeight-r.height-8))+'px';if(!manuale)menuAperto=p;p.addEventListener('toggle',e=>{if(e.newState==='closed')p.remove();});return p;
  }
  function sfogliaColori(fn,anchor){
-  const grid=E('div',null,'presenta-slot-colori');
-  for(let i=0;i<5;i++){
-   const col=E('div'),uso=b('Usa colore '+(i+1),null,()=>{if(!colori.slots[i])return;colori.ultimo=colori.slots[i];ricordaColori();fn(colori.ultimo);menuAperto?.hidePopover();}),sw=E('i',null,'presenta-campione');uso.textContent=String(i+1);sw.style.backgroundColor=colori.slots[i]||'transparent';uso.prepend(sw);uso.disabled=!colori.slots[i];uso.title=colori.slots[i]?'Usa il colore '+colori.slots[i]:'Slot '+(i+1)+' vuoto';
-   const salva=b('Memorizza colore nello slot '+(i+1),'save',()=>{colori.slots[i]=colori.ultimo;ricordaColori();menuAperto?.hidePopover();sfogliaColori(fn,anchor);});salva.title='Memorizza '+colori.ultimo+' nello slot '+(i+1);col.append(uso,salva);grid.append(col);
-  }const r=anchor.getBoundingClientRect();popup('presenta-palette',grid,r.left,r.bottom+4);
+  const box=E('div',null,'presenta-palette-contenuto'),titolo=E('div','Tailwind · '+C.etichetta(colori.ultimo),'presenta-sezione'),grid=E('div',null,'presenta-tailwind');
+  grid.append(E('span'));for(const n of C.gradazioni)grid.append(E('span',String(n),'presenta-gradazione'));
+  let famiglia='';for(const c of C.palette){
+   if(c.famiglia!==famiglia){famiglia=c.famiglia;grid.append(E('span',famiglia,'presenta-famiglia'));}
+   const bt=b(c.id,null,()=>{menuAperto?.hidePopover();colori.ultimo=c.hex;ricordaColori();fn(c.hex);}),sw=E('i',null,'presenta-campione');sw.style.backgroundColor=c.hex;bt.textContent='';bt.append(sw);bt.title=c.id+' · '+c.hex;bt.setAttribute('aria-pressed',String(colori.ultimo.toLowerCase()===c.hex));grid.append(bt);
+  }
+  box.append(titolo,grid);const r=anchor.getBoundingClientRect(),p=popup('presenta-palette',box,r.left,r.bottom+4);grid.querySelector('[aria-pressed=true]')?.scrollIntoView({block:'center'});p.querySelector('[aria-pressed=true]')?.focus({preventScroll:true});
  }
- function sceltaColore(nome,valore,fn,{automatico=false,presets=[]}={}){
+ function sceltaColore(nome,valore,fn,{automatico=false}={}){
   const box=E('div',null,'presenta-campo'),label=E('span',nome),bar=E('div',null,'tbar presenta-bar');box.append(label,bar);
   if(automatico){const bt=b('Automatico',null,()=>fn(null));bt.setAttribute('aria-pressed',String(!valore));bt.title='Il colore segue lo sfondo di questa slide';bar.append(bt);}
-  for(const [hex,nome]of presets){const bt=b(nome,null,()=>fn(hex)),sw=E('i',null,'presenta-campione');sw.style.backgroundColor=hex;bt.prepend(sw);bt.setAttribute('aria-pressed',String(valore===hex));bar.append(bt);}
-  const personalizzato=E('label',null,'tbtn presenta-personalizzato'),sw=E('i',null,'presenta-campione'),input=E('input');sw.style.backgroundColor=colori.ultimo;input.type='color';input.value=colori.ultimo;input.setAttribute('aria-label',nome==='Sfondo della slide'?'Colore personalizzato dello sfondo':'Colore manuale del testo');input.title='Ultimo colore personale: '+colori.ultimo;personalizzato.title=input.title;personalizzato.append(sw,E('span','Personalizzato'),input);input.onchange=()=>azione(()=>{colori.ultimo=input.value;ricordaColori();sw.style.backgroundColor=input.value;fn(input.value);});
-  const slots=b('Colori salvati','palette',()=>sfogliaColori(fn,slots));slots.title='Cinque slot per usare o memorizzare i colori personali';bar.append(personalizzato,slots);return box;
+  for(const [hex,nome]of [['#ffffff','Bianco'],['#000000','Nero']]){const bt=b(nome,null,()=>fn(hex)),sw=E('i',null,'presenta-campione');sw.style.backgroundColor=hex;bt.prepend(sw);bt.setAttribute('aria-pressed',String(valore?.toLowerCase()===hex));bar.append(bt);}
+  const nomePicker=nome==='Sfondo della slide'?'Colore personalizzato dello sfondo':'Colore manuale del testo',personalizzato=b(nomePicker,null,()=>sfogliaColori(fn,personalizzato)),sw=E('i',null,'presenta-campione');personalizzato.textContent='';personalizzato.classList.add('presenta-personalizzato');personalizzato.dataset.colore=colori.ultimo;sw.style.backgroundColor=colori.ultimo;personalizzato.append(sw,E('span',C.etichetta(colori.ultimo)));personalizzato.title='Palette Tailwind · ultimo colore '+C.etichetta(colori.ultimo)+' · '+colori.ultimo;bar.append(personalizzato);
+  const slots=E('div',null,'presenta-slot-colori');slots.setAttribute('role','group');slots.setAttribute('aria-label','Colori personali');box.append(slots);
+  for(let i=0;i<5;i++){
+   const hex=colori.slots[i],col=E('div'),uso=b('Usa colore '+(i+1),null,()=>{if(!hex)return;colori.ultimo=hex;ricordaColori();fn(hex);}),sw=E('i',null,'presenta-campione');sw.style.backgroundColor=hex||'transparent';uso.textContent='';uso.append(sw,E('span',C.etichetta(hex)));uso.disabled=!hex;uso.dataset.vuoto=String(!hex);uso.setAttribute('aria-pressed',String(!!hex&&hex.toLowerCase()===valore?.toLowerCase()));uso.title=hex?C.etichetta(hex)+' · '+hex:'Slot '+(i+1)+' vuoto';
+   const salva=b('Memorizza colore nello slot '+(i+1),'save',()=>{colori.slots[i]=colori.ultimo;ricordaColori();campiSlide();});salva.title='Memorizza '+C.etichetta(colori.ultimo)+' nello slot '+(i+1);col.append(uso,salva);slots.append(col);
+  }
+  return box;
  }
  function oggetti(){
   oggettiNav.replaceChildren();const s=posizione()?.slide;if(!s)return;const titolo=s.blocks.find(b=>b.type==='title');
@@ -133,7 +141,7 @@
   if(titolo){const contenuto=E('section');contenuto.append(campo('Titolo della slide',s.title,v=>{const virtuale=bloccoId==='@titolo';op({tipo:'titoloSlide',title:v});if(virtuale){campiSlide();const input=campi.querySelector('[aria-label="Titolo della slide"]');input?.focus();input?.setSelectionRange(v.length,v.length);}},{maxLength:140}));if(block)bloccoCampi(block,contenuto);props.append(contenuto);}
   else if(block){const contenuto=E('section');bloccoCampi(block,contenuto);props.append(contenuto);}
   else{
-   const sfondo=E('section');sfondo.append(sceltaColore('Sfondo della slide',s.background,v=>op({tipo:'slide',background:v},{struttura:true}),{presets:[['#fbfbfa','Chiaro'],['#fff7d6','Crema'],['#0f1115','Scuro']]}));props.append(sfondo);
+   const sfondo=E('section');sfondo.append(sceltaColore('Sfondo della slide',s.background,v=>op({tipo:'slide',background:v},{struttura:true})));props.append(sfondo);
    const disposizione=E('section');disposizione.append(E('h3','Disposizione','presenta-sezione'),modelli());props.append(disposizione);
   }
   if(block){const pos=E('section'),grid=E('div',null,'presenta-posizioni');grid.setAttribute('role','group');grid.setAttribute('aria-label','Posizione sulla slide');pos.append(E('h3','Posizione sulla slide','presenta-sezione'));for(const v of ['alto','centro','basso'])for(const h of ['sinistra','centro','destra'])grid.append(b(({alto:'Alto',centro:'Centro',basso:'Basso'})[v]+' '+h,null,()=>posiziona(v+'-'+h)));grid.title='Oppure trascina il riquadro. Frecce per spostare, Maiusc per un passo maggiore, Alt + frecce per ridimensionare.';pos.append(grid);props.append(pos);}

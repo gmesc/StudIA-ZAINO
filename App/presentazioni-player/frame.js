@@ -13,7 +13,7 @@
   for(const m of root.querySelectorAll('audio,video'))m.pause();
   root.querySelector('.slides').innerHTML=r.html;silenzia();
   const ridotto=s.reducedMotion||matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const config={width:s.width,height:s.height,navigationMode:s.navigationMode,embedded:!pubblico,hash:false,history:false,center:true,view:'slide',scrollActivationWidth:null,
+  const config={width:s.width,height:s.height,navigationMode:s.navigationMode,embedded:!pubblico,hash:false,history:false,center:true,...(!pubblico?{margin:0,minScale:.01,maxScale:100}:{}),view:'slide',scrollActivationWidth:null,
    keyboard:pubblico?{83:null,70:null,27:null}:false,controls:pubblico,progress:pubblico,overview:false,help:false,showNotes:false,autoPlayMedia:pubblico?null:false,
    transition:ridotto?'none':'slide',autoAnimate:!ridotto};
   if(!deck){deck=new Reveal(root,config);await deck.initialize();for(const n of ['slidechanged','fragmentshown','fragmenthidden'])deck.on(n,conferma);}

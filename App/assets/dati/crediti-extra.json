@@ -284,6 +284,16 @@
       "copyright": "Autori indicati nei testi originali delle singole famiglie.",
       "url": "https://github.com/excalidraw/excalidraw/tree/v0.18.1/packages/excalidraw/fonts",
       "licenzaFile": "excalidraw-fonts.txt"
+    },
+    {
+      "nome": "Tailwind CSS · palette colori",
+      "versione": "3.4.17",
+      "categoria": "dati",
+      "ruolo": "Palette HEX del selettore colori PRESENTA",
+      "licenza": "MIT",
+      "copyright": "Copyright (c) Tailwind Labs, Inc.",
+      "url": "https://github.com/tailwindlabs/tailwindcss/tree/v3.4.17",
+      "licenzaFile": "tailwindcss.txt"
     }
   ]
 }
