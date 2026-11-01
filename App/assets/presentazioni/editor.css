@@ -1,0 +1,36 @@
+/* Barre e controlli appartengono al design system ZAINO; qui solo il contenuto dei pannelli. */
+#presentaPane,#gobboPane{height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden;isolation:isolate;background:var(--panel);color:var(--ink)}
+.presenta-bar{flex:none;flex-wrap:wrap;gap:0}
+.presenta-bar .tendina{max-width:240px;min-width:0}
+.presenta-stato{font-size:12px;color:var(--muted);padding:4px 8px;overflow-wrap:anywhere}
+.presenta-stato[data-errore="true"]{color:var(--danger,var(--ink));font-weight:600}
+.presenta-corpo{flex:1;min-height:0;overflow:auto;container-type:inline-size}
+.presenta-vuoto{padding:24px;max-width:56ch;line-height:1.5}
+.presenta-vuoto h2{font-size:18px;margin:0 0 8px}
+.presenta-editor{display:grid;grid-template-columns:128px minmax(0,1fr);min-height:100%}
+.presenta-scaletta{border-right:1px solid var(--line);padding:8px;display:flex;flex-direction:column;gap:4px;align-items:stretch}
+.presenta-scaletta .tbtn{height:auto;min-height:var(--tb-h);justify-content:flex-start;text-align:left;white-space:normal;text-transform:none;letter-spacing:normal;overflow-wrap:anywhere;padding-top:8px;padding-bottom:8px;flex:none}
+.presenta-scaletta .tbtn[data-verticale="true"]{margin-left:12px;border-left:2px solid var(--line)}
+.presenta-lavoro{min-width:0;padding:12px;display:flex;flex-direction:column;gap:12px}
+.presenta-anteprima{width:100%;aspect-ratio:16/9;min-height:160px;max-height:420px;border:1px solid var(--line);background:var(--bg)}
+.presenta-campi{display:flex;flex-direction:column;gap:12px;min-width:0}
+.presenta-campo{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;min-width:0}
+.presenta-campo :is(input,textarea,select){box-sizing:border-box;width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:14px/1.5 var(--font-text),sans-serif;border-radius:0;padding:8px;font-weight:400;min-width:0}
+.presenta-campo textarea{resize:vertical;min-height:96px}
+.presenta-campo :is(input,textarea,select):focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+.presenta-campo :disabled{opacity:.5}
+.presenta-blocco-editor{border-top:1px solid var(--line);padding-top:8px;min-width:0}
+.presenta-proprieta{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;padding-top:8px}
+.presenta-aiuto{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
+.presenta-editor details>summary{font-size:12px;cursor:pointer;padding:8px 0}
+.presenta-azione{display:flex;align-items:end;gap:4px;margin-bottom:8px}
+.presenta-azione .presenta-campo{flex:1}
+.presenta-azione input{max-width:80px}
+.presenta-drop{outline:2px solid var(--teal);outline-offset:-2px;background:var(--hover)}
+.presenta-bar .presenta-documento{flex:0 1 auto}
+.gobbo-corpo{overflow:auto;min-height:0;flex:1;padding:16px;display:flex;flex-direction:column;gap:12px}
+.gobbo-titolo{font-size:20px;line-height:1.25;margin:0}
+.gobbo-note{white-space:pre-wrap;font-size:18px;line-height:1.6;overflow-wrap:anywhere;margin:0}
+.gobbo-tempo{font-variant-numeric:tabular-nums;font-size:20px;padding:0 8px}
+@container(max-width:420px){.presenta-editor{grid-template-columns:minmax(0,1fr)}.presenta-scaletta{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}.presenta-scaletta .tbtn{max-width:160px}.presenta-lavoro{padding:8px}.presenta-scaletta .tbtn[data-verticale="true"]{margin-left:0}}
+.presenta-materiali{inset:0;margin:auto;max-height:70vh}.presenta-materiali::backdrop{background:var(--overlay,rgba(0,0,0,.25))}

@@ -14,7 +14,7 @@
 -->
 <html lang="it" data-theme="chiaro">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' file: data: blob:; media-src 'self' file: data: blob:; connect-src 'self' file:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' file: data: blob:; media-src 'self' file: data: blob:; connect-src 'self' file:; worker-src 'self' blob:; frame-src presenta:; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>StudIA - ZAINO</title>
@@ -10996,6 +10996,9 @@ async function zainiAggiorna(){
 
 /** Cambia lo zaino attivo. `silenzioso` durante la ricostruzione dell'elenco. */
 function cambiaZaino(id, silenzioso){
+  if(id && id!==MODO.zaino && window.ZainoPresenta?.daSalvare){
+    return window.ZainoPresenta.flush().then(function(){return cambiaZaino(id,silenzioso);}).catch(function(e){toast('Presentazione non salvata: '+e.message,false);});
+  }
   if(!id || id===MODO.zaino){ modoAggiorna(); return; }
   if(contenitoreMolla()===false) return;
   MODO.zaino=id;
@@ -11021,6 +11024,7 @@ function cambiaZaino(id, silenzioso){
  * nell'altro. Prima si scrive quello che è in canna, poi si lascia andare.
  */
 function contenitoreMolla(){
+  if(window.ZainoPresenta?.daSalvare){toast('Salva prima la presentazione aperta.',false);return false;}
   /* Non solo il flush: l'appunto aperto e l'elenco sono del contenitore che
      si sta lasciando, e devono uscire di scena con lui. */
   try{ if(typeof noteMolla==='function'){ if(noteMolla()===false) return false; }else noteFlush(); }catch(e){ toast('Appunti non salvati: '+e.message,false); return false; }
@@ -11047,8 +11051,11 @@ function contenitoreMolla(){
   /* Per ultimo, a segni ormai scritti: il documento e il media del contenitore
      che si sta lasciando escono di scena — senza dimenticare che erano aperti.
      Prima restavano a schermo, ed erano il documento di un ALTRO zaino. */
+  window.ZainoPresenta?.molla();
   try{ apertoMolla(); }catch(e){}
 }
+
+async function scegliCartellaVault(){try{await window.ZainoPresenta?.flush();}catch(e){toast('Presentazione non salvata: '+e.message,false);return null;}return window.vault.choose();}
 
 /** Commuta. È l'unica porta: il click sul logo passa di qui, e nient'altro. */
 async function cambiaModo(m){
@@ -11488,9 +11495,9 @@ async function setZainiDisegna(){
 function zainoMemoriaSposta(da, a){
   if(!da || !a || da===a) return;
   try{
-    ['studia.banco.c.'+da, 'studia.banco.c.'+da+'.zoom'].forEach(function(k){
+    ['studia.banco.c.'+da, 'studia.banco.c.'+da+'.zoom', 'studia.presenta.'+da].forEach(function(k){
       var v=localStorage.getItem(k); if(v==null) return;
-      localStorage.setItem(k.replace('.c.'+da, '.c.'+a), v);
+      localStorage.setItem(k.startsWith('studia.presenta.')?'studia.presenta.'+a:k.replace('.c.'+da, '.c.'+a), v);
       localStorage.removeItem(k);
     });
   }catch(e){}
@@ -11519,7 +11526,7 @@ async function zainoRinomina(id){
   if(!nome){ toast('Il nome non può essere vuoto', false); return; }
   if(nome===vecchio) return;                                 // niente da fare
   var eraAttivo=(zainoAttivo()===id);
-  if(eraAttivo) contenitoreMolla();
+  if(eraAttivo){try{await window.ZainoPresenta?.flush();}catch(e){toast('Presentazione non salvata: '+e.message,false);return;}if(contenitoreMolla()===false)return;}
   var r;
   try{ r=await window.vault.zaino.rinomina(id, nome); }
   catch(e){ toast('Non rinominato: '+((e&&e.message)||e), false); return; }
@@ -11553,12 +11560,12 @@ async function zainoElimina(id){
   /* Se è quello aperto, prima si molla: è la cautela di ogni cambio di
      contenitore, e qui il contenitore non sta cambiando — sta sparendo. */
   var eraAttivo=(zainoAttivo()===id);
-  if(eraAttivo) contenitoreMolla();
+  if(eraAttivo){try{await window.ZainoPresenta?.flush();}catch(e){toast('Presentazione non salvata: '+e.message,false);return;}if(contenitoreMolla()===false)return;}
   var r;
   try{ r=await window.vault.zaino.elimina(id); }
   catch(e){ toast('Non eliminato: '+((e&&e.message)||e), false); return; }
   if(!r || r.error){ toast('Non eliminato: '+((r&&r.error)||'?'), false); return; }
-  try{ localStorage.removeItem('studia.banco.c.'+id); localStorage.removeItem('studia.banco.c.'+id+'.zoom'); }catch(e){}
+  try{ localStorage.removeItem('studia.banco.c.'+id); localStorage.removeItem('studia.banco.c.'+id+'.zoom');localStorage.removeItem('studia.presenta.'+id); }catch(e){}
   try{ var t=apertoLeggi(); delete t[id]; localStorage.setItem('studia.aperto', JSON.stringify(t)); }catch(e){}
   if(eraAttivo){ MODO.zaino=null; try{ localStorage.removeItem('studia.zaino'); }catch(e){} }
   await zainiAggiorna();
@@ -16576,7 +16583,7 @@ try{
   if(!window.vault.path){
     var sc=document.getElementById('setup'); if(sc) sc.hidden=false;
     var cb=document.getElementById('chooseVault');
-    if(cb) cb.addEventListener('click', function(){ cb.disabled=true; window.vault.choose().then(function(p){ if(p) location.reload(); else cb.disabled=false; }); });
+    if(cb) cb.addEventListener('click', function(){ cb.disabled=true; scegliCartellaVault().then(function(p){ if(p) location.reload(); else cb.disabled=false; }); });
   }
   if(window.vault.ingest){
     var btn=document.getElementById('ingestBtn');
@@ -16691,7 +16698,7 @@ try{
       if(lbl && window.vault.path) lbl.title = window.vault.path;
       if(vb) vb.addEventListener('click', function(){
         vb.disabled=true;
-        window.vault.choose().then(function(p){
+        scegliCartellaVault().then(function(p){
           if(p){ if(typeof toast==='function') toast('Cartella impostata, ricarico…',true); setTimeout(function(){ location.reload(); },400); }
           else vb.disabled=false;
         }).catch(function(){ vb.disabled=false; });
@@ -17847,6 +17854,8 @@ function bancoStrumenti(){
        scritta nelle disposizioni già salvate, e cambiarla svuoterebbe il blocco
        a chi l'aveva scelto. Il nome in tendina dice che cosa si fa. */
     flashcard: { nome:'Ripasso',         famiglia:'quaderno', sel:'#ripassoPane' },
+    presenta:  { nome:'PRESENTA', famiglia:'quaderno', sel:'#presentaPane' },
+    gobbo:     { nome:'GOBBO', famiglia:'quaderno', sel:'#gobboPane', privato:true },
     lim:       { nome:'LIM', famiglia:'quaderno', sel:'#limPane' },
     studio:    { nome:'Raccoglitore',  famiglia:'fonte',    sel:'#studioPane' },
     /* Le POSTILLE: il perche' delle proprie sottolineature, tutte insieme.
@@ -18129,6 +18138,8 @@ function bancoAggiornaDocumenti(){
       var nota=(noteStati()||[]).find(function(s){return s.id===id;});
       if(nota && nota.cur) nome=nota.cur.title || nota.cur.file;
     }
+    if(id==='presenta')nome=window.ZainoPresenta?.documento?.title||'';
+    if(id==='gobbo')nome=window.ZainoPresenta?.regia?.title||'';
     if(id==='lim')nome=window.ZainoLim?.doc?.studia.title||'';
     var el=h.querySelector('.bdoc');
     if(!el){el=document.createElement('span');el.className='bdoc';h.appendChild(el);}
@@ -22092,6 +22103,8 @@ window.addEventListener('keydown', function(e){
      quattro esiti coi tempi previsti sopra. È uno strumento del banco come gli
      appunti e la mappa — sta a livello di pagina e `bancoMonta` lo sposta nel
      blocco che lo ospita, così si può ripassare TENENDO IL CAPITOLO ACCANTO. -->
+<section id="presentaPane" aria-label="PRESENTA · composizione delle presentazioni"></section>
+<section id="gobboPane" aria-label="GOBBO · note private e comandi del presentatore"></section>
 <section id="limPane" aria-label="Lavagnate LIM"></section>
 <section id="studioPane" aria-label="Raccoglitore di schede e ricerca nei materiali"></section>
 <section id="ripassoPane" aria-label="Ripasso">
@@ -22936,5 +22949,9 @@ window.addEventListener('keydown', function(e){
 <script src="assets/lim/modello.js"></script>
 <script src="assets/lim/ui.js"></script>
 <script src="assets/lim/banco.js"></script>
+<link rel="stylesheet" href="assets/presentazioni/editor.css">
+<script src="assets/presentazioni/modello.js"></script>
+<script src="assets/presentazioni/documento.js"></script>
+<script src="assets/presentazioni/editor.js"></script>
 </body>
 </html>

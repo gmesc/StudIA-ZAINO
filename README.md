@@ -16,7 +16,7 @@ Il fork ha identità `ch.insegnai.studia.zaino` e configurazione personale `stud
 
 ## Leggere e presentare
 
-Sono in sviluppo le fondazioni di **PRESENTA** e **GOBBO**: documenti di slide locali, animazioni, approfondimenti verticali, formule ed esportazione HTML offline. L’editor e i due split del Banco sono ancora da costruire. [Stato, architettura e comandi di verifica](docs/PRESENTAZIONI.md).
+Nel Banco sono disponibili **PRESENTA** e **GOBBO**: composizione guidata di slide con autosave, anteprima Reveal.js, formule, media, note private, timer e player a schermo intero. Esportazione HTML offline senza note. È una prima versione utilizzabile, ancora da affinare nell’interfaccia. [Uso, architettura, verifiche e limiti](docs/PRESENTAZIONI.md).
 
 Appunti, schede e Ripasso usano una colonna centrata di circa 68 caratteri. Nella testata dello split, **Dimensione del testo** regola l’ingrandimento dal 75% al 300%, indipendentemente dagli altri split. La larghezza massima cresce insieme al testo; la preferenza viene ricordata per strumento e zaino su questo Mac.
 

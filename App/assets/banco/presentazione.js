@@ -50,7 +50,10 @@
    const row=document.createElement('span');row.className='blettura';row.setAttribute('role','group');row.setAttribute('aria-label','Lettura e presentazione');
    if(testuali.has(id)){const z=button('Dimensione del testo','type',()=>dimensione(id,z));z.dataset.lettura='';row.append(z);zoom(id,percentuale(id),false);}
    const f=button('Schermo intero (Esc per uscire)','maximize',()=>schermoIntero(id));f.dataset.intero='';row.append(f);
-   const p=button(proiezione?.id===id?'Chiudi la finestra di proiezione':'Apri finestra di proiezione','external-link',()=>proiezione?.id===id?chiudiProiezione():apriProiezione(id));p.dataset.proietta='';p.setAttribute('aria-pressed',String(proiezione?.id===id));row.append(p);h.append(row);
+   // GOBBO contiene le note private. PRESENTA proietta il deck, mai l'editor.
+   if(!window.bancoStrumento(id)?.privato){
+    const p=button(id==='presenta'?'Presenta le slide a schermo intero':proiezione?.id===id?'Chiudi la finestra di proiezione':'Apri finestra di proiezione',id==='presenta'?'play':'external-link',()=>proiezione?.id===id?chiudiProiezione():apriProiezione(id));p.dataset.proietta='';p.setAttribute('aria-pressed',String(proiezione?.id===id));row.append(p);
+   }h.append(row);
    if(proiezione?.id===id)el.closest('.blocco').dataset.proiezione='1';
   });
   if(proiezione&&(!blocco(proiezione.id)||proiezione.zaino!==window.corsoAttivo()))chiudiProiezione();
@@ -81,7 +84,8 @@
   if(testuali.has(id))misura(barra,id);
   if(v){const pref=id==='fonte'?'pdf':'pdf2';[['Riduci','minus','ZoomOut'],['Adatta alla larghezza','move-horizontal','ZoomLvl'],['Ingrandisci','plus','ZoomIn']].forEach(([t,i,suffisso])=>barra.append(button(t,i,()=>{if(suffisso==='ZoomLvl')v.currentScaleValue='page-width';else $('#'+pref+suffisso)?.click();})));}
   if(id==='mappa')barra.append(button('Adatta la mappa alla finestra','maximize-2',()=>$('#mAdatta')?.click()));
-  barra.append(button('Apri finestra di proiezione','external-link',()=>apriProiezione(id)),button('Esci dallo schermo intero (Esc)','x',esciIntero));
+  if(!window.bancoStrumento(id)?.privato)barra.append(button(id==='presenta'?'Presenta le slide':'Apri finestra di proiezione','external-link',()=>apriProiezione(id)));
+  barra.append(button('Esci dallo schermo intero (Esc)','x',esciIntero));
   b.append(barra);barra.addEventListener('focusout',mostraBarra);barra.addEventListener('pointerleave',mostraBarra);mostraBarra();
   perId(id).setAttribute('tabindex','-1');perId(id).focus({preventScroll:true});window.bancoDopoLayout?.();
   if(testuali.has(id)){
@@ -164,6 +168,8 @@
   if(proiezione===p)p.timer=setTimeout(()=>aggiornaProiezione(p),p.dirty?16:250);
  }
  async function apriProiezione(id){
+  if(window.bancoStrumento(id)?.privato){avvisa('Questo pannello contiene note private e non si proietta.');return;}
+  if(id==='presenta'){try{await window.ZainoPresenta?.presenta();}catch(e){avvisa(e);}return;}
   if(aprendo)return;if(!api){avvisa('La proiezione richiede l’app desktop.');return;}
   if(proiezione?.id===id)return;aprendo=true;
   try{

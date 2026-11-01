@@ -64,11 +64,15 @@
     if(!viste.length){lista.innerHTML='<div class="alvuoto">Nessun '+(p.tipo==='audio'?'audio':'video')+'. Trascina i file sulla finestra per importarli.</div>';return;}
     lista.innerHTML=viste.map(function(v){
       var src=root.vault.srcUrl(v.file,root.corsoAttivo()), esc=root.escHtml;
-      return '<button type="button" class="alcard" data-album-media="'+esc(v.file)+'" title="Apri '+esc(v.nome)+'">'+
+      return '<button type="button" class="alcard" draggable="true" data-album-tipo="'+esc(v.tipo)+'" data-album-media="'+esc(v.file)+'" title="Apri '+esc(v.nome)+'">'+
         (v.tipo==='video'?'<video preload="metadata" muted tabindex="-1" aria-hidden="true" src="'+esc(src)+'#t=0.1"></video>':'<span class="albumAudio" aria-hidden="true">'+root.UiIcone.svg('music')+'</span>')+
         '<span class="alcap">'+esc(v.nome)+'</span></button>';
     }).join('');
   }
+  document.addEventListener('dragstart',function(e){
+    const card=e.target.closest?.('[data-album-media]');if(!card||!e.dataTransfer)return;
+    e.dataTransfer.setData('application/x-studia-presenta-media',JSON.stringify({version:1,tipo:card.dataset.albumTipo,file:card.dataset.albumMedia,corso:root.corsoAttivo()}));e.dataTransfer.effectAllowed='copy';
+  });
   async function aggiorna(){
     init(); var mio=++giro, corso=root.corsoAttivo();
     root.albumAggiorna(); root.fotoAggiorna();

@@ -67,6 +67,14 @@
   const p=trova(d,o.slideId),s=p.slide;
   function inserisci(n){if(o.direzione==='sotto')p.stack.slides.splice(p.v+1,0,n);else d.stacks.splice(p.h+1,0,{id:id(),slides:[n]});}
   switch(o.tipo){
+   case 'titoloSlide':{
+    s.title=o.title;let b=s.blocks.find(b=>b.type==='title');
+    if(!b){b={id:id(),type:'title',slot:'title',markdown:''};s.blocks.unshift(b);}b.markdown=o.title;break;
+   }
+   case 'spostaArgomento':{
+    const h=p.h+o.delta;if(![-1,1].includes(o.delta)||h<0||h>=d.stacks.length)throw Error('Non ci sono altri argomenti in questa direzione.');
+    [d.stacks[p.h],d.stacks[h]]=[d.stacks[h],d.stacks[p.h]];break;
+   }
    case 'aggiungiSlide':inserisci(slide(id));break;
    case 'duplicaSlide':inserisci(duplicata(s,id,false));break;
    case 'statoSuccessivo':{
@@ -87,7 +95,7 @@
    }
    case 'blocco':{
     const i=s.blocks.findIndex(b=>b.id===o.blockId);if(i<0)throw Error('Blocco non più disponibile.');
-    const b=copia(o.block);if(b.id!==o.blockId)throw Error('L’identità del blocco non si cambia.');s.blocks[i]=b;break;
+    const b=copia(o.block);if(b.id!==o.blockId)throw Error('L’identità del blocco non si cambia.');s.blocks[i]=b;const rimasti=new Set(bersagli(s));s.animations=s.animations.filter(a=>rimasti.has(a.targetId));break;
    }
    case 'eliminaBlocco':{
     const b=s.blocks.find(b=>b.id===o.blockId);if(!b)throw Error('Blocco non più disponibile.');const target=new Set([b.id,...(b.items||[]).map(i=>i.id)]);

@@ -1,6 +1,20 @@
-# Fondazioni di PRESENTA e GOBBO
+# PRESENTA e GOBBO nel Banco
 
-PRESENTA è il nome scelto per il futuro strumento di composizione delle presentazioni nel Banco. GOBBO è il pannello indipendente per note, timer e comandi del presentatore. Questa prima consegna prepara il nucleo di P0: dati, archivio, risorse, renderer, player offline, esportazione e contratto della sessione. L’editor visuale e i due split nel Banco devono ancora essere costruiti dopo il confronto sulle interfacce.
+PRESENTA è lo strumento del Banco per comporre le presentazioni. GOBBO è il pannello indipendente con note private, timer e comandi del relatore. Il primo percorso utilizzabile è collegato: creazione, modifica, autosave, riapertura, anteprima isolata, player nativo Reveal.js ed esportazione HTML offline. L’interfaccia usa i componenti ZAINO esistenti e resta una prima versione da affinare con i mockup richiesti.
+
+## Come provarlo nell’app
+
+1. Aprire uno zaino e scegliere **PRESENTA** nella tendina di uno split.
+2. Premere **Nuova presentazione** (`+` nella barra), scegliere il titolo e compilare il titolo della prima slide.
+3. Aggiungere testo, elenco o formula; aggiungere altre slide con `+`, approfondimenti con la freccia verso il basso. Duplicazione, riordino, eliminazione e annulla/ripeti sono nella stessa superficie.
+4. Trascinare parole chiave o elementi dell’Album nel pannello, oppure usare **Inserisci dallo zaino**. Il gesto inserisce nella slide selezionata; la creazione di slide tramite drop nella panoramica resta P1.
+5. Attendere **Salvato**, chiudere il documento e riaprirlo dalla tendina o dalla sezione PRESENTA in sidebar. Anche l’ultima presentazione e la slide selezionata si ricordano per zaino.
+6. Scegliere **Presenta a schermo intero**. Aprire **GOBBO** in un altro split per leggere le note e comandare la sessione. `Esc` esce dallo schermo intero della finestra pubblica; un altro `Esc` chiude quella finestra. `F` commuta lo schermo intero.
+7. **Esporta presentazione HTML** apre il selettore della cartella e produce un pacchetto offline senza note.
+
+Il campo titolo modifica anche il titolo visibile nella slide. L’editor offre layout guidati, dimensione del testo, allineamento, colonne occupate e passaggi animati; **Stato successivo animato** collega le corrispondenze fra le due slide. Le formule usano LaTeX; il testo accetta Markdown e delimitatori matematici espliciti. I bottoni hanno etichette accessibili e tooltip italiani; `⌘/Ctrl+S`, `⌘/Ctrl+Z`, `⌘/Ctrl+Shift+Z` agiscono sull’editor.
+
+La testata di PRESENTA avvia il deck reale. GOBBO è marcato privato nel registro e non offre la proiezione generica, neppure nella barra a schermo intero. Una sessione usa la revisione fissata all’avvio: eventuali modifiche successive nell’editor non cambiano in silenzio le note o le slide già proiettate.
 
 ## Decisioni già fissate
 
@@ -9,7 +23,7 @@ PRESENTA è il nome scelto per il futuro strumento di composizione delle present
 - Reveal.js 6.0.2 e KaTeX 0.18.2 locali; Markdown analizzato con Marked 16.4.2 e renderizzato attraverso una lista consentita di token.
 - Note private escluse dal documento pubblico e dal pacchetto HTML. Le citazioni interne nel Markdown diventano etichette statiche nell’esportazione.
 - Duplicazione ordinaria con nuove identità. L’operazione esplicita `statoSuccessivo` conserva le corrispondenze Auto-Animate, distinte dalle identità dei blocchi.
-- Le toolbar future riusano `.tbar`, `.tbtn`, `--tb-*`, la palette dei comandi e `UiIcone`. Nessuna nuova toolbar o disposizione del Banco è definita da questa consegna.
+- Le toolbar riusano `.tbar`, `.tbtn`, `--tb-*`, la palette dei comandi e `UiIcone`. Le misure e gli stati dei comandi sono ereditati dal design system; il layout del Banco resta quello esistente.
 - Creazione di slide mediante drop nella panoramica ancora P1; possibile anticipazione soltanto se riusa le operazioni esistenti senza un secondo meccanismo. Generazione AI e PDF restano P1.
 
 ## Mappa degli innesti
@@ -19,8 +33,8 @@ PRESENTA è il nome scelto per il futuro strumento di composizione delle present
 | `main.js::createWindow` | Installa il servizio PRESENTA sulla WebContents della finestra principale |
 | `lib/presentazioni-ipc.js::installa` | Controlla mittente, frame principale, zaino e privilegi del disco per ogni richiesta |
 | `lib/presentazioni-ipc.js::ponte` e `bin/preload.js::genera` | Generano `window.vault.presentazioni`; il preload generato non si modifica a mano |
-| `App/StudIA.html::bancoStrumenti`, `bancoAggiornaDocumenti` | Registro e titoli del Banco da estendere nella fase UI; nessuna iscrizione fittizia di split vuoti |
-| Evento `studia:zaino-changed` | Punto da usare per cancellare caricamenti e chiudere la sessione al cambio di contesto nella fase UI |
+| `App/StudIA.html::bancoStrumenti`, `bancoAggiornaDocumenti` | Registro di PRESENTA/GOBBO, titoli dei documenti e protezione del pannello privato |
+| Evento `studia:zaino-changed` | Riallineamento dell’editor, annullamento dei risultati obsoleti e chiusura della sessione al cambio di contesto |
 | `App/assets/lim/modello.js::trasporto/leggiTrasporto` | Envelope esistente con tipo, ID e zaino, già prodotto dai drag di Parole e Album |
 | `lib/lim.js::comando`, azione `materiale` | Risolve le identità reali delle parole e delle immagini con provenienza e byte originali |
 | `lib/materiali.js::trova` | Risolve audio/video nello stesso zaino, senza accettare percorsi assoluti dal trasferimento |
@@ -29,7 +43,7 @@ PRESENTA è il nome scelto per il futuro strumento di composizione delle present
 | `lib/validate.js::validatePresentazione` | Schema Ajv e integrità referenziale del modello |
 | `lib/pacchetto.js` | Presentazioni condivise con l’opzione dei contenuti personali; bozze e copia precedente sempre escluse |
 
-I contratti drag `application/x-studia-album` e `application/x-studia-evidenza` non cambiano. Il ricevitore può usare l’envelope aggiuntivo `application/x-studia-lim` già emesso dal checkout: conserva anche lo zaino d’origine. Per i media è predisposto un ingresso versionato `{version:1,tipo:'audio'|'video',file,corso}`; il produttore e il gesto effettivo nell’Album saranno collegati con l’editor.
+I contratti drag `application/x-studia-album` e `application/x-studia-evidenza` non cambiano. Il ricevitore può usare l’envelope aggiuntivo `application/x-studia-lim` già emesso dal checkout: conserva anche lo zaino d’origine. Per i media è predisposto un ingresso versionato `{version:1,tipo:'audio'|'video',file,corso}`; l’Album produce `application/x-studia-presenta-media` per audio/video. I payload preesistenti di Parole e immagini sono conservati.
 
 ## Archivio e risorse
 
@@ -65,7 +79,17 @@ Il renderer preserva `\(...\)`, `\[...\]` e `$$...$$`; il singolo dollaro non è
 
 La regia privata riceve le note della revisione fissata. Il player riceve HTML compilato e metadati delle sole risorse usate: niente note né provenienza. Il player autonomo non ha un preload del vault e non carica il plugin note standard. I media partono tramite controllo esplicito, salvo l’opzione sul singolo blocco; cambiare slide ferma quelli lasciati indietro.
 
-Il coordinatore è pronto e provato come modulo; il collegamento con la futura finestra pubblica Electron e con GOBBO resta da realizzare. La proiezione esistente di PDF, appunti e lavagna conserva il proprio percorso.
+`lib/presentazioni-player.js` collega il coordinatore alla finestra pubblica sandboxed. Il preload pubblico espone soltanto pronto/conferma e ricezione dei comandi, senza `vault`. GOBBO segue la posizione confermata dal player; le richieste di una sessione vecchia sono rifiutate. Chiudere e riavviare crea una nuova sessione. La finestra si apre sul secondo schermo se presente; il selettore in GOBBO permette di spostarla. La proiezione esistente di PDF, appunti e lavagna conserva il proprio percorso.
+
+`lib/presentazioni-vista.js` serve il runtime e i media tramite URL `presenta://` a capacità temporanea. Ogni URL identifica un file espressamente autorizzato; nessun percorso arbitrario o file JSON del vault può essere richiesto. Le capacità dei media sono revocate alla chiusura del documento/sessione. L’anteprima è un iframe `sandbox="allow-scripts"`, senza `allow-same-origin`, senza preload e con media passivi; i messaggi controllano la finestra sorgente e il canale. Il player imposta esplicitamente la modalità slide, anche negli split stretti. La navigazione è condivisa con il pacchetto esportato in `navigazione.js`.
+
+## Autosave e transizioni
+
+`App/assets/presentazioni/documento.js` conserva cronologia, revisione del disco e bozza separatamente. Autosave dopo 600 ms; una scrittura per volta. Il testo digitato durante una scrittura rimane da salvare e viene scritto nel giro seguente. Annulla/ripeti non riportano indietro la revisione del disco.
+
+Cambio zaino, rinomina/eliminazione dello zaino, cambio documento, esportazione e presentazione attendono le scritture necessarie. Anche il cambio della cartella vault passa da un flush prima del selettore. Per la chiusura nativa, il main intercetta `close`, richiede il flush al renderer e prosegue soltanto dopo la conferma associata a quella richiesta; non dipende da un `beforeunload` asincrono. Una ricarica con modifiche pendenti viene bloccata e avvia il salvataggio; può essere ripetuta dopo **Salvato**.
+
+Un errore conserva la bozza in memoria e tenta una copia di recupero; se anche quella fallisce lo dice. Cambio contesto e chiusura sono impediti. Una bozza dello stesso documento e della stessa revisione può essere recuperata esplicitamente alla riapertura. L’errore non viene spacciato per un salvataggio riuscito.
 
 ## Build, dimostrazione e verifiche
 
@@ -76,6 +100,7 @@ npm run presenta:build
 npm run presenta:verifica
 node test/presentazioni.js
 npm run test:presenta-player
+npm run test:presenta-chiusura
 npm run presenta:demo -- /percorso/assoluto/destinazione
 ```
 
@@ -87,13 +112,23 @@ Le prove Node coprono operazioni, undo/redo, struttura verticale, corrispondenze
 
 ```bash
 npm test
-bash bin/prova-zaino.sh prova-presenta-fondazioni.js prova-sicurezza.js
+bash bin/prova-zaino.sh prova-presenta-fondazioni.js prova-presenta-editor.js prova-sicurezza.js
 ```
 
 La prova CDP attraversa il preload e l’IPC reali di ZAINO. È registrata nel runner sintetico; non simula un drag dell’utente. Il test esistente `prova-presentazione.js` si ferma sul passaggio nativo a schermo intero della finestra esterna, nello stesso punto sia sul ramo sia sulla copia del commit iniziale `20a314b`. Le altre verifiche passate non vengono presentate come collaudo di quel passaggio, degli schermi esterni, di Windows o degli installatori.
 
-## Lavoro successivo di P0
+## Verifiche dell’integrazione e limiti
 
-Restano editor visuale e anteprima nel Banco; iscrizione e lifecycle dei due split; proprietà, ridimensionamento e feedback di overflow; adapter DOM del trascinamento e comandi alternativi nei menu; autosave con debounce, flush e protezione del cambio contesto/shutdown; finestra pubblica Electron con bridge di sessione ristretto; GOBBO sincronizzato e prove fisiche di trascinamento e LIM. Le fondamenta non costituiscono ancora P0 completo.
+`test/presentazioni-editor.js` prova scrittura durante autosave, revisioni dopo undo/redo, flush, recupero dopo errore e limiti/revoca degli URL media. Il controllo del flush è stato fatto diventare rosso sostituendo la transizione con una che non salva, in un processo separato.
 
-Per scegliere toolbar, pulsanti e disposizione dei pannelli si useranno mockup ricavati dai componenti e dai token reali di ZAINO, come richiesto.
+`test/cdp/prova-presenta-editor.js` attraversa la UI vera e i produttori drag di Album: creazione da modale, campi, matematica effettivamente visibile, immagini caricate, audio passivo nell’anteprima, menu alternativo, riapertura, spostamento/riduzione del Banco, cambio zaino con ultima battuta pendente, player pubblico senza note/API vault, pausa del media uscendo dalla slide e GOBBO sincronizzato. I drag consegnati da CDP restano prove degli handler, non un collaudo fisico su LIM.
+
+`test/presentazioni-chiusura.js` chiude davvero la finestra con un disco guasto simulato, controlla che restino finestra, ultima revisione e bozza, poi riprova con una scrittura rallentata e controlla l’ultima battuta sul disco dopo la chiusura.
+
+Restano da affinare con i mockup l’editing direttamente sul canvas, le miniature, il ridimensionamento con maniglie e i controlli più articolati delle animazioni. I blocchi si modificano nei campi sotto l’anteprima; un click sul blocco porta al campo corrispondente. L’avviso di overflow segnala il contenuto troppo alto. Non è un editor a posizionamento libero equivalente a PowerPoint.
+
+La riapertura di una finestra pubblica chiusa avvia una nuova sessione dall’inizio; il trasferimento dell’autorità fra un player locale e quello esterno, preservando il passaggio in corso, resta da aggiungere. GOBBO mostra le note della slide attuale, non un’anteprima grafica della successiva. La riparazione da UI di un archivio con JSON principale corrotto non è ancora offerta: l’errore è dichiarato e le copie restano sul disco.
+
+Restano i collaudi con trascinamento fisico, LIM, più monitor fisici, Windows e installatori. PDF, AI, PPTX e drop che crea nuove slide nella panoramica restano fuori da questa consegna. Non dichiarare P0 completo sulla sola base del percorso iniziale utilizzabile.
+
+Per riprodurre il controllo visuale sintetico con il CSS e l’editor veri: `./node_modules/.bin/electron docs/mockup-presenta/avvia.js`. Usa un profilo temporaneo e non apre un vault personale. Non sostituisce le prove della UI nell’app.
