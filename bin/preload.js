@@ -6,7 +6,7 @@ const path = require('path');
 const root = path.join(__dirname,'..');
 function genera() {
   const sorgente=fs.readFileSync(path.join(root,'preload-base.js'),'utf8');
-  const ponti=['chat','rag','studio'].map(nome=>{
+  const ponti=['chat','rag','studio','presentazioni'].map(nome=>{
     const ponte=require(path.join(root,'lib',nome+'-ipc')).ponte;
     return 'vaultApi.'+nome+' = ('+ponte.toString()+')(ipcRenderer);';
   }).join('\n');

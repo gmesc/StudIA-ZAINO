@@ -1,0 +1,564 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Presentazione locale di ZAINO",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,100}$"
+    },
+    "zainoId": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 140
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 640,
+          "maximum": 3840
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 360,
+          "maximum": 2160
+        },
+        "theme": {
+          "enum": [
+            "zaino-light",
+            "zaino-dark"
+          ]
+        },
+        "navigationMode": {
+          "enum": [
+            "default",
+            "grid"
+          ]
+        },
+        "reducedMotion": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "width",
+        "height",
+        "theme",
+        "navigationMode",
+        "reducedMotion"
+      ]
+    },
+    "assets": {
+      "type": "object",
+      "maxProperties": 2000,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,100}$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "enum": [
+              "image",
+              "audio",
+              "video"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^assets/[a-f0-9]{64}\\.[a-z0-9]{2,5}$"
+          },
+          "mimeType": {
+            "enum": [
+              "image/png",
+              "image/jpeg",
+              "image/webp",
+              "image/gif",
+              "audio/mpeg",
+              "audio/wav",
+              "audio/ogg",
+              "audio/flac",
+              "audio/mp4",
+              "audio/aac",
+              "audio/aiff",
+              "video/mp4",
+              "video/webm",
+              "video/quicktime",
+              "video/x-matroska",
+              "video/x-msvideo",
+              "video/mpeg"
+            ]
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 536870912
+          },
+          "source": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "enum": [
+                  "keyword",
+                  "album",
+                  "audio",
+                  "video"
+                ]
+              },
+              "id": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "link": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "page": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100000
+              }
+            },
+            "required": [
+              "kind",
+              "id"
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "path",
+          "mimeType",
+          "sha256",
+          "size"
+        ]
+      }
+    },
+    "stacks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 300,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,100}$"
+          },
+          "slides": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 300,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9_-]{1,100}$"
+                },
+                "title": {
+                  "type": "string",
+                  "maxLength": 140
+                },
+                "layout": {
+                  "enum": [
+                    "title-text",
+                    "text-image",
+                    "image-caption",
+                    "two-columns",
+                    "formula-text",
+                    "media"
+                  ]
+                },
+                "autoAnimate": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "groupId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,100}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 5
+                    }
+                  },
+                  "required": [
+                    "enabled",
+                    "groupId",
+                    "duration"
+                  ]
+                },
+                "blocks": {
+                  "type": "array",
+                  "maxItems": 200,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_-]{1,100}$"
+                      },
+                      "type": {
+                        "enum": [
+                          "title",
+                          "text",
+                          "list",
+                          "math",
+                          "image",
+                          "audio",
+                          "video"
+                        ]
+                      },
+                      "slot": {
+                        "enum": [
+                          "title",
+                          "body",
+                          "media",
+                          "formula",
+                          "left",
+                          "right",
+                          "caption"
+                        ]
+                      },
+                      "markdown": {
+                        "type": "string",
+                        "maxLength": 100000
+                      },
+                      "latex": {
+                        "type": "string",
+                        "maxLength": 20000
+                      },
+                      "display": {
+                        "type": "boolean"
+                      },
+                      "assetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_-]{1,100}$"
+                      },
+                      "alt": {
+                        "type": "string",
+                        "maxLength": 2000
+                      },
+                      "caption": {
+                        "type": "string",
+                        "maxLength": 10000
+                      },
+                      "items": {
+                        "type": "array",
+                        "maxItems": 200,
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,100}$"
+                            },
+                            "markdown": {
+                              "type": "string",
+                              "maxLength": 20000
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "markdown"
+                          ]
+                        }
+                      },
+                      "style": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "column": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 12
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 12
+                          },
+                          "row": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 12
+                          },
+                          "rowSpan": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 12
+                          },
+                          "fontSize": {
+                            "type": "number",
+                            "minimum": 12,
+                            "maximum": 160
+                          },
+                          "color": {
+                            "type": "string",
+                            "pattern": "^#[a-fA-F0-9]{6}$"
+                          },
+                          "align": {
+                            "enum": [
+                              "left",
+                              "center",
+                              "right"
+                            ]
+                          },
+                          "scale": {
+                            "type": "number",
+                            "minimum": 0.25,
+                            "maximum": 4
+                          },
+                          "highlight": {
+                            "type": "string",
+                            "pattern": "^#[a-fA-F0-9]{6}$"
+                          }
+                        },
+                        "required": []
+                      },
+                      "matchId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_-]{1,100}$"
+                      },
+                      "source": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "enum": [
+                              "keyword",
+                              "album",
+                              "audio",
+                              "video"
+                            ]
+                          },
+                          "id": {
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "link": {
+                            "type": "string",
+                            "maxLength": 2000
+                          },
+                          "page": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100000
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "id"
+                        ]
+                      },
+                      "autoplay": {
+                        "type": "boolean"
+                      },
+                      "start": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 604800
+                      },
+                      "end": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 604800
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "type",
+                      "slot"
+                    ],
+                    "allOf": [
+                      {
+                        "if": {
+                          "properties": {
+                            "type": {
+                              "enum": [
+                                "title",
+                                "text"
+                              ]
+                            }
+                          }
+                        },
+                        "then": {
+                          "required": [
+                            "markdown"
+                          ]
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "type": {
+                              "const": "math"
+                            }
+                          }
+                        },
+                        "then": {
+                          "required": [
+                            "latex",
+                            "display"
+                          ]
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "type": {
+                              "const": "list"
+                            }
+                          }
+                        },
+                        "then": {
+                          "required": [
+                            "items"
+                          ]
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "type": {
+                              "enum": [
+                                "image",
+                                "audio",
+                                "video"
+                              ]
+                            }
+                          }
+                        },
+                        "then": {
+                          "required": [
+                            "assetId"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "animations": {
+                  "type": "array",
+                  "maxItems": 2000,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_-]{1,100}$"
+                      },
+                      "step": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 1000
+                      },
+                      "effect": {
+                        "enum": [
+                          "fade-in",
+                          "fade-up",
+                          "fade-out",
+                          "grow",
+                          "shrink",
+                          "highlight-red"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "targetId",
+                      "step",
+                      "effect"
+                    ]
+                  }
+                },
+                "notes": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "markdown": {
+                      "type": "string",
+                      "maxLength": 100000
+                    }
+                  },
+                  "required": [
+                    "markdown"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "layout",
+                "autoAnimate",
+                "blocks",
+                "animations",
+                "notes"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "slides"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "zainoId",
+    "title",
+    "revision",
+    "settings",
+    "assets",
+    "stacks"
+  ]
+}

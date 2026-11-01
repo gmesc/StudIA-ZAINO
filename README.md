@@ -16,6 +16,8 @@ Il fork ha identità `ch.insegnai.studia.zaino` e configurazione personale `stud
 
 ## Leggere e presentare
 
+Sono in sviluppo le fondazioni di **PRESENTA** e **GOBBO**: documenti di slide locali, animazioni, approfondimenti verticali, formule ed esportazione HTML offline. L’editor e i due split del Banco sono ancora da costruire. [Stato, architettura e comandi di verifica](docs/PRESENTAZIONI.md).
+
 Appunti, schede e Ripasso usano una colonna centrata di circa 68 caratteri. Nella testata dello split, **Dimensione del testo** regola l’ingrandimento dal 75% al 300%, indipendentemente dagli altri split. La larghezza massima cresce insieme al testo; la preferenza viene ricordata per strumento e zaino su questo Mac.
 
 **Schermo intero** mostra il contenuto dello split e nasconde l’interfaccia. Il testo parte almeno dal 200%; gli appunti vengono mostrati in anteprima. Porta il puntatore in alto o usa Tab per ritrovare i comandi. **Esc** ripristina la disposizione, l’ingrandimento e il punto di lettura precedenti. Nei PDF rimangono pinch, Spazio + trascinamento e tre clic per adattare alla larghezza.

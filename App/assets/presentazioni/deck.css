@@ -1,0 +1,25 @@
+/* Soltanto il contenuto delle slide. La futura toolbar usa tbar/tbtn di ZAINO. */
+:root{--bg:#fbfbfa;--ink:#16181d;--muted:#5b6069;--font-text:"Helvetica Neue",Helvetica,Arial}
+:root[data-tema="zaino-dark"]{--bg:#0f1115;--ink:#eceef2;--muted:#a2a8b2}
+body{background:var(--bg);color:var(--ink)}
+.reveal{font-family:var(--font-text),sans-serif;font-size:32px;color:var(--ink)}
+.presenta-slide{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:minmax(0,auto);gap:24px;align-content:center;box-sizing:border-box;min-height:640px;padding:40px;text-align:left;isolation:isolate}
+.presenta-blocco{grid-column:span 12;min-width:0;overflow-wrap:anywhere}
+.presenta-blocco[data-slot="title"]{grid-column:1 / -1}
+.presenta-slide[data-layout="two-columns"]>.presenta-blocco:not([data-slot="title"]),.presenta-slide[data-layout="text-image"]>.presenta-blocco:not([data-slot="title"]),.presenta-slide[data-layout="formula-text"]>.presenta-blocco:not([data-slot="title"]){grid-column:span 6}
+.presenta-contenuto{transform-origin:center;max-width:100%}
+.presenta-contenuto img,.presenta-contenuto video{display:block;max-width:100%;max-height:480px;object-fit:contain;margin:auto}
+.presenta-contenuto audio{width:100%}
+.presenta-slide p{margin:0 0 .5em;line-height:1.4}
+.presenta-slide h2{font-size:1.7em;line-height:1.15;margin:0 0 .4em}
+.presenta-slide h2 p{margin:0}
+.presenta-slide ul,.presenta-slide ol{margin:.25em 0;padding-left:1.3em}
+.presenta-slide li{margin:.25em 0}
+.presenta-slide figcaption{font-size:.65em;color:var(--muted);margin-top:16px}
+.presenta-slide .katex-display{margin:.5em 0;overflow:auto}
+.presenta-formula-errore{font-size:.75em;border:1px solid currentColor;padding:8px;display:inline-block}
+.presenta-slide table{border-collapse:collapse;width:100%}
+.presenta-slide td,.presenta-slide th{border-bottom:1px solid var(--muted);padding:8px}
+.presenta-slide pre{white-space:pre-wrap}
+:root[data-movimento-ridotto="true"] .reveal *{transition-duration:0s!important;animation-duration:0s!important}
+@media(prefers-reduced-motion:reduce){.reveal *{transition-duration:0s!important;animation-duration:0s!important}}

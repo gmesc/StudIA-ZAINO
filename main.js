@@ -194,6 +194,7 @@ function createWindow() {
   finestre.proteggiFinestra(win,{file:appFile,shell});
   const lim=require('./lib/lim').installa({win,appDir:path.join(__dirname,'App'),vaultDir,cestina:p=>shell.trashItem(p)});
   require('./lib/proiezione').installa({lim,win,BrowserWindow,screen:require('electron').screen,appDir:path.join(__dirname,'App')});
+  require('./lib/presentazioni-ipc').installa({win,appDir:path.join(__dirname,'App'),vaultDir,cestina:p=>shell.trashItem(p),dialog});
   win.loadFile(appFile);
 }
 app.whenReady().then(() => { createWindow(); app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); }); });

@@ -2,6 +2,10 @@
 node_modules/
 dist/
 
+# KaTeX usa «dist» anche per i file runtime necessari alla presentazione offline.
+!App/assets/presentazioni/vendor/katex/dist/
+!App/assets/presentazioni/vendor/katex/dist/**
+
 # Ambienti Python. Quello della trascrizione sta qui dentro per ragioni storiche;
 # quello della lettura avanzata dei documenti vive fuori, in
 # ~/Library/Application Support/studia/pyenv-ocr.

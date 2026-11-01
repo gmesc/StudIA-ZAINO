@@ -495,4 +495,5 @@ vaultApi.studio = (function ponte(ipc){const call=(n,o)=>ipc.invoke('studio:'+n,
  answer:(zaino,id,o)=>call('answer',{zaino,id,...o}),keep:(zaino,id)=>call('keep',{zaino,id}),
  outcome:(zaino,id,attemptId,outcome)=>call('outcome',{zaino,id,attemptId,outcome}),resume:(zaino,id)=>call('resume',{zaino,id}),cancel:()=>call('cancel')
 };})(ipcRenderer);
+vaultApi.presentazioni = (function ponte(ipc){return {comando:o=>ipc.invoke('presenta:comando',o),onCambiata:fn=>{const h=(_e,d)=>fn(d);ipc.on('presenta:cambiata',h);return ()=>ipc.removeListener('presenta:cambiata',h);}};})(ipcRenderer);
 contextBridge.exposeInMainWorld('vault', vaultApi);
