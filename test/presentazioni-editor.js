@@ -58,6 +58,28 @@ const differita=()=>{let resolve,reject;return {promise:new Promise((r,j)=>{reso
  assert.equal(Colori.etichetta('#0EA5E9'),'sky-500');assert.equal(Colori.etichetta('#ffffff'),'white');assert.equal(Colori.etichetta('#000000'),'black');
  assert.equal(Colori.etichetta('#0ea5e8'),'≈ sky-500');assert.equal(Colori.etichetta(null),'—');assert.equal(Colori.etichetta('url(bad)'),'—');
  assert.equal(Colori.sfondoBianco('#ffffff','zaino-dark'),true);assert.equal(Colori.sfondoBianco(undefined,'zaino-light'),true);assert.equal(Colori.sfondoBianco(undefined,'zaino-dark'),false);assert.equal(Colori.sfondoBianco('#fefce8','zaino-light'),false);
+ // La formattazione cambia il singolo oggetto e attraversa il confine pubblico/offline.
+ let base=M.crea('00000000-0000-4000-8000-000000000001','Strumenti di base');const bs=base.stacks[0].slides[0].id;
+ base=M.applica(base,{tipo:'titoloSlide',slideId:bs,title:'Titolo indipendente'});
+ base=M.applica(base,{tipo:'inserisciBlocco',slideId:bs,block:{type:'text',slot:'body',markdown:'Contenuto',style:{fontFamily:'georgia',bold:true,italic:true,underline:true,lineHeight:1.6,color:'#0f766e'}}});
+ base=M.applica(base,{tipo:'slide',slideId:bs,background:'#fef9c3'});
+ const stileTesto=M.trova(base,bs).slide.blocks[1].style;assert(validatePresentazione(base).ok);
+ assert.deepEqual(M.pubblica(base).stacks[0].slides[0].blocks[1].style,stileTesto,'tutto lo stile sopravvive alla pubblicazione');
+ const htmlStile=Rivela.compila(base).html;for(const css of ['font-family:Georgia','--peso-testo:700','font-style:italic','text-decoration:underline','--interlinea:1.6'])assert(htmlStile.includes(css),css+' deve arrivare al player e all’export');
+ assert(!M.trova(base,bs).slide.blocks[0].style.fontFamily,'il titolo non eredita una modifica locale al testo');
+ for(const [k,v]of [['fontFamily','url(https://bad)'],['bold','true'],['lineHeight',9]]){const err=M.copia(base);err.stacks[0].slides[0].blocks[1].style[k]=v;assert(!M.valida(err).ok);assert(!validatePresentazione(err).ok);assert.throws(()=>Rivela.compila(err));}
+ const storiaBase=M.cronologia(base);storiaBase.applica({tipo:'aggiungiSlide',slideId:bs,modello:'colonne'});let nuova=storiaBase.documento.stacks[1].slides[0];
+ assert.equal(nuova.blocks.length,3);assert.equal(nuova.background,'#fef9c3');assert(nuova.blocks.every(b=>!b.markdown),'i modelli non introducono testi nella lezione');assert(nuova.blocks.every(b=>M.riquadro(b.style.box)));
+ assert.equal(nuova.blocks[1].style.fontFamily,'georgia');assert.equal(nuova.blocks[2].style.box.x,53);assert.equal(nuova.notes.markdown,'');assert(validatePresentazione(storiaBase.documento).ok);
+ assert.deepEqual(storiaBase.annulla(),base,'una sola operazione annulla l’intera nuova slide');storiaBase.ripeti();
+ for(const modello of Object.keys(M.MODELLI)){const doc=M.applica(base,{tipo:'aggiungiSlide',slideId:bs,modello});assert(validatePresentazione(doc).ok,modello);}
+ assert.throws(()=>M.applica(base,{tipo:'aggiungiSlide',slideId:bs,modello:'inesistente'}));
+ const appunti=M.copiaOggetto(base,bs,M.trova(base,bs).slide.blocks[1].id),primaIncolla=storiaBase.documento;
+ storiaBase.applica({tipo:'incollaOggetto',slideId:nuova.id,appunti});const incollato=M.trova(storiaBase.documento,nuova.id).slide.blocks.at(-1);
+ assert.equal(incollato.markdown,'Contenuto');assert.equal(incollato.style.fontFamily,'georgia');assert.notEqual(incollato.id,appunti.block.id);assert(validatePresentazione(storiaBase.documento).ok);
+ assert.deepEqual(storiaBase.annulla(),primaIncolla);assert.throws(()=>M.applica(M.crea('altro-zaino','Altro'),{tipo:'incollaOggetto',slideId:'manca',appunti}));
+ const altro=M.crea('altro-zaino','Altro');assert.throws(()=>M.applica(altro,{tipo:'incollaOggetto',slideId:altro.stacks[0].slides[0].id,appunti}),/questa presentazione/);
+ assert.deepEqual(appunti.block.style,stileTesto,'incollare non cambia gli appunti');
  // Il protocollo non può diventare un lettore generico del vault.
  const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),P=require('../lib/presentazioni'),R=require('../lib/presentazioni-risorse'),V=require('../lib/presentazioni-vista');
  const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'zaino-presenta-vista-'));try{

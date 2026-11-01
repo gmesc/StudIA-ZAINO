@@ -3,6 +3,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const q=JSON.stringify;
 async function wait(expr,client=c){for(let n=0;n<120;n++){if(await client.val(expr))return;await c.pausa(100);}throw Error('Attesa: '+expr);}
 async function click(nome){
+ if(['Nuova presentazione','Rinomina presentazione','Salva presentazione','Esporta presentazione HTML','Elimina presentazione','Chiudi presentazione'].includes(nome))await click('Documento');
+ if(['Aggiungi testo','Aggiungi elenco','Aggiungi formula','Inserisci dallo zaino','Incolla oggetto'].includes(nome))await click('Inserisci');
  const sel='#presentaPane [aria-label='+JSON.stringify(nome)+']';
  if(['Nuovo approfondimento','Duplica slide','Stato successivo animato','Copia stile','Incolla stile','Elimina slide'].includes(nome)){
   await c.val('document.querySelector(".presenta-scaletta [aria-pressed=true]").scrollIntoView({block:"center",behavior:"instant"});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
@@ -10,6 +12,7 @@ async function click(nome){
   for(const type of ['mousePressed','mouseReleased'])await c.invia('Input.dispatchMouseEvent',{type,...r,button:'right',clickCount:1});await wait('!!document.querySelector(".presenta-menu:popover-open")');
  }
  await c.val(`document.querySelector(${q(sel)}).scrollIntoView({block:'center',behavior:'instant'});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))`);await c.clicca(sel);await c.val('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
+ if(nome==='Nuova slide'){await wait('!!document.querySelector(".presenta-scelta-modello[open]")');await c.clicca('.presenta-scelta-modello [data-modello=vuota]');}
 }
 
 async function scrivi(nome,valore){if(nome==='Titolo della slide')await click('Titolo');await c.val(`(()=>{const e=document.querySelector('#presentaPane [aria-label='+${q(JSON.stringify(nome))}+']');e.value=${q(valore)};e.dispatchEvent(new Event('input',{bubbles:true}));})()`);}
@@ -49,7 +52,7 @@ async function riordinaMiniature(da,a){
  try{
   await c.val("cambiaZaino('biologia',true);bancoForma('due-col');bancoAssegna('A','presenta');bancoAssegna('C','gobbo')");
   assert(!await c.val(`!!document.querySelector('#gobboPane').closest('.blocco').querySelector('[data-proietta]')`),'le note private non offrono la proiezione generica');
-  await wait('document.querySelector(\'#presentaPane [data-presenta-action="nuova"]\')?.disabled===false');
+  await wait('!!document.querySelector(\'#presentaPane [aria-label="Documento"]\')');
   assert(await c.val(`['presenta','gobbo'].every(k=>[...document.querySelector('.bsel').options].some(o=>o.value===k))`));
   await click('Nuova presentazione');await wait('document.getElementById("uiModal").hasAttribute("open")');
   await c.val(`document.getElementById('umInput').value='Lezione della foglia';document.getElementById('umOk').click()`);await wait('!!ZainoPresenta.documento');id=await c.val('ZainoPresenta.documento.id');
@@ -68,7 +71,7 @@ async function riordinaMiniature(da,a){
   await c.val(`(()=>{const dt=new DataTransfer();dt.setData('application/x-studia-lim',${q(drag)});document.getElementById('presentaPane').dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:dt}));})()`);
   await wait('ZainoPresenta.documento.stacks[0].slides[0].blocks.some(b=>b.type==="image")');await c.val('ZainoPresenta.flush()');
   await frameWait('document.querySelector("img")?.naturalWidth>0');await wait('document.querySelector(".presenta-mini img")?.naturalWidth>0');
-  await click('Sfondo');await click('Immagine a sinistra');await click('Colore personalizzato dello sfondo');await click('yellow-100');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].background'),'#fef9c3');
+  await click('Disposizione');await click('Immagine a sinistra');await click('Sfondo');await click('Colore personalizzato dello sfondo');await click('yellow-100');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].background'),'#fef9c3');
   const imageId=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").id');
   const textId=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").id');
   assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box.x'),7);
@@ -98,7 +101,7 @@ async function riordinaMiniature(da,a){
   await click('Colore manuale del testo');await click('slate-800');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style.color'),'#1e293b');
   await click('Automatico');assert.equal(await c.val('Object.hasOwn(ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style,"color")'),false);
   await click('Alto destra');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style.box.y'),7);
-  const layoutProva=await c.val('bancoStato()');await c.val('bancoForma("uno");bancoAssegna("A","presenta")');await click('Sfondo');await click('Immagine a sinistra');await click('Testo');
+  const layoutProva=await c.val('bancoStato()');await c.val('bancoForma("uno");bancoAssegna("A","presenta")');await click('Disposizione');await click('Immagine a sinistra');await click('Sfondo');await click('Testo');
   await c.val('document.querySelector("#presentaPane iframe").scrollIntoView({block:"start",behavior:"instant"});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
   await c.val('ZainoPresenta.flush()');await wait('!document.querySelector("#toast")?.classList.contains("show")');await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:20,y:20});await frameWait('document.querySelector(".reveal").dataset.bloccato==="false"');assert(await c.val('(()=>{const f=document.querySelector("#presentaPane iframe"),p=f.parentElement;return Math.abs(f.clientWidth-(p.clientWidth-24))<2 && Math.abs(f.clientWidth/f.clientHeight-16/9)<.01})()'),'anteprima a tutta larghezza e proporzioni conservate');assert(await frameVal('(()=>{const r=document.querySelector(".slides").getBoundingClientRect();return Math.abs(r.width-innerWidth)<2 && Math.abs(r.height-innerHeight)<2})()'),'Reveal riempie davvero il frame senza margini laterali');const foglioShot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/private/tmp/presenta-sul-foglio.png',Buffer.from(foglioShot.result.data,'base64'));
   await click('Sfondo');
@@ -121,6 +124,28 @@ async function riordinaMiniature(da,a){
   await trascinaOggetto(imageId);await wait('ZainoPresenta.documento.stacks[0].slides[0].layout==="free"');await frameWait('document.querySelector(".presenta-slide").dataset.layout==="free" && document.querySelector(".reveal").dataset.modificaPronta==="true"');
   const titoloDopo=await frameVal('(()=>{const r=document.querySelector("[data-slot=title]").getBoundingClientRect();return {x:r.x,y:r.y};})()');
   assert(Math.abs(titoloPrima.x-titoloDopo.x)<2&&Math.abs(titoloPrima.y-titoloDopo.y)<2,'conversione della griglia senza spostare il titolo');
+  // Stili reali: campo -> modello -> iframe isolato -> salvataggio/riapertura.
+  await click('Testo');
+  await c.val(`(()=>{const e=document.querySelector('#presentaPane [aria-label="Carattere"]');e.value='georgia';e.dispatchEvent(new Event('change'));})()`);
+  await click('Grassetto');await click('Corsivo');await click('Sottolineato');
+  await frameWait(`(()=>{const b=document.querySelector('[data-block-id="'+${q(textId)}+'"]'),s=getComputedStyle(b.querySelector('.presenta-contenuto'));return s.fontFamily.includes('Georgia')&&s.fontWeight==='700'&&s.fontStyle==='italic'&&getComputedStyle(b).textDecorationLine==='underline';})()`);
+  assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="title").style.fontFamily'),undefined);
+  const contaOggetti=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.length');
+  await frameWait('document.querySelector(".reveal").dataset.bloccato==="false"');
+  await frameVal(`document.querySelector('[data-block-id="'+${q(textId)}+'"]').focus()`);
+  await frameClient.invia('Input.dispatchKeyEvent',{type:'keyDown',key:'d',code:'KeyD',modifiers:4,windowsVirtualKeyCode:68});await frameClient.invia('Input.dispatchKeyEvent',{type:'keyUp',key:'d',code:'KeyD',modifiers:4,windowsVirtualKeyCode:68});
+  await wait('ZainoPresenta.documento.stacks[0].slides[0].blocks.length==='+String(contaOggetti+1));
+  await click('Annulla nella presentazione');await click('Testo');
+  assert.equal(await c.val(`(()=>{const e=document.querySelector('#presentaPane textarea'),k=new KeyboardEvent('keydown',{key:'Backspace',bubbles:true,cancelable:true});e.dispatchEvent(k);return k.defaultPrevented;})()`),false,'cancellare nel campo di testo non elimina l’oggetto');
+  await click('Anteprima pulita');await frameWait('document.querySelector(".reveal").dataset.pulita==="true"');
+  assert(await frameVal('[...document.querySelectorAll(".presenta-blocco")].every(e=>e.tabIndex===-1&&getComputedStyle(e).outlineWidth==="0px")'));
+  await click('Anteprima pulita');await click('Comandi dell’oggetto');await click('Copia oggetto');
+  await c.val(`document.querySelector('.presenta-scaletta [aria-label="Nuova slide"]').scrollIntoView({block:"center"})`);await c.clicca('.presenta-scaletta [aria-label="Nuova slide"]');await wait('!!document.querySelector(".presenta-scelta-modello[open]")');
+  await c.clicca('.presenta-scelta-modello [data-modello=colonne]');
+  assert.equal(await c.val('ZainoPresenta.documento.stacks[1].slides[0].blocks.length'),3);
+  await click('Incolla oggetto');assert.equal(await c.val('ZainoPresenta.documento.stacks[1].slides[0].blocks.at(-1).markdown'),'La clorofilla cattura la luce. Formula: \\(x^2\\)');
+  assert.equal(await c.val('ZainoPresenta.documento.stacks[1].slides[0].blocks.at(-1).style.fontFamily'),'georgia');
+  await click('Annulla nella presentazione');assert.equal(await c.val('ZainoPresenta.documento.stacks[1].slides[0].blocks.length'),3);await click('Annulla nella presentazione');assert.equal(await c.val('ZainoPresenta.documento.stacks.length'),1);await click('Testo');
   const geometriaSalvata=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box');
 
   const audioDir=path.join(v,'Zaini/biologia/MATERIALI/Audio');fs.mkdirSync(audioDir,{recursive:true});fs.writeFileSync(path.join(audioDir,'03 Tono.wav'),require('../fixtures/presentazioni').audio());
@@ -134,7 +159,7 @@ async function riordinaMiniature(da,a){
   const ordinePrima=await c.val('ZainoPresenta.documento.stacks.map(s=>s.slides.map(s=>s.id))');await riordinaMiniature(ordinePrima[0][0],ordinePrima[1][0]);await wait('ZainoPresenta.documento.stacks[0].slides[0].id==='+q(ordinePrima[1][0]));assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides.length'),2);await click('Annulla nella presentazione');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks.map(s=>s.slides.map(s=>s.id))'),ordinePrima);
   await click('Duplica slide');assert.equal(await c.val('PresentaModello.posizioni(ZainoPresenta.documento).length'),4);await click('Annulla nella presentazione');assert.equal(await c.val('PresentaModello.posizioni(ZainoPresenta.documento).length'),3);await click('Ripeti nella presentazione');assert.equal(await c.val('PresentaModello.posizioni(ZainoPresenta.documento).length'),4);await click('Annulla nella presentazione');
   await c.val('ZainoPresenta.flush()');await click('Chiudi presentazione');await wait('!ZainoPresenta.documento');
-  await c.val(`ZainoPresenta.apri(${q(id)})`);assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box'),geometriaSalvata);assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].notes.markdown'),'NOTA_PRIVATA_UI · Chiedere un esempio alla classe.');
+  await c.val(`ZainoPresenta.apri(${q(id)})`);assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style.fontFamily'),'georgia');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box'),geometriaSalvata);assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].notes.markdown'),'NOTA_PRIVATA_UI · Chiedere un esempio alla classe.');
   // La disposizione cambia; il DOM dell'editor e la bozza restano gli stessi.
   await c.val(`window.__presentaPane=document.getElementById('presentaPane');bancoForma('quattro');bancoScambia('A','D');bancoForma('due-col');bancoMostra('presenta')`);
   assert(await c.val('window.__presentaPane===document.getElementById("presentaPane")'));assert.equal(await c.val('ZainoPresenta.documento.id'),id);
@@ -155,7 +180,7 @@ async function riordinaMiniature(da,a){
   assert((await c.val(`window.vault.presentazioni.comando({azione:'sessione',corso:'biologia',sessionId:${q(sid)},comando:'approfondisci'})`)).ok);await wait('ZainoPresenta.regia?.stato.v===1');
   for(const tema of ['chiaro','scuro']){
    await c.val(`document.documentElement.dataset.theme=${q(tema)}`);
-   const stile=await c.val(`(()=>{const b=getComputedStyle(document.querySelector('#presentaPane [data-presenta-action="nuova"]')),r=getComputedStyle(document.querySelector('#limPane .tbtn'));return {altezza:b.height,riferimento:r.height,font:b.fontSize,fontRiferimento:r.fontSize,angoli:b.borderRadius};})()`);
+   const stile=await c.val(`(()=>{const b=getComputedStyle(document.querySelector('#presentaPane [aria-label="Inserisci"]')),r=getComputedStyle(document.querySelector('#limPane .tbtn'));return {altezza:b.height,riferimento:r.height,font:b.fontSize,fontRiferimento:r.fontSize,angoli:b.borderRadius};})()`);
    assert.equal(stile.altezza,stile.riferimento);assert.equal(stile.font,stile.fontRiferimento);assert.equal(stile.angoli,'0px');
    const shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/private/tmp/zaino-presenta-'+tema+'.png',Buffer.from(shot.result.data,'base64'));
   }await c.val(`document.documentElement.dataset.theme='chiaro'`);

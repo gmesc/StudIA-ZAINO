@@ -11,7 +11,7 @@ async function wait(fn){for(let n=0;n<150;n++){if(await fn())return;await new Pr
 app.whenReady().then(async()=>{
  await wait(()=>BrowserWindow.getAllWindows().some(w=>w.webContents.getURL().endsWith('/StudIA.html')));const win=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().endsWith('/StudIA.html'));
  const run=js=>win.webContents.executeJavaScript(js,true);await wait(()=>run('!!window.ZainoPresenta'));
- await run(`cambiaZaino('scienze',true);bancoMostra('presenta')`);await wait(()=>run('document.querySelector(\'#presentaPane [data-presenta-action="nuova"]\')?.disabled===false'));
+ await run(`cambiaZaino('scienze',true);bancoMostra('presenta');document.querySelector('#presentaPane [aria-label="Documento"]').click()`);await wait(()=>run('document.querySelector(\'#presentaPane [data-presenta-action="nuova"]\')?.disabled===false'));
  const d=await run(`window.vault.presentazioni.comando({azione:'crea',corso:'scienze',title:'Chiusura protetta'})`);assert(d.ok,d.error);await run('ZainoPresenta.apri('+JSON.stringify(d.documento.id)+')');
  const sid=d.documento.stacks[0].slides[0].id;
  rotto=true;await run('ZainoPresenta.modifica({tipo:"titoloSlide",slideId:'+JSON.stringify(sid)+',title:"Ultima battuta"})');win.close();

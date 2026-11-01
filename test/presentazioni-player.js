@@ -6,7 +6,7 @@ let win;const errori=[],rete=[];
 app.whenReady().then(async()=>{
  const exported=await require('../bin/presenta-demo').genera(path.join(tmp,'export'));
  const M=require('../App/assets/presentazioni/modello'),R=require('../App/assets/presentazioni/reveal-adapter');let foglio=M.crea('00000000-0000-4000-8000-000000000001','Sul foglio'),sid=foglio.stacks[0].slides[0].id;
- foglio=M.applica(foglio,{tipo:'titoloSlide',slideId:sid,title:'Foglio libero'});foglio=M.applica(foglio,{tipo:'inserisciBlocco',slideId:sid,block:{type:'text',slot:'body',markdown:'A destra'}});
+ foglio=M.applica(foglio,{tipo:'titoloSlide',slideId:sid,title:'Foglio libero'});foglio=M.applica(foglio,{tipo:'inserisciBlocco',slideId:sid,block:{type:'text',slot:'body',markdown:'A destra',style:{fontFamily:'georgia',bold:true,italic:true,underline:true,lineHeight:1.6}}});
  foglio=M.applica(foglio,{tipo:'posizionaBlocchi',slideId:sid,boxes:foglio.stacks[0].slides[0].blocks.map((b,i)=>({id:b.id,box:{x:i?53:7,y:i?30:6,width:i?40:86,height:i?55:18}}))});foglio=M.applica(foglio,{tipo:'slide',slideId:sid,background:'#0f1115'});
  const index=path.join(exported.cartella,'index.html');fs.writeFileSync(index,fs.readFileSync(index,'utf8').replace('</div></div><script',R.compila(foglio).html+'</div></div><script'));
  const spostato=path.join(tmp,'altro-percorso');fs.renameSync(exported.cartella,spostato);
@@ -41,6 +41,7 @@ app.whenReady().then(async()=>{
  await run('PresentaPlayer.comando({azione:"vai",h:3,v:0,fragmentIndex:-1})');
  const geometria=await run(`(()=>{const s=document.querySelector('section.present>.presenta-slide'),b=s.querySelectorAll('.presenta-blocco')[1],r=b.getBoundingClientRect(),a=s.getBoundingClientRect();return {sfondo:getComputedStyle(s).backgroundColor,colore:getComputedStyle(s).color,x:(r.x-a.x)/a.width*100,width:r.width/a.width*100,maniglie:document.querySelectorAll('.presenta-maniglia').length};})()`);
  assert.equal(geometria.sfondo,'rgb(15, 17, 21)');assert.equal(geometria.colore,'rgb(251, 251, 250)');assert(Math.abs(geometria.x-53)<.1&&Math.abs(geometria.width-40)<.1);assert.equal(geometria.maniglie,0);
+ const testoStile=await run(`(()=>{const b=document.querySelector('section.present>.presenta-slide .presenta-blocco:nth-child(2)'),t=b.querySelector('p'),s=getComputedStyle(t);return {font:s.fontFamily,peso:s.fontWeight,corsivo:s.fontStyle,interlinea:s.lineHeight,sottolineato:getComputedStyle(b).textDecorationLine};})()`);assert(testoStile.font.includes('Georgia'));assert.equal(testoStile.peso,'700');assert.equal(testoStile.corsivo,'italic');assert.equal(testoStile.interlinea,'51.2px');assert.equal(testoStile.sottolineato,'underline');
  assert.deepEqual(rete,[],'nessuna dipendenza di rete');assert.deepEqual(errori,[],'nessun errore del renderer');
  await run('PresentaPlayer.destroy()');console.log('✓ Player reale offline: passi, simultaneità, inverso, Auto-Animate verticale, formule, media, privacy e pacchetto spostato.');console.log('Schermata: '+screenshot);app.exit(0);
 }).catch(e=>{console.error(e);app.exit(1);});

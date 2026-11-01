@@ -8,3 +8,6 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}.reveal{height:100%}
 .presenta-maniglia{display:block;position:absolute;right:0;bottom:0;width:22px;height:22px;background:var(--selezione);border:2px solid white;box-sizing:border-box;cursor:nwse-resize;z-index:3;touch-action:none}
 
 .reveal[data-editor="true"][data-bloccato="true"] .presenta-blocco{cursor:progress}
+
+.reveal[data-editor="true"][data-pulita="true"] .presenta-blocco{outline:0;cursor:default}
+.reveal[data-pulita="true"] .presenta-maniglia{display:none}

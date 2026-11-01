@@ -394,6 +394,29 @@
                               "center",
                               "end"
                             ]
+                          },
+                          "fontFamily": {
+                            "enum": [
+                              "zaino",
+                              "arial",
+                              "verdana",
+                              "georgia",
+                              "courier"
+                            ]
+                          },
+                          "bold": {
+                            "type": "boolean"
+                          },
+                          "italic": {
+                            "type": "boolean"
+                          },
+                          "underline": {
+                            "type": "boolean"
+                          },
+                          "lineHeight": {
+                            "type": "number",
+                            "minimum": 1,
+                            "maximum": 2
                           }
                         },
                         "required": []
