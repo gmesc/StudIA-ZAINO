@@ -40,7 +40,7 @@
 .presenta-scaletta>.tbtn:first-child{height:var(--tb-h);justify-content:center}
 .presenta-slide-mini.tbtn{display:flex;flex-direction:column;gap:4px;padding:4px;align-items:stretch;border:1px solid var(--line)}
 .presenta-slide-mini[aria-pressed="true"]{outline:2px solid var(--teal-strong);outline-offset:-2px}
-.presenta-slide-mini[data-destinazione="true"]{outline:3px solid var(--teal-strong);outline-offset:1px}
+.presenta-slide-mini[data-destinazione="dentro"]{outline:3px solid var(--teal-strong);outline-offset:1px}
 .presenta-mini{position:relative;width:100%;overflow:hidden;background:#fbfbfa;color:#16181d;pointer-events:none}
 .presenta-mini-scena{position:absolute;top:0;left:0;transform-origin:0 0;font:32px var(--font-text),sans-serif;--bg:#fbfbfa;--ink:#16181d;--muted:#5b6069}
 .presenta-mini-scena[data-tema="zaino-dark"]{--bg:#0f1115;--ink:#eceef2;--muted:#a2a8b2}
@@ -114,3 +114,11 @@
 .presenta-tabella-dialog{width:min(900px,92vw)}.presenta-tabella-celle{display:grid;gap:8px;margin-top:16px;overflow:auto;max-height:60vh}
 
 .presenta-font-bubble .presenta-campo{margin:0;gap:0}.presenta-font-bubble .presenta-carattere{min-width:160px;max-width:220px}.presenta-font-bubble input{font-size:var(--tb-fs)}.presenta-bubble{max-width:calc(100vw - 16px)}
+
+.presenta-tipografia [data-formato=bold]{font-weight:700}.presenta-tipografia [data-formato=italic]{font-style:italic}.presenta-tipografia [data-formato=underline]{text-decoration:underline}
+
+.presenta-tipografia .presenta-peso select{box-sizing:border-box;height:var(--tb-h);min-height:var(--tb-h);font-size:var(--tb-fs);padding:0 var(--tb-pad-x);border:1px solid var(--line);background:var(--panel);color:var(--ink)}.presenta-font-bubble .presenta-peso{width:112px;margin:0}
+
+.presenta-slide-mini{position:relative}.presenta-slide-mini[data-destinazione]::after{content:attr(data-drop-label);position:absolute;left:0;right:0;top:0;padding:4px;background:var(--teal-strong);color:var(--panel);font-size:12px;line-height:1.3;pointer-events:none}.presenta-slide-mini[data-destinazione=prima]{border-top:3px solid var(--teal-strong)}.presenta-slide-mini[data-destinazione=dopo]{border-bottom:3px solid var(--teal-strong)}.presenta-slide-mini[data-destinazione=dopo]::after{top:auto;bottom:0}.presenta-scaletta .tbtn[data-verticale=true]{width:calc(100% - 12px)}
+
+.presenta-carattere-nome{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.presenta-carattere>.tbtn::after{flex:none}.presenta-tipografia [data-formato=italic],.presenta-tipografia [data-formato=underline]{font-weight:400}

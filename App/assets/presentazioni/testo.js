@@ -1,10 +1,13 @@
 /* Testo sul foglio: sequenze validate, formati per intervallo e fallback Markdown senza DOM. */
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.PresentaTesto=factory();})(typeof window==='undefined'?this:window,function(){
  'use strict';
- const FONT=['zaino','arial','verdana','georgia','courier','atkinson','testme'];
- const CHIAVI=['bold','italic','underline','fontFamily','fontSize','color'];
+ const FONT=['zaino','arial','verdana','georgia','courier','atkinson','atkinson-next','testme','testme-alt'];
+ const CHIAVI=['bold','italic','underline','fontFamily','fontSize','fontWeight','color'];
+ const pesi=f=>f==='atkinson-next'?[200,300,400,500,600,700,800]:[400,700];
+ const peso=(s={},base=400)=>s.fontWeight??(s.bold===undefined?base:s.bold?700:400);
+ function aggiornaStile(s={},patch={}){const v={...s,...patch};if(Object.hasOwn(patch,'bold')&&!Object.hasOwn(patch,'fontWeight'))delete v.fontWeight;if(patch.fontWeight!=null)v.bold=patch.fontWeight>=600;if(patch.fontFamily&&!pesi(patch.fontFamily).includes(v.fontWeight))delete v.fontWeight;return v;}
  const copia=x=>JSON.parse(JSON.stringify(x));
- function stileValido(s){return !!s&&typeof s==='object'&&!Array.isArray(s)&&Object.entries(s).every(([k,v])=>CHIAVI.includes(k)&&(k==='fontFamily'?FONT.includes(v):k==='fontSize'?Number.isFinite(v)&&v>=12&&v<=160:k==='color'?v===null||/^#[a-fA-F0-9]{6}$/.test(v):typeof v==='boolean'));}
+ function stileValido(s){return !!s&&typeof s==='object'&&!Array.isArray(s)&&Object.entries(s).every(([k,v])=>CHIAVI.includes(k)&&(k==='fontFamily'?FONT.includes(v):k==='fontWeight'?[200,300,400,500,600,700,800,900].includes(v):k==='fontSize'?Number.isFinite(v)&&v>=12&&v<=160:k==='color'?v===null||/^#[a-fA-F0-9]{6}$/.test(v):typeof v==='boolean'));}
  function linkValido(s){try{const u=new URL(s);return ['https:','http:'].includes(u.protocol)&&!u.username&&!u.password&&s.length<=2000;}catch(_){return false;}}
  function valida(ns){
   if(!Array.isArray(ns)||ns.length>10000)return false;let quanti=0;
@@ -23,7 +26,7 @@
   esigi(ns);if(!Number.isInteger(inizio)||!Number.isInteger(fine)||inizio<0||fine<inizio||fine>lunghezza(ns))throw Error('Selezione del testo non valida.');
   if(!patch||Object.keys(patch).some(k=>!CHIAVI.includes(k))||!stileValido(Object.fromEntries(Object.entries(patch).filter(([,v])=>v!==null))))throw Error('Formato del testo non valido.');
   let pos=0;const out=[];for(const n of ns){const len=n.text?.length??1,a=Math.max(0,inizio-pos),b=Math.min(len,fine-pos);pos+=len;
-   if(n.text===undefined||a>=b){out.push(n);continue;}if(a)out.push({...n,text:n.text.slice(0,a)});const style={...n.style};for(const [k,v]of Object.entries(patch)){if(v===null&&k!=='color')delete style[k];else style[k]=v;}out.push({...n,text:n.text.slice(a,b),style});if(b<len)out.push({...n,text:n.text.slice(b)});
+   if(n.text===undefined||a>=b){out.push(n);continue;}if(a)out.push({...n,text:n.text.slice(0,a)});const style=aggiornaStile(n.style,patch);for(const [k,v]of Object.entries(patch)){if(v===null&&k!=='color')delete style[k];}out.push({...n,text:n.text.slice(a,b),style});if(b<len)out.push({...n,text:n.text.slice(b)});
   }return normalizza(out);
  }
  function collega(ns,inizio,fine,link){
@@ -43,6 +46,6 @@
  function comune(ns,k){return normalizza(ns.map(n=>{if(!n.style)return n;const style={...n.style};delete style[k];return {...n,style};}));}
  // Il Markdown rimane una rappresentazione leggibile; richText è autorevole quando presente.
  function markdown(ns){const esc=s=>s.replace(/[\\`*_{}[\]<>#!|]/g,'\\$&');return ns.map(n=>{if(n.markdown!==undefined)return n.markdown;if(n.latex!==undefined)return '\\'+(n.display?'[':'(')+n.latex+'\\'+(n.display?']':')');let s=esc(n.text);if(n.style?.bold)s='**'+s+'**';if(n.style?.italic)s='*'+s+'*';if(n.link)s='['+s+']('+n.link.replace(/[()]/g,c=>encodeURIComponent(c))+')';return s;}).join('');}
- function css(s={},caratteri={}){const out=['text-decoration:var(--sottolineato-testo,none)'];if(s.fontFamily&&caratteri[s.fontFamily])out.push('font-family:'+caratteri[s.fontFamily].css);if(s.fontSize)out.push('font-size:'+s.fontSize+'px');if(s.bold!==undefined)out.push('font-weight:'+(s.bold?700:400));if(s.italic!==undefined)out.push('font-style:'+(s.italic?'italic':'normal'));if(s.underline!==undefined)out.push('text-decoration:'+(s.underline?'underline':'none'));if(s.color!==undefined)out.push('color:'+(s.color||'var(--ink)'));return out.join(';');}
- return {collega,riscrivi,FONT,CHIAVI,stileValido,linkValido,valida,esigi,normalizza,lunghezza,piano,formatta,comune,markdown,css};
+ function css(s={},caratteri={}){const out=['text-decoration:var(--sottolineato-testo,none)'];if(s.fontFamily&&caratteri[s.fontFamily])out.push('font-family:'+caratteri[s.fontFamily].css);if(s.fontSize)out.push('font-size:'+s.fontSize+'px');if(s.fontWeight!==undefined||s.bold!==undefined)out.push('font-weight:'+peso(s));if(s.italic!==undefined)out.push('font-style:'+(s.italic?'italic':'normal'));if(s.underline!==undefined)out.push('text-decoration:'+(s.underline?'underline':'none'));if(s.color!==undefined)out.push('color:'+(s.color||'var(--ink)'));return out.join(';');}
+ return {pesi,peso,aggiornaStile,collega,riscrivi,FONT,CHIAVI,stileValido,linkValido,valida,esigi,normalizza,lunghezza,piano,formatta,comune,markdown,css};
 });

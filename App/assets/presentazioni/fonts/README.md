@@ -1,6 +1,6 @@
-# Caratteri del mockup PRESENTA
+# Caratteri di PRESENTA
 
-File originali, inclusi solo nel prototipo: nessuna installazione nel sistema e nessuna richiesta a servizi font durante l’uso.
+File originali, inclusi nell’app e nell’export HTML offline: nessuna installazione nel sistema e nessuna richiesta a servizi font durante l’uso.
 
 ## Provenienza
 
@@ -15,3 +15,10 @@ File originali, inclusi solo nel prototipo: nessuna installazione nel sistema e 
 - `AtkinsonHyperlegible-Regular.woff2`: `2df4ba17804bc7a36f123127966075d8427bff2df58d0d76820c1130bb1a4150`
 - `TestMeSans02-Bold.otf`: `d5cb8d0f9d984e570f2d4f566138118555ca8ba1063ed7169609104170b3e8d5`
 - `TestMeSans02-Regular.otf`: `6c6f867e118497821360e7b9abd4d086545494e845f3bc910489200f47f792a4`
+
+## Varianti aggiunte il 1 novembre 2026
+
+- Atkinson Hyperlegible Next: https://github.com/googlefonts/atkinson-hyperlegible-next, commit `7925f50f649b3813257faf2f4c0b381011f434f1`. File `fonts/webfonts/AtkinsonHyperlegibleNext[wght].woff2` e `AtkinsonHyperlegibleNext-Italic[wght].woff2`, rinominati localmente con suffisso `-Variable` senza modificare i binari. Pesi 200 ExtraLight, 300 Light, 400 Regular, 500 Medium, 600 SemiBold, 700 Bold, 800 ExtraBold, tutti con corsivo originale. Licenza `OFL-AtkinsonNext.txt`. La prima famiglia Atkinson resta separata per mantenere l’aspetto dei documenti esistenti.
+- TestMe Sans Alternate: stesso commit TestMe02 indicato sopra, `TestMeAlt02-Regular.otf` e `TestMeAlt02-Bold.otf`. Stessa licenza `OFL-TestMe.txt`. Il repository originale non distribuisce Light né corsivi disegnati per TestMe; il corsivo continua a essere sintetizzato. La variante Serif è descritta dagli autori come incompleta negli accenti e non è proposta nell’editor per testi scolastici in italiano.
+
+Tutte le impronte, comprese queste varianti e le licenze, sono verificate all’apertura/esportazione tramite `manifest.json`.

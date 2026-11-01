@@ -4,7 +4,7 @@
  const VERSIONE=1, STRUMENTI=Object.freeze({presenta:'PRESENTA',gobbo:'GOBBO'});
  const EFFETTI=Object.freeze({'fade-in':'Comparsa','fade-up':'Comparsa dal basso','fade-out':'Scomparsa',grow:'Ingrandimento',shrink:'Riduzione','highlight-red':'Evidenziazione'});
  const LAYOUT=Object.freeze(['free','title-text','text-image','image-caption','two-columns','formula-text','media']);
- const CARATTERI=Object.freeze({zaino:{nome:'ZAINO',css:'"Helvetica Neue",Helvetica,Arial,sans-serif'},arial:{nome:'Arial',css:'Arial,Helvetica,sans-serif'},verdana:{nome:'Verdana',css:'Verdana,Geneva,sans-serif'},georgia:{nome:'Georgia',css:'Georgia,"Times New Roman",serif'},atkinson:{nome:'Atkinson Hyperlegible',css:'"Atkinson Hyperlegible",Arial,sans-serif'},testme:{nome:'TestMe Sans',css:'"TestMe Sans",Arial,sans-serif'},courier:{nome:'Courier',css:'"Courier New",Courier,monospace'}});
+ const CARATTERI=Object.freeze({zaino:{nome:'ZAINO',css:'"Helvetica Neue",Helvetica,Arial,sans-serif'},arial:{nome:'Arial',css:'Arial,Helvetica,sans-serif'},verdana:{nome:'Verdana',css:'Verdana,Geneva,sans-serif'},georgia:{nome:'Georgia',css:'Georgia,"Times New Roman",serif'},atkinson:{nome:'Atkinson Hyperlegible',css:'"Atkinson Hyperlegible",Arial,sans-serif'},'atkinson-next':{nome:'Atkinson Hyperlegible Next',css:'"Atkinson Hyperlegible Next",Arial,sans-serif'},'testme-alt':{nome:'TestMe Sans Alternate',css:'"TestMe Sans Alternate",Arial,sans-serif'},testme:{nome:'TestMe Sans',css:'"TestMe Sans",Arial,sans-serif'},courier:{nome:'Courier',css:'"Courier New",Courier,monospace'}});
  const MODELLI=Object.freeze({vuota:'Vuota',titolo:'Solo titolo',testo:'Titolo e testo',colonne:'Due colonne',domanda:'Domanda'});
  const STILI=Object.freeze({essenziale:{nome:'Essenziale',sfondo:'#ffffff',colore:'#000000',font:'zaino',accento:'#0f766e'},leggibile:{nome:'Leggibile',sfondo:'#fffbeb',colore:'#1e293b',font:'atkinson',accento:'#0f766e'},lavagna:{nome:'Lavagna',sfondo:'#0f172a',colore:'#ffffff',font:'testme',accento:'#5eead4'}});
  const TIPI=['title','text','list','math','image','audio','video','shape','table'];
@@ -111,6 +111,7 @@
     const targets=new Set();const corrispondenze=new Set();
     for(const b of s.blocks){
      add(b.id);targets.add(b.id);if(b.style?.box&&!riquadro(b.style.box))errors.push('Riquadro fuori dal foglio.');if(b.style?.verticalAlign&&!['start','center','end'].includes(b.style.verticalAlign))errors.push('Posizione verticale non valida.');if(!TIPI.includes(b.type))errors.push('Tipo di blocco non supportato.');
+     if(b.style?.fontWeight!==undefined&&![200,300,400,500,600,700,800,900].includes(b.style.fontWeight))errors.push('Peso del carattere non valido.');
      if(b.style?.fontFamily!==undefined&&!Object.hasOwn(CARATTERI,b.style.fontFamily))errors.push('Carattere non disponibile.');
      for(const k of ['bold','italic','underline'])if(b.style?.[k]!==undefined&&typeof b.style[k]!=='boolean')errors.push('Formato del testo non valido.');
      if(b.style?.lineHeight!==undefined&&(!Number.isFinite(b.style.lineHeight)||b.style.lineHeight<1||b.style.lineHeight>2))errors.push('Interlinea non valida.');
@@ -148,18 +149,25 @@
   n.animations=n.animations.map(a=>({...a,targetId:mappa.get(a.targetId)}));
   if(!collega)n.autoAnimate={enabled:false,groupId:null,duration:s.autoAnimate.duration};return n;
  }
+ function senzaCarattere(style,font){const s=T.aggiornaStile(style,{fontFamily:font});delete s.fontFamily;return s;}
+ function carattereEreditato(ns,font){return T.normalizza(ns.map(n=>n.style?{...n,style:senzaCarattere(n.style,font)}:n));}
+ function destinazioneSlide(d,da,a,quota){
+  if(da===a||!Number.isFinite(quota))return null;const p=trova(d,da),q=trova(d,a);
+  const dentro=quota>=.25&&quota<=.75;if(p.v===0&&p.stack===q.stack)return null;
+  return {tipo:dentro?'approfondisciSlide':'riordinaSlide',slideId:da,destinazione:a,...(dentro?{}:{dopo:quota>.75})};
+ }
  function applica(documento,o,id=nuovoId){
   esigi(documento);const d=copia(documento);if(!o||typeof o.tipo!=='string')throw Error('Operazione non valida.');
   if(o.tipo==='titolo'){d.title=o.title;return esigi(d);}
   if(o.tipo==='caratterePresentazione'){
    if(!Object.hasOwn(CARATTERI,o.fontFamily))throw Error('Carattere non disponibile.');
-   d.settings.fontFamily=o.fontFamily;for(const p of posizioni(d))for(const b of p.slide.blocks){if(b.style)delete b.style.fontFamily;if(b.richText)b.richText=T.comune(b.richText,'fontFamily');for(const i of b.items||[])if(i.richText)i.richText=T.comune(i.richText,'fontFamily');}
+   d.settings.fontFamily=o.fontFamily;for(const p of posizioni(d))for(const b of p.slide.blocks){if(b.style)b.style=senzaCarattere(b.style,o.fontFamily);if(b.richText)b.richText=carattereEreditato(b.richText,o.fontFamily);for(const i of b.items||[])if(i.richText)i.richText=carattereEreditato(i.richText,o.fontFamily);}
    return esigi(d);
   }
   if(o.tipo==='stilePresentazione'){
    const t=STILI[o.stile];if(!t)throw Error('Stile non disponibile.');
    const slide=o.tutte?posizioni(d).map(p=>p.slide):[trova(d,o.slideId).slide];if(o.tutte)d.settings.fontFamily=t.font;
-   for(const s of slide){s.background=t.sfondo;for(const b of s.blocks){b.style={...b.style,fontFamily:t.font,color:b.type==='title'?t.accento:t.colore,fontSize:b.type==='title'?54:32,lineHeight:b.type==='title'?1.15:1.4};if(b.richText)b.richText=T.comune(T.comune(b.richText,'fontFamily'),'color');for(const i of b.items||[])if(i.richText)i.richText=T.comune(T.comune(i.richText,'fontFamily'),'color');}}
+   for(const s of slide){s.background=t.sfondo;for(const b of s.blocks){b.style={...T.aggiornaStile(b.style,{fontFamily:t.font}),color:b.type==='title'?t.accento:t.colore,fontSize:b.type==='title'?54:32,lineHeight:b.type==='title'?1.15:1.4};if(b.richText)b.richText=T.comune(carattereEreditato(b.richText,t.font),'color');for(const i of b.items||[])if(i.richText)i.richText=T.comune(carattereEreditato(i.richText,t.font),'color');}}
    return esigi(d);
   }
   const p=trova(d,o.slideId),s=p.slide;
@@ -232,6 +240,14 @@
     const v=o.stile;if(!v||!LAYOUT.includes(v.layout)||!Array.isArray(v.blocks))throw Error('Stile della slide non disponibile.');s.layout=v.layout;if(v.background)s.background=v.background;else delete s.background;
     const usati=new Set();for(const b of s.blocks){const i=v.blocks.findIndex((x,i)=>x.type===b.type&&!usati.has(i));if(i<0)continue;usati.add(i);b.style=copia(v.blocks[i].style||{});}break;
    }
+   case 'approfondisciSlide':{
+    const q=trova(d,o.destinazione);if(q.slide.id===s.id)break;
+    if(p.v===0&&p.stack===q.stack)throw Error('Una slide non può diventare approfondimento di una propria slide.');
+    // Una principale porta con sé tutti i suoi approfondimenti, senza introdurre un terzo livello Reveal.
+    const spostate=p.v===0?p.stack.slides:p.stack.slides.splice(p.v,1);
+    if(p.v===0)d.stacks.splice(d.stacks.indexOf(p.stack),1);
+    q.stack.slides.splice(q.stack.slides.indexOf(q.slide)+1,0,...spostate);break;
+   }
    case 'riordinaSlide':{
     const q=trova(d,o.destinazione);if(q.slide.id===s.id)break;
     if(p.v===0){if(p.stack===q.stack)break;d.stacks.splice(p.h,1);const index=d.stacks.indexOf(q.stack)+(o.dopo?1:0);d.stacks.splice(index,0,p.stack);}
@@ -266,8 +282,8 @@
   const scegli=(o,chiavi)=>Object.fromEntries(chiavi.filter(k=>Object.hasOwn(o,k)).map(k=>[k,copia(o[k])]));
   return {schemaVersion:VERSIONE,title:d.title,settings:scegli(d.settings,['width','height','theme','navigationMode','reducedMotion','fontFamily']),assets,stacks:d.stacks.map(p=>({slides:p.slides.map(s=>({title:s.title,layout:s.layout,...(s.background?{background:s.background}:{}),autoAnimate:scegli(s.autoAnimate,['enabled','groupId','duration']),animations:s.animations.map(a=>scegli(a,['targetId','step','effect'])),blocks:s.blocks.map(b=>{
    const n=scegli(b,['id','type','slot','markdown','latex','display','assetId','alt','caption','matchId','autoplay','start','end','crop','richText','shape','table']);
-   if(b.items)n.items=b.items.map(i=>scegli(i,['id','markdown','richText']));if(b.style)n.style=scegli(b.style,['column','span','row','rowSpan','fontSize','color','highlight','align','scale','box','verticalAlign','fontFamily','bold','italic','underline','lineHeight']);return n;
+   if(b.items)n.items=b.items.map(i=>scegli(i,['id','markdown','richText']));if(b.style)n.style=scegli(b.style,['column','span','row','rowSpan','fontSize','color','highlight','align','scale','box','verticalAlign','fontFamily','fontWeight','bold','italic','underline','lineHeight']);return n;
   })}))}))};
  }
- return {allinea,aggancia,STILI,sistema,trasportoSidebar,selezioneObsoleta,ritaglioValido,ritaglia,proporzioneRitaglio,CARATTERI,MODELLI,daModello,copiaOggetto,coloriPersonali,stileSlide,contrasto,riquadro,muovi,iniziale,disponi,ancora,VERSIONE,STRUMENTI,EFFETTI,LAYOUT,crea,slide,copia,posizioni,trova,bersagli,valida,esigi,applica,cronologia,indiceFragment,risorseUsate,pubblica};
+ return {destinazioneSlide,allinea,aggancia,STILI,sistema,trasportoSidebar,selezioneObsoleta,ritaglioValido,ritaglia,proporzioneRitaglio,CARATTERI,MODELLI,daModello,copiaOggetto,coloriPersonali,stileSlide,contrasto,riquadro,muovi,iniziale,disponi,ancora,VERSIONE,STRUMENTI,EFFETTI,LAYOUT,crea,slide,copia,posizioni,trova,bersagli,valida,esigi,applica,cronologia,indiceFragment,risorseUsate,pubblica};
 });

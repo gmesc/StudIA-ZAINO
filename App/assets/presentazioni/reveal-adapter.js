@@ -66,7 +66,7 @@
   if(s.row)out.push('grid-row:'+s.row+' / span '+(s.rowSpan||1));if(s.fontSize)out.push('font-size:'+s.fontSize+'px');
   if(s.box)out.push('left:'+s.box.x+'%','top:'+s.box.y+'%','width:'+s.box.width+'%','height:'+s.box.height+'%');if(s.verticalAlign)out.push('justify-content:'+({start:'flex-start',center:'center',end:'flex-end'})[s.verticalAlign]);
   if(s.fontFamily)out.push('font-family:'+M.CARATTERI[s.fontFamily].css);
-  if(s.bold!==undefined)out.push('--peso-testo:'+(s.bold?700:400));if(s.italic!==undefined)out.push('font-style:'+(s.italic?'italic':'normal'));
+  if(s.fontWeight!==undefined||s.bold!==undefined)out.push('--peso-testo:'+T.peso(s));if(s.italic!==undefined)out.push('font-style:'+(s.italic?'italic':'normal'));
   if(s.underline!==undefined)out.push('--sottolineato-testo:'+(s.underline?'underline':'none'));if(s.lineHeight)out.push('--interlinea:'+s.lineHeight);
   if(s.color)out.push('color:'+s.color);if(s.align)out.push('text-align:'+s.align);return out.join(';');
  }

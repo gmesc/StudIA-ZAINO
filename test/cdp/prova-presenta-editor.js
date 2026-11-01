@@ -36,8 +36,8 @@ async function trascinaOggetto(blockId,ridimensiona=false){
  await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:x+24,y:y+16,button:'left',buttons:1});
  await c.invia('Input.dispatchMouseEvent',{type:'mouseReleased',x:x+24,y:y+16,button:'left',clickCount:1});await c.val('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
 }
-async function riordinaMiniature(da,a){
- const pos=await c.val(`(()=>{const d=document.querySelector('[data-slide-id="'+${q(da)}+'"]'),t=document.querySelector('[data-slide-id="'+${q(a)}+'"]');d.scrollIntoView({block:'center',behavior:'instant'});const r=d.getBoundingClientRect(),s=t.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,dx:s.x+s.width/2,dy:s.bottom-8};})()`);
+async function riordinaMiniature(da,a,dentro=false){
+ const pos=await c.val(`(()=>{const d=document.querySelector('[data-slide-id="'+${q(da)}+'"]'),t=document.querySelector('[data-slide-id="'+${q(a)}+'"]');d.scrollIntoView({block:'center',behavior:'instant'});const r=d.getBoundingClientRect(),s=t.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,dx:s.x+s.width/2,dy:${dentro?'s.y+s.height/2':'s.bottom-8'}};})()`);
  let data;const ascolta=raw=>{const m=JSON.parse(raw);if(m.method==='Input.dragIntercepted')data=m.params.data;};c.ws().on('message',ascolta);await c.invia('Input.setInterceptDrags',{enabled:true});
  try{
   await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:pos.x,y:pos.y});await c.invia('Input.dispatchMouseEvent',{type:'mousePressed',x:pos.x,y:pos.y,button:'left',buttons:1,clickCount:1});
@@ -61,6 +61,11 @@ async function riordinaMiniature(da,a){
   await scrivi('Appunti del presentatore · privati','NOTA_PRIVATA_UI · Chiedere un esempio alla classe.');
   await c.val('ZainoPresenta.flush()');await frameWait('document.querySelector(".presenta-slide")?.textContent.includes("clorofilla")');
   await frameWait('!!document.querySelector(".katex")');
+  await click('Guide e aggancio');
+  await frameWait('document.querySelector(".reveal").dataset.bloccato==="false"');
+  assert.equal(await frameVal('document.querySelectorAll(".presenta-guide-fisse").length'),1,'il righello mostra le guide anche senza trascinare');
+  await click('Guide e aggancio');
+  await frameWait('!document.querySelector(".presenta-guide-fisse")');
   assert(await frameVal('!!document.querySelector(".katex")'),'matematica effettivamente renderizzata');assert(await frameVal('document.querySelector(".reveal").clientHeight>100'),'anteprima visibile');
   assert(!await frameVal('document.body.innerHTML.includes("NOTA_PRIVATA_UI")'));assert.equal(await frameVal('typeof window.vault'),'undefined');assert.equal(await frameVal('window.__privatoRicevuto'),false,'nessuna nota privata neppure nei metadati dei messaggi');
   // I payload vengono dai produttori reali del drag, poi il ricevitore del pannello li risolve.
@@ -134,7 +139,7 @@ async function riordinaMiniature(da,a){
   assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="title").style.fontFamily'),undefined);
   const misureFont=await c.val(`(()=>{const a=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect(),b=document.querySelector('#presentaPane [aria-label="Dimensione testo"]').getBoundingClientRect();return [a.height,b.height,a.y,b.y];})()`);assert.equal(misureFont[0],misureFont[1]);assert.equal(misureFont[2],misureFont[3]);
   await click('Stile');await click('Carattere per tutte le slide');
-  assert.equal(await c.val('document.querySelectorAll(".presenta-font-opzione").length'),7);assert((await c.val(`getComputedStyle(document.querySelector('.presenta-font-opzione[aria-label="Atkinson Hyperlegible"]')).fontFamily`)).includes('Atkinson'));
+  assert.equal(await c.val('document.querySelectorAll(".presenta-font-opzione").length'),9);assert((await c.val(`getComputedStyle(document.querySelector('.presenta-font-opzione[aria-label="Atkinson Hyperlegible"]')).fontFamily`)).includes('Atkinson'));
   fs.writeFileSync('/private/tmp/presenta-font-reale.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
   await click('Atkinson Hyperlegible');await frameWait('getComputedStyle(document.querySelector(".presenta-slide")).fontFamily.includes("Atkinson")');
   assert.equal(await frameVal(`document.fonts.load('32px "Atkinson Hyperlegible"').then(f=>f.length===1&&f[0].status==='loaded')`),true);assert.equal(await c.val('ZainoPresenta.documento.settings.fontFamily'),'atkinson');
@@ -185,6 +190,11 @@ async function riordinaMiniature(da,a){
   await click('Nuova slide');await scrivi('Titolo della slide','Secondo argomento');await click('Nuovo approfondimento');await scrivi('Titolo della slide','Dettaglio verticale');await c.val('ZainoPresenta.flush()');
   assert.equal(await c.val('PresentaModello.posizioni(ZainoPresenta.documento).length'),3);assert.equal(await c.val('ZainoPresenta.documento.stacks[1].slides.length'),2);
   const ordinePrima=await c.val('ZainoPresenta.documento.stacks.map(s=>s.slides.map(s=>s.id))');await riordinaMiniature(ordinePrima[0][0],ordinePrima[1][0]);await wait('ZainoPresenta.documento.stacks[0].slides[0].id==='+q(ordinePrima[1][0]));assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides.length'),2);await click('Annulla nella presentazione');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks.map(s=>s.slides.map(s=>s.id))'),ordinePrima);
+  await riordinaMiniature(ordinePrima[0][0],ordinePrima[1][0],true);await wait('ZainoPresenta.documento.stacks.length===1');
+  assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides.map(s=>s.id)'),[ordinePrima[1][0],...ordinePrima[0],...ordinePrima[1].slice(1)]);
+  await c.val('ZainoPresenta.flush()');assert.equal(JSON.parse(fs.readFileSync(path.join(v,'Zaini/biologia/PRESENTAZIONI',id,'presentazione.json'))).stacks.length,1);
+  await click('Annulla nella presentazione');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks.map(s=>s.slides.map(s=>s.id))'),ordinePrima);
+
   await click('Duplica slide');assert.equal(await c.val('PresentaModello.posizioni(ZainoPresenta.documento).length'),4);await click('Annulla nella presentazione');assert.equal(await c.val('PresentaModello.posizioni(ZainoPresenta.documento).length'),3);await click('Ripeti nella presentazione');assert.equal(await c.val('PresentaModello.posizioni(ZainoPresenta.documento).length'),4);await click('Annulla nella presentazione');
   await c.val('ZainoPresenta.flush()');await click('Chiudi presentazione');await wait('!ZainoPresenta.documento');
   await c.val(`ZainoPresenta.apri(${q(id)})`);assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style.fontFamily'),'georgia');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box'),geometriaSalvata);assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").crop'),ritaglioSalvato);assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].notes.markdown'),'NOTA_PRIVATA_UI · Chiedere un esempio alla classe.');
@@ -195,6 +205,10 @@ async function riordinaMiniature(da,a){
   const geometrieTesto=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.map(b=>b.style?.box)');
   await frameVal(`document.querySelector('[data-testo-id="'+${q(textId)}+'"]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true}))`);
   await wait(`!!document.querySelector('[aria-label="Carattere delle parole"]')`);
+  assert.equal(await c.val(`getComputedStyle(document.querySelector('[aria-label="Corsivo sulle parole"]')).fontStyle`),'italic');
+  assert.equal(await c.val(`getComputedStyle(document.querySelector('[aria-label="Sottolineato sulle parole"]')).textDecorationLine`),'underline');
+  await click('Guide e aggancio');assert(await frameVal('!!document.querySelector(".presenta-guide-fisse")'),'guide attive anche durante la scrittura');fs.writeFileSync('/private/tmp/presenta-guide-reali.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));await click('Guide e aggancio');
+
   await frameVal(`(()=>{const el=document.querySelector('[data-testo-id="'+${q(textId)}+'"]'),n=el.firstChild.firstChild,r=document.createRange();r.setStart(n,3);r.setEnd(n,13);const s=getSelection();s.removeAllRanges();s.addRange(r);document.dispatchEvent(new Event('selectionchange'));})()`);
   await click('Carattere delle parole');await click('Atkinson Hyperlegible');
   await wait('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").richText?.some(n=>n.text==="clorofilla"&&n.style?.fontFamily==="atkinson")');
@@ -203,6 +217,12 @@ async function riordinaMiniature(da,a){
   await click('Collegamento delle parole');await wait('document.getElementById("uiModal").hasAttribute("open")');await c.val(`document.getElementById('umInput').value='https://example.org/lezione';document.getElementById('umOk').click()`);await wait('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").richText.some(n=>n.link==="https://example.org/lezione")');
   await click('Grassetto sulle parole');await click('Colore delle parole');await click('teal-700');
   await frameWait(`(()=>{const ns=[...document.querySelector('[data-testo-id="'+${q(textId)}+'"]').children],n=ns.find(n=>n.textContent==='clorofilla');return n&&getComputedStyle(n).fontFamily.includes('Atkinson')&&getComputedStyle(n).color==='rgb(15, 118, 110)';})()`);
+  await click('Carattere delle parole');await click('Atkinson Hyperlegible Next');await c.val(`(()=>{const e=document.querySelector('[aria-label="Peso delle parole"]');e.value='300';e.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+  await frameWait(`(()=>{const n=[...document.querySelectorAll('[data-testo-id="'+${q(textId)}+'"] span')].find(n=>n.textContent==='clorofilla');return n&&getComputedStyle(n).fontWeight==='300'&&getComputedStyle(n).fontFamily.includes('Next');})()`);
+  assert.equal(await c.val(`document.querySelector('[aria-label="Peso delle parole"]').value`),'300');
+  assert.equal(await c.val(`document.querySelector('[aria-label="Grassetto sulle parole"]').getAttribute('aria-pressed')`),'false');
+  for(const stile of ['normal','italic'])for(const peso of [200,300,400,500,600,700,800])assert(await frameVal(`document.fonts.load('${stile} ${peso} 32px "Atkinson Hyperlegible Next"').then(f=>f.length===1&&f[0].status==='loaded')`));
+  assert(await frameVal(`document.fonts.load('32px "TestMe Sans Alternate"').then(f=>f.length===1)`));
   fs.writeFileSync('/private/tmp/presenta-parole-selezionate.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
   const testoRicco=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").richText');
   assert.equal(testoRicco[0].style,undefined);assert(testoRicco.some(n=>n.latex==='x^2'));assert.equal(testoRicco.find(n=>n.text==='clorofilla').style.bold,false);

@@ -28,11 +28,17 @@
  let modificaFoglio=null,gesto=null,inAttesa=false;
  function corrente(){return deck?.getCurrentSlide()?.querySelector('.presenta-slide');}
  function elementi(){return [...(corrente()?.querySelectorAll('.presenta-blocco[data-block-id]')||[])];}
+ function disegnaGuide(){
+  root.querySelectorAll('.presenta-guide-fisse').forEach(e=>e.remove());
+  const area=corrente();if(pubblico||!area||!modificaFoglio?.guide)return;
+  const griglia=document.createElement('div');griglia.className='presenta-guide-fisse';griglia.setAttribute('aria-hidden','true');
+  for(const asse of ['x','y'])for(const pos of [7,50,93]){const linea=document.createElement('i');linea.dataset.asse=asse;linea.style[asse==='x'?'left':'top']=pos+'%';griglia.append(linea);}area.append(griglia);
+ }
  function selezione(o){
   // Un messaggio già in coda non deve cancellare il gesto appena iniziato nel frame.
   if(PresentaModello.selezioneObsoleta(o,modificaFoglio,gesto))return;
   if(gesto&&(o.slideId!==modificaFoglio?.slideId||o.selezionato!==gesto.id))termina(true);root.dataset.bloccato=String(!!o.bloccato);
-  modificaFoglio={...modificaFoglio,...o};root.dataset.editor='true';root.dataset.pulita=String(!!o.pulita);root.style.setProperty('--selezione',o.colore||'#0f766e');
+  modificaFoglio={...modificaFoglio,...o};disegnaGuide();root.dataset.editor='true';root.dataset.pulita=String(!!o.pulita);root.style.setProperty('--selezione',o.colore||'#0f766e');
   for(const b of elementi()){
    b.tabIndex=o.bloccato||o.pulita?-1:0;b.setAttribute('role','button');b.setAttribute('aria-label','Seleziona oggetto');b.setAttribute('aria-pressed',String((o.selezionati?.length>1?o.selezionati.includes(b.dataset.blockId):b.dataset.blockId===o.selezionato)));b.dataset.selezionato=String((o.selezionati?.length>1?o.selezionati.includes(b.dataset.blockId):b.dataset.blockId===o.selezionato));
    b.querySelector('.presenta-maniglia')?.remove();if(b.dataset.selezionato==='true'&&!(o.selezionati?.length>1)){const h=document.createElement('span');h.className='presenta-maniglia';h.setAttribute('aria-hidden','true');b.append(h);}
@@ -101,6 +107,7 @@
    else if(o.tipo==='riproduciClip'&&clip){const n=++clipGiro,media=clip;media.currentTime=intervalloClip.start;media.play().catch(e=>{if(n===clipGiro&&clip===media)invia('errore',{error:e.message});});}
    else if(o.tipo==='pausaClip'&&clip){clipGiro++;clip.pause();}
    else if(o.tipo==='quadro')esegui(()=>aggiorna({...o,canale:o.presenta}));
+   else if(o.tipo==='guide'){if(modificaFoglio){modificaFoglio.guide=!!o.attive;disegnaGuide();}}
    else if(o.tipo==='selezione'){if(!pubblico)selezione({...modificaFoglio,...o.editor});}
    else if(o.tipo==='modificaTesto'){scrittura.avvia(elementi().find(b=>b.dataset.blockId===o.blockId)?.querySelector('[data-testo-id]'));}
    else if(o.tipo==='formatoTesto'){if(scrittura.attiva?.identita.sessione===o.sessione)scrittura.formatta(o.patch);}

@@ -20,3 +20,5 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}.reveal{height:100%}
 .presenta-clip{display:block;width:100%;height:100%;object-fit:contain}audio.presenta-clip{height:54px;margin:16px auto}
 
 .presenta-guida{position:absolute;pointer-events:none;z-index:4;border-color:var(--selezione);border-style:dashed;border-width:0}.presenta-guida[data-asse=x]{top:0;bottom:0;border-left-width:1px}.presenta-guida[data-asse=y]{left:0;right:0;border-top-width:1px}
+
+.presenta-guide-fisse{position:absolute;inset:0;pointer-events:none;z-index:4}.presenta-guide-fisse i{position:absolute;border:0 dashed var(--selezione);opacity:.65}.presenta-guide-fisse [data-asse=x]{top:0;bottom:0;border-left-width:1px}.presenta-guide-fisse [data-asse=y]{left:0;right:0;border-top-width:1px}

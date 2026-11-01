@@ -3,9 +3,14 @@
   "AtkinsonHyperlegible-BoldItalic.woff2": "f27e95143bc12e8f40f955cf86c74e6afef4441abb89d271282ea0f9e93c1fd5",
   "AtkinsonHyperlegible-Italic.woff2": "60bedf0954ffa7e7800eddd529b06c7558d09283667c74fef60170d8d241089e",
   "AtkinsonHyperlegible-Regular.woff2": "2df4ba17804bc7a36f123127966075d8427bff2df58d0d76820c1130bb1a4150",
+  "AtkinsonHyperlegibleNext-Italic-Variable.woff2": "34491c5a87f711d314637962f69267d28c7df3ed498082c990cdfbbc02ebf3f2",
+  "AtkinsonHyperlegibleNext-Variable.woff2": "abde1ad5cf78b9ac575ef90d991f2e9101eb0b3b6668bde9a00e2e1e27d99afd",
   "OFL-Atkinson.txt": "f32d22b3908fcad2c86a74000614ec22e6a7f66ea7e867e616026a27aebdc143",
+  "OFL-AtkinsonNext.txt": "aca6a428580965d2297d1b718042dd427c2a9443ece3b0d02d758e161e0c4030",
   "OFL-TestMe.txt": "b8e2bf59130cc0360b5a705f84220d57bbdc1c5ddeed8cafbd8929ada0e9f7d4",
-  "README.md": "736c47966310036b7c2ebb45076fc990f508a19951189ff92e736a1f21aa3bc3",
+  "README.md": "ab3122397e2d3d36185da608a2677ddaf28ec8208ef17397340e12daf308f9c9",
+  "TestMeAlt02-Bold.otf": "b655b84de312c8b5f7b104555f04ef58ebe439169305489ff467cbd6ac978ef5",
+  "TestMeAlt02-Regular.otf": "bc043c738019029afa4b563e7a80a7ef8cd9551d7972b1041e19ca8618afdc71",
   "TestMeSans02-Bold.otf": "d5cb8d0f9d984e570f2d4f566138118555ca8ba1063ed7169609104170b3e8d5",
   "TestMeSans02-Regular.otf": "6c6f867e118497821360e7b9abd4d086545494e845f3bc910489200f47f792a4"
 }
