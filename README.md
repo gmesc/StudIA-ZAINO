@@ -16,7 +16,7 @@ Il fork ha identità `ch.insegnai.studia.zaino` e configurazione personale `stud
 
 ## Leggere e presentare
 
-Nel Banco sono disponibili **PRESENTA** e **GOBBO**: composizione sul foglio con trascinamento, ridimensionamento, proprietà contestuali, sfondi e autosave, anteprima Reveal.js, formule, media, note private, timer e player a schermo intero. Esportazione HTML offline senza note. È una prima versione utilizzabile, ancora da affinare nell’interfaccia. [Uso, architettura, verifiche e limiti](docs/PRESENTAZIONI.md).
+Nel Banco sono disponibili **PRESENTA** e **GOBBO**: composizione sul foglio con trascinamento, ridimensionamento, proprietà contestuali, miniature riordinabili, colori personali, sfondi e autosave, anteprima Reveal.js, formule, media, note private, timer e player a schermo intero. Esportazione HTML offline senza note. È una prima versione utilizzabile, ancora da affinare nell’interfaccia. [Uso, architettura, verifiche e limiti](docs/PRESENTAZIONI.md).
 
 Appunti, schede e Ripasso usano una colonna centrata di circa 68 caratteri. Nella testata dello split, **Dimensione del testo** regola l’ingrandimento dal 75% al 300%, indipendentemente dagli altri split. La larghezza massima cresce insieme al testo; la preferenza viene ricordata per strumento e zaino su questo Mac.
 

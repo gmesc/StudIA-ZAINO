@@ -14,6 +14,8 @@
  function trova(d,id){const p=posizioni(d).find(p=>p.slide.id===id);if(!p)throw Error('Slide non più disponibile.');return p;}
  function bersagli(s){return s.blocks.flatMap(b=>[b.id,...(b.items||[]).map(i=>i.id)]);}
  // Percentuali del foglio: il salvataggio resta indipendente dallo zoom e dallo split.
+ function coloriPersonali(v={}){const colore=c=>typeof c==='string'&&/^#[a-fA-F0-9]{6}$/.test(c);return {ultimo:colore(v?.ultimo)?v.ultimo:'#357a38',slots:Array.from({length:5},(_,i)=>colore(v?.slots?.[i])?v.slots[i]:null)};}
+ function stileSlide(s){return {layout:s.layout,background:s.background||null,blocks:s.blocks.map(b=>({type:b.type,style:copia(b.style||{})}))};}
  function contrasto(c){const rgb=[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]>.179?'#16181d':'#fbfbfa';}
  function riquadro(b){return !!b&&!Array.isArray(b)&&Object.keys(b).length===4&&['x','y','width','height'].every(k=>Number.isFinite(b[k]))&&b.x>=0&&b.y>=0&&b.width>=2&&b.height>=2&&b.x+b.width<=100.001&&b.y+b.height<=100.001;}
  function muovi(b,dx,dy,ridimensiona=false){
@@ -121,6 +123,19 @@
    case 'spostaBlocco':{
     const i=s.blocks.findIndex(b=>b.id===o.blockId);if(i<0||!Number.isInteger(o.index)||o.index<0||o.index>=s.blocks.length)throw Error('Posizione del blocco non valida.');s.blocks.splice(o.index,0,s.blocks.splice(i,1)[0]);break;
    }
+   case 'duplicaBlocco':{
+    const originale=s.blocks.find(b=>b.id===o.blockId);if(!originale)throw Error('Oggetto non disponibile.');const b=copia(originale);b.id=id();delete b.matchId;if(b.type==='title'){b.type='text';b.slot='body';}if(b.items)b.items=b.items.map(i=>({...i,id:id()}));if(b.style?.box)b.style.box=muovi(b.style.box,2,2);s.blocks.push(b);break;
+   }
+   case 'incollaStile':{
+    const v=o.stile;if(!v||!LAYOUT.includes(v.layout)||!Array.isArray(v.blocks))throw Error('Stile della slide non disponibile.');s.layout=v.layout;if(v.background)s.background=v.background;else delete s.background;
+    const usati=new Set();for(const b of s.blocks){const i=v.blocks.findIndex((x,i)=>x.type===b.type&&!usati.has(i));if(i<0)continue;usati.add(i);b.style=copia(v.blocks[i].style||{});}break;
+   }
+   case 'riordinaSlide':{
+    const q=trova(d,o.destinazione);if(q.slide.id===s.id)break;
+    if(p.v===0){if(p.stack===q.stack)break;d.stacks.splice(p.h,1);const index=d.stacks.indexOf(q.stack)+(o.dopo?1:0);d.stacks.splice(index,0,p.stack);}
+    else{p.stack.slides.splice(p.v,1);if(q.v===0)d.stacks.splice(d.stacks.indexOf(q.stack)+(o.dopo?1:0),0,{id:id(),slides:[s]});else q.stack.slides.splice(q.stack.slides.indexOf(q.slide)+(o.dopo?1:0),0,s);}
+    break;
+   }
    case 'posizionaBlocchi':{
     if(!Array.isArray(o.boxes)||o.boxes.length!==s.blocks.length||new Set(o.boxes.map(x=>x.id)).size!==s.blocks.length)throw Error('Misure degli oggetti non aggiornate.');
     const libera=s.layout==='free';for(const b of s.blocks){const v=o.boxes.find(x=>x.id===b.id);if(!v||!riquadro(v.box))throw Error('Riquadro fuori dal foglio.');b.style={...b.style,box:copia(v.box)};if(!libera&&b.type==='title'&&v.fontSize===undefined)b.style.fontSize=Math.min(160,(b.style.fontSize||32)*1.7);if(v.fontSize!==undefined&&(!libera||!b.style.fontSize)){if(!Number.isFinite(v.fontSize)||v.fontSize<12||v.fontSize>160)throw Error('Dimensione testo non valida.');b.style.fontSize=v.fontSize;}}
@@ -152,5 +167,5 @@
    if(b.items)n.items=b.items.map(i=>scegli(i,['id','markdown']));if(b.style)n.style=scegli(b.style,['column','span','row','rowSpan','fontSize','color','highlight','align','scale','box','verticalAlign']);return n;
   })}))}))};
  }
- return {contrasto,riquadro,muovi,iniziale,disponi,ancora,VERSIONE,STRUMENTI,EFFETTI,LAYOUT,crea,slide,copia,posizioni,trova,bersagli,valida,esigi,applica,cronologia,indiceFragment,risorseUsate,pubblica};
+ return {coloriPersonali,stileSlide,contrasto,riquadro,muovi,iniziale,disponi,ancora,VERSIONE,STRUMENTI,EFFETTI,LAYOUT,crea,slide,copia,posizioni,trova,bersagli,valida,esigi,applica,cronologia,indiceFragment,risorseUsate,pubblica};
 });

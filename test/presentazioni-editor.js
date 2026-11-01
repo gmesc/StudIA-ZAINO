@@ -43,6 +43,15 @@ const differita=()=>{let resolve,reject;return {promise:new Promise((r,j)=>{reso
  const htmlFoglio=Rivela.compila(foglio).html;assert(htmlFoglio.includes('left:19%'));assert(htmlFoglio.includes('background-color:#0f1115'));assert(htmlFoglio.includes('color:#fbfbfa'));
  assert.throws(()=>M.applica(foglio,{tipo:'slide',slideId:fid,background:'red;url(http://example.com)'}),/Sfondo/);
  const errato=M.copia(foglio);errato.stacks[0].slides[0].blocks[0].style.box.x=500;assert(!validatePresentazione(errato).ok);
+ // Riordino e stile non portano con sé il contenuto o gli appunti di un'altra slide.
+ const stile=M.stileSlide(slideFoglio()),primaTesto=slideFoglio().blocks[1].markdown;
+ foglio=M.applica(foglio,{tipo:'slide',slideId:fid,background:'#ffffff'});foglio=M.applica(foglio,{tipo:'incollaStile',slideId:fid,stile});assert.equal(slideFoglio().background,'#0f1115');assert.equal(slideFoglio().blocks[1].markdown,primaTesto);assert(!JSON.stringify(stile).includes('notes'));
+ foglio=M.applica(foglio,{tipo:'duplicaBlocco',slideId:fid,blockId:slideFoglio().blocks[1].id});assert.equal(slideFoglio().blocks.length,3);assert.notEqual(slideFoglio().blocks[1].id,slideFoglio().blocks[2].id);assert.notEqual(slideFoglio().blocks[1].style.box.x,slideFoglio().blocks[2].style.box.x);
+ const originaleTitolo=M.copia(slideFoglio().blocks[0]);const testo=slideFoglio().blocks[1];foglio=M.applica(foglio,{tipo:'blocco',slideId:fid,blockId:testo.id,block:{...testo,style:{...testo.style,align:'right',color:'#abcdef'}}});assert.deepEqual(slideFoglio().blocks[0],originaleTitolo,'allineamento e colore appartengono al solo oggetto');
+ foglio=M.applica(foglio,{tipo:'aggiungiSlide',slideId:fid});const secondoId=foglio.stacks[1].slides[0].id;foglio=M.applica(foglio,{tipo:'aggiungiSlide',slideId:secondoId,direzione:'sotto'});const dettaglio=foglio.stacks[1].slides[1].id;
+ foglio=M.applica(foglio,{tipo:'riordinaSlide',slideId:secondoId,destinazione:fid});assert.equal(foglio.stacks[0].slides[0].id,secondoId);assert.equal(foglio.stacks[0].slides[1].id,dettaglio,'spostare l’argomento conserva gli approfondimenti');
+ foglio=M.applica(foglio,{tipo:'riordinaSlide',slideId:dettaglio,destinazione:fid,dopo:true});assert.equal(foglio.stacks[2].slides[0].id,dettaglio);assert(validatePresentazione(foglio).ok);
+ const palette=M.coloriPersonali({ultimo:'#ABCDEF',slots:['#123456','url(bad)',null,'#654321','#000000','#ffffff']});assert.equal(palette.ultimo,'#ABCDEF');assert.deepEqual(palette.slots,['#123456',null,null,'#654321','#000000']);assert.equal(M.coloriPersonali(null).slots.length,5);
  // Il protocollo non può diventare un lettore generico del vault.
  const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),P=require('../lib/presentazioni'),R=require('../lib/presentazioni-risorse'),V=require('../lib/presentazioni-vista');
  const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'zaino-presenta-vista-'));try{
