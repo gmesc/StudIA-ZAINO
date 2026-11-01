@@ -18,6 +18,21 @@ body[data-ritaglia=true] #immagine:after{display:none}
 .maniglia-ritaglio[data-lato=w],.maniglia-ritaglio[data-lato=e]{top:calc(50% - 6px);cursor:ew-resize}
 .maniglia-ritaglio[data-lato=nw],.maniglia-ritaglio[data-lato=se]{cursor:nwse-resize}
 .maniglia-ritaglio[data-lato=ne],.maniglia-ritaglio[data-lato=sw]{cursor:nesw-resize}
+@font-face{font-family:"Atkinson Hyperlegible";src:url("/fonts/AtkinsonHyperlegible-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Atkinson Hyperlegible";src:url("/fonts/AtkinsonHyperlegible-Bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"Atkinson Hyperlegible";src:url("/fonts/AtkinsonHyperlegible-Italic.woff2") format("woff2");font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:"Atkinson Hyperlegible";src:url("/fonts/AtkinsonHyperlegible-BoldItalic.woff2") format("woff2");font-weight:700;font-style:italic;font-display:swap}
+@font-face{font-family:"TestMe Sans";src:url("/fonts/TestMeSans02-Regular.otf") format("opentype");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"TestMe Sans";src:url("/fonts/TestMeSans02-Bold.otf") format("opentype");font-weight:700;font-style:normal;font-display:swap}
+
+.tbtn.selettore-carattere{border:1px solid var(--line);text-transform:none;letter-spacing:0;max-width:210px;justify-content:space-between}
+.selettore-carattere .nome-carattere{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.campo .selettore-carattere{max-width:none;width:100%;font-weight:400}
+.menu-caratteri{width:min(360px,calc(100vw - 32px));display:flex;flex-direction:column;gap:4px}
+.menu-caratteri .tbtn{height:auto;min-height:var(--tb-h);width:100%;max-width:none;display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:8px 12px;text-transform:none;letter-spacing:0;white-space:normal;text-align:left}
+.menu-caratteri .tbtn[aria-checked=true]{background:var(--teal-soft);color:var(--teal-strong)}
+.menu-caratteri .nome-font{font-size:12px}.menu-caratteri .campione-font{font-size:20px;line-height:1.4;font-weight:400}
+.menu-caratteri .tbtn:focus-visible{outline:2px solid var(--teal-strong);outline-offset:-2px}
 </style></head><body>
 <header><svg width="22" height="28" viewBox="0 0 22 28" aria-hidden="true"><path d="M7 6V4a4 4 0 0 1 8 0v2" fill="none" stroke="currentColor"/><rect x="2" y="5" width="18" height="22" rx="7" fill="#f47b65" stroke="#292524" stroke-width="1.5"/><path d="M5 15h12v9H5z" fill="none" stroke="#292524"/></svg><strong>STUDIA</strong><strong>ZAINO · SCIENZE</strong><span class="spazio"></span><span class="badge">MOCKUP INTERATTIVO · DATI DIMOSTRATIVI</span><button class="tbtn" id="tema-app" aria-label="Cambia tema dell’app" title="Cambia tema dell’app" data-icon="moon"></button></header>
 <div id="ambiente"><aside id="raccolta"><h2>IL MIO ZAINO</h2><p>Scienze · Le piante</p><div class="raccolta-voce"><span data-icon="file-text"></span> Materiali</div><div class="raccolta-voce"><span data-icon="pencil"></span> Appunti</div><h2>IMMAGINI</h2><button class="risorsa" draggable="true" data-risorsa="foglia" title="Trascina sulla slide, oppure fai clic per inserire"><svg viewBox="0 0 80 60"><rect width="80" height="60" fill="#eef2e8"/><ellipse cx="40" cy="30" rx="28" ry="15" transform="rotate(-30 40 30)" fill="#527c42"/><path d="m16 44 49-29" stroke="#d7e8bf" stroke-width="2"/></svg><span>Foglia al sole<small>ALBUM · Foto</small></span></button><button class="risorsa" draggable="true" data-risorsa="pianta" title="Trascina sulla slide, oppure fai clic per inserire"><svg viewBox="0 0 80 60"><rect width="80" height="60" fill="#f0fdf4"/><path d="M40 55V18" stroke="#456b38" stroke-width="3"/><ellipse cx="30" cy="28" rx="15" ry="8" transform="rotate(25 30 28)" fill="#6a914d"/><ellipse cx="51" cy="17" rx="15" ry="8" transform="rotate(-35 51 17)" fill="#527c42"/></svg><span>La piantina<small>ALBUM · Illustrazione</small></span></button><h2>AUDIO E VIDEO</h2><button class="risorsa" draggable="true" data-risorsa="audio" title="Inserisci una clip audio dimostrativa"><span data-icon="play"></span><span>Suoni del bosco<small>Audio · 01:20</small></span></button><button class="risorsa" draggable="true" data-risorsa="video" title="Inserisci una clip video dimostrativa"><span data-icon="play"></span><span>Una pianta cresce<small>Video · 00:40</small></span></button><h2>PRESENTAZIONI</h2><div class="raccolta-voce" style="background:var(--teal-soft)">Le piante e la luce</div></aside>
@@ -105,14 +120,59 @@ function formato(cmd){
  const spento={bold:'400',italic:'normal',underline:'none'}[cmd];
  formatoOggetto({[nome]:getComputedStyle(obj)[nome].includes(attivo)?spento:attivo});
 }
+const caratteriDisponibili=['Arial','Verdana','Georgia','Courier New','Atkinson Hyperlegible','TestMe Sans'];
+function carattereCorrente(){
+ const obj=$(selezionato),nodo=intervalloTesto?.startContainer;
+ const elemento=nodo&&(nodo.nodeType===3?nodo.parentElement:nodo);
+ const famiglia=obj&&elemento&&obj.contains(elemento)?getComputedStyle(elemento).fontFamily:stato.formati[selezionato]?.fontFamily||stato.font;
+ const nome=famiglia.split(',')[0].trim().replace(/['"]/g,'');
+ return caratteriDisponibili.includes(nome)?nome:stato.font;
+}
+function aggiornaCaratteri(){
+ const nome=carattereCorrente();
+ for(const b of document.querySelectorAll('.selettore-carattere')){
+  b.querySelector('.nome-carattere').textContent=nome;
+  b.title=b.dataset.etichetta+': '+nome;b.setAttribute('aria-label',b.title);
+ }
+ posizionaBolla();
+}
+function selettoreCarattere(etichetta){
+ const b=bottone('',()=>{
+  conservaIntervallo();const corrente=carattereCorrente(),box=E('div',undefined,'menu-caratteri');
+  box.setAttribute('role','menu');box.setAttribute('aria-label','Scegli il carattere');
+  for(const nome of caratteriDisponibili){
+   const voce=bottone('',()=>{
+    $('popover').hidePopover();formatoOggetto({fontFamily:nome});aggiornaCaratteri();
+    if(!testoInModifica)document.querySelector('.selettore-carattere')?.focus();
+   });
+   voce.setAttribute('role','menuitemradio');voce.setAttribute('aria-label',nome);voce.setAttribute('aria-checked',String(nome===corrente));
+   voce.append(E('span',nome,'nome-font'));
+   const campione=E('span','Una foglia · Aa 0123','campione-font');campione.style.fontFamily='"'+nome+'"';campione.setAttribute('aria-hidden','true');voce.append(campione);box.append(voce);
+  }
+  box.onkeydown=e=>{
+   const voci=[...box.children],i=voci.indexOf(document.activeElement);
+   if(e.key==='Escape'){e.preventDefault();e.stopPropagation();$('popover').hidePopover();b.focus();return;}
+   let prossimo=null;
+   if(e.key==='ArrowDown')prossimo=(i+1)%voci.length;if(e.key==='ArrowUp')prossimo=(i-1+voci.length)%voci.length;
+   if(e.key==='Home')prossimo=0;if(e.key==='End')prossimo=voci.length-1;
+   if(prossimo!==null){e.preventDefault();voci[prossimo].focus();}
+  };
+  pop(b,[box]);b.setAttribute('aria-expanded','true');
+  const chiuso=e=>{if(e.newState==='closed'){b.setAttribute('aria-expanded','false');$('popover').removeEventListener('toggle',chiuso);}};
+  $('popover').addEventListener('toggle',chiuso);
+  box.querySelector('[aria-checked=true]').focus();
+ });
+ b.classList.add('selettore-carattere');b.dataset.etichetta=etichetta;
+ b.setAttribute('aria-haspopup','menu');b.setAttribute('aria-expanded','false');
+ b.append(E('span',carattereCorrente(),'nome-carattere'),E('span','▾'));
+ b.title=etichetta+': '+carattereCorrente();b.setAttribute('aria-label',b.title);return b;
+}
 function strumenti(){
  const b=$('bolla');b.replaceChildren();b.hidden=!['titolo','testo','immagine'].includes(selezionato);if(b.hidden)return;
  if(selezionato==='immagine'){
   b.append(bottone(document.body.dataset.ritaglia==='true'?'Conferma ritaglio':'Ritaglia',ritaglia,'scissors'),bottone('Adatta',ripristinaImmagine,'maximize'));
  }else{
-  const font=E('select');font.setAttribute('aria-label','Carattere sul foglio');
-  for(const f of ['Arial','Verdana','Georgia','Courier New'])font.append(new Option(f,f));
-  font.value=stato.formati[selezionato]?.fontFamily||stato.font;font.onchange=()=>formatoOggetto({fontFamily:font.value});b.append(font);
+  b.append(selettoreCarattere('Carattere sul foglio'));
   for(const [cmd,label]of [['bold','Grassetto'],['italic','Corsivo'],['underline','Sottolineato']]){
    const bt=bottone(label,()=>formato(cmd));bt.textContent={bold:'G',italic:'C',underline:'S'}[cmd];
    bt.style.fontWeight=cmd==='bold'?'700':'400';bt.style.fontStyle=cmd==='italic'?'italic':'normal';bt.style.textDecoration=cmd==='underline'?'underline':'none';b.append(bt);
@@ -131,7 +191,7 @@ function schema(tipo){const e=E('span',undefined,'schema '+tipo);for(let i=0;i<(
 function modelli(azione){const grid=E('div',undefined,'modelli');for(const [id,nome]of [['titolo','Solo titolo'],['testo','Titolo e testo'],['colonne','Due colonne'],['immagine','Immagine grande'],['domanda','Domanda'],['vuota','Vuota']]){const bt=E('button',undefined,'modello');bt.append(schema(id),E('b',nome));bt.onclick=()=>azione(id,nome);grid.append(bt);}return grid;}
 function stili(box){const riga=E('div',undefined,'riga');for(const [nome,bg,fg,font]of [['Essenziale','#ffffff','#16181d','Arial'],['Naturale','#f0fdf4','#14532d','Georgia'],['Notturno','#0f172a','#f8fafc','Arial']]){const bt=E('button',undefined,'tema'),es=E('div',undefined,'esempio');es.style.cssText='background:'+bg+';color:'+fg+';font-family:'+font;es.append(E('b','Una foglia'),E('span','Luce, acqua e nutrimento'));bt.append(es,E('b',nome));bt.onclick=()=>{const prima=JSON.parse(JSON.stringify(stato));let confermato=false;stato.sfondo=bg;stato.colore=fg;stato.font=font;disegna();const testo=E('p','Applicare lo stile “'+nome+'”? Il contenuto resta lo stesso.');dialogo('Applica lo stile',[testo],[bottone('Annulla',()=>{stato=prima;confermato=true;disegna();$('dialog').close();}),bottone('Solo questa slide',()=>{confermato=true;storico.push(JSON.stringify(prima));disegna();$('dialog').close();avviso('Stile applicato alla slide · Annulla per ripristinare');}),bottone('Tutte le slide',()=>{confermato=true;storico.push(JSON.stringify(prima));stato.temi=stato.titoli.map(()=>tinta());disegna();$('dialog').close();avviso('Stile applicato alle slide dimostrative');})]);$('dialog').addEventListener('close',()=>{if(!confermato){stato=prima;disegna();}},{once:true});};riga.append(bt);}box.append(riga);}
 function proprieta(){const id=selezionato,p=$('proprieta');p.replaceChildren();const sin=E('div',undefined,'gruppo'),des=E('div',undefined,'gruppo');p.append(sin,des);
- if(['testo','titolo'].includes(selezionato)){sin.append(campo(selezionato==='titolo'?'Titolo della slide':'Testo',selezionato==='titolo'?stato.titoli[indice]:stato.testo,v=>applica(()=>{if(id==='titolo')stato.titoli[indice]=v;else stato.testo=v;delete stato.html[chiaveTesto(id)];}),selezionato==='titolo'?'text':'textarea'));const riga=E('div',undefined,'riga');riga.append(scelta('Carattere',['Arial','Verdana','Georgia','Courier New'].map(f=>[f,f]),stato.formati[selezionato]?.fontFamily||stato.font,v=>formatoOggetto({fontFamily:v})),campo('Dimensione',selezionato==='titolo'?54:32,v=>formatoOggetto({fontSize:(Math.max(8,Number(v))/12.8)+'cqw'}),'number'));sin.append(riga);des.append(E('h3','Allineamento del testo'));const allinea=E('div',undefined,'tbar');for(const [id,n]of [['left','Sinistra'],['center','Centro'],['right','Destra']])allinea.append(bottone(n,()=>applica(()=>stato.formati[selezionato]={...stato.formati[selezionato],textAlign:id})));des.append(allinea,E('h3','Colore del testo'));colori(des,c=>formatoOggetto({color:c}),true);}
+ if(['testo','titolo'].includes(selezionato)){sin.append(campo(selezionato==='titolo'?'Titolo della slide':'Testo',selezionato==='titolo'?stato.titoli[indice]:stato.testo,v=>applica(()=>{if(id==='titolo')stato.titoli[indice]=v;else stato.testo=v;delete stato.html[chiaveTesto(id)];}),selezionato==='titolo'?'text':'textarea'));const riga=E('div',undefined,'riga');riga.append((()=>{const gruppo=E('div',undefined,'campo');gruppo.append(E('span','Carattere'),selettoreCarattere('Carattere'));return gruppo;})(),campo('Dimensione',selezionato==='titolo'?54:32,v=>formatoOggetto({fontSize:(Math.max(8,Number(v))/12.8)+'cqw'}),'number'));sin.append(riga);des.append(E('h3','Allineamento del testo'));const allinea=E('div',undefined,'tbar');for(const [id,n]of [['left','Sinistra'],['center','Centro'],['right','Destra']])allinea.append(bottone(n,()=>applica(()=>stato.formati[selezionato]={...stato.formati[selezionato],textAlign:id})));des.append(allinea,E('h3','Colore del testo'));colori(des,c=>formatoOggetto({color:c}),true);}
  else if(selezionato==='immagine'){const r=E('div',undefined,'tbar');r.append(bottone(document.body.dataset.ritaglia==='true'?'Conferma ritaglio':'Ritaglia',ritaglia,'scissors'),bottone('Ripristina immagine',ripristinaImmagine,'undo-2'));sin.append(E('h3','Immagine'),r,campo('Didascalia',stato.caption,v=>applica(()=>stato.caption=v)));const zoom=campo('Ingrandimento',stato.zoom,v=>applica(()=>stato.zoom=Number(v)),'range');zoom.lastChild.min=1;zoom.lastChild.max=3;zoom.lastChild.step=.05;des.append(zoom,campo('Descrizione per chi non vede l’immagine','Foglia verde con nervature chiare',()=>avviso('Descrizione aggiornata nel mockup')));if(document.body.dataset.ritaglia==='true'){sin.append(scelta('Proporzioni del ritaglio',[['libero','Libero'],['1','Quadrato · 1:1'],['1.3333333333333333','Originale · 4:3'],['1.7777777777777777','Panoramico · 16:9'],['0.75','Verticale · 3:4']],stato.rapporto,impostaRapporto));des.append(bottone('Centra il ritaglio',()=>applica(()=>{stato.cx=0;stato.cy=0;})));}}
  else if(selezionato==='audio'){sin.append(E('h3',stato.media==='video'?'Frammento del video':'Frammento dell’audio'));const t=E('div',undefined,'timeline');t.style.setProperty('--inizio',stato.inizio/(stato.media==='video'?40:80)*100+'%');t.style.setProperty('--fine',(1-stato.fine/(stato.media==='video'?40:80))*100+'%');for(let i=0;i<60;i++){const bar=E('i');bar.style.height=(8+(i*17%27))+'px';t.append(bar);}sin.append(t);const r=E('div',undefined,'riga');r.append(campo('Da · secondi',stato.inizio,v=>{if(+v>=stato.fine)return avviso('L’inizio deve precedere la fine');applica(()=>stato.inizio=Math.max(0,+v));},'number'),campo('A · secondi',stato.fine,v=>{if(+v<=stato.inizio||+v>(stato.media==='video'?40:80))return avviso('Scegli una fine entro la durata della clip');applica(()=>stato.fine=+v);},'number'));sin.append(r);des.append(E('h3','Durata del frammento · '+(stato.fine-stato.inizio)+' secondi'),bottone('Prova il frammento',()=>{clearInterval(clipTimer);let t=stato.inizio;avviso('Simulazione: '+t+' s');clipTimer=setInterval(()=>{avviso('Simulazione: '+(++t)+' s');if(t>=stato.fine){clearInterval(clipTimer);avviso('Fine del frammento');}},250);},'play'),bottone('Ripristina durata',()=>applica(()=>{stato.inizio=0;stato.fine=stato.media==='video'?40:80;}),'undo-2'));}
  else if(selezionato==='sfondo'){sin.append(E('h3','Sfondo della slide'));colori(sin,c=>applica(()=>{stato.sfondo=c;stato.colore=PresentaModello.contrasto(c);}));des.append(E('h3','Colore automatico del testo'),bottone('Rendi il testo leggibile',()=>applica(()=>stato.colore=PresentaModello.contrasto(stato.sfondo))));}
@@ -231,5 +291,5 @@ function passa(d){scenario(scenari[(scenari.findIndex(s=>s[0]===variante)+d+scen
   if($('dialog').open||$('popover').matches(':popover-open'))return;
   e.preventDefault();terminaGesto();$('scena').classList.remove('pulita');deseleziona();return;
  }
- if(e.target.closest('input,textarea,select,[contenteditable=true],dialog')||e.metaKey||e.ctrlKey)return;if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();passa(e.key==='ArrowLeft'?-1:1);}});icone();scenario(variante);
+ if(e.target.closest('input,textarea,select,[contenteditable=true],dialog,[role=menu]')||e.metaKey||e.ctrlKey)return;if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();passa(e.key==='ArrowLeft'?-1:1);}});icone();scenario(variante);
 </script></body></html>
