@@ -4,7 +4,7 @@
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
 const root=path.join(__dirname,'../..'),app=fs.readFileSync(path.join(root,'App/StudIA.html'),'utf8');
 const css=app.slice(app.indexOf('<style>')+7,app.indexOf('</style>'));
-const html=()=>fs.readFileSync(path.join(__dirname,'prototipo-strumenti.html'),'utf8').replace('/* CSS_ZAINO */',css).replace('/* CSS_ICONE */',fs.readFileSync(path.join(root,'App/assets/comandi.css'),'utf8')).replace('/* ICONE_ZAINO */',fs.readFileSync(path.join(root,'App/assets/interfaccia/icone.js'),'utf8')).replace('/* MODELLO_ZAINO */',fs.readFileSync(path.join(root,'App/assets/presentazioni/modello.js'),'utf8')).replace('/* COLORI_ZAINO */',fs.readFileSync(path.join(root,'App/assets/presentazioni/colori.js'),'utf8'));
+const html=()=>fs.readFileSync(path.join(__dirname,'prototipo-strumenti.html'),'utf8').replace('/* CSS_ZAINO */',css).replace('/* CSS_ICONE */',fs.readFileSync(path.join(root,'App/assets/comandi.css'),'utf8')).replace('/* ICONE_ZAINO */',fs.readFileSync(path.join(root,'App/assets/interfaccia/icone.js'),'utf8')).replace('/* MODELLO_ZAINO */',fs.readFileSync(path.join(root,'App/assets/presentazioni/testo.js'),'utf8')+'\n'+fs.readFileSync(path.join(root,'App/assets/presentazioni/modello.js'),'utf8')).replace('/* COLORI_ZAINO */',fs.readFileSync(path.join(root,'App/assets/presentazioni/colori.js'),'utf8'));
 // Serve soltanto i font inclusi nel prototipo, senza esporre altre cartelle del progetto.
 const fontLocali=new Map(fs.readdirSync(path.join(__dirname,'fonts')).filter(nome=>/\.(woff2|otf)$/.test(nome)).map(nome=>['/fonts/'+nome,path.join(__dirname,'fonts',nome)]));
 const server=http.createServer((req,res)=>{

@@ -11273,10 +11273,12 @@ function znavBersaglio(e){
     var scelti=ZNAV.selezione[sezione]||[], file=el.dataset.file;
     ZNAV.trascinamento={id:ZNAV.id,sezione:sezione,file:file,files:scelti.includes(file)?scelti:[file],gruppo:el.dataset.gruppo};
     e.dataTransfer.setData('application/x-zaino-sidebar','voce'); e.dataTransfer.effectAllowed='move';
+    if(sezione==='media'&&file){var trasporto=PresentaModello.trasportoSidebar(file,zainoAttivo(),file.startsWith('album:')?null:Lettore.tipoDi(file));if(trasporto){e.dataTransfer.setData('application/x-studia-presenta-media',JSON.stringify(trasporto));e.dataTransfer.effectAllowed='copyMove';}}
     el.classList.add('zs-trascina');
   });
   document.addEventListener('dragover',function(e){
     if(!ZNAV.trascinamento) return;
+    if(e.target.closest?.('#presentaPane'))return;
     e.preventDefault(); e.stopPropagation(); znavTracciaVia();
     var b=znavBersaglio(e); e.dataTransfer.dropEffect=b?'move':'none'; if(!b) return;
     b.el.dataset.caduta=ZNAV.trascinamento.file&&!b.file?'dentro':(b.dopo?'dopo':'prima');
@@ -11285,6 +11287,7 @@ function znavBersaglio(e){
   },true);
   document.addEventListener('drop',async function(e){
     var d=ZNAV.trascinamento; if(!d) return;
+    if(e.target.closest?.('#presentaPane')){znavTrascinaFine();return;}
     e.preventDefault(); e.stopPropagation(); var b=znavBersaglio(e); znavTrascinaFine(); if(!b) return;
     var s=FontiGruppi.trascina(ZNAV.gruppi[d.sezione],d,b);
     var g=s.gruppi.find(function(g){ return g.id===b.gruppo; });
@@ -22952,7 +22955,7 @@ window.addEventListener('keydown', function(e){
 <link rel="stylesheet" href="assets/presentazioni/vendor/katex/dist/katex.min.css">
 <link rel="stylesheet" href="assets/presentazioni/caratteri.css">
 <link rel="stylesheet" href="assets/presentazioni/editor.css">
-<script src="assets/presentazioni/modello.js"></script>
+<script src="assets/presentazioni/testo.js"></script><script src="assets/presentazioni/modello.js"></script>
 <script src="assets/presentazioni/colori.js"></script>
 <script src="assets/presentazioni/documento.js"></script>
 <script src="assets/presentazioni/editor.js"></script>

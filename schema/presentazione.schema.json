@@ -259,7 +259,9 @@
                           "math",
                           "image",
                           "audio",
-                          "video"
+                          "video",
+                          "shape",
+                          "table"
                         ]
                       },
                       "slot": {
@@ -310,6 +312,9 @@
                             "markdown": {
                               "type": "string",
                               "maxLength": 20000
+                            },
+                            "richText": {
+                              "$ref": "#/$defs/richText"
                             }
                           },
                           "required": [
@@ -523,6 +528,30 @@
                           "height",
                           "aspect"
                         ]
+                      },
+                      "richText": {
+                        "$ref": "#/$defs/richText"
+                      },
+                      "shape": {
+                        "enum": [
+                          "rectangle",
+                          "ellipse",
+                          "arrow"
+                        ]
+                      },
+                      "table": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 20,
+                        "items": {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 10,
+                          "items": {
+                            "type": "string",
+                            "maxLength": 2000
+                          }
+                        }
                       }
                     },
                     "required": [
@@ -592,6 +621,34 @@
                         "then": {
                           "required": [
                             "assetId"
+                          ]
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "type": {
+                              "const": "shape"
+                            }
+                          }
+                        },
+                        "then": {
+                          "required": [
+                            "shape"
+                          ]
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "type": {
+                              "const": "table"
+                            }
+                          }
+                        },
+                        "then": {
+                          "required": [
+                            "table"
                           ]
                         }
                       }
@@ -678,5 +735,104 @@
     "settings",
     "assets",
     "stacks"
-  ]
+  ],
+  "$defs": {
+    "richText": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "text"
+            ],
+            "properties": {
+              "text": {
+                "type": "string",
+                "maxLength": 100000
+              },
+              "style": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "fontSize": {
+                    "type": "number",
+                    "minimum": 12,
+                    "maximum": 160
+                  },
+                  "color": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^#[a-fA-F0-9]{6}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "fontFamily": {
+                    "enum": [
+                      "zaino",
+                      "arial",
+                      "verdana",
+                      "georgia",
+                      "courier",
+                      "atkinson",
+                      "testme"
+                    ]
+                  },
+                  "bold": {
+                    "type": "boolean"
+                  },
+                  "italic": {
+                    "type": "boolean"
+                  },
+                  "underline": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              "link": {
+                "type": "string",
+                "maxLength": 2000
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "latex",
+              "display"
+            ],
+            "properties": {
+              "latex": {
+                "type": "string",
+                "maxLength": 20000
+              },
+              "display": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "markdown"
+            ],
+            "properties": {
+              "markdown": {
+                "type": "string",
+                "maxLength": 100000
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
 }

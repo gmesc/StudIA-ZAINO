@@ -4,7 +4,7 @@ const q=JSON.stringify;
 async function wait(expr,client=c){for(let n=0;n<120;n++){if(await client.val(expr))return;await c.pausa(100);}throw Error('Attesa: '+expr);}
 async function click(nome){
  if(['Nuova presentazione','Rinomina presentazione','Salva presentazione','Esporta presentazione HTML','Elimina presentazione','Chiudi presentazione'].includes(nome))await click('Documento');
- if(['Aggiungi testo','Aggiungi elenco','Aggiungi formula','Inserisci dallo zaino','Incolla oggetto'].includes(nome))await click('Inserisci');
+ if(['Aggiungi testo','Aggiungi elenco','Aggiungi formula','Aggiungi forma','Aggiungi tabella','Inserisci dallo zaino','Incolla oggetto'].includes(nome))await click('Inserisci');
  const sel='#presentaPane [aria-label='+JSON.stringify(nome)+']';
  if(['Nuovo approfondimento','Duplica slide','Stato successivo animato','Copia stile','Incolla stile','Elimina slide'].includes(nome)){
   await c.val('document.querySelector(".presenta-scaletta [aria-pressed=true]").scrollIntoView({block:"center",behavior:"instant"});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
@@ -47,7 +47,7 @@ async function riordinaMiniature(da,a){
  }finally{await c.invia('Input.dispatchMouseEvent',{type:'mouseReleased',x:pos.dx,y:pos.dy,button:'left',buttons:0,clickCount:1});await c.invia('Input.setInterceptDrags',{enabled:false});c.ws().off('message',ascolta);}
 }
 (async()=>{
- await c.collega();await c.invia('Page.enable');await c.invia('Runtime.enable');await c.invia('Log.enable');c.ws().on('message',raw=>{const m=JSON.parse(raw);if(m.method==='Log.entryAdded'&&m.params.entry.level==='error')console.log('rete',m.params.entry.text);if(m.method==='Runtime.consoleAPICalled'&&m.params.type==='error')console.log('renderer',m.params.args.map(a=>a.value));if(m.method==='Runtime.exceptionThrown')console.log('eccezione',JSON.stringify(m.params));});await wait('!!window.ZainoPresenta');const v=await c.val('window.vault.path');assert(v.includes('studia-zaino-prova-'));
+ await c.collega();await c.invia('Page.enable');await c.invia('Runtime.enable');await c.invia('Log.enable');c.ws().on('message',raw=>{const m=JSON.parse(raw);if(m.method==='Log.entryAdded'&&m.params.entry.level==='error')console.log('rete',m.params.entry.text);if(m.method==='Runtime.consoleAPICalled'&&m.params.type==='error')console.log('renderer',m.params.args.map(a=>a.value));if(m.method==='Runtime.exceptionThrown')console.log('eccezione',JSON.stringify(m.params));});await wait('!!window.ZainoPresenta');await c.val(`window.__erroriPresenta=[];window.addEventListener('message',e=>{if(e.data?.presenta&&e.data.tipo==='errore')window.__erroriPresenta.push(e.data.error);});`);const v=await c.val('window.vault.path');assert(v.includes('studia-zaino-prova-'));
  const banco=await c.val('bancoStato()');let id;
  try{
   await c.val("cambiaZaino('biologia',true);bancoForma('due-col');bancoAssegna('A','presenta');bancoAssegna('C','gobbo')");
@@ -130,7 +130,7 @@ async function riordinaMiniature(da,a){
   await click('Testo');
   await click('Carattere');await click('Georgia');
   await click('Grassetto');await click('Corsivo');await click('Sottolineato');
-  await frameWait(`(()=>{const b=document.querySelector('[data-block-id="'+${q(textId)}+'"]'),s=getComputedStyle(b.querySelector('.presenta-contenuto'));return s.fontFamily.includes('Georgia')&&s.fontWeight==='700'&&s.fontStyle==='italic'&&getComputedStyle(b).textDecorationLine==='underline';})()`);
+  await frameWait(`(()=>{const b=document.querySelector('[data-block-id="'+${q(textId)}+'"]'),s=getComputedStyle(b.querySelector('.presenta-contenuto'));return s.fontFamily.includes('Georgia')&&s.fontWeight==='700'&&s.fontStyle==='italic'&&getComputedStyle(b).getPropertyValue('--sottolineato-testo')==='underline';})()`);
   assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="title").style.fontFamily'),undefined);
   const misureFont=await c.val(`(()=>{const a=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect(),b=document.querySelector('#presentaPane [aria-label="Dimensione testo"]').getBoundingClientRect();return [a.height,b.height,a.y,b.y];})()`);assert.equal(misureFont[0],misureFont[1]);assert.equal(misureFont[2],misureFont[3]);
   await click('Stile');await click('Carattere per tutte le slide');
@@ -190,6 +190,74 @@ async function riordinaMiniature(da,a){
   await c.val(`ZainoPresenta.apri(${q(id)})`);assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style.fontFamily'),'georgia');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box'),geometriaSalvata);assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").crop'),ritaglioSalvato);assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].notes.markdown'),'NOTA_PRIVATA_UI · Chiedere un esempio alla classe.');
   await click('Audio');await c.val(`(()=>{const e=document.querySelector('#presentaPane [aria-label="Fine (secondi)"]');e.value='.8';e.dispatchEvent(new Event('change'));})()`);await frameWait('document.querySelector("audio")?.getAttribute("src")?.endsWith("#t=0,0.8")');
   await click('Usa media intero');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="audio").end'),undefined);
+  // La selezione delle parole attraversa iframe, menu del padre, disco e riapertura.
+  await click('Testo');await frameWait('document.querySelector(".reveal").dataset.bloccato==="false"');
+  const geometrieTesto=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.map(b=>b.style?.box)');
+  await frameVal(`document.querySelector('[data-testo-id="'+${q(textId)}+'"]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true}))`);
+  await wait(`!!document.querySelector('[aria-label="Carattere delle parole"]')`);
+  await frameVal(`(()=>{const el=document.querySelector('[data-testo-id="'+${q(textId)}+'"]'),n=el.firstChild.firstChild,r=document.createRange();r.setStart(n,3);r.setEnd(n,13);const s=getSelection();s.removeAllRanges();s.addRange(r);document.dispatchEvent(new Event('selectionchange'));})()`);
+  await click('Carattere delle parole');await click('Atkinson Hyperlegible');
+  await wait('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").richText?.some(n=>n.text==="clorofilla"&&n.style?.fontFamily==="atkinson")');
+  assert.equal(await c.val(`document.querySelector('[aria-label="Carattere delle parole"]').textContent`),'Atkinson Hyperlegible');
+  assert(await c.val(`(()=>{const a=document.querySelector('[aria-label="Carattere delle parole"]').getBoundingClientRect(),b=document.querySelector('[aria-label="Dimensione delle parole"]').getBoundingClientRect();return Math.abs(a.height-b.height)<1&&Math.abs(a.y-b.y)<1;})()`),'altezza e allineamento del bubble uguali');
+  await click('Collegamento delle parole');await wait('document.getElementById("uiModal").hasAttribute("open")');await c.val(`document.getElementById('umInput').value='https://example.org/lezione';document.getElementById('umOk').click()`);await wait('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").richText.some(n=>n.link==="https://example.org/lezione")');
+  await click('Grassetto sulle parole');await click('Colore delle parole');await click('teal-700');
+  await frameWait(`(()=>{const ns=[...document.querySelector('[data-testo-id="'+${q(textId)}+'"]').children],n=ns.find(n=>n.textContent==='clorofilla');return n&&getComputedStyle(n).fontFamily.includes('Atkinson')&&getComputedStyle(n).color==='rgb(15, 118, 110)';})()`);
+  fs.writeFileSync('/private/tmp/presenta-parole-selezionate.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
+  const testoRicco=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").richText');
+  assert.equal(testoRicco[0].style,undefined);assert(testoRicco.some(n=>n.latex==='x^2'));assert.equal(testoRicco.find(n=>n.text==='clorofilla').style.bold,false);
+  await c.val('ZainoPresenta.flush()');assert.deepEqual(JSON.parse(fs.readFileSync(path.join(v,'Zaini/biologia/PRESENTAZIONI',id,'presentazione.json'))).stacks[0].slides[0].blocks.find(b=>b.type==='text').richText,testoRicco);
+  assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.map(b=>b.style?.box)'),geometrieTesto);
+  for(const type of ['keyDown','keyUp'])await frameClient.invia('Input.dispatchKeyEvent',{type,key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  await frameWait('!document.querySelector("[contenteditable=true]") && document.querySelector(".reveal").dataset.bloccato==="false"');
+  await c.val(`ZainoPresenta.apri(${q(id)})`);await frameWait('document.querySelector(".reveal").dataset.bloccato==="false"');
+  assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").richText'),testoRicco);
+  assert(await frameVal('!!document.querySelector(".katex")'));
+  await click('Testo');await click('Scrivi sul foglio');await frameWait('!!document.querySelector("[contenteditable=true]")');
+  await frameClient.invia('Input.insertText',{text:' Fine della spiegazione.'});
+  await wait('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").richText.some(n=>n.text?.includes("Fine della spiegazione"))');
+  await click('Termina scrittura');await frameWait('!document.querySelector("[contenteditable=true]")');
+  await click('Annulla nella presentazione');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").richText'),testoRicco);
+  await click('Ripeti nella presentazione');await c.val('ZainoPresenta.flush()');
+  fs.writeFileSync('/private/tmp/presenta-parole-reale.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
+  // Stili annullabili e proposta di disposizione che non modifica nulla prima di Applica.
+  const primaStile=await c.val('ZainoPresenta.documento.stacks');
+  await click('Stile');await click('Lavagna');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].background'),'#0f172a');
+  await click('Annulla nella presentazione');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks'),primaStile);
+  await click('Disposizione');await click('Sistema la slide');await wait('!!document.querySelector(".presenta-sistema-dialog[open]")');
+  assert.deepEqual(await c.val('ZainoPresenta.documento.stacks'),primaStile);await c.clicca('[aria-label="Annulla proposta"]');
+  assert.deepEqual(await c.val('ZainoPresenta.documento.stacks'),primaStile);
+  await click('Sistema la slide');await wait('!!document.querySelector(".presenta-sistema-dialog[open]")');await c.clicca('[aria-label="Applica disposizione"]');
+  assert.notDeepEqual(await c.val('ZainoPresenta.documento.stacks'),primaStile);await click('Annulla nella presentazione');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks'),primaStile);
+  await click('Audio');await click('Scegli e prova il frammento');
+  await wait(`!!document.querySelector('.presenta-clip-dialog[open]') && !document.querySelector('[aria-label="Inizio del frammento"]').disabled`);
+  await c.val(`(()=>{const a=document.querySelector('[aria-label="Inizio del frammento"]'),b=document.querySelector('[aria-label="Fine del frammento"]');a.value='.2';b.value='.6';b.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+  await c.clicca('[aria-label="Prova il frammento"]');await c.clicca('[aria-label="Pausa frammento"]');await c.clicca('[aria-label="Applica frammento"]');
+  assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="audio").start'),.2);
+  assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="audio").end'),.6);await click('Annulla nella presentazione');
+  // Trasporto reale dalla sidebar principale; la raccolta resta intatta.
+  await c.val('zainoNavAggiorna()');await wait(`!!document.querySelector('#zainoNav [data-file="album:'+${q(aid)}+'"]')`);
+  const primaDrop=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.length');
+  await c.val(`(()=>{const el=document.querySelector('#zainoNav [data-file="album:'+${q(aid)}+'"]'),dt=new DataTransfer();el.dispatchEvent(new DragEvent('dragstart',{bubbles:true,dataTransfer:dt}));if(!dt.getData('application/x-studia-presenta-media'))throw Error('Trasporto media assente');document.getElementById('presentaPane').dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:dt}));el.dispatchEvent(new DragEvent('dragend',{bubbles:true,dataTransfer:dt}));})()`);
+  await wait('ZainoPresenta.documento.stacks[0].slides[0].blocks.length==='+String(primaDrop+1));await click('Annulla nella presentazione');
+  // Selezione multipla: allinea in una sola operazione senza cambiare testo o immagini.
+  await click('Testo');await frameWait('document.querySelector(".reveal").dataset.bloccato==="false"');
+  const primaGruppo=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks');
+  await frameVal(`document.querySelector('[data-block-id="'+${q(imageId)}+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,shiftKey:true,pointerId:15}))`);
+  await wait(`!!document.querySelector('#presentaPane [aria-label="Allinea in alto"]')`);await click('Allinea in alto');
+  assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box.y'),await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style.box.y'));
+  await click('Annulla nella presentazione');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks'),primaGruppo);
+  await click('Duplica selezionati');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.length'),primaGruppo.length+2);await click('Annulla nella presentazione');
+  await click('Immagine');await click('Sostituisci immagine');await wait('!!document.querySelector(".presenta-materiali[open] .lim-menu-voce")');
+  await c.clicca('.presenta-materiali[open] .lim-menu-voce');await wait('!ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").crop');
+  assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box'),primaGruppo.find(b=>b.type==='image').style.box);await click('Annulla nella presentazione');
+  await click('Aggiungi forma');await wait('ZainoPresenta.documento.stacks[0].slides[0].blocks.some(b=>b.type==="shape")');
+  await c.val(`(()=>{const e=document.querySelector('select[aria-label="Forma"]');e.value='ellipse';e.dispatchEvent(new Event('change'));})()`);await frameWait('!!document.querySelector(".presenta-forma ellipse")');
+  await click('Annulla nella presentazione');await click('Annulla nella presentazione');
+  await click('Aggiungi tabella');await wait('!!document.querySelector(".presenta-tabella-dialog[open]")');
+  await c.val(`(()=>{const e=document.querySelector('[aria-label="Riga 1 · colonna 1"]');e.value='Organismo';e.dispatchEvent(new Event('input'));})()`);
+  await c.clicca('[aria-label="Applica tabella"]');await frameWait('document.querySelector(".presenta-slide table th")?.textContent==="Organismo"');
+  await click('Annulla nella presentazione');await click('Annulla nella presentazione');
   // La disposizione cambia; il DOM dell'editor e la bozza restano gli stessi.
   await c.val(`window.__presentaPane=document.getElementById('presentaPane');bancoForma('quattro');bancoScambia('A','D');bancoForma('due-col');bancoMostra('presenta')`);
   assert(await c.val('window.__presentaPane===document.getElementById("presentaPane")'));assert.equal(await c.val('ZainoPresenta.documento.id'),id);
@@ -202,6 +270,7 @@ async function riordinaMiniature(da,a){
   const sid=await c.val('ZainoPresenta.regia.stato.sessionId');
   const target=(await (await fetch('http://localhost:'+(process.env.STUDIA_PORTA||9333)+'/json')).json()).find(t=>t.type==='page'&&t.url.endsWith('/presentazioni-player/index.html'));assert(target);const pubblico=await collegaTarget(target);
   assert.equal(await pubblico.val('typeof window.vault'),'undefined');assert(!await pubblico.val('document.documentElement.outerHTML.includes("NOTA_PRIVATA_UI")'));
+  await wait('!!document.querySelector(".presenta-immagine-ritagliata image")',pubblico);
   assert(await pubblico.val(`(async()=>{const e=document.querySelector('.presenta-immagine-ritagliata image'),img=new Image();img.src=e.getAttribute('href');await img.decode();return img.naturalWidth>0;})()`),'la sorgente del ritaglio si decodifica nel player pubblico');
   await pubblico.val('document.querySelector("audio").play()');assert.equal(await pubblico.val('document.querySelector("audio").paused'),false);
 
@@ -214,8 +283,11 @@ async function riordinaMiniature(da,a){
    assert.equal(stile.altezza,stile.riferimento);assert.equal(stile.font,stile.fontRiferimento);assert.equal(stile.angoli,'0px');
    const shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/private/tmp/zaino-presenta-'+tema+'.png',Buffer.from(shot.result.data,'base64'));
   }await c.val(`document.documentElement.dataset.theme='chiaro'`);
+  assert.deepEqual(await c.val('window.__erroriPresenta'),[],'nessun errore nascosto durante le interazioni');
   const screenshot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/private/tmp/zaino-presenta-editor.png',Buffer.from(screenshot.result.data,'base64'));
   assert((await c.val(`window.vault.presentazioni.comando({azione:'sessione',corso:'biologia',sessionId:${q(sid)},comando:'chiudi'})`)).ok);await wait('!ZainoPresenta.regia');
+  // La regia si svuota prima della chiusura nativa: non lasciare al test successivo il target morente.
+  let playerChiuso=false;for(let n=0;n<120;n++){const targets=await (await fetch('http://localhost:'+(process.env.STUDIA_PORTA||9333)+'/json')).json();if(!targets.some(t=>t.id===target.id)){playerChiuso=true;break;}await c.pausa(100);}assert(playerChiuso,'finestra pubblica davvero chiusa');
   await c.val('ZainoPresenta.chiudi()');
   console.log('✓ PRESENTA e GOBBO: tab contestuali, colori e cinque slot, titolo/testo indipendenti, miniature e riordino nativo, stile, adatta riquadro, media, autosave, riapertura, player e note private');
  }finally{

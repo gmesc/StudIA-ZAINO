@@ -65,7 +65,7 @@ const differita=()=>{let resolve,reject;return {promise:new Promise((r,j)=>{reso
  base=M.applica(base,{tipo:'slide',slideId:bs,background:'#fef9c3'});
  const stileTesto=M.trova(base,bs).slide.blocks[1].style;assert(validatePresentazione(base).ok);
  assert.deepEqual(M.pubblica(base).stacks[0].slides[0].blocks[1].style,stileTesto,'tutto lo stile sopravvive alla pubblicazione');
- const htmlStile=Rivela.compila(base).html;for(const css of ['font-family:Georgia','--peso-testo:700','font-style:italic','text-decoration:underline','--interlinea:1.6'])assert(htmlStile.includes(css),css+' deve arrivare al player e all’export');
+ const htmlStile=Rivela.compila(base).html;for(const css of ['font-family:Georgia','--peso-testo:700','font-style:italic','--sottolineato-testo:underline','--interlinea:1.6'])assert(htmlStile.includes(css),css+' deve arrivare al player e all’export');
  assert(!M.trova(base,bs).slide.blocks[0].style.fontFamily,'il titolo non eredita una modifica locale al testo');
  for(const [k,v]of [['fontFamily','url(https://bad)'],['bold','true'],['lineHeight',9]]){const err=M.copia(base);err.stacks[0].slides[0].blocks[1].style[k]=v;assert(!M.valida(err).ok);assert(!validatePresentazione(err).ok);assert.throws(()=>Rivela.compila(err));}
  const storiaBase=M.cronologia(base);storiaBase.applica({tipo:'aggiungiSlide',slideId:bs,modello:'colonne'});let nuova=storiaBase.documento.stacks[1].slides[0];
