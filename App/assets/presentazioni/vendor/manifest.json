@@ -1,8 +1,11 @@
 {
   "version": 1,
+  "anime": "4.5.0",
   "reveal": "6.0.2",
   "katex": "0.18.2",
   "files": {
+    "anime.js": "8d5b3a58a1f64023a04a4cedeef135a2263b18da04b35177ac13438a0bad033b",
+    "licenze/anime.txt": "3f3e835a9952cfc2a6ca836fb95b3257c981f24fa3ef51249055acb09931897b",
     "reveal.js": "aa1bbbf2617b23a623b23612cb3c5bdb63de512e652bf20fcfa832b045d37844",
     "reveal.css": "615ee850cbbb98a0f688b60ed37b21819a3f54c9f3e6f20e33e63693ab74a0c0",
     "math.js": "c1990472103c0640a9b21077f32b20347a79615f495ad36c2dd5698ce0ec6a92",

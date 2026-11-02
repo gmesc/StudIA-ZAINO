@@ -23,7 +23,7 @@
 .presenta-blocco-editor{border-top:1px solid var(--line);padding-top:8px;min-width:0}
 .presenta-proprieta{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;padding-top:8px;align-items:end}
 .presenta-aiuto{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
-.presenta-editor details>summary{font-size:12px;cursor:pointer;padding:8px 0}
+.presenta-editor details>summary:not(.tbtn){font-size:12px;cursor:pointer;padding:8px 0}
 .presenta-azione{display:grid;grid-template-columns:72px 208px var(--tb-h);align-items:end;gap:8px;flex:none}
 .presenta-azione :is(input,select){height:var(--tb-h);box-sizing:border-box}
 .presenta-azione>.tbtn{width:var(--tb-h);padding:0}
@@ -227,3 +227,36 @@
 .presenta-tipografia-popup:popover-open{display:flex;flex-wrap:wrap;gap:12px 8px;align-items:end}
 .presenta-tipografia-popup>*{flex:none;max-width:100%}
 .presenta-tipografia-popup .presenta-campo{margin:0}
+
+/* Effetti: scelte leggibili e campioni animati con lo stesso runtime del pubblico. */
+.presenta-animazioni-toolbar{flex-wrap:wrap;justify-content:flex-start;gap:8px}
+.presenta-animazioni-elenco{overflow:visible}
+.presenta-animazioni .presenta-azione{display:flex;flex-wrap:wrap;align-items:end;gap:8px;margin-top:12px}
+.presenta-animazioni .presenta-azione>.presenta-campo{width:88px;flex:none;margin:0}
+.presenta-animazioni .presenta-azione>.presenta-campo:has([aria-label="Avvio"]){width:200px}
+.presenta-effetto-nome{display:flex;flex-direction:column;gap:6px;width:216px;max-width:100%}
+.presenta-effetto-nome>span{font-size:12px;color:var(--muted)}
+.presenta-effetto-scelto{justify-content:flex-start;height:var(--tb-h);border:1px solid var(--line);text-transform:none;letter-spacing:0;white-space:normal;text-align:left}
+.presenta-animazioni .presenta-azione>.tbar{gap:4px;padding:0}
+.presenta-tempo-effetto,.presenta-animazioni-vuoto{margin:4px 0;color:var(--muted);font-size:13px;line-height:1.4}
+.presenta-galleria-animazioni{margin:auto;width:min(1040px,calc(100vw - 32px));max-height:calc(100vh - 32px);box-sizing:border-box;padding:16px;background:var(--panel);color:var(--ink);border:1px solid var(--line);isolation:isolate;overflow:auto}
+.presenta-galleria-animazioni>.tbar{border:0;padding:0;gap:8px}
+.presenta-filtri-animazioni{flex-wrap:wrap;margin-block:12px}
+.presenta-galleria-effetti{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:8px}
+.presenta-effetto-card.tbtn{height:auto;min-height:144px;display:flex;flex-direction:column;align-items:stretch;justify-content:start;gap:8px;border:1px solid var(--line);padding:8px;white-space:normal;letter-spacing:0;text-transform:none;text-align:left;font-size:14px}
+.presenta-effetto-card small{color:var(--muted);font-size:12px}
+.presenta-effetto-card[aria-pressed=true]{outline:2px solid var(--teal);outline-offset:-2px}
+.presenta-campione-animazione{height:88px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg);color:var(--ink);font-size:13px;line-height:1.4;isolation:isolate}
+.presenta-demo-oggetto{max-width:90%;text-align:left;transform-origin:center;position:relative}
+.presenta-demo-oggetto svg{width:80px;height:52px;display:block;color:var(--teal)}
+.presenta-demo-oggetto.presenta-demo-pianeta{width:32px;margin-right:48px}.presenta-demo-pianeta svg{width:32px;height:32px}
+.presenta-demo-oggetto ul{margin:0;padding-left:20px}.presenta-demo-oggetto table{border-collapse:collapse;font-size:12px}.presenta-demo-oggetto td,.presenta-demo-oggetto th{padding:2px 8px;border-bottom:1px solid var(--line)}
+.presenta-galleria-footer{display:grid;grid-template-columns:180px minmax(0,1fr);align-items:center;gap:12px;margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
+.presenta-galleria-footer p{margin:0;font-size:14px;line-height:1.5}.presenta-galleria-footer>.tbar{grid-column:1/-1;justify-content:flex-end;flex-wrap:wrap;gap:8px;border:0;padding:0}
+.presenta-prova-animazioni{width:min(1100px,calc(100vw - 32px))}.presenta-prova-animazioni>.tbar{flex-wrap:wrap;gap:8px}.presenta-prova-animazioni iframe{display:block;width:100%;max-height:70vh;border:0}
+@media(max-width:560px){.presenta-galleria-footer{grid-template-columns:1fr}.presenta-esempio-grande{display:none}}
+
+.presenta-animazioni>summary.tbtn{gap:8px;list-style:none}
+.presenta-animazioni>summary::-webkit-details-marker{display:none}
+.presenta-animazioni[open]>summary.tbtn{background:color-mix(in srgb,var(--teal) 26%,var(--panel));color:var(--teal-strong)}
+.presenta-animazioni[open]>summary>.ui-icon{transform:rotate(90deg)}

@@ -4,13 +4,14 @@
  const pubblico=window.top===window&&!!window.presentaPubblico,root=document.querySelector('.reveal');
  let testi={},clip=null,clipGiro=0,intervalloClip={start:0,end:0};
  const scrittura=PresentaScrittura({invia,metadati:()=>({...modificaFoglio,testi}),pronto:()=>!pubblico&&pronto&&!modificaFoglio?.bloccato,seleziona:b=>{termina(true);selezione({...modificaFoglio,selezionato:b.dataset.blockId});invia('seleziona',{blockId:b.dataset.blockId});},bubble:aggiornaBubble});
+ let animazioni=null;
  let deck=null,canale='',contesto=null,pronto=false,inComando=false,coda=Promise.resolve();
  function stato(){return PresentaNavigazione.stato(deck);}
  function silenzia(){const current=deck?.getCurrentSlide();for(const m of root.querySelectorAll('audio,video')){if(!pubblico||!current?.contains(m))m.pause();m.muted=!pubblico;}}
  function invia(tipo,d={}){if(!pubblico)parent.postMessage({presenta:canale,tipo,...d},'*');}
  function conferma(){silenzia();if(pubblico&&contesto&&!inComando)window.presentaPubblico.conferma({...contesto,...stato()}).then(r=>{if(!r.ok)console.warn(r.error);});}
  async function aggiorna(o){
-  scrittura.termina(false);testi=o.documento.testi||{};termina(true);inAttesa=false;modificaFoglio=o.editor||null;pronto=false;root.dataset.pronto='false';canale=o.canale||canale;const r=o.documento,s=r.settings;
+  animazioni?.destroy();animazioni=null;scrittura.termina(false);testi=o.documento.testi||{};termina(true);inAttesa=false;modificaFoglio=o.editor||null;pronto=false;root.dataset.pronto='false';canale=o.canale||canale;const r=o.documento,s=r.settings;
   document.documentElement.dataset.tema=s.theme;document.documentElement.dataset.movimentoRidotto=String(s.reducedMotion);
   for(const m of root.querySelectorAll('audio,video'))m.pause();
   root.querySelector('.slides').innerHTML=r.html;silenzia();
@@ -20,7 +21,7 @@
    transition:ridotto?'none':'slide',autoAnimate:!ridotto};
   if(!deck){deck=new Reveal(root,config);await deck.initialize();for(const n of ['slidechanged','fragmentshown','fragmenthidden'])deck.on(n,conferma);}
   else{deck.configure(config);deck.sync();}
-  await document.fonts.ready;pronto=true;root.dataset.pronto='true';deck.slide(o.posizione?.h||0,o.posizione?.v||0,o.posizione?.fragmentIndex??-1);deck.layout();silenzia();if(modificaFoglio&&!pubblico){selezione(modificaFoglio);root.dataset.modificaPronta='true';}invia('pronto',{firma:modificaFoglio?.firma,errors:r.errors||[]});segnalaIngombro();
+  await document.fonts.ready;pronto=true;root.dataset.pronto='true';deck.slide(o.posizione?.h||0,o.posizione?.v||0,o.posizione?.fragmentIndex??-1);deck.layout();silenzia();if(pubblico||o.provaAnimazioni)animazioni=PresentaAnimazioniDOM.collega(deck,{ridotto});if(modificaFoglio&&!pubblico){selezione(modificaFoglio);root.dataset.modificaPronta='true';}invia('pronto',{firma:modificaFoglio?.firma,errors:r.errors||[]});segnalaIngombro();
  }
  // La navigazione riusa il documento: le misure devono seguire la slide, non solo la compilazione.
  function segnalaIngombro(){
@@ -120,6 +121,7 @@
    else if(o.tipo==='fineScrittura')scrittura.termina(false);
    else if(o.tipo==='adatta')esegui(()=>adatta(o.blockId));
    else if(o.tipo==='misure'){if(!pubblico&&pronto&&!gesto)invia('misure',{boxes:misure(),firma:modificaFoglio?.firma,slideId:modificaFoglio?.slideId,richiesta:o.richiesta});}
+   else if(o.tipo==='passoAnimazione'&&!modificaFoglio)esegui(()=>comando({azione:o.indietro?'indietro':'avanti'}));
    else if(o.tipo==='vai')esegui(()=>{if(pronto){comando({azione:'vai',...o.posizione});if(o.editor)selezione({...modificaFoglio,...o.editor});segnalaIngombro();}});
   });parent.postMessage({tipo:'presenta-caricato'},'*');
  }
@@ -127,5 +129,5 @@
  root.addEventListener('click',e=>{if(e.shiftKey||modificaFoglio?.selezionati?.length>1)return;if(scrittura.attiva?.el.contains(e.target))return;const a=e.target.closest('a');if(a&&!pubblico)e.preventDefault();if(!pubblico&&!modificaFoglio?.pulita){const b=e.target.closest('[data-block-id]');if(b){invia('seleziona',{blockId:b.dataset.blockId});mostraBubble(b);}}});
  root.addEventListener('play',e=>{if(!pubblico){e.target.pause();e.target.muted=true;}},true);
  new ResizeObserver(()=>{if(pronto){deck.layout();aggiornaBubble(elementi().find(b=>b.dataset.blockId===modificaFoglio?.selezionato));}}).observe(root);
- window.addEventListener('pagehide',()=>{pronto=false;for(const m of root.querySelectorAll('audio,video'))m.pause();deck?.destroy();});
+ window.addEventListener('pagehide',()=>{animazioni?.destroy();pronto=false;for(const m of root.querySelectorAll('audio,video'))m.pause();deck?.destroy();});
 })();

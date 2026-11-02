@@ -48,3 +48,8 @@ body{background:var(--bg);color:var(--ink)}
 .presenta-testo:not([data-ricco=true]){text-decoration:var(--sottolineato-testo,none)}
 
 .presenta-forma{display:block;width:100%;height:100%;min-height:0}.presenta-slide[data-layout=free] .presenta-contenuto:has(>.presenta-forma){height:100%}
+
+/* Reveal conserva i clic; Anime.js governa soltanto gli effetti dei wrapper. */
+.reveal .fragment.presenta-animazione{opacity:1;visibility:visible;transform:none;transition:none}
+.reveal .fragment.presenta-animazione[data-entrata="true"]:not(.visible){opacity:0}
+.reveal .presenta-slide[data-layout="free"]>.presenta-blocco[data-movimento="true"]{overflow:visible}

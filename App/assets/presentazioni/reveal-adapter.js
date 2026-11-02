@@ -1,5 +1,5 @@
 /* Resa comune di slide e note. Il Markdown passa da un albero di token consentiti. */
-(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('marked'),require('katex'),require('./modello'),require('./testo'),require('../../../lib/validate').validatePresentazione);else root.PresentaReveal=factory(root.marked,root.katex,root.PresentaModello,root.PresentaTesto);})(typeof window==='undefined'?this:window,function(marked,katex,M,T,valida){
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('marked'),require('katex'),require('./modello'),require('./testo'),require('./animazioni'),require('../../../lib/validate').validatePresentazione);else root.PresentaReveal=factory(root.marked,root.katex,root.PresentaModello,root.PresentaTesto,root.PresentaAnimazioni);})(typeof window==='undefined'?this:window,function(marked,katex,M,T,A,valida){
  'use strict';
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const parser=new marked.Marked({gfm:true,breaks:false});
@@ -56,8 +56,8 @@
   T.esigi(ns);return ns.map(n=>{if(n.latex!==undefined)return formula(n.latex,n.display,errors,contesto);if(n.markdown!==undefined)return markdown(n.markdown,errors,contesto);let s='<span style="'+esc(T.css(n.style,M.CARATTERI))+'">'+esc(n.text).replace(/\n/g,'<br>')+'</span>';if(n.link)s='<a href="'+esc(n.link)+'" target="_blank" rel="noopener noreferrer">'+s+'</a>';return s;}).join('');
  }
  function fragments(contenuto,id,s){
-  const azioni=s.animations.filter(a=>a.targetId===id).sort((a,b)=>a.step-b.step);
-  for(const a of azioni.reverse())contenuto='<div class="fragment '+a.effect+'" data-fragment-index="'+M.indiceFragment(a.step)+'">'+contenuto+'</div>';
+  const azioni=A.tempi(A.sequenza(s.animations)).filter(a=>a.targetId===id),primo=azioni[0];
+  for(const a of azioni.reverse())contenuto='<div class="fragment presenta-animazione" data-effetto="'+a.effect+'" data-entrata="'+(a===primo&&A.effetti[a.effect].entrata)+'" data-animazione="'+esc(JSON.stringify(a))+'" data-fragment-index="'+M.indiceFragment(a.step)+'">'+contenuto+'</div>';
   return contenuto;
  }
  function stile(b){
@@ -92,7 +92,7 @@
    const identita=b.matchId?' data-id="'+esc(b.matchId)+'"':'';
    if(b.style?.highlight)contenuto='<mark style="background-color:'+b.style.highlight+';color:var(--ink)">'+contenuto+'</mark>';
    contenuto='<div class="presenta-contenuto"'+identita+(b.style?.scale?' style="transform:scale('+b.style.scale+')"':'')+'>'+contenuto+'</div>';
-   return '<div class="presenta-blocco" data-slot="'+b.slot+'" data-block-id="'+esc(b.id)+'" style="'+esc(stile({...b,style:{...(s.layout==='free'&&b.type==='title'?{fontSize:54}:{}),...b.style,...(s.layout!=='free'?{box:undefined}:{})}}))+'">'+fragments(contenuto,b.id,s)+'</div>';
+   return '<div class="presenta-blocco" data-slot="'+b.slot+'" data-movimento="'+s.animations.some(a=>a.targetId===b.id&&['Percorso','Evidenza'].includes(A.effetti[a.effect].gruppo))+'" data-block-id="'+esc(b.id)+'" style="'+esc(stile({...b,style:{...(s.layout==='free'&&b.type==='title'?{fontSize:54}:{}),...b.style,...(s.layout!=='free'?{box:undefined}:{})}}))+'">'+fragments(contenuto,b.id,s)+'</div>';
   }
   function slide(s){const animate=s.autoAnimate.enabled&&!d.settings.reducedMotion?' data-auto-animate data-auto-animate-id="'+esc(s.autoAnimate.groupId)+'" data-auto-animate-duration="'+s.autoAnimate.duration+'"':'';
    return '<section'+animate+' data-background-color="'+esc(s.background||(d.settings.theme==='zaino-dark'?'#0f1115':'#fbfbfa'))+'" aria-label="'+esc(s.title)+'"><div class="presenta-slide" data-layout="'+s.layout+'" style="'+esc('font-family:'+M.CARATTERI[d.settings.fontFamily||'zaino'].css)+';--slide-height:'+d.settings.height+'px;'+(s.background?'background-color:'+s.background+';--ink:'+M.contrasto(s.background)+';--muted:'+M.contrasto(s.background)+';color:'+M.contrasto(s.background)+';':'')+'">'+s.blocks.map(b=>blocco(b,s)).join('')+'</div></section>';

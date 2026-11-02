@@ -204,18 +204,37 @@ async function riordinaMiniature(da,a,dentro=false){
   await frameWait(`(()=>{const b=document.querySelector('[data-block-id="'+${q(textId)}+'"]'),s=getComputedStyle(b.querySelector('.presenta-contenuto'));return s.fontFamily.includes('Georgia')&&s.fontWeight==='700'&&s.fontStyle==='italic'&&getComputedStyle(b).getPropertyValue('--sottolineato-testo')==='underline';})()`);
   assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="title").style.fontFamily'),undefined);
   const misureFont=await c.val(`(()=>{const a=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect(),b=document.querySelector('#presentaPane [aria-label="Dimensione testo"]').getBoundingClientRect();return [a.height,b.height,a.y,b.y];})()`);assert.equal(misureFont[0],misureFont[1]);assert.equal(misureFont[2],misureFont[3]);
-  // I campi compatti delle animazioni modificano il frammento reale e restano annullabili.
+  // La galleria applica un effetto solo alla conferma, con tempi espliciti.
   const animazioniPrima=await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations');
-  await c.val('document.querySelector(".presenta-animazioni").scrollIntoView({block:"center",behavior:"instant"})');await c.clicca('.presenta-animazioni>summary');await click('Aggiungi effetto');
-  assert.deepEqual(await c.val('Array.from(document.querySelectorAll(".presenta-azione optgroup"),g=>g.label)'),['Entrata','Uscita','Evidenza']);
-  await c.val(`(()=>{const e=document.querySelector('.presenta-azione [aria-label="Effetto"]');e.value='fade-up';e.dispatchEvent(new Event('change'));})()`);
-  await c.val(`(()=>{const e=document.querySelector('.presenta-azione [aria-label="Passaggio"]');e.value='2';e.dispatchEvent(new Event('change'));})()`);
-  await frameWait(`!!document.querySelector('[data-block-id="'+${q(textId)}+'"] .fragment.fade-up[data-fragment-index="0"]')`);
-  assert(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations.some(a=>a.targetId==='+q(textId)+'&&a.step===1&&a.effect==="fade-up")'),'sequenza rinumerata senza salti, senza inserire clic vuoti');
-  await click('Aggiungi effetto');assert.equal(await c.val('document.querySelectorAll(".presenta-azione").length'),2);
-  assert(await c.val(`Array.from(document.querySelectorAll('.presenta-azione')).every(row=>{const es=[...row.querySelectorAll('input,select,button')].map(e=>e.getBoundingClientRect());return es[0].width<=73&&es[1].width<=209&&es.every(r=>Math.abs(r.bottom-es[0].bottom)<1&&Math.abs(r.height-es[0].height)<1);})`),'campi animazione corti e tutti i comandi allineati');
-  await c.val('document.querySelector(".presenta-animazioni").scrollIntoView({block:"center",behavior:"instant"})');fs.writeFileSync('/private/tmp/presenta-animazioni-compatte.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
-  await click('Rimuovi effetto');await click('Rimuovi effetto');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations'),animazioniPrima);
+  await c.val('document.querySelector(".presenta-animazioni").scrollIntoView({block:"center",behavior:"instant"})');await c.clicca('.presenta-animazioni>summary');await click('Scegli un’animazione');
+  assert.equal(await c.val('document.querySelectorAll(".presenta-effetto-card").length'),18);
+  await c.clicca('.presenta-effetto-card[data-effetto="draw"]');assert(await c.val(`document.querySelector('.presenta-galleria-animazioni [aria-label="Applica all’oggetto"]').disabled`),'effetto incompatibile spiegato e non applicabile');
+  assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations'),animazioniPrima,'guardare i campioni non cambia il documento');
+  fs.writeFileSync('/private/tmp/presenta-galleria-animazioni.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
+  const vistaGalleria=await c.val('({width:innerWidth,height:innerHeight})');await c.invia('Emulation.setDeviceMetricsOverride',{width:700,height:700,deviceScaleFactor:1,mobile:false});
+  await c.val(`document.querySelector('.presenta-galleria-animazioni [aria-label="Rivedi esempio"]').scrollIntoView({block:"end",behavior:"instant"})`);
+  assert(await c.val('(()=>{const e=document.querySelector(".presenta-galleria-animazioni"),r=e.getBoundingClientRect();return e.scrollWidth<=e.clientWidth+1&&r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight;})()'),'galleria e azioni raggiungibili nella finestra stretta');
+  fs.writeFileSync('/private/tmp/presenta-galleria-stretta.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
+  await c.invia('Emulation.setDeviceMetricsOverride',{...vistaGalleria,deviceScaleFactor:1,mobile:false});await c.val('document.querySelector(".presenta-galleria-animazioni").scrollTop=0');
+
+
+  await c.clicca('.presenta-effetto-card[data-effetto="fade-up"]');await c.clicca('.presenta-galleria-animazioni [aria-label="Applica all’oggetto"]');
+  await frameWait(`!!document.querySelector('[data-block-id="'+${q(textId)}+'"] .fragment[data-effetto="fade-up"][data-fragment-index="0"]')`);
+  await c.val(`(()=>{const e=document.querySelector('.presenta-azione [aria-label="Durata (s)"]');e.value='1.2';e.dispatchEvent(new Event('change'));})()`);
+  assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations[0].duration'),1.2);
+  await click('Scegli un’animazione');await c.clicca('.presenta-effetto-card[data-effetto="pulse"]');await c.clicca('.presenta-galleria-animazioni [aria-label="Applica all’oggetto"]');
+  await c.val(`(()=>{const e=document.querySelectorAll('.presenta-azione [aria-label="Avvio"]')[1];e.value='after';e.dispatchEvent(new Event('change'));})()`);
+  assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations.map(a=>a.step)'),[1,1],'Dopo il precedente mantiene lo stesso clic');
+  assert(await c.val(`Array.from(document.querySelectorAll('.presenta-azione')).every(row=>row.scrollWidth<=row.clientWidth+1)`),'animazioni senza tagli nello split');
+  await c.val('document.querySelector(".presenta-animazioni").scrollIntoView({block:"end",behavior:"instant"})');
+  fs.writeFileSync('/private/tmp/presenta-animazioni-compatte.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
+  await click('Prova la slide');await wait('document.querySelector(".presenta-prova-animazioni")?.dataset.pronto==="true"');
+  const targetsProva=await (await fetch('http://localhost:'+(process.env.STUDIA_PORTA||8999)+'/json')).json(),targetProva=targetsProva.find(t=>t.type==='iframe'&&t.id!==frameClient.id);assert(targetProva,'frame per provare le animazioni');const prova=await collegaTarget(targetProva);
+  assert.equal(await prova.val('document.querySelector("section.present .presenta-animazione").classList.contains("visible")'),false);
+  await c.clicca('.presenta-prova-animazioni [aria-label="Avanti"]');await wait('document.querySelector("section.present .presenta-animazione").classList.contains("visible")',prova);
+  await c.clicca('.presenta-prova-animazioni [aria-label="Ricomincia"]');await wait('!document.querySelector("section.present .presenta-animazione").classList.contains("visible")',prova);
+  await c.clicca('.presenta-prova-animazioni [aria-label="Chiudi prova"]');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations.length'),2,'la prova non modifica gli effetti');
+  await click('Rimuovi effetto 2');await click('Rimuovi effetto 1');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations'),animazioniPrima);
   await click('Annulla nella presentazione');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations.length'),animazioniPrima.length+1);await click('Ripeti nella presentazione');await c.clicca('.presenta-animazioni>summary');
   await click('Stile');await click('Carattere per tutte le slide');
   assert.equal(await c.val('document.querySelectorAll(".presenta-font-opzione").length'),9);assert((await c.val(`getComputedStyle(document.querySelector('.presenta-font-opzione[aria-label="Atkinson Hyperlegible"]')).fontFamily`)).includes('Atkinson'));
