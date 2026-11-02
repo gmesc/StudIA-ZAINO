@@ -27,9 +27,23 @@
   if(pubblico||o.provaAnimazioni)animazioni=PresentaAnimazioniDOM.collega(deck,{ridotto});if(modificaFoglio&&!pubblico){selezione(modificaFoglio);root.dataset.modificaPronta='true';}invia('pronto',{firma:modificaFoglio?.firma,errors:r.errors||[]});segnalaIngombro();
  }
  // La navigazione riusa il documento: le misure devono seguire la slide, non solo la compilazione.
+ function contenutoTagliato(b){
+  if(b.scrollHeight<=b.clientHeight+1&&b.scrollWidth<=b.clientWidth+1)return false;
+  const limite=b.getBoundingClientRect(),scala=deck.getScale(),tolleranza=scala;
+  const fuori=r=>r.left<limite.left-tolleranza||r.right>limite.right+tolleranza||r.top<limite.top-tolleranza||r.bottom>limite.bottom+tolleranza;
+  const c=b.querySelector('.presenta-contenuto');if(!c)return false;
+  if([...c.querySelectorAll('img,video,audio,svg,table,.katex')].some(e=>fuori(e.getBoundingClientRect())))return true;
+  const nodi=document.createTreeWalker(c,NodeFilter.SHOW_TEXT),misura=document.createElement('canvas').getContext('2d'),range=document.createRange();let n;
+  while((n=nodi.nextNode())){
+   if(!n.textContent.trim()||n.parentElement.closest('svg,.katex'))continue;
+   misura.font=getComputedStyle(n.parentElement).font;const metriche=misura.measureText(n.textContent);
+   range.selectNodeContents(n);
+   if([...range.getClientRects()].some(r=>fuori(PresentaTesto.limitiInchiostro(r,metriche,scala))))return true;
+  }return false;
+ }
  function segnalaIngombro(){
-  // I font possono superare la riga interna senza uscire dal riquadro che taglia il contenuto.
-  if(pubblico||!pronto)return;const slide=corrente();invia('ingombro',{firma:modificaFoglio?.firma,slideId:modificaFoglio?.slideId,overflow:!!slide&&(slide.scrollHeight>deck.getConfig().height||[...slide.querySelectorAll('.presenta-blocco')].some(b=>b.scrollHeight>b.clientHeight+1||b.scrollWidth>b.clientWidth+1))});
+  // Il solo scrollHeight può contare spazio vuoto del font anche oltre il riquadro esterno.
+  if(pubblico||!pronto)return;const slide=corrente();invia('ingombro',{firma:modificaFoglio?.firma,slideId:modificaFoglio?.slideId,overflow:!!slide&&(slide.scrollHeight>deck.getConfig().height||[...slide.querySelectorAll('.presenta-blocco')].some(contenutoTagliato))});
  }
  function comando(o){if(gesto&&(o.h!==stato().h||o.v!==stato().v))termina(true);if(!pronto)throw Error('Il player non è ancora pronto.');PresentaNavigazione.comando(deck,o);silenzia();}
  function esegui(fn){coda=coda.then(fn).catch(e=>{inComando=false;document.body.dataset.errore=e.message;if(pubblico)console.error(e.message);else invia('errore',{error:e.message});});return coda;}

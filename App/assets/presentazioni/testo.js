@@ -5,6 +5,12 @@
  const CHIAVI=['bold','italic','underline','fontFamily','fontSize','fontWeight','color'];
  const pesi=f=>f==='atkinson-next'?[200,300,400,500,600,700,800]:[400,700];
  const peso=(s={},base=400)=>s.fontWeight??(s.bold===undefined?base:s.bold?700:400);
+ // Il rettangolo di Range include ascendenti/discendenti vuote del font, non solo i glifi.
+ function limitiInchiostro(r,m,scala){
+  if(![m.fontBoundingBoxDescent,m.actualBoundingBoxAscent,m.actualBoundingBoxDescent].every(Number.isFinite))return r;
+  const base=r.bottom-m.fontBoundingBoxDescent*scala;
+  return {left:r.left,right:r.right,top:base-m.actualBoundingBoxAscent*scala,bottom:base+m.actualBoundingBoxDescent*scala};
+ }
  function aggiornaStile(s={},patch={}){const v={...s,...patch};if(Object.hasOwn(patch,'bold')&&!Object.hasOwn(patch,'fontWeight'))delete v.fontWeight;if(patch.fontWeight!=null)v.bold=patch.fontWeight>=600;if(patch.fontFamily&&!pesi(patch.fontFamily).includes(v.fontWeight))delete v.fontWeight;return v;}
  const copia=x=>JSON.parse(JSON.stringify(x));
  function stileValido(s){return !!s&&typeof s==='object'&&!Array.isArray(s)&&Object.entries(s).every(([k,v])=>CHIAVI.includes(k)&&(k==='fontFamily'?FONT.includes(v):k==='fontWeight'?[200,300,400,500,600,700,800,900].includes(v):k==='fontSize'?Number.isFinite(v)&&v>=12&&v<=160:k==='color'?v===null||/^#[a-fA-F0-9]{6}$/.test(v):typeof v==='boolean'));}
@@ -47,5 +53,5 @@
  // Il Markdown rimane una rappresentazione leggibile; richText è autorevole quando presente.
  function markdown(ns){const esc=s=>s.replace(/[\\`*_{}[\]<>#!|]/g,'\\$&');return ns.map(n=>{if(n.markdown!==undefined)return n.markdown;if(n.latex!==undefined)return '\\'+(n.display?'[':'(')+n.latex+'\\'+(n.display?']':')');let s=esc(n.text);if(n.style?.bold)s='**'+s+'**';if(n.style?.italic)s='*'+s+'*';if(n.link)s='['+s+']('+n.link.replace(/[()]/g,c=>encodeURIComponent(c))+')';return s;}).join('');}
  function css(s={},caratteri={}){const out=['text-decoration:var(--sottolineato-testo,none)'];if(s.fontFamily&&caratteri[s.fontFamily])out.push('font-family:'+caratteri[s.fontFamily].css);if(s.fontSize)out.push('font-size:'+s.fontSize+'px');if(s.fontWeight!==undefined||s.bold!==undefined)out.push('font-weight:'+peso(s));if(s.italic!==undefined)out.push('font-style:'+(s.italic?'italic':'normal'));if(s.underline!==undefined)out.push('text-decoration:'+(s.underline?'underline':'none'));if(s.color!==undefined)out.push('color:'+(s.color||'var(--ink)'));return out.join(';');}
- return {pesi,peso,aggiornaStile,collega,riscrivi,FONT,CHIAVI,stileValido,linkValido,valida,esigi,normalizza,lunghezza,piano,formatta,comune,markdown,css};
+ return {pesi,peso,limitiInchiostro,aggiornaStile,collega,riscrivi,FONT,CHIAVI,stileValido,linkValido,valida,esigi,normalizza,lunghezza,piano,formatta,comune,markdown,css};
 });

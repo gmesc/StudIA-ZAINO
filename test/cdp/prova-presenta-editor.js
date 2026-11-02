@@ -105,6 +105,13 @@ async function riordinaMiniature(da,a,dentro=false){
   await c.val(`ZainoPresenta.modifica({tipo:'blocco',slideId:${q(provaAvviso.slide)},blockId:${q(provaAvviso.titolo.id)},block:{...${q(provaAvviso.titolo)},markdown:'Tabelle',style:{fontFamily:'atkinson',fontSize:54,box:{x:7,y:7,width:24.775,height:11.25}}}},{struttura:true})`);
   await wait('document.querySelector("#presentaPane .presenta-aiuto").hidden');
   assert(await frameVal('(()=>{const b=document.querySelector("[data-slot=title]"),c=b.querySelector(".presenta-contenuto");return b.scrollHeight<=b.clientHeight+1&&c.scrollHeight>c.clientHeight+1;})()'),'il titolo entra nel riquadro anche se le metriche interne superano la riga');
+  // A 110 anche il riquadro esterno conta la discendente vuota del font: le lettere entrano.
+  await c.val(`ZainoPresenta.modifica({tipo:'blocco',slideId:${q(provaAvviso.slide)},blockId:${q(provaAvviso.titolo.id)},block:{...${q(provaAvviso.titolo)},markdown:'Tabelle',style:{fontFamily:'atkinson',fontSize:110,box:{x:7,y:6,width:86,height:18}}}},{struttura:true})`);
+  await frameWait('getComputedStyle(document.querySelector("[data-slot=title]")).fontSize==="110px"');
+  assert(await frameVal('(()=>{const b=document.querySelector("[data-slot=title]");return b.scrollHeight>b.clientHeight+1;})()'),'riproduce il falso allarme delle metriche nel contenitore esterno');
+  await wait('document.querySelector("#presentaPane .presenta-aiuto").hidden');
+  await c.val(`ZainoPresenta.modifica({tipo:'blocco',slideId:${q(provaAvviso.slide)},blockId:${q(provaAvviso.titolo.id)},block:{...${q(provaAvviso.titolo)},markdown:'Tabelle',style:{fontFamily:'atkinson',fontSize:110,box:{x:7,y:6,width:86,height:8}}}},{struttura:true})`);
+  await wait('!document.querySelector("#presentaPane .presenta-aiuto").hidden');
   await c.val(`ZainoPresenta.modifica({tipo:'blocco',slideId:${q(provaAvviso.slide)},blockId:${q(provaAvviso.titolo.id)},block:${q(provaAvviso.titolo)}},{struttura:true});ZainoPresenta.modifica({tipo:'eliminaSlide',slideId:${q(slideVuota)}},{struttura:true})`);
   await wait('document.querySelector("#presentaPane .presenta-aiuto").hidden');
   await click('Aggiungi testo');await scrivi('Testo · Markdown e formule','La clorofilla cattura la luce. Formula: \\(x^2\\)');
@@ -205,7 +212,7 @@ async function riordinaMiniature(da,a,dentro=false){
   await c.clicca('.presenta-prova-animazioni [aria-label="Chiudi prova"]');await wait('!document.querySelector(".presenta-prova-animazioni")');
   await click('Rimuovi media di sfondo');assert(!await c.val('ZainoPresenta.documento.stacks[0].slides[0].backgroundMedia'));await click('Annulla nella presentazione');assert.equal(await c.val('ZainoPresenta.documento.assets[ZainoPresenta.documento.stacks[0].slides[0].backgroundMedia.assetId].kind'),'video');await click('Rimuovi media di sfondo');
 
-  await click('Usa colore 2');await click('Copia stile');await click('Sfondo');await click('Nero');await click('Incolla stile');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].background'),'#0ea5e9');
+  await click('Usa colore 2');await click('Copia stile');await wait('!document.querySelector(".presenta-voci-menu")?.closest(":popover-open")');await click('Sfondo');await click('Nero');await click('Incolla stile');await wait('ZainoPresenta.documento.stacks[0].slides[0].background==="#0ea5e9"');
   assert.equal(await c.val('getComputedStyle(document.querySelector("#presentaPane iframe")).outlineWidth'),'0px','nessuna cornice sullo sfondo colorato');
   await click('Testo');await click('Allineamento del testo');await click('Allineamento del testo · Destra');
   await frameWait(`getComputedStyle(document.querySelector('[data-block-id="'+${q(textId)}+'"]')).textAlign==="right"`);

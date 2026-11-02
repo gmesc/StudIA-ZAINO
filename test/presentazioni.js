@@ -10,6 +10,10 @@ const F=require('./fixtures/presentazioni');
   let d=await P.crea(v,'scienze','Lezione');assert.equal(d.revision,1);assert.deepEqual(P.leggi(v,'scienze',d.id),d);assert(V.validatePresentazione(d).ok);
   // I formati delle parole non cambiano il resto del testo né la geometria.
   const T=require('../App/assets/presentazioni/testo');
+  const riga={left:0,right:380,top:0,bottom:136},metriche={fontBoundingBoxDescent:32,actualBoundingBoxAscent:74,actualBoundingBoxDescent:2};
+  assert.deepEqual(T.limitiInchiostro(riga,metriche,1),{left:0,right:380,top:30,bottom:106},'la riga Atkinson non coincide con le lettere visibili');
+  assert.deepEqual(T.limitiInchiostro({left:0,right:190,top:0,bottom:68},metriche,.5),{left:0,right:190,top:15,bottom:53},'misura alla scala dell’anteprima');
+  assert.deepEqual(T.limitiInchiostro(riga,{},1),riga,'senza metriche il controllo resta conservativo');
   {const leggero=T.formatta([{text:'Sole e pianeti'}],0,4,{fontFamily:'atkinson-next',fontWeight:300});
   assert.equal(leggero[0].style.fontWeight,300);assert(!leggero[1].style);
   assert.match(T.css(leggero[0].style,M.CARATTERI),/font-weight:300/);
