@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),WS=require('ws'),c=require('./cdp');
-const porta=process.env.STUDIA_PORTA||9458;
+const porta=process.env.STUDIA_PORTA||8999;
 setTimeout(()=>{console.error('Tempo massimo della prova di presentazione superato');process.exit(1);},180000).unref();
 let peer=null,initial=null;
 async function wait(expr,client=c){for(let i=0;i<160;i++){if(await client.val(expr))return;await c.pausa(100);}throw Error('Attesa scaduta: '+expr);}

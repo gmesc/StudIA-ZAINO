@@ -28,6 +28,16 @@ const differita=()=>{let resolve,reject;return {promise:new Promise((r,j)=>{reso
  foglio=M.applica(foglio,{tipo:'inserisciBlocco',slideId:fid,block:{type:'text',slot:'body',markdown:'Confederazione'}});
  const slideFoglio=()=>M.trova(foglio,fid).slide,blocchi=slideFoglio().blocks;
  assert.equal(slideFoglio().layout,'free');assert(blocchi.every(b=>M.riquadro(b.style.box)));
+ const g=M.righelli(4);assert.equal(g.divisioni,4);assert.deepEqual(g.linee,[7,28.5,50,71.5,93]);
+ assert.equal(M.righelli(0).divisioni,3);assert.deepEqual(M.righelli(0).linee,[]);assert.throws(()=>M.righelli(8));
+ const daPosizionare={x:19,y:23,width:40,height:30};
+ assert.deepEqual(M.ancoraGriglia(daPosizionare,{divisioni:3,riga:2,colonna:2}),M.ancora(daPosizionare,'basso-destra'));
+ assert.equal(M.ancoraGriglia(daPosizionare,{divisioni:4,riga:1,colonna:null}).x,19);
+ assert.equal(M.ancoraGriglia(daPosizionare,{divisioni:4,riga:null,colonna:2}).y,23);
+ assert.deepEqual(M.cellePosizione(4,{riga:1,colonna:null}),[4,5,6,7]);
+ assert.deepEqual(M.cellePosizione(3,{riga:null,colonna:2}),[2,5,8]);
+ assert.throws(()=>M.ancoraGriglia(daPosizionare,{divisioni:3,riga:3,colonna:0}));
+ const snap=M.aggancia({x:28.1,y:20,width:10,height:10},[],.7,g.linee);assert.equal(snap.box.x,28.5);assert(snap.guide.some(g=>g.pos===28.5));
  const box={x:7,y:30,width:40,height:55};assert.deepEqual(M.muovi(box,12,-9),{x:19,y:21,width:40,height:55});
  assert.deepEqual(M.muovi(box,500,-500),{x:60,y:0,width:40,height:55});
  assert.deepEqual(M.muovi(box,500,500,true),{x:7,y:30,width:93,height:70});assert.equal(M.muovi(box,-500,0,true).width,2);

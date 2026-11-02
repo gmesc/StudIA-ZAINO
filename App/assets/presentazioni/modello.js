@@ -69,9 +69,21 @@
   else for(const b of gruppo){if(modo==='left')b.box.x=minX;if(modo==='right')b.box.x=maxX-b.box.width;if(modo==='center')b.box.x=(minX+maxX-b.box.width)/2;if(modo==='top')b.box.y=minY;if(modo==='bottom')b.box.y=maxY-b.box.height;if(modo==='middle')b.box.y=(minY+maxY-b.box.height)/2;}
   return boxes;
  }
- function aggancia(box,altri,soglia=.7){
+ function righelli(n){
+  if(![0,2,3,4].includes(n))throw Error('Griglia non disponibile.');
+  return {divisioni:n||3,linee:n?Array.from({length:n+1},(_,i)=>7+86*i/n):[]};
+ }
+ function cellePosizione(n,{riga=null,colonna=null}){
+  if(![2,3,4].includes(n)||[riga,colonna].some(v=>v!==null&&(!Number.isInteger(v)||v<0||v>=n))||riga===null&&colonna===null)throw Error('Posizione non disponibile.');
+  return Array.from({length:n*n},(_,i)=>i).filter(i=>(riga===null||Math.floor(i/n)===riga)&&(colonna===null||i%n===colonna));
+ }
+ function ancoraGriglia(b,{divisioni=3,riga=null,colonna=null}){
+  cellePosizione(divisioni,{riga,colonna});if(!riquadro(b))throw Error('Posizione non valida.');
+  return muovi(b,colonna===null?0:7+(86-b.width)*colonna/(divisioni-1)-b.x,riga===null?0:7+(86-b.height)*riga/(divisioni-1)-b.y);
+ }
+ function aggancia(box,altri,soglia=.7,riferimenti=[7,50,93]){
   if(!riquadro(box))throw Error('Posizione non valida.');const b={...box},guide=[];
-  for(const [asse,dim]of [['x','width'],['y','height']]){const linee=[7,50,93,...altri.flatMap(v=>[v[asse],v[asse]+v[dim]/2,v[asse]+v[dim]])];let scelta=null;
+  for(const [asse,dim]of [['x','width'],['y','height']]){const linee=[...riferimenti,...altri.flatMap(v=>[v[asse],v[asse]+v[dim]/2,v[asse]+v[dim]])];let scelta=null;
    for(const f of [0,.5,1])for(const linea of linee){const delta=linea-(box[asse]+box[dim]*f);if(Math.abs(delta)<=soglia&&(!scelta||Math.abs(delta)<Math.abs(scelta.delta)))scelta={delta,linea};}
    if(scelta&&b[asse]+scelta.delta>=0&&b[asse]+scelta.delta+b[dim]<=100){b[asse]+=scelta.delta;guide.push({asse,pos:scelta.linea});}
   }return {box:b,guide};
@@ -296,5 +308,5 @@
    if(b.items)n.items=b.items.map(i=>scegli(i,['id','markdown','richText']));if(b.style)n.style=scegli(b.style,['column','span','row','rowSpan','fontSize','color','highlight','align','scale','box','verticalAlign','fontFamily','fontWeight','bold','italic','underline','lineHeight']);return n;
   })}))}))};
  }
- return {ricordaColore,temaPersonale,destinazioneSlide,allinea,aggancia,STILI,sistema,trasportoSidebar,selezioneObsoleta,ritaglioValido,ritaglia,proporzioneRitaglio,CARATTERI,MODELLI,daModello,copiaOggetto,coloriPersonali,stileSlide,contrasto,riquadro,muovi,iniziale,disponi,ancora,VERSIONE,STRUMENTI,EFFETTI,LAYOUT,crea,slide,copia,posizioni,trova,bersagli,valida,esigi,applica,cronologia,indiceFragment,risorseUsate,pubblica};
+ return {righelli,cellePosizione,ancoraGriglia,ricordaColore,temaPersonale,destinazioneSlide,allinea,aggancia,STILI,sistema,trasportoSidebar,selezioneObsoleta,ritaglioValido,ritaglia,proporzioneRitaglio,CARATTERI,MODELLI,daModello,copiaOggetto,coloriPersonali,stileSlide,contrasto,riquadro,muovi,iniziale,disponi,ancora,VERSIONE,STRUMENTI,EFFETTI,LAYOUT,crea,slide,copia,posizioni,trova,bersagli,valida,esigi,applica,cronologia,indiceFragment,risorseUsate,pubblica};
 });

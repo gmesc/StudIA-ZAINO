@@ -8,7 +8,7 @@ let ws, id = 0, attesi = new Map();
 /* La porta la decide chi lancia le prove (`STUDIA_PORTA`), non questo file: due
    sessioni di prova sulla stessa porta si contenderebbero la stessa app, e le
    misure dell'una arriverebbero all'altra. */
-const PORTA = process.env.STUDIA_PORTA || '9333';
+const PORTA = process.env.STUDIA_PORTA || '8999';
 
 async function collega() {
   let r;

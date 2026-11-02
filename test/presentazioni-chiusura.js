@@ -32,6 +32,19 @@ app.whenReady().then(async()=>{
  win.close();await wait(()=>run('document.querySelector("#presentaPane .presenta-stato").textContent.includes("Testo formattato non valido")'));
  assert(!win.isDestroyed(),'il testo non valido impedisce la chiusura');
  assert.equal(await frame.executeJavaScript('document.querySelector("[contenteditable=true]").textContent.length'),100001,'il testo resta correggibile');
+ // Anche il popup interroga il DOM prima del flush, e conserva un errore correggibile.
+ await frame.executeJavaScript('document.querySelector("[contenteditable=true]").textContent="Titolo corretto"');await run('ZainoPresenta.flush()');
+ await run(`document.querySelector('[aria-label="Termina scrittura"]').click();document.querySelector('#presentaPane [aria-label="Titolo"]').click();document.querySelector('#presentaPane [aria-label="Titolo della slide"]').click()`);
+ await wait(()=>run('!!document.querySelector(".presenta-input-popup input")'));
+ await run('document.querySelector(".presenta-input-popup input").value="x".repeat(141)');
+ assert((await run('ZainoPresenta.flush().then(()=>null,e=>e.message)')).includes('limite'));
+ assert(await run('ZainoPresenta.daSalvare'),'una bozza non valida nel popup resta segnalata');
+ await run('document.querySelector(".presenta-input-popup input").value="Ultima battuta dal popup"');await run('ZainoPresenta.flush()');
+ assert.equal(P.leggi(vault,'scienze',d.documento.id).stacks[0].slides[0].title,'Ultima battuta dal popup');
+ await run(`document.querySelector('.presenta-input-popup [aria-label="Chiudi campo"]').click()`);
+ await wait(()=>frame.executeJavaScript('document.querySelector(".reveal")?.dataset.bloccato==="false"'));
+ await frame.executeJavaScript('document.querySelector("[data-testo-id]").dispatchEvent(new MouseEvent("dblclick",{bubbles:true,cancelable:true}))');
+ await wait(()=>run(`!!document.querySelector('[aria-label="Carattere delle parole"]')`));
  // Simula l'ultima modifica DOM non ancora notificata: la chiusura deve interrogarla.
  await frame.executeJavaScript('document.querySelector("[contenteditable=true]").textContent="Scritta sul foglio subito prima di chiudere"');
  const closed=new Promise(r=>win.once('closed',r));win.close();await closed;

@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 LAVORO=$(mktemp -d /tmp/studia-zaino-prova-XXXXXX)
-PORTA=${STUDIA_PORTA:-9458}
+PORTA=${STUDIA_PORTA:-8999}
 PID_APP=''
 trap 'if [ -n "$PID_APP" ]; then kill "$PID_APP" 2>/dev/null || true; fi; rm -rf "$LAVORO"' EXIT
 if lsof -nP -iTCP:"$PORTA" -sTCP:LISTEN >/dev/null 2>&1; then echo 'Porta di prova occupata'; exit 1; fi

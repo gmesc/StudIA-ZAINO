@@ -15,7 +15,15 @@ async function click(nome){
  if(nome==='Nuova slide'){await wait('!!document.querySelector(".presenta-scelta-modello[open]")');await c.clicca('.presenta-scelta-modello [data-modello=vuota]');}
 }
 
-async function scrivi(nome,valore){if(nome==='Titolo della slide')await click('Titolo');await c.val(`(()=>{const e=document.querySelector('#presentaPane [aria-label='+${q(JSON.stringify(nome))}+']');e.value=${q(valore)};e.dispatchEvent(new Event('input',{bubbles:true}));})()`);}
+async function scrivi(nome,valore){
+ if(nome==='Titolo della slide')await click('Titolo');
+ const tipo=await c.val(`document.querySelector('#presentaPane [aria-label='+${q(JSON.stringify(nome))}+']')?.tagName`);
+ if(tipo==='BUTTON'){await click(nome);await wait('!!document.querySelector(".presenta-input-popup:popover-open")');}
+ await c.val(`(()=>{const e=document.querySelector('.presenta-input-popup [aria-label='+${q(JSON.stringify(nome))}+']')||document.querySelector('#presentaPane [aria-label='+${q(JSON.stringify(nome))}+']');e.value=${q(valore)};e.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+ if(tipo==='BUTTON')await c.clicca('.presenta-input-popup [aria-label="Chiudi campo"]');
+}
+async function cicloRighelli(n){await click('Righelli');for(let i=0;i<n;i++)await click('Cambia griglia di riferimento');}
+
 const WS=require('ws');let frameClient=null;const clients=[];
 async function collegaTarget(target){
  const ws=new WS(target.webSocketDebuggerUrl,{perMessageDeflate:false});await new Promise((ok,ko)=>{ws.on('open',ok);ws.on('error',ko);});let id=0;const attesi=new Map();ws.on('message',raw=>{const m=JSON.parse(raw);if(m.id&&attesi.has(m.id)){attesi.get(m.id)(m);attesi.delete(m.id);}});
@@ -23,7 +31,7 @@ async function collegaTarget(target){
  const client={id:target.id,ws,invia,val:async expression=>{const r=await invia('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.result.exceptionDetails)throw Error(JSON.stringify(r.result.exceptionDetails));return r.result.result.value;}};clients.push(client);ws.on('message',raw=>{const m=JSON.parse(raw);if(m.method==='Network.loadingFailed'||m.method==='Log.entryAdded')console.log('frame-network',JSON.stringify(m.params));});await invia('Network.enable',{});await invia('Log.enable',{});return client;
 }
 async function frameVal(expr){
- const targets=await (await fetch('http://localhost:'+(process.env.STUDIA_PORTA||9333)+'/json')).json(),url=await c.val('document.querySelector("#presentaPane iframe").src');
+ const targets=await (await fetch('http://localhost:'+(process.env.STUDIA_PORTA||8999)+'/json')).json(),url=await c.val('document.querySelector("#presentaPane iframe").src');
  const target=targets.find(t=>t.type==='iframe'&&t.url===url);assert(target,'iframe isolato presente');if(frameClient?.id!==target.id)frameClient=await collegaTarget(target);return frameClient.val(expr);
 }
 async function frameWait(expr){for(let n=0;n<80;n++){if(await frameVal(expr))return;await c.pausa(100);}console.log(await frameVal('({errore:document.body.dataset.errore,pronto:document.querySelector(".reveal").dataset.pronto,fonts:document.fonts.status,classi:document.querySelector(".reveal").className,audio:document.querySelector("audio")?.outerHTML})'));throw Error('Anteprima: '+expr);}
@@ -61,10 +69,10 @@ async function riordinaMiniature(da,a,dentro=false){
   await scrivi('Appunti del presentatore · privati','NOTA_PRIVATA_UI · Chiedere un esempio alla classe.');
   await c.val('ZainoPresenta.flush()');await frameWait('document.querySelector(".presenta-slide")?.textContent.includes("clorofilla")');
   await frameWait('!!document.querySelector(".katex")');
-  await click('Guide e aggancio');
+  await cicloRighelli(1);
   await frameWait('document.querySelector(".reveal").dataset.bloccato==="false"');
   assert.equal(await frameVal('document.querySelectorAll(".presenta-guide-fisse").length'),1,'il righello mostra le guide anche senza trascinare');
-  await click('Guide e aggancio');
+  await cicloRighelli(3);
   await frameWait('!document.querySelector(".presenta-guide-fisse")');
   assert(await frameVal('!!document.querySelector(".katex")'),'matematica effettivamente renderizzata');assert(await frameVal('document.querySelector(".reveal").clientHeight>100'),'anteprima visibile');
   assert(!await frameVal('document.body.innerHTML.includes("NOTA_PRIVATA_UI")'));assert.equal(await frameVal('typeof window.vault'),'undefined');assert.equal(await frameVal('window.__privatoRicevuto'),false,'nessuna nota privata neppure nei metadati dei messaggi');
@@ -91,6 +99,17 @@ async function riordinaMiniature(da,a,dentro=false){
   assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box'),spostata);
   await trascinaOggetto(imageId,true);await wait('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box.width>40');
   await click('Titolo');await click('Allineamento del testo');await click('Allineamento del testo · Centro');
+  // Campi brevi e comandi immagine allineati: la didascalia si modifica davvero nel popup.
+  await click('Immagine');assert.equal(await c.val('document.querySelectorAll(".presenta-proprieta-foglio input[type=text],.presenta-proprieta-foglio textarea").length'),0);assert(await c.val(`(()=>{const a=document.querySelector('[aria-label="Sostituisci immagine"]').getBoundingClientRect(),b=document.querySelector('[aria-label="Ritaglia immagine"]').getBoundingClientRect();return Math.abs(a.top-b.top)<1;})()`));
+  await scrivi('Didascalia','Foglia sintetica · prova');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").caption'),'Foglia sintetica · prova');
+  await click('Annulla nella presentazione');await click('Didascalia');await click('Testo');
+  assert(await c.val(`!document.querySelector('.presenta-input-popup:popover-open')&&document.querySelector('#presentaPane [aria-label="Testo"]').getAttribute('aria-pressed')==='true'`),'clic fuori chiude il campo e cambia tab con un solo gesto');
+  await click('Riga 2');assert.equal(await c.val('document.querySelectorAll(".presenta-posizioni [data-cella][aria-pressed=true]").length'),3);
+  await click('Colonna 1');assert.equal(await c.val('document.querySelectorAll(".presenta-posizioni [data-cella][aria-pressed=true]").length'),3);
+  await cicloRighelli(3);await click('Guide magnetiche');assert.equal(await c.val(`document.querySelector('[aria-label="Guide magnetiche"]').getAttribute('aria-pressed')`),'true');await click('Guide magnetiche');
+  await click('Testo');assert.equal(await c.val('document.querySelectorAll(".presenta-posizioni [data-cella]").length'),16);
+  await click('Riga 2');assert.equal(await c.val('document.querySelectorAll(".presenta-posizioni [data-cella][aria-pressed=true]").length'),4);
+  await cicloRighelli(1);await click('Testo');assert.equal(await c.val('document.querySelectorAll(".presenta-posizioni [data-cella]").length'),9);
   await click('Sfondo');assert.equal(await c.val('document.querySelectorAll('+q('.presenta-campi [aria-label="Titolo della slide"]')+').length'),0);
   await click('Colore personalizzato dello sfondo');await click('sky-500');await click('Bianco');
   assert.equal(await c.val('document.querySelector('+q('#presentaPane [aria-label="Colore personalizzato dello sfondo"]')+').dataset.colore'),'#0ea5e9','l’ultimo colore manuale resta disponibile dopo un preset');
@@ -208,7 +227,7 @@ async function riordinaMiniature(da,a,dentro=false){
   await wait(`!!document.querySelector('[aria-label="Carattere delle parole"]')`);
   assert.equal(await c.val(`getComputedStyle(document.querySelector('[aria-label="Corsivo sulle parole"]')).fontStyle`),'italic');
   assert.equal(await c.val(`getComputedStyle(document.querySelector('[aria-label="Sottolineato sulle parole"]')).textDecorationLine`),'underline');
-  await click('Guide e aggancio');assert(await frameVal('!!document.querySelector(".presenta-guide-fisse")'),'guide attive anche durante la scrittura');fs.writeFileSync('/private/tmp/presenta-guide-reali.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));await click('Guide e aggancio');
+  await cicloRighelli(1);await click('Testo');await click('Scrivi sul foglio');await frameWait('!!document.querySelector("[contenteditable=true]")');assert(await frameVal('!!document.querySelector(".presenta-guide-fisse")'),'guide conservate durante la scrittura');fs.writeFileSync('/private/tmp/presenta-guide-reali.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));await cicloRighelli(3);await click('Testo');await click('Scrivi sul foglio');await frameWait('!!document.querySelector("[contenteditable=true]")');
 
   await frameVal(`(()=>{const el=document.querySelector('[data-testo-id="'+${q(textId)}+'"]'),n=el.firstChild.firstChild,r=document.createRange();r.setStart(n,3);r.setEnd(n,13);const s=getSelection();s.removeAllRanges();s.addRange(r);document.dispatchEvent(new Event('selectionchange'));})()`);
   await click('Carattere delle parole');await click('Atkinson Hyperlegible');
@@ -241,6 +260,21 @@ async function riordinaMiniature(da,a,dentro=false){
   await click('Annulla nella presentazione');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").richText'),testoRicco);
   await click('Ripeti nella presentazione');await c.val('ZainoPresenta.flush()');
   fs.writeFileSync('/private/tmp/presenta-parole-reale.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
+  // Il popup ricco riusa l’editor sul foglio e conserva formule e stili delle altre parole.
+  const primaPopup=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").richText');
+  await click('Testo');await click('Modifica testo');await wait('!!document.querySelector(".presenta-input-popup [contenteditable=true]")');
+  assert(await c.val('!!document.querySelector(".presenta-input-popup [data-atomo]")'),'formula presente anche nel campo popup');
+  assert.equal(await c.val('parseFloat(getComputedStyle(document.querySelector(".presenta-input-ricco [contenteditable]")).fontSize)'),await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style.fontSize'),'il popup eredita le dimensioni del riquadro');
+  fs.writeFileSync('/private/tmp/presenta-popup-testo.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
+  await c.invia('Input.insertText',{text:' Nel popup.'});await c.val('ZainoPresenta.flush()');
+  assert(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").richText.some(n=>n.text?.includes("Nel popup."))'));
+  await c.val(`(()=>{const el=[...document.querySelectorAll('.presenta-input-ricco [data-stile]')].find(e=>e.textContent==='clorofilla'),r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);document.dispatchEvent(new Event('selectionchange'));})()`);
+  await click('Carattere delle parole');await click('TestMe Sans');await wait('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").richText.some(n=>n.text==="clorofilla"&&n.style?.fontFamily==="testme")');
+  const dopoPopup=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").richText');
+  assert.deepEqual(dopoPopup.filter(n=>n.text===undefined),primaPopup.filter(n=>n.text===undefined));
+  const attesoPopup={...primaPopup.find(n=>n.text==='clorofilla')?.style,fontFamily:'testme'};delete attesoPopup.fontWeight;assert.deepEqual(dopoPopup.find(n=>n.text==='clorofilla')?.style,attesoPopup,'TestMe usa Regular e conserva gli altri formati della parola');
+  await c.clicca('.presenta-input-popup [aria-label="Chiudi campo"]');await click('Annulla nella presentazione');await click('Annulla nella presentazione');
+  assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").richText'),primaPopup);
   // Stili annullabili e proposta di disposizione che non modifica nulla prima di Applica.
   const primaStile=await c.val('ZainoPresenta.documento.stacks');
   await click('Stile');
@@ -262,18 +296,18 @@ async function riordinaMiniature(da,a,dentro=false){
   await click('Stile');await c.val(`(()=>{const e=document.querySelector('[aria-label="Applica lo stile a"]');e.value='slide';e.dispatchEvent(new Event('change'));})()`);await click('Modifica stile 1');assert.equal(await c.val(`document.querySelector('.presenta-tema-dialog [aria-label="Nome"]').value`),'Scienze');await c.clicca('.presenta-tema-dialog [aria-label="Chiudi"]');
   await c.val('document.querySelector(".presenta-stili-galleria").scrollLeft=0;document.querySelector(".presenta-stili-compatti").scrollIntoView({block:"center",behavior:"instant"})');
   fs.writeFileSync('/private/tmp/presenta-stile-compatto.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
-  const layoutCompatto=await c.val('bancoStato()');await c.val('bancoForma("uno");bancoAssegna("A","presenta")');
-  for(const tab of ['Stile','Disposizione','Testo','Titolo']){
+  const layoutCompatto=await c.val('bancoStato()');await c.val('bancoForma("uno");bancoAssegna("A","presenta")');await wait('!document.querySelector("#toast")?.classList.contains("show")');
+  for(const tab of ['Stile','Disposizione','Testo','Titolo','Immagine','Righelli']){
    await click(tab);await c.val('document.querySelector(".presenta-proprieta-foglio").scrollIntoView({block:"end",behavior:"instant"});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
    assert(await c.val('(()=>{const p=document.querySelector(".presenta-lavoro");return p.scrollWidth<=p.clientWidth+1;})()'),tab+' senza overflow orizzontale');
    if(tab==='Stile')assert(await c.val('(()=>{const g=document.querySelector(".presenta-stili-galleria").getBoundingClientRect(),c=document.querySelector(".presenta-stili-controlli").getBoundingClientRect();return g.left>c.right&&Math.abs(g.top-c.top)<2;})()'),'galleria affiancata nello split largo');
-   if(['Testo','Titolo'].includes(tab))assert(await c.val('(()=>{const p=document.querySelector(".presenta-posizioni").getBoundingClientRect(),i=document.querySelector(".presenta-interlinea").getBoundingClientRect();return p.width<100&&i.width<=161;})()'),'griglia e interlinea compatte');
+   if(['Testo','Titolo'].includes(tab))assert(await c.val('(()=>{const p=document.querySelector(".presenta-posizioni").getBoundingClientRect(),i=document.querySelector(".presenta-interlinea").getBoundingClientRect();return p.width<=106&&i.width<=161;})()'),'griglia e interlinea compatte');
    fs.writeFileSync('/private/tmp/presenta-'+tab.toLowerCase()+'-largo.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
   }
   await c.val(`BANCO.stato=${q(layoutCompatto)};bancoSalva();bancoDisegna()`);await click('Stile');
   await click('Lavagna');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].background'),'#0f172a');
   await click('Annulla nella presentazione');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks'),primaStile);
-  await click('Disposizione');assert.equal(await c.val('document.querySelectorAll(".presenta-disposizione-compatta h3").length'),0);assert(await c.val('(()=>{const a=document.querySelector(".presenta-modelli").getBoundingClientRect(),b=document.querySelector(".presenta-bacchetta").getBoundingClientRect();return b.left>=a.right&&b.top<a.bottom;})()'));await click('Sistema la slide');await wait('!!document.querySelector(".presenta-sistema-dialog[open]")');
+  await click('Disposizione');assert.equal(await c.val('document.querySelectorAll(".presenta-disposizione-compatta h3").length'),0);assert(await c.val('(()=>{const a=document.querySelector(".presenta-modelli").getBoundingClientRect(),b=document.querySelector(".presenta-bacchetta").getBoundingClientRect();const c=document.querySelector(".presenta-modello").getBoundingClientRect();return Math.abs(b.width-c.width)<1&&Math.abs(b.height-c.height)<1;})()'));await click('Sistema la slide');await wait('!!document.querySelector(".presenta-sistema-dialog[open]")');
   assert.deepEqual(await c.val('ZainoPresenta.documento.stacks'),primaStile);await c.clicca('[aria-label="Annulla proposta"]');
   assert.deepEqual(await c.val('ZainoPresenta.documento.stacks'),primaStile);
   await click('Sistema la slide');await wait('!!document.querySelector(".presenta-sistema-dialog[open]")');await c.clicca('[aria-label="Applica disposizione"]');
@@ -317,7 +351,7 @@ async function riordinaMiniature(da,a,dentro=false){
   await c.val('ZainoPresenta.presenta()');await wait('!!ZainoPresenta.regia');
   await wait('document.querySelector("#gobboPane .gobbo-note")?.textContent.includes("NOTA_PRIVATA_UI")');
   const sid=await c.val('ZainoPresenta.regia.stato.sessionId');
-  const target=(await (await fetch('http://localhost:'+(process.env.STUDIA_PORTA||9333)+'/json')).json()).find(t=>t.type==='page'&&t.url.endsWith('/presentazioni-player/index.html'));assert(target);const pubblico=await collegaTarget(target);
+  const target=(await (await fetch('http://localhost:'+(process.env.STUDIA_PORTA||8999)+'/json')).json()).find(t=>t.type==='page'&&t.url.endsWith('/presentazioni-player/index.html'));assert(target);const pubblico=await collegaTarget(target);
   assert.equal(await pubblico.val('typeof window.vault'),'undefined');assert(!await pubblico.val('document.documentElement.outerHTML.includes("NOTA_PRIVATA_UI")'));
   await wait('!!document.querySelector(".presenta-immagine-ritagliata image")',pubblico);
   assert(await pubblico.val(`(async()=>{const e=document.querySelector('.presenta-immagine-ritagliata image'),img=new Image();img.src=e.getAttribute('href');await img.decode();return img.naturalWidth>0;})()`),'la sorgente del ritaglio si decodifica nel player pubblico');
@@ -336,7 +370,7 @@ async function riordinaMiniature(da,a,dentro=false){
   const screenshot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/private/tmp/zaino-presenta-editor.png',Buffer.from(screenshot.result.data,'base64'));
   assert((await c.val(`window.vault.presentazioni.comando({azione:'sessione',corso:'biologia',sessionId:${q(sid)},comando:'chiudi'})`)).ok);await wait('!ZainoPresenta.regia');
   // La regia si svuota prima della chiusura nativa: non lasciare al test successivo il target morente.
-  let playerChiuso=false;for(let n=0;n<120;n++){const targets=await (await fetch('http://localhost:'+(process.env.STUDIA_PORTA||9333)+'/json')).json();if(!targets.some(t=>t.id===target.id)){playerChiuso=true;break;}await c.pausa(100);}assert(playerChiuso,'finestra pubblica davvero chiusa');
+  let playerChiuso=false;for(let n=0;n<120;n++){const targets=await (await fetch('http://localhost:'+(process.env.STUDIA_PORTA||8999)+'/json')).json();if(!targets.some(t=>t.id===target.id)){playerChiuso=true;break;}await c.pausa(100);}assert(playerChiuso,'finestra pubblica davvero chiusa');
   await c.val('ZainoPresenta.chiudi()');
   console.log('✓ PRESENTA e GOBBO: tab contestuali, colori e cinque slot, titolo/testo indipendenti, miniature e riordino nativo, stile, adatta riquadro, media, autosave, riapertura, player e note private');
  }finally{

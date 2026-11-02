@@ -169,3 +169,40 @@
 .presenta-punto-posizione{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.35;pointer-events:none}
 .presenta-posizioni [aria-pressed=true] .presenta-punto-posizione{width:10px;height:10px;opacity:1}
 @container(max-width:650px){.presenta-stili-controlli{grid-template-columns:repeat(2,minmax(0,200px))}.presenta-proprieta-foglio:has(.presenta-blocco-editor){grid-template-columns:minmax(0,1fr)}.presenta-proprieta-foglio>.presenta-posizione-compatta{flex-direction:row;align-items:center}}
+
+/* Campi in anteprima: il testo lungo vive nel popup, senza occupare il foglio delle proprietà. */
+.presenta-campo-breve{width:min(100%,420px)}
+.presenta-campo-breve>.tbtn{justify-content:space-between;gap:12px;border:1px solid var(--line);background:var(--bg);height:var(--ctl-h);text-transform:none;letter-spacing:0;font-size:14px;font-weight:400;text-align:left;min-width:0}
+.presenta-input-anteprima{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.presenta-campo-breve i{flex:none}
+.presenta-input-popup{width:min(620px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;padding:12px;isolation:isolate}
+.presenta-input-popup .presenta-campo{margin-top:8px}.presenta-input-popup textarea{min-height:160px;max-height:50vh}.presenta-input-popup .presenta-stato:empty{display:none}
+.presenta-input-popup .presenta-campo>span{font-size:12px}.presenta-input-popup .presenta-font-bubble .presenta-campo{margin:0}
+.presenta-input-ricco{margin-top:8px;padding:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.presenta-input-ricco>[contenteditable]{min-height:144px;max-height:45vh;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font:18px/1.5 var(--font-text);outline-offset:4px}
+.presenta-input-ricco [data-atomo]{display:inline-block;padding:2px 4px;background:var(--hover)}
+.presenta-input-ricco .katex{font-size:1em}.presenta-input-ricco>[contenteditable]:focus-visible{outline:2px solid var(--teal-strong)}
+.presenta-immagine-comandi{justify-content:flex-start;gap:8px!important}
+.presenta-immagine-campi{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%;max-width:840px}
+.presenta-immagine-campi>.presenta-campo-breve{width:100%}
+/* Font e numero leggono la medesima scala, anche quando il carattere scelto ha un disegno minuto. */
+.presenta-proprieta-foglio .presenta-carattere>.tbtn,.presenta-tipografia:not(.presenta-font-bubble) .presenta-peso select{font-size:14px}
+.presenta-allineamento .ui-icon,.presenta-menu-allineamento .ui-icon{width:24px;height:24px;flex:none}
+.presenta-allineamento>.tbtn,.presenta-menu-allineamento .tbtn{min-width:calc(var(--tb-min) + 12px)}
+/* I quattro modelli occupano quattro celle identiche. */
+.presenta-disposizione-compatta .presenta-modelli{display:grid;grid-template-columns:repeat(4,148px);gap:8px;overflow-x:auto;max-width:100%}
+.presenta-disposizione-compatta .presenta-modello{width:148px;height:98px;box-sizing:border-box;min-width:0;min-height:0}
+.presenta-disposizione-compatta .presenta-bacchetta{justify-content:center;padding:8px}.presenta-bacchetta .ui-icon{width:32px;height:32px}
+/* Nessun bordo esterno sui colori: stessa altezza e medesimo hover per ogni scelta. */
+.presenta-slot-colori>div{border:0}
+.presenta-colori .tbtn{height:var(--tb-h);min-height:var(--tb-h);box-sizing:border-box;border:0}
+.presenta-colori .tbtn:hover:not(:disabled),.presenta-posizioni .tbtn:hover:not(:disabled),.presenta-posizioni .tbtn[data-hover=true]{background:var(--teal-light);color:var(--teal-strong)}
+/* POSIZIONE: celle contigue; i selettori esterni agiscono su un asse soltanto. */
+.presenta-posizione-compatta .presenta-posizioni{grid-template-columns:calc(var(--tb-h) / 2) repeat(var(--divisioni),var(--tb-h));grid-template-rows:calc(var(--tb-h) / 2) repeat(var(--divisioni),var(--tb-h));gap:0}
+.presenta-posizioni .tbtn{height:var(--tb-h);width:var(--tb-h);border:1px solid var(--line);margin:0;padding:0;border-radius:0}
+.presenta-posizioni .tbtn[data-cella]{border-right-width:0;border-bottom-width:0;box-shadow:1px 1px 0 var(--line)}
+.presenta-posizioni .presenta-posizione-asse{border:0;width:100%;height:100%;min-height:0;font-size:11px;line-height:1}
+.presenta-posizioni .tbtn[aria-pressed=true]{background:var(--teal-light);color:var(--teal-strong)}
+.presenta-proprieta-foglio[data-voce=righelli]{grid-template-columns:minmax(0,1fr)}
+.presenta-proprieta-foglio>.presenta-righelli{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px}
+.presenta-righelli .tbtn{gap:8px;border:1px solid var(--line)}
+@container(max-width:550px){.presenta-immagine-campi{grid-template-columns:minmax(0,1fr)}.presenta-disposizione-compatta .presenta-modelli{grid-template-columns:repeat(4,112px)}.presenta-disposizione-compatta .presenta-modello{width:112px}}

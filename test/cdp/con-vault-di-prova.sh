@@ -37,7 +37,7 @@ CFG_VERA="$HOME/Library/Application Support/studia/config.json"
 LAVORO="$(mktemp -d "${TMPDIR:-/tmp}/studia-prove-XXXXXX")"
 DATI="$LAVORO/dati"           # la cartella `userData` dell'istanza di prova
 VAULT="$LAVORO/vault"
-PORTA="${STUDIA_PORTA:-9333}"
+PORTA="${STUDIA_PORTA:-8999}"
 PID_APP=""
 
 # Si chiude l'app e si butta la cartella temporanea. Nessun ripristino: non c'è niente da
