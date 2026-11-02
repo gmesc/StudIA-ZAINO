@@ -24,9 +24,13 @@
 .presenta-proprieta{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;padding-top:8px;align-items:end}
 .presenta-aiuto{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
 .presenta-editor details>summary{font-size:12px;cursor:pointer;padding:8px 0}
-.presenta-azione{display:flex;align-items:end;gap:4px;margin-bottom:8px}
-.presenta-azione .presenta-campo{flex:1}
-.presenta-azione input{max-width:80px}
+.presenta-azione{display:grid;grid-template-columns:72px 208px var(--tb-h);align-items:end;gap:8px;flex:none}
+.presenta-azione :is(input,select){height:var(--tb-h);box-sizing:border-box}
+.presenta-azione>.tbtn{width:var(--tb-h);padding:0}
+.presenta-animazioni-controlli{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0}
+.presenta-animazioni-elenco{display:flex;flex-direction:column;gap:8px;max-width:100%;overflow-x:auto;padding-bottom:4px}
+.presenta-animazioni-elenco:empty{display:none}
+.presenta-animazioni-controlli>.tbtn{gap:8px}
 .presenta-drop{outline:2px solid var(--teal);outline-offset:-2px;background:var(--hover)}
 .presenta-bar .presenta-documento{flex:0 1 auto}
 .gobbo-corpo{overflow:auto;min-height:0;flex:1;padding:16px;display:flex;flex-direction:column;gap:12px}

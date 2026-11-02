@@ -42,9 +42,15 @@ app.whenReady().then(async()=>{
  await run('PresentaPlayer.comando({azione:"avanti"})');await run('PresentaPlayer.comando({azione:"avanti"})');
  await new Promise(r=>setTimeout(r,350));
  const immagine=await win.webContents.capturePage();const screenshot=process.env.PRESENTA_SCREENSHOT||path.join(tmp,'player.png');fs.mkdirSync(path.dirname(screenshot),{recursive:true});fs.writeFileSync(screenshot,immagine.toPNG());
- await run('PresentaPlayer.comando({azione:"vai",h:3,v:0,fragmentIndex:-1})');
+ await run('document.documentElement.dataset.movimentoRidotto="true";PresentaPlayer.comando({azione:"vai",h:3,v:0,fragmentIndex:-1})');
  const geometria=await run(`(()=>{const s=document.querySelector('section.present>.presenta-slide'),b=s.querySelectorAll('.presenta-blocco')[1],r=b.getBoundingClientRect(),a=s.getBoundingClientRect();return {sfondo:getComputedStyle(s).backgroundColor,colore:getComputedStyle(s).color,x:(r.x-a.x)/a.width*100,width:r.width/a.width*100,maniglie:document.querySelectorAll('.presenta-maniglia').length};})()`);
  assert.equal(geometria.sfondo,'rgb(15, 17, 21)');assert.equal(geometria.colore,'rgb(251, 251, 250)');assert(Math.abs(geometria.x-53)<.1&&Math.abs(geometria.width-40)<.1);assert.equal(geometria.maniglie,0);
+ win.setContentSize(1280,900);await run('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
+ if(process.env.PRESENTA_FOGLIO_SCREENSHOT)fs.writeFileSync(process.env.PRESENTA_FOGLIO_SCREENSHOT,(await win.webContents.capturePage()).toPNG());
+ const cornice=await run(`(()=>{const s=document.querySelector('section.present>.presenta-slide'),r=document.querySelector('.reveal'),b=document.querySelector('.backgrounds>.slide-background.present'),a=document.querySelector('.slides').getBoundingClientRect();return {sfondo:getComputedStyle(s).backgroundColor,esterno:getComputedStyle(b).backgroundColor,controlli:getComputedStyle(document.querySelector('.controls')).color,larghezza:a.width,altezza:a.height,disponibile:r.clientWidth};})()`);
+ assert.equal(cornice.esterno,cornice.sfondo,'le bande fuori dalla slide ereditano il suo sfondo');
+ assert.equal(cornice.controlli,'rgb(251, 251, 250)','i comandi del player restano visibili sullo sfondo scuro');
+ assert(Math.abs(cornice.larghezza-cornice.disponibile)<2&&Math.abs(cornice.larghezza/cornice.altezza-16/9)<.01,'il player usa tutta la larghezza senza deformare il foglio');
  assert((await run(`getComputedStyle(document.querySelector('section.present>.presenta-slide h2')).fontFamily`)).includes('Atkinson'));
  assert(await run(`document.fonts.load('32px "Atkinson Hyperlegible"').then(f=>f.length===1)`));assert(await run(`document.fonts.load('32px "TestMe Sans"').then(f=>f.length===1)`));
  const testoStile=await run(`(()=>{const b=document.querySelector('section.present>.presenta-slide .presenta-blocco:nth-child(2)'),t=b.querySelector('.presenta-testo'),s=getComputedStyle(t);return {font:s.fontFamily,peso:s.fontWeight,corsivo:s.fontStyle,interlinea:s.lineHeight,sottolineato:getComputedStyle(b).getPropertyValue('--sottolineato-testo')};})()`);assert(testoStile.font.includes('Georgia'));assert.equal(testoStile.peso,'700');assert.equal(testoStile.corsivo,'italic');assert.equal(testoStile.interlinea,'51.2px');assert.equal(testoStile.sottolineato,'underline');

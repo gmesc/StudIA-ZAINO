@@ -181,6 +181,19 @@ async function riordinaMiniature(da,a,dentro=false){
   await frameWait(`(()=>{const b=document.querySelector('[data-block-id="'+${q(textId)}+'"]'),s=getComputedStyle(b.querySelector('.presenta-contenuto'));return s.fontFamily.includes('Georgia')&&s.fontWeight==='700'&&s.fontStyle==='italic'&&getComputedStyle(b).getPropertyValue('--sottolineato-testo')==='underline';})()`);
   assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="title").style.fontFamily'),undefined);
   const misureFont=await c.val(`(()=>{const a=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect(),b=document.querySelector('#presentaPane [aria-label="Dimensione testo"]').getBoundingClientRect();return [a.height,b.height,a.y,b.y];})()`);assert.equal(misureFont[0],misureFont[1]);assert.equal(misureFont[2],misureFont[3]);
+  // I campi compatti delle animazioni modificano il frammento reale e restano annullabili.
+  const animazioniPrima=await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations');
+  await c.val('document.querySelector(".presenta-animazioni").scrollIntoView({block:"center",behavior:"instant"})');await c.clicca('.presenta-animazioni>summary');await click('Aggiungi effetto');
+  assert.deepEqual(await c.val('Array.from(document.querySelectorAll(".presenta-azione optgroup"),g=>g.label)'),['Entrata','Uscita','Evidenza']);
+  await c.val(`(()=>{const e=document.querySelector('.presenta-azione [aria-label="Effetto"]');e.value='fade-up';e.dispatchEvent(new Event('change'));})()`);
+  await c.val(`(()=>{const e=document.querySelector('.presenta-azione [aria-label="Passaggio"]');e.value='2';e.dispatchEvent(new Event('change'));})()`);
+  await frameWait(`!!document.querySelector('[data-block-id="'+${q(textId)}+'"] .fragment.fade-up[data-fragment-index="0"]')`);
+  assert(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations.some(a=>a.targetId==='+q(textId)+'&&a.step===1&&a.effect==="fade-up")'),'sequenza rinumerata senza salti, senza inserire clic vuoti');
+  await click('Aggiungi effetto');assert.equal(await c.val('document.querySelectorAll(".presenta-azione").length'),2);
+  assert(await c.val(`Array.from(document.querySelectorAll('.presenta-azione')).every(row=>{const es=[...row.querySelectorAll('input,select,button')].map(e=>e.getBoundingClientRect());return es[0].width<=73&&es[1].width<=209&&es.every(r=>Math.abs(r.bottom-es[0].bottom)<1&&Math.abs(r.height-es[0].height)<1);})`),'campi animazione corti e tutti i comandi allineati');
+  await c.val('document.querySelector(".presenta-animazioni").scrollIntoView({block:"center",behavior:"instant"})');fs.writeFileSync('/private/tmp/presenta-animazioni-compatte.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
+  await click('Rimuovi effetto');await click('Rimuovi effetto');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations'),animazioniPrima);
+  await click('Annulla nella presentazione');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations.length'),animazioniPrima.length+1);await click('Ripeti nella presentazione');await c.clicca('.presenta-animazioni>summary');
   await click('Stile');await click('Carattere per tutte le slide');
   assert.equal(await c.val('document.querySelectorAll(".presenta-font-opzione").length'),9);assert((await c.val(`getComputedStyle(document.querySelector('.presenta-font-opzione[aria-label="Atkinson Hyperlegible"]')).fontFamily`)).includes('Atkinson'));
   fs.writeFileSync('/private/tmp/presenta-font-reale.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
@@ -390,6 +403,7 @@ async function riordinaMiniature(da,a,dentro=false){
   const sid=await c.val('ZainoPresenta.regia.stato.sessionId');
   const target=(await (await fetch('http://localhost:'+(process.env.STUDIA_PORTA||8999)+'/json')).json()).find(t=>t.type==='page'&&t.url.endsWith('/presentazioni-player/index.html'));assert(target);const pubblico=await collegaTarget(target);
   assert.equal(await pubblico.val('typeof window.vault'),'undefined');assert(!await pubblico.val('document.documentElement.outerHTML.includes("NOTA_PRIVATA_UI")'));
+  assert(await pubblico.val(`(()=>{const s=document.querySelector('section.present>.presenta-slide'),b=document.querySelector('.slide-background.present:not(.stack)');return getComputedStyle(s).backgroundColor===getComputedStyle(b).backgroundColor;})()`),'anche il player nativo estende lo sfondo al viewport');
   await wait('!!document.querySelector(".presenta-immagine-ritagliata image")',pubblico);
   assert(await pubblico.val(`(async()=>{const e=document.querySelector('.presenta-immagine-ritagliata image'),img=new Image();img.src=e.getAttribute('href');await img.decode();return img.naturalWidth>0;})()`),'la sorgente del ritaglio si decodifica nel player pubblico');
   await pubblico.val('document.querySelector("audio").play()');assert.equal(await pubblico.val('document.querySelector("audio").paused'),false);

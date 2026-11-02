@@ -4,7 +4,7 @@
  const impostazioni=JSON.parse(document.getElementById('presenta-config').textContent),root=document.querySelector('.reveal');
  const ridotto=impostazioni.reducedMotion||matchMedia('(prefers-reduced-motion: reduce)').matches;
  const deck=new Reveal(root,{width:impostazioni.width,height:impostazioni.height,navigationMode:impostazioni.navigationMode,
-  hash:false,history:false,center:true,transition:ridotto?'none':'slide',autoAnimate:!ridotto,autoPlayMedia:null,
+  hash:false,history:false,center:true,margin:0,minScale:.01,maxScale:100,transition:ridotto?'none':'slide',autoAnimate:!ridotto,autoPlayMedia:null,
   showNotes:false,help:false,keyboard:{83:null},fragmentInURL:false,view:'slide',
   katex:{local:'runtime/katex',trust:false,throwOnError:false,maxExpand:1000,maxSize:20,ignoredClasses:['katex','presenta-formula-errore'],delimiters:[{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true},{left:'$$',right:'$$',display:true}]},
   plugins:[RevealMath.KaTeX]});

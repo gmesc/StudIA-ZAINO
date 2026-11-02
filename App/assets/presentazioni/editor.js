@@ -391,8 +391,6 @@
    for(const [k,nome]of [['start','Inizio (secondi)'],['end','Fine (secondi)']])intervallo.append(campo(nome,block[k],v=>patch({[k]:v===''?undefined:Number(v)}),{tipo:'number',min:0,max:604800,step:.1,opzionale:true}));
    box.append(intervallo,testoBottone('Usa media intero',null,()=>{patch({start:undefined,end:undefined});campiSlide();}));
   }
-  const details=E('details'),summary=E('summary','Animazioni avanzate'),props=E('div',null,'presenta-proprieta');details.append(summary,props);
-  details.dataset.pannello='oggetto';
   const stile=(k,v)=>{if(scrittura&&PresentaTesto.CHIAVI.includes(k)){formatoParole({[k]:v});return;}const corrente=posizione().slide.blocks.find(b=>b.id===block.id);patch({style:PresentaTesto.aggiornaStile(corrente.style,{[k]:v})});};
   const visibili=E('div',null,'presenta-proprieta tbar-ctl presenta-tipografia');
   visibili.append(sceltaCarattere('Carattere',block.style?.fontFamily||D.documento.settings.fontFamily||'zaino',v=>{stile('fontFamily',v);campiSlide();}),campo('Dimensione testo',block.style?.fontSize||(block.type==='title'?54:32),v=>stile('fontSize',Number(v)),{tipo:'number',min:12,max:160}),sceltaAllineamento('Allineamento del testo',block.style?.align||'left',false,v=>stile('align',v)),sceltaAllineamento('Posizione nel riquadro',block.style?.verticalAlign||'center',true,v=>stile('verticalAlign',v)));visibili.insertBefore(sceltaPeso('Peso del carattere',block.style?.fontFamily||D.documento.settings.fontFamily||'zaino',PresentaTesto.peso(block.style,block.type==='title'?700:400),v=>{stile('fontWeight',v);if(!scrittura)campiSlide();}),visibili.children[1]);visibili.children[0].firstElementChild.textContent='Font';visibili.children[1].firstElementChild.textContent='Peso';visibili.children[2].firstElementChild.textContent='Dimensione';visibili.children[2].classList.add('presenta-dimensione');box.append(visibili);
@@ -401,11 +399,21 @@
   const interlinea=campo('Interlinea',block.style?.lineHeight||(block.type==='title'?1.15:1.4),v=>stile('lineHeight',Number(v)),{opzioni:[[1,'Compatta · 1'],[1.15,'Stretta · 1,15'],[1.4,'Normale · 1,4'],[1.6,'Ampia · 1,6'],[2,'Doppia · 2']]});interlinea.classList.add('presenta-interlinea');visibili.insertBefore(formati,visibili.children[3]);visibili.append(interlinea,comandoPosizione(block));box.append(sceltaColore(block.type==='shape'?'Colore della forma':'Colore del testo',block.style?.color,v=>{if(formatoParole({color:v}))return;const corrente=posizione().slide.blocks.find(b=>b.id===block.id),style={...corrente.style};if(v)style.color=v;else delete style.color;patch({style});campiSlide();},{automatico:true}));
 
   if(inizio)visibili.prepend(inizio);
-  const actions=E('div');for(const a of s.animations.filter(a=>a.targetId===block.id)){
-   const row=E('div',null,'presenta-azione'),aggiorna=patch=>{const animations=posizione().slide.animations.map(x=>x.targetId===a.targetId&&x.step===a.step?{...x,...patch}:x);op({tipo:'animazioni',animations},{struttura:true});};
-   row.append(campo('Passaggio',a.step,v=>aggiorna({step:Number(v)}),{tipo:'number',min:1,max:1000}),campo('Effetto',a.effect,v=>aggiorna({effect:v}),{opzioni:Object.entries(M.EFFETTI)}),b('Rimuovi effetto','x',()=>op({tipo:'animazioni',animations:posizione().slide.animations.filter(x=>!(x.targetId===a.targetId&&x.step===a.step))},{struttura:true})));actions.append(row);
-  }actions.append(b('Aggiungi passaggio','plus',()=>{const animations=posizione().slide.animations;op({tipo:'animazioni',animations:[...animations,{targetId:block.id,step:Math.max(0,...animations.map(a=>a.step))+1,effect:'fade-in'}]},{struttura:true});}));details.append(actions);box.append(details);destinazione.append(box);
+  box.append(animazioniOggetto(block));destinazione.append(box);
  }
+ function animazioniOggetto(block){
+  const details=E('details',null,'presenta-animazioni tbar-ctl'),contenuto=E('div',null,'presenta-animazioni-controlli'),lista=E('div',null,'presenta-animazioni-elenco');details.dataset.pannello='oggetto';details.append(E('summary','Animazioni'),contenuto);contenuto.append(lista);
+  for(const a of posizione().slide.animations.filter(a=>a.targetId===block.id).sort((a,b)=>a.step-b.step)){
+   const row=E('div',null,'presenta-azione'),aggiorna=patch=>{const animations=posizione().slide.animations.map(x=>x.targetId===a.targetId&&x.step===a.step?{...x,...patch}:x);op({tipo:'animazioni',animations},{struttura:true});};
+   row.setAttribute('role','group');row.setAttribute('aria-label','Animazione al passaggio '+a.step);
+   const passo=campo('Passaggio',a.step,v=>aggiorna({step:Number(v)}),{tipo:'number',min:1,max:1000}),effetto=campo('Effetto',a.effect,v=>aggiorna({effect:v}),{opzioni:[]}),select=effetto.querySelector('select');
+   passo.title='Ordine nella sequenza, rinumerato senza salti. Oggetti diversi con lo stesso numero partono insieme.';
+   for(const [nome,ids]of [['Entrata',['fade-in','fade-up']],['Uscita',['fade-out']],['Evidenza',['grow','shrink','highlight-red']]]){const gruppo=E('optgroup');gruppo.label=nome;for(const id of ids)gruppo.append(new Option(M.EFFETTI[id],id));select.append(gruppo);}select.value=a.effect;
+   row.append(passo,effetto,b('Rimuovi effetto','trash-2',()=>op({tipo:'animazioni',animations:posizione().slide.animations.filter(x=>!(x.targetId===a.targetId&&x.step===a.step))},{struttura:true})));lista.append(row);
+  }
+  const aggiungi=testoBottone('Aggiungi effetto','plus',()=>{const animations=posizione().slide.animations;op({tipo:'animazioni',animations:[...animations,{targetId:block.id,step:Math.max(0,...animations.map(a=>a.step))+1,effect:'fade-in'}]},{struttura:true});});aggiungi.title='Aggiungi un effetto all’oggetto nel passaggio successivo';contenuto.append(aggiungi);return details;
+ }
+
  function modificaTabella(id){
   const documentoId=D.documento.id,sid=posizione().slide.id,originale=posizione().slide.blocks.find(b=>b.id===id),dialog=E('dialog',null,'presenta-materiali presenta-tabella-dialog'),bar=E('div',null,'tbar'),celle=E('div',null,'presenta-tabella-celle'),dimensioni=E('div',null,'tbar');let valori=M.copia(originale.table);
   function disegna(){celle.replaceChildren();celle.style.gridTemplateColumns='repeat('+valori[0].length+',minmax(120px,1fr))';valori.forEach((r,i)=>r.forEach((v,j)=>celle.append(campo('Riga '+(i+1)+' · colonna '+(j+1),v,t=>valori[i][j]=t,{maxLength:2000,espanso:true}))));}
