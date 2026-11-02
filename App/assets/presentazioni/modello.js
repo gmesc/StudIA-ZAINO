@@ -18,6 +18,17 @@
  function bersagli(s){return s.blocks.flatMap(b=>[b.id,...(b.items||[]).map(i=>i.id)]);}
  // Percentuali del foglio: il salvataggio resta indipendente dallo zoom e dallo split.
  function coloriPersonali(v={}){const colore=c=>typeof c==='string'&&/^#[a-fA-F0-9]{6}$/.test(c);return {ultimo:colore(v?.ultimo)?v.ultimo:'#22c55e',slots:Array.from({length:5},(_,i)=>colore(v?.slots?.[i])?v.slots[i]:null)};}
+ function ricordaColore(memoria,hex,slot){
+  if(typeof hex!=='string'||!/^#[a-fA-F0-9]{6}$/.test(hex)||slot!==undefined&&(!Number.isInteger(slot)||slot<0||slot>4))throw Error('Colore o slot non valido.');
+  const r=coloriPersonali(memoria);r.ultimo=hex.toLowerCase();
+  if(slot!==undefined)r.slots[slot]=r.ultimo;
+  else if(!r.slots.some(c=>c?.toLowerCase()===r.ultimo)){const libero=r.slots.indexOf(null);if(libero>=0)r.slots[libero]=r.ultimo;else{r.slots.shift();r.slots.push(r.ultimo);}}
+  return r;
+ }
+ function temaPersonale(v){
+  if(!v||typeof v.nome!=='string'||!v.nome.trim()||v.nome.length>40||!Object.hasOwn(CARATTERI,v.font)||!['sfondo','colore','accento'].every(k=>typeof v[k]==='string'&&/^#[a-fA-F0-9]{6}$/.test(v[k]))||!['titolo','testo'].every(k=>Number.isFinite(v[k])&&v[k]>=12&&v[k]<=120))return null;
+  return {nome:v.nome.trim(),font:v.font,sfondo:v.sfondo,colore:v.colore,accento:v.accento,titolo:v.titolo,testo:v.testo};
+ }
  function stileSlide(s){return {layout:s.layout,background:s.background||null,blocks:s.blocks.map(b=>({type:b.type,style:copia(b.style||{})}))};}
  function contrasto(c){const rgb=[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]>.179?'#16181d':'#fbfbfa';}
  function riquadro(b){return !!b&&!Array.isArray(b)&&Object.keys(b).length===4&&['x','y','width','height'].every(k=>Number.isFinite(b[k]))&&b.x>=0&&b.y>=0&&b.width>=2&&b.height>=2&&b.x+b.width<=100.001&&b.y+b.height<=100.001;}
@@ -165,9 +176,9 @@
    return esigi(d);
   }
   if(o.tipo==='stilePresentazione'){
-   const t=STILI[o.stile];if(!t)throw Error('Stile non disponibile.');
+   const t=o.tema?temaPersonale(o.tema):STILI[o.stile];if(!t)throw Error('Stile non disponibile.');
    const slide=o.tutte?posizioni(d).map(p=>p.slide):[trova(d,o.slideId).slide];if(o.tutte)d.settings.fontFamily=t.font;
-   for(const s of slide){s.background=t.sfondo;for(const b of s.blocks){b.style={...T.aggiornaStile(b.style,{fontFamily:t.font}),color:b.type==='title'?t.accento:t.colore,fontSize:b.type==='title'?54:32,lineHeight:b.type==='title'?1.15:1.4};if(b.richText)b.richText=T.comune(carattereEreditato(b.richText,t.font),'color');for(const i of b.items||[])if(i.richText)i.richText=T.comune(carattereEreditato(i.richText,t.font),'color');}}
+   for(const s of slide){s.background=t.sfondo;for(const b of s.blocks){b.style={...T.aggiornaStile(b.style,{fontFamily:t.font}),color:b.type==='title'?t.accento:t.colore,fontSize:b.type==='title'?(t.titolo||54):(t.testo||32),lineHeight:b.type==='title'?1.15:1.4};if(b.richText)b.richText=T.comune(carattereEreditato(b.richText,t.font),'color');for(const i of b.items||[])if(i.richText)i.richText=T.comune(carattereEreditato(i.richText,t.font),'color');}}
    return esigi(d);
   }
   const p=trova(d,o.slideId),s=p.slide;
@@ -285,5 +296,5 @@
    if(b.items)n.items=b.items.map(i=>scegli(i,['id','markdown','richText']));if(b.style)n.style=scegli(b.style,['column','span','row','rowSpan','fontSize','color','highlight','align','scale','box','verticalAlign','fontFamily','fontWeight','bold','italic','underline','lineHeight']);return n;
   })}))}))};
  }
- return {destinazioneSlide,allinea,aggancia,STILI,sistema,trasportoSidebar,selezioneObsoleta,ritaglioValido,ritaglia,proporzioneRitaglio,CARATTERI,MODELLI,daModello,copiaOggetto,coloriPersonali,stileSlide,contrasto,riquadro,muovi,iniziale,disponi,ancora,VERSIONE,STRUMENTI,EFFETTI,LAYOUT,crea,slide,copia,posizioni,trova,bersagli,valida,esigi,applica,cronologia,indiceFragment,risorseUsate,pubblica};
+ return {ricordaColore,temaPersonale,destinazioneSlide,allinea,aggancia,STILI,sistema,trasportoSidebar,selezioneObsoleta,ritaglioValido,ritaglia,proporzioneRitaglio,CARATTERI,MODELLI,daModello,copiaOggetto,coloriPersonali,stileSlide,contrasto,riquadro,muovi,iniziale,disponi,ancora,VERSIONE,STRUMENTI,EFFETTI,LAYOUT,crea,slide,copia,posizioni,trova,bersagli,valida,esigi,applica,cronologia,indiceFragment,risorseUsate,pubblica};
 });

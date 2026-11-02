@@ -51,6 +51,28 @@ const differita=()=>{let resolve,reject;return {promise:new Promise((r,j)=>{reso
  foglio=M.applica(foglio,{tipo:'aggiungiSlide',slideId:fid});const secondoId=foglio.stacks[1].slides[0].id;foglio=M.applica(foglio,{tipo:'aggiungiSlide',slideId:secondoId,direzione:'sotto'});const dettaglio=foglio.stacks[1].slides[1].id;
  foglio=M.applica(foglio,{tipo:'riordinaSlide',slideId:secondoId,destinazione:fid});assert.equal(foglio.stacks[0].slides[0].id,secondoId);assert.equal(foglio.stacks[0].slides[1].id,dettaglio,'spostare l’argomento conserva gli approfondimenti');
  foglio=M.applica(foglio,{tipo:'riordinaSlide',slideId:dettaglio,destinazione:fid,dopo:true});assert.equal(foglio.stacks[2].slides[0].id,dettaglio);assert(validatePresentazione(foglio).ok);
+ // I colori scelti si ricordano senza un gesto di salvataggio; gli slot espliciti restano modificabili.
+ const vuoti=M.coloriPersonali(),mem=M.ricordaColore(vuoti,'#0EA5E9');
+ assert.equal(mem.slots[0],'#0ea5e9');assert.equal(vuoti.slots[0],null);
+ assert.deepEqual(M.ricordaColore(mem,'#0ea5e9'),mem,'nessun duplicato automatico');
+ assert.equal(M.ricordaColore(mem,'#22c55e',4).slots[4],'#22c55e');
+ assert.throws(()=>M.ricordaColore(mem,'url(no)'));assert.throws(()=>M.ricordaColore(mem,'#ffffff',5));
+ const pieni={ultimo:'#555555',slots:['#111111','#222222','#333333','#444444','#555555']};
+ assert.deepEqual(M.ricordaColore(pieni,'#666666').slots,['#222222','#333333','#444444','#555555','#666666']);
+ // I temi personali sono dati limitati, applicabili senza toccare geometrie e contenuti.
+ const tema=M.temaPersonale({nome:'Mio stile',font:'atkinson-next',sfondo:'#e0f2fe',colore:'#0c4a6e',accento:'#075985',titolo:48,testo:28});
+ assert(tema);assert.equal(M.temaPersonale({...tema,font:'url(no)'}),null);assert.equal(M.temaPersonale({...tema,testo:999}),null);
+ const primaTema=M.copia(foglio),storiaTema=M.cronologia(foglio);
+ storiaTema.applica({tipo:'stilePresentazione',slideId:fid,tema,tutte:true});
+ for(const p of M.posizioni(storiaTema.documento)){
+  assert.equal(p.slide.background,tema.sfondo);
+  for(const b of p.slide.blocks)assert.equal(b.style.fontSize,b.type==='title'?48:28);
+ }
+ assert.equal(storiaTema.documento.settings.fontFamily,'atkinson-next');
+ assert.deepEqual(M.trova(storiaTema.documento,fid).slide.blocks[1].style.box,M.trova(primaTema,fid).slide.blocks[1].style.box);
+ assert.equal(M.trova(storiaTema.documento,fid).slide.blocks[1].markdown,M.trova(primaTema,fid).slide.blocks[1].markdown);
+ assert.deepEqual(storiaTema.annulla(),primaTema);assert(validatePresentazione(storiaTema.ripeti()).ok);
+ assert.throws(()=>M.applica(foglio,{tipo:'stilePresentazione',slideId:fid,tema:{...tema,sfondo:'red;url(no)'}}));
  const palette=M.coloriPersonali({ultimo:'#ABCDEF',slots:['#123456','url(bad)',null,'#654321','#000000','#ffffff']});assert.equal(palette.ultimo,'#ABCDEF');assert.deepEqual(palette.slots,['#123456',null,null,'#654321','#000000']);assert.equal(M.coloriPersonali(null).slots.length,5);
  const Colori=require('../App/assets/presentazioni/colori');
  assert.equal(Colori.palette.length,242);assert.equal(new Set(Colori.palette.map(c=>c.id)).size,242);
