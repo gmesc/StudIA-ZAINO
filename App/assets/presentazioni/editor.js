@@ -208,8 +208,8 @@
  }
  function iconaAllineamento(v,verticale){
   const x=({left:3,center:7,right:11})[v]||3,y=({start:4,center:8,end:12})[v]||4;
-  const d=verticale?'M3 2h18M3 22h18M5 '+y+'h14M5 '+(y+4)+'h14M5 '+(y+8)+'h14':'M3 4h18M'+x+' 9h10M3 14h18M'+x+' 19h10';
-  return '<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="'+d+'"/></svg>';
+  const disegno=verticale?'<path d="M3 2h18M3 22h18" stroke="var(--muted)"/><rect x="5" y="'+y+'" width="14" height="8" fill="currentColor" stroke="none"/>':'<path d="M3 4h18M'+x+' 9h10M3 14h18M'+x+' 19h10"/>';
+  return '<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">'+disegno+'</svg>';
  }
  function sceltaAllineamento(nome,valore,verticale,fn){
   const box=E('div',null,'presenta-campo presenta-allineamento'),voci=verticale?[['start','In alto'],['center','Al centro'],['end','In basso']]:[['left','Sinistra'],['center','Centro'],['right','Destra']];
@@ -322,13 +322,13 @@
   const aperti=[...campi.querySelectorAll('details[open]')].map(e=>e.dataset.pannello);campi.replaceChildren();const p=posizione();if(!p)return;slideId=p.slide.id;const s=p.slide;if(!['@titolo','@disposizione','@stile','@righelli'].includes(bloccoId)&&!s.blocks.some(b=>b.id===bloccoId))bloccoId='';
   if(gruppo.length>1){campi.append(comandiGruppo());oggetti();return;}
   const block=s.blocks.find(b=>b.id===bloccoId),titolo=block?.type==='title'||bloccoId==='@titolo',props=E('div',null,'presenta-proprieta-foglio');props.dataset.voce=titolo?'titolo':bloccoId==='@stile'?'stile':bloccoId==='@disposizione'?'disposizione':bloccoId==='@righelli'?'righelli':block?.type||'sfondo';
-  if(titolo){const contenuto=E('section');contenuto.append(campo('Titolo della slide',s.title,v=>op({tipo:'titoloSlide',title:v}),{maxLength:140}));contenuto.querySelector('.presenta-campo>span').textContent='Titolo';if(block)bloccoCampi(block,contenuto);props.append(contenuto);}
+  if(titolo){const contenuto=E('section'),titolo=campo('Titolo della slide',s.title,v=>op({tipo:'titoloSlide',title:v}),{maxLength:140});titolo.firstElementChild.remove();titolo.classList.add('presenta-titolo-campo');if(block)bloccoCampi(block,contenuto,titolo);else contenuto.append(titolo);props.append(contenuto);}
   else if(block){const contenuto=E('section');bloccoCampi(block,contenuto);props.append(contenuto);}
   else if(bloccoId==='@righelli'){props.append(pannelloRighelli());}
   else if(bloccoId==='@stile'){props.append(stiliPronti());}
   else if(bloccoId==='@disposizione'){const disposizione=E('section',null,'presenta-disposizione-compatta');const mod=modelli();mod.append(bacchetta());disposizione.append(mod);props.append(disposizione);}
   else{
-   const sfondo=E('section');sfondo.append(sceltaColore('Sfondo della slide',s.background,v=>op({tipo:'slide',background:v},{struttura:true})));props.append(sfondo);
+   const sfondo=sceltaColore('Sfondo della slide',s.background,v=>op({tipo:'slide',background:v},{struttura:true}));sfondo.firstElementChild.remove();sfondo.setAttribute('role','group');sfondo.setAttribute('aria-label','Sfondo della slide');props.append(sfondo);
   }
   campi.append(props);for(const key of aperti){const el=campi.querySelector('details[data-pannello="'+key+'"]');if(el)el.open=true;}oggetti();
  }
@@ -367,7 +367,7 @@
   bar.append(E('strong','Sistema la slide'),E('span',null,'tbspazio'),testoBottone('Annulla proposta','x',()=>dialog.close()),testoBottone('Applica disposizione','check',()=>{if(corso!==z||JSON.stringify({...D.documento,revision:0})!==prima)throw Error('La presentazione è cambiata. Riapri la proposta.');op({tipo:'posizionaBlocchi',boxes},{struttura:true});dialog.close();}));
   dialog.append(bar,anteprima);document.body.append(dialog);dialog.addEventListener('close',()=>{window.removeEventListener('message',ascolta);dialog.remove();},{once:true});dialog.showModal();
  }
- function bloccoCampi(block,destinazione){
+ function bloccoCampi(block,destinazione,inizio=null){
   const box=E('section',null,'presenta-blocco-editor');box.dataset.blockId=block.id;
   const patch=v=>cambiaBlocco(block.id,v),s=posizione().slide;
   if(block.type==='text'&&scrittura)box.append(testoBottone('Termina scrittura','check',()=>{fineScrittura();campiSlide();disegna();}));
@@ -375,7 +375,7 @@
   else if(block.type==='text'&&block.richText){box.append(campoTestoRicco(block));const comandi=E('div',null,'tbar presenta-scrittura-comandi');box.append(comandi);comandi.append(testoBottone('Scrivi sul foglio','pencil',()=>scriviSulFoglio(block.id)),testoBottone('Modifica sorgente Markdown',null,()=>{if(confirm('Passare al sorgente Markdown rimuove i font, i colori e le dimensioni delle singole parole. Grassetto, corsivo e formule restano. Puoi annullare.')){patch({richText:undefined});campiSlide();}}));}
   else if(block.type==='title'){}
   else if(block.type==='shape')box.append(campo('Forma',block.shape,v=>patch({shape:v}),{opzioni:[['rectangle','Rettangolo'],['ellipse','Ellisse'],['arrow','Freccia']]}));
-  else if(block.type==='table')box.append(testoBottone('Modifica celle','pencil',()=>modificaTabella(block.id)));
+  else if(block.type==='table'){inizio=testoBottone('Modifica celle','pencil',()=>modificaTabella(block.id));inizio.classList.add('presenta-celle-comando');}
   else if(block.type==='math')box.append(campo('Formula · LaTeX',block.latex,v=>patch({latex:v}),{tipo:'textarea',maxLength:20000}));
   else if(block.type==='list')box.append(campo('Elenco · una voce per riga',block.items.map(i=>i.richText?PresentaTesto.piano(i.richText):i.markdown).join('\n'),v=>{
    const corrente=posizione().slide.blocks.find(b=>b.id===block.id);patch({items:v.split('\n').map((markdown,i)=>{const prima=corrente.items[i];return prima&&(prima.richText?PresentaTesto.piano(prima.richText):prima.markdown)===markdown?prima:{id:prima?.id||crypto.randomUUID(),markdown,...(prima?.richText?{richText:PresentaTesto.riscrivi(prima.richText,markdown)}:{})};})});
@@ -400,6 +400,7 @@
   for(const [k,nome,lettera]of [['bold','Grassetto','G'],['italic','Corsivo','C'],['underline','Sottolineato','S']]){const attivo=k==='bold'?PresentaTesto.peso(block.style,block.type==='title'?700:400)>=600:!!block.style?.[k],bt=b(nome,null,()=>{if(scrittura){formatoParole({[k]:'toggle'});return;}stile(k,!attivo);campiSlide();});bt.textContent=lettera;bt.style.fontWeight=k==='bold'?'700':'400';bt.style.fontStyle=k==='italic'?'italic':'normal';bt.style.textDecoration=k==='underline'?'underline':'none';bt.setAttribute('aria-pressed',String(attivo));bt.title=nome+(scrittura?' · parole selezionate':' · intero oggetto');formati.append(bt);}
   const interlinea=campo('Interlinea',block.style?.lineHeight||(block.type==='title'?1.15:1.4),v=>stile('lineHeight',Number(v)),{opzioni:[[1,'Compatta · 1'],[1.15,'Stretta · 1,15'],[1.4,'Normale · 1,4'],[1.6,'Ampia · 1,6'],[2,'Doppia · 2']]});interlinea.classList.add('presenta-interlinea');visibili.insertBefore(formati,visibili.children[3]);visibili.append(interlinea,comandoPosizione(block));box.append(sceltaColore(block.type==='shape'?'Colore della forma':'Colore del testo',block.style?.color,v=>{if(formatoParole({color:v}))return;const corrente=posizione().slide.blocks.find(b=>b.id===block.id),style={...corrente.style};if(v)style.color=v;else delete style.color;patch({style});campiSlide();},{automatico:true}));
 
+  if(inizio)visibili.prepend(inizio);
   const actions=E('div');for(const a of s.animations.filter(a=>a.targetId===block.id)){
    const row=E('div',null,'presenta-azione'),aggiorna=patch=>{const animations=posizione().slide.animations.map(x=>x.targetId===a.targetId&&x.step===a.step?{...x,...patch}:x);op({tipo:'animazioni',animations},{struttura:true});};
    row.append(campo('Passaggio',a.step,v=>aggiorna({step:Number(v)}),{tipo:'number',min:1,max:1000}),campo('Effetto',a.effect,v=>aggiorna({effect:v}),{opzioni:Object.entries(M.EFFETTI)}),b('Rimuovi effetto','x',()=>op({tipo:'animazioni',animations:posizione().slide.animations.filter(x=>!(x.targetId===a.targetId&&x.step===a.step))},{struttura:true})));actions.append(row);

@@ -165,6 +165,8 @@
 .presenta-blocco-editor>.presenta-tipografia>.presenta-peso{width:112px}
 .presenta-blocco-editor>.presenta-tipografia>.presenta-dimensione{width:64px}
 .presenta-blocco-editor>.presenta-tipografia>.presenta-interlinea{width:160px}
+.presenta-campo-breve.presenta-titolo-campo{width:160px;align-self:end}
+.presenta-celle-comando{width:max-content;height:var(--tb-h);align-self:end;gap:8px}
 .presenta-allineamento>.tbtn{height:var(--tb-h);min-width:var(--tb-min);border:1px solid var(--line);padding-inline:8px}
 .presenta-posizione-compatta .presenta-posizioni{grid-template-columns:repeat(3,var(--tb-h));gap:2px;width:max-content}
 .presenta-posizioni .tbtn{height:var(--tb-h);min-width:0;padding:0}

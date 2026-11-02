@@ -115,6 +115,7 @@ async function riordinaMiniature(da,a,dentro=false){
   await click('Riga 2');assert.equal(await c.val('document.querySelectorAll(".presenta-posizioni [data-cella][aria-pressed=true]").length'),4);
   await cicloRighelli(1);await click('Testo');await click('Posizione');assert.equal(await c.val('document.querySelectorAll(".presenta-posizioni [data-cella]").length'),9);
   await click('Sfondo');assert.equal(await c.val('document.querySelectorAll('+q('.presenta-campi [aria-label="Titolo della slide"]')+').length'),0);
+  assert(!await c.val('!!document.querySelector(".presenta-proprieta-foglio>.presenta-colori>span")'),'Sfondo senza titolo ripetuto');
   await click('Colore personalizzato dello sfondo');await click('sky-500');await click('Bianco');
   assert.equal(await c.val('document.querySelector('+q('#presentaPane [aria-label="Colore personalizzato dello sfondo"]')+').dataset.colore'),'#0ea5e9','l’ultimo colore manuale resta disponibile dopo un preset');
   const misureColore=await c.val('(()=>{const p=document.querySelector(".presenta-personalizzato"),b=document.querySelector("#presentaPane [aria-label=Bianco]");return [p.getBoundingClientRect().height,b.getBoundingClientRect().height];})()');assert.equal(misureColore[0],misureColore[1]);
@@ -311,6 +312,7 @@ async function riordinaMiniature(da,a,dentro=false){
    if(tab==='Stile')assert(await c.val('(()=>{const g=document.querySelector(".presenta-stili-galleria").getBoundingClientRect(),c=document.querySelector(".presenta-stili-controlli").getBoundingClientRect();return g.left>c.right&&Math.abs(g.top-c.top)<2;})()'),'galleria affiancata nello split largo');
    if(['Testo','Titolo'].includes(tab))assert(await c.val(`(()=>{const p=document.querySelector('[aria-label="Posizione"]').getBoundingClientRect(),i=document.querySelector(".presenta-interlinea").getBoundingClientRect();return p.width<=90&&i.width<=161;})()`),'Posizione e interlinea compatti');
    if(['Testo','Titolo','Immagine'].includes(tab))assert(await c.val(`(()=>{const a=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect();return ['Grassetto','Corsivo','Sottolineato','Posizione'].every(n=>{const b=document.querySelector('#presentaPane [aria-label="'+n+'"]').getBoundingClientRect();return Math.abs(b.bottom-a.bottom)<1&&Math.abs(b.height-a.height)<1;});})()`) ,'formati e posizione nella riga del font');
+   if(tab==='Titolo')assert(await c.val(`(()=>{const e=document.querySelector('.presenta-titolo-campo'),a=e.querySelector('button').getBoundingClientRect(),b=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect();return !e.querySelector(':scope>span')&&a.width<=161&&Math.abs(a.bottom-b.bottom)<1&&Math.abs(a.height-b.height)<1;})()`),'campo Titolo breve e allineato al font senza etichetta ripetuta');
    fs.writeFileSync('/private/tmp/presenta-'+tab.toLowerCase()+'-largo.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
    if(tab==='Titolo'){await click('Posizione');fs.writeFileSync('/private/tmp/presenta-posizione-bubble.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));await click('Posizione');}
   }
@@ -350,6 +352,12 @@ async function riordinaMiniature(da,a,dentro=false){
   await click('Aggiungi tabella');await wait('!!document.querySelector(".presenta-tabella-dialog[open]")');
   await c.val(`(()=>{const e=document.querySelector('[aria-label="Riga 1 · colonna 1"]');e.value='Organismo';e.dispatchEvent(new Event('input'));})()`);
   await c.clicca('[aria-label="Applica tabella"]');await frameWait('document.querySelector(".presenta-slide table th")?.textContent==="Organismo"');
+  await click('Tabella');
+  assert(await c.val(`(()=>{const e=document.querySelector('#presentaPane [aria-label="Modifica celle"]'),a=e.getBoundingClientRect(),b=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect();return e.parentElement.classList.contains('presenta-tipografia')&&a.width<180&&Math.abs(a.bottom-b.bottom)<1&&Math.abs(a.height-b.height)<1;})()`),'Modifica celle compatto nella riga del font');
+  const layoutTabella=await c.val('bancoStato()');await c.val('bancoForma("uno");bancoAssegna("A","presenta");document.querySelector(".presenta-proprieta-foglio").scrollIntoView({block:"end",behavior:"instant"})');
+  fs.writeFileSync('/private/tmp/presenta-tabella-compatta.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
+  await click('Modifica celle');await wait('!!document.querySelector(".presenta-tabella-dialog[open]")');await c.clicca('[aria-label="Annulla tabella"]');
+  await c.val(`BANCO.stato=${q(layoutTabella)};bancoSalva();bancoDisegna()`);
   await click('Annulla nella presentazione');await click('Annulla nella presentazione');
   // La disposizione cambia; il DOM dell'editor e la bozza restano gli stessi.
   await c.val(`window.__presentaPane=document.getElementById('presentaPane');bancoForma('quattro');bancoScambia('A','D');bancoForma('due-col');bancoMostra('presenta')`);
