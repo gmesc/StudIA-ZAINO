@@ -179,6 +179,32 @@ async function riordinaMiniature(da,a,dentro=false){
   await click('Modifica colore');await click('rose-500');
   assert.equal(await c.val('JSON.parse(localStorage.getItem("studia.presenta.colori")).slots[4]'),'#f43f5e','lo slot vuoto torna riutilizzabile');
 
+  // Sfondi veri: risorse indipendenti dai blocchi, non una grande immagine spostabile.
+  const Fsfondo=require('../fixtures/presentazioni');
+  await c.val(`window.vault.album.salva('biologia',{origine:'foto',materiale:'sfondo.gif',didascalia:'Sfondo animato',dati:'data:image/gif;base64,${Fsfondo.gif.toString('base64')}'});fotoAggiorna()`);
+  const videoDir=path.join(v,'Zaini/biologia/MATERIALI/Video');fs.mkdirSync(videoDir,{recursive:true});fs.writeFileSync(path.join(videoDir,'04 Sfondo.webm'),Fsfondo.video);
+  const blocchiPrimaSfondo=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks');
+  const scegliSfondo=async(tipo,label)=>{const prima=await c.val('ZainoPresenta.documento.stacks[0].slides[0].backgroundMedia?.assetId');await click(tipo);await wait('!!document.querySelector(".presenta-materiali[open]")');await c.clicca('.presenta-materiali [aria-label='+q(label)+']');await wait('!!ZainoPresenta.documento.stacks[0].slides[0].backgroundMedia&&ZainoPresenta.documento.stacks[0].slides[0].backgroundMedia.assetId!=='+q(prima));};
+  await scegliSfondo('Immagine/GIF di sfondo','Immagine · Foglia sintetica');
+  await frameWait(`!!document.querySelector('section.present[data-background-image^="presenta://"]')&&getComputedStyle(document.querySelector('section.present>.presenta-slide')).backgroundColor==='rgba(0, 0, 0, 0)'`);
+  await frameWait(`(()=>{const s=document.querySelector('.slide-background.present .slide-background-content');return !!s&&getComputedStyle(s).backgroundImage.includes('presenta://');})()`);
+  assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks'),blocchiPrimaSfondo);
+  await c.val(`(()=>{const e=document.querySelector('[aria-label="Visualizzazione sfondo"]');e.value='contain';e.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+  await frameWait(`document.querySelector('section.present').dataset.backgroundSize==='contain'`);fs.writeFileSync('/private/tmp/presenta-sfondo-immagine.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
+  await scegliSfondo('Immagine/GIF di sfondo','Immagine · Sfondo animato');await c.val('ZainoPresenta.flush()');
+  const gifAsset=await c.val('ZainoPresenta.documento.assets[ZainoPresenta.documento.stacks[0].slides[0].backgroundMedia.assetId]');assert.equal(gifAsset.mimeType,'image/gif');assert.deepEqual(fs.readFileSync(path.join(v,'Zaini/biologia/PRESENTAZIONI',id,gifAsset.path)),Fsfondo.gif,'GIF originale conservata senza conversione in immagine statica');
+  await frameWait(`(()=>{const el=document.querySelector('section.present');return el.dataset.backgroundImage?.endsWith('.gif')&&document.querySelector('.slide-background.present .slide-background-content').style.backgroundImage.includes('.gif');})()`);
+  await scegliSfondo('Video di sfondo','Video · 04 Sfondo.webm');
+  await frameWait(`(()=>{const m=document.querySelector('.slide-background.present video');return !!m&&m.readyState>=2&&m.paused&&m.muted&&m.loop;})()`);
+  await click('Audio dello sfondo');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].backgroundMedia.muted'),false);await click('Audio dello sfondo');
+  await click('Ripeti video di sfondo');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].backgroundMedia.loop'),false);await click('Ripeti video di sfondo');
+  await c.val('document.querySelector(".presenta-sfondo-comandi").scrollIntoView({block:"center",behavior:"instant"})');fs.writeFileSync('/private/tmp/presenta-sfondo-video.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));await click('Prova sfondo');await wait(`document.querySelector('.presenta-prova-animazioni')?.dataset.pronto==='true'`);
+  const urlSfondo=await c.val('document.querySelector(".presenta-prova-animazioni iframe").src'),targetsSfondo=await (await fetch('http://localhost:'+(process.env.STUDIA_PORTA||8999)+'/json')).json();
+  const playerSfondo=await collegaTarget(targetsSfondo.find(t=>t.type==='iframe'&&t.url===urlSfondo&&t.id!==frameClient.id));
+  await wait(`(()=>{const m=document.querySelector('.slide-background.present video');return !!m&&m.readyState>=2&&!m.paused&&m.muted&&m.loop;})()`,playerSfondo);
+  await c.clicca('.presenta-prova-animazioni [aria-label="Chiudi prova"]');await wait('!document.querySelector(".presenta-prova-animazioni")');
+  await click('Rimuovi media di sfondo');assert(!await c.val('ZainoPresenta.documento.stacks[0].slides[0].backgroundMedia'));await click('Annulla nella presentazione');assert.equal(await c.val('ZainoPresenta.documento.assets[ZainoPresenta.documento.stacks[0].slides[0].backgroundMedia.assetId].kind'),'video');await click('Rimuovi media di sfondo');
+
   await click('Usa colore 2');await click('Copia stile');await click('Sfondo');await click('Nero');await click('Incolla stile');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].background'),'#0ea5e9');
   assert.equal(await c.val('getComputedStyle(document.querySelector("#presentaPane iframe")).outlineWidth'),'0px','nessuna cornice sullo sfondo colorato');
   await click('Testo');await click('Allineamento del testo');await click('Allineamento del testo · Destra');
@@ -306,7 +332,7 @@ async function riordinaMiniature(da,a,dentro=false){
   await c.val('ZainoPresenta.flush()');assert.equal(JSON.parse(fs.readFileSync(path.join(v,'Zaini/biologia/PRESENTAZIONI',id,'presentazione.json'))).stacks.length,1);
   await click('Annulla nella presentazione');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks.map(s=>s.slides.map(s=>s.id))'),ordinePrima);
 
-  await click('Duplica slide');assert.equal(await c.val('PresentaModello.posizioni(ZainoPresenta.documento).length'),4);await click('Annulla nella presentazione');assert.equal(await c.val('PresentaModello.posizioni(ZainoPresenta.documento).length'),3);await click('Ripeti nella presentazione');assert.equal(await c.val('PresentaModello.posizioni(ZainoPresenta.documento).length'),4);await click('Annulla nella presentazione');
+  await click('Duplica slide');await wait('PresentaModello.posizioni(ZainoPresenta.documento).length===4');assert.equal(await c.val('PresentaModello.posizioni(ZainoPresenta.documento).length'),4);await click('Annulla nella presentazione');assert.equal(await c.val('PresentaModello.posizioni(ZainoPresenta.documento).length'),3);await click('Ripeti nella presentazione');assert.equal(await c.val('PresentaModello.posizioni(ZainoPresenta.documento).length'),4);await click('Annulla nella presentazione');
   await c.val('ZainoPresenta.flush()');await click('Chiudi presentazione');await wait('!ZainoPresenta.documento');
   await c.val(`ZainoPresenta.apri(${q(id)})`);assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style.fontFamily'),'georgia');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box'),geometriaSalvata);assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").crop'),ritaglioSalvato);assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].notes.markdown'),'NOTA_PRIVATA_UI · Chiedere un esempio alla classe.');
   await click('Audio');await c.val(`(()=>{const e=document.querySelector('#presentaPane [aria-label="Fine (secondi)"]');e.value='.8';e.dispatchEvent(new Event('change'));})()`);await frameWait('document.querySelector("audio")?.getAttribute("src")?.endsWith("#t=0,0.8")');
@@ -453,6 +479,7 @@ async function riordinaMiniature(da,a,dentro=false){
   await scrivi('Titolo della slide','Ultima battuta prima del cambio');await c.val("cambiaZaino('storia',true)");await wait('zainoAttivo()==="storia" && !ZainoPresenta.documento');
   assert.equal(JSON.parse(fs.readFileSync(path.join(v,'Zaini/biologia/PRESENTAZIONI',id,'presentazione.json'))).stacks[0].slides[0].title,'Ultima battuta prima del cambio');
   await c.val("cambiaZaino('biologia',true)");await wait('!!ZainoPresenta.documento');assert.equal(await c.val('ZainoPresenta.documento.id'),id);
+  await c.val(`(()=>{const d=ZainoPresenta.documento,assetId=Object.keys(d.assets).find(k=>d.assets[k].kind==='video');ZainoPresenta.modifica({tipo:'sfondoMedia',slideId:d.stacks[1].slides[0].id,backgroundMedia:{assetId,fit:'cover',muted:true,loop:true}},{struttura:true});})()`);
   await c.val('ZainoPresenta.presenta()');await wait('!!ZainoPresenta.regia');
   await wait('document.querySelector("#gobboPane .gobbo-note")?.textContent.includes("NOTA_PRIVATA_UI")');
   const sid=await c.val('ZainoPresenta.regia.stato.sessionId');
@@ -464,8 +491,8 @@ async function riordinaMiniature(da,a,dentro=false){
   await pubblico.val('document.querySelector("audio").play()');assert.equal(await pubblico.val('document.querySelector("audio").paused'),false);
 
   assert((await c.val(`window.vault.presentazioni.comando({azione:'sessione',corso:'biologia',sessionId:${q(sid)},comando:'avanti'})`)).ok);
-  await wait('ZainoPresenta.regia?.stato.h===1');assert.equal(await pubblico.val('document.querySelector(\"audio\").paused'),true);assert.equal(await c.val('document.querySelector("#gobboPane .gobbo-titolo").textContent'),'Secondo argomento');
-  assert((await c.val(`window.vault.presentazioni.comando({azione:'sessione',corso:'biologia',sessionId:${q(sid)},comando:'approfondisci'})`)).ok);await wait('ZainoPresenta.regia?.stato.v===1');
+  await wait('ZainoPresenta.regia?.stato.h===1');assert.equal(await pubblico.val('document.querySelector(\"audio\").paused'),true);assert.equal(await c.val('document.querySelector("#gobboPane .gobbo-titolo").textContent'),'Secondo argomento');await wait(`(()=>{const m=document.querySelector('section.present[data-background-video]').slideBackgroundElement.querySelector('video');return m.readyState>=2&&!m.paused&&m.muted&&m.loop;})()`,pubblico);
+  assert((await c.val(`window.vault.presentazioni.comando({azione:'sessione',corso:'biologia',sessionId:${q(sid)},comando:'approfondisci'})`)).ok);await wait('ZainoPresenta.regia?.stato.v===1');assert(await pubblico.val(`document.querySelector('.slide-background video').paused`),'video di sfondo fermato entrando nell’approfondimento');
   for(const tema of ['chiaro','scuro']){
    await c.val(`document.documentElement.dataset.theme=${q(tema)}`);
    const stile=await c.val(`(()=>{const b=getComputedStyle(document.querySelector('#presentaPane [aria-label="Inserisci"]')),r=getComputedStyle(document.querySelector('#limPane .tbtn'));return {altezza:b.height,riferimento:r.height,font:b.fontSize,fontRiferimento:r.fontSize,angoli:b.borderRadius};})()`);

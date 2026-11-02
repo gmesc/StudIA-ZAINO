@@ -24,6 +24,14 @@ Il player nativo e l’export HTML adattano il foglio alla massima area disponib
 
 La testata di PRESENTA avvia il deck reale. GOBBO è marcato privato nel registro e non offre la proiezione generica, neppure nella barra a schermo intero. Una sessione usa la revisione fissata all’avvio: eventuali modifiche successive nell’editor non cambiano in silenzio le note o le slide già proiettate.
 
+
+Gli sfondi **SFONDO → Immagine/GIF** e **SFONDO → Video** scelgono una risorsa da MEDIA dello stesso zaino. Il media resta dietro tutti gli oggetti e non è selezionabile sul foglio. **Riempi slide** copre il foglio ritagliando i bordi; **Mostra tutto** conserva l’intera immagine o il video. Il colore già scelto rimane sotto al media e ricompare tornando a **Colore** o usando il cestino. Queste azioni e la sostituzione si possono annullare.
+
+Le GIF conservano l’originale animato. I video partono **muti e in ripetizione**: **Audio** e **Ripeti** modificano queste opzioni. Nell’editor il video è fermo e muto; **Prova sfondo** apre la prova in movimento. In presentazione lo sfondo parte entrando nella slide e si ferma quando la si lascia. Le immagini/GIF compaiono nelle miniature come fotogrammi statici; gli sfondi video sono indicati con «Video». Il file viene copiato nell’archivio della presentazione e incluso nell’HTML offline, con controllo dell’impronta anche se usato soltanto come sfondo. GIF e video non vengono convertiti; la compatibilità video dipende dai codec del browser.
+
+Il contratto mantiene `background` per il colore e aggiunge l’oggetto opzionale `backgroundMedia` (`assetId`, `fit`, `loop`, `muted`); valgono le stesse risorse locali verificate degli oggetti. Nessun URL arbitrario e nessun iframe/web incorporato. `risorseUsate`, pubblicazione, anteprima a capacità, export e cronologia includono lo sfondo. Duplicazione, nuove slide da modello e copia dello stile lo conservano. Il main dichiara la capacità `sfondiMedia`: una finestra aggiornata sopra un main precedente chiede il riavvio prima di importare.
+
+
 ## Strumenti di base e mockup dell’evoluzione
 
 La barra espone **Documento**, **Inserisci**, **Presenta** e **Apri GOBBO**. Nel menu Documento restano creazione, rinomina, salvataggio, esportazione HTML, eliminazione e chiusura. **Anteprima pulita** è stata rimossa: Escape o un clic sul foglio vuoto deselezionano l’oggetto e chiudono la bolla. Escape funziona anche dal pannello delle proprietà; i menu e le finestre aperte si chiudono per primi. Il menu **…** sotto il foglio rende raggiungibili le azioni dell’oggetto selezionato senza click destro.

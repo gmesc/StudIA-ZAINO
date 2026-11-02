@@ -53,3 +53,6 @@ body{background:var(--bg);color:var(--ink)}
 .reveal .fragment.presenta-animazione{opacity:1;visibility:visible;transform:none;transition:none}
 .reveal .fragment.presenta-animazione[data-entrata="true"]:not(.visible){opacity:0}
 .reveal .presenta-slide[data-layout="free"]>.presenta-blocco[data-movimento="true"]{overflow:visible}
+
+/* Il colore resta sulle bande Reveal; il foglio lascia vedere il media sottostante. */
+.presenta-slide[data-sfondo-media=true]{background:transparent}

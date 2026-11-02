@@ -14,5 +14,9 @@
    default:throw Error('Comando non disponibile.');
   }return stato(deck);
  }
- return {stato,comando};
+ function sincronizzaMedia(deck,root,passivo){
+  const slide=deck?.getCurrentSlide(),p=deck?.getIndices(),sfondo=p&&deck.getSlideBackground(p.h,p.v);
+  for(const m of root.querySelectorAll('audio,video')){const dietro=!!m.closest('.slide-background');if(passivo||!(slide?.contains(m)||sfondo?.contains(m)))m.pause();m.muted=passivo||dietro&&!!slide?.hasAttribute('data-background-video-muted');}
+ }
+ return {stato,comando,sincronizzaMedia};
 });

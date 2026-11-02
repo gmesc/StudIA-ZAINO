@@ -9,7 +9,7 @@
   katex:{local:'runtime/katex',trust:false,throwOnError:false,maxExpand:1000,maxSize:20,ignoredClasses:['katex','presenta-formula-errore'],delimiters:[{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true},{left:'$$',right:'$$',display:true}]},
   plugins:[RevealMath.KaTeX]});
  let pronto=false,observer,animazioni;
- function silenzia(){const current=deck.getCurrentSlide();for(const m of root.querySelectorAll('audio,video'))if(!current?.contains(m)||document.documentElement.dataset.passiva==='true'){m.pause();m.muted=document.documentElement.dataset.passiva==='true';}}
+ function silenzia(){PresentaNavigazione.sincronizzaMedia(deck,root,document.documentElement.dataset.passiva==='true');}
  function stato(){return PresentaNavigazione.stato(deck);}
  function cambiata(){silenzia();window.dispatchEvent(new CustomEvent('presenta:stato',{detail:stato()}));}
  function comando(o){if(!pronto)throw Error('Player non ancora pronto.');return PresentaNavigazione.comando(deck,o);}

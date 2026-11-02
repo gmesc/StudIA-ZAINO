@@ -104,7 +104,7 @@
   bottoni.salva.disabled=disabled||!d;bottoni.nuova.disabled=disabled||!corso;
   const messaggio=listaErrore||D.errore;stato.textContent=messaggio?'Non salvato: '+messaggio:D.salvando?'Salvataggio…':D.sporco?'Modifiche da salvare':d?'Salvato':'PRESENTA';stato.dataset.errore=String(!!messaggio);
   for(const e of campi.querySelectorAll('input,textarea,select,button'))e.disabled=disabled||!d||e.dataset.vuoto==='true';const eliminaSlide=campi.querySelector('[aria-label="Elimina slide"]');if(eliminaSlide)eliminaSlide.disabled=disabled||!d||M.posizioni(d).length===1;
-  if(d&&p){frame.style.aspectRatio=d.settings.width+'/'+d.settings.height;frame.dataset.sfondoBianco=String(C.sfondoBianco(p.slide.background,d.settings.theme));if(avviso.dataset.slideId!==p.slide.id)avviso.hidden=true;}
+  if(d&&p){frame.style.aspectRatio=d.settings.width+'/'+d.settings.height;frame.dataset.sfondoBianco=String(!p.slide.backgroundMedia&&C.sfondoBianco(p.slide.background,d.settings.theme));if(avviso.dataset.slideId!==p.slide.id)avviso.hidden=true;}
   disegnaScaletta();
   oggetti();ricorda();sidebar();anteprima();sincronizzaSelezione();disegnaGobbo();
  }
@@ -252,7 +252,7 @@
   if(s.blocks.some(b=>b.id===bloccoId)){const menu=b('Comandi dell’oggetto',null,()=>{const r=menu.getBoundingClientRect();menuOggetto({blockId:bloccoId,anchor:{x:r.left,y:r.bottom}});});menu.textContent='…';menu.disabled=occupato||D.bloccato;oggettiNav.append(E('span',null,'tbspazio'),menu);}
  }
  function disegnaMiniature(compilata,immagini={}){
-  const html=compilata.html.replace(/(src|href)="([^"]+)"/g,(intero,attributo,src)=>{if(attributo==='href'&&!/^(assets\/|presenta:)/.test(src))return intero;let p;try{p=new URL(src).pathname.slice(1);}catch(_){p=src;}return attributo+'="'+(immagini[p]||'')+'"';});const dom=new DOMParser().parseFromString(html,'text/html'),viste=[...dom.querySelectorAll('.presenta-slide')];miniature=new Map(M.posizioni(D.documento).map((p,i)=>[p.slide.id,{html:viste[i]?.outerHTML||'',settings:compilata.settings}]));miniGiro++;disegnaScaletta();
+  const html=compilata.html.replace(/(src|href|data-background-image|data-background-video)="([^"]+)"/g,(intero,attributo,src)=>{if(attributo==='href'&&!/^(assets\/|presenta:)/.test(src))return intero;let p;try{p=new URL(src).pathname.slice(1);}catch(_){p=src;}return attributo+'="'+(immagini[p]||'')+'"';});const dom=new DOMParser().parseFromString(html,'text/html'),viste=[...dom.querySelectorAll('.presenta-slide')];miniature=new Map(M.posizioni(D.documento).map((p,i)=>[p.slide.id,{html:viste[i]?.parentElement?.outerHTML||'',settings:compilata.settings}]));miniGiro++;disegnaScaletta();
  }
  function scalaMiniatura(box){const w=Number(box.dataset.larghezza)||1280;box.firstElementChild.style.transform='scale('+box.clientWidth/w+')';}
  const osservaMini=new ResizeObserver(entries=>entries.forEach(e=>scalaMiniatura(e.target)));
@@ -262,7 +262,7 @@
    for(const pos of posizioni){
     const nome=(pos.h+1)+(pos.v?'.'+pos.v:'')+' · '+(pos.slide.title||'Senza titolo'),bt=b(nome,null,()=>scegliSlide(pos.slide.id));bt.classList.add('presenta-slide-mini');bt.dataset.slideId=pos.slide.id;bt.dataset.verticale=String(pos.v>0);bt.draggable=true;bt.setAttribute('aria-keyshortcuts','Shift+F10');bt.title=nome+' · Trascina al centro di una miniatura per creare un approfondimento; sui bordi per riordinare.'+(pos.v?'':' La slide porta con sé i suoi approfondimenti.');
     const mini=E('div',null,'presenta-mini'),v=miniature.get(pos.slide.id),scena=E('div',null,'presenta-mini-scena');mini.setAttribute('aria-hidden','true');mini.dataset.larghezza=v?.settings.width||1280;mini.style.aspectRatio=(v?.settings.width||1280)+' / '+(v?.settings.height||720);scena.style.width=(v?.settings.width||1280)+'px';scena.style.height=(v?.settings.height||720)+'px';scena.dataset.tema=v?.settings.theme||'zaino-light';
-    if(v){scena.innerHTML=v.html;for(const e of scena.querySelectorAll('audio,video'))e.replaceWith(E('span',e.tagName==='AUDIO'?'Audio':'Video'));for(const e of scena.querySelectorAll('a,button,input'))e.tabIndex=-1;}
+    if(v){scena.innerHTML=v.html;const section=scena.querySelector('section');scena.style.backgroundColor=section?.dataset.backgroundColor||'';if(section?.dataset.backgroundImage){scena.style.backgroundImage='url('+JSON.stringify(section.dataset.backgroundImage)+')';scena.style.backgroundSize=section.dataset.backgroundSize;scena.style.backgroundPosition='center';scena.style.backgroundRepeat='no-repeat';}if(section?.hasAttribute('data-background-video'))scena.append(E('span','Video','presenta-mini-video'));for(const e of scena.querySelectorAll('audio,video'))e.replaceWith(E('span',e.tagName==='AUDIO'?'Audio':'Video'));for(const e of scena.querySelectorAll('a,button,input'))e.tabIndex=-1;}
     else scena.append(E('h2',pos.slide.title));mini.append(scena);bt.replaceChildren(mini,E('span',nome,'presenta-mini-numero'));bt.oncontextmenu=e=>{e.preventDefault();menuSlide(pos.slide.id,e.clientX,e.clientY);};bt.onkeydown=e=>{if(e.key==='ContextMenu'||e.shiftKey&&e.key==='F10'){e.preventDefault();const r=bt.getBoundingClientRect();menuSlide(pos.slide.id,r.left,r.bottom);}};
     const destinazione=e=>{const r=bt.getBoundingClientRect();return trascinaSlide?M.destinazioneSlide(D.documento,trascinaSlide,pos.slide.id,(e.clientY-r.top)/r.height):null;};
     const pulisci=()=>scaletta.querySelectorAll('[data-destinazione]').forEach(b=>{delete b.dataset.destinazione;delete b.dataset.dropLabel;});
@@ -368,7 +368,16 @@
   else if(bloccoId==='@stile'){props.append(stiliPronti());}
   else if(bloccoId==='@disposizione'){const disposizione=E('section',null,'presenta-disposizione-compatta');const mod=modelli();mod.append(bacchetta());disposizione.append(mod);props.append(disposizione);}
   else{
-   const sfondo=sceltaColore('Sfondo della slide',s.background,v=>op({tipo:'slide',background:v},{struttura:true}));sfondo.firstElementChild.remove();sfondo.setAttribute('role','group');sfondo.setAttribute('aria-label','Sfondo della slide');props.append(sfondo);
+   const media=s.backgroundMedia,risorsa=media&&D.documento.assets[media.assetId],bar=E('div',null,'tbar presenta-bar presenta-sfondo-tipi');bar.setAttribute('role','group');bar.setAttribute('aria-label','Tipo di sfondo');
+   const colore=testoBottone('Colore','palette',()=>{if(media)op({tipo:'sfondoMedia',backgroundMedia:null},{struttura:true});}),immagine=testoBottone('Immagine/GIF di sfondo','image',()=>scegliMateriale(null,'image')),video=testoBottone('Video di sfondo','video',()=>scegliMateriale(null,'video'));
+   immagine.lastElementChild.textContent='Immagine/GIF';video.lastElementChild.textContent='Video';for(const [bt,attivo]of [[colore,!media],[immagine,risorsa?.kind==='image'],[video,risorsa?.kind==='video']]){bt.setAttribute('aria-pressed',String(attivo));bar.append(bt);}props.append(bar);
+   if(!media){const sfondo=sceltaColore('Sfondo della slide',s.background,v=>op({tipo:'slide',background:v},{struttura:true}));sfondo.firstElementChild.remove();sfondo.setAttribute('role','group');sfondo.setAttribute('aria-label','Sfondo della slide');props.append(sfondo);}
+   else{
+    const comandi=E('div',null,'tbar tbar-ctl presenta-bar presenta-sfondo-comandi'),nome=E('span',risorsa.source?.title|| (risorsa.mimeType==='image/gif'?'GIF animata':risorsa.kind==='video'?'Video':'Immagine'),'presenta-sfondo-nome');nome.title=nome.textContent;
+    const aggiorna=patch=>op({tipo:'sfondoMedia',backgroundMedia:{...media,...patch}},{struttura:true}),fit=campo('Visualizzazione sfondo',media.fit,v=>aggiorna({fit:v}),{opzioni:[['cover','Riempi slide'],['contain','Mostra tutto']]});fit.firstElementChild.textContent='Dimensione';fit.title='Riempi slide: copre tutto, ritagliando i bordi. Mostra tutto: mantiene visibile l’intero media.';comandi.append(nome,fit);
+    if(risorsa.kind==='video'){const audio=testoBottone('Audio dello sfondo','volume-2',()=>aggiorna({muted:media.muted===false})),ripeti=testoBottone('Ripeti video di sfondo','refresh-cw',()=>aggiorna({loop:media.loop===false}));audio.lastElementChild.textContent='Audio';ripeti.lastElementChild.textContent='Ripeti';audio.setAttribute('aria-pressed',String(media.muted===false));ripeti.setAttribute('aria-pressed',String(media.loop!==false));comandi.append(audio,ripeti);}
+    comandi.append(testoBottone('Prova sfondo','play',provaAnimazioni),b('Rimuovi media di sfondo','trash-2',()=>op({tipo:'sfondoMedia',backgroundMedia:null},{struttura:true})));props.append(comandi);
+   }
   }
   campi.append(props);adattaBarra(campi.querySelector('.presenta-tipografia'));for(const key of aperti){const el=campi.querySelector('details[data-pannello="'+key+'"]');if(el)el.open=true;}oggetti();
  }
@@ -485,7 +494,7 @@
  }
  async function provaAnimazioni(){
   fineScrittura();const d=D.documento,p=coordinate(),r=await call({azione:'vista',documento:d});if(D.documento?.id!==d.id)return;
-  const dialog=E('dialog',null,'presenta-materiali presenta-prova-animazioni'),bar=E('div',null,'tbar'),preview=E('iframe'),canaleProva=crypto.randomUUID();dialog.setAttribute('aria-label','Prova le animazioni della slide');dialog.dataset.pronto='false';preview.title='Anteprima delle animazioni';preview.setAttribute('sandbox','allow-scripts');preview.style.aspectRatio=d.settings.width+'/'+d.settings.height;preview.src=frame.src;
+  const dialog=E('dialog',null,'presenta-materiali presenta-prova-animazioni'),bar=E('div',null,'tbar'),preview=E('iframe'),canaleProva=crypto.randomUUID();dialog.setAttribute('aria-label','Prova le animazioni della slide');dialog.dataset.pronto='false';preview.title='Anteprima delle animazioni';preview.setAttribute('sandbox','allow-scripts');preview.allow='autoplay';preview.style.aspectRatio=d.settings.width+'/'+d.settings.height;preview.src=frame.src;
   const invia=o=>preview.contentWindow.postMessage({presenta:canaleProva,...o},'*');const rinizia=()=>invia({tipo:'vai',posizione:{...p,fragmentIndex:-1}});
   bar.append(E('strong','Prova la slide'),E('span',null,'tbspazio'),testoBottone('Ricomincia','undo-2',rinizia),testoBottone('Indietro','chevron-left',()=>invia({tipo:'passoAnimazione',indietro:true})),testoBottone('Avanti','chevron-right',()=>invia({tipo:'passoAnimazione'})),b('Chiudi prova','x',()=>dialog.close()));
   const controlli=[...bar.querySelectorAll('button')].slice(0,-1);controlli.forEach(b=>b.disabled=true);const statoProva=E('output','Caricamento della slide…','presenta-stato');statoProva.setAttribute('role','status');bar.append(statoProva);
@@ -567,26 +576,29 @@
  async function rinomina(){const t=await askText('Titolo della presentazione',D.documento.title);if(t!==null){modifica({tipo:'titolo',title:t.trim()});await salvaTutto();await ricaricaLista();}}
  async function chiudi(){await salvaTutto();fineScrittura();selezioneGiro++;await call({azione:'lascia'});D.svuota();slideId='';previewGiro++;firma='';quadro=null;frame.contentWindow.postMessage({presenta:canale,tipo:'quadro',documento:{html:'',settings:{width:1280,height:720,theme:'zaino-light',navigationMode:'default'}}},'*');campiSlide();disegna();}
  async function elimina(){if(!confirm('Spostare questa presentazione e i suoi media nel Cestino di sistema?'))return;const {d,z}=await pronta();await call({azione:'lascia'},z);await call({azione:'elimina',id:d.id},z);if(z!==corso)return;D.svuota();await ricaricaLista();}
- async function importa(trasporto,sostituisci=null){
+ async function importa(trasporto,sostituisci=null,sfondo=null){
   if(typeof trasporto==='string')trasporto=JSON.parse(trasporto);
   if(!D.documento)throw Error('Crea o apri prima una presentazione.');const z=corso,id=D.documento.id,sid=posizione().slide.id,n=selezioneGiro;
   await salvaTutto();const r=await call({azione:'materiale',id,trasporto,baseRevision:D.documento.revision},z);
   if(z!==corso||id!==D.documento?.id||sid!==posizione()?.slide.id||n!==selezioneGiro)throw Error('La slide è cambiata durante il caricamento. Ripeti l’inserimento.');
+  if(sfondo){if(!r.asset||r.asset.kind!==sfondo)throw Error('Scegli un’immagine, una GIF o un video del tipo richiesto.');op({tipo:'sfondoMedia',asset:r.asset,assetId:r.assetId,backgroundMedia:{assetId:r.assetId,fit:'cover',loop:true,muted:true}},{struttura:true});scegliBlocco('');return;}
   const doc=op({tipo:sostituisci?'sostituisciMedia':'inserisciBlocco',...(sostituisci?{blockId:sostituisci}:{}),block:r.block,...(r.asset?{asset:r.asset,assetId:r.assetId}:{})},{struttura:true});scegliBlocco(sostituisci||M.trova(doc,sid).slide.blocks.at(-1).id);
  }
- async function scegliMateriale(sostituisci=null){
+ async function scegliMateriale(sostituisci=null,sfondo=null){
+  if(sfondo&&!(await call({azione:'strumenti'})).sfondiMedia)throw Error('Riavvia ZAINO per usare immagini e video come sfondo.');
   const voci=[];for(const e of (window.vault.evidenze.leggi(corso)?.evidenze||[]).filter(e=>window.kwEParolaChiave(e)))voci.push({label:'Parola · '+(e.exact||e.id).slice(0,80),t:LimModello.trasporto('keyword',e.id,corso)});
   for(const e of window.vault.album.elenco(corso)?.voci||[])voci.push({label:'Immagine · '+(e.didascalia||e.titolo||e.title||e.id),t:LimModello.trasporto('album',e.id,corso)});
   const media=await window.vault.media.elenco(corso);for(const e of Array.isArray(media)?media:media?.elenco||[])voci.push({label:(e.tipo==='audio'?'Audio':'Video')+' · '+(e.nome||e.name||e.file),t:{version:1,tipo:e.tipo,file:e.file||e.nome||e.name,corso}});
   for(const v of voci)if(typeof v.t==='string')v.t=JSON.parse(v.t);
   if(sostituisci){const tipo=posizione().slide.blocks.find(b=>b.id===sostituisci)?.type;for(let i=voci.length-1;i>=0;i--)if(voci[i].t.tipo!==(tipo==='image'?'album':tipo))voci.splice(i,1);}
-  if(!voci.length){window.toast?.('Non ci sono ancora parole chiave o media in questo zaino.',false);return;}
+  if(sfondo)for(let i=voci.length-1;i>=0;i--)if(voci[i].t.tipo!==(sfondo==='image'?'album':'video'))voci.splice(i,1);
+  if(!voci.length){window.toast?.(sfondo==='image'?'Aggiungi prima un’immagine o una GIF a MEDIA → Immagini.':sfondo==='video'?'Aggiungi prima un video a MEDIA → Video.':'Non ci sono ancora parole chiave o media in questo zaino.',false);return;}
   const scelta=await new Promise(resolve=>{
-   const dialog=E('dialog',null,'lim-menu presenta-materiali'),bar=E('div',null,'tbar'),title=E('strong','Inserisci dallo zaino');let scelta=null;
+   const dialog=E('dialog',null,'lim-menu presenta-materiali'),bar=E('div',null,'tbar'),title=E('strong',sfondo==='image'?'Scegli immagine o GIF di sfondo':sfondo==='video'?'Scegli video di sfondo':'Inserisci dallo zaino');let scelta=null;
    bar.append(title,E('span',null,'tbspazio'),b('Chiudi inserimento','x',()=>dialog.close()));dialog.append(bar);
-   for(const [i,v]of voci.entries()){const button=E('button',v.label,'lim-menu-voce');button.type='button';button.onclick=()=>{scelta=i;dialog.close();};dialog.append(button);}
+   for(const [i,v]of voci.entries()){const button=E('button',v.label,'lim-menu-voce');button.type='button';button.setAttribute('aria-label',v.label);button.onclick=()=>{scelta=i;dialog.close();};dialog.append(button);}
    dialog.addEventListener('close',()=>{dialog.remove();resolve(scelta);},{once:true});document.body.append(dialog);dialog.showModal();
-  });if(scelta!==null)await importa(voci[scelta].t,sostituisci);
+  });if(scelta!==null)await importa(voci[scelta].t,sostituisci,sfondo);
  }
  async function presenta(){const {d,z}=await pronta();if(regia?.stato.presentationId===d.id&&regia.stato.documentRevision===d.revision){await sessione('mostra');return;}const r=await call({azione:'presenta',id:d.id,baseRevision:d.revision},z);regia=r.regia;disegnaGobbo();}
  async function sessione(comando,extra={}){if(!regia)throw Error('Avvia prima una presentazione.');const r=await call({azione:'sessione',sessionId:regia.stato.sessionId,comando,...extra});regia=r.regia;disegnaGobbo();}

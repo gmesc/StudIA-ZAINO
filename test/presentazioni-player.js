@@ -18,14 +18,27 @@ app.whenReady().then(async()=>{
   if(type==='table')b.table=[['Pianeta','Lune'],['Terra','1']];else if(type==='list')b.items=[{id:'uno',markdown:'Osserva'},{id:'due',markdown:'Spiega'}];else if(type==='shape')b.shape='arrow';else b.markdown=e.id==='letters'?'Caffè 👩‍🚀 e **Terra**':'La **Terra** gira intorno al Sole.';
   slide.blocks=[b];slide.animations=[{targetId:b.id,effect:e.id,step:1,duration:.2,delay:.05,distance:40}];if(e.id==='fade-in')slide.animations.push({targetId:b.id,effect:'words',step:2,duration:.2});esempi.stacks.push({id:require('node:crypto').randomUUID(),slides:[slide]});
  }
- const index=path.join(exported.cartella,'index.html');fs.writeFileSync(index,fs.readFileSync(index,'utf8').replace('</div></div><script',R.compila(foglio).html+R.compila(esempi).html+'</div></div><script'));
+ const Fsfondo=require('./fixtures/presentazioni');let sfondi=M.crea('00000000-0000-4000-8000-000000000001','Sfondi');sfondi.stacks=[];
+ for(const [i,[kind,ext,dati]]of [['image','png',bytes],['image','gif',Fsfondo.gif],['video','webm',Fsfondo.video]].entries()){const sha256=require('node:crypto').createHash('sha256').update(dati).digest('hex'),assetId='sfondo_'+i,a={kind,path:'assets/'+sha256+'.'+ext,mimeType:kind+'/'+ext,size:dati.length,sha256};sfondi.assets[assetId]=a;fs.writeFileSync(path.join(exported.cartella,a.path),dati);const s=M.slide();s.title='Sfondo '+ext;s.background='#000000';s.backgroundMedia={assetId,fit:i===0?'contain':'cover',muted:true,loop:true};sfondi.stacks.push({id:require('node:crypto').randomUUID(),slides:[s]});}
+ const index=path.join(exported.cartella,'index.html');fs.writeFileSync(index,fs.readFileSync(index,'utf8').replace('</div></div><script',R.compila(foglio).html+R.compila(esempi).html+R.compila(sfondi).html+'</div></div><script'));
  const spostato=path.join(tmp,'altro-percorso');fs.renameSync(exported.cartella,spostato);
  win=new BrowserWindow({show:false,width:1280,height:720,webPreferences:{backgroundThrottling:false,sandbox:true,contextIsolation:true,nodeIntegration:false,webSecurity:true,partition:'presenta-prova'}});
  win.webContents.on('console-message',event=>{if(event.level==='error')errori.push(event.message);});
  win.webContents.session.webRequest.onBeforeRequest({urls:['<all_urls>']},(d,cb)=>{if(!d.url.startsWith('file:'))rete.push(d.url);cb({cancel:!d.url.startsWith('file:')});});
  await win.loadFile(path.join(spostato,'index.html'));
  const run=async js=>{try{return await win.webContents.executeJavaScript(js,true);}catch(e){throw Error(js+'\n'+e.message+'\n'+errori.join('\n'));}};
- const stato=await run('PresentaPlayer.ready');assert.deepEqual(stato,{h:0,v:0,fragmentIndex:-1});
+ async function verificaSfondi(){
+ // Sfondo immagine/GIF reale e video in movimento nel pacchetto spostato.
+ const bgH=4+A.catalogo.length;
+ for(let i=0;i<2;i++){await run(`PresentaPlayer.comando({azione:'vai',h:${bgH+i},v:0,fragmentIndex:-1});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))`);const vista=await run(`(async()=>{const s=document.querySelector('section.present[data-background-image]'),img=new Image();img.src=s.dataset.backgroundImage;await img.decode();return {width:img.naturalWidth,colore:getComputedStyle(s.querySelector('.presenta-slide')).backgroundColor,src:s.dataset.backgroundImage,background:document.querySelector('section.present[data-background-image]').slideBackgroundContentElement.style.backgroundImage};})()`);assert(vista.width>0&&vista.colore==='rgba(0, 0, 0, 0)'&&vista.background.includes(vista.src),JSON.stringify(vista));}
+ const primoGif=(await win.webContents.capturePage()).toBitmap().subarray(0,4).toString('hex');let gifCambiata=false;
+ for(let n=0;n<10&&!gifCambiata;n++){await new Promise(r=>setTimeout(r,150));gifCambiata=(await win.webContents.capturePage()).toBitmap().subarray(0,4).toString('hex')!==primoGif;}assert(gifCambiata,'lo sfondo GIF cambia realmente fotogramma');
+ await run(`PresentaPlayer.comando({azione:'vai',h:${bgH+2},v:0,fragmentIndex:-1})`);
+ for(let n=0;n<80&&!await run(`(()=>{const m=document.querySelector('section.present[data-background-video]').slideBackgroundElement.querySelector('video');return m&&m.readyState>=2&&!m.paused&&m.currentTime>0;})()`);n++)await new Promise(r=>setTimeout(r,50));
+ const videoBg=await run(`(()=>{const m=document.querySelector('section.present[data-background-video]').slideBackgroundElement.querySelector('video');return {ready:m.readyState,paused:m.paused,time:m.currentTime,muted:m.muted,loop:m.loop};})()`);assert(videoBg.ready>=2&&!videoBg.paused&&videoBg.time>0&&videoBg.muted&&videoBg.loop,JSON.stringify(videoBg));
+ await run(`PresentaPlayer.comando({azione:'vai',h:${bgH},v:0,fragmentIndex:-1})`);assert(await run(`document.querySelector('.slide-background video').paused`),'video di sfondo fermato quando si lascia la slide');
+ }
+ const stato=await run('PresentaPlayer.ready');assert.deepEqual(stato,{h:0,v:0,fragmentIndex:-1});if(process.env.PRESENTA_SOLO_SFONDI){await verificaSfondi();assert.deepEqual(rete,[]);assert.deepEqual(errori,[]);console.log('✓ Sfondi offline immagine/GIF/video, riproduzione e pausa');app.exit(0);return;}
  assert.equal(await run('document.fonts.status'),'loaded');assert.equal(await run('document.querySelector("audio").paused'),true);
  assert.deepEqual(await run('PresentaPlayer.comando({azione:"argomentoSuccessivo"})'),{h:1,v:0,fragmentIndex:-1});
  assert.equal(await run('document.querySelector("section.present > .presenta-slide .fragment[data-effetto=fade-in]").classList.contains("visible")'),false);
@@ -101,6 +114,7 @@ app.whenReady().then(async()=>{
  }
  await run('PresentaPlayer.comando({azione:"vai",h:3,v:0,fragmentIndex:-1})');
  const immagineEvidenza=await run(`(()=>{const e=document.querySelector('section.present .presenta-contenuto:has(svg image)'),prima=e.getAttribute('style'),h=PresentaAnimazioniDOM.esegui(e,{effect:'highlight-red'},{finale:true});const colore=getComputedStyle(e).outlineColor;h.revert();return {colore,prima,dopo:e.getAttribute('style')};})()`);assert.equal(immagineEvidenza.colore,'rgb(239, 68, 68)',JSON.stringify(immagineEvidenza));assert.equal(immagineEvidenza.dopo,immagineEvidenza.prima);
+ await verificaSfondi();
  assert.deepEqual(rete,[],'nessuna dipendenza di rete');assert.deepEqual(errori,[],'nessun errore del renderer');
  await run('PresentaPlayer.destroy()');console.log('✓ Player reale offline: passi, simultaneità, inverso, Auto-Animate verticale, formule, media, privacy e pacchetto spostato.');console.log('Schermata: '+screenshot);app.exit(0);
 }).catch(e=>{console.error(e);app.exit(1);});

@@ -266,3 +266,5 @@
 .presenta-galleria-effetti{min-height:100px;overflow-y:auto;overscroll-behavior:contain;padding:2px}
 
 .presenta-runtime-avviso{flex:none;margin:0 0 12px;font-size:14px;line-height:1.4;padding:8px;border-left:3px solid var(--teal-strong);background:var(--hover)}
+
+.presenta-sfondo-tipi{margin-bottom:8px}.presenta-proprieta-foglio[data-voce=sfondo]{gap:8px}.presenta-sfondo-comandi{align-items:end;gap:8px}.presenta-sfondo-comandi .presenta-campo{width:176px;flex:none}.presenta-sfondo-comandi>.tbtn{align-self:end}.presenta-sfondo-nome{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:end;font-size:var(--tb-fs);line-height:var(--tb-h)}.presenta-mini-video{position:absolute;bottom:16px;right:16px;font-size:32px;color:var(--muted)}

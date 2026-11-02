@@ -60,6 +60,29 @@ const differita=()=>{let resolve,reject;return {promise:new Promise((r,j)=>{reso
  const htmlFoglio=Rivela.compila(foglio).html;assert(htmlFoglio.includes('left:19%'));assert(htmlFoglio.includes('background-color:#0f1115'));assert(htmlFoglio.includes('color:#fbfbfa'));
  assert.throws(()=>M.applica(foglio,{tipo:'slide',slideId:fid,background:'red;url(http://example.com)'}),/Sfondo/);
  const errato=M.copia(foglio);errato.stacks[0].slides[0].blocks[0].style.box.x=500;assert(!validatePresentazione(errato).ok);
+ // Gli sfondi sono risorse del documento, separati dai blocchi e presenti anche nell’export.
+ {
+  const asset=(kind,ext,n)=>({kind,path:'assets/'+String(n).repeat(64)+'.'+ext,mimeType:kind==='image'?'image/'+ext:'video/webm',sha256:String(n).repeat(64),size:10,source:{kind:'album',id:'privata',title:'Fonte privata'}});
+  const foto=asset('image','png',1),gif=asset('image','gif',2),video=asset('video','webm',3),sfondo={assetId:'foto_sfondo',fit:'cover',loop:true,muted:true};
+  const storia=M.cronologia(foglio);storia.applica({tipo:'sfondoMedia',slideId:fid,assetId:sfondo.assetId,asset:foto,backgroundMedia:sfondo});const d=storia.documento;
+  assert.deepEqual(d.stacks[0].slides[0].blocks,foglio.stacks[0].slides[0].blocks);assert(validatePresentazione(d).ok);
+  assert.deepEqual(M.risorseUsate(d),['foto_sfondo']);assert(!JSON.stringify(M.pubblica(d)).includes('Fonte privata'));
+  assert.deepEqual(M.pubblica(d).stacks[0].slides[0].backgroundMedia,sfondo);
+  assert(Rivela.compila(d).html.includes('data-background-image="'+foto.path+'"'));assert(Rivela.compila(d).html.includes('data-sfondo-media="true"'));
+  assert.equal(storia.annulla().stacks[0].slides[0].backgroundMedia,undefined);assert.deepEqual(storia.ripeti().stacks[0].slides[0].backgroundMedia,sfondo);
+  const g=M.applica(d,{tipo:'sfondoMedia',slideId:fid,assetId:'gif_sfondo',asset:gif,backgroundMedia:{...sfondo,assetId:'gif_sfondo',fit:'contain'}});
+  assert(Rivela.compila(g).html.includes('data-background-image="'+gif.path+'"'));assert(Rivela.compila(g).html.includes('data-background-size="contain"'));
+  const v=M.applica(g,{tipo:'sfondoMedia',slideId:fid,assetId:'video_sfondo',asset:video,backgroundMedia:{...sfondo,assetId:'video_sfondo'}}),html=Rivela.compila(v).html;
+  assert(html.includes('data-background-video="'+video.path+'"'));assert(html.includes('data-background-video-loop'));assert(html.includes('data-background-video-muted'));
+  assert.deepEqual(M.risorseUsate(v),['video_sfondo'],'le risorse sostituite non entrano nel pacchetto');
+  const senzaAudio=M.applica(v,{tipo:'sfondoMedia',slideId:fid,backgroundMedia:{...sfondo,assetId:'video_sfondo',muted:false,loop:false}});
+  assert(!Rivela.compila(senzaAudio).html.includes('data-background-video-muted'));assert(!Rivela.compila(senzaAudio).html.includes('data-background-video-loop'));
+  const rimossa=M.applica(v,{tipo:'sfondoMedia',slideId:fid,backgroundMedia:null});assert.equal(rimossa.stacks[0].slides[0].backgroundMedia,undefined);assert.deepEqual(M.risorseUsate(rimossa),[]);
+  assert.deepEqual(M.daModello('vuota',v.stacks[0].slides[0]).backgroundMedia,v.stacks[0].slides[0].backgroundMedia);
+  assert.deepEqual(M.applica(rimossa,{tipo:'incollaStile',slideId:fid,stile:M.stileSlide(v.stacks[0].slides[0])}).stacks[0].slides[0].backgroundMedia,v.stacks[0].slides[0].backgroundMedia);
+  for(const patch of [{assetId:'mancante'},{fit:'url(https://male)'},{muted:'false'},{src:'file:///privato'}])assert.throws(()=>M.applica(v,{tipo:'sfondoMedia',slideId:fid,backgroundMedia:{...sfondo,assetId:'video_sfondo',...patch}}));
+  assert.throws(()=>M.applica(d,{tipo:'sfondoMedia',slideId:fid,assetId:'audio',asset:{...video,kind:'audio'},backgroundMedia:{assetId:'audio',fit:'cover'}}));
+ }
  // Riordino e stile non portano con sé il contenuto o gli appunti di un'altra slide.
  const stile=M.stileSlide(slideFoglio()),primaTesto=slideFoglio().blocks[1].markdown;
  foglio=M.applica(foglio,{tipo:'slide',slideId:fid,background:'#ffffff'});foglio=M.applica(foglio,{tipo:'incollaStile',slideId:fid,stile});assert.equal(slideFoglio().background,'#0f1115');assert.equal(slideFoglio().blocks[1].markdown,primaTesto);assert(!JSON.stringify(stile).includes('notes'));

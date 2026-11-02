@@ -774,6 +774,32 @@
                 "background": {
                   "type": "string",
                   "pattern": "^#[a-fA-F0-9]{6}$"
+                },
+                "backgroundMedia": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "assetId": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,100}$"
+                    },
+                    "fit": {
+                      "enum": [
+                        "cover",
+                        "contain"
+                      ]
+                    },
+                    "loop": {
+                      "type": "boolean"
+                    },
+                    "muted": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "assetId",
+                    "fit"
+                  ]
                 }
               },
               "required": [
