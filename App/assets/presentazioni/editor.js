@@ -7,6 +7,7 @@
  let gruppo=[],grigliaAttiva=0,magnetiche=false,posizioneScelta=null,selezioneGiro=0,scrittura=null,daScrittura=false;
  let corso='',elenco=[],slideId='',giro=0,occupato=false,listaErrore='',regia=null,previewTimer=null,previewGiro=0,quadro=null,framePronto=false,firma='',canale=crypto.randomUUID();
  let inputAperto=null,ricostruisciInput=false,datiInput=null,richiestaScrittura=null,quadroVisibile=null;
+ let barraAdattiva=null;
  let avviso,bloccoId='',oggettiNav,richiestaMisure=null,appuntiOggetto=null;
  let host,bar,corpo,scaletta,campi,frame,stato,vuoto,editor,gobbo,gobboBar,gobboCorpo,gobboStato;
  const bottoni={},D=PresentaDocumento.crea({salva:async(d,baseRevision)=>(await call({azione:'salva',documento:d,baseRevision})).documento,
@@ -318,7 +319,39 @@
   voce('Adatta riquadro al contenuto','maximize',()=>frame.contentWindow.postMessage({presenta:canale,tipo:'adatta',blockId:o.blockId},'*'));voce('Centra nella slide','move-horizontal',()=>posiziona('centro-centro'));voce('Duplica oggetto','copy',()=>{const d=op({tipo:'duplicaBlocco',blockId:o.blockId},{struttura:true});scegliBlocco(M.trova(d,slideId).slide.blocks.at(-1).id);});voce('Porta avanti','chevron-up',()=>muoviBlocco(o.blockId,1));voce('Porta indietro','chevron-down',()=>muoviBlocco(o.blockId,-1));voce('Elimina oggetto','trash-2',()=>op({tipo:'eliminaBlocco',blockId:o.blockId},{struttura:true}));
   const r=frame.getBoundingClientRect(),a=o.rect;bubble=popup('presenta-bubble',bar,o.anchor?.x??r.left+(a?.x||8),o.anchor?.y??r.top+(a?.y||0)-38,true);bar.querySelector('[aria-label="Incolla oggetto"]').disabled=appuntiOggetto?.documentId!==D.documento?.id;
  }
+ // Gli stessi controlli passano nel popover: nessuna copia di valori o listener.
+ function adattaBarra(row){
+  if(!row)return;
+  const nodi=[...row.children],abort=new AbortController(),eventi={signal:abort.signal};
+  const altri=b('Altri comandi di testo',null,()=>aperto()?chiudi(true):apri());altri.textContent='…';altri.classList.add('presenta-altri');altri.setAttribute('aria-haspopup','dialog');altri.setAttribute('aria-expanded','false');
+  const pop=E('div',null,'popmenu presenta-menu presenta-tipografia-popup tbar-ctl');pop.popover='manual';pop.setAttribute('role','dialog');pop.setAttribute('aria-label','Altri comandi di testo');
+  pop.id='presenta-altri-comandi';altri.setAttribute('aria-controls',pop.id);row.append(altri,pop);
+  const aperto=()=>pop.matches(':popover-open');
+  function chiudi(focus=false){if(aperto())pop.hidePopover();altri.setAttribute('aria-expanded','false');if(focus&&altri.isConnected&&!altri.hidden)altri.focus();}
+  function colloca(){if(!aperto())return;const r=altri.getBoundingClientRect(),p=pop.getBoundingClientRect();pop.style.left=Math.max(8,Math.min(r.left,innerWidth-p.width-8))+'px';pop.style.top=Math.max(8,Math.min(r.bottom+4,innerHeight-p.height-8))+'px';}
+  function apri(){pop.showPopover();altri.setAttribute('aria-expanded','true');colloca();pop.querySelector('button,input,select')?.focus();}
+  let precedente=-1;
+  function misura(){
+   if(!row.isConnected)return;const spazio=row.clientWidth;if(spazio===precedente)return;precedente=spazio;
+   const focus=document.activeElement,eraAperto=aperto();
+   for(const n of nodi)row.insertBefore(n,altri);
+   altri.hidden=false;
+   const quanti=PresentaBarra.visibili(nodi.map(n=>n.getBoundingClientRect().width),spazio,parseFloat(getComputedStyle(row).columnGap)||0,altri.getBoundingClientRect().width);
+   for(const n of nodi.slice(quanti))pop.append(n);
+   altri.hidden=quanti===nodi.length;
+   if(altri.hidden)chiudi();else if(eraAperto)colloca();
+   if(focus!==document.body&&row.contains(focus)){if(focus.closest('.presenta-tipografia-popup')&&!aperto())altri.focus();else focus.focus({preventScroll:true});}
+  }
+  document.addEventListener('pointerdown',e=>{if(aperto()&&!pop.contains(e.target)&&!altri.contains(e.target)&&!e.target.closest('.presenta-menu'))chiudi();},eventi);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&aperto()&&!document.querySelector('.presenta-menu[popover="auto"]:popover-open')&&!inputAperto){e.preventDefault();e.stopImmediatePropagation();chiudi(true);}}, {...eventi,capture:true});
+  // Un clic sul foglio avviene nell’iframe e non propaga pointerdown al documento.
+  window.addEventListener('blur',()=>{if(document.activeElement===frame)chiudi();},eventi);
+  corpo.addEventListener('scroll',colloca,eventi);window.addEventListener('resize',colloca,eventi);
+  const osserva=new ResizeObserver(misura);osserva.observe(row);misura();
+  barraAdattiva=()=>{abort.abort();osserva.disconnect();chiudi();};
+ }
  function campiSlide(){
+  barraAdattiva?.();barraAdattiva=null;
   const aperti=[...campi.querySelectorAll('details[open]')].map(e=>e.dataset.pannello);campi.replaceChildren();const p=posizione();if(!p)return;slideId=p.slide.id;const s=p.slide;if(!['@titolo','@disposizione','@stile','@righelli'].includes(bloccoId)&&!s.blocks.some(b=>b.id===bloccoId))bloccoId='';
   if(gruppo.length>1){campi.append(comandiGruppo());oggetti();return;}
   const block=s.blocks.find(b=>b.id===bloccoId),titolo=block?.type==='title'||bloccoId==='@titolo',props=E('div',null,'presenta-proprieta-foglio');props.dataset.voce=titolo?'titolo':bloccoId==='@stile'?'stile':bloccoId==='@disposizione'?'disposizione':bloccoId==='@righelli'?'righelli':block?.type||'sfondo';
@@ -330,7 +363,7 @@
   else{
    const sfondo=sceltaColore('Sfondo della slide',s.background,v=>op({tipo:'slide',background:v},{struttura:true}));sfondo.firstElementChild.remove();sfondo.setAttribute('role','group');sfondo.setAttribute('aria-label','Sfondo della slide');props.append(sfondo);
   }
-  campi.append(props);for(const key of aperti){const el=campi.querySelector('details[data-pannello="'+key+'"]');if(el)el.open=true;}oggetti();
+  campi.append(props);adattaBarra(campi.querySelector('.presenta-tipografia'));for(const key of aperti){const el=campi.querySelector('details[data-pannello="'+key+'"]');if(el)el.open=true;}oggetti();
  }
  function stiliPronti(){
   const box=E('section',null,'presenta-stili-compatti tbar-ctl'),controlli=E('div',null,'presenta-stili-controlli'),galleria=E('div',null,'presenta-stili-galleria');galleria.setAttribute('role','group');galleria.setAttribute('aria-label','Stili della presentazione');

@@ -162,13 +162,13 @@
 /* Proprietà del testo: larghezze legate al contenuto, senza tendine elastiche. */
 .presenta-proprieta-foglio:has(.presenta-blocco-editor){grid-template-columns:minmax(0,1fr);gap:16px}
 .presenta-scrittura-comandi{justify-content:flex-start;gap:8px!important}
-.presenta-blocco-editor>.presenta-tipografia{display:flex;flex-wrap:nowrap;gap:8px;align-items:end;padding:0 0 4px;overflow-x:auto;scrollbar-width:thin}
+.presenta-blocco-editor>.presenta-tipografia{display:flex;flex-wrap:nowrap;gap:8px;align-items:end;padding:0 0 4px;min-width:0}
 .presenta-blocco-editor>.presenta-tipografia>*{flex:none}
 .presenta-blocco-editor .presenta-formati{flex-wrap:nowrap;min-height:var(--tb-h);padding:0;align-self:end}
-.presenta-blocco-editor>.presenta-tipografia>.presenta-carattere{width:200px;max-width:100%}
-.presenta-blocco-editor>.presenta-tipografia>.presenta-peso{width:112px}
-.presenta-blocco-editor>.presenta-tipografia>.presenta-dimensione{width:64px}
-.presenta-blocco-editor>.presenta-tipografia>.presenta-interlinea{width:160px}
+:is(.presenta-tipografia,.presenta-tipografia-popup)>.presenta-carattere{width:200px;max-width:100%}
+:is(.presenta-tipografia,.presenta-tipografia-popup)>.presenta-peso{width:112px}
+:is(.presenta-tipografia,.presenta-tipografia-popup)>.presenta-dimensione{width:64px}
+:is(.presenta-tipografia,.presenta-tipografia-popup)>.presenta-interlinea{width:160px}
 .presenta-campo-breve.presenta-titolo-campo{width:160px;align-self:end}
 .presenta-celle-comando{width:max-content;height:var(--tb-h);align-self:end;gap:8px}
 .presenta-allineamento>.tbtn{height:var(--tb-h);min-width:var(--tb-min);border:1px solid var(--line);padding-inline:8px}
@@ -219,3 +219,11 @@
 .presenta-posizione-campo>.tbtn{height:var(--tb-h);gap:8px;border:1px solid var(--line);padding-inline:8px}
 .presenta-posizione-campo .ui-icon{width:24px;height:24px;flex:none}
 .presenta-posizione-popup{padding:12px}.presenta-posizione-popup>.presenta-posizione-compatta{display:flex;flex-direction:column;gap:8px}
+
+/* La riga mantiene soltanto i gruppi che entrano; il resto resta nel top layer. */
+.presenta-tipografia>.presenta-altri{flex:none;align-self:end;width:var(--tb-h);height:var(--tb-h);padding:0;font-size:var(--tb-fs)}
+.presenta-tipografia>.presenta-altri[hidden]{display:none}
+.presenta-tipografia-popup{margin:0;box-sizing:border-box;width:max-content;max-width:min(620px,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow:auto;padding:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.presenta-tipografia-popup:popover-open{display:flex;flex-wrap:wrap;gap:12px 8px;align-items:end}
+.presenta-tipografia-popup>*{flex:none;max-width:100%}
+.presenta-tipografia-popup .presenta-campo{margin:0}

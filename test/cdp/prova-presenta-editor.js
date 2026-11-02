@@ -7,12 +7,13 @@ async function click(nome){
  if(['Nuova presentazione','Rinomina presentazione','Salva presentazione','Esporta presentazione HTML','Elimina presentazione','Chiudi presentazione'].includes(nome))await click('Documento');
  if(['Aggiungi testo','Aggiungi elenco','Aggiungi formula','Aggiungi forma','Aggiungi tabella','Inserisci dallo zaino','Incolla oggetto'].includes(nome))await click('Inserisci');
  const sel='#presentaPane [aria-label='+JSON.stringify(nome)+']';
+ if(nome!=='Altri comandi di testo'&&await c.val(`!!document.querySelector(${q(sel)})?.closest('.presenta-tipografia-popup:not(:popover-open)')`))await click('Altri comandi di testo');
  if(['Nuovo approfondimento','Duplica slide','Stato successivo animato','Copia stile','Incolla stile','Elimina slide'].includes(nome)){
   await c.val('document.querySelector(".presenta-scaletta [aria-pressed=true]").scrollIntoView({block:"center",behavior:"instant"});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
   const r=await c.val('(()=>{const e=document.querySelector(".presenta-scaletta [aria-pressed=true]"),r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()');
-  for(const type of ['mousePressed','mouseReleased'])await c.invia('Input.dispatchMouseEvent',{type,...r,button:'right',clickCount:1});await wait('!!document.querySelector(".presenta-menu:popover-open")');
+  for(const type of ['mousePressed','mouseReleased'])await c.invia('Input.dispatchMouseEvent',{type,...r,button:'right',clickCount:1});await wait(`!!document.querySelector(${q(sel)})?.closest(':popover-open')`);
  }
- await c.val(`document.querySelector(${q(sel)}).scrollIntoView({block:'center',behavior:'instant'});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))`);await c.clicca(sel);await c.val('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
+ await c.val(`document.querySelector(${q(sel)}).scrollIntoView({block:'center',behavior:'instant'});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))`);await wait(`(()=>{const e=document.querySelector(${q(sel)});if(!e||e.disabled)return false;const r=e.getBoundingClientRect();return e.contains(document.elementFromPoint(r.left+r.width/2,r.top+r.height/2));})()`);await c.clicca(sel);await c.val('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
  if(nome==='Nuova slide'){await wait('!!document.querySelector(".presenta-scelta-modello[open]")');await c.clicca('.presenta-scelta-modello [data-modello=vuota]');}
 }
 
@@ -66,6 +67,28 @@ async function riordinaMiniature(da,a,dentro=false){
   await click('Nuova presentazione');await wait('document.getElementById("uiModal").hasAttribute("open")');
   await c.val(`document.getElementById('umInput').value='Lezione della foglia';document.getElementById('umOk').click()`);await wait('!!ZainoPresenta.documento');id=await c.val('ZainoPresenta.documento.id');
   await scrivi('Titolo della slide','Una foglia al sole');
+  assert(await c.val('(()=>{const r=document.querySelector(".presenta-tipografia");return r.scrollWidth<=r.clientWidth+1;})()'),'la riga font stretta non taglia comandi e non richiede scroll orizzontale');
+  // Riduzione, menu annidati, tastiera e ritorno dei medesimi controlli nella riga.
+  await c.val('window.__rigaFont=document.querySelector(".presenta-tipografia");window.__campiFont=[...__rigaFont.querySelectorAll("input,select")];__rigaFont.style.maxWidth="270px"');
+  await wait('!document.querySelector(".presenta-altri").hidden');await click('Altri comandi di testo');
+  assert(await c.val('(()=>{const p=document.querySelector(".presenta-tipografia-popup"),r=p.getBoundingClientRect();return p.matches(":popover-open")&&r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;})()'),'bubble dentro la finestra');
+  fs.writeFileSync('/private/tmp/presenta-overflow-menu.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
+  await click('Carattere');await wait('!!document.querySelector(".presenta-menu-caratteri:popover-open")');
+  for(const type of ['keyDown','keyUp'])await c.invia('Input.dispatchKeyEvent',{type,key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  assert(await c.val('document.querySelector(".presenta-tipografia-popup").matches(":popover-open")'),'Escape chiude prima il menu figlio');
+  for(const type of ['keyDown','keyUp'])await c.invia('Input.dispatchKeyEvent',{type,key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  assert(await c.val('!document.querySelector(".presenta-tipografia-popup").matches(":popover-open")&&document.activeElement.classList.contains("presenta-altri")'),'Escape chiude Altri e restituisce il focus');
+  await click('Posizione');await wait('!!document.querySelector(".presenta-posizione-popup:popover-open")');
+  for(let n=0;n<2;n++)for(const type of ['keyDown','keyUp'])await c.invia('Input.dispatchKeyEvent',{type,key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  await click('Altri comandi di testo');await c.clicca('.presenta-stato');
+  assert(await c.val('!document.querySelector(".presenta-tipografia-popup").matches(":popover-open")'),'clic esterno chiude Altri');
+  await click('Altri comandi di testo');
+  await c.val('__rigaFont.style.maxWidth="";bancoForma("uno");bancoAssegna("A","presenta")');
+  await c.invia('Emulation.setDeviceMetricsOverride',{width:1900,height:1100,deviceScaleFactor:1,mobile:false});
+  await wait('document.querySelector(".presenta-altri").hidden');
+  assert(await c.val('__campiFont.every(e=>e.isConnected&&!e.closest(".presenta-tipografia-popup"))'),'i controlli originali tornano nella riga senza copie');
+  fs.writeFileSync('/private/tmp/presenta-overflow-largo.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
+  await c.invia('Emulation.clearDeviceMetricsOverride');await c.val('bancoForma("due-col");bancoAssegna("A","presenta");bancoAssegna("C","gobbo")');
   // L’avviso segue la slide corrente, anche quando Reveal riusa il documento compilato.
   const provaAvviso=await c.val('({slide:ZainoPresenta.documento.stacks[0].slides[0].id,titolo:ZainoPresenta.documento.stacks[0].slides[0].blocks[0]})');
   await c.val(`ZainoPresenta.modifica({tipo:'blocco',slideId:${q(provaAvviso.slide)},blockId:${q(provaAvviso.titolo.id)},block:{...${q(provaAvviso.titolo)},style:{fontSize:54,box:{x:7,y:7,width:86,height:2}}}},{struttura:true});ZainoPresenta.modifica({tipo:'aggiungiSlide',slideId:${q(provaAvviso.slide)},direzione:'destra'},{struttura:true})`);
@@ -343,10 +366,10 @@ async function riordinaMiniature(da,a,dentro=false){
    assert(await c.val('(()=>{const p=document.querySelector(".presenta-lavoro"),c=document.querySelector(".presenta-campi");return getComputedStyle(p).borderLeftWidth==="1px"&&p.getBoundingClientRect().bottom>=c.getBoundingClientRect().bottom;})()'),'il separatore prosegue fino sotto le proprietà');
    if(tab==='Stile')assert(await c.val('(()=>{const g=document.querySelector(".presenta-stili-galleria").getBoundingClientRect(),c=document.querySelector(".presenta-stili-controlli").getBoundingClientRect();return g.left>c.right&&Math.abs(g.top-c.top)<2;})()'),'galleria affiancata nello split largo');
    if(['Testo','Titolo'].includes(tab))assert(await c.val(`(()=>{const p=document.querySelector('[aria-label="Posizione"]').getBoundingClientRect(),i=document.querySelector(".presenta-interlinea").getBoundingClientRect();return p.width<=90&&i.width<=161;})()`),'Posizione e interlinea compatti');
-   if(['Testo','Titolo','Immagine'].includes(tab))assert(await c.val(`(()=>{const a=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect();return ['Grassetto','Corsivo','Sottolineato','Posizione'].every(n=>{const b=document.querySelector('#presentaPane [aria-label="'+n+'"]').getBoundingClientRect();return Math.abs(b.bottom-a.bottom)<1&&Math.abs(b.height-a.height)<1;});})()`) ,'formati e posizione nella riga del font');
+   if(['Testo','Titolo','Immagine'].includes(tab))assert(await c.val(`(()=>{const a=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect();return ['Grassetto','Corsivo','Sottolineato','Posizione'].every(n=>{const b=document.querySelector('#presentaPane [aria-label="'+n+'"]').getBoundingClientRect();return b.width===0||a.width===0||Math.abs(b.bottom-a.bottom)<1&&Math.abs(b.height-a.height)<1;});})()`) ,'formati e posizione nella riga del font');
    if(tab==='Titolo')assert(await c.val(`(()=>{const e=document.querySelector('.presenta-titolo-campo'),a=e.querySelector('button').getBoundingClientRect(),b=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect();return e.querySelector(':scope>span')?.textContent==='Titolo'&&a.width<=161&&Math.abs(a.bottom-b.bottom)<1&&Math.abs(a.height-b.height)<1;})()`),'etichetta Titolo sopra il campo breve allineato al font');
    fs.writeFileSync('/private/tmp/presenta-'+tab.toLowerCase()+'-largo.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
-   if(tab==='Titolo'){await click('Posizione');fs.writeFileSync('/private/tmp/presenta-posizione-bubble.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));await click('Posizione');}
+   if(tab==='Titolo'){await click('Posizione');fs.writeFileSync('/private/tmp/presenta-posizione-bubble.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));for(let n=0;n<2;n++)for(const type of ['keyDown','keyUp'])await c.invia('Input.dispatchKeyEvent',{type,key:'Escape',code:'Escape',windowsVirtualKeyCode:27});}
   }
   await c.val(`BANCO.stato=${q(layoutCompatto)};bancoSalva();bancoDisegna()`);await click('Stile');
   await click('Lavagna');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].background'),'#0f172a');
@@ -385,7 +408,7 @@ async function riordinaMiniature(da,a,dentro=false){
   await c.val(`(()=>{const e=document.querySelector('[aria-label="Riga 1 · colonna 1"]');e.value='Organismo';e.dispatchEvent(new Event('input'));})()`);
   await c.clicca('[aria-label="Applica tabella"]');await frameWait('document.querySelector(".presenta-slide table th")?.textContent==="Organismo"');
   await click('Tabella');
-  assert(await c.val(`(()=>{const e=document.querySelector('#presentaPane [aria-label="Modifica celle"]'),a=e.getBoundingClientRect(),b=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect();return e.parentElement.classList.contains('presenta-tipografia')&&a.width<180&&Math.abs(a.bottom-b.bottom)<1&&Math.abs(a.height-b.height)<1;})()`),'Modifica celle compatto nella riga del font');
+  assert(await c.val(`(()=>{const e=document.querySelector('#presentaPane [aria-label="Modifica celle"]'),a=e.getBoundingClientRect(),b=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect();return e.parentElement.classList.contains('presenta-tipografia')&&a.width<180&&(b.width===0||Math.abs(a.bottom-b.bottom)<1&&Math.abs(a.height-b.height)<1);})()`),'Modifica celle compatto nella riga del font');
   const layoutTabella=await c.val('bancoStato()');await c.val('bancoForma("uno");bancoAssegna("A","presenta");document.querySelector(".presenta-proprieta-foglio").scrollIntoView({block:"end",behavior:"instant"})');
   fs.writeFileSync('/private/tmp/presenta-tabella-compatta.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
   await click('Modifica celle');await wait('!!document.querySelector(".presenta-tabella-dialog[open]")');await c.clicca('[aria-label="Annulla tabella"]');
@@ -425,6 +448,7 @@ async function riordinaMiniature(da,a,dentro=false){
   await c.val('ZainoPresenta.chiudi()');
   console.log('✓ PRESENTA e GOBBO: tab contestuali, colori e cinque slot, titolo/testo indipendenti, miniature e riordino nativo, stile, adatta riquadro, media, autosave, riapertura, player e note private');
  }finally{
+  fs.writeFileSync('/private/tmp/presenta-ultimo-stato.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
   try{await c.val('ZainoPresenta.chiudi()');await c.val(`BANCO.stato=${q(banco)};bancoSalva();bancoDisegna()`);}catch(_){}
   if(id)fs.rmSync(path.join(v,'Zaini/biologia/PRESENTAZIONI',id),{recursive:true,force:true});for(const cl of clients)cl.ws.close();c.ws()?.close();
  }

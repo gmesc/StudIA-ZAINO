@@ -1,5 +1,12 @@
 'use strict';
 const assert=require('node:assert/strict'),M=require('../App/assets/presentazioni/modello'),C=require('../App/assets/presentazioni/documento');
+const Barra=require('../App/assets/presentazioni/barra');
+assert.equal(Barra.visibili([200,112,64],392,8,40),3,'tutti i campi entrano esattamente');
+assert.equal(Barra.visibili([200,112,64],391,8,40),2,'riserva spazio per Altri');
+assert.equal(Barra.visibili([200,112,64],240,8,40),0,'nessun campo parzialmente tagliato');
+assert.equal(Barra.visibili([200,112,64],248,8,40),1);
+assert.equal(Barra.visibili([40.5,80.5],120,8,40),1,'misure frazionarie');
+assert.equal(Barra.visibili([],0,8,40),0);
 const differita=()=>{let resolve,reject;return {promise:new Promise((r,j)=>{resolve=r;reject=j;}),resolve,reject};};
 (async()=>{
  let disco=M.crea('00000000-0000-4000-8000-000000000001','Lezione');disco.revision=1;const sid=disco.stacks[0].slides[0].id;
