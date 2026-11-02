@@ -127,7 +127,7 @@ async function riordinaMiniature(da,a,dentro=false){
   await c.val(`(()=>{const dt=new DataTransfer();dt.setData('application/x-studia-lim',${q(drag)});document.getElementById('presentaPane').dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:dt}));})()`);
   await wait('ZainoPresenta.documento.stacks[0].slides[0].blocks.some(b=>b.type==="image")');await c.val('ZainoPresenta.flush()');
   await frameWait('document.querySelector("img")?.naturalWidth>0');await wait('document.querySelector(".presenta-mini img")?.naturalWidth>0');
-  await click('Disposizione');await click('Immagine a sinistra');await click('Sfondo');await click('Colore personalizzato dello sfondo');await click('yellow-100');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].background'),'#fef9c3');
+  await click('Disposizione');await click('Immagine a sinistra');await click('Sfondo');await click('Nuovo colore dello sfondo');await click('yellow-100');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].background'),'#fef9c3');
   const imageId=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").id');
   const textId=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").id');
   assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box.x'),7);
@@ -158,8 +158,8 @@ async function riordinaMiniature(da,a,dentro=false){
   await cicloRighelli(1);await click('Testo');await click('Posizione');assert.equal(await c.val('document.querySelectorAll(".presenta-posizioni [data-cella]").length'),9);
   await click('Sfondo');assert.equal(await c.val('document.querySelectorAll('+q('.presenta-campi [aria-label="Titolo della slide"]')+').length'),0);
   assert(!await c.val('!!document.querySelector(".presenta-proprieta-foglio>.presenta-colori>span")'),'Sfondo senza titolo ripetuto');
-  await click('Colore personalizzato dello sfondo');await click('sky-500');await click('Bianco');
-  assert.equal(await c.val('document.querySelector('+q('#presentaPane [aria-label="Colore personalizzato dello sfondo"]')+').dataset.colore'),'#0ea5e9','l’ultimo colore manuale resta disponibile dopo un preset');
+  await click('Nuovo colore dello sfondo');await click('sky-500');await click('Bianco');
+  assert.equal(await c.val('document.querySelector('+q('#presentaPane [aria-label="Nuovo colore dello sfondo"]')+').dataset.colore'),'#0ea5e9','l’ultimo colore manuale resta disponibile dopo un preset');
   const misureColore=await c.val('(()=>{const p=document.querySelector(".presenta-personalizzato"),b=document.querySelector("#presentaPane [aria-label=Bianco]");return [p.getBoundingClientRect().height,b.getBoundingClientRect().height];})()');assert.equal(misureColore[0],misureColore[1]);
   assert.equal(await c.val('getComputedStyle(document.querySelector("#presentaPane iframe")).outlineWidth'),'1px','cornice sullo sfondo bianco');
   assert.equal(await c.val('document.querySelectorAll(".presenta-slot-colori>div").length'),5,'cinque slot direttamente nelle proprietà');
@@ -167,12 +167,25 @@ async function riordinaMiniature(da,a,dentro=false){
   assert.equal(await c.val('JSON.parse(localStorage.getItem("studia.presenta.colori")).slots[1]'),'#0ea5e9','la palette salva automaticamente');
   assert.equal(await c.val('document.querySelectorAll(".presenta-slot-colori [data-icona=save]").length'),0);
   await click('Usa colore 5');await click('rose-500');assert.equal(await c.val('JSON.parse(localStorage.getItem("studia.presenta.colori")).slots[4]'),'#f43f5e');
+  assert((await c.val(`document.querySelector('.presenta-personalizzato').textContent`)).includes('Nuovo colore'),'la palette resta distinguibile dagli slot salvati');
+  const menuColore=async(n,tastiera=false)=>{const sel='#presentaPane [aria-label="Usa colore '+n+'"]';await c.val('document.querySelector('+q(sel)+').scrollIntoView({block:"center",behavior:"instant"});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');if(tastiera){await c.val('document.querySelector('+q(sel)+').focus()');for(const type of ['keyDown','keyUp'])await c.invia('Input.dispatchKeyEvent',{type,key:'F10',code:'F10',modifiers:8,windowsVirtualKeyCode:121});}else{const r=await c.val('(()=>{const r=document.querySelector('+q(sel)+').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()');for(const type of ['mousePressed','mouseReleased'])await c.invia('Input.dispatchMouseEvent',{type,...r,button:'right',clickCount:1});}await wait('!!document.querySelector(".presenta-menu-colore:popover-open")');};
+  await menuColore(5);for(const type of ['keyDown','keyUp'])await c.invia('Input.dispatchKeyEvent',{type,key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await wait(`!document.querySelector('.presenta-menu-colore:popover-open')&&document.querySelector('[aria-label="Usa colore 5"]').getAttribute('aria-expanded')==='false'`);await menuColore(5);const menuColoreShot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/private/tmp/presenta-menu-colore.png',Buffer.from(menuColoreShot.result.data,'base64'));await click('Modifica colore');await click('violet-500');
+  assert.equal(await c.val('JSON.parse(localStorage.getItem("studia.presenta.colori")).slots[4]'),'#8b5cf6','clic destro modifica lo slot scelto');
+  const sfondoDopoModifica=await c.val('ZainoPresenta.documento.stacks[0].slides[0].background');await c.val('ZainoPresenta.flush()');const revisioneColore=await c.val('ZainoPresenta.documento.revision');
+  await menuColore(5,true);await click('Elimina colore');
+  assert.equal(await c.val('JSON.parse(localStorage.getItem("studia.presenta.colori")).slots[4]'),null,'il menu svuota lo slot');
+  assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].background'),sfondoDopoModifica,'svuotare lo slot conserva lo sfondo della slide');
+  assert.equal(await c.val('ZainoPresenta.documento.revision'),revisioneColore,'eliminare una preferenza non modifica la presentazione');
+  await menuColore(5);assert(await c.val(`document.querySelector('.presenta-menu-colore [aria-label="Elimina colore"]').disabled`),'slot vuoto non eliminabile');
+  await click('Modifica colore');await click('rose-500');
+  assert.equal(await c.val('JSON.parse(localStorage.getItem("studia.presenta.colori")).slots[4]'),'#f43f5e','lo slot vuoto torna riutilizzabile');
+
   await click('Usa colore 2');await click('Copia stile');await click('Sfondo');await click('Nero');await click('Incolla stile');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].background'),'#0ea5e9');
   assert.equal(await c.val('getComputedStyle(document.querySelector("#presentaPane iframe")).outlineWidth'),'0px','nessuna cornice sullo sfondo colorato');
   await click('Testo');await click('Allineamento del testo');await click('Allineamento del testo · Destra');
   await frameWait(`getComputedStyle(document.querySelector('[data-block-id="'+${q(textId)}+'"]')).textAlign==="right"`);
   assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="title").style.align'),'center','il testo non cambia l’allineamento del titolo');
-  await click('Colore manuale del testo');await click('slate-800');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style.color'),'#1e293b');
+  await click('Nuovo colore del testo');await click('slate-800');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style.color'),'#1e293b');
   await click('Automatico');assert.equal(await c.val('Object.hasOwn(ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style,"color")'),false);
   await click('Alto destra');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style.box.y'),7);
   const layoutProva=await c.val('bancoStato()');await c.val('bancoForma("uno");bancoAssegna("A","presenta")');await click('Disposizione');await click('Immagine a sinistra');await click('Sfondo');await click('Testo');
@@ -181,9 +194,9 @@ async function riordinaMiniature(da,a,dentro=false){
   await click('Sfondo');
   await c.val('document.querySelector(".presenta-slot-colori").scrollIntoView({block:"center",behavior:"instant"});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
   assert(await c.val('Array.from(document.querySelectorAll(".presenta-slot-colori>div")).every(e=>{const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight})'),'tutti i cinque slot sono visibili senza aprire popup');
-  assert.equal(await c.val('document.querySelector(".presenta-personalizzato").textContent'),'slate-800','anche il picker usa solo l’identificatore Tailwind');
+  assert.equal(await c.val('document.querySelector(".presenta-personalizzato").textContent.trim()'),'Nuovo colore','il comando per scegliere un nuovo colore resta visibile');
   const slotsShot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/private/tmp/presenta-slot-visibili.png',Buffer.from(slotsShot.result.data,'base64'));
-  await click('Colore personalizzato dello sfondo');const paletteShot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/private/tmp/presenta-colori-personali.png',Buffer.from(paletteShot.result.data,'base64'));await c.invia('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await c.invia('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await wait('!document.querySelector(".presenta-palette:popover-open")');
+  await click('Nuovo colore dello sfondo');const paletteShot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/private/tmp/presenta-colori-personali.png',Buffer.from(paletteShot.result.data,'base64'));await c.invia('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await c.invia('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await wait('!document.querySelector(".presenta-palette:popover-open")');
   await c.val(`BANCO.stato=${q(layoutProva)};bancoSalva();bancoDisegna()`);
 
   await frameWait('document.querySelector(".reveal").dataset.bloccato==="false"');
