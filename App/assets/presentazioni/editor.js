@@ -103,7 +103,7 @@
   bottoni.salva.disabled=disabled||!d;bottoni.nuova.disabled=disabled||!corso;
   const messaggio=listaErrore||D.errore;stato.textContent=messaggio?'Non salvato: '+messaggio:D.salvando?'Salvataggio…':D.sporco?'Modifiche da salvare':d?'Salvato':'PRESENTA';stato.dataset.errore=String(!!messaggio);
   for(const e of campi.querySelectorAll('input,textarea,select,button'))e.disabled=disabled||!d||e.dataset.vuoto==='true';const eliminaSlide=campi.querySelector('[aria-label="Elimina slide"]');if(eliminaSlide)eliminaSlide.disabled=disabled||!d||M.posizioni(d).length===1;
-  if(d&&p){frame.style.aspectRatio=d.settings.width+'/'+d.settings.height;frame.dataset.sfondoBianco=String(C.sfondoBianco(p.slide.background,d.settings.theme));}
+  if(d&&p){frame.style.aspectRatio=d.settings.width+'/'+d.settings.height;frame.dataset.sfondoBianco=String(C.sfondoBianco(p.slide.background,d.settings.theme));if(avviso.dataset.slideId!==p.slide.id)avviso.hidden=true;}
   disegnaScaletta();
   oggetti();ricorda();sidebar();anteprima();sincronizzaSelezione();disegnaGobbo();
  }
@@ -322,7 +322,7 @@
   const aperti=[...campi.querySelectorAll('details[open]')].map(e=>e.dataset.pannello);campi.replaceChildren();const p=posizione();if(!p)return;slideId=p.slide.id;const s=p.slide;if(!['@titolo','@disposizione','@stile','@righelli'].includes(bloccoId)&&!s.blocks.some(b=>b.id===bloccoId))bloccoId='';
   if(gruppo.length>1){campi.append(comandiGruppo());oggetti();return;}
   const block=s.blocks.find(b=>b.id===bloccoId),titolo=block?.type==='title'||bloccoId==='@titolo',props=E('div',null,'presenta-proprieta-foglio');props.dataset.voce=titolo?'titolo':bloccoId==='@stile'?'stile':bloccoId==='@disposizione'?'disposizione':bloccoId==='@righelli'?'righelli':block?.type||'sfondo';
-  if(titolo){const contenuto=E('section'),titolo=campo('Titolo della slide',s.title,v=>op({tipo:'titoloSlide',title:v}),{maxLength:140});titolo.firstElementChild.remove();titolo.classList.add('presenta-titolo-campo');if(block)bloccoCampi(block,contenuto,titolo);else contenuto.append(titolo);props.append(contenuto);}
+  if(titolo){const contenuto=E('section'),titolo=campo('Titolo della slide',s.title,v=>op({tipo:'titoloSlide',title:v}),{maxLength:140});titolo.firstElementChild.textContent='Titolo';titolo.classList.add('presenta-titolo-campo');if(block)bloccoCampi(block,contenuto,titolo);else contenuto.append(titolo);props.append(contenuto);}
   else if(block){const contenuto=E('section');bloccoCampi(block,contenuto);props.append(contenuto);}
   else if(bloccoId==='@righelli'){props.append(pannelloRighelli());}
   else if(bloccoId==='@stile'){props.append(stiliPronti());}
@@ -571,7 +571,9 @@
      let boxes=o.boxes;
      if(o.tipo==='misure'){const r=richiestaMisure;if(!r||r.id!==o.richiesta||r.slideId!==s.id)return;richiestaMisure=null;if(r.nome!=='conserva')boxes=boxes.map(v=>v.id===r.blockId?{...v,box:ancoraScelta(v.box,r.nome)}:v);}
      if(occupato||D.bloccato)return;try{op({tipo:'posizionaBlocchi',boxes},{struttura:true});}catch(e){firma='';anteprima();throw e;}
-    });if(e.data.tipo==='pronto'){quadroVisibile=e.data.firma;avviaScritturaRichiesta();if(richiestaMisure)frame.contentWindow.postMessage({presenta:canale,tipo:'misure',richiesta:richiestaMisure.id},'*');avviso.hidden=!e.data.overflow;avviso.textContent='Parte del contenuto non entra nella slide o nel riquadro: allarga il riquadro, riduci il testo o dividi la slide.';}if(e.data.tipo==='errore')window.toast?.('Anteprima: '+e.data.error,false);if(e.data.tipo==='pronto'&&e.data.errors?.length)window.toast?.('Ci sono formule da correggere nella slide.',false);}});
+    });if(e.data.tipo==='pronto'){quadroVisibile=e.data.firma;avviaScritturaRichiesta();if(richiestaMisure)frame.contentWindow.postMessage({presenta:canale,tipo:'misure',richiesta:richiestaMisure.id},'*');}
+    if(e.data.tipo==='ingombro'&&e.data.slideId===posizione()?.slide.id&&e.data.firma===quadro?.editor?.firma&&firma===JSON.stringify({...D.documento,revision:0})){avviso.dataset.slideId=e.data.slideId;avviso.hidden=!e.data.overflow;avviso.textContent='Parte del contenuto non entra nella slide o nel riquadro: allarga il riquadro, riduci il testo o dividi la slide.';}
+    if(e.data.tipo==='errore')window.toast?.('Anteprima: '+e.data.error,false);if(e.data.tipo==='pronto'&&e.data.errors?.length)window.toast?.('Ci sono formule da correggere nella slide.',false);}});
   window.ZainoPresenta={nuova,apri,flush:()=>salvaTutto(),molla,importa,modifica,chiudi,presenta,get documento(){return D.documento;},get daSalvare(){return !!inputAperto?.errore?.textContent||D.sporco||D.salvando;},get regia(){return regia;}};
   api.onCambiata(o=>{if(o.corso===corso)azione(ricaricaLista);});api.onSessione(o=>{regia=o.regia;if(regia?.corso!==corso)regia=null;disegnaGobbo();});
   api.onChiudi(o=>azione(async()=>{try{await salvaTutto();await D.transizione(()=>{});await api.comando({azione:'chiusuraPronta',id:o.id});}catch(e){await api.comando({azione:'chiusuraPronta',id:o.id,errore:true});throw e;}}));

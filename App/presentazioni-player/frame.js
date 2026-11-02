@@ -20,7 +20,12 @@
    transition:ridotto?'none':'slide',autoAnimate:!ridotto};
   if(!deck){deck=new Reveal(root,config);await deck.initialize();for(const n of ['slidechanged','fragmentshown','fragmenthidden'])deck.on(n,conferma);}
   else{deck.configure(config);deck.sync();}
-  await document.fonts.ready;pronto=true;root.dataset.pronto='true';deck.slide(o.posizione?.h||0,o.posizione?.v||0,o.posizione?.fragmentIndex??-1);deck.layout();silenzia();if(modificaFoglio&&!pubblico){selezione(modificaFoglio);root.dataset.modificaPronta='true';}const slide=deck.getCurrentSlide()?.querySelector('.presenta-slide');invia('pronto',{firma:modificaFoglio?.firma,errors:r.errors||[],overflow:!!slide&&(slide.scrollHeight>s.height||[...slide.querySelectorAll('.presenta-blocco,.presenta-contenuto')].some(b=>b.scrollHeight>b.clientHeight+1||b.scrollWidth>b.clientWidth+1))});
+  await document.fonts.ready;pronto=true;root.dataset.pronto='true';deck.slide(o.posizione?.h||0,o.posizione?.v||0,o.posizione?.fragmentIndex??-1);deck.layout();silenzia();if(modificaFoglio&&!pubblico){selezione(modificaFoglio);root.dataset.modificaPronta='true';}invia('pronto',{firma:modificaFoglio?.firma,errors:r.errors||[]});segnalaIngombro();
+ }
+ // La navigazione riusa il documento: le misure devono seguire la slide, non solo la compilazione.
+ function segnalaIngombro(){
+  // I font possono superare la riga interna senza uscire dal riquadro che taglia il contenuto.
+  if(pubblico||!pronto)return;const slide=corrente();invia('ingombro',{firma:modificaFoglio?.firma,slideId:modificaFoglio?.slideId,overflow:!!slide&&(slide.scrollHeight>deck.getConfig().height||[...slide.querySelectorAll('.presenta-blocco')].some(b=>b.scrollHeight>b.clientHeight+1||b.scrollWidth>b.clientWidth+1))});
  }
  function comando(o){if(gesto&&(o.h!==stato().h||o.v!==stato().v))termina(true);if(!pronto)throw Error('Il player non è ancora pronto.');PresentaNavigazione.comando(deck,o);silenzia();}
  function esegui(fn){coda=coda.then(fn).catch(e=>{inComando=false;document.body.dataset.errore=e.message;if(pubblico)console.error(e.message);else invia('errore',{error:e.message});});return coda;}
@@ -115,7 +120,7 @@
    else if(o.tipo==='fineScrittura')scrittura.termina(false);
    else if(o.tipo==='adatta')esegui(()=>adatta(o.blockId));
    else if(o.tipo==='misure'){if(!pubblico&&pronto&&!gesto)invia('misure',{boxes:misure(),firma:modificaFoglio?.firma,slideId:modificaFoglio?.slideId,richiesta:o.richiesta});}
-   else if(o.tipo==='vai')esegui(()=>{if(pronto){comando({azione:'vai',...o.posizione});if(o.editor)selezione({...modificaFoglio,...o.editor});}});
+   else if(o.tipo==='vai')esegui(()=>{if(pronto){comando({azione:'vai',...o.posizione});if(o.editor)selezione({...modificaFoglio,...o.editor});segnalaIngombro();}});
   });parent.postMessage({tipo:'presenta-caricato'},'*');
  }
  root.addEventListener('dblclick',e=>{if(pubblico)return;const el=e.target.closest('[data-testo-id]');if(el){e.preventDefault();scrittura.avvia(el);}});

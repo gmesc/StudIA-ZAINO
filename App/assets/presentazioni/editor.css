@@ -11,7 +11,7 @@
 .presenta-scaletta{border-right:1px solid var(--line);padding:8px;display:flex;flex-direction:column;gap:4px;align-items:stretch}
 .presenta-scaletta .tbtn{height:auto;min-height:var(--tb-h);justify-content:flex-start;text-align:left;white-space:normal;text-transform:none;letter-spacing:normal;overflow-wrap:anywhere;padding-top:8px;padding-bottom:8px;flex:none}
 .presenta-scaletta .tbtn[data-verticale="true"]{margin-left:12px;border-left:2px solid var(--line)}
-.presenta-lavoro{min-width:0;padding:12px;display:flex;flex-direction:column;gap:12px}
+.presenta-lavoro{min-width:0;padding:12px;display:flex;flex-direction:column;gap:12px;border-left:1px solid var(--line)}
 .presenta-anteprima{width:100%;aspect-ratio:16/9;min-height:0;border:0;background:transparent;display:block;box-sizing:border-box}
 .presenta-anteprima[data-sfondo-bianco="true"]{outline:1px solid var(--line);outline-offset:-1px}
 .presenta-campi{display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -35,7 +35,7 @@
 .gobbo-tempo{font-variant-numeric:tabular-nums;font-size:20px;padding:0 8px}
 .presenta-materiali{inset:0;margin:auto;max-height:70vh}.presenta-materiali::backdrop{background:var(--overlay,rgba(0,0,0,.25))}
 /* B · Sul foglio: solo miniature a sinistra; oggetti e sfondo nella barra sotto. */
-.presenta-navigazione{border-right:1px solid var(--line);background:var(--panel);min-width:0;position:sticky;top:0;align-self:start;max-height:calc(100vh - 160px);overflow:auto}
+.presenta-navigazione{background:var(--panel);min-width:0;position:sticky;top:0;align-self:start;max-height:calc(100vh - 160px);overflow:auto}
 .presenta-scaletta{border:0}
 .presenta-scaletta>.tbtn:first-child{height:var(--tb-h);justify-content:center}
 .presenta-slide-mini.tbtn{display:flex;flex-direction:column;gap:4px;padding:4px;align-items:stretch;border:1px solid var(--line)}

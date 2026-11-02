@@ -65,7 +65,25 @@ async function riordinaMiniature(da,a,dentro=false){
   assert(await c.val(`['presenta','gobbo'].every(k=>[...document.querySelector('.bsel').options].some(o=>o.value===k))`));
   await click('Nuova presentazione');await wait('document.getElementById("uiModal").hasAttribute("open")');
   await c.val(`document.getElementById('umInput').value='Lezione della foglia';document.getElementById('umOk').click()`);await wait('!!ZainoPresenta.documento');id=await c.val('ZainoPresenta.documento.id');
-  await scrivi('Titolo della slide','Una foglia al sole');await click('Aggiungi testo');await scrivi('Testo · Markdown e formule','La clorofilla cattura la luce. Formula: \\(x^2\\)');
+  await scrivi('Titolo della slide','Una foglia al sole');
+  // L’avviso segue la slide corrente, anche quando Reveal riusa il documento compilato.
+  const provaAvviso=await c.val('({slide:ZainoPresenta.documento.stacks[0].slides[0].id,titolo:ZainoPresenta.documento.stacks[0].slides[0].blocks[0]})');
+  await c.val(`ZainoPresenta.modifica({tipo:'blocco',slideId:${q(provaAvviso.slide)},blockId:${q(provaAvviso.titolo.id)},block:{...${q(provaAvviso.titolo)},style:{fontSize:54,box:{x:7,y:7,width:86,height:2}}}},{struttura:true});ZainoPresenta.modifica({tipo:'aggiungiSlide',slideId:${q(provaAvviso.slide)},direzione:'destra'},{struttura:true})`);
+  await wait('!document.querySelector("#presentaPane .presenta-aiuto").hidden');
+  const slideVuota=await c.val('ZainoPresenta.documento.stacks[1].slides[0].id');
+  for(const [sid,avverti]of [[slideVuota,false],[provaAvviso.slide,true]]){
+   const sel='.presenta-slide-mini[data-slide-id="'+sid+'"]';await c.val(`document.querySelector(${q(sel)}).scrollIntoView({block:'center',behavior:'instant'})`);await c.clicca(sel);
+   await frameWait(`document.querySelector('section.present .presenta-slide')?.querySelectorAll('.presenta-blocco').length===${avverti?1:0}`);
+   await wait(`document.querySelector('#presentaPane .presenta-aiuto').hidden===${!avverti}`);
+  }
+  await click('Sfondo');assert(!await c.val('document.querySelector("#presentaPane .presenta-aiuto").hidden'),'l’avviso riguarda la slide intera e resta cambiando tab');
+  // Atkinson supera la propria riga di pochi pixel, ma resta dentro il riquadro: nessun taglio.
+  await c.val(`ZainoPresenta.modifica({tipo:'blocco',slideId:${q(provaAvviso.slide)},blockId:${q(provaAvviso.titolo.id)},block:{...${q(provaAvviso.titolo)},markdown:'Tabelle',style:{fontFamily:'atkinson',fontSize:54,box:{x:7,y:7,width:24.775,height:11.25}}}},{struttura:true})`);
+  await wait('document.querySelector("#presentaPane .presenta-aiuto").hidden');
+  assert(await frameVal('(()=>{const b=document.querySelector("[data-slot=title]"),c=b.querySelector(".presenta-contenuto");return b.scrollHeight<=b.clientHeight+1&&c.scrollHeight>c.clientHeight+1;})()'),'il titolo entra nel riquadro anche se le metriche interne superano la riga');
+  await c.val(`ZainoPresenta.modifica({tipo:'blocco',slideId:${q(provaAvviso.slide)},blockId:${q(provaAvviso.titolo.id)},block:${q(provaAvviso.titolo)}},{struttura:true});ZainoPresenta.modifica({tipo:'eliminaSlide',slideId:${q(slideVuota)}},{struttura:true})`);
+  await wait('document.querySelector("#presentaPane .presenta-aiuto").hidden');
+  await click('Aggiungi testo');await scrivi('Testo · Markdown e formule','La clorofilla cattura la luce. Formula: \\(x^2\\)');
   await frameVal('window.__privatoRicevuto=false;window.addEventListener("message",e=>{if(JSON.stringify(e.data).includes("NOTA_PRIVATA_UI"))window.__privatoRicevuto=true})');
   await scrivi('Appunti del presentatore · privati','NOTA_PRIVATA_UI · Chiedere un esempio alla classe.');
   await c.val('ZainoPresenta.flush()');await frameWait('document.querySelector(".presenta-slide")?.textContent.includes("clorofilla")');
@@ -309,10 +327,11 @@ async function riordinaMiniature(da,a,dentro=false){
   for(const tab of ['Stile','Disposizione','Testo','Titolo','Immagine','Righelli']){
    await click(tab);await c.val('document.querySelector(".presenta-proprieta-foglio").scrollIntoView({block:"end",behavior:"instant"});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
    assert(await c.val('(()=>{const p=document.querySelector(".presenta-lavoro");return p.scrollWidth<=p.clientWidth+1;})()'),tab+' senza overflow orizzontale');
+   assert(await c.val('(()=>{const p=document.querySelector(".presenta-lavoro"),c=document.querySelector(".presenta-campi");return getComputedStyle(p).borderLeftWidth==="1px"&&p.getBoundingClientRect().bottom>=c.getBoundingClientRect().bottom;})()'),'il separatore prosegue fino sotto le proprietà');
    if(tab==='Stile')assert(await c.val('(()=>{const g=document.querySelector(".presenta-stili-galleria").getBoundingClientRect(),c=document.querySelector(".presenta-stili-controlli").getBoundingClientRect();return g.left>c.right&&Math.abs(g.top-c.top)<2;})()'),'galleria affiancata nello split largo');
    if(['Testo','Titolo'].includes(tab))assert(await c.val(`(()=>{const p=document.querySelector('[aria-label="Posizione"]').getBoundingClientRect(),i=document.querySelector(".presenta-interlinea").getBoundingClientRect();return p.width<=90&&i.width<=161;})()`),'Posizione e interlinea compatti');
    if(['Testo','Titolo','Immagine'].includes(tab))assert(await c.val(`(()=>{const a=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect();return ['Grassetto','Corsivo','Sottolineato','Posizione'].every(n=>{const b=document.querySelector('#presentaPane [aria-label="'+n+'"]').getBoundingClientRect();return Math.abs(b.bottom-a.bottom)<1&&Math.abs(b.height-a.height)<1;});})()`) ,'formati e posizione nella riga del font');
-   if(tab==='Titolo')assert(await c.val(`(()=>{const e=document.querySelector('.presenta-titolo-campo'),a=e.querySelector('button').getBoundingClientRect(),b=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect();return !e.querySelector(':scope>span')&&a.width<=161&&Math.abs(a.bottom-b.bottom)<1&&Math.abs(a.height-b.height)<1;})()`),'campo Titolo breve e allineato al font senza etichetta ripetuta');
+   if(tab==='Titolo')assert(await c.val(`(()=>{const e=document.querySelector('.presenta-titolo-campo'),a=e.querySelector('button').getBoundingClientRect(),b=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect();return e.querySelector(':scope>span')?.textContent==='Titolo'&&a.width<=161&&Math.abs(a.bottom-b.bottom)<1&&Math.abs(a.height-b.height)<1;})()`),'etichetta Titolo sopra il campo breve allineato al font');
    fs.writeFileSync('/private/tmp/presenta-'+tab.toLowerCase()+'-largo.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
    if(tab==='Titolo'){await click('Posizione');fs.writeFileSync('/private/tmp/presenta-posizione-bubble.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));await click('Posizione');}
   }
