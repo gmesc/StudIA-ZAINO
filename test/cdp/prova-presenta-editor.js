@@ -14,6 +14,7 @@ async function click(nome){
   for(const type of ['mousePressed','mouseReleased'])await c.invia('Input.dispatchMouseEvent',{type,...r,button:'right',clickCount:1});await wait(`!!document.querySelector(${q(sel)})?.closest(':popover-open')`);
  }
  await c.val(`document.querySelector(${q(sel)}).scrollIntoView({block:'center',behavior:'instant'});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))`);await wait(`(()=>{const e=document.querySelector(${q(sel)});if(!e||e.disabled)return false;const r=e.getBoundingClientRect();return e.contains(document.elementFromPoint(r.left+r.width/2,r.top+r.height/2));})()`);await c.clicca(sel);await c.val('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
+ if(nome==='Scegli un’animazione')await wait('!!document.querySelector(".presenta-galleria-animazioni[open]")');
  if(nome==='Nuova slide'){await wait('!!document.querySelector(".presenta-scelta-modello[open]")');await c.clicca('.presenta-scelta-modello [data-modello=vuota]');}
 }
 

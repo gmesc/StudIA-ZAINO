@@ -6,6 +6,9 @@ app.setPath('userData',profilo);app.commandLine.appendSwitch('user-data-dir',pro
 require('../lib/zaini').crea(vault,'Scienze');fs.writeFileSync(path.join(profilo,'config.json'),JSON.stringify({vaultPath:vault,onboardingFatto:true}));
 const P=require('../lib/presentazioni'),vero=P.salva;let rotto=false,ritardo=0;
 P.salva=async(...args)=>{if(ritardo)await new Promise(r=>setTimeout(r,ritardo));if(rotto)throw Error('DISCO_PIENO_SIMULATO');return vero(...args);};
+// Simula un main rimasto aperto prima dell’aggiornamento: non comunica il catalogo.
+let catalogoVecchio=false;const IPC=require('../lib/presentazioni-ipc'),installa=IPC.installa;
+IPC.installa=o=>{const handle=o.win.webContents.ipc.handle;o.win.webContents.ipc.handle=function(canale,fn){return handle.call(this,canale,async(...args)=>{const r=await fn(...args);if(catalogoVecchio&&args[1]?.azione==='strumenti')delete r.effetti;return r;});};try{return installa(o);}finally{o.win.webContents.ipc.handle=handle;}};
 require('../main');
 async function wait(fn){for(let n=0;n<150;n++){if(await fn())return;await new Promise(r=>setTimeout(r,100));}throw Error('Attesa della chiusura non soddisfatta.');}
 app.whenReady().then(async()=>{
@@ -14,10 +17,22 @@ app.whenReady().then(async()=>{
  await run(`cambiaZaino('scienze',true);bancoMostra('presenta');document.querySelector('#presentaPane [aria-label="Documento"]').click()`);await wait(()=>run('document.querySelector(\'#presentaPane [data-presenta-action="nuova"]\')?.disabled===false'));
  const d=await run(`window.vault.presentazioni.comando({azione:'crea',corso:'scienze',title:'Chiusura protetta'})`);assert(d.ok,d.error);await run('ZainoPresenta.apri('+JSON.stringify(d.documento.id)+')');
  const sid=d.documento.stacks[0].slides[0].id;
+ await run('ZainoPresenta.modifica({tipo:"titoloSlide",slideId:'+JSON.stringify(sid)+',title:"Titolo di prova"});ZainoPresenta.flush()');
+ const apriGalleria=async()=>{await run(`document.querySelector('#presentaPane [aria-label="Titolo"]').click();document.querySelector('.presenta-animazioni').open=true;document.querySelector('#presentaPane [aria-label="Scegli un’animazione"]').click()`);await wait(()=>run('!!document.querySelector(".presenta-galleria-animazioni[open]")'));await run(`document.querySelector('.presenta-effetto-card[data-effetto="letters"]').click()`);};
+ catalogoVecchio=true;await apriGalleria();
+ assert(await run(`document.querySelector('.presenta-galleria-animazioni [aria-label="Applica all’oggetto"]').disabled`),'un main precedente non permette di applicare lettere e bloccare il salvataggio');
+ assert(await run(`document.querySelector('.presenta-runtime-avviso').textContent.includes('chiudi e riapri')`));
+ assert.equal(await run('ZainoPresenta.documento.stacks[0].slides[0].animations.length'),0,'la galleria precedente non sporca il documento');
+ await run(`document.querySelector('.presenta-galleria-animazioni [aria-label="Chiudi galleria"]').click()`);
+ catalogoVecchio=false;await apriGalleria();
+ assert(!await run(`document.querySelector('.presenta-galleria-animazioni [aria-label="Applica all’oggetto"]').disabled`));
+ await run(`document.querySelector('.presenta-galleria-animazioni [aria-label="Applica all’oggetto"]').click();ZainoPresenta.flush()`);
+ assert.equal(P.leggi(vault,'scienze',d.documento.id).stacks[0].slides[0].animations[0].effect,'letters','il nuovo effetto si salva sul disco');
+
  rotto=true;await run('ZainoPresenta.modifica({tipo:"titoloSlide",slideId:'+JSON.stringify(sid)+',title:"Ultima battuta"})');win.close();
  await wait(()=>run('document.querySelector("#presentaPane .presenta-stato").textContent.includes("DISCO_PIENO_SIMULATO")'));
  assert(!win.isDestroyed(),'l’errore disco impedisce la chiusura');assert(await run('ZainoPresenta.daSalvare'));
- assert.equal(P.leggi(vault,'scienze',d.documento.id).stacks[0].slides[0].title,'Nuova slide');assert.equal(P.recupera(vault,'scienze',d.documento.id).documento.stacks[0].slides[0].title,'Ultima battuta');
+ assert.equal(P.leggi(vault,'scienze',d.documento.id).stacks[0].slides[0].title,'Titolo di prova');assert.equal(P.recupera(vault,'scienze',d.documento.id).documento.stacks[0].slides[0].title,'Ultima battuta');
  rotto=false;ritardo=250;
  await run('ZainoPresenta.modifica({tipo:"titoloSlide",slideId:'+JSON.stringify(sid)+',title:"Scritta un attimo prima di chiudere"})');
  await wait(()=>win.webContents.mainFrame.frames.some(f=>f.url.includes('/presentazioni-player/index.html')));
@@ -49,6 +64,7 @@ app.whenReady().then(async()=>{
  await frame.executeJavaScript('document.querySelector("[contenteditable=true]").textContent="Scritta sul foglio subito prima di chiudere"');
  const closed=new Promise(r=>win.once('closed',r));win.close();await closed;
  assert.equal(P.leggi(vault,'scienze',d.documento.id).stacks[0].slides[0].title,'Scritta sul foglio subito prima di chiudere');
- console.log('✓ Chiusura reale: errore dichiarato, finestra e bozza conservate; retry attende la scrittura atomica dell’ultima battuta.');app.exit(0);
+ assert.equal(P.leggi(vault,'scienze',d.documento.id).stacks[0].slides[0].animations[0].effect,'letters','l’effetto è conservato anche dopo la chiusura');
+ console.log('✓ Cataloghi disallineati bloccati prima della modifica; nuovo effetto salvato e conservato. Chiusura reale: errore dichiarato, finestra e bozza conservate; retry attende la scrittura atomica dell’ultima battuta.');app.exit(0);
 }).catch(e=>{console.error(e);app.exit(1);});
 app.on('will-quit',()=>fs.rmSync(tmp,{recursive:true,force:true}));

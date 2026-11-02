@@ -4,6 +4,8 @@ assert.equal(A.catalogo.length,36);assert.equal(new Set(A.catalogo.map(e=>e.id))
 const azioni=[{targetId:'a',effect:'fade-in',step:1,duration:1},{targetId:'b',effect:'pulse',step:1,duration:2,start:'after',delay:.3},{targetId:'c',effect:'grow',step:1,start:'with',duration:.5},{targetId:'a',effect:'fade-out',step:2,start:'click'}];
 assert.deepEqual(A.tempi(azioni).map(a=>[a.step,a.inizio,a.fine]),[[1,0,1],[1,1.3,3.3],[1,1.3,1.8],[2,0,.6]]);
 assert.equal(A.normalizza(azioni.slice(1))[0].start,'click');assert.equal(azioni[1].start,'after');
+assert.equal(A.disponibile('letters','title',['fade-in','words']),false,'un processo precedente non deve accettare effetti nuovi');
+assert.equal(A.disponibile('words','title',['fade-in','words']),true);assert.equal(A.disponibile('letters','title',[]),false);
 assert.equal(A.errore({effect:'words'},'image'),'Effetto non compatibile con questo oggetto.');
 assert(A.errore({effect:'fade-in',duration:0},'title'));assert(A.errore({effect:'fade-in',delay:21},'title'));assert(A.errore({effect:'path-orbit',distance:Infinity},'title'));
 for(const effetto of A.catalogo){

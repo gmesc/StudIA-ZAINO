@@ -265,3 +265,5 @@
 .presenta-galleria-animazioni[open]{display:flex;flex-direction:column}
 .presenta-galleria-animazioni>.tbar,.presenta-galleria-footer{flex:none}
 .presenta-galleria-effetti{min-height:100px;overflow-y:auto;overscroll-behavior:contain;padding:2px}
+
+.presenta-runtime-avviso{flex:none;margin:0 0 12px;font-size:14px;line-height:1.4;padding:8px;border-left:3px solid var(--teal-strong);background:var(--hover)}

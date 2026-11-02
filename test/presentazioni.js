@@ -165,6 +165,7 @@ const F=require('./fixtures/presentazioni');
   win.webContents={mainFrame:{url:'file:///app/StudIA.html'},ipc:{handle:(k,fn)=>handlers[k]=fn},send:(...args)=>messages.push(args)};
   require('../lib/presentazioni-ipc').installa({win,appDir:'/app',vaultDir:()=>v,nativeImage:{createFromPath:p=>{assert.equal(p,asset);return {getSize:()=>({width:3200,height:1600}),resize:taille=>{assert.deepEqual(taille,{width:1600,height:800});return {toDataURL:()=>'data:image/png;base64,'+F.png.toString('base64')};}};}},cestina:async()=>{throw Error('cestino non disponibile');}});
   const invoke=(o,e={sender:win.webContents,senderFrame:win.webContents.mainFrame})=>handlers['presenta:comando'](e,o);
+  assert.deepEqual((await invoke({azione:'strumenti',corso:'scienze'})).effetti,Object.keys(M.EFFETTI),'il renderer conosce il catalogo del processo che salva');
   const fotoCrop=d.stacks[0].slides[0].blocks.find(b=>b.type==='image');
   const vistaCrop=await invoke({azione:'immagineRitaglio',corso:'scienze',documento:d,blockId:fotoCrop.id});assert(vistaCrop.ok);assert.equal(vistaCrop.width,3200);assert(vistaCrop.immagine.startsWith('data:image/png;base64,'));
   assert(!(await invoke({azione:'immagineRitaglio',corso:'storia',documento:d,blockId:fotoCrop.id})).ok);

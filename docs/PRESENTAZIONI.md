@@ -148,6 +148,8 @@ Selezionare un oggetto e aprire **ANIMAZIONI → Scegli un’animazione**. Il co
 - Disegno: Disegna la forma, Sottolinea.
 - Percorso: rettilineo, arco, orbita, onda, zig-zag; tutti tornano al punto iniziale.
 
+La galleria verifica gli effetti riconosciuti dal processo che salva. Se il codice dell’app è cambiato mentre ZAINO era aperto, gli effetti non ancora disponibili sono indicati con **Richiede riavvio**, con Applica disabilitato: occorre salvare, chiudere e riaprire tutta l’app. Ricaricare soltanto la finestra non aggiorna lo schema e il motore nel processo principale.
+
 Ogni effetto mostra il clic e il numero nella sequenza della slide. **Avvio** sceglie **Al clic**, **Insieme al precedente** o **Dopo il precedente**; il precedente è l’effetto subito prima nell’ordine globale, anche su un altro oggetto. **Durata (s)** regola il tempo totale, **Attesa (s)** aggiunge una pausa rispetto all’avvio scelto. Per i percorsi, **Distanza** offre Breve/Media/Ampia. Le frecce riordinano gli effetti nella slide, il cestino elimina; il nome dell’effetto riapre la galleria per sostituirlo. Tutte le modifiche sono annullabili e autosalvate. I controlli vanno a capo negli split stretti.
 
 **Prova la slide** apre il contenuto corrente con **Avanti**, **Indietro** e **Ricomincia**. La prova non cambia il documento. L’editor resta statico per consentire selezione e scrittura. Le sequenze di lettere, parole, righe e celle si svolgono automaticamente nel singolo clic; non sono clic distinti per ogni elemento. Le formule e i frammenti di codice sono esclusi dalla divisione del testo. La divisione in lettere usa i grafemi Unicode, preservando accenti ed emoji composti. I percorsi sono preset, non tracciati disegnabili liberamente.

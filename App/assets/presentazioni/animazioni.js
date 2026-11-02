@@ -41,7 +41,7 @@
   ['path-zigzag','Zig-zag','Percorso','Segue un percorso a zig-zag e torna al punto di partenza.',tutti,2.5]
  ].map(([id,nome,gruppo,descrizione,tipi,durata])=>Object.freeze({id,nome,gruppo,descrizione,tipi,durata,entrata:gruppo==='Entrata'||gruppo==='Sequenza'||id==='draw',uscita:gruppo==='Uscita'})));
  const effetti=Object.freeze(Object.fromEntries(catalogo.map(e=>[e.id,e])));
- const disponibile=(id,tipo)=>!!effetti[id]?.tipi.includes(tipo);
+ const disponibile=(id,tipo,supportati)=>!!effetti[id]?.tipi.includes(tipo)&&(supportati===undefined||Array.isArray(supportati)&&supportati.includes(id));
  const durata=a=>a.duration??effetti[a.effect]?.durata??.6;
  function normalizza(azioni){
   let passo=0,prima=null;
