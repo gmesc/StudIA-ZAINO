@@ -207,9 +207,10 @@ async function riordinaMiniature(da,a,dentro=false){
   // La galleria applica un effetto solo alla conferma, con tempi espliciti.
   const animazioniPrima=await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations');
   await c.val('document.querySelector(".presenta-animazioni").scrollIntoView({block:"center",behavior:"instant"})');await c.clicca('.presenta-animazioni>summary');await click('Scegli un’animazione');
-  assert.equal(await c.val('document.querySelectorAll(".presenta-effetto-card").length'),18);
-  await c.clicca('.presenta-effetto-card[data-effetto="draw"]');assert(await c.val(`document.querySelector('.presenta-galleria-animazioni [aria-label="Applica all’oggetto"]').disabled`),'effetto incompatibile spiegato e non applicabile');
+  assert.equal(await c.val('document.querySelectorAll(".presenta-effetto-card").length'),36);
+  await c.val('document.querySelector(".presenta-effetto-card[data-effetto=draw]").scrollIntoView({block:"center",behavior:"instant"})');await c.clicca('.presenta-effetto-card[data-effetto="draw"]');assert(await c.val(`document.querySelector('.presenta-galleria-animazioni [aria-label="Applica all’oggetto"]').disabled`),'effetto incompatibile spiegato e non applicabile');
   assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations'),animazioniPrima,'guardare i campioni non cambia il documento');
+  assert(await c.val(`(()=>{const b=document.querySelector('.presenta-galleria-animazioni [aria-label="Applica all’oggetto"]').getBoundingClientRect(),g=document.querySelector('.presenta-galleria-effetti');return b.bottom<=innerHeight&&g.scrollHeight>g.clientHeight;})()`),'conferma visibile mentre scorre il catalogo');
   fs.writeFileSync('/private/tmp/presenta-galleria-animazioni.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
   const vistaGalleria=await c.val('({width:innerWidth,height:innerHeight})');await c.invia('Emulation.setDeviceMetricsOverride',{width:700,height:700,deviceScaleFactor:1,mobile:false});
   await c.val(`document.querySelector('.presenta-galleria-animazioni [aria-label="Rivedi esempio"]').scrollIntoView({block:"end",behavior:"instant"})`);
@@ -218,11 +219,11 @@ async function riordinaMiniature(da,a,dentro=false){
   await c.invia('Emulation.setDeviceMetricsOverride',{...vistaGalleria,deviceScaleFactor:1,mobile:false});await c.val('document.querySelector(".presenta-galleria-animazioni").scrollTop=0');
 
 
-  await c.clicca('.presenta-effetto-card[data-effetto="fade-up"]');await c.clicca('.presenta-galleria-animazioni [aria-label="Applica all’oggetto"]');
+  await c.val('document.querySelector(".presenta-effetto-card[data-effetto=fade-up]").scrollIntoView({block:"center",behavior:"instant"})');await c.clicca('.presenta-effetto-card[data-effetto="fade-up"]');await c.clicca('.presenta-galleria-animazioni [aria-label="Applica all’oggetto"]');
   await frameWait(`!!document.querySelector('[data-block-id="'+${q(textId)}+'"] .fragment[data-effetto="fade-up"][data-fragment-index="0"]')`);
   await c.val(`(()=>{const e=document.querySelector('.presenta-azione [aria-label="Durata (s)"]');e.value='1.2';e.dispatchEvent(new Event('change'));})()`);
   assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations[0].duration'),1.2);
-  await click('Scegli un’animazione');await c.clicca('.presenta-effetto-card[data-effetto="pulse"]');await c.clicca('.presenta-galleria-animazioni [aria-label="Applica all’oggetto"]');
+  await click('Scegli un’animazione');await c.val('document.querySelector(".presenta-effetto-card[data-effetto=pulse]").scrollIntoView({block:"center",behavior:"instant"})');await c.clicca('.presenta-effetto-card[data-effetto="pulse"]');await c.clicca('.presenta-galleria-animazioni [aria-label="Applica all’oggetto"]');
   await c.val(`(()=>{const e=document.querySelectorAll('.presenta-azione [aria-label="Avvio"]')[1];e.value='after';e.dispatchEvent(new Event('change'));})()`);
   assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations.map(a=>a.step)'),[1,1],'Dopo il precedente mantiene lo stesso clic');
   assert(await c.val(`Array.from(document.querySelectorAll('.presenta-azione')).every(row=>row.scrollWidth<=row.clientWidth+1)`),'animazioni senza tagli nello split');

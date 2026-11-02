@@ -456,7 +456,7 @@
  }
  function campioneAnimazione(id){
   const box=E('div',null,'presenta-campione-animazione'),oggetto=E('div',null,'presenta-demo-oggetto');box.setAttribute('aria-hidden','true');box.append(oggetto);
-  if(id==='table-rows')oggetto.innerHTML='<table><tr><th>Pianeta</th><th>Lune</th></tr><tr><td>Terra</td><td>1</td></tr><tr><td>Marte</td><td>2</td></tr></table>';
+  if(id.startsWith('table-'))oggetto.innerHTML='<table><tr><th>Pianeta</th><th>Lune</th></tr><tr><td>Terra</td><td>1</td></tr><tr><td>Marte</td><td>2</td></tr></table>';
   else if(id==='list-items')oggetto.innerHTML='<ul><li>Osserva</li><li>Confronta</li><li>Spiega</li></ul>';
   else if(id==='draw')oggetto.innerHTML='<svg class="presenta-forma" viewBox="0 0 100 60" fill="currentColor"><path d="M5 23H65V5L95 30L65 55V37H5Z"/></svg>';
   else if(id.startsWith('path-')){oggetto.innerHTML='<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17" fill="currentColor"/><ellipse cx="24" cy="24" rx="23" ry="7" fill="none" stroke="currentColor" stroke-width="2"/></svg>';oggetto.classList.add('presenta-demo-pianeta');}

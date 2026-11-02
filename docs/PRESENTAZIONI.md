@@ -139,18 +139,18 @@ Limiti iniziali: 8 MiB di JSON, 300 slide totali, 200 blocchi per slide, 512 MiB
 
 ## Galleria delle animazioni
 
-Selezionare un oggetto e aprire **ANIMAZIONI → Scegli un’animazione**. Il comando ANIMAZIONI usa gli stessi token dei pulsanti, con chevron e stato aperto evidenziato in verde. La galleria offre 18 effetti in sei categorie, con campioni di testo, elenco, tabella, forma e pianeta. Hover/focus riproducono la tessera; il clic seleziona l’esempio grande, **Rivedi esempio** lo ripete. Solo **Applica all’oggetto** modifica la slide. Gli effetti riservati a un altro tipo di oggetto restano esplorabili con il motivo dell’incompatibilità; non possono essere applicati.
+Selezionare un oggetto e aprire **ANIMAZIONI → Scegli un’animazione**. Il comando ANIMAZIONI usa gli stessi token dei pulsanti, con chevron e stato aperto evidenziato in verde. La galleria offre 36 effetti in sei categorie, con campioni di testo, elenco, tabella, forma e pianeta. Scorre soltanto la griglia: filtri, esempio e conferma rimangono visibili. Hover/focus riproducono la tessera; il clic seleziona l’esempio grande, **Rivedi esempio** lo ripete. Solo **Applica all’oggetto** modifica la slide. Gli effetti riservati a un altro tipo di oggetto restano esplorabili con il motivo dell’incompatibilità; non possono essere applicati.
 
-- Entrata: Comparsa, Dal basso, Da sinistra, Zoom leggero.
-- Uscita: Scomparsa.
-- Evidenza: Ingrandisci, Riduci, Evidenzia, Pulsazione.
-- Sequenza: Una parola alla volta, Una riga alla volta, Punti in sequenza, Righe in sequenza (tabella).
+- Entrata: Comparsa, Dal basso, Dall’alto, Da sinistra, Da destra, Zoom leggero, Rimbalzo, Ruota ed entra, Tendina, Apri.
+- Uscita: Scomparsa, Esci a sinistra/destra/in alto/in basso, Riduci e scompari.
+- Evidenza: Ingrandisci, Riduci, Evidenzia, Pulsazione, Scuoti, Oscilla, Giro completo.
+- Sequenza: Una lettera alla volta, Una parola alla volta, Una riga alla volta, Punti in sequenza, Righe in sequenza e Colonne in sequenza (tabella).
 - Disegno: Disegna la forma, Sottolinea.
-- Percorso: rettilineo, arco, orbita; tutti tornano al punto iniziale.
+- Percorso: rettilineo, arco, orbita, onda, zig-zag; tutti tornano al punto iniziale.
 
 Ogni effetto mostra il clic e il numero nella sequenza della slide. **Avvio** sceglie **Al clic**, **Insieme al precedente** o **Dopo il precedente**; il precedente è l’effetto subito prima nell’ordine globale, anche su un altro oggetto. **Durata (s)** regola il tempo totale, **Attesa (s)** aggiunge una pausa rispetto all’avvio scelto. Per i percorsi, **Distanza** offre Breve/Media/Ampia. Le frecce riordinano gli effetti nella slide, il cestino elimina; il nome dell’effetto riapre la galleria per sostituirlo. Tutte le modifiche sono annullabili e autosalvate. I controlli vanno a capo negli split stretti.
 
-**Prova la slide** apre il contenuto corrente con **Avanti**, **Indietro** e **Ricomincia**. La prova non cambia il documento. L’editor resta statico per consentire selezione e scrittura. Le sequenze di parole, righe e celle si svolgono automaticamente nel singolo clic; non sono clic distinti per ogni elemento. Le formule e i frammenti di codice sono esclusi dalla divisione in parole. I percorsi sono preset, non tracciati disegnabili liberamente.
+**Prova la slide** apre il contenuto corrente con **Avanti**, **Indietro** e **Ricomincia**. La prova non cambia il documento. L’editor resta statico per consentire selezione e scrittura. Le sequenze di lettere, parole, righe e celle si svolgono automaticamente nel singolo clic; non sono clic distinti per ogni elemento. Le formule e i frammenti di codice sono esclusi dalla divisione del testo. La divisione in lettere usa i grafemi Unicode, preservando accenti ed emoji composti. I percorsi sono preset, non tracciati disegnabili liberamente.
 
 L’esecutore condiviso `animazioni-dom.js` usa **Anime.js 4.5.0**, inclusa localmente con licenza MIT e impronta SHA-256. Il modulo puro `animazioni.js` gestisce catalogo, compatibilità e tempi. Reveal conserva il controllo di slide e passaggi. Navigazione indietro, cambio slide e chiusura ripristinano stili e contenuti; con movimento ridotto si applica subito il risultato finale al clic. L’HTML esportato contiene lo stesso motore e funziona offline; i pacchetti esportati prima dell’aggiornamento devono essere esportati di nuovo.
 

@@ -707,7 +707,25 @@
                           "underline",
                           "path-line",
                           "path-arc",
-                          "path-orbit"
+                          "path-orbit",
+                          "fade-down",
+                          "slide-right",
+                          "bounce-in",
+                          "rotate-in",
+                          "wipe-in",
+                          "unfold-in",
+                          "slide-out-left",
+                          "slide-out-right",
+                          "slide-out-up",
+                          "slide-out-down",
+                          "zoom-out",
+                          "shake",
+                          "wobble",
+                          "spin",
+                          "letters",
+                          "table-columns",
+                          "path-wave",
+                          "path-zigzag"
                         ]
                       },
                       "start": {

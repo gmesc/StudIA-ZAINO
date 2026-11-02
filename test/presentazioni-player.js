@@ -15,7 +15,7 @@ app.whenReady().then(async()=>{
  const A=require('../App/assets/presentazioni/animazioni');
  let esempi=M.crea('00000000-0000-4000-8000-000000000001','Galleria verificata');esempi.stacks=[];
  for(const e of A.catalogo){const slide=M.slide();slide.title=e.nome;const type=e.tipi[0],b={id:'campione-'+e.id,type,slot:'body',style:{box:{x:15,y:20,width:50,height:50}}};
-  if(type==='table')b.table=[['Pianeta','Lune'],['Terra','1']];else if(type==='list')b.items=[{id:'uno',markdown:'Osserva'},{id:'due',markdown:'Spiega'}];else if(type==='shape')b.shape='arrow';else b.markdown='La **Terra** gira intorno al Sole.';
+  if(type==='table')b.table=[['Pianeta','Lune'],['Terra','1']];else if(type==='list')b.items=[{id:'uno',markdown:'Osserva'},{id:'due',markdown:'Spiega'}];else if(type==='shape')b.shape='arrow';else b.markdown=e.id==='letters'?'Caffè 👩‍🚀 e **Terra**':'La **Terra** gira intorno al Sole.';
   slide.blocks=[b];slide.animations=[{targetId:b.id,effect:e.id,step:1,duration:.2,delay:.05,distance:40}];if(e.id==='fade-in')slide.animations.push({targetId:b.id,effect:'words',step:2,duration:.2});esempi.stacks.push({id:require('node:crypto').randomUUID(),slides:[slide]});
  }
  const index=path.join(exported.cartella,'index.html');fs.writeFileSync(index,fs.readFileSync(index,'utf8').replace('</div></div><script',R.compila(foglio).html+R.compila(esempi).html+'</div></div><script'));
@@ -74,24 +74,28 @@ app.whenReady().then(async()=>{
   assert.equal(await run('Number(getComputedStyle(document.querySelector("section.present .presenta-animazione")).opacity)'),e.entrata?0:1,e.id+' stato prima del clic');
   await run('PresentaPlayer.comando({azione:"avanti"})');await new Promise(r=>setTimeout(r,350));
   const stato=await run(`(()=>{const el=document.querySelector('section.present .presenta-animazione');return {opacity:Number(getComputedStyle(el).opacity),transform:getComputedStyle(el).transform,text:el.textContent,styles:el.getAttribute('style')};})()`);
-  assert.equal(stato.opacity,e.id==='fade-out'?0:1,e.id+' stato finale');
+  assert.equal(stato.opacity,e.uscita?0:1,e.id+' stato finale');
   if(e.id==='fade-in')assert(await run(`Array.from(document.querySelectorAll('section.present .presenta-animazione')).every(e=>Number(getComputedStyle(e).opacity)===1)`),'un ingresso futuro non nasconde il contenuto fra due clic');
   if(e.id==='grow')assert(stato.transform.includes('1.15'),e.id);if(e.id==='shrink')assert(stato.transform.includes('0.85'),e.id);
+  if(e.id==='wipe-in')assert(['inset(0%)','inset(0% 0% 0% 0%)'].includes(await run(`getComputedStyle(document.querySelector('section.present .presenta-animazione')).clipPath`)),'tendina completamente aperta alla fine');
   if(e.id.startsWith('path-'))assert(!/NaN/.test(stato.transform),e.id+' percorso valido');
   await run('PresentaPlayer.comando({azione:"indietro"})');
   assert.equal(await run('document.querySelector("section.present .presenta-contenuto").innerHTML'),prima,e.id+' DOM ripristinato, inclusi formule e formati');
   assert.equal(await run('document.querySelector("section.present .presenta-animazione").getAttribute("style")'),null,e.id+' nessuno stile residuo');
   // Movimento ridotto: risultato finale immediato, sempre rispettando il clic.
   await run('document.documentElement.dataset.movimentoRidotto="true";PresentaPlayer.comando({azione:"avanti"})');
-  assert.equal(await run('Number(getComputedStyle(document.querySelector("section.present .presenta-animazione")).opacity)'),e.id==='fade-out'?0:1,e.id+' movimento ridotto');
+  assert.equal(await run('Number(getComputedStyle(document.querySelector("section.present .presenta-animazione")).opacity)'),e.uscita?0:1,e.id+' movimento ridotto');
   await run('document.documentElement.dataset.movimentoRidotto="false"');
  }
  // Verifica il movimento durante l’esecuzione, non soltanto il risultato finale.
- for(const id of ['path-line','path-arc','path-orbit','words','table-rows','draw']){
+ for(const id of ['path-line','path-arc','path-orbit','path-wave','path-zigzag','letters','words','table-rows','table-columns','draw','shake','wobble','spin','bounce-in','wipe-in']){
   const i=A.catalogo.findIndex(e=>e.id===id);await run(`PresentaPlayer.comando({azione:'vai',h:${4+i},v:0,fragmentIndex:-1});(()=>{const e=document.querySelector('section.present .presenta-animazione'),a=JSON.parse(e.dataset.animazione);a.duration=2;a.delay=0;a.inizio=0;e.dataset.animazione=JSON.stringify(a);})()`);
   const prima=await run('document.querySelector("section.present .presenta-contenuto").innerHTML');await run('PresentaPlayer.comando({azione:"avanti"})');await new Promise(r=>setTimeout(r,220));
   if(id.startsWith('path-'))assert(await run(`(()=>{const m=new DOMMatrix(getComputedStyle(document.querySelector('section.present .presenta-animazione')).transform);return Math.abs(m.e)+Math.abs(m.f)>1;})()`),id+' movimento reale intermedio');
-  if(id==='words'||id==='table-rows')assert(await run(`(()=>{const ns=[...document.querySelectorAll('section.present .presenta-animazione ${id==='words'?'span[style]':'tr'}')],op=ns.map(e=>Number(getComputedStyle(e).opacity));return op.some(n=>n>0)&&op.some(n=>n===0);})()`),id+' contenuti in momenti diversi');
+  if(['letters','words','table-rows','table-columns'].includes(id))assert(await run(`(()=>{const ns=[...document.querySelectorAll('section.present .presenta-animazione ${['words','letters'].includes(id)?'span[style]':id==='table-columns'?'th,section.present .presenta-animazione td':'tr'}')],op=ns.map(e=>Number(getComputedStyle(e).opacity));return op.some(n=>n>0)&&op.some(n=>n===0);})()`),id+' contenuti in momenti diversi');
+  if(id==='letters')assert(await run(`Array.from(document.querySelectorAll('section.present .presenta-animazione span')).some(e=>e.textContent==='👩‍🚀'&&e.children.length===0)`),'emoji composto conservato come un unico carattere');
+  if(['shake','wobble','spin','bounce-in'].includes(id))assert(await run(`(()=>{const m=new DOMMatrix(getComputedStyle(document.querySelector('section.present .presenta-animazione')).transform);return Math.abs(m.a-1)+Math.abs(m.b)+Math.abs(m.c)+Math.abs(m.d-1)+Math.abs(m.e)+Math.abs(m.f)>.01;})()`),id+' trasformazione in corso');
+  if(id==='wipe-in')assert(await run(`(()=>{const s=getComputedStyle(document.querySelector('section.present .presenta-animazione'));return s.clipPath!=='none'&&s.clipPath!=='inset(0%)';})()`),'tendina in corso');
   if(id==='draw')assert(await run(`(()=>{const n=parseFloat(document.querySelector('section.present .presenta-forma path').getAttribute('stroke-dasharray'));return n>0&&n<1000;})()`),'contorno SVG in corso');
   await run('PresentaPlayer.comando({azione:"indietro"})');assert.equal(await run('document.querySelector("section.present .presenta-contenuto").innerHTML'),prima,id+' ritorno durante animazione');
  }

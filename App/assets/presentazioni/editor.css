@@ -260,3 +260,8 @@
 .presenta-animazioni>summary::-webkit-details-marker{display:none}
 .presenta-animazioni[open]>summary.tbtn{background:color-mix(in srgb,var(--teal) 26%,var(--panel));color:var(--teal-strong)}
 .presenta-animazioni[open]>summary>.ui-icon{transform:rotate(90deg)}
+
+/* Con un catalogo ampio scorre soltanto la griglia; filtri, esempio e conferma restano visibili. */
+.presenta-galleria-animazioni[open]{display:flex;flex-direction:column}
+.presenta-galleria-animazioni>.tbar,.presenta-galleria-footer{flex:none}
+.presenta-galleria-effetti{min-height:100px;overflow-y:auto;overscroll-behavior:contain;padding:2px}
