@@ -3,6 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const q=JSON.stringify;
 async function wait(expr,client=c){for(let n=0;n<120;n++){if(await client.val(expr))return;await c.pausa(100);}throw Error('Attesa: '+expr);}
 async function click(nome){
+ if(/^(Riga [1-4]|Colonna [1-4]|(Alto|Centro|Basso) (sinistra|centro|destra))$/.test(nome)&&!await c.val('!!document.querySelector(".presenta-posizione-popup:popover-open")'))await click('Posizione');
  if(['Nuova presentazione','Rinomina presentazione','Salva presentazione','Esporta presentazione HTML','Elimina presentazione','Chiudi presentazione'].includes(nome))await click('Documento');
  if(['Aggiungi testo','Aggiungi elenco','Aggiungi formula','Aggiungi forma','Aggiungi tabella','Inserisci dallo zaino','Incolla oggetto'].includes(nome))await click('Inserisci');
  const sel='#presentaPane [aria-label='+JSON.stringify(nome)+']';
@@ -107,9 +108,12 @@ async function riordinaMiniature(da,a,dentro=false){
   await click('Riga 2');assert.equal(await c.val('document.querySelectorAll(".presenta-posizioni [data-cella][aria-pressed=true]").length'),3);
   await click('Colonna 1');assert.equal(await c.val('document.querySelectorAll(".presenta-posizioni [data-cella][aria-pressed=true]").length'),3);
   await cicloRighelli(3);await click('Guide magnetiche');assert.equal(await c.val(`document.querySelector('[aria-label="Guide magnetiche"]').getAttribute('aria-pressed')`),'true');await click('Guide magnetiche');
-  await click('Testo');assert.equal(await c.val('document.querySelectorAll(".presenta-posizioni [data-cella]").length'),16);
+  await click('Testo');await click('Posizione');assert.equal(await c.val('document.querySelectorAll(".presenta-posizioni [data-cella]").length'),16);
+  for(const type of ['keyDown','keyUp'])await c.invia('Input.dispatchKeyEvent',{type,key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  await wait('!document.querySelector(".presenta-posizione-popup:popover-open")');
+  assert.equal(await c.val(`document.querySelector('#presentaPane [aria-label="Testo"]').getAttribute('aria-pressed')`),'true','Escape chiude prima la griglia e conserva l’oggetto');
   await click('Riga 2');assert.equal(await c.val('document.querySelectorAll(".presenta-posizioni [data-cella][aria-pressed=true]").length'),4);
-  await cicloRighelli(1);await click('Testo');assert.equal(await c.val('document.querySelectorAll(".presenta-posizioni [data-cella]").length'),9);
+  await cicloRighelli(1);await click('Testo');await click('Posizione');assert.equal(await c.val('document.querySelectorAll(".presenta-posizioni [data-cella]").length'),9);
   await click('Sfondo');assert.equal(await c.val('document.querySelectorAll('+q('.presenta-campi [aria-label="Titolo della slide"]')+').length'),0);
   await click('Colore personalizzato dello sfondo');await click('sky-500');await click('Bianco');
   assert.equal(await c.val('document.querySelector('+q('#presentaPane [aria-label="Colore personalizzato dello sfondo"]')+').dataset.colore'),'#0ea5e9','l’ultimo colore manuale resta disponibile dopo un preset');
@@ -230,7 +234,11 @@ async function riordinaMiniature(da,a,dentro=false){
   await cicloRighelli(1);await click('Testo');await click('Scrivi sul foglio');await frameWait('!!document.querySelector("[contenteditable=true]")');assert(await frameVal('!!document.querySelector(".presenta-guide-fisse")'),'guide conservate durante la scrittura');fs.writeFileSync('/private/tmp/presenta-guide-reali.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));await cicloRighelli(3);await click('Testo');await click('Scrivi sul foglio');await frameWait('!!document.querySelector("[contenteditable=true]")');
 
   await frameVal(`(()=>{const el=document.querySelector('[data-testo-id="'+${q(textId)}+'"]'),n=el.firstChild.firstChild,r=document.createRange();r.setStart(n,3);r.setEnd(n,13);const s=getSelection();s.removeAllRanges();s.addRange(r);document.dispatchEvent(new Event('selectionchange'));})()`);
-  await click('Carattere delle parole');await click('Atkinson Hyperlegible');
+  await wait(`!!document.querySelector('[aria-label="Carattere delle parole"]')`);
+  await c.val('document.querySelector(".presenta-corpo").dispatchEvent(new Event("scroll"));new Promise(r=>requestAnimationFrame(r))');
+  assert(await c.val('!!document.querySelector(".presenta-bubble:popover-open")'),'il menu di scrittura rimane disponibile dopo lo scorrimento');
+  await click('Carattere delle parole');
+  await click('Atkinson Hyperlegible');
   await wait('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").richText?.some(n=>n.text==="clorofilla"&&n.style?.fontFamily==="atkinson")');
   assert.equal(await c.val(`document.querySelector('[aria-label="Carattere delle parole"]').textContent`),'Atkinson Hyperlegible');
   assert(await c.val(`(()=>{const a=document.querySelector('[aria-label="Carattere delle parole"]').getBoundingClientRect(),b=document.querySelector('[aria-label="Dimensione delle parole"]').getBoundingClientRect();return Math.abs(a.height-b.height)<1&&Math.abs(a.y-b.y)<1;})()`),'altezza e allineamento del bubble uguali');
@@ -301,8 +309,10 @@ async function riordinaMiniature(da,a,dentro=false){
    await click(tab);await c.val('document.querySelector(".presenta-proprieta-foglio").scrollIntoView({block:"end",behavior:"instant"});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
    assert(await c.val('(()=>{const p=document.querySelector(".presenta-lavoro");return p.scrollWidth<=p.clientWidth+1;})()'),tab+' senza overflow orizzontale');
    if(tab==='Stile')assert(await c.val('(()=>{const g=document.querySelector(".presenta-stili-galleria").getBoundingClientRect(),c=document.querySelector(".presenta-stili-controlli").getBoundingClientRect();return g.left>c.right&&Math.abs(g.top-c.top)<2;})()'),'galleria affiancata nello split largo');
-   if(['Testo','Titolo'].includes(tab))assert(await c.val('(()=>{const p=document.querySelector(".presenta-posizioni").getBoundingClientRect(),i=document.querySelector(".presenta-interlinea").getBoundingClientRect();return p.width<=106&&i.width<=161;})()'),'griglia e interlinea compatte');
+   if(['Testo','Titolo'].includes(tab))assert(await c.val(`(()=>{const p=document.querySelector('[aria-label="Posizione"]').getBoundingClientRect(),i=document.querySelector(".presenta-interlinea").getBoundingClientRect();return p.width<=90&&i.width<=161;})()`),'Posizione e interlinea compatti');
+   if(['Testo','Titolo','Immagine'].includes(tab))assert(await c.val(`(()=>{const a=document.querySelector('#presentaPane [aria-label="Carattere"]').getBoundingClientRect();return ['Grassetto','Corsivo','Sottolineato','Posizione'].every(n=>{const b=document.querySelector('#presentaPane [aria-label="'+n+'"]').getBoundingClientRect();return Math.abs(b.bottom-a.bottom)<1&&Math.abs(b.height-a.height)<1;});})()`) ,'formati e posizione nella riga del font');
    fs.writeFileSync('/private/tmp/presenta-'+tab.toLowerCase()+'-largo.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
+   if(tab==='Titolo'){await click('Posizione');fs.writeFileSync('/private/tmp/presenta-posizione-bubble.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));await click('Posizione');}
   }
   await c.val(`BANCO.stato=${q(layoutCompatto)};bancoSalva();bancoDisegna()`);await click('Stile');
   await click('Lavagna');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].background'),'#0f172a');
