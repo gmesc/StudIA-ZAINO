@@ -32,6 +32,20 @@ Le GIF conservano l’originale animato. I video partono **muti e in ripetizione
 Il contratto mantiene `background` per il colore e aggiunge l’oggetto opzionale `backgroundMedia` (`assetId`, `fit`, `loop`, `muted`); valgono le stesse risorse locali verificate degli oggetti. Nessun URL arbitrario e nessun iframe/web incorporato. `risorseUsate`, pubblicazione, anteprima a capacità, export e cronologia includono lo sfondo. Duplicazione, nuove slide da modello e copia dello stile lo conservano. Il main dichiara la capacità `sfondiMedia`: una finestra aggiornata sopra un main precedente chiede il riavvio prima di importare.
 
 
+## Navbar, numerazione, aspetto e disegno vettoriale
+
+**Inserisci → Navbar** aggiunge una barra comune a tutte le slide, comprese quelle create in seguito. **Step numerati**, **Schede** e **Linea di avanzamento** leggono i titoli delle slide e aggiornano quantità, ordine e indicatore corrente. Il campo **Step della navbar** sceglie tutte le slide oppure le sole principali. Gli approfondimenti usano lettere. I clic navigano nel player pubblico e nell’HTML offline; nell’editor selezionano l’oggetto. L’entrata usa Anime.js, con ritardo complessivo limitato e rispetto del movimento ridotto. Se gli step non entrano, la barra scorre orizzontalmente e nel player porta in vista quello corrente.
+
+**Inserisci → Numera pagine** crea un contatore comune con font, dimensione, colore, allineamento e posizione modificabili. Mostra `1/12`, `2/12`, ecc.; gli approfondimenti della seconda principale diventano `2a/12`, `2b/12`, fino a `2aa/12` oltre la ventiseiesima. Il denominatore conta le principali. Posizione e stile si aggiornano insieme in tutte le slide, anche trascinando l’oggetto. Dal menu contestuale scegliere **Nascondi su questa slide**; la voce **Numero pagina · nascosto** nelle proprietà permette di selezionarlo e usare **Mostra su questa slide**. Vale anche per le navbar. **Rimuovi da tutte le slide** elimina l’oggetto comune; Annulla lo recupera.
+
+**Aspetto**, nella sezione dell’oggetto o nel suo bubble menu, offre opacità 0–100%, bianco e nero/scala di grigi, seppia, luminosità, contrasto, saturazione e sfocatura. **Fusione** include Normale, Moltiplica, Scolora, Sovrapponi, Scurisci e Schiarisci. **Ripristina aspetto** rimuove questi cambiamenti. Video, audio e GIF sono esclusi. Gli effetti statici restano separati dai wrapper delle animazioni: un’entrata non ripristina l’opacità dell’oggetto al 100%. Miniature, player ed esportazione usano lo stesso stile.
+
+**Inserisci → Disegno vettoriale** apre Excalidraw locale, già incluso nella LIM, con forme, frecce, testo e tratto libero. **Inserisci disegno** aggiunge un singolo oggetto ridimensionabile; **Modifica disegno vettoriale** riapre la scena originale. Annullare la finestra conserva il disegno precedente. Il testo interno al disegno è reso in Arial nell’output, come indicato nella finestra; per i font della presentazione usare i normali oggetti Testo. I controlli Aspetto e Posizione restano disponibili sul vettore.
+
+Il documento conserva la scena modificabile e un albero SVG ristretto, senza immagini raster, HTML, script, URL remoti o attributi evento. `vettori.js` valida il medesimo albero in Node e nel browser; il compilatore produce gli elementi SVG consentiti con ID distinti per oggetto. Il payload pubblico esclude la scena di editing. Limiti: 2.000 elementi Excalidraw, 15.000 nodi SVG, profondità 40 e 2 MiB per disegno, entro gli 8 MiB complessivi del documento. Nessuna nuova dipendenza, nessun accesso al vault della LIM.
+
+Le operazioni passano dal modello e dalla cronologia esistenti. `test/presentazioni-elementi.js` copre calcoli, sincronizzazione, visibilità, gerarchia, undo/redo, filtri, SVG e pubblicazione; è rosso caricando il modello precedente `19f5dcb`. `test/cdp/prova-presenta-elementi.js` attraversa i comandi reali, disegna con eventi del mouse, verifica la resa nell’iframe e riapre il vettore salvato sul vault sintetico. La prova del player controlla anche clic nella navbar e contatore verticale nell’HTML offline spostato.
+
 ## Strumenti di base e mockup dell’evoluzione
 
 La barra espone **Documento**, **Inserisci**, **Presenta** e **Apri GOBBO**. Nel menu Documento restano creazione, rinomina, salvataggio, esportazione HTML, eliminazione e chiusura. **Anteprima pulita** è stata rimossa: Escape o un clic sul foglio vuoto deselezionano l’oggetto e chiudono la bolla. Escape funziona anche dal pannello delle proprietà; i menu e le finestre aperte si chiudono per primi. Il menu **…** sotto il foglio rende raggiungibili le azioni dell’oggetto selezionato senza click destro.
@@ -200,6 +214,7 @@ Il runtime sotto `App/assets/presentazioni/vendor/` contiene script, CSS, font e
 npm run presenta:build
 npm run presenta:verifica
 node test/presentazioni.js
+node test/presentazioni-elementi.js
 npm run test:presenta-player
 npm run test:presenta-chiusura
 npm run presenta:demo -- /percorso/assoluto/destinazione
@@ -213,7 +228,7 @@ Le prove Node coprono operazioni, undo/redo, struttura verticale, corrispondenze
 
 ```bash
 npm test
-bash bin/prova-zaino.sh prova-presenta-fondazioni.js prova-presenta-editor.js prova-sicurezza.js
+bash bin/prova-zaino.sh prova-presenta-fondazioni.js prova-presenta-editor.js prova-presenta-elementi.js prova-sicurezza.js
 ```
 
 La prova CDP attraversa il preload e l’IPC reali di ZAINO. È registrata nel runner sintetico e ora usa anche eventi nativi del mouse per spostamento e ridimensionamento degli oggetti. Il test esistente `prova-presentazione.js` si ferma sul passaggio nativo a schermo intero della finestra esterna, nello stesso punto sia sul ramo sia sulla copia del commit iniziale `20a314b`. Le altre verifiche passate non vengono presentate come collaudo di quel passaggio, degli schermi esterni, di Windows o degli installatori.

@@ -1,7 +1,7 @@
 // Unica isola React: il resto dell'app conserva i moduli e le barre esistenti.
 import React from 'react';
 import {createRoot} from 'react-dom/client';
-import {Excalidraw,MainMenu,convertToExcalidrawElements,CaptureUpdateAction,restoreElements,reconcileElements,exportToCanvas} from '@excalidraw/excalidraw';
+import {Excalidraw,MainMenu,convertToExcalidrawElements,CaptureUpdateAction,restoreElements,reconcileElements,exportToCanvas,exportToSvg} from '@excalidraw/excalidraw';
 import '@excalidraw/excalidraw/index.css';
 window.LimEditor={monta(host,opts){
  let api;const root=createRoot(host);
@@ -29,4 +29,4 @@ window.LimEditor={monta(host,opts){
  }
  root.render(<Editor/>);
  return {smonta:()=>root.unmount(),get api(){return api;}};
-},converti:convertToExcalidrawElements,restore:restoreElements,reconcile:reconcileElements,exportToCanvas,CaptureUpdateAction};
+},converti:convertToExcalidrawElements,restore:restoreElements,reconcile:reconcileElements,exportToCanvas,exportToSvg,CaptureUpdateAction};

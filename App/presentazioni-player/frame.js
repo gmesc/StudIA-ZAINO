@@ -4,14 +4,14 @@
  const pubblico=window.top===window&&!!window.presentaPubblico,root=document.querySelector('.reveal');
  let testi={},clip=null,clipGiro=0,intervalloClip={start:0,end:0};
  const scrittura=PresentaScrittura({invia,metadati:()=>({...modificaFoglio,testi}),pronto:()=>!pubblico&&pronto&&!modificaFoglio?.bloccato,seleziona:b=>{termina(true);selezione({...modificaFoglio,selezionato:b.dataset.blockId});invia('seleziona',{blockId:b.dataset.blockId});},bubble:aggiornaBubble});
- let animazioni=null;
+ let animazioni=null,navbar=null;
  let prova=false,deck=null,canale='',contesto=null,pronto=false,inComando=false,coda=Promise.resolve();
  function stato(){return PresentaNavigazione.stato(deck);}
  function silenzia(){PresentaNavigazione.sincronizzaMedia(deck,root,!pubblico&&!prova);}
  function invia(tipo,d={}){if(!pubblico)parent.postMessage({presenta:canale,tipo,...d},'*');}
  function conferma(){silenzia();if(pubblico&&contesto&&!inComando)window.presentaPubblico.conferma({...contesto,...stato()}).then(r=>{if(!r.ok)console.warn(r.error);});}
  async function aggiorna(o){
-  animazioni?.destroy();animazioni=null;scrittura.termina(false);testi=o.documento.testi||{};prova=!!o.provaAnimazioni;termina(true);inAttesa=false;modificaFoglio=o.editor||null;pronto=false;root.dataset.pronto='false';canale=o.canale||canale;const r=o.documento,s=r.settings;
+  animazioni?.destroy();animazioni=null;navbar?.destroy();navbar=null;scrittura.termina(false);testi=o.documento.testi||{};prova=!!o.provaAnimazioni;termina(true);inAttesa=false;modificaFoglio=o.editor||null;pronto=false;root.dataset.pronto='false';canale=o.canale||canale;const r=o.documento,s=r.settings;
   document.documentElement.dataset.tema=s.theme;document.documentElement.dataset.movimentoRidotto=String(s.reducedMotion);
   for(const m of root.querySelectorAll('audio,video'))m.pause();
   root.querySelector('.slides').innerHTML=r.html;silenzia();
@@ -21,6 +21,7 @@
    transition:ridotto?'none':'slide',autoAnimate:!ridotto};
   if(!deck){deck=new Reveal(root,config);await deck.initialize();for(const n of ['slidechanged','fragmentshown','fragmenthidden'])deck.on(n,conferma);}
   else{deck.configure(config);deck.sync();}
+  navbar=PresentaNavigazione.navbar(deck,root,{ridotto,attiva:()=>pubblico||prova||!!modificaFoglio?.pulita});
   await document.fonts.ready;pronto=true;root.dataset.pronto='true';deck.slide(o.posizione?.h||0,o.posizione?.v||0,o.posizione?.fragmentIndex??-1);deck.layout();silenzia();
   // Nell’iframe il media può essere pronto dopo il primo tentativo di autoplay di Reveal.
   if(pubblico||prova){const p=deck.getIndices(),video=deck.getSlideBackground(p.h,p.v)?.querySelector('video');video?.play().catch(e=>{if(video.isConnected&&e.name!=='AbortError')invia('errore',{error:'Video di sfondo non riproducibile. Verifica il formato e il codec.'});});}
@@ -70,7 +71,7 @@
  }
  function misure(){
   const area=corrente(),a=root.querySelector('.slides').getBoundingClientRect(),lim=n=>Math.max(0,Math.min(98,n));
-  return elementi().map(b=>{const salvata=modificaFoglio?.boxes?.find(v=>v.id===b.dataset.blockId);if(area.dataset.layout==='free'&&PresentaModello.riquadro(salvata?.box))return {id:b.dataset.blockId,box:{...salvata.box}};const r=b.getBoundingClientRect(),x=lim((r.left-a.left)/a.width*100),y=lim((r.top-a.top)/a.height*100);return {id:b.dataset.blockId,box:{x,y,width:Math.max(2,Math.min(100-x,r.width/a.width*100)),height:Math.max(2,Math.min(100-y,r.height/a.height*100))},fontSize:Math.max(12,Math.min(160,parseFloat(getComputedStyle(b.querySelector('h2')||b).fontSize)))};});
+  return elementi().map(b=>{const salvata=modificaFoglio?.boxes?.find(v=>v.id===b.dataset.blockId);if((area.dataset.layout==='free'||['navbar','page-number'].includes(b.dataset.type))&&PresentaModello.riquadro(salvata?.box))return {id:b.dataset.blockId,box:{...salvata.box}};const r=b.getBoundingClientRect(),x=lim((r.left-a.left)/a.width*100),y=lim((r.top-a.top)/a.height*100);return {id:b.dataset.blockId,box:{x,y,width:Math.max(2,Math.min(100-x,r.width/a.width*100)),height:Math.max(2,Math.min(100-y,r.height/a.height*100))},fontSize:Math.max(12,Math.min(160,parseFloat(getComputedStyle(b.querySelector('h2')||b).fontSize)))};});
  }
  function aggiornaBubble(b){if(!b)return;const r=b.getBoundingClientRect();invia('muoviBubble',{blockId:b.dataset.blockId,rect:{x:r.x,y:r.y,width:r.width,height:r.height}});}
  function deseleziona(){scrittura.termina();termina(true);if(!modificaFoglio)return;selezione({...modificaFoglio,selezionato:'',selezionati:[]});document.activeElement?.blur();invia('seleziona',{blockId:null});invia('nascondiBubble');}

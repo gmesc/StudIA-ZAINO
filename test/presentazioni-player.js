@@ -115,6 +115,17 @@ app.whenReady().then(async()=>{
  await run('PresentaPlayer.comando({azione:"vai",h:3,v:0,fragmentIndex:-1})');
  const immagineEvidenza=await run(`(()=>{const e=document.querySelector('section.present .presenta-contenuto:has(svg image)'),prima=e.getAttribute('style'),h=PresentaAnimazioniDOM.esegui(e,{effect:'highlight-red'},{finale:true});const colore=getComputedStyle(e).outlineColor;h.revert();return {colore,prima,dopo:e.getAttribute('style')};})()`);assert.equal(immagineEvidenza.colore,'rgb(239, 68, 68)',JSON.stringify(immagineEvidenza));assert.equal(immagineEvidenza.dopo,immagineEvidenza.prima);
  await verificaSfondi();
+ // Secondo HTML autonomo: nessun indice preso in prestito dalla galleria precedente.
+ let elementi=M.crea('00000000-0000-4000-8000-000000000001','Elementi');const es=elementi.stacks[0].slides[0].id;
+ const eo=o=>elementi=M.applica(elementi,{slideId:es,...o});eo({tipo:'titoloSlide',title:'Partenza'});eo({tipo:'aggiungiSlide',direzione:'sotto'});eo({tipo:'aggiungiSlide',direzione:'destra'});eo({tipo:'inserisciComune',type:'navbar'});eo({tipo:'inserisciComune',type:'page-number'});
+ const drawing={viewBox:'0 0 100 100',scene:[],nodes:[{tag:'path',attrs:{d:'M0 0 L100 100',stroke:'#ef4444','stroke-width':'4'},children:[]}]};eo({tipo:'inserisciBlocco',block:{type:'drawing',slot:'body',drawing,style:{appearance:{opacity:.6,blend:'multiply',grayscale:100},box:{x:20,y:30,width:40,height:40}}}});
+ const elementiFile=path.join(spostato,'elementi.html');fs.writeFileSync(elementiFile,require('../lib/presentazioni-export').html(elementi).html);await run('PresentaPlayer.destroy()');await win.loadFile(elementiFile);await run('PresentaPlayer.ready');
+ assert.equal(await run('document.querySelector("section.present > .presenta-slide .presenta-numero-pagina").textContent'),'1/2');
+ assert.equal(await run('getComputedStyle(document.querySelector("section.present > .presenta-slide [data-type=drawing]")).opacity'),'0.6');
+ assert.equal(await run('document.querySelectorAll("section.present > .presenta-slide .presenta-vettore path").length'),1);
+ await run(`document.querySelector('section.present > .presenta-slide [data-nav-v="1"]').click()`);assert.deepEqual(await run('PresentaPlayer.stato()'),{h:0,v:1,fragmentIndex:-1});assert.equal(await run('document.querySelector("section.present > .presenta-slide .presenta-numero-pagina").textContent'),'1a/2');
+ await run(`document.querySelector('section.present > .presenta-slide [data-nav-h="1"]').click()`);assert.deepEqual(await run('PresentaPlayer.stato()'),{h:1,v:0,fragmentIndex:-1});assert.equal(await run('document.querySelector("section.present > .presenta-slide .presenta-numero-pagina").textContent'),'2/2');
+
  assert.deepEqual(rete,[],'nessuna dipendenza di rete');assert.deepEqual(errori,[],'nessun errore del renderer');
  await run('PresentaPlayer.destroy()');console.log('✓ Player reale offline: passi, simultaneità, inverso, Auto-Animate verticale, formule, media, privacy e pacchetto spostato.');console.log('Schermata: '+screenshot);app.exit(0);
 }).catch(e=>{console.error(e);app.exit(1);});

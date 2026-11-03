@@ -18,5 +18,12 @@
   const slide=deck?.getCurrentSlide(),p=deck?.getIndices(),sfondo=p&&deck.getSlideBackground(p.h,p.v);
   for(const m of root.querySelectorAll('audio,video')){const dietro=!!m.closest('.slide-background');if(passivo||!(slide?.contains(m)||sfondo?.contains(m)))m.pause();m.muted=passivo||dietro&&!!slide?.hasAttribute('data-background-video-muted');}
  }
- return {stato,comando,sincronizzaMedia};
+ // Il player autonomo e la finestra pubblica condividono clic e movimento ridotto.
+ function navbar(deck,root,{ridotto=false,attiva=()=>true}={}){
+  function click(e){const b=e.target.closest('[data-nav-h]');if(!b||!root.contains(b)||!attiva())return;e.preventDefault();e.stopPropagation();deck.slide(Number(b.dataset.navH),Number(b.dataset.navV),-1);}
+  let animazione;
+  function anima(){animazione?.revert();const nav=deck.getCurrentSlide()?.querySelector('.presenta-navbar');if(!nav)return;const active=nav.querySelector('[aria-current]');if(active)nav.scrollLeft=Math.max(0,active.offsetLeft-nav.offsetLeft-(nav.clientWidth-active.offsetWidth)/2);if(ridotto||!globalThis.anime?.animate)return;const buttons=nav.querySelectorAll('button');animazione=globalThis.anime.animate(buttons,{opacity:{from:0,to:1},translateY:{from:6,to:0},delay:globalThis.anime.stagger(Math.min(20,120/Math.max(1,buttons.length-1))),duration:180,ease:'outQuad'});}
+  root.addEventListener('click',click,true);deck.on('slidechanged',anima);anima();return {destroy(){animazione?.revert();root.removeEventListener('click',click,true);deck.off('slidechanged',anima);}};
+ }
+ return {stato,comando,sincronizzaMedia,navbar};
 });

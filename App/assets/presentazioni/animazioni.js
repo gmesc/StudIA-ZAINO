@@ -1,7 +1,7 @@
 /* Catalogo e tempi condivisi da editor, player ed export. Nessun accesso al DOM. */
 (function(r,f){if(typeof module==='object'&&module.exports)module.exports=f();else r.PresentaAnimazioni=f();})(typeof globalThis==='undefined'?this:globalThis,function(){
  'use strict';
- const tutti=['title','text','list','table','shape','image','math','audio','video'],testi=['title','text','list'];
+ const tutti=['title','text','list','table','shape','image','math','audio','video','navbar','page-number','drawing'],testi=['title','text','list'];
  const catalogo=Object.freeze([
   ['fade-in','Comparsa','Entrata','L’oggetto diventa visibile gradualmente.',tutti,.6],
   ['fade-up','Dal basso','Entrata','L’oggetto sale e diventa visibile.',tutti,.7],

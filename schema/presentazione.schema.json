@@ -263,7 +263,10 @@
                           "audio",
                           "video",
                           "shape",
-                          "table"
+                          "table",
+                          "navbar",
+                          "page-number",
+                          "drawing"
                         ]
                       },
                       "slot": {
@@ -452,6 +455,57 @@
                               800,
                               900
                             ]
+                          },
+                          "appearance": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "opacity": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              },
+                              "blend": {
+                                "enum": [
+                                  "normal",
+                                  "multiply",
+                                  "screen",
+                                  "overlay",
+                                  "darken",
+                                  "lighten"
+                                ]
+                              },
+                              "grayscale": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 100
+                              },
+                              "sepia": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 100
+                              },
+                              "brightness": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 200
+                              },
+                              "contrast": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 200
+                              },
+                              "saturate": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 200
+                              },
+                              "blur": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 20
+                              }
+                            }
                           }
                         },
                         "required": []
@@ -569,6 +623,51 @@
                             "maxLength": 2000
                           }
                         }
+                      },
+                      "hidden": {
+                        "type": "boolean"
+                      },
+                      "variant": {
+                        "enum": [
+                          "steps",
+                          "tabs",
+                          "progress"
+                        ]
+                      },
+                      "scope": {
+                        "enum": [
+                          "main",
+                          "all"
+                        ]
+                      },
+                      "drawing": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "viewBox": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "nodes": {
+                            "type": "array",
+                            "maxItems": 15000,
+                            "items": {
+                              "$ref": "#/$defs/vectorNode"
+                            }
+                          },
+                          "scene": {
+                            "type": "array",
+                            "maxItems": 2000,
+                            "items": {
+                              "type": "object"
+                            }
+                          }
+                        },
+                        "required": [
+                          "viewBox",
+                          "nodes",
+                          "scene"
+                        ]
                       }
                     },
                     "required": [
@@ -666,6 +765,35 @@
                         "then": {
                           "required": [
                             "table"
+                          ]
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "type": {
+                              "const": "navbar"
+                            }
+                          }
+                        },
+                        "then": {
+                          "required": [
+                            "variant",
+                            "scope"
+                          ]
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "type": {
+                              "const": "drawing"
+                            }
+                          }
+                        },
+                        "then": {
+                          "required": [
+                            "drawing"
                           ]
                         }
                       }
@@ -943,6 +1071,53 @@
           }
         ]
       }
+    },
+    "vectorNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tag": {
+          "enum": [
+            "g",
+            "path",
+            "rect",
+            "ellipse",
+            "circle",
+            "line",
+            "polyline",
+            "polygon",
+            "text",
+            "tspan",
+            "defs",
+            "clipPath",
+            "mask",
+            "pattern"
+          ]
+        },
+        "attrs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "maxLength": 500000
+          }
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 20000
+        },
+        "children": {
+          "type": "array",
+          "maxItems": 15000,
+          "items": {
+            "$ref": "#/$defs/vectorNode"
+          }
+        }
+      },
+      "required": [
+        "tag",
+        "attrs",
+        "children"
+      ]
     }
   }
 }
