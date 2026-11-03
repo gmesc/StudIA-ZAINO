@@ -30,7 +30,7 @@ const misura = (sel) => val(`(()=>{const e=document.querySelector(${JSON.stringi
            fondo:s.backgroundColor, sotto:s.borderBottomWidth+' '+s.borderBottomColor,
            sopra:s.borderTopWidth, wrap:s.flexWrap };})()`);
 
-/** L'altezza vera del primo bottone della barra: il token `--tb-h` è 30px. */
+/** L'altezza vera del primo bottone della barra: il token `--tb-h` è 27px. */
 const altBottone = (sel) => val(`(()=>{const e=document.querySelector(${JSON.stringify(sel)});
   return e ? Math.round(e.getBoundingClientRect().height) : null;})()`);
 
@@ -45,25 +45,25 @@ const altBottone = (sel) => val(`(()=>{const e=document.querySelector(${JSON.str
   await apriStrumento('mappa');
   const m = await misura('.mtoolbar');
   ok('esiste ed è una riga flex', 'flex', m && m.c);
-  ok('alta quanto il token', '39px', m.minH);
+  ok('alta quanto il token', '35.1px', m.minH);
   ok('fondo del pannello, non trasparente', true, m.fondo !== 'rgba(0, 0, 0, 0)');
   ok('una linea sotto, nessuna sopra', ['1px', '0px'], [m.sotto.split(' ')[0], m.sopra]);
   ok('i comandi possono andare a capo', 'wrap', m.wrap);
-  ok('i bottoni sono alti 30', 30, await altBottone('#mChiudi'));
+  ok('i bottoni sono alti 27', 27, await altBottone('#mChiudi'));
 
   console.log('\n== Le altre barre sono la stessa barra');
   for (const [nome, strumento, sel] of [
     ['fonte',         'fonte',    '#pdfPane .pdfbar'],
     ['appunti',       'appunti',  '#noteHost .editor-toolbar'],
-    ['album',         'album',    '.albar'],
+    ['album',         'album',    '#albumSpazio .albumComandi'],
     ['parole chiave', 'keyword',  '.kwbar'],
-    ['ripasso',       'flashcard', '.ripbar'],
+    ['ripasso',       'flashcard', '#zstudyToolbar'],
   ]) {
     await apriStrumento(strumento);
     await pausa(300);
     const b = await misura(sel);
     if (!b) { ok(nome + ': la barra c\'è', true, false); continue; }
-    ok(nome + ': stessa altezza minima della mappa', m.minH, b.minH);
+    ok(nome + ': altezza minima della barra', nome==='ripasso'?'27px':m.minH, b.minH);
     ok(nome + ': stesso fondo', m.fondo, b.fondo);
     ok(nome + ': stessa linea sotto e nessuna sopra', [m.sotto, '0px'], [b.sotto, b.sopra]);
     ok(nome + ': va a capo come la mappa', 'wrap', b.wrap);
@@ -74,15 +74,15 @@ const altBottone = (sel) => val(`(()=>{const e=document.querySelector(${JSON.str
   /* ⚠️ Non `#pdfDoc`: senza un documento aperto quel bottone non è a schermo, e
      misurarlo darebbe 0 accusando la barra di una cosa che non è sua. La ✕ c'è
      sempre, ed è un bottone della barra come gli altri. */
-  ok('la fonte: la ✕ è alta 30', 30, await altBottone('#pdfClose'));
+  ok('la fonte: la ✕ è alta 27', 27, await altBottone('#pdfClose'));
   await apriStrumento('keyword'); await pausa(300);
-  ok('parole chiave: il campo di ricerca è alto 30', 30, await altBottone('#kwCerca'));
-  ok('…e il bottone dell\'ordine pure', 30, await altBottone('#kwOrdine'));
+  ok('parole chiave: il campo di ricerca è alto 27', 27, await altBottone('#kwCerca'));
+  ok('…e il bottone dell\'ordine pure', 27, await altBottone('#kwOrdine'));
   await apriStrumento('album'); await pausa(300);
-  ok('album: il campo di ricerca è alto 30', 30, await altBottone('#albCerca'));
+  ok('album: il comando ricerca è alto 27', 27, await altBottone('#albumCerca'));
   await apriStrumento('flashcard'); await pausa(300);
-  ok('ripasso: la tendina dell\'ambito è alta 30', 30, await altBottone('#ripAmbito'));
-  ok('…e il bottone «Salta» pure', 30, await altBottone('#ripSalta'));
+  ok('ripasso: Domande è alto 27', 27, await altBottone('#zstudyBrowse'));
+  ok('…e Nuova domanda pure', 27, await altBottone('#zstudyNewButton'));
 
   console.log(ko ? '\n✗ ' + ko + ' controlli falliti' : '\n✓ tutti i controlli passati');
   process.exit(ko ? 1 : 0);

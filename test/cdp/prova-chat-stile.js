@@ -199,7 +199,7 @@ const SUPERFICI = {
       classe: head.classList.contains('tbar'),
       spazioElastico: spazio >= 0,
       alta: Math.round(head.getBoundingClientRect().height),
-      attesa: Math.round(parseFloat(d.getPropertyValue('--ctl-h')) - 1),
+      attesa: Math.round((parseFloat(d.getPropertyValue('--ctl-h')) - 1) * .9),
       barrette: head.querySelectorAll('.tbsep').length,
       /* La grammatica: chiudere viene DOPO lo spazio elastico, aprire prima. */
       codaDopoLoSpazio: ['zchatSettings','zchatCollapse','zchatClose'].every(id => figli.findIndex(e => e.id === id) > spazio),

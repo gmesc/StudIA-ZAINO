@@ -39,8 +39,8 @@ const box = (sel) => val(`(()=>{const e=document.querySelector(${JSON.stringify(
   ok('non è più il quadratone da 40', true, man.h <= 35);
 
   console.log('\n== E dove deve stare');
-  ok('appoggiata al fondo della topbar (un pixel di bordo in comune)', topbar.bottom - 1, man.top);
-  ok('sull\'angolo destro della sidebar', side.right - 1, man.left);
+  ok('appoggiata al bordo superiore della testata', bh.top, man.top);
+  ok('sull\'angolo destro della sidebar', side.right, man.left);
   ok('l\'icona ci sta dentro senza toccare i bordi', true,
     (await box('#menuBtn .oi')).h <= man.h - 6);
 

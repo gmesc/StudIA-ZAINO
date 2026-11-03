@@ -115,15 +115,14 @@ async function pulisci() {
       const precedente=await c.val('document.documentElement.dataset.theme');
       await c.val(`document.documentElement.dataset.theme=${q(tema)}`);
       assert(await c.val(`(()=>{
-        const e=document.createElement('canvas'),ctx=e.getContext('2d'),sfondo=getComputedStyle(document.querySelector('#zainoNav .zs-tit')).backgroundColor;
-        const ricerca=document.createElement('div');ricerca.className='sr-lesson';document.getElementById('searchRes').appendChild(ricerca);
-        const stesso=getComputedStyle(ricerca).backgroundColor===sfondo;ricerca.remove();
-        function intensita(colore){ctx.fillStyle=colore;ctx.fillRect(0,0,1,1);const rgb=Array.from(ctx.getImageData(0,0,1,1).data).slice(0,3);return Math.max(...rgb)-Math.min(...rgb);}
-        return stesso && Array.from(document.querySelectorAll('#banco .blocco:not([hidden]) .bhead')).every(h=>{
-          const colore=getComputedStyle(h).backgroundColor,attivo=h.closest('.blocco').dataset.attivo==='1';
-          return (attivo?intensita(colore)>intensita(sfondo):colore===sfondo) && getComputedStyle(h).justifyContent==='flex-start' && getComputedStyle(h.querySelector('.tendina'),'::after').maskImage.includes('image/svg+xml');
+        const sonda=document.createElement('i');document.body.append(sonda);
+        sonda.style.color='var(--panel)';const pannello=getComputedStyle(sonda).color;
+        sonda.style.color='var(--hover)';const neutro=getComputedStyle(sonda).color;sonda.remove();
+        return getComputedStyle(document.querySelector('#zainoNav .zs-tit')).backgroundColor==='rgba(0, 0, 0, 0)' && Array.from(document.querySelectorAll('#banco .blocco:not([hidden]) .bhead')).every(h=>{
+          const st=getComputedStyle(h),attivo=h.closest('.blocco').dataset.attivo==='1';
+          return st.backgroundColor===(attivo?pannello:neutro) && (attivo?st.boxShadow.includes('inset'):st.boxShadow==='none') && st.justifyContent==='flex-start' && getComputedStyle(h.querySelector('.tendina'),'::after').maskImage.includes('image/svg+xml');
         });
-      })()`),'testate uguali a sidebar e ricerca, attivo più saturo, in tema '+tema);
+      })()`),'testate neutre, linea sul solo attivo e sidebar senza fondo, in tema '+tema);
       await c.val(`document.documentElement.dataset.theme=${q(precedente)}`);
     }
 

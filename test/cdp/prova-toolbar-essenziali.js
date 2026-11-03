@@ -81,7 +81,7 @@ async function wait(expr){for(let i=0;i<160;i++){if(await c.val(expr))return;awa
   for(const tema of ['chiaro','scuro']){
    await c.val(`document.documentElement.dataset.theme=${q(tema)}`);await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});await c.pausa(250);
    assert(await c.val(`['#settingsBtn','#zschedeNewButton','#mNuova','#kwEvid','#albumOrdina'].every(sel=>{const e=document.querySelector(sel);return e&&getComputedStyle(e).backgroundColor==='rgba(0, 0, 0, 0)';})`),'azioni trasparenti in '+tema);
-   assert.equal(await c.val(`getComputedStyle(document.getElementById('menuBtn')).backgroundColor`),'rgb(255, 255, 255)','la maniglia della sidebar resta bianca in '+tema);
+   assert.equal(await c.val(`getComputedStyle(document.getElementById('menuBtn')).backgroundColor`),await c.val(`getComputedStyle(document.querySelector('.topbar')).backgroundColor`),'la maniglia della sidebar segue il pannello in '+tema);
    assert.equal(await c.val(`getComputedStyle(document.querySelector('[data-album-tab][aria-pressed="true"]')).boxShadow`),'none');
    assert.notEqual(await c.val(`getComputedStyle(document.querySelector('[data-album-tab][aria-pressed="true"]')).backgroundColor`),'rgba(0, 0, 0, 0)');
    const b=await c.val(`(()=>{const r=document.getElementById('mNuova').getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`);await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',...b});await c.pausa(250);

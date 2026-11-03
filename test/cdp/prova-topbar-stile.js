@@ -34,9 +34,9 @@ const box = (sel) => val(`(()=>{const e=document.querySelector(${JSON.stringify(
     const t=getComputedStyle(document.querySelector('.topbar'));
     return { h:c.getPropertyValue('--tb-h').trim(), fs:c.getPropertyValue('--tb-fs').trim(),
              topH:t.getPropertyValue('--tb-h').trim(), topFs:t.getPropertyValue('--tb-fs').trim() };})()`);
-  ok('la barra degli split resta a 30px / 11px', ['30px', '11px'], [tok.h, tok.fs]);
+  ok('la barra degli split passa a 27px / 11px', ['27px', '11px'], [tok.h, tok.fs]);
   const b = await box('#bancoBtn');
-  ok('un bottone di testata è alto 33', 33, b.h);
+  ok('un bottone di testata è alto 30 arrotondato', 30, b.h);
   ok('…e scrive a 12.1px', '12.1px', b.fs);
   ok('…in maiuscole, come nelle barre', 'uppercase', b.maiuscole);
 
@@ -54,7 +54,7 @@ const box = (sel) => val(`(()=>{const e=document.querySelector(${JSON.stringify(
   const fila = await val(`modoAttivo()==='zaino' ? 'zainorow' : 'lessonrow'`);
   const tend = await box('.' + fila + ' .tendina');
   ok('la tendina è nuda', '0px0px0px0px', tend.bordo);
-  ok('…e alta quanto i bottoni', 33, tend.h);
+  ok('…e alta quanto i bottoni', 30, tend.h);
   ok('le barrette di gruppo sono a schermo', true,
     await val(`[...document.querySelectorAll('.topbar .tbsep')].some(e=>!e.hidden)`));
 
@@ -63,11 +63,12 @@ const box = (sel) => val(`(()=>{const e=document.querySelector(${JSON.stringify(
   ok('il logo è a sinistra, a filo del rientro', true, logo.x - barra.x < 30);
   const cr = await box('.topbar .controls');
   ok('i comandi finiscono a destra', true, Math.abs(barra.destra - cr.destra) < 30);
-  ok('e cominciano dopo il logo', true, cr.x > logo.destra);
+  ok('e cominciano dopo il logo', true, cr.x >= logo.destra);
   const ordine = await val(`[...document.querySelectorAll('.topbar .controls > *')]
     .filter(e=>!e.hidden && getComputedStyle(e).display!=='none').map(e=>e.id||e.className.split(' ')[0])`);
   console.log('   ordine: ' + JSON.stringify(ordine));
-  ok('la fila che sceglie che cosa studiare apre la riga', fila, ordine[0]);
+  ok('la scelta dello zaino vive accanto al marchio', true, await val(`modoAttivo()!=='zaino' || !!document.querySelector('.brand .zainorow')`));
+  ok('la ricerca apre la riga dei comandi', 'searchBtn', ordine[0]);
   ok('e «Banco» viene dopo la lente, come prima', true,
     ordine.indexOf('bancoBtn') > ordine.indexOf('searchBtn'));
 

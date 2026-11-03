@@ -32,7 +32,7 @@
 }
 :root .znav .zs-tit .zs-azioni .tbtn { color:var(--comando-ink); }
 /* La maniglia deve distinguersi dalla testata anche quando la sidebar è chiusa. */
-#menuBtn { --comando-bg:#fff; }
+#menuBtn { --comando-bg:var(--panel); }
 .znav .zs-tit:has(.zs-collapse[aria-expanded="false"]) > .zs-azioni,
 .znav .zs-collapse[aria-expanded="false"] .zs-n { display:none; }
 /* Sul colore della superficie non si sovrappone un secondo rettangolo.

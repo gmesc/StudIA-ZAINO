@@ -224,12 +224,13 @@
     --ev-nudo:#fdf14d;
     /* I bottoni delle barre degli strumenti (mappa, appunti, e chi verrà dopo).
        Cambiarli qui li cambia tutti: è il punto di questo blocco. */
-    --tb-h:30px; --tb-min:30px; --tb-pad-x:.55rem;
+    /* Barre più basse del 10%, conservando il corpo del testo. */
+    --tb-h:27px; --tb-min:30px; --tb-pad-x:.55rem;
     --tb-fs:11px; --tb-peso:700; --tb-track:.08em;
     /* …e la BARRA che li contiene: altezza, rientro e distanza fra le righe
        quando i comandi vanno a capo. Il modello è la barra della mappa, che è
        quella riuscita meglio; queste tre misure sono ciò che la rende tale. */
-    --tb-bar-h:calc(var(--ctl-h) - 1px); --tb-bar-pad-x:.5rem; --tb-bar-rowgap:.3rem;
+    --tb-bar-h:calc((var(--ctl-h) - 1px) * .9); --tb-bar-pad-x:.5rem; --tb-bar-rowgap:.3rem;
     /* La TESTATA dell'app è la stessa barra, un decimo più grande: comanda tutta
        l'app, non un riquadro, e a parità di misura sembrerebbe uno strumento
        fra gli altri. Il fattore è uno solo (`--tb-piu`), così «più grande del
@@ -243,13 +244,9 @@
     --tbig-bar-h:calc(var(--tb-bar-h) * var(--tb-piu));
     --tbig-oi:22px;
     --topbar-action-oi:calc(var(--tbig-oi) * 1.1 * .95);
-    /* La TESTATA DI BLOCCO è la barra più bassa dell'app: dentro ha una tendina
-       sola, e ogni pixel in più lo toglie al contenuto del blocco. La sua
-       altezza non è un numero scritto a mano ma il bottone di barra più i suoi
-       due pixel di bordi (1 sopra e 1 sotto). La usa anche la maniglia dell'indice,
-       che le sta a fianco
-       nell'angolo: due cose adiacenti alte diverso si vedono subito. */
-    --tb-blocco-h:calc(var(--tb-h) + 2px);
+    /* La testata di split e il fantasma condividono l'altezza: il numero è
+       l'intera testata precedente (32px), ridotta del 10%, cornice compresa. */
+    --tb-blocco-h:28.8px; /* 32px × .9: anche la cornice partecipa alla riduzione. */
     --side-w:clamp(240px,19vw,290px); --pane-w:42vw;
     --icon-plus:none; --icon-minus:none; --icon-check:none;
   }
@@ -595,26 +592,17 @@
      segue. (`:has` c'è in questo Chromium dalla 105; qui siamo alla 142.) */
   .tendina:has(select[hidden]){ display:none; }
   .tendina:has(select:disabled){ opacity:.45; }
-  /* toggle per nascondere la sidebar (fantasma), sull'angolo topbar/sidebar */
-  /* ⚠️ Quadrata e alta quanto la TESTATA DI BLOCCO che le sta a fianco, non
-     quanto i controlli grandi. Erano 40 contro 33: sette pixel di scalino
-     nell'angolo fra l'indice e il primo blocco, e l'occhio ci va perché sono
-     due cose attaccate. Il token è uno, quindi non possono più divergere. */
+  /* Il fantasma occupa la fessura riservata nella prima testata; il suo
+     ancoraggio legge il rettangolo dello split, anche con sidebar chiusa. */
   .paneltoggle{ position:fixed; top:var(--topbar-h); left:var(--side-w); z-index:60;
-    width:var(--tb-blocco-h);
-    /* ⚠️ Un pixel in più in altezza, e non è una svista: `positionPanelToggle`
-       appoggia la maniglia UN PIXEL SOPRA il fondo della topbar, così il bordo
-       inferiore della topbar e quello superiore della maniglia diventano una
-       linea sola invece di due. Senza questo pixel di recupero il fondo della
-       maniglia resterebbe uno sopra il fondo della testata di blocco accanto:
-       due linee parallele a un pixel di distanza, che è il difetto che si
-       nota di più. */
-    height:calc(var(--tb-blocco-h) + 1px);
+    width:var(--tb-blocco-h); height:var(--tb-blocco-h);
     display:inline-flex; align-items:center; justify-content:center; background:var(--panel);
-    border:1px solid var(--line); border-radius:0; cursor:pointer; transition:box-shadow var(--speed),background var(--speed); }
-  /* L'icona dentro segue il riquadro: a 28px dentro 33 tocca i bordi. */
+    border:0; border-right:1px solid var(--line); border-bottom:1px solid var(--line);
+    border-radius:0; cursor:pointer; transition:background var(--speed); }
+  /* L'icona conserva aria attorno anche nella testata più bassa. */
   .paneltoggle .oi{ width:var(--tbig-oi); height:var(--tbig-oi); }
-  .paneltoggle:hover{ background:var(--hover); box-shadow:var(--sh-3d); }
+  .paneltoggle:hover{ background:var(--hover); }
+  .paneltoggle:focus-visible{ outline:2px solid var(--focus); outline-offset:-2px; }
 
   /* ---- Layout ---- */
   .wrap{ display:grid; grid-template-columns:var(--side-w) minmax(0,1fr); }
@@ -656,10 +644,11 @@
   /* I separatori restano neutri: il riquadro in uso si riconosce dalla testata. */
   .bhead{ display:flex; align-items:center; justify-content:flex-start; gap:.4rem; padding:0 .5rem; flex:0 0 auto; min-width:0;
     min-height:var(--tb-blocco-h); border-bottom:1px solid var(--line);
-    border-top:1px solid var(--line); }
+    border-top:0; }
   /* La maniglia della sidebar occupa l’angolo del primo riquadro. */
   .bhead[data-primo="1"]{ padding-left:calc(var(--tb-blocco-h) + .5rem); }
-  .bnumero{ color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums; }
+  .bnumero{ color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums;
+    min-width:18px; padding:0 4px; line-height:1.5; text-align:center; flex:none; }
   .bhead[draggable="true"]{ cursor:grab; }
   .bhead:focus-visible{ outline:2px solid var(--focus); outline-offset:-2px; }
   .blocco[data-banco-drag] .bhead{ cursor:grabbing; }
@@ -785,16 +774,16 @@
   .znav{ --znav-titolo:12px; }
   /* Sidebar e split condividono l’altezza, anche quando i comandi sono nascosti. */
   .znav .zs-tit{ display:flex; align-items:center; gap:.4rem; margin:0; padding:0 .6rem 0 .8rem; min-height:var(--tb-blocco-h);
-    font-size:var(--znav-titolo); font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--teal-strong); }
+    font-size:var(--znav-titolo); font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--ink); }
   .znav .zs-raccolta + .zs-raccolta .zs-tit{ margin-top:.8rem; }
   .znav .zs-n{ font-size:10px; letter-spacing:.06em; color:var(--muted); font-variant-numeric:tabular-nums; }
   .znav ul{ list-style:none; }
-  .znav li{ border-bottom:1px solid var(--line-weak); }
+  .znav li{ border-bottom:0; }
   .znav button{ width:100%; text-align:left; background:transparent; border:none; border-left:3px solid transparent;
     cursor:pointer; padding:.6rem 1rem .6rem .8rem; color:var(--ink); line-height:1.35; font-size:13px;
     font-family:inherit; transition:background var(--speed); overflow-wrap:anywhere; }
   .znav button:hover{ background:var(--hover); }
-  .znav button.attivo{ border-left-color:var(--teal); background:var(--hover); font-weight:700; }
+  .znav button.attivo{ border-left-color:var(--teal-strong); background:var(--hover); font-weight:700; }
   .znav .zs-vuoto{ padding:.5rem 1rem .7rem .8rem; color:var(--muted); font-size:12px; line-height:1.45; }
   .znav .zs-no{ color:var(--no-ink); }
   .znav .zs-tit .zs-azioni{ margin-left:auto; display:flex; }
@@ -1558,19 +1547,18 @@
   #searchRes{ position:fixed; z-index:320; width:min(520px,92vw); max-height:52vh; overflow:auto; display:none;
     background:var(--panel); border:1px solid var(--line); box-shadow:var(--sh-3d); }
   #searchRes.open{ display:block; }
-  /* ⚠️ L'INTESTAZIONE PORTA L'ACCENTO DELL'APP, e non è decorazione: in un
-     elenco lungo è l'unica cosa che dice «da qui in poi si parla di un'altra
-     fonte», e in grigio spento si confondeva con i frammenti, che sono grigi
-     anche loro. Il teal è il colore che in tutta l'app vuol dire «questo», e la
-     riga sotto lo ripete sottile: due segni deboli invece di uno forte, perché
-     il pannello non diventi una bandiera. */
-  .bhead, .znav .zs-tit, .zchat-ai-section > .set-sec-h, .sicurezza-section > .set-sec-h, :is(#searchRes, #albumCercaRisultati) .sr-lesson{
+  /* La struttura resta neutra; l'accento distingue il riquadro in uso. */
+  .bhead{ --testata-bg:var(--hover); background:var(--testata-bg); }
+  .blocco[data-attivo="1"] > .bhead{ --testata-bg:var(--panel); box-shadow:inset 0 3px 0 var(--teal-strong); }
+  .blocco[data-attivo="1"] > .bhead .bnumero{ color:var(--panel); background:var(--teal-strong); }
+  :root .blocco[data-attivo="1"] > .bhead > .tendina{ color:var(--teal-strong); }
+  .znav .zs-tit{ --testata-bg:transparent; background:var(--testata-bg); }
+  .zchat-ai-section > .set-sec-h, .sicurezza-section > .set-sec-h, :is(#searchRes, #albumCercaRisultati) .sr-lesson{
     --testata-bg:color-mix(in srgb, var(--teal) 10%, var(--panel));
     background:var(--testata-bg); }
-  .blocco[data-attivo="1"] > .bhead{ --testata-bg:color-mix(in srgb, var(--teal) 33%, var(--panel)); }
-  :is(.bhead, .znav .zs-tit, :is(#searchRes, #albumCercaRisultati) .sr-lesson) button[aria-pressed="true"]{
+  :is(#searchRes, #albumCercaRisultati) .sr-lesson button[aria-pressed="true"]{
     --testata-bg:color-mix(in srgb, var(--teal) 26%, var(--panel)); }
-  .znav .zs-tit, :is(#searchRes, #albumCercaRisultati) .sr-lesson{
+  :is(#searchRes, #albumCercaRisultati) .sr-lesson{
     border-bottom:1px solid color-mix(in srgb, var(--teal) 35%, var(--line)); }
   :is(#searchRes, #albumCercaRisultati) .sr-lesson{ position:sticky; top:0; z-index:1;
     font-size:10px; text-transform:uppercase; letter-spacing:.12em; font-weight:700;
@@ -3091,7 +3079,7 @@
   #albumCercaInput{box-sizing:border-box;width:100%;padding:.65rem;border:0;border-bottom:1px solid var(--line);font:inherit;background:var(--panel);color:var(--ink);}
   #albumCercaRisultati{max-height:50vh;overflow:auto;}
   #albumOrdineMenu button[aria-checked="true"]::before{content:'✓ ';}
-  .zs-media-tipo{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--teal-strong);padding:.4rem .6rem;border-bottom:1px solid var(--line-weak);background:color-mix(in srgb,var(--teal) 7%,var(--panel));}
+  .zs-media-tipo{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:.4rem .6rem;background:transparent;}
 
   .brand #zainoScegli{padding-inline:var(--tb-pad-x,.75rem);}
   #zainiMenu{width:min(420px,calc(100vw - 16px));padding:0;max-height:75vh;overflow:hidden;}
@@ -4614,22 +4602,26 @@ $('#themeToggle').addEventListener('click',()=>{
 /* opzioni 'alta leggibilita' e 'meno animazioni' rimosse dalla UI */
 
 /* ---- Navigazione mobile ---- */
-function openNav(){ root.dataset.nav='open'; }
-function closeNav(){ root.dataset.nav=''; }
+function openNav(){ root.dataset.nav='open'; positionPanelToggle(); }
+function closeNav(){ root.dataset.nav=''; positionPanelToggle(); }
 const mqMobile=window.matchMedia('(max-width:860px)');
 function positionPanelToggle(){
   const btn=$('#menuBtn'); if(!btn) return;
   const tb=document.querySelector('.topbar').getBoundingClientRect();
   const sb=document.querySelector('.sidebar');
   const collapsed = root.dataset.sidebar==='collapsed' || getComputedStyle(sb).display==='none';
-  const bw=1; // spessore dei bordi (topbar/sidebar/toggle) da sovrapporre invece di affiancare
-  let x,y;
-  if(mqMobile.matches || collapsed){ x=0; y=tb.bottom; }
-  else { x=sb.getBoundingClientRect().right-bw; y=tb.bottom-bw; }
+  const testata=document.querySelector('#banco .bhead[data-primo="1"]');
+  const r=testata && testata.getBoundingClientRect();
+  const x=r && r.width ? r.left : (mqMobile.matches || collapsed ? 0 : sb.getBoundingClientRect().right);
+  const y=r && r.height ? r.top : tb.bottom;
   btn.style.top = y + 'px'; btn.style.left = x + 'px';
+  const espansa=mqMobile.matches ? root.dataset.nav==='open' : !collapsed;
+  const nome=(espansa?'Nascondi':'Mostra')+' la sidebar';
+  btn.setAttribute('aria-controls','sidebar'); btn.setAttribute('aria-expanded',String(espansa));
+  btn.setAttribute('aria-label',nome); btn.title=nome;
   /* Il contatore si appende alla maniglia: le misure gliele chiede a lei invece
      di ripetere i 40px che la maniglia non ha più. */
-  const lato=btn.getBoundingClientRect().height || 33;
+  const lato=btn.getBoundingClientRect().height;
   const cc=$('#chapCounter'); if(cc){ cc.style.top=(y+Math.round(lato/2))+'px'; cc.style.left=(x+lato+8)+'px'; }
 }
 $('#menuBtn').addEventListener('click',()=>{
@@ -4822,7 +4814,7 @@ document.addEventListener('click', function(e){
 const topbarEl=document.querySelector('.topbar');
 function setTopbarH(){
   if(!topbarEl) return;
-  var h=topbarEl.offsetHeight;
+  var h=topbarEl.getBoundingClientRect().height;
   if(h) root.style.setProperty('--topbar-h', h+'px');
   /* Il tasto dell'indice e il contatore non sono in CSS: li piazza
      `positionPanelToggle` leggendo il fondo della topbar, e lo faceva solo al
