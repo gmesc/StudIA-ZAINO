@@ -1,5 +1,13 @@
 'use strict';
 const assert=require('node:assert/strict'),A=require('../App/assets/presentazioni/animazioni'),M=require('../App/assets/presentazioni/modello'),R=require('../App/assets/presentazioni/reveal-adapter'),V=require('../lib/validate');
+const N=require('../App/assets/presentazioni/navigazione'),inizio={h:0,v:0,step:'0/0',pagina:'1/2'},figliaStato={h:0,v:1,step:'0/1',pagina:'1a/2'};
+assert.deepEqual(N.passaggioComuni(null,inizio),{zoom:false,numero:false,verso:1});
+assert.deepEqual(N.passaggioComuni(inizio,figliaStato),{zoom:true,numero:true,verso:1});
+assert.deepEqual(N.passaggioComuni(figliaStato,inizio),{zoom:true,numero:true,verso:-1});
+assert.deepEqual(N.passaggioComuni(inizio,inizio),{zoom:false,numero:false,verso:1});
+assert.deepEqual(N.passaggioComuni(inizio,{...figliaStato,step:inizio.step}),{zoom:false,numero:true,verso:1},'approfondimento con navbar dei soli argomenti');
+assert.deepEqual(N.passaggioComuni(inizio,figliaStato,true),{zoom:false,numero:false,verso:1});
+assert.deepEqual(N.passaggioComuni({...inizio,step:null,pagina:null},figliaStato),{zoom:false,numero:false,verso:1},'gli oggetti prima nascosti riappaiono senza ingresso');
 let n=0;const id=()=> 'elemento-'+(++n);
 let d=M.crea('cbd14eca-2adb-4fc1-9762-f20fe6601a1c','Elementi',id),sid=d.stacks[0].slides[0].id;
 const op=o=>d=M.applica(d,{slideId:sid,...o},id),s=()=>M.trova(d,sid).slide;

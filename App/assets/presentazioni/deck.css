@@ -62,6 +62,12 @@ body{background:var(--bg);color:var(--ink)}
 .presenta-slide>.presenta-blocco:is([data-type=navbar],[data-type=page-number]){position:absolute;display:flex;flex-direction:column;justify-content:center;box-sizing:border-box;padding:4px;z-index:1}
 .presenta-blocco[hidden]{display:none!important}
 .presenta-numero-pagina{display:block;text-align:inherit;font-variant-numeric:tabular-nums;white-space:nowrap}
+.presenta-numero-valore{display:inline-block}
+/* Il foglio comune scala come Reveal ma resta fuori dalla transizione delle sezioni. */
+.reveal .presenta-comuni{position:absolute;left:50%;top:50%;inset-inline-end:auto;bottom:auto;margin:0;padding:0;min-height:0;background:transparent;transform-origin:center;z-index:2;pointer-events:none}
+.presenta-comuni>.presenta-blocco{pointer-events:auto}
+.reveal .presenta-comuni[hidden]{display:none}
+.presenta-comune-sorgente{visibility:hidden!important;pointer-events:none!important}
 .presenta-step-numero{flex:none;font-variant-numeric:tabular-nums}
 .presenta-step-titolo{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .presenta-vettore{display:block;width:100%;height:100%;max-height:100%}

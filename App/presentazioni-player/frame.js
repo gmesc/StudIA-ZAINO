@@ -11,7 +11,7 @@
  function invia(tipo,d={}){if(!pubblico)parent.postMessage({presenta:canale,tipo,...d},'*');}
  function conferma(){silenzia();if(pubblico&&contesto&&!inComando)window.presentaPubblico.conferma({...contesto,...stato()}).then(r=>{if(!r.ok)console.warn(r.error);});}
  async function aggiorna(o){
-  animazioni?.destroy();animazioni=null;navbar?.destroy();navbar=null;scrittura.termina(false);testi=o.documento.testi||{};prova=!!o.provaAnimazioni;termina(true);inAttesa=false;modificaFoglio=o.editor||null;pronto=false;root.dataset.pronto='false';canale=o.canale||canale;const r=o.documento,s=r.settings;
+  animazioni?.destroy();animazioni=null;scrittura.termina(false);testi=o.documento.testi||{};prova=!!o.provaAnimazioni;termina(true);inAttesa=false;modificaFoglio=o.editor||null;pronto=false;root.dataset.pronto='false';canale=o.canale||canale;const r=o.documento,s=r.settings;
   document.documentElement.dataset.tema=s.theme;document.documentElement.dataset.movimentoRidotto=String(s.reducedMotion);
   for(const m of root.querySelectorAll('audio,video'))if(!m.closest('.presenta-sfondo-comune'))m.pause();
   root.querySelector('.slides').innerHTML=r.html;silenzia();
@@ -23,8 +23,8 @@
   else{deck.configure(config);deck.sync();}
   // Anche un salvataggio o una ricompilazione dell'editor conserva il playback.
   if(!sfondo||sfondo.firma!==root.querySelector('.presenta-sfondo-template')?.innerHTML){sfondo?.destroy();sfondo=PresentaNavigazione.sfondoComune(deck,root,{passivo:()=>!pubblico&&!prova,errore:error=>invia('errore',{error})});}
-  navbar=PresentaNavigazione.navbar(deck,root,{ridotto,attiva:()=>pubblico||prova||!!modificaFoglio?.pulita});
   await document.fonts.ready;pronto=true;root.dataset.pronto='true';deck.slide(o.posizione?.h||0,o.posizione?.v||0,o.posizione?.fragmentIndex??-1);deck.layout();silenzia();sfondo?.aggiorna?.();
+  if(!navbar)navbar=PresentaNavigazione.navbar(deck,root,{attiva:()=>pubblico||prova||!!modificaFoglio?.pulita});else navbar.aggiorna();
   // Nell’iframe il media può essere pronto dopo il primo tentativo di autoplay di Reveal.
   if(pubblico||prova){const p=deck.getIndices(),video=deck.getSlideBackground(p.h,p.v)?.querySelector('video');video?.play().catch(e=>{if(video.isConnected&&e.name!=='AbortError')invia('errore',{error:'Video di sfondo non riproducibile. Verifica il formato e il codec.'});});}
   if(pubblico||o.provaAnimazioni)animazioni=PresentaAnimazioniDOM.collega(deck,{ridotto});if(modificaFoglio&&!pubblico){selezione(modificaFoglio);root.dataset.modificaPronta='true';}invia('pronto',{firma:modificaFoglio?.firma,errors:r.errors||[]});segnalaIngombro();
@@ -53,7 +53,7 @@
  // La superficie isolata invia soltanto misure; il documento e la cronologia restano nel padre.
  let modificaFoglio=null,gesto=null,inAttesa=false;
  function corrente(){return deck?.getCurrentSlide()?.querySelector('.presenta-slide');}
- function elementi(){return [...(corrente()?.querySelectorAll('.presenta-blocco[data-block-id]')||[])];}
+ function elementi(){return [...(corrente()?.querySelectorAll('.presenta-blocco[data-block-id]:not(.presenta-comune-sorgente)')||[]),...(navbar?.elementi()||[])];}
  function disegnaGuide(){
   root.querySelectorAll('.presenta-guide-fisse').forEach(e=>e.remove());
   const area=corrente();if(pubblico||!area||!modificaFoglio?.griglia)return;
@@ -68,6 +68,7 @@
   for(const b of elementi()){
    b.tabIndex=o.bloccato||o.pulita?-1:0;b.setAttribute('role','button');b.setAttribute('aria-label','Seleziona oggetto');b.setAttribute('aria-pressed',String((o.selezionati?.length>1?o.selezionati.includes(b.dataset.blockId):b.dataset.blockId===o.selezionato)));b.dataset.selezionato=String((o.selezionati?.length>1?o.selezionati.includes(b.dataset.blockId):b.dataset.blockId===o.selezionato));
    b.querySelector('.presenta-maniglia')?.remove();if(b.dataset.selezionato==='true'&&!(o.selezionati?.length>1)){const h=document.createElement('span');h.className='presenta-maniglia';h.setAttribute('aria-hidden','true');b.append(h);}
+   for(const bt of b.querySelectorAll('[data-nav-h]'))bt.tabIndex=o.pulita?0:-1;
   }
   const scelto=elementi().find(b=>(o.selezionati?.length>1?o.selezionati.includes(b.dataset.blockId):b.dataset.blockId===o.selezionato));if(scelto)aggiornaBubble(scelto);
  }
@@ -152,5 +153,5 @@
  root.addEventListener('click',e=>{if(e.shiftKey||modificaFoglio?.selezionati?.length>1)return;if(scrittura.attiva?.el.contains(e.target))return;const a=e.target.closest('a');if(a&&!pubblico)e.preventDefault();if(!pubblico&&!modificaFoglio?.pulita){const b=e.target.closest('[data-block-id]');if(b){invia('seleziona',{blockId:b.dataset.blockId});mostraBubble(b);}}});
  root.addEventListener('play',e=>{if(!pubblico&&!prova){e.target.pause();e.target.muted=true;}},true);
  new ResizeObserver(()=>{if(pronto){deck.layout();aggiornaBubble(elementi().find(b=>b.dataset.blockId===modificaFoglio?.selezionato));}}).observe(root);
- window.addEventListener('pagehide',()=>{animazioni?.destroy();pronto=false;for(const m of root.querySelectorAll('audio,video'))m.pause();deck?.destroy();});
+ window.addEventListener('pagehide',()=>{animazioni?.destroy();navbar?.destroy();sfondo?.destroy();pronto=false;for(const m of root.querySelectorAll('audio,video'))m.pause();deck?.destroy();});
 })();
