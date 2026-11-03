@@ -14,7 +14,7 @@
 .presenta-lavoro{min-width:0;padding:12px;display:flex;flex-direction:column;gap:12px;border-left:1px solid var(--line)}
 .presenta-anteprima{width:100%;aspect-ratio:16/9;min-height:0;border:0;background:transparent;display:block;box-sizing:border-box}
 .presenta-anteprima[data-sfondo-bianco="true"]{outline:1px solid var(--line);outline-offset:-1px}
-.presenta-campi{display:flex;flex-direction:column;gap:12px;min-width:0}
+.presenta-campi{display:flex;flex-direction:column;gap:12px;min-width:0;margin-top:-8px}
 .presenta-campo{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;min-width:0}
 .presenta-campo :is(input,textarea,select){box-sizing:border-box;width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:14px/1.5 var(--font-text),sans-serif;border-radius:0;padding:8px;font-weight:400;min-width:0}
 .presenta-campo textarea{resize:vertical;min-height:96px}
@@ -50,7 +50,7 @@
 .presenta-mini-scena[data-tema="zaino-dark"]{--bg:#0f1115;--ink:#eceef2;--muted:#a2a8b2}
 .presenta-mini-scena>*{pointer-events:none}.presenta-mini-numero{font-size:11px;font-weight:500;line-height:1.4;text-align:left;height:2.8em;overflow:hidden}
 .presenta-tabs{flex-wrap:wrap;border-block:1px solid var(--line);margin-top:-12px}.presenta-tabs .tbtn{gap:6px}
-.presenta-proprieta-foglio{display:grid;grid-template-columns:minmax(200px,1.5fr) minmax(190px,1fr);gap:24px;padding:12px 0}
+.presenta-proprieta-foglio{display:grid;grid-template-columns:minmax(200px,1.5fr) minmax(190px,1fr);gap:24px;padding:4px 0 8px}
 .presenta-proprieta-foglio>section{min-width:0;display:flex;flex-direction:column;gap:12px}
 .presenta-proprieta-foglio .presenta-blocco-editor{padding:0;border:0;display:flex;flex-direction:column;gap:12px}
 .presenta-sezione{font-size:13px;line-height:1.4;margin:0;font-weight:600}
@@ -267,7 +267,7 @@
 
 .presenta-runtime-avviso{flex:none;margin:0 0 12px;font-size:14px;line-height:1.4;padding:8px;border-left:3px solid var(--teal-strong);background:var(--hover)}
 
-.presenta-sfondo-tipi{margin-bottom:8px}.presenta-proprieta-foglio[data-voce=sfondo]{gap:8px}.presenta-sfondo-comandi{align-items:end;gap:8px}.presenta-sfondo-comandi .presenta-campo{width:176px;flex:none}.presenta-sfondo-comandi>.tbtn{align-self:end}.presenta-sfondo-nome{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:end;font-size:var(--tb-fs);line-height:var(--tb-h)}.presenta-mini-video{position:absolute;bottom:16px;right:16px;font-size:32px;color:var(--muted)}
+.presenta-proprieta-foglio[data-voce=sfondo]{gap:8px}.presenta-sfondo-comandi{align-items:end;gap:8px}.presenta-sfondo-comandi .presenta-campo{width:176px;flex:none}.presenta-sfondo-comandi>.tbtn{align-self:end}.presenta-sfondo-nome{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:end;font-size:var(--tb-fs);line-height:var(--tb-h)}.presenta-mini-video{position:absolute;bottom:16px;right:16px;font-size:32px;color:var(--muted)}
 
 /* Stesse barre adattive della tipografia, con due righe per i cursori. */
 .presenta-navbar-controlli{display:flex;flex-wrap:nowrap;gap:8px;align-items:end;min-width:0}
@@ -297,7 +297,7 @@
 .presenta-controlli-popup>.tbtn{flex:none;white-space:nowrap}
 .presenta-controlli-popup>.tbsep:first-child{display:none}
 .presenta-aspetto-popup{width:min(760px,calc(100vw - 16px));box-sizing:border-box}
-.presenta-aiuto-comuni{font-size:var(--t2);color:var(--muted);margin:8px 0;max-width:65ch}
+.presenta-aiuto-comuni{font-size:12px;line-height:1.5;color:var(--muted);margin:0;max-width:65ch}
 .presenta-disegno-dialog{width:min(1100px,94vw);height:min(780px,90vh);padding:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);isolation:isolate}
 .presenta-disegno-dialog[open]{display:flex;flex-direction:column;gap:8px}.presenta-disegno-tela{flex:1;min-height:0;position:relative}.presenta-disegno-tela>.excalidraw{height:100%}
 
@@ -307,5 +307,11 @@
 .presenta-navbar-gruppo[open]{padding-bottom:8px}
 .presenta-navbar-gruppo .presenta-colori{max-width:100%}
 
-.presenta-sfondo-tutte.tbtn{max-width:100%;height:auto;min-height:var(--tb-h)}
-.presenta-sfondo-tutte>span{white-space:normal}
+/* Le azioni comuni hanno la scala compatta della barra, senza colonne vuote. */
+.presenta-azioni-comuni{--tb-h:24px;--tb-min:24px;--tb-bar-h:24px;--tb-fs:10px;--tb-pad-x:8px;gap:8px;padding:0;justify-content:flex-start;min-width:0}
+.presenta-azioni-comuni>.tbtn{flex:none;max-width:100%;height:auto;min-height:var(--tb-h);line-height:1.2;white-space:normal}
+.presenta-sfondo-tipi>.presenta-azioni-comuni{flex:none;align-self:center}
+.presenta-carte-popup{width:min(440px,calc(100vw - 16px));box-sizing:border-box;padding:8px;max-height:calc(100vh - 16px);overflow:auto;isolation:isolate}
+.presenta-carte-griglia{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.presenta-carta-scelta.tbtn{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:4px;min-width:0;height:auto;padding:4px;border:1px solid var(--line);text-transform:none;letter-spacing:normal;font-size:12px;font-weight:500;line-height:1.4;white-space:normal;text-align:left}
+.presenta-carta-scelta>img{display:block;width:100%;height:72px;object-fit:cover;pointer-events:none}
