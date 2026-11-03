@@ -85,14 +85,14 @@ const strumentiSalvati = () => c.val(`Object.values(bancoStato().blocchi).filter
     await c.clicca('.blocco[data-blocco="D"] .bnumero');
     verifica('il click vero nel quarto riquadro lo attiva', 'D', await c.val('bancoBloccoAttivo()'));
     verifica('anche Appunta segue la testata scelta', 'appunti2', await c.val('noteStatoAttivo().id'));
-    verifica('il quarto riquadro è attivo senza pallino', true,
+    verifica('il quarto riquadro è attivo senza indicatore duplicato', true,
       await c.val(`!document.querySelector('.battivo') && document.querySelector('.blocco[data-blocco="D"]').dataset.attivo==='1'`));
     verifica('il riquadro attivo resta accessibile', true,
       await c.val(`document.querySelector('.blocco[data-blocco="D"] .bnumero').getAttribute('aria-label').includes('Riquadro attivo')`));
-    verifica('separatori neutri e linea sul solo split attivo', true, await c.val(`(()=>{
+    verifica('separatori neutri senza linea verde', true, await c.val(`(()=>{
       const linea=getComputedStyle(document.querySelector('.blocco[data-bordo-sx="1"]')).borderLeftColor;
       return Array.from(document.querySelectorAll('#banco .blocco:not([hidden]) > .bhead')).every(e=>{
-        const s=getComputedStyle(e);return s.borderTopWidth==='0px' && s.borderBottomColor===linea && (e.parentElement.dataset.attivo==='1' ? s.boxShadow.includes('inset') : s.boxShadow==='none');
+        const s=getComputedStyle(e);return s.borderTopWidth==='0px' && s.borderBottomColor===linea && s.boxShadow==='none';
       });
     })()`));
     verifica('la barra di avanzamento dei capitoli è nascosta nello zaino', 'none', await c.val(`getComputedStyle(document.getElementById('navdots')).display`));

@@ -108,15 +108,16 @@
     expand.append(el('span',name,'zs-nome'),el('span',String(items.length),'zs-n'));collassa(expand,list,name,key+'.'+sourceId);head.append(expand);if(modificaSchede)head.append(spuntaSchede(items.map(c=>c.id),'Seleziona le schede di '+name,'selection-group:'+sourceId));group.append(head,list);
     for(const c of items.sort((a,b)=>a.title.localeCompare(b.title,'it'))){
      const row=el('li',undefined,'zs-item'),open=button(c.title,()=>apriScheda(c.sourceId,c.preset));
-     open.className='zn-scheda';open.dataset.sourceId=c.sourceId;open.dataset.preset=c.preset;open.dataset.schedaFocus='card:'+c.sourceId+':'+c.preset;
+     open.className='zn-scheda';open.dataset.materiale='schede:'+JSON.stringify([c.sourceId,c.preset]);open.dataset.sourceId=c.sourceId;open.dataset.preset=c.preset;open.dataset.schedaFocus='card:'+c.sourceId+':'+c.preset;
      open.title='Apri '+c.title+' — '+name+(c.status==='changed'?' · Fonte modificata':c.status==='removed'?' · Fonte non disponibile':'');
      open.setAttribute('aria-label',open.title);
-     if(schedeView==='card'&&schedaAperta?.sourceId===c.sourceId&&schedaAperta?.preset===c.preset){open.classList.add('attivo');open.setAttribute('aria-current','page');}
+     if(schedeView==='card'&&schedaAperta?.sourceId===c.sourceId&&schedaAperta?.preset===c.preset){open.dataset.aperto='1';}
      row.append(open);if(modificaSchede)row.append(spuntaSchede([c.id],'Seleziona '+c.title+' — '+name,'selection:'+c.id));list.append(row);
     }
     body.append(group);
    }
    const fonti=host.querySelector('[data-sezione="fonti"]');if(fonti)fonti.after(section);else host.append(section);
+   window.znavIndicatori?.();
    selezioneSchedeDisegna();
    if(focus){const target=[...section.querySelectorAll('[data-scheda-focus]')].find(b=>b.dataset.schedaFocus===focus&&b.getClientRects().length);(target||toggle).focus({preventScroll:true});}
   }

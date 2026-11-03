@@ -20,9 +20,9 @@
    const del=b('Elimina selezionate','trash-2',async()=>{if(await ui.elimina([...scelti])){scelti.clear();await aggiorna();}});del.disabled=!scelti.size;azioni.append(del);
    const bar=E('div',null,'zs-schede-selection'),all=spunta(lista.map(d=>d.id),'Seleziona tutte le lavagnate','all'),count=E('span',scelti.size+(scelti.size===1?' selezionata':' selezionate'),'zs-n');all.append(E('span','Seleziona tutte'));count.setAttribute('role','status');bar.append(all,count);body.append(bar);
   }
-  const ul=E('ul');for(const d of lista){const row=E('li',null,'zs-item'),open=E('button',d.title,'lim-apri');open.type='button';open.title=d.title;open.dataset.limId=d.id;open.dataset.limFocus=d.id;if(ui.doc?.studia.id===d.id){open.classList.add('attivo');open.setAttribute('aria-current','page');}open.onclick=()=>azione(()=>apri(d.id));row.append(open);if(edit){
+  const ul=E('ul');for(const d of lista){const row=E('li',null,'zs-item'),open=E('button',d.title,'lim-apri');open.type='button';open.title=d.title;open.dataset.materiale='lim:'+d.id;open.dataset.limId=d.id;open.dataset.limFocus=d.id;open.onclick=()=>azione(()=>apri(d.id));row.append(open);if(edit){
    const azioni=E('span',null,'zs-azioni'),rename=b('Rinomina '+d.title,'pencil',async()=>{const t=await window.askText('Titolo della lavagnata',d.title);if(t!==null){await call({azione:'rinomina',id:d.id,titolo:t});await aggiorna();}});rename.dataset.limFocus='rename:'+d.id;azioni.append(rename);row.append(azioni,spunta([d.id],'Seleziona '+d.title,'select:'+d.id));
-  }ul.append(row);}body.append(ul);host.append(section);
+  }ul.append(row);}body.append(ul);host.append(section);window.znavIndicatori?.();
   if(focus)([...section.querySelectorAll('[data-lim-focus]')].find(e=>e.dataset.limFocus===focus)||toggle).focus({preventScroll:true});
  }
  async function aggiorna(){const n=++giro,z=window.zainoAttivo?.()||'';if(!z)return;

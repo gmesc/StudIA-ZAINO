@@ -31,6 +31,7 @@
     el('fotoPane').hidden=anteprima==='player' || (!anteprima && p.tipo!=='immagini');
     el('playerPane').hidden=anteprima!=='player';
     el('albumMediaLista').hidden=!!anteprima || !['audio','video'].includes(p.tipo);
+    root.znavIndicatori?.();
   }
   function chiudi(){
     var prima=anteprima; anteprima='';

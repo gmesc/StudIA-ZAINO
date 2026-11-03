@@ -69,6 +69,10 @@ async function menuContestuale(client,host,tema){
  assert(await c.val("ZainoLim.editor.api.getSceneElements().some(e=>e.text==='Prima del salvataggio')"),'primo salvataggio conserva il disegno');
 
  const id=await c.val('ZainoLim.doc.studia.id');
+ assert.equal(await c.val(`document.querySelector('#zs-lim .attivo .znumero').textContent`),'1','LIM collegata allo split');
+ await c.val(`bancoAssegna('A','album')`);assert.equal(await c.val(`document.querySelectorAll('#zs-lim .attivo, #zs-lim .znumero').length`),0,'LIM nascosta senza indicatori residui');
+ await c.val(`bancoAssegna('A','lim')`);
+
  assert(await c.val("!!document.querySelector('#limPane .lim-scegli')"),'selettore LIM compatto con bubble menu');
  assert.equal(await c.val("!!document.querySelector('#limPane .lim-bar select')"),false,'nessun select nativo nella barra LIM');
  await c.clicca('#limPane .lim-scegli');

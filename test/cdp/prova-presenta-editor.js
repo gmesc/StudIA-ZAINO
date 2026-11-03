@@ -68,6 +68,13 @@ async function riordinaMiniature(da,a,dentro=false){
   await click('Nuova presentazione');await wait('document.getElementById("uiModal").hasAttribute("open")');
   await c.val(`document.getElementById('umInput').value='Lezione della foglia';document.getElementById('umOk').click()`);await wait('!!ZainoPresenta.documento');id=await c.val('ZainoPresenta.documento.id');
   await scrivi('Titolo della slide','Una foglia al sole');
+  await c.val(`document.querySelector('.presenta-stato').click();bancoAttivaBlocco('A')`);
+  assert(await c.val(`(()=>{const b=document.querySelector('.presenta-slide-mini[aria-pressed="true"]'),s=getComputedStyle(b);return s.outlineStyle==='none'&&s.backgroundColor!=='rgba(0, 0, 0, 0)';})()`),'miniatura selezionata: solo highlight, senza cornice verde');
+  assert.equal(await c.val(`document.querySelector('#zs-presenta .znumero').textContent`),'1','presentazione collegata allo split');
+  await c.val(`bancoAssegna('A','album')`);
+  assert.equal(await c.val(`document.querySelectorAll('#zs-presenta .attivo, #zs-presenta .znumero').length`),0,'presentazione nascosta senza indicatori residui');
+  await c.val(`bancoAssegna('A','presenta')`);
+
   assert(await c.val('(()=>{const r=document.querySelector(".presenta-tipografia");return r.scrollWidth<=r.clientWidth+1;})()'),'la riga font stretta non taglia comandi e non richiede scroll orizzontale');
   // Riduzione, menu annidati, tastiera e ritorno dei medesimi controlli nella riga.
   await c.val('window.__rigaFont=document.querySelector(".presenta-tipografia");window.__campiFont=[...__rigaFont.querySelectorAll("input,select")];__rigaFont.style.maxWidth="270px"');

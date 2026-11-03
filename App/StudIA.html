@@ -245,8 +245,8 @@
     --tbig-oi:22px;
     --topbar-action-oi:calc(var(--tbig-oi) * 1.1 * .95);
     /* La testata di split e il fantasma condividono l'altezza: il numero è
-       l'intera testata precedente (32px), ridotta del 10%, cornice compresa. */
-    --tb-blocco-h:28.8px; /* 32px × .9: anche la cornice partecipa alla riduzione. */
+       32px ridotti del 10% e poi aumentati di un ottavo, cornice compresa. */
+    --tb-blocco-h:32.4px; /* 32px × .9 × 1.125 */
     --side-w:clamp(240px,19vw,290px); --pane-w:42vw;
     --icon-plus:none; --icon-minus:none; --icon-check:none;
   }
@@ -647,8 +647,12 @@
     border-top:0; }
   /* La maniglia della sidebar occupa l’angolo del primo riquadro. */
   .bhead[data-primo="1"]{ padding-left:calc(var(--tb-blocco-h) + .5rem); }
-  .bnumero{ color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums;
-    min-width:18px; padding:0 4px; line-height:1.5; text-align:center; flex:none; }
+  .bnumero, .znumero{ display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box;
+    width:20px; height:20px; flex:0 0 20px; border:1px solid #d1d5db; border-radius:50%;
+    background:transparent; color:#6b7280; font-size:11px; font-weight:400; line-height:1;
+    font-variant-numeric:tabular-nums; letter-spacing:normal; }
+  .blocco[data-attivo="1"] > .bhead .bnumero, .znumero[data-attivo="1"]{
+    border-color:transparent; background:#f97316; color:#4b5563; font-weight:700; }
   .bhead[draggable="true"]{ cursor:grab; }
   .bhead:focus-visible{ outline:2px solid var(--focus); outline-offset:-2px; }
   .blocco[data-banco-drag] .bhead{ cursor:grabbing; }
@@ -783,7 +787,7 @@
     cursor:pointer; padding:.6rem 1rem .6rem .8rem; color:var(--ink); line-height:1.35; font-size:13px;
     font-family:inherit; transition:background var(--speed); overflow-wrap:anywhere; }
   .znav button:hover{ background:var(--hover); }
-  .znav button.attivo{ border-left-color:var(--teal-strong); background:var(--hover); font-weight:700; }
+  .znav button.attivo{ font-weight:700; }
   .znav .zs-vuoto{ padding:.5rem 1rem .7rem .8rem; color:var(--muted); font-size:12px; line-height:1.45; }
   .znav .zs-no{ color:var(--no-ink); }
   .znav .zs-tit .zs-azioni{ margin-left:auto; display:flex; }
@@ -802,9 +806,12 @@
   .znav .zs-gruppo ul{ margin-left:.7rem; }
   .znav .zs-gruppo [hidden]{ display:none!important; }
   .znav .zs-item{ display:flex; align-items:stretch; position:relative; }
-  .znav .zs-item:hover, .znav .zs-item:has(> button.attivo){ background:var(--hover); }
+  .znav .zs-item:hover{ background:var(--hover); }
   .znav .zs-item > button:hover, .znav .zs-item > button.attivo{ background:transparent; }
   .znav .zs-item > button:first-child{ flex:1; min-width:0; }
+  .znav .zs-item > button[data-materiale]{ display:flex; align-items:baseline; gap:.4rem; padding-left:2rem; }
+  .znav .znome{ min-width:0; }
+  .znav .znumeri{ display:inline-flex; align-items:center; gap:3px; flex:none; align-self:center; }
   .znav .zs-seleziona-area{ display:flex; align-items:center; justify-content:center; flex:0 0 auto; min-width:28px; min-height:28px; cursor:pointer; }
   .znav .zs-seleziona{ flex:0 0 auto; width:var(--znav-titolo); height:var(--znav-titolo); margin:0;
     accent-color:var(--teal-strong); cursor:pointer; }
@@ -1549,10 +1556,9 @@
   #searchRes.open{ display:block; }
   /* La struttura resta neutra; l'accento distingue il riquadro in uso. */
   .bhead{ --testata-bg:var(--hover); background:var(--testata-bg); }
-  .blocco[data-attivo="1"] > .bhead{ --testata-bg:var(--panel); box-shadow:inset 0 3px 0 var(--teal-strong); }
-  .blocco[data-attivo="1"] > .bhead .bnumero{ color:var(--panel); background:var(--teal-strong); }
+  .blocco[data-attivo="1"] > .bhead{ --testata-bg:var(--panel); }
   :root .blocco[data-attivo="1"] > .bhead > .tendina{ color:var(--teal-strong); }
-  .znav .zs-tit{ --testata-bg:transparent; background:var(--testata-bg); }
+  .znav .zs-tit{ --testata-bg:var(--hover); background:var(--testata-bg); }
   .zchat-ai-section > .set-sec-h, .sicurezza-section > .set-sec-h, :is(#searchRes, #albumCercaRisultati) .sr-lesson{
     --testata-bg:color-mix(in srgb, var(--teal) 10%, var(--panel));
     background:var(--testata-bg); }
@@ -3070,7 +3076,13 @@
   .albumTabs button{font-size:11px;letter-spacing:.04em;}
   .albumTabs button[aria-pressed="true"]{background:var(--hover);color:var(--teal-strong);box-shadow:inset 0 -2px var(--teal);}
   .albumComandi{gap:.35rem;flex-wrap:wrap;}
-  #albumDimensione{width:clamp(60px,10vw,150px);min-width:60px;accent-color:var(--teal-strong);}
+  #albumDimensione{--album-cursore:#6b7280;--album-traccia:#e5e7eb;
+    width:clamp(60px,10vw,150px);min-width:60px;appearance:none;background:transparent;cursor:pointer;accent-color:var(--album-cursore);}
+  #albumDimensione::-webkit-slider-runnable-track{height:4px;background:var(--album-traccia);border-radius:2px;}
+  #albumDimensione::-webkit-slider-thumb{appearance:none;width:14px;height:14px;margin-top:-5px;border:0;border-radius:50%;background:var(--album-cursore);}
+  #albumDimensione::-moz-range-track{height:4px;background:var(--album-traccia);border-radius:2px;}
+  #albumDimensione::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--album-cursore);}
+  #albumDimensione:focus-visible{outline:2px solid var(--focus);outline-offset:4px;}
   #albumSpazio .alblista{grid-template-columns:repeat(auto-fill,minmax(min(var(--album-card),100%),1fr));align-content:start;width:100%;}
   #albumSpazio .alcard :is(img,video,.albumAudio){height:var(--album-immagine);width:100%;object-fit:contain;background:var(--hover);}
   #albumSpazio .alcard{font-family:inherit;color:var(--ink);text-align:left;cursor:pointer;}
@@ -7210,6 +7222,7 @@ function fotoChiudiVista(){
 /** Quale delle due facce si vede. Un punto solo, o le due barre e i due
  *  contenuti si contraddicono al primo ripensamento. */
 function fotoFacce(){
+  znavIndicatori();
   var aperta=fotoVistaAperta();
   var b1=$('#fotoBarra'), b2=$('#fotoBarraVista'), lista=$('#fotoLista'), vista=$('#fotoVista');
   if(b1) b1.hidden=aperta;
@@ -11135,7 +11148,7 @@ function znavRaccolta(sezione, titolo, voci, vuoto, errore, erroreGruppi){
       var v=voci.find(function(x){ return x.quale===file; }); if(!v) return '';
       var dati='data-file="'+znavEsc(file)+'" data-gruppo="'+znavEsc(gruppo)+'"';
       return '<li class="zs-item" '+dati+(modificabile?' draggable="true" tabindex="0" title="Trascina le voci selezionate in un gruppo · Alt+↑/↓ per riordinare"':'')+'>'+
-        '<button type="button" class="'+v.classe+(v.attivo?' attivo':'')+'" data-quale="'+znavEsc(file)+'" title="'+znavEsc(v.titolo||v.testo)+'">'+znavEsc(v.testo)+'</button>'+
+        '<button type="button" class="'+v.classe+'" data-quale="'+znavEsc(file)+'" data-materiale="'+znavEsc(sezione+':'+file)+'" title="'+znavEsc(v.titolo||v.testo)+'">'+znavEsc(v.testo)+'</button>'+
         (edit?'<label class="zs-seleziona-area" title="Seleziona '+znavEsc(v.testo)+'"><input type="checkbox" class="zs-seleziona" '+dati+' aria-label="Seleziona '+znavEsc(v.testo)+'"'+(selezione.includes(file)?' checked':'')+'></label>':'')+'</li>';
     }).join('')+'</ul>';
   }
@@ -11222,7 +11235,7 @@ async function znavComando(btn){
   }
   if(azione==='ordina'){
     var direzione=ZNAV.ordine[sezione]==='az'?'za':'az', nomi={};
-    btn.closest('.zs-raccolta').querySelectorAll('.zs-item > button').forEach(function(b){nomi[b.dataset.quale]=b.textContent;});
+    btn.closest('.zs-raccolta').querySelectorAll('.zs-item > button').forEach(function(b){nomi[b.dataset.quale]=b.querySelector('.znome')?.textContent||b.textContent;});
     var precedente=ZNAV.ordine[sezione]; ZNAV.ordine[sezione]=direzione;
     if(!await znavSalva(FontiGruppi.ordina(s,direzione,nomi),id,sezione)){ ZNAV.ordine[sezione]=precedente; await zainoNavAggiorna(); }
     return;
@@ -11381,35 +11394,68 @@ async function zainoNavAggiorna(){
   });
   ZNAV.id=id; ZNAV.gruppi=gruppi;
 
-  var apertoPdf = (typeof ANTEPRIMA!=='undefined' && ANTEPRIMA && ANTEPRIMA.tipo==='pdf') ? ANTEPRIMA.file : '';
-  var apertoMedia = (typeof PLAYER!=='undefined' && PLAYER) ? PLAYER.file : '';
-  var noteAttive=noteStatoAttivo();
-  var apertoNota = noteAttive && noteAttive.cur ? noteAttive.cur.file : '';
-  var apertaMappa = (typeof MAPPA!=='undefined' && MAPPA && MAPPA.mia) ? MAPPA.mia.file : '';
-
   function fonteVoce(f){
     var media=f.tipo==='media', segno=media?(Lettore.tipoDi(f.name)==='audio'?'♪ ':'▶ '):'';
     return {tipo:media?Lettore.tipoDi(f.name):'pdf', classe:media?'zn-fonte zn-media':'zn-fonte', quale:f.name, titolo:FontiNomi.visibile(f.name),
-      testo:segno+FontiNomi.visibile(f.name), attivo:f.name===(media?apertoMedia:apertoPdf)};
+      testo:segno+FontiNomi.visibile(f.name)};
   }
   znavAiutoChiudi();
   host.innerHTML =
     znavRaccolta('appunti','Appunti',appunti.map(function(n){
-      return { classe:'zn-appunto', quale:n.file, testo:noteEtichetta(n), attivo:n.file===apertoNota };
+      return { classe:'zn-appunto', quale:n.file, testo:noteEtichetta(n) };
     }), 'Nessun appunto. Si scrivono nel blocco «Appunti».',eAppunti,eGruppi.appunti) +
     znavRaccolta('mappe','Mappe', mappe.map(function(x){
       return { classe:'zn-mappa', quale:x.file, testo:x.titolo||x.file,
-               titolo:x.file, attivo:x.file===apertaMappa };
+               titolo:x.file };
     }), 'Nessuna mappa. Si disegnano nel blocco «Mappa».', eMappe,eGruppi.mappe) +
     znavRaccolta('fonti','Fonti',fonti.filter(function(f){return f.tipo==='pdf';}).map(fonteVoce),
       'Nessun documento in questo zaino.',eFonti,eGruppi.fonti) +
     znavRaccolta('media','Media',immagini.map(function(v){
-      return {tipo:'immagini',classe:'zn-immagine',quale:'album:'+v.id,testo:v.didascalia||v.materiale,attivo:FOTOV.aperta===v.id};
+      return {tipo:'immagini',classe:'zn-immagine',quale:'album:'+v.id,testo:v.didascalia||v.materiale};
     }).concat(fonti.filter(function(f){return f.tipo==='media';}).map(fonteVoce)),
       'Nessun media in questo zaino.',[eFonti,eImmagini].filter(Boolean).join(' · '),eGruppi.media);
   host.dataset.zaino=id;
+  znavIndicatori();
   window.dispatchEvent(new CustomEvent('studia:sidebar-updated',{detail:{id:id}}));
   if(bancoVisibile('album')) AlbumSpazio.aggiorna();
+}
+
+/** I numeri descrivono i materiali a schermo, mai l'ultimo file ricordato. */
+function znavIndicatori(){
+  var host=document.getElementById('zainoNav');
+  if(!host || typeof BANCO==='undefined' || !BANCO.stato || host.dataset.zaino!==zainoAttivo()) return;
+  var documenti={};
+  function assegna(id,sezione,file){ if(file) documenti[id]=sezione+':'+file; }
+  noteStati().forEach(function(s){if(s.cur && s.courseId===corsoAttivo())assegna(s.id,'appunti',s.cur.file);});
+  if(typeof ANTEPRIMA!=='undefined' && ANTEPRIMA.tipo==='pdf')assegna('fonte','fonti',ANTEPRIMA.file);
+  if(typeof FONTE2!=='undefined')assegna('fonte2','fonti',FONTE2.file);
+  if(typeof MAPPA!=='undefined' && MAPPA.registro==='mie')assegna('mappa','mappe',MAPPA.mia.file);
+  if(typeof AlbumSpazio!=='undefined'){
+    if(AlbumSpazio.visibile('player'))assegna('album','media',PLAYER.file);
+    else if(AlbumSpazio.visibile('foto') && FOTOV.aperta)assegna('album','media','album:'+FOTOV.aperta);
+  }
+  assegna('presenta','presenta',window.ZainoPresenta?.documento?.id);
+  assegna('lim','lim',window.ZainoLim?.doc?.studia.id);
+  // Le Schede conservano la propria vista privata, esposta dal loro renderer.
+  var scheda=host.querySelector('.zn-scheda[data-aperto="1"]');
+  if(scheda)documenti.studio=scheda.dataset.materiale;
+  var aperti=BancoMateriali.indicatori(bancoStato().blocchi,BancoForme.blocchiInLettura(bancoStato().forma),bancoBloccoAttivo(),documenti);
+  host.querySelectorAll('.zs-item > button[data-materiale]').forEach(function(btn){
+    var numeri=aperti[btn.dataset.materiale]||[];
+    btn.classList.toggle('attivo',!!numeri.length);
+    if(numeri.length)btn.setAttribute('aria-current','page');else btn.removeAttribute('aria-current');
+    var nome=btn.querySelector('.znome');
+    if(!nome){nome=document.createElement('span');nome.className='znome';nome.append(...btn.childNodes);btn.append(nome);}
+    btn.querySelector('.znumeri')?.remove();
+    if(!numeri.length)return;
+    var gruppo=document.createElement('span');gruppo.className='znumeri';
+    numeri.forEach(function(n){
+      var pallino=document.createElement('span');pallino.className='znumero';pallino.textContent=n.numero;
+      pallino.dataset.attivo=n.attivo?'1':'0';pallino.setAttribute('role','img');
+      pallino.setAttribute('aria-label','Aperto nello split '+n.numero+(n.attivo?', attivo':''));
+      gruppo.append(pallino);
+    });btn.prepend(gruppo);
+  });
 }
 
 /** I documenti di un contenitore: una strada sola, per tutti quelli che li
@@ -17977,6 +18023,7 @@ function bancoSegnaAttivo(){
     chiudi.setAttribute('aria-label','Chiudi split '+n+': '+bancoNomeStrumento(bancoStrumentoIn(b)));
     chiudi.title=chiudi.disabled?'L’ultimo split resta aperto: puoi cambiarne il contenuto.':'Chiudi lo split; il documento resta disponibile.';
   });
+  znavIndicatori();
 }
 
 /* ---- il magazzino: dove aspettano gli strumenti che non sono a schermo ----
@@ -18140,6 +18187,7 @@ function bancoAggiornaDocumenti(){
     if(!el){el=document.createElement('span');el.className='bdoc';h.appendChild(el);}
     el.textContent=nome;el.title=nome;el.hidden=!nome;
   });
+  znavIndicatori();
 }
 function bancoAggiornaTestate(){
   var reg=bancoStrumentiOfferti();
@@ -19821,6 +19869,7 @@ function mappaLevaEtichetta(k, val){
   return String(val);
 }
 function mappaSincronizzaComandi(){
+  znavIndicatori();
   mappaCronologiaComandi();
   /* Le tendine diventano bottoni la prima volta che si passa di qui: la barra
      della mappa esiste da subito, ma il suo elenco no. */
@@ -22009,8 +22058,11 @@ window.addEventListener('keydown', function(e){
 <section id="albumSpazio" aria-label="Album">
   <div class="tbar albumTabs" role="group" aria-label="Materiali dell’album">
     <button class="tbtn" type="button" data-album-tab="ritagli">RITAGLI</button>
+    <span class="tbsep" aria-hidden="true"></span>
     <button class="tbtn" type="button" data-album-tab="immagini">IMMAGINI</button>
+    <span class="tbsep" aria-hidden="true"></span>
     <button class="tbtn" type="button" data-album-tab="video">VIDEO</button>
+    <span class="tbsep" aria-hidden="true"></span>
     <button class="tbtn" type="button" data-album-tab="audio">AUDIO</button>
   </div>
   <div class="tbar albumComandi">

@@ -18,6 +18,14 @@ assert.equal(Banco.scegli({A:'fonte',C:'appunti'},['A','B','C','D'],'D','appunti
 assert.equal(Banco.scegli(blocchi,['A','C'],'C','fonte'),'fonte2'); // libero perché nascosto
 assert.equal(Banco.scegli(blocchi,['A','B','C','D'],'D','mappa'),'mappa');
 
+// Conta solo i blocchi visibili, nell'ordine che numeriamo in testata.
+const documenti={appunti:'appunti:a.md',appunti2:'appunti:b.md',fonte:'fonti:x.pdf',fonte2:'fonti:x.pdf'};
+assert.deepEqual(Banco.indicatori(blocchi,['A','C'],'C',documenti),{
+  'fonti:x.pdf':[{numero:1,attivo:false}], 'appunti:a.md':[{numero:2,attivo:true}]
+});
+assert.deepEqual(Banco.indicatori(blocchi,['B','A'],'B',documenti)['fonti:x.pdf'],[{numero:1,attivo:true},{numero:2,attivo:false}]);
+assert.deepEqual(Banco.indicatori({A:'album'},['A'],'A',{album:''}),{});
+
 // Il renderer comune gira con DOM e CodeMirror minimi: le decisioni di salvataggio,
 // destinazione e attesa sono vere; Electron deve soltanto verificarne il cablaggio.
 function harness(){

@@ -26,6 +26,17 @@
       return !(visibili||[]).some(function(b){ return b!==blocco && blocchi[b]===id; });
     }) || '';
   }
+  // I documenti ricordati dai pannelli in magazzino non sono aperti sul banco.
+  function indicatori(blocchi,visibili,attivo,documenti){
+    var out=Object.create(null);
+    (visibili||[]).forEach(function(b,i){
+      var materiale=documenti[(blocchi||{})[b]];
+      if(!materiale) return;
+      if(!out[materiale]) out[materiale]=[];
+      out[materiale].push({numero:i+1,attivo:b===attivo});
+    });
+    return out;
+  }
   if(root){
     function stato(){ return root.noteStati()[1]; }
     root.appuntiParalleli={
@@ -45,5 +56,5 @@
     };
     root.document.addEventListener('DOMContentLoaded',function(){ root.appuntiParalleli.layout(); });
   }
-  return {tipo:tipo,scegli:scegli,riquadro:riquadro,unificaAlbum:unificaAlbum};
+  return {tipo:tipo,scegli:scegli,riquadro:riquadro,unificaAlbum:unificaAlbum,indicatori:indicatori};
 });

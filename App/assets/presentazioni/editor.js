@@ -614,7 +614,7 @@
  function sidebar(){
   const old=$('zs-presenta');old?.remove();const nav=$('zainoNav');if(!nav||nav.hidden||nav.dataset.zaino!==corso||!elenco.length)return;
   const section=E('section',null,'zs-raccolta');section.id='zs-presenta';const head=E('div',null,'zs-tit'),title=E('span','PRESENTA'),ul=E('ul');head.append(title);section.append(head,ul);
-  for(const d of elenco){const li=E('li',null,'zs-item'),button=E('button',d.title);button.type='button';button.title=d.title;if(D.documento?.id===d.id)button.classList.add('attivo');button.onclick=()=>azione(async()=>{bancoMostra('presenta');await apri(d.id);});li.append(button);ul.append(li);}nav.append(section);
+  for(const d of elenco){const li=E('li',null,'zs-item'),button=E('button',d.title);button.type='button';button.title=d.title;button.dataset.materiale='presenta:'+d.id;button.onclick=()=>azione(async()=>{bancoMostra('presenta');await apri(d.id);});li.append(button);ul.append(li);}nav.append(section);window.znavIndicatori?.();
  }
  async function contesto(){
   const z=window.zainoAttivo?.()||'';if(z===corso)return;

@@ -43,6 +43,9 @@ function saveCard(plan,preset,n=1){const {chunks,...info}=plan,card={...info,pre
   const open=firstSource+' [data-preset="sintesi"]';await click(open);await wait(`!document.getElementById('zschedeResult').hidden && document.querySelector('${base} .attivo')?.dataset.preset==='sintesi' && !document.getElementById('zschedeNewButton').disabled`);
   assert(await c.val(`bancoVisibile('studio') && document.getElementById('zschedeResult').textContent.includes('Testo della scheda conservata.')`));
   assert.equal(await c.val(`document.querySelector(${q(open)}).getAttribute('aria-current')`),'page');
+  assert.equal(await c.val(`document.querySelector(${q(open)}+' .znumero').textContent`),'1','scheda collegata allo split visibile');
+  await c.val(`bancoAssegna('A','album')`);assert.equal(await c.val(`document.querySelectorAll('${base} .attivo, ${base} .znumero').length`),0,'scheda nascosta senza indicatori residui');
+  await c.val(`bancoAssegna('A','studio')`);assert.equal(await c.val(`document.querySelector(${q(open)}+' .znumero').textContent`),'1','ripristino degli indicatori sulla scheda ancora aperta');
   await click('#zschedeBack');assert.equal(await c.val(`document.querySelectorAll('${base} .attivo').length`),0);
   // Il filtro della ricerca non limita la sidebar; lo zaino sì, anche con letture in volo.
   await c.val(`document.getElementById('zschedeFilter').value='inesistente';document.getElementById('zschedeFilter').dispatchEvent(new Event('input'))`);
