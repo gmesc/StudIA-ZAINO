@@ -16,7 +16,14 @@
  }
  function sincronizzaMedia(deck,root,passivo){
   const slide=deck?.getCurrentSlide(),p=deck?.getIndices(),sfondo=p&&deck.getSlideBackground(p.h,p.v);
-  for(const m of root.querySelectorAll('audio,video')){const dietro=!!m.closest('.slide-background');if(passivo||!(slide?.contains(m)||sfondo?.contains(m)))m.pause();m.muted=passivo||dietro&&!!slide?.hasAttribute('data-background-video-muted');}
+  for(const m of root.querySelectorAll('audio,video')){const dietro=!!m.closest('.slide-background'),comune=!!m.closest('.presenta-sfondo-comune');if(passivo||!(slide?.contains(m)||sfondo?.contains(m)||comune&&slide?.dataset.sfondoComune==='true'))m.pause();m.muted=passivo||(comune?m.dataset.silenzioso!=='false':dietro&&!!slide?.hasAttribute('data-background-video-muted'));}
+ }
+ // Un solo elemento vive fuori dalle slide: GIF e video non ripartono al cambio.
+ function sfondoComune(deck,root,{passivo=()=>false,errore=()=>{}}={}){
+  const template=root.querySelector('.presenta-sfondo-template');if(!template)return {destroy(){}};
+  const layer=template.content.firstElementChild.cloneNode(true),video=layer.querySelector('video');root.append(layer);
+  function aggiorna(){layer.hidden=deck.getCurrentSlide()?.dataset.sfondoComune!=='true';if(video){video.muted=passivo()||video.dataset.silenzioso!=='false';if(layer.hidden||passivo())video.pause();else if(video.paused)video.play().catch(e=>{if(e.name!=='AbortError'&&video.isConnected)errore('Video di sfondo non riproducibile. Verifica il formato e il codec.');});}}
+  deck.on('slidechanged',aggiorna);aggiorna();return {firma:template.innerHTML,aggiorna,destroy(){video?.pause();deck.off('slidechanged',aggiorna);layer.remove();}};
  }
  // Il player autonomo e la finestra pubblica condividono clic e movimento ridotto.
  function navbar(deck,root,{ridotto=false,attiva=()=>true}={}){
@@ -32,5 +39,5 @@
   }
   root.addEventListener('click',click,true);deck.on('slidechanged',anima);anima();return {destroy(){animazione?.revert();zoom?.revert();root.removeEventListener('click',click,true);deck.off('slidechanged',anima);}};
  }
- return {stato,comando,sincronizzaMedia,navbar};
+ return {stato,comando,sincronizzaMedia,sfondoComune,navbar};
 });

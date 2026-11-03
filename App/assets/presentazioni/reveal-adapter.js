@@ -71,6 +71,9 @@
   if(s.appearance)out.push(M.aspettoCSS(s.appearance));
   if(s.color)out.push('color:'+s.color);if(s.align)out.push('text-align:'+s.align);return out.join(';');
  }
+ function carta(tipo){
+  if(!Object.hasOwn(M.CARTE,tipo))throw Error('Carta non valida.');return '<img class="presenta-carta" src="carte/'+tipo+'.png" alt="" aria-hidden="true">';
+ }
  function compila(documento){
   if(valida){const r=valida(documento);if(!r.ok)throw Error(r.errors.join('; '));}M.esigi(documento);const d=M.pubblica(documento),errors=[],testi={};
   function testo(b,inline=false){const ns=b.richText||testoDaMarkdown(b.markdown);testi[b.id]={nodes:ns,atomi:ns.map(n=>n.text===undefined?testoHTML([n],[],b.id):null)};return '<span class="presenta-testo" data-ricco="'+!!b.richText+'" data-testo-id="'+esc(b.id)+'">'+(b.richText?testoHTML(ns,errors,b.id):markdown(b.markdown,errors,b.id,inline))+'</span>';}
@@ -98,11 +101,14 @@
    contenuto='<div class="presenta-contenuto"'+identita+(b.style?.scale?' style="transform:scale('+b.style.scale+')"':'')+'>'+contenuto+'</div>';
    return '<div class="presenta-blocco" data-slot="'+b.slot+'" data-movimento="'+s.animations.some(a=>a.targetId===b.id&&['Percorso','Evidenza'].includes(A.effetti[a.effect].gruppo))+'" data-block-id="'+esc(b.id)+'" data-type="'+b.type+'"'+(b.hidden?' hidden':'')+' style="'+esc(stile({...b,style:{...(s.layout==='free'&&b.type==='title'?{fontSize:54}:{}),...b.style,...(s.layout!=='free'&&!M.comune(b)?{box:undefined}:{})}}))+'">'+fragments(contenuto,b.id,s)+'</div>';
   }
-  function slide(s,h,v){const bg=s.backgroundMedia,a=bg&&d.assets[bg.assetId],media=a?' data-background-'+(a.kind==='video'?'video':'image')+'="'+esc(a.path)+'" data-background-size="'+bg.fit+'"'+(a.kind==='video'?(bg.loop!==false?' data-background-video-loop':'')+(bg.muted!==false?' data-background-video-muted':''):''):'';const animate=s.autoAnimate.enabled&&!d.settings.reducedMotion?' data-auto-animate data-auto-animate-id="'+esc(s.autoAnimate.groupId)+'" data-auto-animate-duration="'+s.autoAnimate.duration+'"':'';
-   return '<section'+animate+media+' data-background-color="'+esc(s.background||(d.settings.theme==='zaino-dark'?'#0f1115':'#fbfbfa'))+'" aria-label="'+esc(s.title)+'"><div class="presenta-slide"'+(a?' data-sfondo-media="true"':'')+' data-layout="'+s.layout+'" style="'+esc('font-family:'+M.CARATTERI[d.settings.fontFamily||'zaino'].css)+';--slide-height:'+d.settings.height+'px;'+(s.background?'background-color:'+(a?'transparent':s.background)+';--ink:'+M.contrasto(s.background)+';--muted:'+M.contrasto(s.background)+';color:'+M.contrasto(s.background)+';':'')+'">'+s.blocks.map(b=>blocco(b,s,h,v)).join('')+'</div></section>';
+  const coloreSfondo=f=>f.background||(d.settings.theme==='zaino-dark'?'#0f1115':'#fbfbfa');
+  function slide(s,h,v){const fondo=M.sfondoSlide(d,s),bg=fondo.backgroundMedia,a=bg&&d.assets[bg.assetId],comune=M.sfondoCondiviso(d,s),media=a?' data-'+(comune?'common-':'background-')+(a.kind==='video'?'video':'image')+'="'+esc(a.path)+'" data-background-size="'+bg.fit+'"'+(!comune&&a.kind==='video'?(bg.loop!==false?' data-background-video-loop':'')+(bg.muted!==false?' data-background-video-muted':''):''):'';const animate=s.autoAnimate.enabled&&!d.settings.reducedMotion?' data-auto-animate data-auto-animate-id="'+esc(s.autoAnimate.groupId)+'" data-auto-animate-duration="'+s.autoAnimate.duration+'"':'';
+   return '<section'+animate+media+(comune?' data-sfondo-comune="true"':'')+' data-background-color="'+esc(coloreSfondo(fondo))+'" aria-label="'+esc(s.title)+'"><div class="presenta-slide"'+(a||comune?' data-sfondo-media="true"':'')+' data-layout="'+s.layout+'" style="'+esc('font-family:'+M.CARATTERI[d.settings.fontFamily||'zaino'].css)+';--slide-height:'+d.settings.height+'px;background-color:'+(a||comune?'transparent':coloreSfondo(fondo))+';--ink:'+M.contrasto(coloreSfondo(fondo))+';--muted:'+M.contrasto(coloreSfondo(fondo))+';color:'+M.contrasto(coloreSfondo(fondo))+';">'+(fondo.backgroundPattern?carta(fondo.backgroundPattern):'')+s.blocks.map(b=>blocco(b,s,h,v)).join('')+'</div></section>';
   }
-  const html=d.stacks.map((p,h)=>p.slides.length>1?'<section>'+p.slides.map((s,v)=>slide(s,h,v)).join('')+'</section>':slide(p.slides[0],h,0)).join('');
+  const fondo=d.backgroundCommon,bg=fondo?.backgroundMedia,asset=bg&&d.assets[bg.assetId];
+  const comune=fondo?'<template class="presenta-sfondo-template"><div class="presenta-sfondo-comune" aria-hidden="true" style="background-color:'+esc(coloreSfondo(fondo))+'">'+(asset?asset.kind==='video'?'<video src="'+esc(asset.path)+'" playsinline preload="auto"'+(bg.loop!==false?' loop':'')+(bg.muted!==false?' muted':'')+' data-silenzioso="'+(bg.muted!==false)+'" style="object-fit:'+bg.fit+'"></video>':'<img src="'+esc(asset.path)+'" alt="" style="object-fit:'+bg.fit+'">':fondo.backgroundPattern?carta(fondo.backgroundPattern):'')+'</div></template>':'';
+  const html=comune+d.stacks.map((p,h)=>p.slides.length>1?'<section>'+p.slides.map((s,v)=>slide(s,h,v)).join('')+'</section>':slide(p.slides[0],h,0)).join('');
   return {html,errors,settings:d.settings,title:d.title,testi};
  }
- return {compila,markdown,formula,esc,testoDaMarkdown,testoHTML};
+ return {carta,compila,markdown,formula,esc,testoDaMarkdown,testoHTML};
 });

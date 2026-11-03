@@ -91,3 +91,10 @@ body{background:var(--bg);color:var(--ink)}
 .presenta-navbar[data-variante=progress] button[aria-current]{border-top-color:color-mix(in srgb,var(--nav-active-graphic,currentColor) calc(var(--nav-active-opacity,1) * 100%),transparent)}
 .presenta-navbar[data-orientamento=vertical][data-variante=progress] button{border-top:0;border-left:var(--nav-line-width,4px) solid color-mix(in srgb,var(--nav-line-color,currentColor) calc(var(--nav-line-opacity,.25) * 100%),transparent)}
 .presenta-navbar[data-orientamento=vertical][data-variante=progress] button[aria-current]{border-left-color:color-mix(in srgb,var(--nav-active-graphic,currentColor) calc(var(--nav-active-opacity,1) * 100%),transparent)}
+
+.presenta-carta,.presenta-slide[data-layout]>.presenta-carta{position:absolute;inset:0;pointer-events:none;z-index:-1;width:100%;height:100%;object-fit:cover;max-width:none;max-height:none}
+.reveal .presenta-sfondo-comune{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.reveal .presenta-sfondo-comune[hidden]{display:none}
+.presenta-sfondo-comune>img,.presenta-sfondo-comune>video{width:100%;height:100%;display:block;max-width:none;max-height:none}
+.presenta-sfondo-comune>.presenta-carta{z-index:0}
+.reveal section[data-sfondo-comune=true]>.presenta-slide>.presenta-carta{display:none}

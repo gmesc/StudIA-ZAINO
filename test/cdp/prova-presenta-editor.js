@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),c=require('./cdp');
 const q=JSON.stringify;
-async function wait(expr,client=c){for(let n=0;n<120;n++){if(await client.val(expr))return;await c.pausa(100);}throw Error('Attesa: '+expr);}
+async function wait(expr,client=c){for(let n=0;n<120;n++){if(await client.val(expr))return;await c.pausa(100);}throw Error('Attesa: '+expr+'; menu aperti: '+JSON.stringify(await client.val(`[...document.querySelectorAll(':popover-open')].map(e=>({classe:e.className,testo:e.textContent}))`)));}
 async function click(nome){
  if(/^(Riga [1-4]|Colonna [1-4]|(Alto|Centro|Basso) (sinistra|centro|destra))$/.test(nome)&&!await c.val('!!document.querySelector(".presenta-posizione-popup:popover-open")'))await click('Posizione');
  if(['Nuova presentazione','Rinomina presentazione','Salva presentazione','Esporta presentazione HTML','Elimina presentazione','Chiudi presentazione'].includes(nome))await click('Documento');
@@ -237,9 +237,10 @@ async function riordinaMiniature(da,a,dentro=false){
   await click('Nuovo colore dello sfondo');const paletteShot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/private/tmp/presenta-colori-personali.png',Buffer.from(paletteShot.result.data,'base64'));await c.invia('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await c.invia('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await wait('!document.querySelector(".presenta-palette:popover-open")');
   await c.val(`BANCO.stato=${q(layoutProva)};bancoSalva();bancoDisegna()`);
 
+  await click('Immagine');await c.val('document.querySelector("#presentaPane iframe").scrollIntoView({block:"start",behavior:"instant"});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
   await frameWait('document.querySelector(".reveal").dataset.bloccato==="false"');
   const altezzaPrima=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box.height');
-  await frameVal(`document.querySelector('[data-block-id="'+${q(imageId)}+'"]').dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true}))`);await wait('!!document.querySelector(".presenta-bubble:popover-open")');await click('Adatta riquadro al contenuto');
+  await frameVal(`document.querySelector('[data-block-id="'+${q(imageId)}+'"]').dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true}))`);await wait('!!document.querySelector(\'.presenta-bubble:popover-open [aria-label="Adatta riquadro al contenuto"]\')');await click('Adatta riquadro al contenuto');
   await wait('Math.abs(ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box.height-'+altezzaPrima+')>.1');
   await frameWait('document.querySelector(".reveal").dataset.modificaPronta==="true"');
   // Una slide precedente a Sul foglio conserva i pixel degli altri oggetti quando si trascina.

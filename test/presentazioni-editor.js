@@ -158,7 +158,23 @@ const differita=()=>{let resolve,reject;return {promise:new Promise((r,j)=>{reso
   assert(url.startsWith('presenta://'));assert(!pubblico.html.includes(tmp));assert(V.consentita(url,session));
   assert.deepEqual(Buffer.from(await (await handle(new Request(url))).arrayBuffer()),require('./fixtures/presentazioni').png);
   for(const u of [url.replace(/assets\/.*/, 'presentazione.json'),url.replace(/assets\/.*/, '../_identita.json'),url+'?file=segreto',url.replace('presenta://','presenta://utente@'),url.replace('presenta://','https://')])assert(!V.consentita(u,session));
-  vista.chiudi();assert(!V.consentita(url,session));assert.equal((await handle(new Request(url))).status,404);
+  doc=M.applica(doc,{tipo:'sfondoPattern',slideId:doc.stacks[0].slides[0].id,pattern:'chiara'});const carta=vista.compila(doc).html.match(/src="([^"]+\/carte\/chiara.png)"/)[1];
+  assert(V.consentita(carta,session));assert.equal(Buffer.from(await (await handle(new Request(carta))).arrayBuffer()).subarray(1,4).toString(),'PNG');assert(!V.consentita(carta.replace('carte/chiara.png','modello.js'),session));
+  vista.chiudi();for(const u of [url,carta]){assert(!V.consentita(u,session));assert.equal((await handle(new Request(u))).status,404);}
  }finally{fs.rmSync(tmp,{recursive:true,force:true});}
+ {
+  let x=M.crea('00000000-0000-4000-8000-000000000001','Sfondo comune'),sid=x.stacks[0].slides[0].id;
+  const opera=o=>x=M.applica(x,{slideId:sid,...o}),slide=()=>M.trova(x,sid).slide;
+  opera({tipo:'aggiungiSlide',direzione:'destra'});const seconda=x.stacks[1].slides[0].id;
+  const a={kind:'video',path:'assets/'+('4'.repeat(64))+'.webm',mimeType:'video/webm',sha256:'4'.repeat(64),size:10};
+  opera({tipo:'sfondoMedia',assetId:'comune',asset:a,backgroundMedia:{assetId:'comune',fit:'cover'}});assert.equal(slide().backgroundMedia.loop,true);opera({tipo:'sfondoTutte'});
+  assert(M.posizioni(x).every(p=>M.sfondoSlide(x,p.slide).backgroundMedia.assetId==='comune'));assert(validatePresentazione(x).ok);assert.deepEqual(M.risorseUsate(x),['comune']);
+  const html=Rivela.compila(x).html;assert.equal((html.match(/<video /g)||[]).length,1,'un solo video condiviso');assert.equal((html.match(/data-sfondo-comune="true"/g)||[]).length,2);assert(!JSON.stringify(M.pubblica(x)).includes('Fonte privata'));
+  opera({tipo:'sfondoAutonomo',slideId:seconda,autonomo:true});opera({tipo:'sfondoPattern',slideId:seconda,pattern:'naturale'});assert.equal(M.sfondoSlide(x,M.trova(x,seconda).slide).backgroundPattern,'naturale');assert.equal(M.sfondoSlide(x,slide()).backgroundMedia.assetId,'comune');assert(Rivela.compila(x).html.includes('carte/naturale.png'));
+  opera({tipo:'aggiungiSlide',direzione:'sotto'});assert.equal(M.sfondoSlide(x,x.stacks[0].slides[1]).backgroundMedia.assetId,'comune','nuove slide collegate');opera({tipo:'sfondoPattern',pattern:'cotone'});assert.equal(x.backgroundCommon.backgroundPattern,'cotone');assert.equal(x.backgroundCommon.backgroundMedia,undefined);assert.equal(M.sfondoSlide(x,M.trova(x,seconda).slide).backgroundPattern,'naturale','eccezione conservata');
+  opera({tipo:'sfondoAutonomo',slideId:seconda,autonomo:false});assert.equal(M.sfondoSlide(x,M.trova(x,seconda).slide).backgroundPattern,'cotone');assert(validatePresentazione(x).ok);
+  opera({tipo:'sfondoTutte'});assert(M.posizioni(x).every(p=>!p.slide.backgroundIndependent));opera({tipo:'incollaStile',stile:{layout:'free',background:'#000000',blocks:[]}});assert(!slide().backgroundIndependent,'Incolla stile conserva il collegamento');assert.equal(M.sfondoSlide(x,slide()).backgroundPattern,'cotone');assert.throws(()=>opera({tipo:'sfondoPattern',pattern:'url(file:///secret)'}));
+  const storia=M.cronologia(x);storia.applica({tipo:'sfondoColore',slideId:sid,background:'#000000'});assert.equal(storia.documento.backgroundCommon.backgroundPattern,undefined);assert.equal(storia.annulla().backgroundCommon.backgroundPattern,'cotone');
+ }
  console.log('✓ Editor PRESENTA: scrittura durante autosave, undo/redo dopo salvataggio, flush delle transizioni, errore disco, bozza e riordino');
 })().catch(e=>{console.error(e);process.exitCode=1;});

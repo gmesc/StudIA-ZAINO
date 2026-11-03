@@ -5,6 +5,7 @@ const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'zaino-presenta-player-'));fs.mkd
 let win;const errori=[],rete=[];
 app.whenReady().then(async()=>{
  const exported=await require('../bin/presenta-demo').genera(path.join(tmp,'export'));
+ const carte=require('../lib/presentazioni-export').carte();fs.mkdirSync(path.join(exported.cartella,'carte'));for(const f of carte)fs.copyFileSync(f.p,path.join(exported.cartella,'carte',f.nome));
  const M=require('../App/assets/presentazioni/modello'),R=require('../App/assets/presentazioni/reveal-adapter');let foglio=M.crea('00000000-0000-4000-8000-000000000001','Sul foglio'),sid=foglio.stacks[0].slides[0].id;
  foglio=M.applica(foglio,{tipo:'titoloSlide',slideId:sid,title:'Foglio libero'});foglio=M.applica(foglio,{tipo:'inserisciBlocco',slideId:sid,block:{type:'text',slot:'body',markdown:'A destra',style:{fontFamily:'georgia',bold:true,italic:true,underline:true,lineHeight:1.6}}});
  foglio=M.applica(foglio,{tipo:'posizionaBlocchi',slideId:sid,boxes:foglio.stacks[0].slides[0].blocks.map((b,i)=>({id:b.id,box:{x:i?53:7,y:i?30:6,width:i?40:86,height:i?55:18}}))});foglio=M.applica(foglio,{tipo:'slide',slideId:sid,background:'#0f1115'});
@@ -140,6 +141,18 @@ app.whenReady().then(async()=>{
 
  await run(`document.documentElement.dataset.movimentoRidotto='true';document.querySelector('section.present > .presenta-slide [data-nav-v="1"]').click()`);assert(Math.abs(await run('new DOMMatrix(getComputedStyle(document.querySelector("section.present > .presenta-slide [aria-current]>.presenta-step-contenuto")).transform).a')-1.2)<.01,'movimento ridotto: zoom finale immediato');
 
+ // Lo sfondo comune resta un singolo elemento durante slide e approfondimenti.
+ eo({tipo:'sfondoMedia',assetId:'sfondo_comune',asset:Object.values(sfondi.assets).find(a=>a.kind==='video'),backgroundMedia:{assetId:'sfondo_comune',fit:'cover'}});eo({tipo:'sfondoTutte'});
+ const comuneFile=path.join(spostato,'comune.html');fs.writeFileSync(comuneFile,require('../lib/presentazioni-export').html(elementi).html);await run('PresentaPlayer.destroy()');await win.loadFile(comuneFile);await run('PresentaPlayer.ready');
+ for(let i=0;i<30;i++){if(await run(`document.querySelector('.presenta-sfondo-comune video')?.readyState>=2`))break;await new Promise(r=>setTimeout(r,100));}
+ assert.equal(await run(`document.querySelectorAll('.presenta-sfondo-comune video').length`),1);assert(await run(`document.querySelector('.presenta-sfondo-comune video').loop`));
+ await run(`window.__sfondo=document.querySelector('.presenta-sfondo-comune video');__sfondo.pause();__sfondo.currentTime=.05;window.__rect=JSON.stringify(__sfondo.getBoundingClientRect().toJSON());PresentaPlayer.comando({azione:'vai',h:0,v:1,fragmentIndex:-1})`);
+ assert(await run(`__sfondo===document.querySelector('.presenta-sfondo-comune video')`),'stesso video DOM');assert(await run(`__sfondo.currentTime>=.049`),'il video non riparte da zero');assert(await run(`JSON.stringify(__sfondo.getBoundingClientRect().toJSON())===__rect`),'sfondo fermo durante la transizione');
+ eo({tipo:'sfondoAutonomo',slideId:elementi.stacks[1].slides[0].id,autonomo:true});eo({tipo:'sfondoPattern',slideId:elementi.stacks[1].slides[0].id,pattern:'naturale'});eo({tipo:'sfondoPattern',pattern:'cotone'});
+ fs.writeFileSync(comuneFile,require('../lib/presentazioni-export').html(elementi).html);await run('PresentaPlayer.destroy()');await win.loadFile(comuneFile);await run('PresentaPlayer.ready');
+ assert.equal(await run(`document.querySelectorAll('.presenta-sfondo-comune img[src*=cotone]').length`),1);await run(`window.__carta=document.querySelector('.presenta-sfondo-comune');PresentaPlayer.comando({azione:'vai',h:0,v:1,fragmentIndex:-1})`);assert(await run(`__carta===document.querySelector('.presenta-sfondo-comune')&&!__carta.hidden`));await run(`PresentaPlayer.comando({azione:'vai',h:1,v:0,fragmentIndex:-1})`);assert(await run(`__carta.hidden`));assert.equal(await run(`document.querySelectorAll('section.present img.presenta-carta[src*=naturale]').length`),1,'texture di carta autonoma');
+ assert.equal(await run(`getComputedStyle(document.querySelector('section.present img.presenta-carta')).objectFit`),'cover','la carta copre tutto il foglio senza bande laterali');
+ eo({tipo:'sfondoAutonomo',autonomo:false});eo({tipo:'sfondoPattern',pattern:'chiara'});fs.writeFileSync(comuneFile,require('../lib/presentazioni-export').html(elementi).html);await run('PresentaPlayer.destroy()');await win.loadFile(comuneFile);await run('PresentaPlayer.ready');await run(`document.querySelector('.presenta-sfondo-comune img').decode()`);assert(await run(`document.querySelector('.presenta-sfondo-comune img').naturalWidth>1000`),'texture chiarissima reale');
  assert.deepEqual(rete,[],'nessuna dipendenza di rete');assert.deepEqual(errori,[],'nessun errore del renderer');
  await run('PresentaPlayer.destroy()');console.log('✓ Player reale offline: passi, simultaneità, inverso, Auto-Animate verticale, formule, media, privacy e pacchetto spostato.');console.log('Schermata: '+screenshot);app.exit(0);
 }).catch(e=>{console.error(e);app.exit(1);});

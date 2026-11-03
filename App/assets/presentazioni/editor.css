@@ -285,12 +285,12 @@
 .presenta-aspetto-campi output{font-variant-numeric:tabular-nums;min-width:5ch;text-align:right;font-size:12px}
 .presenta-aspetto-azioni{flex-wrap:nowrap;gap:8px;justify-content:flex-start;padding:0}
 .presenta-aspetto-azioni>.tbtn{flex:none;white-space:nowrap}
-.presenta-bianco-nero.tbtn{border:1px solid var(--line);background:var(--panel);padding-inline:var(--tb-pad-x)}
+.presenta-bianco-nero.tbtn{border:0;padding-inline:var(--tb-pad-x)}
 .presenta-bianco-nero.tbtn:hover{background:var(--hover)}
 .presenta-bianco-nero.tbtn[aria-pressed=true]{background:color-mix(in srgb,var(--teal) 26%,var(--panel));color:var(--teal-strong)}
-:is(.presenta-navbar-controlli,.presenta-aspetto-campi,.presenta-aspetto-azioni)>.presenta-altri{flex:none;align-self:end;width:var(--tb-h);height:var(--tb-h);padding:0;font-size:var(--tb-fs)}
+:is(.presenta-navbar-controlli,.presenta-aspetto-campi,.presenta-aspetto-azioni,.presenta-sfondo-tipi)>.presenta-altri{flex:none;align-self:end;width:var(--tb-h);height:var(--tb-h);padding:0;font-size:var(--tb-fs)}
 .presenta-aspetto-campi>.presenta-altri{align-self:center}
-:is(.presenta-navbar-controlli,.presenta-aspetto-campi,.presenta-aspetto-azioni)>.presenta-altri[hidden]{display:none}
+:is(.presenta-navbar-controlli,.presenta-aspetto-campi,.presenta-aspetto-azioni,.presenta-sfondo-tipi)>.presenta-altri[hidden]{display:none}
 .presenta-controlli-popup{margin:0;box-sizing:border-box;width:max-content;max-width:min(760px,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow:auto;padding:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
 .presenta-controlli-popup:popover-open{display:flex;flex-wrap:wrap;gap:12px 8px;align-items:end}
 .presenta-controlli-popup>.presenta-campo{width:176px;max-width:100%;flex:none;margin:0}
@@ -306,3 +306,6 @@
 .presenta-navbar-gruppo>summary{cursor:pointer;list-style:revert;display:list-item;margin-left:16px}
 .presenta-navbar-gruppo[open]{padding-bottom:8px}
 .presenta-navbar-gruppo .presenta-colori{max-width:100%}
+
+.presenta-sfondo-tutte.tbtn{max-width:100%;height:auto;min-height:var(--tb-h)}
+.presenta-sfondo-tutte>span{white-space:normal}
