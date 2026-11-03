@@ -259,7 +259,7 @@ async function riordinaMiniature(da,a,dentro=false){
   // La galleria applica un effetto solo alla conferma, con tempi espliciti.
   const animazioniPrima=await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations');
   await c.val('document.querySelector(".presenta-animazioni").scrollIntoView({block:"center",behavior:"instant"})');await c.clicca('.presenta-animazioni>summary');await click('Scegli un’animazione');
-  assert.equal(await c.val('document.querySelectorAll(".presenta-effetto-card").length'),36);
+  assert.equal(await c.val('document.querySelectorAll(".presenta-effetto-card").length'),38);
   await c.val('document.querySelector(".presenta-effetto-card[data-effetto=draw]").scrollIntoView({block:"center",behavior:"instant"})');await c.clicca('.presenta-effetto-card[data-effetto="draw"]');assert(await c.val(`document.querySelector('.presenta-galleria-animazioni [aria-label="Applica all’oggetto"]').disabled`),'effetto incompatibile spiegato e non applicabile');
   assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations'),animazioniPrima,'guardare i campioni non cambia il documento');
   assert(await c.val(`(()=>{const b=document.querySelector('.presenta-galleria-animazioni [aria-label="Applica all’oggetto"]').getBoundingClientRect(),g=document.querySelector('.presenta-galleria-effetti');return b.bottom<=innerHeight&&g.scrollHeight>g.clientHeight;})()`),'conferma visibile mentre scorre il catalogo');

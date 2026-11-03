@@ -62,19 +62,8 @@ body{background:var(--bg);color:var(--ink)}
 .presenta-slide>.presenta-blocco:is([data-type=navbar],[data-type=page-number]){position:absolute;display:flex;flex-direction:column;justify-content:center;box-sizing:border-box;padding:4px;z-index:1}
 .presenta-blocco[hidden]{display:none!important}
 .presenta-numero-pagina{display:block;text-align:inherit;font-variant-numeric:tabular-nums;white-space:nowrap}
-.presenta-navbar{display:flex;gap:8px;overflow:auto;max-width:100%;height:100%;max-height:100%;box-sizing:border-box;padding:6px;scrollbar-width:thin}
-.presenta-navbar button{flex:1 0 72px;min-width:0;max-width:200px;display:flex;gap:8px;align-items:center;border:0;border-bottom:2px solid transparent;background:transparent;color:inherit;font:inherit;cursor:pointer;padding:4px;text-align:left}
-.presenta-navbar button:hover{background:color-mix(in srgb,currentColor 10%,transparent)}
-.presenta-navbar button:focus-visible{outline:2px solid currentColor;outline-offset:-2px}
-.presenta-navbar button[aria-current]{font-weight:700;border-bottom-color:currentColor}
 .presenta-step-numero{flex:none;font-variant-numeric:tabular-nums}
 .presenta-step-titolo{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.presenta-navbar[data-variante=steps] .presenta-step-numero{border:1px solid currentColor;border-radius:50%;min-width:1.8em;height:1.8em;display:grid;place-items:center}
-.presenta-navbar[data-variante=steps] button[aria-current] .presenta-step-numero{background:transparent;border-width:3px}
-.presenta-navbar[data-variante=tabs] button{border:1px solid currentColor;border-radius:4px}
-.presenta-navbar[data-variante=tabs] button[aria-current]{background:color-mix(in srgb,currentColor 15%,transparent)}
-.presenta-navbar[data-variante=progress] button{border-top:4px solid color-mix(in srgb,currentColor 20%,transparent);border-bottom:0;flex-direction:column;gap:0;align-items:flex-start}
-.presenta-navbar[data-variante=progress] button[aria-current]{border-top-color:currentColor}
 .presenta-vettore{display:block;width:100%;height:100%;max-height:100%}
 .presenta-slide[data-layout=free] .presenta-contenuto:has(>.presenta-vettore){height:100%}
 
@@ -83,7 +72,22 @@ body{background:var(--bg);color:var(--ink)}
 .presenta-step-contenuto{display:flex;align-items:center;gap:8px;min-width:0;width:calc(100% / var(--step-zoom,1));transform-origin:left center}
 .presenta-navbar button[aria-current]>.presenta-step-contenuto{transform:scale(var(--step-zoom,1))}
 .presenta-navbar[data-orientamento=vertical]{flex-direction:column;overflow-x:hidden}
-.presenta-navbar[data-orientamento=vertical] button{flex:0 0 auto;max-width:none;width:100%;min-height:48px}
 .presenta-navbar[data-variante=progress] .presenta-step-contenuto{flex-direction:column;align-items:flex-start;gap:0}
-.presenta-navbar[data-orientamento=vertical][data-variante=progress] button{border-top:0;border-left:4px solid color-mix(in srgb,currentColor 20%,transparent)}
-.presenta-navbar[data-orientamento=vertical][data-variante=progress] button[aria-current]{border-left-color:currentColor}
+
+/* Colori indipendenti per testo attivo e segni, condivisi con miniature ed export. */
+.presenta-navbar{display:flex;gap:var(--nav-gap,8px);overflow:auto;max-width:100%;height:100%;max-height:100%;box-sizing:border-box;padding:6px;scrollbar-width:thin}
+.presenta-navbar button{position:relative;flex:1 0 72px;min-width:0;max-width:200px;display:flex;align-items:center;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;padding:4px;text-align:left}
+.presenta-navbar button:hover{background:color-mix(in srgb,currentColor 10%,transparent)}
+.presenta-navbar button:focus-visible{outline:2px solid currentColor;outline-offset:-2px}
+.presenta-navbar button[aria-current]{font-weight:700;color:var(--nav-active-text,inherit)}
+.presenta-navbar button+button::before{content:"";position:absolute;left:calc(-.5 * var(--nav-gap,8px));top:10%;height:80%;border-left:var(--nav-separator-width,0px) solid var(--nav-separator-color,currentColor);opacity:var(--nav-separator-opacity,.25);pointer-events:none}
+.presenta-navbar[data-orientamento=vertical] button{flex:0 0 auto;max-width:none;width:100%;min-height:48px}
+.presenta-navbar[data-orientamento=vertical] button+button::before{left:0;top:calc(-.5 * var(--nav-gap,8px));width:100%;height:0;border-left:0;border-top:var(--nav-separator-width,0px) solid var(--nav-separator-color,currentColor)}
+.presenta-navbar[data-variante=steps] .presenta-step-numero{box-sizing:border-box;border:var(--nav-border-width,1px) solid color-mix(in srgb,var(--nav-border-color,currentColor) calc(var(--nav-border-opacity,1) * 100%),transparent);background:color-mix(in srgb,var(--nav-bg-color,currentColor) calc(var(--nav-bg-opacity,0) * 100%),transparent);border-radius:50%;width:var(--nav-marker,32px);height:var(--nav-marker,32px);display:grid;place-items:center}
+.presenta-navbar[data-variante=steps] button[aria-current] .presenta-step-numero{border-color:color-mix(in srgb,var(--nav-active-graphic,currentColor) calc(var(--nav-border-opacity,1) * var(--nav-active-opacity,1) * 100%),transparent);background:color-mix(in srgb,var(--nav-active-bg-color,currentColor) calc(var(--nav-active-bg-opacity,.15) * var(--nav-active-opacity,1) * 100%),transparent)}
+.presenta-navbar[data-variante=tabs] button{border:var(--nav-border-width,1px) solid color-mix(in srgb,var(--nav-border-color,currentColor) calc(var(--nav-border-opacity,1) * 100%),transparent);border-radius:4px;background:color-mix(in srgb,var(--nav-bg-color,currentColor) calc(var(--nav-bg-opacity,0) * 100%),transparent)}
+.presenta-navbar[data-variante=tabs] button[aria-current]{border-color:color-mix(in srgb,var(--nav-active-graphic,currentColor) calc(var(--nav-border-opacity,1) * var(--nav-active-opacity,1) * 100%),transparent);background:color-mix(in srgb,var(--nav-active-bg-color,currentColor) calc(var(--nav-active-bg-opacity,.15) * var(--nav-active-opacity,1) * 100%),transparent)}
+.presenta-navbar[data-variante=progress] button{border-top:var(--nav-line-width,4px) solid color-mix(in srgb,var(--nav-line-color,currentColor) calc(var(--nav-line-opacity,.25) * 100%),transparent);flex-direction:column;align-items:flex-start}
+.presenta-navbar[data-variante=progress] button[aria-current]{border-top-color:color-mix(in srgb,var(--nav-active-graphic,currentColor) calc(var(--nav-active-opacity,1) * 100%),transparent)}
+.presenta-navbar[data-orientamento=vertical][data-variante=progress] button{border-top:0;border-left:var(--nav-line-width,4px) solid color-mix(in srgb,var(--nav-line-color,currentColor) calc(var(--nav-line-opacity,.25) * 100%),transparent)}
+.presenta-navbar[data-orientamento=vertical][data-variante=progress] button[aria-current]{border-left-color:color-mix(in srgb,var(--nav-active-graphic,currentColor) calc(var(--nav-active-opacity,1) * 100%),transparent)}

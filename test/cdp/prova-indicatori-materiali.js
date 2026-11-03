@@ -29,6 +29,12 @@ async function stato(){return c.val(`Object.fromEntries([...document.querySelect
   const separatori=await c.val(`[...document.querySelectorAll('.albumTabs .tbsep')].map(e=>({hidden:e.hidden,w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height,bg:getComputedStyle(e).backgroundColor}))`);
   assert(separatori.every(e=>!e.hidden&&e.w===1&&e.h===16&&e.bg!=='rgba(0, 0, 0, 0)'),'separatori realmente visibili: '+JSON.stringify(separatori));
 
+  await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});await c.pausa(250);
+  assert.equal(await c.val(`getComputedStyle(document.querySelector('.albumTabs [aria-pressed="true"]')).backgroundColor`),'rgb(229, 231, 235)','tab selezionato grigio senza hover');
+  const tab=await c.val(`(()=>{const r=document.querySelector('.albumTabs [aria-pressed="true"]').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',...tab});await c.pausa(250);
+  assert.notEqual(await c.val(`getComputedStyle(document.querySelector('.albumTabs [aria-pressed="true"]')).backgroundColor`),'rgb(229, 231, 235)','hover verde anche sul tab selezionato');
+  await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});await c.pausa(250);
   const slider=await c.val(`(()=>{const e=document.querySelector('#albumDimensione');return {accento:getComputedStyle(e).accentColor,pallino:getComputedStyle(e).getPropertyValue('--album-cursore').trim(),linea:getComputedStyle(e).getPropertyValue('--album-traccia').trim()};})()`);assert.equal(slider.pallino,'#6b7280');assert.equal(slider.linea,'#e5e7eb');
   console.log('Indicatori materiali: nascosti, due istanze, cambio attivo, riduzione, PDF duplicato, chiusura e Album OK');
  }finally{if(immagine)await c.val(`vault.album.rimuovi('biologia',${q(immagine)},{insisti:true})`);await c.val(`localStorage.clear();Object.entries(${q(prima.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));BANCO.stato=${q(prima.banco)};BANCO.attivo=${q(prima.attivo)};bancoDisegna()`);}

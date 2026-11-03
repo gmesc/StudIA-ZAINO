@@ -86,9 +86,11 @@ app.whenReady().then(async()=>{
   const prima=await run('document.querySelector("section.present .presenta-contenuto").innerHTML');
   assert.equal(await run('Number(getComputedStyle(document.querySelector("section.present .presenta-animazione")).opacity)'),e.entrata?0:1,e.id+' stato prima del clic');
   await run('PresentaPlayer.comando({azione:"avanti"})');await new Promise(r=>setTimeout(r,350));
-  const stato=await run(`(()=>{const el=document.querySelector('section.present .presenta-animazione');return {opacity:Number(getComputedStyle(el).opacity),transform:getComputedStyle(el).transform,text:el.textContent,styles:el.getAttribute('style')};})()`);
+  for(let attesa=0;attesa<20;attesa++){const fine=await run(`(()=>{const s=getComputedStyle(document.querySelector('section.present .presenta-animazione'));return Number(s.opacity)===${e.uscita?0:1}&&${e.id==='blur'?"s.filter==='blur(8px)'":e.id==='focus-in'?"s.filter==='blur(0px)'":'true'};})()`);if(fine)break;await new Promise(r=>setTimeout(r,100));}
+  const stato=await run(`(()=>{const el=document.querySelector('section.present .presenta-animazione');return {opacity:Number(getComputedStyle(el).opacity),transform:getComputedStyle(el).transform,filter:getComputedStyle(el).filter,text:el.textContent,styles:el.getAttribute('style')};})()`);
   assert.equal(stato.opacity,e.uscita?0:1,e.id+' stato finale');
   if(e.id==='fade-in')assert(await run(`Array.from(document.querySelectorAll('section.present .presenta-animazione')).every(e=>Number(getComputedStyle(e).opacity)===1)`),'un ingresso futuro non nasconde il contenuto fra due clic');
+  if(e.id==='blur')assert.equal(stato.filter,'blur(8px)');if(e.id==='focus-in')assert.equal(stato.filter,'blur(0px)');
   if(e.id==='grow')assert(stato.transform.includes('1.15'),e.id);if(e.id==='shrink')assert(stato.transform.includes('0.85'),e.id);
   if(e.id==='wipe-in')assert(['inset(0%)','inset(0% 0% 0% 0%)'].includes(await run(`getComputedStyle(document.querySelector('section.present .presenta-animazione')).clipPath`)),'tendina completamente aperta alla fine');
   if(e.id.startsWith('path-'))assert(!/NaN/.test(stato.transform),e.id+' percorso valido');
@@ -118,14 +120,19 @@ app.whenReady().then(async()=>{
  // Secondo HTML autonomo: nessun indice preso in prestito dalla galleria precedente.
  let elementi=M.crea('00000000-0000-4000-8000-000000000001','Elementi');const es=elementi.stacks[0].slides[0].id;
  const eo=o=>elementi=M.applica(elementi,{slideId:es,...o});eo({tipo:'titoloSlide',title:'Partenza'});eo({tipo:'aggiungiSlide',direzione:'sotto'});eo({tipo:'aggiungiSlide',direzione:'destra'});eo({tipo:'inserisciComune',type:'navbar'});eo({tipo:'inserisciComune',type:'page-number'});
- const navbar=elementi.stacks[0].slides[0].blocks.find(b=>b.type==='navbar');eo({tipo:'blocco',blockId:navbar.id,block:{...navbar,orientation:'vertical',activeZoom:1.2,style:{...navbar.style,box:{x:5,y:20,width:24,height:65}}}});
+ const navbar=elementi.stacks[0].slides[0].blocks.find(b=>b.type==='navbar');eo({tipo:'blocco',blockId:navbar.id,block:{...navbar,orientation:'vertical',activeZoom:1.2,style:{...navbar.style,box:{x:5,y:20,width:24,height:65},navbar:{activeTextColor:'#cc2200',activeGraphicColor:'#008800',border:{width:3,color:'#111111',opacity:.5},background:{color:'#ffffff',opacity:.3},separator:{width:2,color:'#0000ff',opacity:.4},activeBackground:{color:'#aaaaaa',opacity:.2}}}}});
  const drawing={viewBox:'0 0 100 100',scene:[],nodes:[{tag:'path',attrs:{d:'M0 0 L100 100',stroke:'#ef4444','stroke-width':'4'},children:[]}]};eo({tipo:'inserisciBlocco',block:{type:'drawing',slot:'body',drawing,style:{appearance:{opacity:.6,blend:'multiply',grayscale:100},box:{x:20,y:30,width:40,height:40}}}});
  const elementiFile=path.join(spostato,'elementi.html');fs.writeFileSync(elementiFile,require('../lib/presentazioni-export').html(elementi).html);await run('PresentaPlayer.destroy()');await win.loadFile(elementiFile);await run('PresentaPlayer.ready');
  assert.equal(await run('document.querySelector("section.present > .presenta-slide .presenta-numero-pagina").textContent'),'1/2');
  assert.equal(await run('getComputedStyle(document.querySelector("section.present > .presenta-slide [data-type=drawing]")).opacity'),'0.6');
  assert.equal(await run('document.querySelectorAll("section.present > .presenta-slide .presenta-vettore path").length'),1);
+ assert.equal(await run(`getComputedStyle(document.querySelector('section.present .presenta-navbar [aria-current]')).color`),'rgb(204, 34, 0)');
+ assert.equal(await run(`getComputedStyle(document.querySelector('section.present .presenta-navbar [aria-current] .presenta-step-numero')).color`),'rgb(204, 34, 0)');
+ assert.equal(await run(`getComputedStyle(document.querySelector('section.present .presenta-navbar [aria-current] .presenta-step-numero')).borderTopColor`),'color(srgb 0 0.533333 0 / 0.5)');
+ assert.equal(await run(`getComputedStyle(document.querySelector('section.present .presenta-navbar .presenta-step-numero')).borderTopWidth`),'3px');
  assert.equal(await run('getComputedStyle(document.querySelector("section.present > .presenta-slide .presenta-navbar")).flexDirection'),'column');
- await run('new Promise(r=>setTimeout(r,260))');assert(Math.abs(await run('new DOMMatrix(getComputedStyle(document.querySelector("section.present > .presenta-slide [aria-current]>.presenta-step-contenuto")).transform).a')-1.2)<.01,'zoom dello step attivo nel player esportato');
+ for(let attesa=0;attesa<20;attesa++){if(Math.abs(await run('new DOMMatrix(getComputedStyle(document.querySelector("section.present > .presenta-slide [aria-current]>.presenta-step-contenuto")).transform).a')-1.2)<.01)break;await new Promise(r=>setTimeout(r,100));}
+ const scalaEsportata=await run('new DOMMatrix(getComputedStyle(document.querySelector("section.present > .presenta-slide [aria-current]>.presenta-step-contenuto")).transform).a');assert(Math.abs(scalaEsportata-1.2)<.01,'zoom dello step attivo nel player esportato: '+scalaEsportata);
  assert.equal(await run('new DOMMatrix(getComputedStyle(document.querySelector("section.present > .presenta-slide button:not([aria-current])>.presenta-step-contenuto")).transform).a'),1);
 
  await run(`document.querySelector('section.present > .presenta-slide [data-nav-v="1"]').click()`);if(!await run('matchMedia("(prefers-reduced-motion: reduce)").matches'))assert(await run('!!document.querySelector("section.present > .presenta-slide [aria-current]>.presenta-step-contenuto").style.transform'),'zoom eseguito da Anime.js');assert.deepEqual(await run('PresentaPlayer.stato()'),{h:0,v:1,fragmentIndex:-1});assert.equal(await run('document.querySelector("section.present > .presenta-slide .presenta-numero-pagina").textContent'),'1a/2');

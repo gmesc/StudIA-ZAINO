@@ -506,6 +506,174 @@
                                 "maximum": 20
                               }
                             }
+                          },
+                          "navbar": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "activeTextColor": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "pattern": "^#[a-fA-F0-9]{6}$"
+                                  }
+                                ]
+                              },
+                              "activeGraphicColor": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "pattern": "^#[a-fA-F0-9]{6}$"
+                                  }
+                                ]
+                              },
+                              "markerSize": {
+                                "type": "number",
+                                "minimum": 12,
+                                "maximum": 80
+                              },
+                              "gap": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 32
+                              },
+                              "line": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "color": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "pattern": "^#[a-fA-F0-9]{6}$"
+                                      }
+                                    ]
+                                  },
+                                  "opacity": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1
+                                  },
+                                  "width": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 16
+                                  }
+                                }
+                              },
+                              "separator": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "color": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "pattern": "^#[a-fA-F0-9]{6}$"
+                                      }
+                                    ]
+                                  },
+                                  "opacity": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1
+                                  },
+                                  "width": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 16
+                                  }
+                                }
+                              },
+                              "border": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "color": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "pattern": "^#[a-fA-F0-9]{6}$"
+                                      }
+                                    ]
+                                  },
+                                  "opacity": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1
+                                  },
+                                  "width": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 16
+                                  }
+                                }
+                              },
+                              "background": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "color": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "pattern": "^#[a-fA-F0-9]{6}$"
+                                      }
+                                    ]
+                                  },
+                                  "opacity": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1
+                                  }
+                                }
+                              },
+                              "activeBackground": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "color": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "pattern": "^#[a-fA-F0-9]{6}$"
+                                      }
+                                    ]
+                                  },
+                                  "opacity": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1
+                                  }
+                                }
+                              },
+                              "activeGraphicOpacity": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              }
+                            }
                           }
                         },
                         "required": []
@@ -868,7 +1036,9 @@
                           "letters",
                           "table-columns",
                           "path-wave",
-                          "path-zigzag"
+                          "path-zigzag",
+                          "blur",
+                          "focus-in"
                         ]
                       },
                       "start": {

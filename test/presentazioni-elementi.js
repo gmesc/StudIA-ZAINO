@@ -40,3 +40,31 @@ const titolo=s().blocks.find(b=>b.type==='title'),male=M.copia(d);M.trova(male,s
 op({tipo:'eliminaBlocco',blockId:numero.id});assert(M.posizioni(d).every(p=>!p.slide.blocks.some(b=>b.type==='page-number')));assert(M.posizioni(d).every(p=>p.slide.blocks.some(b=>b.type==='navbar')));
 const storia=M.cronologia(d);storia.applica({tipo:'inserisciComune',slideId:sid,type:'page-number'},id);storia.annulla();assert(!M.trova(storia.documento,sid).slide.blocks.some(b=>b.type==='page-number'));storia.ripeti();assert(M.trova(storia.documento,sid).slide.blocks.some(b=>b.type==='page-number'));
 console.log('✓ PRESENTA elementi: navbar dinamiche, numeri e approfondimenti, stile comune, nascondi, movimento, copia, cronologia, effetti, SVG sicuro ed export');
+
+assert(!M.filtriConsentiti({type:'text'}));assert(!M.filtriConsentiti({type:'navbar'}));assert(M.filtriConsentiti({type:'image'}));
+const grafica={activeTextColor:'#ff0000',activeGraphicColor:'#008800',markerSize:42,gap:12,line:{width:6,color:'#0000ff',opacity:.4},separator:{width:2,color:'#333333',opacity:.3},border:{width:3,color:'#cccccc',opacity:.7},background:{color:'#ffffff',opacity:.2},activeBackground:{color:'#111111',opacity:.6}};
+assert(M.graficaNavbarValida(grafica));assert(!M.graficaNavbarValida({line:{width:99}}));assert(!M.graficaNavbarValida({activeTextColor:'red;display:none'}));assert(!M.graficaNavbarValida({border:{url:'x'}}));
+const navAttuale=s().blocks.find(b=>b.type==='navbar');op({tipo:'blocco',blockId:navAttuale.id,block:{...navAttuale,style:{...navAttuale.style,navbar:grafica}}});
+assert(M.posizioni(d).every(p=>JSON.stringify(p.slide.blocks.find(b=>b.type==='navbar').style.navbar)===JSON.stringify(grafica)));assert(V.validatePresentazione(d).ok);assert(R.compila(d).html.includes('--nav-active-text:#ff0000'));assert(R.compila(d).html.includes('--nav-line-opacity:0.4'));
+const scorretto=M.copia(d);M.trova(scorretto,sid).slide.blocks.find(b=>b.type==='navbar').style.navbar.line.opacity=2;assert(!V.validatePresentazione(scorretto).ok);
+const contenuto={id:'contenuto',type:'text',slot:'body',markdown:'Contenuto',style:{box:{x:7,y:7,width:40,height:40}}};
+for(const [orientation,box,attesa] of [['vertical',{x:2,y:10,width:18,height:80},{x:22,y:7,width:71,height:86}],['vertical',{x:80,y:10,width:18,height:80},{x:7,y:7,width:71,height:86}],['horizontal',{x:7,y:2,width:86,height:10},{x:7,y:14,width:86,height:79}],['horizontal',{x:7,y:88,width:86,height:10},{x:7,y:7,width:86,height:79}]]){
+ const navbar={id:'nav',...M.modelloComune('navbar'),orientation,style:{box}},slide={...M.slide(id),blocks:[contenuto,navbar]},a=M.areaUtile(slide);assert.deepEqual(a,attesa);
+ for(const azione of [M.sistema(slide),M.disponi(slide,'text-left'),M.disponi(slide,'image-top')]){assert.deepEqual(azione.find(v=>v.id==='nav').box,box);for(const v of azione.filter(v=>v.id!=='nav')){assert.deepEqual(M.limitaArea(v.box,a),v.box);assert(M.riquadro(v.box));}}
+ const corner=M.ancoraGriglia(contenuto.style.box,{divisioni:3,riga:2,colonna:2},a);assert(Math.abs(corner.x+corner.width-a.x-a.width)<.001);assert(Math.abs(corner.y+corner.height-a.y-a.height)<.001);
+ assert.equal(M.righelli(3,a).x[0],a.x);assert.equal(M.righelli(3,a).y.at(-1),a.y+a.height);
+ assert.deepEqual(M.areaUtile({...slide,blocks:[contenuto,{...navbar,hidden:true}]}),{x:7,y:7,width:86,height:86});
+}
+let prova=M.crea('cbd14eca-2adb-4fc1-9762-f20fe6601a1c','Margini',id),psid=prova.stacks[0].slides[0].id;
+const opera=o=>prova=M.applica(prova,{slideId:psid,...o},id),slideProva=()=>prova.stacks[0].slides[0];opera({tipo:'inserisciBlocco',block:contenuto});opera({tipo:'inserisciComune',type:'navbar'});opera({tipo:'inserisciComune',type:'page-number'});opera({tipo:'aggiungiSlide',modello:'colonne',direzione:'destra'});
+let barra=slideProva().blocks.find(b=>b.type==='navbar');opera({tipo:'blocco',blockId:barra.id,block:{...barra,orientation:'vertical',style:{...barra.style,box:{x:2,y:10,width:18,height:80}}}});
+for(const p of M.posizioni(prova)){const a=M.areaUtile(p.slide);assert(p.slide.blocks.filter(b=>!M.comune(b)).every(b=>JSON.stringify(M.limitaArea(b.style.box,a))===JSON.stringify(b.style.box)));}
+const comuni=slideProva().blocks.filter(M.comune).map(b=>M.copia(b));opera({tipo:'posizionaBlocchi',boxes:M.sistema(slideProva())});assert.deepEqual(slideProva().blocks.filter(M.comune),comuni);
+opera({tipo:'incollaStile',stile:{layout:'free',blocks:[{type:'navbar',style:{box:{x:70,y:7,width:10,height:20}}},{type:'page-number',style:{fontSize:90}}]}});assert.deepEqual(slideProva().blocks.filter(M.comune),comuni);
+const bid=slideProva().blocks.find(b=>!M.comune(b)).id;opera({tipo:'posizionaBlocchi',boxes:slideProva().blocks.map(b=>({id:b.id,box:b.id===bid?{x:0,y:0,width:90,height:90}:b.style.box}))});assert.deepEqual(slideProva().blocks.find(b=>b.id===bid).style.box,M.areaUtile(slideProva()));
+assert.throws(()=>M.allinea(slideProva(),[bid,barra.id],'left'),/navbar/);
+console.log('✓ Grafica navbar validata, filtri pertinenti, area utile sui quattro lati, guide, ancoraggi, contenuti protetti e comuni invariati');
+
+const areaGruppo={x:25,y:7,width:68,height:80},primo={x:25,y:10,width:20,height:15},ultimo={x:65,y:45,width:20,height:20};assert.deepEqual(M.limitaDelta([primo,ultimo],-90,90,areaGruppo),[0,22]);assert.deepEqual(M.limitaDelta([primo,ultimo],90,-90,areaGruppo),[8,-3]);
+
+opera({tipo:'incollaStile',stile:{layout:'title-text',blocks:[]}});assert.equal(slideProva().layout,'free','i layout storici si adattano alla fascia riservata');assert.deepEqual(slideProva().blocks.filter(M.comune),comuni);for(const b of slideProva().blocks.filter(b=>!M.comune(b)))assert.deepEqual(M.limitaArea(b.style.box,M.areaUtile(slideProva())),b.style.box);

@@ -29,6 +29,8 @@
   else if(a.effect==='fade-out')muovi(el,{opacity:[1,0]});
   else if(a.effect.startsWith('slide-out-')){const direzione=a.effect.slice(10),asse=['left','right'].includes(direzione)?'translateX':'translateY';muovi(el,{opacity:[1,0],[asse]:[0,['left','up'].includes(direzione)?-48:48]});}
   else if(a.effect==='zoom-out')muovi(el,{opacity:[1,0],scale:[1,.2]});
+  else if(a.effect==='blur')muovi(el,{filter:['blur(0px)','blur(8px)']});
+  else if(a.effect==='focus-in')muovi(el,{filter:['blur(12px)','blur(0px)'],opacity:[0,1]});
   else if(a.effect==='grow')muovi(el,{scale:[1,1.15]});
   else if(a.effect==='shrink')muovi(el,{scale:[1,.85]});
   else if(a.effect==='highlight-red'){muovi(el,{color:[getComputedStyle(el).color,'#ef4444']});if(el.querySelector('img,audio,video,.presenta-immagine-ritagliata')){el.style.outline='2px solid transparent';muovi(el,{outlineColor:['rgba(239,68,68,0)','rgba(239,68,68,1)']});}}

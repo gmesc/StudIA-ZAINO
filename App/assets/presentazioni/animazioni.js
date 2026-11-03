@@ -19,6 +19,8 @@
   ['slide-out-up','Esci in alto','Uscita','Sale e scompare.',tutti,.7],
   ['slide-out-down','Esci in basso','Uscita','Scende e scompare.',tutti,.7],
   ['zoom-out','Riduci e scompari','Uscita','Si rimpicciolisce fino a scomparire.',tutti,.7],
+  ['blur','Sfoca','Evidenza','Sfoca l’oggetto dopo il clic; torna nitido tornando indietro.',tutti.filter(t=>!['audio','navbar','page-number'].includes(t)),.6],
+  ['focus-in','Messa a fuoco','Entrata','L’oggetto compare passando da sfocato a nitido.',tutti.filter(t=>!['audio','navbar','page-number'].includes(t)),.8],
   ['grow','Ingrandisci','Evidenza','L’oggetto resta più grande dopo l’effetto.',tutti,.6],
   ['shrink','Riduci','Evidenza','L’oggetto resta più piccolo dopo l’effetto.',tutti,.6],
   ['highlight-red','Evidenzia','Evidenza','Evidenzia in rosso il testo o la forma; contorna immagini e media.',tutti,.6],

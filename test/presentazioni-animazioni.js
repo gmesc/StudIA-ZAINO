@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),A=require('../App/assets/presentazioni/animazioni'),M=require('../App/assets/presentazioni/modello'),R=require('../App/assets/presentazioni/reveal-adapter'),V=require('../lib/validate');
-assert.equal(A.catalogo.length,36);assert.equal(new Set(A.catalogo.map(e=>e.id)).size,36);
+assert.equal(A.catalogo.length,38);assert.equal(new Set(A.catalogo.map(e=>e.id)).size,38);
 const azioni=[{targetId:'a',effect:'fade-in',step:1,duration:1},{targetId:'b',effect:'pulse',step:1,duration:2,start:'after',delay:.3},{targetId:'c',effect:'grow',step:1,start:'with',duration:.5},{targetId:'a',effect:'fade-out',step:2,start:'click'}];
 assert.deepEqual(A.tempi(azioni).map(a=>[a.step,a.inizio,a.fine]),[[1,0,1],[1,1.3,3.3],[1,1.3,1.8],[2,0,.6]]);
 assert.equal(A.normalizza(azioni.slice(1))[0].start,'click');assert.equal(azioni[1].start,'after');
@@ -22,4 +22,6 @@ let doppio=M.crea('00000000-0000-4000-8000-000000000001','Due ingressi');const s
 doppio=M.applica(doppio,{tipo:'inserisciBlocco',slideId:sid,block:{type:'text',slot:'body',markdown:'Sempre visibile fra due clic'}});const bid=doppio.stacks[0].slides[0].blocks[0].id;
 doppio=M.applica(doppio,{tipo:'animazioni',slideId:sid,animations:[{targetId:bid,effect:'fade-in',step:1},{targetId:bid,effect:'words',step:2}]});
 assert.equal((R.compila(doppio).html.match(/data-entrata="true"/g)||[]).length,1,'un solo ingresso determina la visibilità iniziale');
-console.log('✓ 36 effetti, compatibilità, tempi concatenati, limiti, compilazione, privacy e annullamento');
+console.log('✓ 38 effetti, compatibilità, tempi concatenati, limiti, compilazione, privacy e annullamento');
+
+assert(A.disponibile("blur","text"));assert(A.disponibile("focus-in","image"));assert(!A.disponibile("blur","navbar"));

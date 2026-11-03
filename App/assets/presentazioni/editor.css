@@ -300,3 +300,9 @@
 .presenta-aiuto-comuni{font-size:var(--t2);color:var(--muted);margin:8px 0;max-width:65ch}
 .presenta-disegno-dialog{width:min(1100px,94vw);height:min(780px,90vh);padding:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);isolation:isolate}
 .presenta-disegno-dialog[open]{display:flex;flex-direction:column;gap:8px}.presenta-disegno-tela{flex:1;min-height:0;position:relative}.presenta-disegno-tela>.excalidraw{height:100%}
+
+.presenta-navbar-grafica{display:flex;flex-direction:column;gap:8px;min-width:0}
+.presenta-navbar-gruppo{border-top:1px solid var(--line);padding-top:4px;min-width:0}
+.presenta-navbar-gruppo>summary{cursor:pointer;list-style:revert;display:list-item;margin-left:16px}
+.presenta-navbar-gruppo[open]{padding-bottom:8px}
+.presenta-navbar-gruppo .presenta-colori{max-width:100%}
