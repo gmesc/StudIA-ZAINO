@@ -77,7 +77,7 @@
   function blocco(b,s,h,v){
    let contenuto='';
    if(b.type==='page-number')contenuto='<span class="presenta-numero-pagina">'+M.numeroPagina(h,v,d.stacks.length)+'</span>';
-   else if(b.type==='navbar'){const passi=M.passi(d,h,v,b.scope);contenuto='<nav class="presenta-navbar" data-variante="'+b.variant+'" aria-label="Slide della presentazione">'+passi.map((p,i)=>'<button type="button" data-nav-h="'+p.h+'" data-nav-v="'+p.v+'"'+(p.attivo?' aria-current="step"':'')+' title="'+esc(p.numero+' · '+p.title)+'"><span class="presenta-step-numero">'+p.numero+'</span><span class="presenta-step-titolo">'+esc(p.title)+'</span></button>').join('')+'</nav>'; }
+   else if(b.type==='navbar'){const passi=M.passi(d,h,v,b.scope);contenuto='<nav class="presenta-navbar" data-variante="'+b.variant+'" data-orientamento="'+(b.orientation||'horizontal')+'" data-zoom="'+(b.activeZoom??1)+'" style="--step-zoom:'+(b.activeZoom??1)+'" aria-label="Slide della presentazione">'+passi.map((p,i)=>'<button type="button" data-nav-h="'+p.h+'" data-nav-v="'+p.v+'"'+(p.attivo?' aria-current="step"':'')+' title="'+esc(p.numero+' · '+p.title)+'"><span class="presenta-step-contenuto"><span class="presenta-step-numero">'+p.numero+'</span><span class="presenta-step-titolo">'+esc(p.title)+'</span></span></button>').join('')+'</nav>'; }
    else if(b.type==='drawing')contenuto=M.vettori.html(b.drawing,b.id+'-');
    else if(b.type==='title')contenuto='<h2>'+testo(b,true)+'</h2>';
    else if(b.type==='text')contenuto=testo(b);

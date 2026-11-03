@@ -7,6 +7,11 @@ assert.equal(Barra.visibili([200,112,64],240,8,40),0,'nessun campo parzialmente 
 assert.equal(Barra.visibili([200,112,64],248,8,40),1);
 assert.equal(Barra.visibili([40.5,80.5],120,8,40),1,'misure frazionarie');
 assert.equal(Barra.visibili([],0,8,40),0);
+assert.deepEqual(Barra.griglia(8,1400,8,36),{visibili:8,colonne:8},'schermo largo: tutti gli otto controlli in riga');
+assert.deepEqual(Barra.griglia(8,900,8,36),{visibili:8,colonne:5},'più colonne, al massimo due righe');
+assert.deepEqual(Barra.griglia(8,440,8,36),{visibili:4,colonne:2},'split stretto: quattro controlli e menu');
+assert.deepEqual(Barra.griglia(8,200,8,36),{visibili:0,colonne:0},'nessun cursore tagliato');
+assert.deepEqual(Barra.griglia(0,0,8,36),{visibili:0,colonne:0});
 const differita=()=>{let resolve,reject;return {promise:new Promise((r,j)=>{resolve=r;reject=j;}),resolve,reject};};
 (async()=>{
  let disco=M.crea('00000000-0000-4000-8000-000000000001','Lezione');disco.revision=1;const sid=disco.stacks[0].slides[0].id;

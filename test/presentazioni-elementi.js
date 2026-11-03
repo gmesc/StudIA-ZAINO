@@ -21,6 +21,11 @@ const html=R.compila(d).html;assert(html.includes('1b/2'));assert(html.includes(
 assert.equal((html.match(/data-type="page-number" hidden/g)||[]).length,1);
 assert(M.sistema(s()).find(b=>b.id===numero.id).box.x===60,'Sistematica non sposta gli oggetti comuni');
 const nav=s().blocks.find(b=>b.type==='navbar');for(const variant of Object.keys(M.NAVBAR)){op({tipo:'blocco',blockId:nav.id,block:{...s().blocks.find(b=>b.id===nav.id),variant}});assert(R.compila(d).html.includes('data-variante="'+variant+'"'));}
+op({tipo:'blocco',blockId:nav.id,block:{...s().blocks.find(b=>b.id===nav.id),orientation:'vertical',activeZoom:1.2}});
+assert(M.posizioni(d).every(p=>{const b=p.slide.blocks.find(b=>b.type==='navbar');return b.orientation==='vertical'&&b.activeZoom===1.2;}),'orientamento e zoom comuni su tutte le slide');
+assert(R.compila(d).html.includes('data-orientamento="vertical" data-zoom="1.2"'));assert(JSON.stringify(M.pubblica(d)).includes('"activeZoom":1.2'));
+assert.throws(()=>op({tipo:'blocco',blockId:nav.id,block:{...s().blocks.find(b=>b.id===nav.id),activeZoom:2}}));
+assert.throws(()=>op({tipo:'blocco',blockId:nav.id,block:{...s().blocks.find(b=>b.id===nav.id),orientation:'url(x)'}}));
 op({tipo:'riordinaSlide',slideId:seconda,destinazione:sid,dopo:false});assert.equal(M.passi(d,0,0)[0].title,'Arrivo <script>alert(1)</script>');
 assert(V.validatePresentazione(d).ok);assert.throws(()=>op({tipo:'duplicaBlocco',blockId:numero.id}));
 const style=s().blocks.find(b=>b.type==='page-number').style;const boxes=s().blocks.map(b=>({id:b.id,box:b.id===numero.id?{...style.box,x:55}:b.style.box}));op({tipo:'posizionaBlocchi',boxes});assert(M.posizioni(d).every(p=>p.slide.blocks.find(b=>b.type==='page-number').style.box.x===55));

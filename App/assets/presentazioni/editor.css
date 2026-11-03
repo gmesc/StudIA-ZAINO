@@ -269,10 +269,34 @@
 
 .presenta-sfondo-tipi{margin-bottom:8px}.presenta-proprieta-foglio[data-voce=sfondo]{gap:8px}.presenta-sfondo-comandi{align-items:end;gap:8px}.presenta-sfondo-comandi .presenta-campo{width:176px;flex:none}.presenta-sfondo-comandi>.tbtn{align-self:end}.presenta-sfondo-nome{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:end;font-size:var(--tb-fs);line-height:var(--tb-h)}.presenta-mini-video{position:absolute;bottom:16px;right:16px;font-size:32px;color:var(--muted)}
 
-.presenta-aspetto-controlli{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;padding:8px;max-width:520px}
-.presenta-aspetto-controlli .presenta-campo{display:grid;grid-template-columns:1fr auto;gap:4px;align-items:center}
-.presenta-aspetto-controlli .presenta-campo>span{grid-column:1/-1}.presenta-aspetto-controlli input[type=range]{min-width:0;width:100%;accent-color:var(--teal-strong)}
-.presenta-aspetto-controlli output{font-variant-numeric:tabular-nums;min-width:5ch;text-align:right}.presenta-aspetto-controlli select{grid-column:1/-1}
+/* Stesse barre adattive della tipografia, con due righe per i cursori. */
+.presenta-navbar-controlli{display:flex;flex-wrap:nowrap;gap:8px;align-items:end;min-width:0}
+.presenta-navbar-controlli>.presenta-campo{flex:none;width:192px}
+.presenta-navbar-controlli .presenta-campo:has([aria-label="Step della navbar"]){width:160px}
+.presenta-navbar-controlli .presenta-campo:has([aria-label="Orientamento"]){width:160px}
+.presenta-navbar-controlli .presenta-campo:has([aria-label="Zoom dello step attivo"]){width:160px}
+.presenta-navbar-controlli .presenta-campo select{height:var(--tb-h);padding:0 var(--tb-pad-x);font-size:var(--tb-fs)}
+.presenta-aspetto-controlli{display:flex;flex-direction:column;gap:12px;padding:8px 0;min-width:0;max-width:100%}
+.presenta-aspetto-campi{display:grid;gap:12px 8px;min-width:0;align-items:end}
+.presenta-aspetto-campi .presenta-campo{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px;align-items:center;min-width:0}
+.presenta-aspetto-campi .presenta-campo>span{grid-column:1/-1}
+.presenta-aspetto-campi select{grid-column:1/-1;height:var(--tb-h);padding:0 var(--tb-pad-x);font-size:var(--tb-fs)}
+.presenta-aspetto-campi input.zaino-slider{min-width:0;width:100%;height:var(--tb-h);padding:0;border:0;background:transparent}
+.presenta-aspetto-campi output{font-variant-numeric:tabular-nums;min-width:5ch;text-align:right;font-size:12px}
+.presenta-aspetto-azioni{flex-wrap:nowrap;gap:8px;justify-content:flex-start;padding:0}
+.presenta-aspetto-azioni>.tbtn{flex:none;white-space:nowrap}
+.presenta-bianco-nero.tbtn{border:1px solid var(--line);background:var(--panel);padding-inline:var(--tb-pad-x)}
+.presenta-bianco-nero.tbtn:hover{background:var(--hover)}
+.presenta-bianco-nero.tbtn[aria-pressed=true]{background:color-mix(in srgb,var(--teal) 26%,var(--panel));color:var(--teal-strong)}
+:is(.presenta-navbar-controlli,.presenta-aspetto-campi,.presenta-aspetto-azioni)>.presenta-altri{flex:none;align-self:end;width:var(--tb-h);height:var(--tb-h);padding:0;font-size:var(--tb-fs)}
+.presenta-aspetto-campi>.presenta-altri{align-self:center}
+:is(.presenta-navbar-controlli,.presenta-aspetto-campi,.presenta-aspetto-azioni)>.presenta-altri[hidden]{display:none}
+.presenta-controlli-popup{margin:0;box-sizing:border-box;width:max-content;max-width:min(760px,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow:auto;padding:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.presenta-controlli-popup:popover-open{display:flex;flex-wrap:wrap;gap:12px 8px;align-items:end}
+.presenta-controlli-popup>.presenta-campo{width:176px;max-width:100%;flex:none;margin:0}
+.presenta-controlli-popup>.tbtn{flex:none;white-space:nowrap}
+.presenta-controlli-popup>.tbsep:first-child{display:none}
+.presenta-aspetto-popup{width:min(760px,calc(100vw - 16px));box-sizing:border-box}
 .presenta-aiuto-comuni{font-size:var(--t2);color:var(--muted);margin:8px 0;max-width:65ch}
 .presenta-disegno-dialog{width:min(1100px,94vw);height:min(780px,90vh);padding:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);isolation:isolate}
 .presenta-disegno-dialog[open]{display:flex;flex-direction:column;gap:8px}.presenta-disegno-tela{flex:1;min-height:0;position:relative}.presenta-disegno-tela>.excalidraw{height:100%}

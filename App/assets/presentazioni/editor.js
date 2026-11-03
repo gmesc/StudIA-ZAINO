@@ -7,7 +7,7 @@
  let gruppo=[],grigliaAttiva=0,magnetiche=false,posizioneScelta=null,selezioneGiro=0,scrittura=null,daScrittura=false;
  let corso='',elenco=[],slideId='',giro=0,occupato=false,listaErrore='',regia=null,previewTimer=null,previewGiro=0,quadro=null,framePronto=false,firma='',canale=crypto.randomUUID();
  let inputAperto=null,ricostruisciInput=false,datiInput=null,richiestaScrittura=null,quadroVisibile=null;
- let barraAdattiva=null;
+ let barreAdattive=[];
  let avviso,bloccoId='',oggettiNav,richiestaMisure=null,appuntiOggetto=null;
  let host,bar,corpo,scaletta,campi,frame,stato,vuoto,editor,gobbo,gobboBar,gobboCorpo,gobboStato;
  const bottoni={},D=PresentaDocumento.crea({salva:async(d,baseRevision)=>(await call({azione:'salva',documento:d,baseRevision})).documento,
@@ -322,7 +322,7 @@
    const tipografia=E('div',null,'tbar presenta-tipografia presenta-font-bubble'),patch=(k,v)=>{const corrente=posizione().slide.blocks.find(b=>b.id===o.blockId);cambiaBlocco(o.blockId,{style:PresentaTesto.aggiornaStile(corrente.style,{[k]:v})});campiSlide();nascondiBubble();};
    tipografia.append(sceltaCarattere('Carattere dell’oggetto',blocco.style?.fontFamily||D.documento.settings.fontFamily||'zaino',v=>patch('fontFamily',v)),campo('Dimensione dell’oggetto',blocco.style?.fontSize||(blocco.type==='title'?54:32),v=>patch('fontSize',Number(v)),{tipo:'number',min:12,max:160}));tipografia.insertBefore(sceltaPeso('Peso dell’oggetto',blocco.style?.fontFamily||D.documento.settings.fontFamily||'zaino',PresentaTesto.peso(blocco.style,blocco.type==='title'?700:400),v=>patch('fontWeight',v)),tipografia.children[1]);bar.append(tipografia);
   }
-  if(M.aspettoConsentito(blocco,D.documento.assets))voce('Aspetto dell’oggetto','palette',()=>{const r=frame.getBoundingClientRect();popup('presenta-aspetto-popup',pannelloAspetto(blocco),r.left+8,r.top+8);});
+  if(M.aspettoConsentito(blocco,D.documento.assets))voce('Aspetto dell’oggetto','palette',()=>{const r=frame.getBoundingClientRect();const pop=popup('presenta-aspetto-popup',pannelloAspetto(blocco),r.left+8,r.top+8);adattaAspetto(pop);});
   if(blocco.type==='drawing')voce('Modifica disegno vettoriale','pencil',()=>disegnoVettoriale(blocco));
   if(M.comune(blocco))voce(blocco.hidden?'Mostra su questa slide':'Nascondi su questa slide','eye',()=>op({tipo:'visibilitaComune',blockId:blocco.id,hidden:!blocco.hidden},{struttura:true}));
   if(blocco.type==='image')voce('Ritaglia immagine','scissors',()=>ritagliaImmagine(blocco.id));
@@ -331,38 +331,43 @@
   const r=frame.getBoundingClientRect(),a=o.rect;bubble=popup('presenta-bubble',bar,o.anchor?.x??r.left+(a?.x||8),o.anchor?.y??r.top+(a?.y||0)-38,true);if(M.comune(blocco)){bar.querySelector('[aria-label="Duplica oggetto"]').disabled=true;bar.querySelector('[aria-label="Copia oggetto"]').disabled=true;}bar.querySelector('[aria-label="Incolla oggetto"]').disabled=appuntiOggetto?.documentId!==D.documento?.id;
  }
  // Gli stessi controlli passano nel popover: nessuna copia di valori o listener.
- function adattaBarra(row){
+ function adattaBarra(row,{nome='Altri comandi di testo',griglia=false}={}){
   if(!row)return;
   const nodi=[...row.children],abort=new AbortController(),eventi={signal:abort.signal};
-  const altri=b('Altri comandi di testo',null,()=>aperto()?chiudi(true):apri());altri.textContent='…';altri.classList.add('presenta-altri');altri.setAttribute('aria-haspopup','dialog');altri.setAttribute('aria-expanded','false');
-  const pop=E('div',null,'popmenu presenta-menu presenta-tipografia-popup tbar-ctl');pop.popover='manual';pop.setAttribute('role','dialog');pop.setAttribute('aria-label','Altri comandi di testo');
-  pop.id='presenta-altri-comandi';altri.setAttribute('aria-controls',pop.id);row.append(altri,pop);
+  const altri=b(nome,null,()=>aperto()?chiudi(true):apri());altri.textContent='…';altri.classList.add('presenta-altri');altri.setAttribute('aria-haspopup','dialog');altri.setAttribute('aria-expanded','false');
+  const pop=E('div',null,'popmenu presenta-menu '+(nome==='Altri comandi di testo'?'presenta-tipografia-popup':'presenta-controlli-popup')+' tbar-ctl');pop.popover='manual';pop.setAttribute('role','dialog');pop.setAttribute('aria-label',nome);
+  pop.id='presenta-altri-'+crypto.randomUUID();altri.setAttribute('aria-controls',pop.id);row.append(altri,pop);
   const aperto=()=>pop.matches(':popover-open');
   function chiudi(focus=false){if(aperto())pop.hidePopover();altri.setAttribute('aria-expanded','false');if(focus&&altri.isConnected&&!altri.hidden)altri.focus();}
   function colloca(){if(!aperto())return;const r=altri.getBoundingClientRect(),p=pop.getBoundingClientRect();pop.style.left=Math.max(8,Math.min(r.left,innerWidth-p.width-8))+'px';pop.style.top=Math.max(8,Math.min(r.bottom+4,innerHeight-p.height-8))+'px';}
   function apri(){pop.showPopover();altri.setAttribute('aria-expanded','true');colloca();pop.querySelector('button,input,select')?.focus();}
   let precedente=-1;
   function misura(){
-   if(!row.isConnected)return;const spazio=row.clientWidth;if(spazio===precedente)return;precedente=spazio;
+   if(!row.isConnected)return;const spazio=row.clientWidth;if(!spazio||spazio===precedente)return;precedente=spazio;
    const focus=document.activeElement,eraAperto=aperto();
    for(const n of nodi)row.insertBefore(n,altri);
    altri.hidden=false;
-   const quanti=PresentaBarra.visibili(nodi.map(n=>n.getBoundingClientRect().width),spazio,parseFloat(getComputedStyle(row).columnGap)||0,altri.getBoundingClientRect().width);
+   const gap=parseFloat(getComputedStyle(row).columnGap)||0,larghezzaAltri=altri.getBoundingClientRect().width;
+   let quanti;
+   if(griglia){const g=PresentaBarra.griglia(nodi.length,spazio,gap,larghezzaAltri);quanti=g.visibili;row.style.gridTemplateColumns=(g.colonne?'repeat('+g.colonne+',minmax(0,1fr))':'')+(quanti<nodi.length?(g.colonne?' ':'')+larghezzaAltri+'px':'');altri.style.gridColumn=quanti<nodi.length?String(g.colonne+1):'';altri.style.gridRow='1 / span 2';}
+   else{quanti=PresentaBarra.visibili(nodi.map(n=>n.getBoundingClientRect().width),spazio,gap,larghezzaAltri);if(nodi[quanti-1]?.classList.contains('tbsep'))quanti--;}
+
    for(const n of nodi.slice(quanti))pop.append(n);
    altri.hidden=quanti===nodi.length;
    if(altri.hidden)chiudi();else if(eraAperto)colloca();
-   if(focus!==document.body&&row.contains(focus)){if(focus.closest('.presenta-tipografia-popup')&&!aperto())altri.focus();else focus.focus({preventScroll:true});}
+   if(focus!==document.body&&row.contains(focus)){if(focus.closest('.presenta-tipografia-popup,.presenta-controlli-popup')&&!aperto())altri.focus();else focus.focus({preventScroll:true});}
   }
   document.addEventListener('pointerdown',e=>{if(aperto()&&!pop.contains(e.target)&&!altri.contains(e.target)&&!e.target.closest('.presenta-menu'))chiudi();},eventi);
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&aperto()&&!document.querySelector('.presenta-menu[popover="auto"]:popover-open')&&!inputAperto){e.preventDefault();e.stopImmediatePropagation();chiudi(true);}}, {...eventi,capture:true});
   // Un clic sul foglio avviene nell’iframe e non propaga pointerdown al documento.
   window.addEventListener('blur',()=>{if(document.activeElement===frame)chiudi();},eventi);
   corpo.addEventListener('scroll',colloca,eventi);window.addEventListener('resize',colloca,eventi);
+  const details=row.closest('details');details?.addEventListener('toggle',()=>{if(!details.open)chiudi();else{precedente=-1;misura();}},eventi);
   const osserva=new ResizeObserver(misura);osserva.observe(row);misura();
-  barraAdattiva=()=>{abort.abort();osserva.disconnect();chiudi();};
+  const dispose=()=>{abort.abort();osserva.disconnect();chiudi();};barreAdattive.push(dispose);return dispose;
  }
  function campiSlide(){
-  barraAdattiva?.();barraAdattiva=null;
+  barreAdattive.forEach(f=>f());barreAdattive=[];
   const aperti=[...campi.querySelectorAll('details[open]')].map(e=>e.dataset.pannello);campi.replaceChildren();const p=posizione();if(!p)return;slideId=p.slide.id;const s=p.slide;if(!['@titolo','@disposizione','@stile','@righelli'].includes(bloccoId)&&!s.blocks.some(b=>b.id===bloccoId))bloccoId='';
   if(gruppo.length>1){campi.append(comandiGruppo());oggetti();return;}
   const block=s.blocks.find(b=>b.id===bloccoId),titolo=block?.type==='title'||bloccoId==='@titolo',props=E('div',null,'presenta-proprieta-foglio');props.dataset.voce=titolo?'titolo':bloccoId==='@stile'?'stile':bloccoId==='@disposizione'?'disposizione':bloccoId==='@righelli'?'righelli':block?.type||'sfondo';
@@ -383,7 +388,7 @@
     comandi.append(testoBottone('Prova sfondo','play',provaAnimazioni),b('Rimuovi media di sfondo','trash-2',()=>op({tipo:'sfondoMedia',backgroundMedia:null},{struttura:true})));props.append(comandi);
    }
   }
-  campi.append(props);adattaBarra(campi.querySelector('.presenta-tipografia'));for(const key of aperti){const el=campi.querySelector('details[data-pannello="'+key+'"]');if(el)el.open=true;}oggetti();
+  campi.append(props);for(const key of aperti){const el=campi.querySelector('details[data-pannello="'+key+'"]');if(el)el.open=true;}adattaBarra(campi.querySelector('.presenta-tipografia'));adattaBarra(campi.querySelector('.presenta-navbar-controlli'),{nome:'Altri comandi della navbar'});adattaAspetto(campi);oggetti();
  }
  function stiliPronti(){
   const box=E('section',null,'presenta-stili-compatti tbar-ctl'),controlli=E('div',null,'presenta-stili-controlli'),galleria=E('div',null,'presenta-stili-galleria');galleria.setAttribute('role','group');galleria.setAttribute('aria-label','Stili della presentazione');
@@ -427,7 +432,10 @@
   else if(block.type==='text'&&!block.richText){box.append(campo('Testo · Markdown e formule',block.markdown,v=>patch({markdown:v,richText:undefined}),{tipo:'textarea',maxLength:100000}));const comandi=E('div',null,'tbar presenta-scrittura-comandi');comandi.append(testoBottone('Scrivi sul foglio','pencil',()=>scriviSulFoglio(block.id)));box.append(comandi);}
   else if(block.type==='text'&&block.richText){box.append(campoTestoRicco(block));const comandi=E('div',null,'tbar presenta-scrittura-comandi');box.append(comandi);comandi.append(testoBottone('Scrivi sul foglio','pencil',()=>scriviSulFoglio(block.id)),testoBottone('Modifica sorgente Markdown',null,()=>{if(confirm('Passare al sorgente Markdown rimuove i font, i colori e le dimensioni delle singole parole. Grassetto, corsivo e formule restano. Puoi annullare.')){patch({richText:undefined});campiSlide();}}));}
   else if(block.type==='title'){}
-  else if(block.type==='navbar'){box.append(campo('Tipo di navbar',block.variant,v=>{patch({variant:v});campiSlide();},{opzioni:Object.entries(M.NAVBAR)}),campo('Step della navbar',block.scope,v=>{patch({scope:v});campiSlide();},{opzioni:[['all','Tutte le slide'],['main','Solo principali']]}));}
+  else if(block.type==='navbar'){
+   const row=E('div',null,'presenta-navbar-controlli tbar-ctl'),tipo=campo('Tipo di navbar',block.variant,v=>{patch({variant:v});campiSlide();},{opzioni:Object.entries(M.NAVBAR)}),step=campo('Step della navbar',block.scope,v=>{patch({scope:v});campiSlide();},{opzioni:[['all','Tutte le slide'],['main','Solo principali']]});tipo.firstElementChild.textContent='Tipo';step.firstElementChild.textContent='Step';
+   row.append(tipo,step,campo('Orientamento',block.orientation||'horizontal',v=>{patch({orientation:v});campiSlide();},{opzioni:[['horizontal','Orizzontale'],['vertical','Verticale']]}),campo('Zoom dello step attivo',block.activeZoom??1,v=>{patch({activeZoom:Number(v)});campiSlide();},{opzioni:[[1,'Disattivato'],[1.1,'Leggero · 110%'],[1.2,'Medio · 120%'],[1.3,'Marcato · 130%']]}));row.lastElementChild.firstElementChild.textContent='Zoom';box.append(row);
+  }
   else if(block.type==='page-number')box.append(E('p','Numerazione automatica: principali 1/12, approfondimenti 2a/12. Il totale conta le slide principali.','presenta-aiuto-comuni'));
   else if(block.type==='drawing')box.append(testoBottone('Modifica disegno vettoriale','pencil',()=>disegnoVettoriale(block)));
   else if(block.type==='shape')box.append(campo('Forma',block.shape,v=>patch({shape:v}),{opzioni:[['rectangle','Rettangolo'],['ellipse','Ellisse'],['arrow','Freccia']]}));
@@ -461,17 +469,18 @@
   box.append(animazioniOggetto(block));destinazione.append(box);
  }
  function aspettoOggetto(block){const dettagli=E('details',null,'presenta-aspetto tbar-ctl'),summary=E('summary',null,'tbtn');UiIcone.imposta(summary,'chevron-right');summary.append(E('span','Aspetto'));dettagli.dataset.pannello='aspetto';dettagli.append(summary,pannelloAspetto(block));return dettagli;}
+ function adattaAspetto(scope){for(const row of scope.querySelectorAll('.presenta-aspetto-campi'))adattaBarra(row,{nome:'Altri controlli di aspetto',griglia:true});for(const row of scope.querySelectorAll('.presenta-aspetto-azioni'))adattaBarra(row,{nome:'Altre azioni di aspetto'});}
  function pannelloAspetto(block){
   const box=E('div',null,'presenta-aspetto-controlli tbar-ctl'),documento=D.documento.id,sid=slideId;
   const corrente=()=>D.documento?.id===documento&&slideId===sid?posizione().slide.blocks.find(b=>b.id===block.id):null;
   function patch(p){const b=corrente();if(!b)throw Error('La selezione è cambiata. Riapri Aspetto.');cambiaBlocco(b.id,{style:{...b.style,appearance:{...b.style?.appearance,...p}}});}
-  const a=block.style?.appearance||{};
-  box.append(campo('Fusione',a.blend||'normal',v=>patch({blend:v}),{opzioni:Object.entries(M.FUSIONI)}));
-  function cursore(key,label,min,max,base,step=1){const val=a[key]??base,field=campo(label,key==='opacity'?Math.round(val*100):val,v=>{const numero=Number(v);patch({[key]:key==='opacity'?numero/100:numero});output.textContent=v+(key==='blur'?' px':'%');},{tipo:'range',min,max,step}),output=E('output',(key==='opacity'?Math.round(val*100):val)+(key==='blur'?' px':'%'));field.append(output);field.dataset.aspetto=key;box.append(field);}
+  const a=block.style?.appearance||{},campiAspetto=E('div',null,'presenta-aspetto-campi'),azioni=E('div',null,'tbar presenta-aspetto-azioni');box.append(campiAspetto,azioni);
+  campiAspetto.append(campo('Fusione',a.blend||'normal',v=>patch({blend:v}),{opzioni:Object.entries(M.FUSIONI)}));
+  function cursore(key,label,min,max,base,step=1){const val=a[key]??base,field=campo(label,key==='opacity'?Math.round(val*100):val,v=>{const numero=Number(v);patch({[key]:key==='opacity'?numero/100:numero});output.textContent=v+(key==='blur'?' px':'%');},{tipo:'range',min,max,step}),output=E('output',(key==='opacity'?Math.round(val*100):val)+(key==='blur'?' px':'%'));field.append(output);field.dataset.aspetto=key;field.querySelector('input').classList.add('zaino-slider');campiAspetto.append(field);}
   cursore('opacity','Opacità',0,100,1);
-  const grigio=testoBottone('Bianco e nero',null,()=>{const v=corrente()?.style?.appearance?.grayscale===100?0:100;patch({grayscale:v});grigio.setAttribute('aria-pressed',String(v===100));const input=box.querySelector('[aria-label="Scala di grigi"]');input.value=v;input.nextElementSibling.textContent=v+'%';});grigio.setAttribute('aria-pressed',String(a.grayscale===100));box.append(grigio);
+  const grigio=testoBottone('Bianco e nero',null,()=>{const v=corrente()?.style?.appearance?.grayscale===100?0:100;patch({grayscale:v});grigio.setAttribute('aria-pressed',String(v===100));const input=box.querySelector('[aria-label="Scala di grigi"]');input.value=v;input.nextElementSibling.textContent=v+'%';});grigio.setAttribute('aria-pressed',String(a.grayscale===100));grigio.classList.add('presenta-bianco-nero');azioni.append(grigio,E('span',null,'tbsep'));
   for(const [key,label]of [['grayscale','Scala di grigi'],['sepia','Seppia'],['brightness','Luminosità'],['contrast','Contrasto'],['saturate','Saturazione'],['blur','Sfocatura']]){const [min,max,base]=M.FILTRI[key];cursore(key,label,min,max,base,key==='blur'?.5:1);}
-  box.append(testoBottone('Ripristina aspetto','rotate-ccw',()=>{const b=corrente();if(!b)return;const style={...b.style};delete style.appearance;cambiaBlocco(b.id,{style});campiSlide();menuAperto?.hidePopover();}));return box;
+  azioni.append(testoBottone('Ripristina aspetto','rotate-ccw',()=>{const b=corrente();if(!b)return;const style={...b.style};delete style.appearance;cambiaBlocco(b.id,{style});campiSlide();menuAperto?.hidePopover();}));return box;
  }
  async function disegnoVettoriale(block){
   fineScrittura();nascondiBubble();const documento=D.documento.id,sid=slideId;await LavagnaUI.carica();if(D.documento?.id!==documento||slideId!==sid)return;

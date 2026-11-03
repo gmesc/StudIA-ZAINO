@@ -118,13 +118,20 @@ app.whenReady().then(async()=>{
  // Secondo HTML autonomo: nessun indice preso in prestito dalla galleria precedente.
  let elementi=M.crea('00000000-0000-4000-8000-000000000001','Elementi');const es=elementi.stacks[0].slides[0].id;
  const eo=o=>elementi=M.applica(elementi,{slideId:es,...o});eo({tipo:'titoloSlide',title:'Partenza'});eo({tipo:'aggiungiSlide',direzione:'sotto'});eo({tipo:'aggiungiSlide',direzione:'destra'});eo({tipo:'inserisciComune',type:'navbar'});eo({tipo:'inserisciComune',type:'page-number'});
+ const navbar=elementi.stacks[0].slides[0].blocks.find(b=>b.type==='navbar');eo({tipo:'blocco',blockId:navbar.id,block:{...navbar,orientation:'vertical',activeZoom:1.2,style:{...navbar.style,box:{x:5,y:20,width:24,height:65}}}});
  const drawing={viewBox:'0 0 100 100',scene:[],nodes:[{tag:'path',attrs:{d:'M0 0 L100 100',stroke:'#ef4444','stroke-width':'4'},children:[]}]};eo({tipo:'inserisciBlocco',block:{type:'drawing',slot:'body',drawing,style:{appearance:{opacity:.6,blend:'multiply',grayscale:100},box:{x:20,y:30,width:40,height:40}}}});
  const elementiFile=path.join(spostato,'elementi.html');fs.writeFileSync(elementiFile,require('../lib/presentazioni-export').html(elementi).html);await run('PresentaPlayer.destroy()');await win.loadFile(elementiFile);await run('PresentaPlayer.ready');
  assert.equal(await run('document.querySelector("section.present > .presenta-slide .presenta-numero-pagina").textContent'),'1/2');
  assert.equal(await run('getComputedStyle(document.querySelector("section.present > .presenta-slide [data-type=drawing]")).opacity'),'0.6');
  assert.equal(await run('document.querySelectorAll("section.present > .presenta-slide .presenta-vettore path").length'),1);
- await run(`document.querySelector('section.present > .presenta-slide [data-nav-v="1"]').click()`);assert.deepEqual(await run('PresentaPlayer.stato()'),{h:0,v:1,fragmentIndex:-1});assert.equal(await run('document.querySelector("section.present > .presenta-slide .presenta-numero-pagina").textContent'),'1a/2');
+ assert.equal(await run('getComputedStyle(document.querySelector("section.present > .presenta-slide .presenta-navbar")).flexDirection'),'column');
+ await run('new Promise(r=>setTimeout(r,260))');assert(Math.abs(await run('new DOMMatrix(getComputedStyle(document.querySelector("section.present > .presenta-slide [aria-current]>.presenta-step-contenuto")).transform).a')-1.2)<.01,'zoom dello step attivo nel player esportato');
+ assert.equal(await run('new DOMMatrix(getComputedStyle(document.querySelector("section.present > .presenta-slide button:not([aria-current])>.presenta-step-contenuto")).transform).a'),1);
+
+ await run(`document.querySelector('section.present > .presenta-slide [data-nav-v="1"]').click()`);if(!await run('matchMedia("(prefers-reduced-motion: reduce)").matches'))assert(await run('!!document.querySelector("section.present > .presenta-slide [aria-current]>.presenta-step-contenuto").style.transform'),'zoom eseguito da Anime.js');assert.deepEqual(await run('PresentaPlayer.stato()'),{h:0,v:1,fragmentIndex:-1});assert.equal(await run('document.querySelector("section.present > .presenta-slide .presenta-numero-pagina").textContent'),'1a/2');
  await run(`document.querySelector('section.present > .presenta-slide [data-nav-h="1"]').click()`);assert.deepEqual(await run('PresentaPlayer.stato()'),{h:1,v:0,fragmentIndex:-1});assert.equal(await run('document.querySelector("section.present > .presenta-slide .presenta-numero-pagina").textContent'),'2/2');
+
+ await run(`document.documentElement.dataset.movimentoRidotto='true';document.querySelector('section.present > .presenta-slide [data-nav-v="1"]').click()`);assert(Math.abs(await run('new DOMMatrix(getComputedStyle(document.querySelector("section.present > .presenta-slide [aria-current]>.presenta-step-contenuto")).transform).a')-1.2)<.01,'movimento ridotto: zoom finale immediato');
 
  assert.deepEqual(rete,[],'nessuna dipendenza di rete');assert.deepEqual(errori,[],'nessun errore del renderer');
  await run('PresentaPlayer.destroy()');console.log('✓ Player reale offline: passi, simultaneità, inverso, Auto-Animate verticale, formule, media, privacy e pacchetto spostato.');console.log('Schermata: '+screenshot);app.exit(0);

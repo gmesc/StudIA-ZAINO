@@ -3076,12 +3076,13 @@
   .albumTabs button{font-size:11px;letter-spacing:.04em;}
   .albumTabs button[aria-pressed="true"]{background:var(--hover);color:var(--teal-strong);box-shadow:inset 0 -2px var(--teal);}
   .albumComandi{gap:.35rem;flex-wrap:wrap;}
-  #albumDimensione{--album-cursore:#6b7280;--album-traccia:#e5e7eb;
-    width:clamp(60px,10vw,150px);min-width:60px;appearance:none;background:transparent;cursor:pointer;accent-color:var(--album-cursore);}
-  #albumDimensione::-webkit-slider-runnable-track{height:4px;background:var(--album-traccia);border-radius:2px;}
-  #albumDimensione::-webkit-slider-thumb{appearance:none;width:14px;height:14px;margin-top:-5px;border:0;border-radius:50%;background:var(--album-cursore);}
-  #albumDimensione::-moz-range-track{height:4px;background:var(--album-traccia);border-radius:2px;}
-  #albumDimensione::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--album-cursore);}
+  :is(#albumDimensione,.zaino-slider){--album-cursore:#6b7280;--album-traccia:#e5e7eb;
+    appearance:none;background:transparent;cursor:pointer;accent-color:var(--album-cursore);}
+  #albumDimensione{width:clamp(60px,10vw,150px);min-width:60px;}
+  :is(#albumDimensione,.zaino-slider)::-webkit-slider-runnable-track{height:4px;background:var(--album-traccia);border-radius:2px;}
+  :is(#albumDimensione,.zaino-slider)::-webkit-slider-thumb{appearance:none;width:14px;height:14px;margin-top:-5px;border:0;border-radius:50%;background:var(--album-cursore);}
+  :is(#albumDimensione,.zaino-slider)::-moz-range-track{height:4px;background:var(--album-traccia);border-radius:2px;}
+  :is(#albumDimensione,.zaino-slider)::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--album-cursore);}
   #albumDimensione:focus-visible{outline:2px solid var(--focus);outline-offset:4px;}
   #albumSpazio .alblista{grid-template-columns:repeat(auto-fill,minmax(min(var(--album-card),100%),1fr));align-content:start;width:100%;}
   #albumSpazio .alcard :is(img,video,.albumAudio){height:var(--album-immagine);width:100%;object-fit:contain;background:var(--hover);}
