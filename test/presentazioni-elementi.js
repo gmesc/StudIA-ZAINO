@@ -8,6 +8,14 @@ assert.deepEqual(N.passaggioComuni(inizio,inizio),{zoom:false,numero:false,verso
 assert.deepEqual(N.passaggioComuni(inizio,{...figliaStato,step:inizio.step}),{zoom:false,numero:true,verso:1},'approfondimento con navbar dei soli argomenti');
 assert.deepEqual(N.passaggioComuni(inizio,figliaStato,true),{zoom:false,numero:false,verso:1});
 assert.deepEqual(N.passaggioComuni({...inizio,step:null,pagina:null},figliaStato),{zoom:false,numero:false,verso:1},'gli oggetti prima nascosti riappaiono senza ingresso');
+// Gli assi hanno destinazioni esplicite: nessuna memoria dell'ultimo approfondimento visitato.
+const pile=[3,1,2],punto=(h,v)=>({h,v,fragmentIndex:-1});
+for(const [h,v,azione,attesa] of [[0,0,'approfondisci',punto(0,1)],[0,2,'approfondisci',punto(1,0)],[1,0,'approfondisci',punto(2,0)],[2,1,'approfondisci',null],[2,1,'risali',punto(2,0)],[2,0,'risali',punto(1,0)],[1,0,'risali',punto(0,2)],[0,0,'risali',null],[0,2,'argomentoSuccessivo',punto(1,0)],[2,1,'argomentoPrecedente',punto(1,0)],[0,1,'argomentoPrecedente',null],[2,1,'argomentoSuccessivo',null]])assert.deepEqual(N.destinazione(punto(h,v),pile,azione),attesa,azione+' da '+h+'/'+v);
+assert.equal(N.destinazione(punto(0,0),[1],'approfondisci'),null);assert.equal(N.destinazione(punto(0,0),[1],'risali'),null);
+const comandiTasti=[],mappaTasti=N.tasti(o=>comandiTasti.push(o.azione));for(const codice of [39,37,40,38])mappaTasti[codice]();assert.deepEqual(comandiTasti,['argomentoSuccessivo','argomentoPrecedente','approfondisci','risali']);
+let indice={h:0,v:2,f:0},passaggi=0;const deckFinto={getIndices:()=>indice,getHorizontalSlides:()=>pile.map(n=>({querySelectorAll:()=>({length:n===1?0:n})})),slide:(h,v,f)=>{indice={h,v,f};},next:()=>passaggi++,prev:()=>passaggi--};
+assert.deepEqual(N.comando(deckFinto,{azione:'approfondisci'}),punto(1,0));assert.deepEqual(N.comando(deckFinto,{azione:'risali'}),punto(0,2));N.comando(deckFinto,{azione:'avanti'});assert.equal(passaggi,1,'Avanti conserva il percorso dei frammenti');N.comando(deckFinto,{azione:'indietro'});assert.equal(passaggi,0);
+indice={h:2,v:1,f:0};N.comando(deckFinto,{azione:'approfondisci'});assert.deepEqual(indice,{h:2,v:1,f:0},'al limite non si azzerano le animazioni');
 let n=0;const id=()=> 'elemento-'+(++n);
 let d=M.crea('cbd14eca-2adb-4fc1-9762-f20fe6601a1c','Elementi',id),sid=d.stacks[0].slides[0].id;
 const op=o=>d=M.applica(d,{slideId:sid,...o},id),s=()=>M.trova(d,sid).slide;

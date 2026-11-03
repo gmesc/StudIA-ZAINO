@@ -4,7 +4,7 @@
  const pubblico=window.top===window&&!!window.presentaPubblico,root=document.querySelector('.reveal');
  let testi={},clip=null,clipGiro=0,intervalloClip={start:0,end:0};
  const scrittura=PresentaScrittura({invia,metadati:()=>({...modificaFoglio,testi}),pronto:()=>!pubblico&&pronto&&!modificaFoglio?.bloccato,seleziona:b=>{termina(true);selezione({...modificaFoglio,selezionato:b.dataset.blockId});invia('seleziona',{blockId:b.dataset.blockId});},bubble:aggiornaBubble});
- let animazioni=null,navbar=null,sfondo=null;
+ let animazioni=null,navbar=null,sfondo=null,frecce=null;
  let prova=false,deck=null,canale='',contesto=null,pronto=false,inComando=false,coda=Promise.resolve();
  function stato(){return PresentaNavigazione.stato(deck);}
  function silenzia(){PresentaNavigazione.sincronizzaMedia(deck,root,!pubblico&&!prova);}
@@ -17,7 +17,7 @@
   root.querySelector('.slides').innerHTML=r.html;silenzia();
   const ridotto=s.reducedMotion||matchMedia('(prefers-reduced-motion: reduce)').matches;
   const config={width:s.width,height:s.height,navigationMode:s.navigationMode,embedded:!pubblico,hash:false,history:false,center:true,margin:0,minScale:.01,maxScale:100,view:'slide',scrollActivationWidth:null,
-   keyboard:pubblico?{83:null,70:null,27:null}:false,controls:pubblico,progress:pubblico,overview:false,help:false,showNotes:false,autoPlayMedia:pubblico||prova?null:false,
+   keyboard:pubblico?{83:null,70:null,27:null,...PresentaNavigazione.tasti(o=>{if(pronto)comando(o);})}:false,controls:pubblico,progress:pubblico,overview:false,help:false,showNotes:false,autoPlayMedia:pubblico||prova?null:false,
    transition:ridotto?'none':'slide',autoAnimate:!ridotto};
   if(!deck){deck=new Reveal(root,config);await deck.initialize();for(const n of ['slidechanged','fragmentshown','fragmenthidden'])deck.on(n,conferma);}
   else{deck.configure(config);deck.sync();}
@@ -25,6 +25,7 @@
   if(!sfondo||sfondo.firma!==root.querySelector('.presenta-sfondo-template')?.innerHTML){sfondo?.destroy();sfondo=PresentaNavigazione.sfondoComune(deck,root,{passivo:()=>!pubblico&&!prova,errore:error=>invia('errore',{error})});}
   await document.fonts.ready;pronto=true;root.dataset.pronto='true';deck.slide(o.posizione?.h||0,o.posizione?.v||0,o.posizione?.fragmentIndex??-1);deck.layout();silenzia();sfondo?.aggiorna?.();
   if(!navbar)navbar=PresentaNavigazione.navbar(deck,root,{attiva:()=>pubblico||prova||!!modificaFoglio?.pulita});else navbar.aggiorna();
+  if(pubblico){if(!frecce)frecce=PresentaNavigazione.frecce(deck,root,{esegui:comando});else frecce.aggiorna();}
   // Nell’iframe il media può essere pronto dopo il primo tentativo di autoplay di Reveal.
   if(pubblico||prova){const p=deck.getIndices(),video=deck.getSlideBackground(p.h,p.v)?.querySelector('video');video?.play().catch(e=>{if(video.isConnected&&e.name!=='AbortError')invia('errore',{error:'Video di sfondo non riproducibile. Verifica il formato e il codec.'});});}
   if(pubblico||o.provaAnimazioni)animazioni=PresentaAnimazioniDOM.collega(deck,{ridotto});if(modificaFoglio&&!pubblico){selezione(modificaFoglio);root.dataset.modificaPronta='true';}invia('pronto',{firma:modificaFoglio?.firma,errors:r.errors||[]});segnalaIngombro();
@@ -153,5 +154,5 @@
  root.addEventListener('click',e=>{if(e.shiftKey||modificaFoglio?.selezionati?.length>1)return;if(scrittura.attiva?.el.contains(e.target))return;const a=e.target.closest('a');if(a&&!pubblico)e.preventDefault();if(!pubblico&&!modificaFoglio?.pulita){const b=e.target.closest('[data-block-id]');if(b){invia('seleziona',{blockId:b.dataset.blockId});mostraBubble(b);}}});
  root.addEventListener('play',e=>{if(!pubblico&&!prova){e.target.pause();e.target.muted=true;}},true);
  new ResizeObserver(()=>{if(pronto){deck.layout();aggiornaBubble(elementi().find(b=>b.dataset.blockId===modificaFoglio?.selezionato));}}).observe(root);
- window.addEventListener('pagehide',()=>{animazioni?.destroy();navbar?.destroy();sfondo?.destroy();pronto=false;for(const m of root.querySelectorAll('audio,video'))m.pause();deck?.destroy();});
+ window.addEventListener('pagehide',()=>{animazioni?.destroy();navbar?.destroy();sfondo?.destroy();frecce?.destroy();pronto=false;for(const m of root.querySelectorAll('audio,video'))m.pause();deck?.destroy();});
 })();

@@ -508,6 +508,11 @@ async function riordinaMiniature(da,a,dentro=false){
   assert((await c.val(`window.vault.presentazioni.comando({azione:'sessione',corso:'biologia',sessionId:${q(sid)},comando:'avanti'})`)).ok);
   await wait('ZainoPresenta.regia?.stato.h===1');assert.equal(await pubblico.val('document.querySelector(\"audio\").paused'),true);assert.equal(await c.val('document.querySelector("#gobboPane .gobbo-titolo").textContent'),'Secondo argomento');await wait(`(()=>{const m=document.querySelector('section.present[data-background-video]').slideBackgroundElement.querySelector('video');return m.readyState>=2&&!m.paused&&m.muted&&m.loop;})()`,pubblico);
   assert((await c.val(`window.vault.presentazioni.comando({azione:'sessione',corso:'biologia',sessionId:${q(sid)},comando:'approfondisci'})`)).ok);await wait('ZainoPresenta.regia?.stato.v===1');assert(await pubblico.val(`document.querySelector('.slide-background video').paused`),'video di sfondo fermato entrando nell’approfondimento');
+  // La tastiera della finestra pubblica e GOBBO confermano le stesse coordinate.
+  const quanteSlide=await c.val('ZainoPresenta.documento.stacks.map(p=>p.slides.length)');
+  async function frecciaPubblica(codice,key,h,v){for(const type of ['keyDown','keyUp'])await pubblico.invia('Input.dispatchKeyEvent',{type,key,code:key,windowsVirtualKeyCode:codice});await wait(`ZainoPresenta.regia?.stato.h===${h}&&ZainoPresenta.regia?.stato.v===${v}`);}
+  await frecciaPubblica(37,'ArrowLeft',0,0);await frecciaPubblica(39,'ArrowRight',1,0);await frecciaPubblica(38,'ArrowUp',0,quanteSlide[0]-1);
+  await pubblico.val(`document.querySelector('.controls .navigate-down').click()`);await wait('ZainoPresenta.regia?.stato.h===1&&ZainoPresenta.regia?.stato.v===0');await frecciaPubblica(40,'ArrowDown',1,1);
   for(const tema of ['chiaro','scuro']){
    await c.val(`document.documentElement.dataset.theme=${q(tema)}`);
    const stile=await c.val(`(()=>{const b=getComputedStyle(document.querySelector('#presentaPane [aria-label="Inserisci"]')),r=getComputedStyle(document.querySelector('#limPane .tbtn'));return {altezza:b.height,riferimento:r.height,font:b.fontSize,fontRiferimento:r.fontSize,angoli:b.borderRadius};})()`);

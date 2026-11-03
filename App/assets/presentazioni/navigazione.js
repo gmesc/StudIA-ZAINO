@@ -1,18 +1,43 @@
 /* Una sola grammatica dei comandi per anteprima, finestra pubblica e HTML esportato. */
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.PresentaNavigazione=factory();})(typeof window==='undefined'?this:window,function(){
  'use strict';
+ const FRECCE=[[37,'left','argomentoPrecedente','Slide principale precedente'],[39,'right','argomentoSuccessivo','Slide principale successiva'],[38,'up','risali','Slide precedente nel percorso completo'],[40,'down','approfondisci','Slide successiva nel percorso completo']];
+ function destinazione(p,quante,azione){
+  let {h,v}=p;if(!quante[h])return null;
+  switch(azione){
+   case 'argomentoSuccessivo':h++;v=0;break;
+   case 'argomentoPrecedente':h--;v=0;break;
+   case 'approfondisci':if(v+1<quante[h])v++;else{h++;v=0;}break;
+   case 'risali':if(v>0)v--;else{h--;v=(quante[h]||1)-1;}break;
+   default:throw Error('Comando di navigazione non disponibile.');
+  }return h>=0&&h<quante.length?{h,v,fragmentIndex:-1}:null;
+ }
+ const quantita=deck=>deck.getHorizontalSlides().map(s=>s.querySelectorAll(':scope > section').length||1);
+ const tasti=esegui=>Object.fromEntries(FRECCE.map(([codice,_nome,azione])=>[codice,()=>esegui({azione})]));
  function stato(deck){const p=deck.getIndices();return {h:p.h,v:p.v||0,fragmentIndex:p.f??-1};}
  function comando(deck,o){
-  const p=stato(deck),stacks=deck.getHorizontalSlides();
+  const p=stato(deck);
   switch(o.azione){
    case 'avanti':deck.next();break;case 'indietro':deck.prev();break;
-   case 'argomentoSuccessivo':if(p.h+1<stacks.length)deck.slide(p.h+1,0,-1);break;
-   case 'argomentoPrecedente':if(p.h>0)deck.slide(p.h-1,0,-1);break;
-   case 'approfondisci':if(stacks[p.h].querySelectorAll(':scope > section').length>p.v+1)deck.slide(p.h,p.v+1,-1);break;
-   case 'risali':if(p.v>0)deck.slide(p.h,p.v-1,-1);break;
+   case 'argomentoSuccessivo':case 'argomentoPrecedente':case 'approfondisci':case 'risali':{const d=destinazione(p,quantita(deck),o.azione);if(d)deck.slide(d.h,d.v,d.fragmentIndex);break;}
    case 'vai':if(!Number.isInteger(o.h)||!Number.isInteger(o.v)||!Number.isInteger(o.fragmentIndex)||!deck.getSlide(o.h,o.v))throw Error('Posizione non valida.');deck.slide(o.h,o.v,o.fragmentIndex);break;
    default:throw Error('Comando non disponibile.');
   }return stato(deck);
+ }
+ // Anche le frecce a schermo saltano i frammenti e ignorano le posizioni ricordate da Reveal.
+ function frecce(deck,root,{esegui=o=>comando(deck,o)}={}){
+  let chiuso=false;
+  function aggiorna(){if(chiuso)return;const p=stato(deck),quante=quantita(deck);for(const [_codice,nome,azione,label]of FRECCE)for(const b of root.querySelectorAll('.controls .navigate-'+nome)){const disponibile=!!destinazione(p,quante,azione);if(b.disabled===disponibile)b.disabled=!disponibile;if(b.classList.contains('enabled')!==disponibile)b.classList.toggle('enabled',disponibile);for(const c of ['fragmented','highlight'])if(b.classList.contains(c))b.classList.remove(c);if(b.getAttribute('aria-label')!==label)b.setAttribute('aria-label',label);if(b.title!==label)b.title=label;}}
+  // Reveal aggiorna i suoi pulsanti dopo slidechanged: la nostra disponibilità segue quella scrittura.
+  const pianifica=()=>queueMicrotask(aggiorna),bottone=e=>e.target.closest('.controls button');
+  function click(e){const b=bottone(e),voce=b&&FRECCE.find(([,nome])=>b.classList.contains('navigate-'+nome));if(!voce)return;e.preventDefault();e.stopPropagation();if(!b.disabled)esegui({azione:voce[2]});pianifica();}
+  // Il touch genera un solo clic nativo; non deve eseguire anche il gestore touch di Reveal.
+  function touch(e){if(bottone(e))e.stopPropagation();}
+  root.addEventListener('click',click,true);root.addEventListener('touchstart',touch,true);root.addEventListener('touchend',touch,true);
+  const eventi=['slidechanged','fragmentshown','fragmenthidden','slidesync'];for(const ev of eventi)deck.on(ev,pianifica);
+  // Anche slide(h,v) sulla posizione già corrente riscrive i controlli senza emettere slidechanged.
+  const osserva=new root.ownerDocument.defaultView.MutationObserver(pianifica);for(const c of root.querySelectorAll('.controls'))osserva.observe(c,{subtree:true,attributes:true,attributeFilter:['disabled','class']});aggiorna();
+  return {aggiorna,destroy(){chiuso=true;osserva.disconnect();root.removeEventListener('click',click,true);root.removeEventListener('touchstart',touch,true);root.removeEventListener('touchend',touch,true);for(const ev of eventi)deck.off(ev,pianifica);}};
  }
  function sincronizzaMedia(deck,root,passivo){
   const slide=deck?.getCurrentSlide(),p=deck?.getIndices(),sfondo=p&&deck.getSlideBackground(p.h,p.v);
@@ -75,5 +100,5 @@
   return {aggiorna,elementi:()=>presenti.slice(),destroy(){ferma();root.removeEventListener('click',click,true);deck.off('slidechanged',aggiorna);deck.off('resize',dimensiona);layer.remove();for(const b of root.querySelectorAll('.presenta-comune-sorgente')){b.classList.remove('presenta-comune-sorgente');b.inert=false;b.removeAttribute('aria-hidden');}}};
  }
 
- return {stato,comando,sincronizzaMedia,sfondoComune,passaggioComuni,navbar};
+ return {destinazione,tasti,frecce,stato,comando,sincronizzaMedia,sfondoComune,passaggioComuni,navbar};
 });
