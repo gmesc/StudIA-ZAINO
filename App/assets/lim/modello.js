@@ -46,10 +46,20 @@
   const rgb=[0,2,4].map(i=>{const c=parseInt(h.slice(i,i+2),16)/255;return c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4);});
   return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]>.179?'#000000':'#ffffff';
  }
+ // La versione degli elementi la aggiorna Excalidraw: Undo e sincronizzazione restano suoi.
+ function colora(elementi,stato,tipo,colore,aggiorna){
+  if(!['tratto','fondo','foglio'].includes(tipo)||!/^#[0-9a-f]{6}$/i.test(colore)&&colore!=='transparent')throw Error('Colore del disegno non valido.');
+  if(tipo==='foglio')return {appState:{viewBackgroundColor:colore}};
+  const ids=new Set(Object.keys(stato.selectedElementIds||{}).filter(id=>stato.selectedElementIds[id]));
+  if(tipo==='tratto')for(const e of elementi)if(ids.has(e.id))for(const b of e.boundElements||[])if(b.type==='text')ids.add(b.id);
+  if(stato.editingTextElement)ids.add(stato.editingTextElement.id);
+  const chiave=tipo==='tratto'?'strokeColor':'backgroundColor',corrente=tipo==='tratto'?'currentItemStrokeColor':'currentItemBackgroundColor';
+  return {elements:elementi.map(e=>!e.isDeleted&&ids.has(e.id)&&!['image','frame','magicframe'].includes(e.type)?aggiorna(e,{[chiave]:colore}):e),appState:{[corrente]:colore}};
+ }
  function titoloAutomatico(numero,data){
   if(!Number.isSafeInteger(numero)||numero<1||!Number.isFinite(data?.getTime()))throw Error('Numero o data della lavagna non validi.');
   const due=n=>String(n).padStart(2,'0');
   return 'LAVAGNA '+String(numero).padStart(3,'0')+' ['+due(data.getDate())+'/'+due(data.getMonth()+1)+'/'+data.getFullYear()+']';
  }
- return {scena,unisci,rapporto,titoloAutomatico,coloreTesto,MIME,trasporto,leggiTrasporto,punto};
+ return {colora,scena,unisci,rapporto,titoloAutomatico,coloreTesto,MIME,trasporto,leggiTrasporto,punto};
 });

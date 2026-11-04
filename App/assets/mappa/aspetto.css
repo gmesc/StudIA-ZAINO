@@ -8,7 +8,6 @@
 .mappa-aspetto-campi{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
 .mappa-aspetto-campi label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;min-width:0}
 .mappa-aspetto-campi select{width:100%;font-size:14px;min-height:32px}
-.mappa-aspetto-campi input[type=color]{width:100%;height:32px;padding:4px;background:var(--panel);border:1px solid var(--line)}
 .mappa-aspetto-range{display:flex;align-items:center;gap:8px;min-height:32px}
 .mappa-aspetto-range input{flex:1;min-width:0;width:80px}
 .mappa-aspetto-range output{min-width:36px;text-align:right;font-variant-numeric:tabular-nums}

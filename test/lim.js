@@ -2,6 +2,17 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),M=require('../App/assets/lim/modello'),L=require('../lib/lim');
 // Il bundle locale non deve trascinare le credenziali dei servizi della demo upstream.
 assert.equal(/AIza[0-9A-Za-z_-]{35}/.test(fs.readFileSync(path.join(__dirname,'../App/assets/lim/vendor/excalidraw.js'),'utf8')),false,'il bundle LIM contiene una chiave Google incorporata');
+// I colori rispettano la selezione, il testo legato e gli elementi non colorabili.
+{
+ const elementi=[{id:'r',type:'rectangle',boundElements:[{id:'t',type:'text'}]},{id:'t',type:'text',containerId:'r'},{id:'altro',type:'ellipse'},{id:'img',type:'image'}];
+ const aggiorna=(e,p)=>({...e,...p}),stato={selectedElementIds:{r:true,img:true}};
+ const tratto=M.colora(elementi,stato,'tratto','#8b5cf6',aggiorna);
+ assert.equal(tratto.elements[0].strokeColor,'#8b5cf6');assert.equal(tratto.elements[1].strokeColor,'#8b5cf6');assert.equal(tratto.elements[2],elementi[2]);assert.equal(tratto.elements[3],elementi[3]);assert.equal(tratto.appState.currentItemStrokeColor,'#8b5cf6');
+ const fondo=M.colora(elementi,stato,'fondo','transparent',aggiorna);assert.equal(fondo.elements[0].backgroundColor,'transparent');assert.equal(fondo.elements[1],elementi[1]);
+ assert.deepEqual(M.colora(elementi,stato,'foglio','#e0f2fe',aggiorna),{appState:{viewBackgroundColor:'#e0f2fe'}});
+ assert.equal(M.colora(elementi,{editingTextElement:elementi[1]},'tratto','#000000',aggiorna).elements[1].strokeColor,'#000000');
+ assert.throws(()=>M.colora(elementi,stato,'tratto','url(x)',aggiorna));assert.equal(elementi[0].strokeColor,undefined);
+}
 const v=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'studia-lim-')));
 (async()=>{try{
  require('../lib/zaini').crea(v,'Scienze');require('../lib/zaini').crea(v,'Storia');

@@ -139,12 +139,16 @@
      `--fs` del foglio di stile. Scrivere «il valore di fabbrica» in linea
      inchioderebbe un numero che smetterebbe di somigliare a quello vero il
      giorno che qualcuno ritocca il CSS. -->
+<script src="assets/presentazioni/colori.js"></script>
+<script src="assets/interfaccia/palette.js"></script>
+<link rel="stylesheet" href="assets/interfaccia/palette.css">
 <script>
 (function(){
   var r=document.documentElement;
   try{
     r.dataset.theme = AspettoStanza.tema(localStorage.getItem('studia.tema'));
     r.dataset.tinta = AspettoStanza.tinta(localStorage.getItem('studia.pdf.tinta'));
+    if(r.dataset.tinta.startsWith('#'))r.style.setProperty('--pdf-tinta',r.dataset.tinta);
     var fs = AspettoStanza.stile(localStorage.getItem('studia.fs'));
     if(fs) r.style.setProperty('--fs', fs);
   }catch(e){ /* niente localStorage (o niente modulo): si resta di fabbrica */ }
@@ -2096,7 +2100,6 @@
   .ctxmenu .ctx-col{ width:18px; height:18px; border:1px solid var(--line); cursor:pointer; padding:0; }
   .ctxmenu .ctx-col:hover{ box-shadow:var(--sh-3d); }
   .ctxmenu .ctx-col.nessuno{ background:var(--panel); position:relative; }
-  .ctxmenu input[type=color]{ width:22px; height:18px; padding:0; border:1px solid var(--line); background:var(--panel); cursor:pointer; }
   /* I due tratti — sottolineatura o fondo pieno — sotto la riga dei colori.
      Stessa famiglia dei bottoni di quel menu, ma con l'etichetta accanto: qui
      un campione da solo direbbe «giallo», non «in che modo». Il campione porta
@@ -2551,11 +2554,7 @@
   .riq-et{ width:9rem; height:var(--tb-h); box-sizing:border-box; border:1px solid var(--line);
     background:var(--bg); color:var(--ink); padding:0 .5rem; font-size:13px;
     font-family:var(--font-text),var(--emoji-font),sans-serif; }
-  /* Il quadratino di colore: la stessa misura dei bottoni della barra, senza la
-     cornice di sistema che il browser gli mette attorno. */
   .riq-col{ display:inline-flex; }
-  .riq-col input[type=color]{ width:var(--tb-h); height:var(--tb-h); padding:0; border:1px solid var(--line);
-    background:var(--panel); cursor:pointer; }
   #riquadriBody .riq-reset{ font-size:11px; text-transform:none; letter-spacing:0; }
   #riquadriBody .riq-reset[aria-disabled="true"]{ opacity:.4; }
   /* La voce che apre il pannello sta in fondo al menu, staccata da un filo: apre
@@ -9002,13 +9001,14 @@ function riquadriRighe(){
         '<button type="button" class="tbtn riq-emoji" title="Cambia l’emoji" aria-label="Cambia l’emoji di '+escHtml(d.label)+'">'+UiIcone.svg('smile')+'</button>'+
         '<input class="riq-et" type="text" value="'+escHtml(d.label)+'" aria-label="Nome del riquadro '+escHtml(base.label)+'" maxlength="24">'+
         '<label class="riq-col" title="Il colore del bordo e del fondo">'+
-          '<input type="color" class="riq-c" value="'+escHtml(col||riquadriTinta(base.k,'--uc-col'))+'" aria-label="Colore di '+escHtml(d.label)+'"></label>'+
+          '<button type="button" class="tbtn zaino-colore riq-c" aria-haspopup="dialog" value="'+escHtml(col||riquadriTinta(base.k,'--uc-col'))+'" aria-label="Colore di '+escHtml(d.label)+'"></button></label>'+
         '<label class="riq-col" title="Il colore del titolo">'+
-          '<input type="color" class="riq-i" value="'+escHtml(ink||riquadriTinta(base.k,'--uc-ink'))+'" aria-label="Colore del titolo di '+escHtml(d.label)+'"></label>'+
+          '<button type="button" class="tbtn zaino-colore riq-i" aria-haspopup="dialog" value="'+escHtml(ink||riquadriTinta(base.k,'--uc-ink'))+'" aria-label="Colore del titolo di '+escHtml(d.label)+'"></button></label>'+
         '<button type="button" class="tbtn riq-reset"'+(Object.keys(o).length?'':' aria-disabled="true"')+
           ' title="Rimetti questo riquadro com’era">com’era</button>'+
       '</div></div>';
   }).join('');
+  corpo.querySelectorAll('.zaino-colore').forEach(b=>ZainoPalette.campione(b,b.value));
 }
 /**
  * La tinta di fabbrica di un tipo, chiesta al foglio di stile.
@@ -9017,9 +9017,8 @@ function riquadriRighe(){
  * (`.uc-nota{ --uc-col:var(--teal) }` e compagni) e ricopiarli in JavaScript
  * sarebbe la seconda copia che diverge al primo ritocco del tema. Si misura
  * quello che il browser ha davvero calcolato — che è anche l'unico modo di
- * risolvere `var(--teal)` in un colore che un `<input type="color">` accetta.
- * ⚠️ E l'input vuole `#rrggbb`: `color-mix()` e `rgb()` li rifiuta in silenzio,
- * mostrando nero. La conversione sta qui, in un posto solo.
+ * risolvere `var(--teal)` nel valore HEX salvato nelle preferenze.
+ * La conversione da `color-mix()` e `rgb()` sta qui, in un posto solo.
  */
 function riquadriTinta(k, quale){
   var d=document.createElement('div'); d.className='ucallout uc-'+k;
@@ -9446,6 +9445,7 @@ function tendinaViva(sel, opt){
 }
 
 function closePops(){
+  window.ZainoPalette?.chiudi(false);
   document.querySelectorAll('[id^=notePdf][aria-expanded]').forEach(function(b){b.setAttribute('aria-expanded','false');});
   znavAiutoChiudi();
   /* ⚠️ LA RICERCA NEL DOCUMENTO NON SI CHIUDE DA QUI, e non è una dimenticanza:
@@ -10919,36 +10919,30 @@ function righelloPasso(giu){
   }, true);
 })();
 
-/* ---- Il foglio colorato: quattro stati di un bottone solo ----------------
-   ⚠️ Cicla invece di aprire un pannellino, ed è la forma del bottone dello zoom
-   qui accanto: una scelta che si fa una volta e non si tocca più non merita una
-   superficie sua. Il nome della tinta sta su `<html>` come il tema — il CSS
-   fa il resto, e i colori vivono solo là (invariante 8). */
+/* Tinta PDF: la palette comune conserva anche le preferenze storiche per nome. */
 function tintaNome(t){
-  return { nessuna:'nessuna', crema:'crema', azzurro:'azzurra', grigio:'grigia' }[t] || 'nessuna';
+  return { nessuna:'nessuna', crema:'crema', azzurro:'azzurra', grigio:'grigia' }[t] || PresentaColori.etichetta(t);
 }
 function tintaAggiorna(){
   var b=$('#pdfTinta'); if(!b) return;
   b.hidden=false;b.disabled=!(ANTEPRIMA && ANTEPRIMA.tipo==='pdf');
   var ora=AspettoStanza.tinta(document.documentElement.dataset.tinta);
-  var poi=AspettoStanza.tintaDopo(ora);
-  /* Il suggerimento dice DOVE si è e DOVE si va: un comando che cicla senza
-     dirlo obbliga a premere quattro volte per capire che cosa fa. */
-  b.title='Tinta del foglio: '+tintaNome(ora)+' — clicca per passare a «'+tintaNome(poi)+'»';
+  if(ora.startsWith('#'))document.documentElement.style.setProperty('--pdf-tinta',ora);
+  else document.documentElement.style.removeProperty('--pdf-tinta');
+  b.title='Tinta del foglio: '+tintaNome(ora)+' · palette Tailwind';
+  b.setAttribute('aria-haspopup','dialog');
   b.setAttribute('aria-label', b.title);
   b.classList.toggle('acceso', ora!=='nessuna');
 }
-function tintaCicla(){
-  var t=AspettoStanza.tintaDopo(document.documentElement.dataset.tinta);
-  document.documentElement.dataset.tinta=t;
-  stanzaScrivi('studia.pdf.tinta', t);
-  tintaAggiorna();
+function tintaScegli(){
+  const r=document.documentElement,t=AspettoStanza.tinta(r.dataset.tinta),col=t.startsWith('#')?t:getComputedStyle(r).getPropertyValue('--pdf-tinta').trim();
+  ZainoPalette.apri({ancora:$('#pdfTinta'),nome:'Tinta del foglio',valore:t==='nessuna'?'none':col,nessuno:'Senza tinta',onSelect:v=>{r.dataset.tinta=v==='none'?'nessuna':v;stanzaScrivi('studia.pdf.tinta',r.dataset.tinta);tintaAggiorna();}});
 }
 
 (function(){
   document.addEventListener('click', function(e){
     if(!e.target.closest) return;
-    if(e.target.closest('#pdfTinta')){ tintaCicla(); return; }
+    if(e.target.closest('#pdfTinta')){ tintaScegli(); return; }
     if(e.target.closest('#pdfPagN')){ pagCampoApri(); return; }
     var v=e.target.closest('#pdfSommarioPop .so-voce');
     if(v){ pagSommarioVai(+v.getAttribute('data-i')); return; }
@@ -13734,7 +13728,7 @@ document.addEventListener('click',function(e){
      lo si usa. `closePops()` chiude anche il menu della selezione, quindi
      senza questa eccezione il 🔗 si spegneva e si portava via la superficie da
      cui era stato premuto — cambiavi idea e dovevi riselezionare la frase. */
-  if(!(e.target.closest && (e.target.closest('.popmenu')||e.target.closest('[id^=notePdf]')||e.target.closest('.ncb-callout')||e.target.closest('.ncb-emoji')||e.target.closest('.ncb-mat')||e.target.closest('#mVista')||e.target.closest('#bancoBtn')||e.target.closest('#mappaSvg .mfonte')||e.target.closest('#albumCerca')||e.target.closest('#albumOrdine')||e.target.closest('#searchBtn')||e.target.closest('#searchRes')||e.target.closest('#zainoScegli')||e.target.closest('#pdfDoc')||e.target.closest('.ctx-cita')))) closePops();
+  if(!(e.target.closest && (e.target.closest('.popmenu,[data-palette]')||e.target.closest('[id^=notePdf]')||e.target.closest('.ncb-callout')||e.target.closest('.ncb-emoji')||e.target.closest('.ncb-mat')||e.target.closest('#mVista')||e.target.closest('#bancoBtn')||e.target.closest('#mappaSvg .mfonte')||e.target.closest('#albumCerca')||e.target.closest('#albumOrdine')||e.target.closest('#searchBtn')||e.target.closest('#searchRes')||e.target.closest('#zainoScegli')||e.target.closest('#pdfDoc')||e.target.closest('.ctx-cita')))) closePops();
   var esporta=e.target.closest && e.target.closest('[data-note-export]');
   if(esporta){noteExportScegli(esporta.dataset.noteExport);return;}
   var a=e.target.closest && e.target.closest('.myotes a[data-note]');
@@ -14039,8 +14033,7 @@ function selMenuHTML(sel){
       righeColore+='<button class="ctx-col" data-evcol="'+escHtml(c)+'" style="background:'+escHtml(c)+
         '" title="Evidenzia con questo colore" aria-label="Evidenzia con questo colore"></button>';
     });
-    righeColore+='<input type="color" class="ev-pick" value="'+escHtml(evidenzeColore())+
-      '" title="Un altro colore" aria-label="Scegli un altro colore">';
+    righeColore+='<button type="button" class="tbtn ev-pick" aria-haspopup="dialog" title="Palette Tailwind" aria-label="Scegli un altro colore">'+UiIcone.svg('palette')+'</button>';
     righeColore+='</div>';
     /* I due tratti sotto i colori: prima QUALE colore, poi IN CHE MODO. Sopra il
        colore, la prima cosa che si incontra sarebbe la meno urgente. */
@@ -14236,6 +14229,8 @@ document.addEventListener('click', function(e){
     openEmojiPop(e.target.closest('.riq-emoji'), function(ch){ riquadriScrivi(k, { emoji:ch }); riquadriRighe(); });
     return;
   }
+  const colore=e.target.closest('.zaino-colore');
+  if(colore){ZainoPalette.apri({ancora:colore,nome:colore.getAttribute('aria-label'),valore:colore.value,onSelect:v=>{colore.value=v;colore.dispatchEvent(new Event('change',{bubbles:true}));}});return;}
   var reset=e.target.closest('.riq-reset');
   if(reset){
     if(reset.getAttribute('aria-disabled')==='true'){ toast('Questo riquadro è già com’era', false); return; }
@@ -14244,8 +14239,7 @@ document.addEventListener('click', function(e){
 });
 /* I campi si prendono al `change`, non a ogni tasto: un salvataggio per lettera
    riscriverebbe il file del vault trenta volte per un nome di otto caratteri.
-   ⚠️ `input[type=color]` emette `change` quando si chiude la tavolozza, che è
-   esattamente «ho scelto». */
+   La palette invia `change` solo quando il colore viene scelto. */
 document.addEventListener('change', function(e){
   if(!e.target.closest) return;
   var riga=e.target.closest('#riquadriBody .riq-riga'); if(!riga) return;
@@ -14301,12 +14295,12 @@ document.addEventListener('click', function(e){
      c'era prima — l'evidenza che sta lì, o la memoria se il punto è vergine. */
   evidenzia(range, null, { tratto:t });
 });
-/* Il picker nativo parla con `change`, non con `click`: un `click` arriverebbe
-   all'apertura della tavolozza, quando un colore non è ancora stato scelto. */
-document.addEventListener('change', function(e){
-  if(!e.target || !e.target.classList || !e.target.classList.contains('ev-pick')) return;
-  var c=e.target.value, range=SELMENU.range;
-  selMenuChiudi(); selBarraChiudi(); evidenzeColoreScegli(c); evidenzia(range, c);
+/* Il range è catturato prima di portare il focus nella palette. */
+document.addEventListener('click', function(e){
+  const b=e.target.closest?.('.ev-pick');if(!b)return;
+  const range=SELMENU.range?.cloneRange(),corso=corsoAttivo();
+  ZainoPalette.apri({ancora:b,nome:'Evidenziatore',valore:evidenzeColore(),valido:()=>corsoAttivo()===corso&&!!range?.startContainer.isConnected,onSelect:c=>{evidenzeColoreScegli(c);evidenzia(range,c);}});
+  selMenuChiudi();selBarraChiudi();
 });
 /* ⚠️ In cattura su `window`, come la pila della mappa e per la stessa ragione:
    sul DOCUMENTO ci sono già `closePops()` e la catena della ricerca, registrati
@@ -15140,7 +15134,7 @@ document.addEventListener('contextmenu', function(e){
   (evidenzeColori()||[]).forEach(function(col){
     h+='<button class="ctx-col" data-kwcol="'+escHtml(col)+'" style="background:'+escHtml(col)+'" aria-label="Questo colore"></button>';
   });
-  h+='<input type="color" id="kwColPick" value="'+escHtml(ev.colore||evidenzeColori()[0])+'" aria-label="Un altro colore">';
+  h+='<button type="button" class="tbtn" id="kwColPick" aria-haspopup="dialog" title="Palette Tailwind" aria-label="Un altro colore">'+UiIcone.svg('palette')+'</button>';
   h+='</div>';
   /* Il tratto si cambia da qui come il colore: sono i due modi in cui una parola
      chiave si vede, e governarli in due posti diversi vorrebbe dire cercarne uno
@@ -15416,10 +15410,10 @@ document.addEventListener('click', function(e){
     EVIDENZE.elenco=r.evidenze; evidenzeDisegna(); toast('Parola chiave tolta', true);
   }
 });
-document.addEventListener('change', function(e){
-  if(!e.target || e.target.id!=='kwColPick') return;
-  var m=document.getElementById('kwMenu'), id=m?m.dataset.kw:'';
-  var c=e.target.value; kwMenuChiudi(); kwRicolora(id, c);
+document.addEventListener('click', function(e){
+  const b=e.target.closest?.('#kwColPick');if(!b)return;
+  const id=document.getElementById('kwMenu').dataset.kw,ev=kwDaId(id),corso=corsoAttivo();if(!ev)return;
+  ZainoPalette.apri({ancora:b,nome:'Parola chiave',valore:ev.colore,valido:()=>corsoAttivo()===corso&&!!kwDaId(id),onSelect:c=>kwRicolora(id,c)});kwMenuChiudi();
 });
 window.addEventListener('keydown', function(e){
   if(e.key!=='Escape' || !kwMenuAperto()) return;
@@ -20709,16 +20703,6 @@ function mappaRinominaMappa(){
    proprio perché un gesto, da solo, non si vede.
    ========================================================================= */
 
-/** I cinque colori dei nodi, letti dalle variabili CSS vere come già fa
- *  `mappaGruppi()`: cambiando tema o foglio di stile la tavolozza segue l'app
- *  invece di restare indietro. */
-function mappaColori(){
-  var s=getComputedStyle(document.documentElement);
-  function v(n,d){ var x=(s.getPropertyValue(n)||'').trim(); return x||d; }
-  return [v('--teal-strong','#0f766e'), v('--yellow-strong','#a16207'), v('--blue-strong','#1d4ed8'),
-          v('--orange','#f97316'), '#7c3aed'];
-}
-
 /** Il punto di un nodo o di un arco in coordinate di finestra: serve a posare
  *  la casella di scrittura sopra il disegno. È l'inverso di `mappaPuntoGrafo`. */
 function mappaClientDaGrafo(gx, gy){
@@ -20963,11 +20947,8 @@ function mapMenuApri(x, y, b){
       }
       h+=sep;
       h+='<div class="ctx-colori" role="group" aria-label="Colore del nodo">';
-      mappaColori().forEach(function(c){
-        h+='<button class="ctx-col" data-col="'+c+'" style="background:'+c+'" aria-label="Colora"></button>';
-      });
+      h+='<button class="ctx-item" data-az="colore-tailwind" aria-haspopup="dialog">Palette Tailwind</button>';
       h+='<button class="ctx-col nessuno" data-col="" aria-label="Togli il colore" title="Torna al colore del ramo">'+UiIcone.svg('x')+'</button>';
-      h+='<input type="color" id="mColPick" aria-label="Scegli un colore">';
       h+='</div>';
       h+='<label class="ctx-casc"><input type="checkbox" id="mCasc"> applica ai discendenti</label>';
       h+=sep;
@@ -21431,6 +21412,11 @@ document.addEventListener('click', function(e){
   var mot=it.getAttribute('data-motore');
   if(mot){ mapMenuChiudi(); mappaMotore(mot); return; }
   switch(it.getAttribute('data-az')){
+    case 'colore-tailwind': {
+      const file=MAPPA.mia.file,corso=corsoAttivo();
+      ZainoPalette.apri({ancora:it,nome:'Colore del nodo',valore:MAPPA.nodi[id]?.colore||mappaTema().muted,valido:()=>MAPPA.mia.file===file&&corsoAttivo()===corso,onSelect:v=>mappaColora(id,v,casc)});
+      mapMenuChiudi();return;
+    }
     case 'rinomina':     mapMenuChiudi(); mappaRinomina(id); return;
     case 'figlio':       mapMenuChiudi(); mappaSeleziona(id); mappaFiglio(); return;
     case 'fratello':     mapMenuChiudi(); mappaSeleziona(id); mappaFratello(); return;
@@ -21459,13 +21445,6 @@ document.addEventListener('click', function(e){
     case 'adatta':       mapMenuChiudi(); mappaAdatta(); return;
     case 'annulla':      mapMenuChiudi(); mappaAnnulla(); return;
   }
-});
-document.addEventListener('change', function(e){
-  if(!e.target || e.target.id!=='mColPick' || !mapMenuAperto()) return;
-  var m=$('#mapMenu');
-  var casc=!!(document.getElementById('mCasc') && document.getElementById('mCasc').checked);
-  mappaColora(m.dataset.id, e.target.value, casc);
-  mapMenuChiudi();
 });
 window.addEventListener('resize', mapMenuChiudi);
 
@@ -21899,9 +21878,7 @@ window.addEventListener('keydown', function(e){
          e la topbar dice già la funzione della lezione. Restano nascoste quando
          l'anteprima mostra un video, dove non vogliono dire niente. -->
     <i class="tbsep" aria-hidden="true"></i>
-    <!-- La tinta del foglio: un bottone che CICLA, come quello dello zoom qui
-         accanto — quattro stati di un comando solo, non un pannellino per una
-         scelta che si fa una volta e non si tocca più. -->
+    <!-- Palette comune con ripristino Senza tinta. -->
     <button class="tbtn" id="pdfTinta" type="button" hidden>&#9673;</button>
     <!-- La finestra sulla riga: si accende, segue il mouse, e le frecce su/giù
          la spostano di riga. Si spegne con Esc, che qui è un gradino che non
@@ -23080,7 +23057,7 @@ document.getElementById('noteExportMenu').addEventListener('keydown',function(e)
 <link rel="stylesheet" href="assets/presentazioni/caratteri.css">
 <link rel="stylesheet" href="assets/presentazioni/editor.css">
 <script src="assets/presentazioni/testo.js"></script><script src="assets/presentazioni/vendor/anime.js"></script><script src="assets/presentazioni/animazioni.js"></script><script src="assets/presentazioni/vettori.js"></script><script src="assets/presentazioni/modello.js"></script><script src="assets/presentazioni/animazioni-dom.js"></script>
-<script src="assets/presentazioni/colori.js"></script>
+
 <script src="assets/presentazioni/documento.js"></script>
 <script src="presentazioni-player/scrittura.js"></script>
 <script src="assets/presentazioni/barra.js"></script>

@@ -166,16 +166,14 @@ async function finoA(expr, quanto) {
     new Set(['crema', 'azzurro', 'grigio'].map((t) => tinte[t].fondo)).size);
   ok('nessuna delle tre è il bianco', false,
     ['crema', 'azzurro', 'grigio'].some((t) => tinte[t].fondo === 'rgb(255, 255, 255)'));
-  /* Il comando cicla e dice dove va: un bottone che gira senza dirlo obbliga a
-     premerlo quattro volte per capire che cosa fa. */
   await val("document.documentElement.dataset.tinta='nessuna', tintaAggiorna(), 1");
-  ok('il comando dice a che tinta si passa', true,
-    await val("/passare a «crema»/.test(document.getElementById('pdfTinta').title)"));
+  ok('il comando apre la palette comune', true,
+    await val("/Tailwind/.test(document.getElementById('pdfTinta').title)"));
   await clicca('#pdfTinta'); await pausa(200);
-  ok('e premendolo ci si passa davvero', 'crema',
-    await val('document.documentElement.dataset.tinta'));
-  ok('la scelta è scritta dove si ricorda', 'crema',
-    await val("localStorage.getItem('studia.pdf.tinta')"));
+  await val(`document.querySelector('.zaino-palette [aria-label="sky-100"]').scrollIntoView({block:'nearest'})`);
+  await clicca('.zaino-palette [aria-label="sky-100"]');
+  ok('la tinta scelta si applica davvero', '#e0f2fe', await val('document.documentElement.dataset.tinta'));
+  ok('la scelta è scritta dove si ricorda', '#e0f2fe', await val("localStorage.getItem('studia.pdf.tinta')"));
   await val("document.documentElement.dataset.tinta='nessuna', localStorage.removeItem('studia.pdf.tinta'), tintaAggiorna(), 1");
 
   sezione('Il CSS di pdf.js resta nel suo riquadro');

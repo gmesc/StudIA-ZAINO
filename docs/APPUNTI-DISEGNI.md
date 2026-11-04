@@ -2,6 +2,8 @@
 
 La toolbar di ciascun editor offre **Inserisci disegno modificabile**. La finestra Excalidraw locale permette forme, frecce, linee, testo e tratto libero. **Inserisci disegno** lo colloca al cursore, fra paragrafi; **Annulla** non modifica l’appunto. Il doppio clic sul disegno nell’anteprima riapre gli elementi originali.
 
+I controlli di tratto/testo, riempimento e sfondo aprono la **palette Tailwind comune**, con Trasparente, Bianco e Nero. La scelta conserva selezione, Undo e testo legato alle forme. È la stessa palette della LIM e dei colori delle tabelle e dei callout: dettagli in [ASPETTO.md](ASPETTO.md). Il colore scelto si conserva nella scena modificabile, nello SVG e negli export PDF/DOCX.
+
 Un clic o il menu contestuale su un disegno o un’immagine apre i controlli di larghezza e allineamento. **Porta sopra** sovrappone la figura davanti al testo; **Porta sotto** la mette dietro. **In linea** torna alla figura che occupa spazio fra i paragrafi. Trascinando una figura la si può posizionare liberamente sopra il foglio. **Posiziona liberamente** mostra una maniglia anche per una figura dietro al testo: trascinamento, frecce (1 px) e Maiusc+frecce (10 px); Esc chiude o annulla un trascinamento. Il punto Markdown resta l’ancora: se si aggiungono paragrafi prima, il disegno segue il suo contesto. **In linea** azzera la posizione libera. Lo spostamento si annulla con un solo Undo. Le immagini dell’album conservano il comando per aprire l’originale.
 
 ## Conservazione

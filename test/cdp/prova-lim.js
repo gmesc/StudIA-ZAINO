@@ -110,8 +110,11 @@ async function menuContestuale(client,host,tema){
  await peer.val('ProiezioneLavagna.apri()');await wait('!!ProiezioneLavagna.editor?.api',peer);assert.equal(await peer.val('ProiezioneLavagna.editor.doc.studia.id'),id);
  assert.equal(await peer.val('ProiezioneLavagna.editor.api.getAppState().viewBackgroundColor'),'#000000','riapertura con lo stesso fondo');
  await clicca('#limProiezione .main-menu-trigger',peer);
- await clicca('#limProiezione [data-testid="color-top-pick-#ffffff"]',peer);
+ await clicca('#limProiezione .dropdown-menu .active-color',peer);await wait('ZainoPalette.aperta()',peer);
+ assert.equal(await peer.val("document.querySelectorAll('.zaino-palette .zaino-tailwind button').length"),242);
+ await clicca('.zaino-palette [data-colore="#ffffff"]',peer);
  await wait("ZainoLim.editor.api.getAppState().viewBackgroundColor==='#ffffff'");
+ if(!await peer.val("!!document.querySelector('#limProiezione [aria-label=\"Sfondo nero\"]')"))await clicca('#limProiezione .main-menu-trigger',peer);
  await clicca('#limProiezione [aria-label="Sfondo nero"]',peer);
  await wait("ProiezioneLavagna.editor.api.getAppState().viewBackgroundColor==='#000000'",peer);
  await wait("ZainoLim.editor.api.getAppState().viewBackgroundColor==='#000000'");

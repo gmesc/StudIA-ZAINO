@@ -193,12 +193,7 @@
   const r=anchor.getBoundingClientRect(),pop=popup('presenta-carte-popup',grid,r.left,r.bottom+4);pop.setAttribute('role','dialog');pop.setAttribute('aria-label','Tipo di carta');anchor.setAttribute('aria-expanded','true');pop.addEventListener('toggle',e=>{if(e.newState==='closed'){anchor.setAttribute('aria-expanded','false');if(document.activeElement===document.body||pop.contains(document.activeElement))restituisciFocus();}});(grid.querySelector('[aria-pressed=true]')||grid.firstElementChild).focus({preventScroll:true});
  }
  function sfogliaColori(fn,anchor,slot){
-  const box=E('div',null,'presenta-palette-contenuto'),titolo=E('div','Tailwind · '+C.etichetta(colori.ultimo),'presenta-sezione'),grid=E('div',null,'presenta-tailwind');
-  grid.append(E('span'));for(const n of C.gradazioni)grid.append(E('span',String(n),'presenta-gradazione'));
-  let famiglia='';for(const c of C.palette){
-   if(c.famiglia!==famiglia){famiglia=c.famiglia;grid.append(E('span',famiglia,'presenta-famiglia'));}
-   const bt=b(c.id,null,()=>{menuAperto?.hidePopover();colori=M.ricordaColore(colori,c.hex,slot);ricordaColori();fn(c.hex);if(scrittura)campiSlide();}),sw=E('i',null,'presenta-campione');sw.style.backgroundColor=c.hex;bt.textContent='';bt.append(sw);bt.title=c.id+' · '+c.hex;bt.setAttribute('aria-pressed',String(colori.ultimo.toLowerCase()===c.hex));grid.append(bt);
-  }
+  const box=E('div',null,'presenta-palette-contenuto'),titolo=E('div','Tailwind · '+C.etichetta(colori.ultimo),'presenta-sezione'),grid=ZainoPalette.griglia({valore:colori.ultimo,onSelect:hex=>{menuAperto?.hidePopover();colori=M.ricordaColore(colori,hex,slot);ricordaColori();fn(hex);if(scrittura)campiSlide();}});grid.classList.add('presenta-tailwind');
   box.append(titolo,grid);const r=anchor.getBoundingClientRect(),p=popup('presenta-palette',box,r.left,r.bottom+4);grid.querySelector('[aria-pressed=true]')?.scrollIntoView({block:'center'});p.querySelector('[aria-pressed=true]')?.focus({preventScroll:true});
  }
  const {sceltaCarattere,sceltaPeso,sceltaAllineamento,aggiornaPesi}=ZainoTipografia.crea({popup,bottone:b,contesto:()=>{const documento=D.documento?.id,slide=slideId,blocco=bloccoId;return ()=>D.documento?.id===documento&&slideId===slide&&bloccoId===blocco;}});

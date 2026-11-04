@@ -51,13 +51,8 @@
      l'app com'era il giorno prima. */
   var TEMI = ['chiaro', 'scuro'];
 
-  /* Le tinte del foglio, per chi legge male sul bianco pieno. Solo i NOMI: i
-     colori stanno nel foglio di stile, come tutti gli altri.
-     ⚠️ È l'invariante 8 alla lettera — «il vestito non si ricopia». Se i valori
-     stessero qui, il giorno che si ritocca una tinta ci sarebbero due verità e
-     la prima che diverge è quella che si vede. Qui c'è la REGOLA (quali tinte
-     esistono, che cosa vuol dire un nome che non conosciamo); l'aspetto lo dice
-     `html[data-tinta="…"]`. */
+  /* I nomi storici restano compatibili e prendono il colore dal CSS.
+     La palette condivisa salva invece un HEX, validato da tinta(). */
   var TINTE = ['nessuna', 'crema', 'azzurro', 'grigio'];
 
   /* Le misure del corpo, in `rem`. Non sono scelte a caso:
@@ -101,11 +96,10 @@
    */
   function tinta(v) {
     var s = (v == null) ? '' : String(v).trim().toLowerCase();
-    return TINTE.indexOf(s) >= 0 ? s : 'nessuna';
+    return TINTE.indexOf(s) >= 0 || /^#[0-9a-f]{6}$/.test(s) ? s : 'nessuna';
   }
 
-  /** La tinta dopo aver scelto quella dopo: serve a un comando che cicla senza
-   *  aprire un pannellino. Gira in tondo, e «nessuna» è una delle quattro. */
+  /** Ciclo storico conservato per i chiamanti precedenti alla palette. */
   function tintaDopo(v) {
     var i = TINTE.indexOf(tinta(v));
     return TINTE[(i + 1) % TINTE.length];

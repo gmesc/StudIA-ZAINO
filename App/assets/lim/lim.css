@@ -44,3 +44,10 @@
 
 /* Il bordo indica il bersaglio senza coprire la tela durante il rilascio. */
 .lim-editor[data-rilascio]{outline:2px solid var(--teal,#117b72);outline-offset:-2px;}
+
+/* Le scelte complete passano dalla palette comune; il trigger nativo mantiene
+   i gesti e le scorciatoie Excalidraw, senza un secondo pannello di colori. */
+.lim-editor .excalidraw .color-picker__top-picks,.lim-editor .excalidraw .color-picker__top-picks+div{display:none;}
+.lim-editor .excalidraw .color-picker-container .active-color{width:auto;min-width:120px;display:flex;align-items:center;gap:8px;padding:4px 8px;}
+.lim-editor .excalidraw .color-picker-container .active-color:after{content:"Tailwind";font:12px var(--font-ui,Arial);}
+.lim-editor .excalidraw .color-picker-container .active-color .color-picker__button-outline{position:relative;inset:auto;width:18px;height:18px;}

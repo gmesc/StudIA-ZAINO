@@ -402,6 +402,7 @@
     var stile=opt.aspetto?aspetto().normalizza(opt.aspetto):null;
     var tema = Object.assign({}, TEMA, opt.tema || {});
     if(stile){tema=aspetto().tema(stile,tema);opt={...opt,font:aspetto().font(stile)};}
+    var fondoNodo=stile?.nodo==='none'?'none':tema.panel, bordoNodo=stile?.bordo==='none'?'none':tema.line;
     var gruppi = (opt.gruppi && opt.gruppi.length) ? opt.gruppi : GRUPPI;
     var tipo = tipografiaNodo(null, opt);
     var font = tipo.font;
@@ -578,10 +579,10 @@
         // Il rettangolo conserva la geometria usata dall’editor della didascalia;
         // il profilo visibile ha il bordo superiore diritto come la fotografia.
         g.push('<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + n1(Hn) + '" fill="none" pointer-events="none"/>');
-        g.push('<path class="mcontorno" d="M' + n1(x) + ' ' + n1(y) + 'H' + n1(x+Wn) + 'V' + n1(y+Hn-ry) + 'A' + n1(rx) + ' ' + n1(ry) + ' 0 0 1 ' + n1(x+Wn-rx) + ' ' + n1(y+Hn) + 'H' + n1(x+rx) + 'A' + n1(rx) + ' ' + n1(ry) + ' 0 0 1 ' + n1(x) + ' ' + n1(y+Hn-ry) + 'Z" fill="' + tema.panel + '" stroke="' + (acceso ? col : 'none') + '" stroke-width="2.5"/>');
+        g.push('<path class="mcontorno" d="M' + n1(x) + ' ' + n1(y) + 'H' + n1(x+Wn) + 'V' + n1(y+Hn-ry) + 'A' + n1(rx) + ' ' + n1(ry) + ' 0 0 1 ' + n1(x+Wn-rx) + ' ' + n1(y+Hn) + 'H' + n1(x+rx) + 'A' + n1(rx) + ' ' + n1(ry) + ' 0 0 1 ' + n1(x) + ' ' + n1(y+Hn-ry) + 'Z" pointer-events="all" fill="' + fondoNodo + '" stroke="' + (acceso ? col : 'none') + '" stroke-width="2.5"/>');
       } else {
-      g.push('<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + n1(Hn) + '" fill="' + tema.panel +
-        '" stroke="' + (acceso ? col : (imm ? 'none' : tema.line)) + '" stroke-width="' + (acceso ? 2.5 : (stile?stile.spessore:1)) + '" rx="'+(stile?stile.raggio:0)+'"' +
+      g.push('<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + n1(Hn) + '"' + (fondoNodo==='none'?' pointer-events="all"':'') + ' fill="' + fondoNodo +
+        '" stroke="' + (acceso ? col : (imm ? 'none' : bordoNodo)) + '" stroke-width="' + (acceso ? 2.5 : (stile?stile.spessore:1)) + '" rx="'+(stile?stile.raggio:0)+'"' +
         (suo && !imm ? ' stroke-dasharray="4 3"' : '') + '/>');
       }
       /* La barra d'accento dice il gruppo senza colorare il fondo, che renderebbe
@@ -589,7 +590,7 @@
          ramo entra; su un'immagine sta SEMPRE a sinistra, perché lì è l'unica
          cosa che resta del riquadro e deve stare sempre nello stesso posto. */
       g.push(stile?.raggio > 0
-        ? barraArrotondata(x,y,Wn,Hn,stile.raggio,acceso?2.5:imm?0:stile.spessore,!!imm||o.orient==='lr',col,!!imm)
+        ? barraArrotondata(x,y,Wn,Hn,stile.raggio,acceso?2.5:imm||bordoNodo==='none'?0:stile.spessore,!!imm||o.orient==='lr',col,!!imm)
         : imm || o.orient === 'lr'
         ? '<rect class="mbarra" x="' + n1(x) + '" y="' + n1(y) + '" width="' + BARRA + '" height="' + n1(Hn) + '" fill="' + col + '"/>'
         : '<rect class="mbarra" x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + BARRA + '" fill="' + col + '"/>');

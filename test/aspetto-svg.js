@@ -18,6 +18,12 @@ for(const orient of ['td','lr']){
  const svg=Disegna.svg(Layouts.run(originale,{orient}),{aspetto:v.aspetto}).markup;
  A(/<path class="mbarra"[^>]+d="[^"]*A/.test(svg),'La barra segue gli angoli anche in orientamento '+orient);
 }
+const senza=Stile.normalizza({...v.aspetto,nodo:'none',bordo:'none',legame:''});
+A.equal(senza.nodo,'none');A.equal(senza.bordo,'none');A.notEqual(Stile.normalizza({testo:'none'}).testo,'none');
+const libero=Disegna.svg(res,{aspetto:senza,sfondo:false}).markup,nodoLibero=libero.match(/<g class="mnodo"[^]*?<\/g>/)[0];
+A(/fill="none"[^>]*stroke="none"/.test(nodoLibero));A(nodoLibero.includes('pointer-events="all"'));
+A(!libero.match(/<g class="marco"[^]*?<\/g>/)[0].includes('stroke="none"'),'Senza bordo non nasconde i collegamenti');
+A(!Disegna.svg(res,{aspetto:senza,sfondo:false,evidenzia:'a'}).markup.match(/<g class="mnodo" data-id="a"[^]*?<\/g>/)[0].includes('stroke="none"'),'La selezione rimane visibile');
 const vettore={drawing:{viewBox:'0 0 120 80',scene:[],nodes:[{tag:'rect',attrs:{width:'120',height:'80',fill:'#ff9900'},children:[]}]},fonts:[]};
 A(Svg.html(vettore).includes('width="120" height="80"'));A.throws(()=>Svg.html({...vettore,fonts:[{family:'Arial',data:'https://evil.example/font'}]}));A.throws(()=>Svg.html({...vettore,drawing:{...vettore.drawing,nodes:[{tag:'script',attrs:{},children:[]}]}}));
 A(Figure.leggi(['![Schema](_disegni/12345678-1234-1234-1234-123456789abc.svg)'],0));

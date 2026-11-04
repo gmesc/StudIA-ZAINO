@@ -116,5 +116,8 @@ ok('si cicla in tondo', ['crema', 'azzurro', 'grigio', 'nessuna'],
   ['nessuna', 'crema', 'azzurro', 'grigio'].map(S.tintaDopo));
 ok('e da un nome storto si riparte dalla prima', 'crema', S.tintaDopo('fucsia'));
 
+ok('colore Tailwind conservato e normalizzato', '#e0f2fe', S.tinta(' #E0F2FE '));
+ok('una tinta CSS arbitraria viene rifiutata', 'nessuna', S.tinta('url(x)'));
+
 console.log(ko ? `\n✗ ${ko} controlli falliti` : `\n✓ tutti i controlli passati`);
 process.exit(ko ? 1 : 0);

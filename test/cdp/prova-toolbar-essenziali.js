@@ -109,7 +109,8 @@ async function wait(expr){for(let i=0;i<160;i++){if(await c.val(expr))return;awa
   await c.val(`document.getElementById('settingsBtn').click()`);
   assert.equal(await c.val(`getComputedStyle(document.querySelector('.set-tab[aria-selected="true"]')).boxShadow`),'none');
   assert.deepEqual(await c.val(`[...document.querySelectorAll('button:has(svg.ui-icon),a:has(svg.ui-icon),button.tendina')].filter(b=>!b.title&&!b.getAttribute('aria-describedby')).map(b=>b.id||b.className)`),[],'ogni comando con icona ha un tooltip');
-  assert.deepEqual(await c.val(`[...document.querySelectorAll('button svg:not(.ui-icon)')].map(s=>s.closest('button').id)`),[],'i simboli dei comandi provengono tutti da Lucide');
+  // La LIM può essere già montata da una prova precedente: Excalidraw conserva le proprie icone.
+  assert.deepEqual(await c.val(`[...document.querySelectorAll('button svg:not(.ui-icon)')].filter(s=>!s.closest('.excalidraw')).map(s=>s.closest('button').id)`),[],'i simboli dei comandi ZAINO provengono tutti da Lucide');
  }finally{
   if(evPrima)fs.writeFileSync(evFile,evPrima);else fs.rmSync(evFile,{force:true});
   await c.val(`document.getElementById('settingsClose').click();if(window.__toolbarFlush)noteFlushStato=window.__toolbarFlush;localStorage.clear();Object.entries(${q(prima.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));ZNAV.organizza=${q(prima.organizza)};zainoNavAggiorna();EVIDENZE.viste=null;evidenzeCarica();KW.ordine={criterio:'alfa',verso:'asc'};keywordDisegna();BANCO.stato=${q(prima.banco)};BANCO.attivo=${q(prima.attivo)};document.documentElement.dataset.theme=${q(prima.tema)};bancoSalva();bancoDisegna()`);}

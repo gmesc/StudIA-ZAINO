@@ -66,10 +66,6 @@
 .presenta-slot-colori{display:flex;flex-wrap:wrap;gap:4px}.presenta-slot-colori>div{display:flex;align-items:center;border:1px solid var(--line)}.presenta-slot-colori .tbtn{gap:4px;text-transform:none;letter-spacing:normal}.presenta-slot-colori .tbtn[data-vuoto="true"]{opacity:.5}
 .presenta-palette{max-height:70vh;overflow:auto}
 .presenta-palette-contenuto{display:flex;flex-direction:column;gap:8px}
-.presenta-tailwind{display:grid;grid-template-columns:max-content repeat(11,var(--tb-h));align-items:center;gap:2px}
-.presenta-tailwind .tbtn{padding:0;min-width:0}
-.presenta-gradazione{text-align:center;font-size:10px;color:var(--muted)}
-.presenta-famiglia{font-size:12px;padding-right:8px}
 .presenta-appunti{inset:100px auto auto 25%;width:min(480px,70vw)}
 .presenta-bubble .tbar{padding:0;min-height:var(--tb-h)}
 .presenta-lavoro>*{flex-shrink:0}
