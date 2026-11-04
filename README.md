@@ -22,7 +22,7 @@ Nel Banco sono disponibili **PRESENTA** e **GOBBO**: composizione sul foglio con
 
 Appunti, schede e Ripasso usano una colonna centrata di circa 68 caratteri. Nella testata dello split, **Dimensione del testo** regola l’ingrandimento dal 75% al 300%, indipendentemente dagli altri split. La larghezza massima cresce insieme al testo; la preferenza viene ricordata per strumento e zaino su questo Mac.
 
-Negli split da metà banco, un quarto o più piccoli, il contenuto passa automaticamente al **75%**; testata e toolbar conservano la propria dimensione. Ingrandire a tutto banco porta al **100%**, tornando alla disposizione precedente si ripristina il 75%.
+Negli split da metà banco, un quarto o più piccoli, il contenuto passa automaticamente al **75%**; testata, toolbar, anteprime PDF, parole chiave e postille conservano la propria dimensione. Ingrandire a tutto banco porta al **100%**, tornando alla disposizione precedente si ripristina il 75%.
 
 **Schermo intero** mostra il contenuto dello split e nasconde l’interfaccia. Per uno split ridotto automaticamente parte dal 100%; negli altri casi il testo parte almeno dal 200%; gli appunti vengono mostrati in anteprima. Porta il puntatore in alto o usa Tab per ritrovare i comandi. **Esc** ripristina la disposizione, l’ingrandimento e il punto di lettura precedenti. Nei PDF rimangono pinch, Spazio + trascinamento e tre clic per adattare alla larghezza.
 

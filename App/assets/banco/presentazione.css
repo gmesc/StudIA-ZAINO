@@ -7,7 +7,7 @@
 }
 .bcorpo .zstudio :is(h2,h3) { font-size:1.2em; }
 .bcorpo .zstudio h4 { font-size:1.2em; }
-.bcorpo .zstudio :is(input,select,textarea) { font-size:var(--lettura-fs); }
+.bcorpo .zstudio :is(input,textarea) { font-size:var(--lettura-fs); }
 .bcorpo .zstudio :is(input,select) { min-height:2.5em; height:auto; }
 .bcorpo .zstudio :is(summary,label,.zchat-hint,.zstudio-item-type) { font-size:.9em; }
 .bcorpo .zstudio .zchat-citation { font-size:1em; white-space:normal; height:auto; }
@@ -58,4 +58,4 @@ html[data-presentazione] .blocco[data-presentazione] .zstudio-banco { padding-to
 
 /* Il fattore automatico riguarda il materiale, mai le barre dei comandi.
    La LIM applica il fattore alla propria camera nativa. */
-.bcorpo :is(.pdfViewer,.CodeMirror,.editor-preview-side,.presenta-anteprima,#mappaSvg,.alblista,#fotoHost,#plHost,#kwLista,#poLista,.gobbo-corpo,#zragResults,#zschedeResult,#zschedeCollection,#zstudyQuestion,#zstudyQueue,#zstudyHome){zoom:var(--banco-zoom,1);}
+.bcorpo :is(.CodeMirror,.editor-preview-side,.presenta-anteprima,#mappaSvg,.alblista,#fotoHost,#plHost,.gobbo-corpo,#zragResults,#zschedeResult,#zschedeCollection,#zstudyQuestion,#zstudyQueue,#zstudyHome){zoom:var(--banco-zoom,1);}
