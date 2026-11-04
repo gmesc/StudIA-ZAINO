@@ -1331,11 +1331,13 @@
   /* Il puntatore dice che si può scrivere lì: senza, l'unica maniera di
      scoprirlo è cliccare per caso. */
   :is(#noteHost,#noteHost2) .editor-preview-active-side .mdb, :is(#noteHost,#noteHost2) .editor-preview-active .mdb{ cursor:text; }
+  /* Il campo di modifica resta sulla pagina senza una cornice propria;
+     i bordi dei callout appartengono al contenuto e conservano il loro stile. */
   :is(#noteHost,#noteHost2) .mdb-edit{
     display:block; width:100%; box-sizing:border-box; resize:none; overflow:hidden;
     font-family:var(--font-text),var(--emoji-font),sans-serif; font-size:14px; line-height:1.55;
-    color:var(--ink); background:var(--bg); border:1px solid var(--teal);
-    outline:0; padding:.35rem .5rem; }
+    color:var(--ink); background:transparent; border:0; box-shadow:none;
+    outline:0; padding:0; }
   /* ---- ◫ AFFIANCATA, dentro il blocco ------------------------------------
      ⚠️ Queste tre righe non sono cosmetica: il foglio di EasyMDE veste
      l'affiancata «senza fullscreen» con `.sided--no-fullscreen`, ma le sue
