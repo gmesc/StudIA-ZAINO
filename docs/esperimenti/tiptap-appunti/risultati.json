@@ -1,0 +1,948 @@
+{
+  "data": "2026-11-04",
+  "tiptap": "3.32.2",
+  "ambiente": {
+    "node": "v24.22.0",
+    "jsdom": "26.1.0"
+  },
+  "ambito": "Campioni sintetici e API in JSDOM. Nessuna prova UI Electron o parità completa.",
+  "campioni": 21,
+  "controlli": 28,
+  "controlliSuperati": [
+    "titolo, grassetto, corsivo, codice ed elenco riconosciuti",
+    "il callout non è riconosciuto come tale",
+    "i due callout contigui confluiscono in una citazione",
+    "il serializer cambia il marcatore callout",
+    "i link interni conservano href nel JSON ma non nella resa standard",
+    "il rimando evidenza conserva ID e sintassi ma non il routing",
+    "il wikilink viene riscritto con escape",
+    "album conserva src e didascalia ma non risolve immagine e percentuale",
+    "sottolineato HTML conservato",
+    "colore visibile in HTML ma perso nel Markdown",
+    "colore highlight perso nel Markdown",
+    "a capo singolo riconosciuto con breaks:true",
+    "tre newline diventano due",
+    "cinque newline diventano quattro",
+    "formule inline e blocco riconosciute",
+    "tabella semplice riconosciuta",
+    "note a piè pagina non interpretate e riscritte",
+    "commento HTML eliminato",
+    "frontmatter reinterpretato: non va passato al parser del corpo",
+    "configurare i protocolli conserva href nella resa",
+    "caricamento silenzioso disponibile per autosave",
+    "emitUpdate:false non azzera la cronologia del caricamento",
+    "comando grassetto utilizzabile dalla toolbar esterna",
+    "modifica notifica update",
+    "undo disponibile",
+    "redo disponibile",
+    "seconda istanza conserva il contenuto dopo undo e redo della prima",
+    "modifica della seconda non cambia la prima"
+  ],
+  "paritaAppunti": false,
+  "comandi": {
+    "linkConfigurati": "<p><a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"pdf:03#p=7\">PDF</a> <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"video:01#t=160\">Video</a> <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"https://example.org\">Fonte</a> <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"cap:01-fondamenti-c03\">Capitolo</a></p>",
+    "caricamentoInCronologia": true,
+    "aggiornamenti": 3
+  },
+  "esiti": {
+    "base": {
+      "ingresso": "# Titolo\n\n**Forte**, *corsivo*, ~~barrato~~ e `codice`.\n\n- uno\n- due",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "heading",
+            "attrs": {
+              "level": 1
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Titolo"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Forte"
+              },
+              {
+                "type": "text",
+                "text": ", "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ],
+                "text": "corsivo"
+              },
+              {
+                "type": "text",
+                "text": ", "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "strike"
+                  }
+                ],
+                "text": "barrato"
+              },
+              {
+                "type": "text",
+                "text": " e "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "codice"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          },
+          {
+            "type": "bulletList",
+            "content": [
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "uno"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "due"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph"
+          }
+        ]
+      },
+      "html": "<h1>Titolo</h1><p><strong>Forte</strong>, <em>corsivo</em>, <s>barrato</s> e <code>codice</code>.</p><ul><li><p>uno</p></li><li><p>due</p></li></ul><p></p>",
+      "uscita": "# Titolo\n\n**Forte**, *corsivo*, ~~barrato~~ e `codice`.\n\n- uno\n- due\n\n"
+    },
+    "callout": {
+      "ingresso": "> [!nota] Titolo\n> Corpo **forte**\n> [!attenzione] Secondo\n> Altro corpo",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "blockquote",
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "[!nota] Titolo"
+                  },
+                  {
+                    "type": "hardBreak"
+                  },
+                  {
+                    "type": "text",
+                    "text": "Corpo "
+                  },
+                  {
+                    "type": "text",
+                    "marks": [
+                      {
+                        "type": "bold"
+                      }
+                    ],
+                    "text": "forte"
+                  },
+                  {
+                    "type": "hardBreak"
+                  },
+                  {
+                    "type": "text",
+                    "text": "[!attenzione] Secondo"
+                  },
+                  {
+                    "type": "hardBreak"
+                  },
+                  {
+                    "type": "text",
+                    "text": "Altro corpo"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph"
+          }
+        ]
+      },
+      "html": "<blockquote><p>[!nota] Titolo<br>Corpo <strong>forte</strong><br>[!attenzione] Secondo<br>Altro corpo</p></blockquote><p></p>",
+      "uscita": "> \\[!nota\\] Titolo  \n> Corpo **forte**  \n> \\[!attenzione\\] Secondo  \n> Altro corpo\n\n"
+    },
+    "rimandi": {
+      "ingresso": "[PDF](pdf:03#p=7) [Video](video:01#t=160) [Fonte](https://example.org) [Capitolo](cap:01-fondamenti-c03)",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "pdf:03#p=7",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": null,
+                      "title": null
+                    }
+                  }
+                ],
+                "text": "PDF"
+              },
+              {
+                "type": "text",
+                "text": " "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "video:01#t=160",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": null,
+                      "title": null
+                    }
+                  }
+                ],
+                "text": "Video"
+              },
+              {
+                "type": "text",
+                "text": " "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://example.org",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": null,
+                      "title": null
+                    }
+                  }
+                ],
+                "text": "Fonte"
+              },
+              {
+                "type": "text",
+                "text": " "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "cap:01-fondamenti-c03",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": null,
+                      "title": null
+                    }
+                  }
+                ],
+                "text": "Capitolo"
+              }
+            ]
+          }
+        ]
+      },
+      "html": "<p><a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"\">PDF</a> <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"\">Video</a> <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"https://example.org\">Fonte</a> <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"\">Capitolo</a></p>",
+      "uscita": "[PDF](pdf:03#p=7) [Video](video:01#t=160) [Fonte](https://example.org) [Capitolo](cap:01-fondamenti-c03)"
+    },
+    "evidenza": {
+      "ingresso": "[==la memoria==](ev:9f2c1a4b7e01)",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "ev:9f2c1a4b7e01",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": null,
+                      "title": null
+                    }
+                  },
+                  {
+                    "type": "highlight",
+                    "attrs": {
+                      "color": null
+                    }
+                  }
+                ],
+                "text": "la memoria"
+              }
+            ]
+          }
+        ]
+      },
+      "html": "<p><a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"\"><mark>la memoria</mark></a></p>",
+      "uscita": "[==la memoria==](ev:9f2c1a4b7e01)"
+    },
+    "wiki": {
+      "ingresso": "Vedi [[02-comorbidita]] e [[02-comorbidita|Titolo]].",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Vedi [[02-comorbidita]] e [[02-comorbidita|Titolo]]."
+              }
+            ]
+          }
+        ]
+      },
+      "html": "<p>Vedi [[02-comorbidita]] e [[02-comorbidita|Titolo]].</p>",
+      "uscita": "Vedi \\[\\[02-comorbidita\\]\\] e \\[\\[02-comorbidita|Titolo\\]\\]."
+    },
+    "immagine": {
+      "ingresso": "![Sole e Luna|93%](album:abcdef123456)",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "image",
+            "attrs": {
+              "src": "album:abcdef123456",
+              "alt": "Sole e Luna|93%",
+              "title": null,
+              "width": null,
+              "height": null
+            }
+          },
+          {
+            "type": "paragraph"
+          }
+        ]
+      },
+      "html": "<img src=\"album:abcdef123456\" alt=\"Sole e Luna|93%\"><p></p>",
+      "uscita": "![Sole e Luna|93%](album:abcdef123456)\n\n"
+    },
+    "sottolineato": {
+      "ingresso": "Un <u>testo sottolineato</u>.",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Un "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "underline"
+                  }
+                ],
+                "text": "testo sottolineato"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          }
+        ]
+      },
+      "html": "<p>Un <u>testo sottolineato</u>.</p>",
+      "uscita": "Un <u>testo sottolineato</u>."
+    },
+    "colore": {
+      "ingresso": "Un <span style=\"color:#ff0000\">testo rosso</span>.",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Un "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "backgroundColor": "",
+                      "color": "#ff0000",
+                      "fontFamily": "",
+                      "fontSize": "",
+                      "lineHeight": ""
+                    }
+                  }
+                ],
+                "text": "testo rosso"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          }
+        ]
+      },
+      "html": "<p>Un <span style=\"color: rgb(255, 0, 0);\">testo rosso</span>.</p>",
+      "uscita": "Un testo rosso."
+    },
+    "highlight": {
+      "ingresso": "<mark data-color=\"#ff0000\" style=\"background-color:#ff0000\">rosso</mark>",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "highlight",
+                    "attrs": {
+                      "color": "#ff0000"
+                    }
+                  }
+                ],
+                "text": "rosso"
+              }
+            ]
+          }
+        ]
+      },
+      "html": "<p><mark data-color=\"#ff0000\" style=\"background-color: rgb(255, 0, 0); color: inherit;\">rosso</mark></p>",
+      "uscita": "==rosso=="
+    },
+    "acapo": {
+      "ingresso": "Prima\nSeconda",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Prima"
+              },
+              {
+                "type": "hardBreak"
+              },
+              {
+                "type": "text",
+                "text": "Seconda"
+              }
+            ]
+          }
+        ]
+      },
+      "html": "<p>Prima<br>Seconda</p>",
+      "uscita": "Prima  \nSeconda"
+    },
+    "formula": {
+      "ingresso": "Vale $x^2$ e\n\n$$\nE=mc^2\n$$",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Vale "
+              },
+              {
+                "type": "inlineMath",
+                "attrs": {
+                  "latex": "x^2"
+                }
+              },
+              {
+                "type": "text",
+                "text": " e"
+              }
+            ]
+          },
+          {
+            "type": "blockMath",
+            "attrs": {
+              "latex": "E=mc^2"
+            }
+          },
+          {
+            "type": "paragraph"
+          }
+        ]
+      },
+      "html": "<p>Vale <span data-latex=\"x^2\" data-type=\"inline-math\"></span> e</p><div data-latex=\"E=mc^2\" data-type=\"block-math\"></div><p></p>",
+      "uscita": "Vale $x^2$ e\n\n$$\nE=mc^2\n$$\n\n"
+    },
+    "tabella": {
+      "ingresso": "| A | B |\n| --- | --- |\n| uno | due |",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "table",
+            "content": [
+              {
+                "type": "tableRow",
+                "content": [
+                  {
+                    "type": "tableHeader",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null,
+                      "align": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "A"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableHeader",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null,
+                      "align": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "B"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableRow",
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null,
+                      "align": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "uno"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null,
+                      "align": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "due"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph"
+          }
+        ]
+      },
+      "html": "<table style=\"min-width: 50px;\"><colgroup><col style=\"min-width: 25px;\"><col style=\"min-width: 25px;\"></colgroup><tbody><tr><th><p>A</p></th><th><p>B</p></th></tr><tr><td><p>uno</p></td><td><p>due</p></td></tr></tbody></table><p></p>",
+      "uscita": "\n| A   | B   |\n| --- | --- |\n| uno | due |\n\n\n"
+    },
+    "nota": {
+      "ingresso": "Frase[^1].\n\n[^1]: Nota con **grassetto**.",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Frase[^1]."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "[^1]: Nota con "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "grassetto"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          }
+        ]
+      },
+      "html": "<p>Frase[^1].</p><p>[^1]: Nota con <strong>grassetto</strong>.</p>",
+      "uscita": "Frase\\[^1\\].\n\n\\[^1\\]: Nota con **grassetto**."
+    },
+    "html": {
+      "ingresso": "Prima <!-- commento --> dopo.",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Prima  dopo."
+              }
+            ]
+          }
+        ]
+      },
+      "html": "<p>Prima  dopo.</p>",
+      "uscita": "Prima  dopo."
+    },
+    "frontmatter": {
+      "ingresso": "---\ntitolo: Prova\nlezione: esempio\n---\n\nCorpo",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "titolo: Prova"
+              },
+              {
+                "type": "hardBreak"
+              },
+              {
+                "type": "text",
+                "text": "lezione: esempio"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Corpo"
+              }
+            ]
+          }
+        ]
+      },
+      "html": "<hr><h2>titolo: Prova<br>lezione: esempio</h2><p>Corpo</p>",
+      "uscita": "---\n\n## titolo: Prova  \nlezione: esempio\n\nCorpo"
+    },
+    "a_capo_2": {
+      "ingresso": "Uno\n\nDue",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Uno"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Due"
+              }
+            ]
+          }
+        ]
+      },
+      "html": "<p>Uno</p><p>Due</p>",
+      "uscita": "Uno\n\nDue"
+    },
+    "a_capo_3": {
+      "ingresso": "Uno\n\n\nDue",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Uno"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Due"
+              }
+            ]
+          }
+        ]
+      },
+      "html": "<p>Uno</p><p>Due</p>",
+      "uscita": "Uno\n\nDue"
+    },
+    "a_capo_4": {
+      "ingresso": "Uno\n\n\n\nDue",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Uno"
+              }
+            ]
+          },
+          {
+            "type": "paragraph"
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Due"
+              }
+            ]
+          }
+        ]
+      },
+      "html": "<p>Uno</p><p></p><p>Due</p>",
+      "uscita": "Uno\n\n\n\nDue"
+    },
+    "a_capo_5": {
+      "ingresso": "Uno\n\n\n\n\nDue",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Uno"
+              }
+            ]
+          },
+          {
+            "type": "paragraph"
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Due"
+              }
+            ]
+          }
+        ]
+      },
+      "html": "<p>Uno</p><p></p><p>Due</p>",
+      "uscita": "Uno\n\n\n\nDue"
+    },
+    "a_capo_6": {
+      "ingresso": "Uno\n\n\n\n\n\nDue",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Uno"
+              }
+            ]
+          },
+          {
+            "type": "paragraph"
+          },
+          {
+            "type": "paragraph"
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Due"
+              }
+            ]
+          }
+        ]
+      },
+      "html": "<p>Uno</p><p></p><p></p><p>Due</p>",
+      "uscita": "Uno\n\n\n\n&nbsp;\n\nDue"
+    },
+    "a_capo_7": {
+      "ingresso": "Uno\n\n\n\n\n\n\nDue",
+      "json": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Uno"
+              }
+            ]
+          },
+          {
+            "type": "paragraph"
+          },
+          {
+            "type": "paragraph"
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Due"
+              }
+            ]
+          }
+        ]
+      },
+      "html": "<p>Uno</p><p></p><p></p><p>Due</p>",
+      "uscita": "Uno\n\n\n\n&nbsp;\n\nDue"
+    }
+  }
+}
