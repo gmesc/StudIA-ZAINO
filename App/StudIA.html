@@ -155,6 +155,8 @@
      entrare in un <style> che nasce vuoto (subito sotto, `#stampaRegole`). -->
 <script src="assets/stampa/foglio.js"></script>
 <script src="assets/appunti/documento.js"></script>
+<script src="assets/appunti/tabelle.js"></script>
+<link rel="stylesheet" href="assets/appunti/tabelle.css">
 <script src="assets/appunti/export-dom.js"></script>
 <!-- Lo zoom del documento: passo, ciclo dei due adattamenti, etichetta del
      bottone e il punto che resta sotto il puntatore. Nessuna dipendenza: qui
@@ -9232,6 +9234,12 @@ function renderNoteMd(md, opt){
       if(out && i<lines.length) out+=vuote(salti);
       continue;
     }
+    if(typeof AppuntiTabelle!=='undefined'){
+      try{
+        var tab=AppuntiTabelle.leggi(lines,i);
+        if(tab){out+=avvolgi(AppuntiTabelle.html(tab.tabella,function(c){return LETTURA_CAP._mdInline(c);}),i,tab.fine);i=tab.fine+1;continue;}
+      }catch(e){out+=avvolgi('<p role="alert">Tabella non leggibile: '+escHtml(e.message)+'</p><pre>'+escHtml(lines.slice(i,i+3).join('\n'))+'</pre>',i,i+2);i+=3;continue;}
+    }
     var m=/^>\s*\[!([A-Za-zàèéìòù-]+)\]\s*(.*)$/.exec(lines[i]);
     if(m){
       var da=i, d=calloutDef(m[1]), titolo=(m[2]||'').trim()||d.label, body=[];
@@ -12257,6 +12265,7 @@ function ensureMde(s){
     toolbar:[
       {name:'annulla',title:'Annulla (⌘Z)',className:'ncb-undo tbtn no-disable',action:function(){ noteCronologia(s,false); }},
       {name:'ripeti',title:'Ripeti (⌘⇧Z)',className:'ncb-redo tbtn no-disable',action:function(){ noteCronologia(s,true); }},
+      {name:'tabella',title:'Inserisci o modifica tabella',className:'ncb-tabella no-disable',action:function(){AppuntiTabelleUI.apri(s);}},
       '|','bold','italic','heading','|','quote','unordered-list','ordered-list','|',
       {name:'callout',title:'Inserisci un riquadro (callout)',className:'ncb-callout',
        action:function(ed){ openCalloutMenu(host.querySelector('.ncb-callout'),ed.codemirror); }},
@@ -12490,6 +12499,7 @@ function mdbVicino(avanti,s){
       var host=noteHost(n), campo=host && host.querySelector('.mdb-edit');
       if(campo && !campo.contains(e.target)) mdbChiudi(true,n);
     });
+    if(e.target.closest('.note-tabella')){AppuntiTabelleUI.apri(s,box);return;}
     if(!box || box.hasAttribute('data-edit') || e.target.closest('a,img')) return;
     // Chiudere il blocco precedente ricrea i nodi: si ritrova quello cliccato dalle righe.
     var host=noteHost(s), da=box.getAttribute('data-da');
@@ -23052,5 +23062,6 @@ document.getElementById('noteExportMenu').addEventListener('keydown',function(e)
 <script src="presentazioni-player/scrittura.js"></script>
 <script src="assets/presentazioni/barra.js"></script>
 <script src="assets/presentazioni/editor.js"></script>
+<script src="assets/appunti/tabelle-ui.js"></script>
 </body>
 </html>

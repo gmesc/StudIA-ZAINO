@@ -121,6 +121,8 @@ Il pulsante **Esporta** (icona di download) apre il menu **.PDF / .DOCX** in ent
 
 L’impaginazione di Word può differire dal PDF, anche in base ai font disponibili sul computer. Le GIF diventano immagini statiche; un’immagine mancante interrompe l’export con un messaggio. L’originale Markdown e l’editor restano invariati. Il documento di prova e i controlli sono descritti in [Export DOCX](docs/EXPORT-DOCX.md).
 
+**Tabelle in APPUNTI**: il comando della toolbar apre l’editor a celle; nell’anteprima basta cliccare una tabella. Puoi aggiungere o eliminare righe e colonne e modificarne lo stile. Da PRESENTA, copia l’oggetto tabella e incollalo nell’appunto: font, colori e allineamento vengono conservati. PDF e DOCX esportano le tabelle con il footer dell’appunto. [Uso e verifiche](docs/APPUNTI-TABELLE.md).
+
 **Appunta** riconosce le frasi che iniziano con maiuscola e terminano con `.`, `?` o `!`: le inserisce come blocchi citazione con una linea sottile e il rimando alla fonte. I frammenti entrano fra virgolette e in corsivo. È una regola pratica: nei PDF le righe non identificano con certezza i paragrafi. I callout scelti manualmente continuano a prevalere; il simbolo **¶** nella riga di Appunta riattiva la scelta automatica. **Quote** permette di formattare un blocco nell’editor.
 
 **Cancella evidenziatura** toglie il segno dalla fonte e la parola dalle keyword. Anche negli appunti scompaiono colore e sottolineatura: restano il testo citato e il rimando alla pagina.

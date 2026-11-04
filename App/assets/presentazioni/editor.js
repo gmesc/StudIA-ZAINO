@@ -632,7 +632,15 @@
   if(!D.documento||occupato||D.bloccato)return;nascondiBubble();
   if(gruppo.length>1&&['duplica','elimina'].includes(cmd)){const ids=[...gruppo];gruppo=[];op({tipo:'gruppo',ids,comando:cmd},{struttura:true});return;}
   if(cmd==='copia'&&gruppo.length>1){window.toast?.('Per copiare, seleziona un solo oggetto. Duplica selezionati mantiene il gruppo sulla slide.',false);return;}
-  if(cmd==='copia'){appuntiOggetto=M.copiaOggetto(D.documento,posizione().slide.id,bloccoId);window.toast?.('Oggetto copiato. Puoi incollarlo in un’altra slide.',true);return;}
+  if(cmd==='copia'){
+   appuntiOggetto=M.copiaOggetto(D.documento,posizione().slide.id,bloccoId);
+   const block=posizione().slide.blocks.find(b=>b.id===bloccoId);
+   if(block?.type==='table'){
+    const fondo=M.sfondoSlide(D.documento,posizione().slide).background||'#ffffff',font=M.CARATTERI[block.style?.fontFamily||D.documento.settings.fontFamily||'zaino'].css;
+    const t=AppuntiTabelle.daPresenta({...block,style:{...block.style,color:block.style?.color||M.contrasto(fondo)}},D.documento.settings,fondo,font);
+    navigator.clipboard.writeText(AppuntiTabelle.scrivi(t)).then(()=>window.toast?.('Tabella copiata: incollala anche negli APPUNTI.',true)).catch(e=>window.toast?.('Tabella non copiata negli appunti di sistema: '+e.message,false));
+   }else window.toast?.('Oggetto copiato. Puoi incollarlo in un’altra slide.',true);return;
+  }
   if(cmd==='incolla'){const d=op({tipo:'incollaOggetto',appunti:appuntiOggetto},{struttura:true});scegliBlocco(M.trova(d,slideId).slide.blocks.at(-1).id);return;}
   if(cmd==='elimina'){const block=posizione().slide.blocks.find(b=>b.id===bloccoId);op(M.comune(block)?{tipo:'eliminaComune',type:block.type}:{tipo:'eliminaBlocco',blockId:bloccoId},{struttura:true});return;}
   if(cmd==='duplica'){const d=op({tipo:'duplicaBlocco',blockId:bloccoId},{struttura:true});scegliBlocco(M.trova(d,slideId).slide.blocks.at(-1).id);}

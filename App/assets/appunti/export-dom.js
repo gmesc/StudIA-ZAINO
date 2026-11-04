@@ -37,6 +37,12 @@
       if(tag==='mark'){n.colore=colore(st.getPropertyValue('--ev')||'#fff09b');n.tratto=el.dataset.tratto||'overlay';n.postilla=el.dataset.postilla?el.title:'';}
       if(tag==='ol')n.inizio=+el.getAttribute('start')||1;
       if(tag==='ul'||tag==='ol'){n.livello=0;for(let p=el.parentElement;p&&p!==elemento;p=p.parentElement)if(['UL','OL'].includes(p.tagName))n.livello++;}
+      if(['table','td','th'].includes(tag)&&el.closest('.note-tabella')){
+        const bg=st.backgroundColor,tab=win.getComputedStyle(el.closest('table'));
+        n.stile={font:st.fontFamily.split(',')[0].replace(/["']/g,''),size:parseFloat(st.fontSize),color:colore(st.color),bold:+st.fontWeight>=600,italic:st.fontStyle==='italic',underline:st.textDecorationLine.includes('underline'),align:st.textAlign,borderColor:colore(st.borderBottomColor)};
+        const fondo=bg==='rgba(0, 0, 0, 0)'?tab.backgroundColor:bg;
+        if(fondo&&fondo!=='rgba(0, 0, 0, 0)')n.stile.background=colore(fondo);
+      }
       if(tag==='td'||tag==='th'){n.colspan=el.colSpan;n.rowspan=el.rowSpan;}
       if(tag==='a'){
         n.href=el.getAttribute('href')||'';

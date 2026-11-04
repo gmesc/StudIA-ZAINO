@@ -1,0 +1,14 @@
+'use strict';
+const A=require('node:assert/strict'),T=require('../App/assets/appunti/tabelle');
+const t={version:1,header:true,rows:[['Pianeta','Massa'],['**Terra**','1 | unità'],['Marte','0.1\n(seconda riga)']],style:{color:'#123456',background:'#ffffff',size:24,font:'Arial',bold:false,italic:true,underline:true,align:'center',borderColor:'#aabbcc'}};
+A.deepEqual(T.leggi(T.scrivi(t).split('\n')).tabella,t);
+A(T.html(t).includes('border-bottom:1px solid #aabbcc'));
+A(T.html({...t,rows:[['<img src=x onerror=alert(1)>']]}).includes('&lt;img'));
+A.throws(()=>T.valida({...t,style:{font:'Arial;position:fixed'}}));
+A.throws(()=>T.valida({...t,rows:[['uno'],['due','tre']]}));
+A.throws(()=>T.valida({...t,style:{color:'red;background:url(x)'}}));
+A.equal(T.leggi(['```zaino-tabella','{}']),null,'recinto incompleto non riscritto');
+A.deepEqual(T.leggi(['| A | B |','| --- | --- |','| 1 | 2 |']).tabella.rows,[['A','B'],['1','2']]);
+const p=T.daPresenta({table:[['A','B'],['C','D']],style:{fontSize:28,color:'#ffffff',align:'right',fontWeight:700,italic:true}}, {},'#0f172a','Georgia');
+A.equal(p.style.bold,true);A.equal(p.style.size,28);A.equal(p.style.align,'right');A.equal(p.style.font,'Georgia');
+console.log('✓ Tabelle: roundtrip senza perdita, righe/celle, Markdown semplice, stili PRESENTA e contenuto non eseguibile');
