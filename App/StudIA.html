@@ -53,6 +53,7 @@
 <!-- Il banco: forme della griglia e regole sullo stato. Puro e UMD come i
      moduli della mappa — i test lo richiedono da Node. -->
 <script src="assets/banco/forme.js"></script>
+<script src="assets/banco/lettura.js"></script>
 <script src="assets/banco/materiali.js"></script>
 <script src="assets/fonti/nomi.js"></script>
 <script src="assets/fonti/gruppi.js"></script>
@@ -1200,7 +1201,7 @@
      caratteri di fabbrica — titolo enorme, comandi che non stavano sul token.
      Stessa forma del guscio in `bin/pdfjs-css.js`, e per la stessa ragione. */
   :is(#pdfPane,#pdfPane2) .pdfbar > *{ flex:0 0 auto; }
-  :is(#pdfPane,#pdfPane2) .pdfbar > .tbspazio{ flex:1 1 auto; }   /* …tranne lo spazio elastico, che deve crescere */
+  .pdfbar .pdfazioni{ display:flex; flex:none; margin-left:auto; align-items:center; }
   :is(#pdfPane,#pdfPane2) .pdfbar strong{ font-size:12px; font-weight:700; overflow:hidden; text-overflow:ellipsis;
     white-space:nowrap; flex:0 1 auto; min-width:0; }
   /* L'etichetta del selettore è VIVA: dice quale documento è aperto, perché
@@ -18070,6 +18071,9 @@ function bancoApplicaForma(){
     righe.forEach(function(riga, y){
       riga.forEach(function(n, x){ if(n===b){ if(x<minX) minX=x; if(y<minY) minY=y; } });
     });
+    var scala=BancoLettura.scalaSplit(righe.flat().filter(function(c){return c===b;}).length,righe.flat().length);
+    blocco.dataset.scalaBanco=String(scala);
+    blocco.querySelector('.bcorpo').style.setProperty('--banco-zoom',scala/100);
     if(minX<99){
       if(minX>0) blocco.dataset.bordoSx='1'; else delete blocco.dataset.bordoSx;
       if(minY>0) blocco.dataset.bordoAlto='1'; else delete blocco.dataset.bordoAlto;
@@ -21820,7 +21824,6 @@ window.addEventListener('keydown', function(e){
          strumento perché è una leva del DOCUMENTO, come lo zoom. -->
     <button class="tbtn" id="pdfDoc" type="button" aria-haspopup="menu" aria-expanded="false"
             title="Scegli il documento" aria-label="Scegli il documento">Documenti &#9662;</button>
-    <span class="tbspazio"></span>
     <!-- il visualizzatore PDF non dice a quale pagina è: la pagina la governa l'app,
          così il numero che finisce nei link è sempre quello vero -->
     <i class="tbsep" aria-hidden="true"></i>
@@ -21903,6 +21906,7 @@ window.addEventListener('keydown', function(e){
          resta (è quello che scrivono i rimandi `pdf:03#p=7`), cambia solo la
          parte che si legge. Come il cestino, compare solo nello zaino: nei corsi
          i nomi dei materiali li governa la pipeline. -->
+    <span class="pdfazioni">
     <button class="tbtn" id="pdfRinomina" type="button" hidden
             title="Rinomina questo documento" aria-label="Rinomina questo documento">&#9998;</button>
     <button class="tbtn" id="pdfElimina" type="button" hidden
@@ -21913,6 +21917,7 @@ window.addEventListener('keydown', function(e){
          suggerimento, è un comando diventato più difficile in silenzio. -->
     <button class="tbtn" id="pdfClose" type="button"
             title="Chiudi il documento; lo split e gli strumenti restano aperti" aria-label="Chiudi il documento">&#10005;</button>
+    </span>
   </div>
 
   <!-- Il visualizzatore. ⚠️ Due `<div>`, e non è una preferenza: `PDFViewer`
@@ -21963,7 +21968,6 @@ window.addEventListener('keydown', function(e){
          «plTitle» (24 ago). Il nome lo dice il selettore qui sotto. -->
     <button class="tbtn" id="pdf2Doc" type="button" aria-haspopup="menu" aria-expanded="false"
             title="Scegli un documento" aria-label="Scegli un documento">Documenti &#9662;</button>
-    <span class="tbspazio"></span>
     <i class="tbsep" aria-hidden="true"></i>
     <span class="pdfpag" id="pdf2Pag" hidden>
       <button class="tbtn" id="pdf2Prev" type="button" title="Pagina precedente" aria-label="Pagina precedente">&#8249;</button>
@@ -21976,7 +21980,9 @@ window.addEventListener('keydown', function(e){
       <button class="tbtn" id="pdf2ZoomLvl" type="button" title="Adattata alla larghezza — segue il riquadro; clicca per adattare alla pagina intera">&#10231;</button>
       <button class="tbtn" id="pdf2ZoomIn" type="button" title="Ingrandisci" aria-label="Ingrandisci">+</button>
     </span>
+    <span class="pdfazioni">
     <button class="tbtn" id="pdf2Close" type="button" aria-label="Chiudi il documento">&#10005;</button>
+    </span>
   </div>
   <div id="pdf2Host">
     <div id="pdf2Frame" tabindex="0" aria-label="Documento nel secondo riquadro"><div class="pdfViewer"></div></div>
@@ -23016,7 +23022,6 @@ window.addEventListener('keydown', function(e){
 <script src="assets/fonti/gesti.js"></script>
 <script src="assets/rimandi/citazioni-ui.js"></script>
 <script src="assets/interfaccia/zaini-menu.js"></script>
-<script src="assets/banco/lettura.js"></script>
 <script src="assets/banco/proiezione-contenuti.js"></script>
 <script src="assets/banco/presentazione.js"></script>
 <link rel="stylesheet" href="assets/lim/lim.css">

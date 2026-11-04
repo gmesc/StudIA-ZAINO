@@ -296,7 +296,7 @@
  }
  function nascondiBubble(){bubble?.remove();bubble=null;bubbleRect=null;}
  function posizionaBubble(a){
-  if(!bubble||!a)return;bubbleRect=a;const r=frame.getBoundingClientRect(),p=bubble.getBoundingClientRect();bubble.style.left=Math.max(8,Math.min(r.left+a.x,innerWidth-p.width-8))+'px';bubble.style.top=Math.max(8,Math.min(r.top+a.y-p.height-4,innerHeight-p.height-8))+'px';
+  if(!bubble||!a)return;bubbleRect=a;const r=frame.getBoundingClientRect(),p=bubble.getBoundingClientRect(),k=r.width/frame.clientWidth; bubble.style.left=Math.max(8,Math.min(r.left+a.x*k,innerWidth-p.width-8))+'px';bubble.style.top=Math.max(8,Math.min(r.top+a.y*k-p.height-4,innerHeight-p.height-8))+'px';
  }
  // Il focus nel testo può scorrere il pannello dopo l’apertura del menu: la scrittura deve conservarlo.
  function aggiornaBubbleVista(){if(scrittura&&!scrittura.locale&&bubble)posizionaBubble(bubbleRect||{x:8,y:bubble.offsetHeight+12});else nascondiBubble();}
@@ -338,7 +338,7 @@
   if(blocco.type==='image')voce('Ritaglia immagine','scissors',()=>ritagliaImmagine(blocco.id));
   voce('Copia oggetto','copy',()=>comandoOggetto('copia'));voce('Incolla oggetto','plus',()=>comandoOggetto('incolla'));
   voce('Adatta riquadro al contenuto','maximize',()=>frame.contentWindow.postMessage({presenta:canale,tipo:'adatta',blockId:o.blockId},'*'));voce('Centra nella slide','move-horizontal',()=>posiziona('centro-centro'));voce('Duplica oggetto','copy',()=>{const d=op({tipo:'duplicaBlocco',blockId:o.blockId},{struttura:true});scegliBlocco(M.trova(d,slideId).slide.blocks.at(-1).id);});voce('Porta avanti','chevron-up',()=>muoviBlocco(o.blockId,1));voce('Porta indietro','chevron-down',()=>muoviBlocco(o.blockId,-1));voce(M.comune(blocco)?'Rimuovi da tutte le slide':'Elimina oggetto','trash-2',()=>comandoOggetto('elimina'));
-  const r=frame.getBoundingClientRect(),a=o.rect;bubble=popup('presenta-bubble',bar,o.anchor?.x??r.left+(a?.x||8),o.anchor?.y??r.top+(a?.y||0)-38,true);if(M.comune(blocco)){bar.querySelector('[aria-label="Duplica oggetto"]').disabled=true;bar.querySelector('[aria-label="Copia oggetto"]').disabled=true;}bar.querySelector('[aria-label="Incolla oggetto"]').disabled=appuntiOggetto?.documentId!==D.documento?.id;
+  const r=frame.getBoundingClientRect(),k=r.width/frame.clientWidth,a=o.rect;bubble=popup('presenta-bubble',bar,o.anchor?.x??r.left+(a?.x||8)*k,o.anchor?.y??r.top+(a?.y||0)*k-38,true);if(M.comune(blocco)){bar.querySelector('[aria-label="Duplica oggetto"]').disabled=true;bar.querySelector('[aria-label="Copia oggetto"]').disabled=true;}bar.querySelector('[aria-label="Incolla oggetto"]').disabled=appuntiOggetto?.documentId!==D.documento?.id;
  }
  // Gli stessi controlli passano nel popover: nessuna copia di valori o listener.
  function adattaBarra(row,{nome='Altri comandi di testo',griglia=false}={}){
@@ -357,10 +357,10 @@
    const focus=document.activeElement,eraAperto=aperto();
    for(const n of nodi)row.insertBefore(n,altri);
    altri.hidden=false;
-   const gap=parseFloat(getComputedStyle(row).columnGap)||0,larghezzaAltri=altri.getBoundingClientRect().width;
+   const gap=parseFloat(getComputedStyle(row).columnGap)||0,larghezzaAltri=altri.offsetWidth;
    let quanti;
    if(griglia){const g=PresentaBarra.griglia(nodi.length,spazio,gap,larghezzaAltri);quanti=g.visibili;row.style.gridTemplateColumns=(g.colonne?'repeat('+g.colonne+',minmax(0,1fr))':'')+(quanti<nodi.length?(g.colonne?' ':'')+larghezzaAltri+'px':'');altri.style.gridColumn=quanti<nodi.length?String(g.colonne+1):'';altri.style.gridRow='1 / span 2';}
-   else{quanti=PresentaBarra.visibili(nodi.map(n=>n.getBoundingClientRect().width),spazio,gap,larghezzaAltri);if(nodi[quanti-1]?.classList.contains('tbsep'))quanti--;}
+   else{quanti=PresentaBarra.visibili(nodi.map(n=>n.offsetWidth),spazio,gap,larghezzaAltri);if(nodi[quanti-1]?.classList.contains('tbsep'))quanti--;}
 
    for(const n of nodi.slice(quanti))pop.append(n);
    altri.hidden=quanti===nodi.length;

@@ -17,11 +17,18 @@
   toolbar.append(select);btn('Nuova lavagnata','plus',nuova);
   const save=btn('Salva lavagnata','save',()=>salva(true)),cestino=btn('Elimina lavagnata','trash-2',()=>elimina([doc.studia.id]));save.disabled=cestino.disabled=true;toolbar.append(status);host.append(toolbar,menu,canvas);
   let doc=null,editor=null,timer=null,sporco=false,impronta='',giro=0,corso='',lista=[],coda=Promise.resolve(),disposed=false,apertura=null;
+  let scalaVista=1;
+  function scalaBanco(){
+   if(!editor?.api)return;const b=host.closest('.blocco'),k=b&&!b.dataset.presentazione?Number(b.dataset.scalaBanco||100)/100:1;
+   if(k===scalaVista)return;const prima=scalaVista;scalaVista=k;const a=editor.api,s=a.getAppState();
+   a.updateScene({appState:{zoom:{value:s.zoom.value*k/prima}},captureUpdate:LimEditor.CaptureUpdateAction.NEVER});
+  }
+  const osservaScala=new ResizeObserver(scalaBanco);osservaScala.observe(canvas);
   const mittente=crypto.randomUUID();
   function stato(t,errore=false){status.textContent=t;status.dataset.errore=errore?'1':'';}
   async function richiesta(o){const r=await api.comando({...o,corso,mittente});if(!r?.ok)throw Error(r?.error||'Operazione LIM non riuscita.');corso=r.corso||corso;return r;}
   async function azione(fn){try{return await fn();}catch(e){stato(e.message,true);opt.errore?.(e);}}
-  function scena(){const a=editor?.api;return a?LimModello.scena({elements:a.getSceneElementsIncludingDeleted(),files:a.getFiles(),appState:a.getAppState()}):null;}
+  function scena(){const a=editor?.api;if(!a)return null;const s=a.getAppState();return LimModello.scena({elements:a.getSceneElementsIncludingDeleted(),files:a.getFiles(),appState:{...s,zoom:{value:s.zoom.value/scalaVista}}});}
   function cambiata(){if(!editor?.api)return;let s;try{s=scena();}catch(e){stato(e.message,true);return;}const key=JSON.stringify(s);if(key===impronta)return;impronta=key;sporco=!!doc||s.elements.some(e=>!e.isDeleted);window.dispatchEvent(new Event('studia:lim-disegno'));clearTimeout(timer);
    if(!doc){stato(sporco?'Non salvata · premi il dischetto':'');return;}
    stato('Salvataggio…');timer=setTimeout(()=>azione(()=>salva()),250);
@@ -74,8 +81,8 @@
    stato(r.rimossi.length===1?'Lavagnata spostata nel Cestino del Mac.':'Lavagnate spostate nel Cestino del Mac.');return true;
   }
   async function apri(id){await salva();const n=++giro,r=await richiesta({azione:'apri',id});if(n!==giro||disposed)return;await mostra(r.lavagna);await elenco();}
-  async function mostra(d){const n=++giro;await carica();if(n!==giro||disposed)return;editor?.smonta();editor=null;canvas.replaceChildren();doc=d;sporco=false;const vuota={elements:[],files:{},appState:{viewBackgroundColor:'#ffffff'}};impronta=JSON.stringify(LimModello.scena(d||vuota));
-   editor=LimEditor.monta(canvas,{data:{...(d||vuota),appState:{...(d||vuota).appState,isLoading:false}},ready:()=>{queueMicrotask(()=>{if(n!==giro)return;stato(doc?'Salvata':'');etichetta();opt.cambiata?.(doc);});},onChange:()=>cambiata(),link:link=>opt.link?.(link)});
+  async function mostra(d){const n=++giro;await carica();if(n!==giro||disposed)return;editor?.smonta();editor=null;scalaVista=1;canvas.replaceChildren();doc=d;sporco=false;const vuota={elements:[],files:{},appState:{viewBackgroundColor:'#ffffff'}};impronta=JSON.stringify(LimModello.scena(d||vuota));
+   editor=LimEditor.monta(canvas,{data:{...(d||vuota),appState:{...(d||vuota).appState,isLoading:false}},ready:()=>{queueMicrotask(()=>{if(n!==giro)return;scalaBanco();stato(doc?'Salvata':'');etichetta();opt.cambiata?.(doc);});},onChange:()=>cambiata(),link:link=>opt.link?.(link)});
    opt.cambiata?.(doc);etichetta();
   }
   async function nuova(){await salva();await mostra(null);}
@@ -121,7 +128,7 @@
    const elements=LimEditor.reconcile(a.getSceneElementsIncludingDeleted(),LimEditor.restore(remoto.elements,null),a.getAppState()),appState={viewBackgroundColor:remoto.appState.viewBackgroundColor||'#ffffff'};
    // Un aggiornamento ricevuto non deve risalvarsi come gesto locale: l'eco potrebbe
    // sovrascrivere un colore scelto subito dopo nell'altra finestra.
-   impronta=JSON.stringify(LimModello.scena({elements,files:{...a.getFiles(),...remoto.files},appState:{...a.getAppState(),...appState}}));
+   impronta=JSON.stringify(LimModello.scena({elements,files:{...a.getFiles(),...remoto.files},appState:{...a.getAppState(),...appState,zoom:{value:a.getAppState().zoom.value/scalaVista}}}));
    a.addFiles(Object.values(remoto.files));a.updateScene({elements,appState,captureUpdate:LimEditor.CaptureUpdateAction.NEVER});opt.cambiata?.(doc);
   }
   const off=api.onCambiata(d=>azione(()=>sincronizza(d)));
@@ -132,7 +139,7 @@
   }
   function primaDiUscire(e){if(!flush()){e.preventDefault();e.returnValue='';}}
   window.addEventListener('beforeunload',primaDiUscire);
-  return {apri,nuova,inserisci,importa,assicurati,flush,salva,elenco,elimina,immagine,get doc(){return doc;},get api(){return editor?.api;},async contesto(z){if(z===corso)return;chiudiMenu();if(!flush())throw Error('Salva la lavagnata prima di cambiare zaino.');await coda;corso=z;giro++;editor?.smonta();editor=null;doc=null;sporco=false;canvas.replaceChildren();stato('');etichetta();await elenco();},smonta(){disposed=true;chiudiMenu();window.removeEventListener('keydown',escMenu,true);window.removeEventListener('resize',nascondiMenu);window.removeEventListener('banco-layout',nascondiMenu);flush();off();editor?.smonta();window.removeEventListener('beforeunload',primaDiUscire);}};
+  return {apri,nuova,inserisci,importa,assicurati,flush,salva,elenco,elimina,immagine,get doc(){return doc;},get api(){return editor?.api;},async contesto(z){if(z===corso)return;chiudiMenu();if(!flush())throw Error('Salva la lavagnata prima di cambiare zaino.');await coda;corso=z;giro++;editor?.smonta();editor=null;doc=null;sporco=false;canvas.replaceChildren();stato('');etichetta();await elenco();},smonta(){osservaScala.disconnect();disposed=true;chiudiMenu();window.removeEventListener('keydown',escMenu,true);window.removeEventListener('resize',nascondiMenu);window.removeEventListener('banco-layout',nascondiMenu);flush();off();editor?.smonta();window.removeEventListener('beforeunload',primaDiUscire);}};
  }
  window.LavagnaUI={monta,carica};
 })();

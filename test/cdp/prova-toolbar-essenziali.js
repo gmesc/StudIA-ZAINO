@@ -43,6 +43,7 @@ async function wait(expr){for(let i=0;i<160;i++){if(await c.val(expr))return;awa
   await c.val(`noteOpen(${q(file)},NOTES)`);assert.equal(await c.val(`NOTES.mde.value()`),body);
   await c.val(`openPdf('01 Botanica.pdf',1,'Botanica',true)`);await wait(`PDFJS.pronto && !!PDFJS.doc`);
   assert.equal((await c.val(`document.getElementById('pdfPagN').textContent`)).toLowerCase(),'1 di 3');
+  assert(await c.val(`(()=>{const b=document.querySelector('#pdfPane .pdfbar').getBoundingClientRect(),p=document.getElementById('pdfPrev').getBoundingClientRect(),a=document.querySelector('#pdfPane .pdfazioni').getBoundingClientRect();return p.left-b.left<12&&b.right-a.right<12;})()`),'Fonti: strumenti a sinistra, matita/cestino/chiudi a destra');
   await c.clicca('#pdfDoc');await wait('!!document.querySelector("#pdfDocPop[open]")');
   await c.clicca('#pdfDocPop [data-doc="02 Biologia cellulare.pdf"]');await wait('ANTEPRIMA.file==="02 Biologia cellulare.pdf"&&!!PDFJS.doc');
   assert.equal(await c.val('document.getElementById("pdfDoc").closest(".bdoc").title'),'Biologia cellulare.pdf','il menu nella testata cambia davvero il documento');

@@ -43,6 +43,13 @@ function sezione(t) { console.log('\n== ' + t); }
   ok('e larghi quasi uguali', true, Math.abs(a - c) <= 8 && Math.abs(c - e) <= 8);
   ok('con i due divisori verticali e nessun orizzontale', ['bDivCol', 'bDivCol2'], tre.div);
 
+  ok('split piccoli: contenuto al 75%, testata e toolbar invariate', true,
+    await val(`Array.from(document.querySelectorAll('.blocco:not([hidden])')).every(b=>getComputedStyle(b.querySelector('.bcorpo')).getPropertyValue('--banco-zoom')==='0.75'&&getComputedStyle(b.querySelector('.bcorpo')).zoom==='1'&&getComputedStyle(b.querySelector('.bhead')).zoom==='1')`));
+  await val("bancoZoom('A')");
+  ok('a tutto banco: 100%', '1',await val("getComputedStyle(document.querySelector('.blocco:not([hidden]) .bcorpo')).getPropertyValue('--banco-zoom')"));
+  await val('bancoZoomTorna()');
+  ok('ritorno al banco: 75%',true,await val("Array.from(document.querySelectorAll('.blocco:not([hidden]) .bcorpo')).every(e=>getComputedStyle(e).getPropertyValue('--banco-zoom')==='0.75')"));
+
   sezione('Sei blocchi: la 3×2 piena');
   await val("bancoForma('sei'), 1"); await pausa(600);
   ok('sei blocchi a schermo', ['A', 'B', 'C', 'D', 'E', 'F'],
@@ -114,6 +121,12 @@ function sezione(t) { console.log('\n== ' + t); }
     await val(`!!BancoForme.FORME[${JSON.stringify(salvata.chiave)}]`));
   ok('né nel localStorage', 0, await val('bancoFormePersonali().length'));
   ok('e il banco è tornato alla forma di fabbrica', 'due-col', await val('bancoStato().forma'));
+
+  await val("bancoAssegna('A','appunti')");
+  await val("BancoPresentazione.schermoIntero('appunti')");
+  ok('fullscreen dello split ridotto: zoom corpo e testo al 100%', ['1',100],await val("[getComputedStyle(document.querySelector('[data-presentazione]>.bcorpo')).getPropertyValue('--banco-zoom'),BancoPresentazione.percentuale('appunti')]"));
+  await val('BancoPresentazione.esciIntero()');
+  ok('uscita fullscreen: corpo al 75%', '0.75',await val("getComputedStyle(document.getElementById('notePane').closest('.bcorpo')).getPropertyValue('--banco-zoom')"));
 
   /* Una prova lascia il banco come l'ha trovato. */
   await val('(()=>{ BANCO.stato=JSON.parse(' + JSON.stringify(bancoPrima) + ');' +

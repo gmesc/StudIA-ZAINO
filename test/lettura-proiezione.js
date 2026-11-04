@@ -1,5 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),L=require('../App/assets/banco/lettura');
+assert.equal(L.scalaSplit(1,2),75);assert.equal(L.scalaSplit(1,4),75);assert.equal(L.scalaSplit(1,3),75);
+assert.equal(L.scalaSplit(2,3),100);assert.equal(L.scalaSplit(1,1),100);assert.equal(L.scalaSplit(1,4,true),100);assert.equal(L.scalaSplit(0,0),100);
 assert.equal(L.scala('x'),100);assert.equal(L.scala(500),300);assert.equal(L.scala(20),75);
 assert.equal(L.passo(100,1),125);assert.equal(L.passo(200,-1),175);assert.equal(L.passo(300,1),300);
 assert.deepEqual(L.rettangolo({x:100,y:20,width:1000,height:700},{width:800,height:600}),{x:100,y:20,width:700,height:580});

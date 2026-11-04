@@ -74,7 +74,7 @@
   const b=blocco(id);if(!b)return;pop?.hidePopover();window.closePops?.();
   const s=nota(id),v=id==='fonte'?window.PDFJS?.viewer:id==='fonte2'?window.FONTE2?.viewer:null;
   const scala=percentuale(id),letturaPrima=testo(id),ancoraPrima=letturaPrima&&ancoraDom(letturaPrima),linea=s?.mde?.codemirror.lineAtHeight(s.mde.codemirror.getScrollInfo().top,'local');
-  intero={id,zaino:window.corsoAttivo(),scroll:scrolls(id),focus:document.activeElement,tabindex:perId(id).getAttribute('tabindex'),note:s,noteFile:s?.cur?.file,preview:s?.mde?.isPreviewActive(),side:s?.mde?.isSideBySideActive(),scala,zoom:Math.max(200,scala),pdf:v&&{v,documento:v.pdfDocument,scala:v.currentScaleValue,pagina:v.currentPageNumber},mappa:id==='mappa'?{file:window.MAPPA?.mia?.file,registro:window.MAPPA?.registro,z:{...window.MAPPA?.z}}:null};
+  intero={id,zaino:window.corsoAttivo(),scroll:scrolls(id),focus:document.activeElement,tabindex:perId(id).getAttribute('tabindex'),note:s,noteFile:s?.cur?.file,preview:s?.mde?.isPreviewActive(),side:s?.mde?.isSideBySideActive(),scala,zoom:b.dataset.scalaBanco==='75'?100:Math.max(200,scala),pdf:v&&{v,documento:v.pdfDocument,scala:v.currentScaleValue,pagina:v.currentPageNumber},mappa:id==='mappa'?{file:window.MAPPA?.mia?.file,registro:window.MAPPA?.registro,z:{...window.MAPPA?.z}}:null};
   if(s?.mde){window.mdbChiudi?.(true,s);if(intero.side)s.mde.toggleSideBySide();if(!s.mde.isPreviewActive())s.mde.togglePreview();}
   document.documentElement.dataset.presentazione='1';b.dataset.presentazione='1';
   perId(id).querySelectorAll(':scope > .tbar,:scope > header,:scope > .panehead').forEach(e=>e.dataset.presentazioneToolbar='1');

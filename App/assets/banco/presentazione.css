@@ -40,7 +40,7 @@ html[data-presentazione] #banco>.blocco[data-presentazione] { position:absolute;
 html[data-presentazione] .blocco[data-presentazione]>.bhead,
 html[data-presentazione] #banco>.bdiv,
 html[data-presentazione] #sideHandle { display:none!important; }
-html[data-presentazione] .blocco[data-presentazione]>.bcorpo { padding-top:48px; }
+html[data-presentazione] .blocco[data-presentazione]>.bcorpo { padding-top:48px; --banco-zoom:1!important; }
 html[data-presentazione] .blocco[data-presentazione] :is(.editor-toolbar,.mtoolbar,#zragToolbar,#zstudyToolbar,.pdftools,.pdf-toolbar,.phead) { display:none!important; }
 html[data-presentazione] .blocco[data-presentazione] [data-presentazione-toolbar] { display:none!important; }
 html[data-presentazione] .blocco[data-presentazione] .editor-preview { padding-block:16px 32px; }
@@ -55,3 +55,7 @@ html[data-presentazione] .blocco[data-presentazione] .zstudio-banco { padding-to
 
 .proiezione-area button:hover { background:var(--hover); }
 .proiezione-area button:active { cursor:grabbing; }
+
+/* Il fattore automatico riguarda il materiale, mai le barre dei comandi.
+   La LIM applica il fattore alla propria camera nativa. */
+.bcorpo :is(.pdfViewer,.CodeMirror,.editor-preview-side,.presenta-anteprima,#mappaSvg,.alblista,#fotoHost,#plHost,#kwLista,#poLista,.gobbo-corpo,#zragResults,#zschedeResult,#zschedeCollection,#zstudyQuestion,#zstudyQueue,#zstudyHome){zoom:var(--banco-zoom,1);}

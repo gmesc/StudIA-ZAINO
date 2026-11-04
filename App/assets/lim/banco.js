@@ -42,7 +42,7 @@
  async function oggetto(tipo,id){const z=window.zainoAttivo?.();if(!z)throw Error('Apri uno zaino.');await trasferisci({trasporto:LimModello.trasporto(tipo,id,z)});}
  async function ritaglio(id){return oggetto('album',id);}
  function link(r){const d=RimandiSintassi.leggi(r);if(d?.tipo==='pdf-zaino')window.citazioneZainoApri(r);else if(d?.tipo==='pdf'){const file=window._pdfNum()[d.numero];if(file)window.openPdf(file,d.pagina);else window.toast?.('Fonte non disponibile nello zaino attivo.',false);}else if(d?.tipo==='ev'){const e=window.kwDaId?.(d.id);if(e)window.evidenzaVai(e);else window.toast?.('Parola chiave non più disponibile.',false);}else if(d?.tipo==='album'){if(window.albumVoce(d.id))window.fotoApri(d.id);else window.toast?.('Immagine originale non più disponibile.',false);}}
- function avvia(){if(!api)return;ui=LavagnaUI.monta($('limPane'),api,{link,cambiata:()=>{sidebar();nome();}});
+ function avvia(){if(!api)return;ui=LavagnaUI.monta($('limPane'),api,{link,cambiata:()=>{azione(aggiorna);nome();}});
   window.ZainoLim={apri,trasferisci,citazione:(t,r)=>azione(()=>citazione(t,r.cloneRange())),ritaglio:id=>azione(()=>ritaglio(id)),parola:id=>azione(()=>oggetto('keyword',id)),get doc(){return ui.doc;},get editor(){return ui;},link};
   window.vault.presentazione.onFonte(d=>link(d.link));
   api.onCambiata(d=>{if(d.corso===corso)azione(aggiorna);});window.addEventListener('studia:zaino-changed',()=>azione(aggiorna));window.addEventListener('studia:sidebar-updated',sidebar);

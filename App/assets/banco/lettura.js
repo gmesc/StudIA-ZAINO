@@ -4,6 +4,7 @@
  const PASSI=[75,100,125,150,175,200,225,250,300];
  const TAGS_TESTO='DIV SPAN P H1 H2 H3 H4 H5 H6 UL OL LI STRONG B EM I U S BLOCKQUOTE BR HR PRE CODE TABLE THEAD TBODY TR TD TH DETAILS SUMMARY ARTICLE SECTION IMG SUP SUB'.split(' ');
  function scala(n){n=Number(n);return Number.isFinite(n)?Math.max(75,Math.min(300,n)):100;}
+ function scalaSplit(celle,totale,intero=false){return !intero&&celle>0&&totale>0&&celle/totale<=.5?75:100;}
  function passo(n,verso){n=scala(n);return (verso>0?PASSI.find(x=>x>n):PASSI.slice().reverse().find(x=>x<n))||n;}
  function rettangolo(r,limiti){
   if(!r||!['x','y','width','height'].every(k=>Number.isFinite(r[k])))throw Error('Area di proiezione non valida.');
@@ -48,5 +49,5 @@
  }
  function posizione(e,a){return e.top+Math.max(0,Math.min(1,Number(a?.frazione)||0))*e.height;}
  function mittente(e,w,url){return !!w&&!w.isDestroyed()&&e.sender===w.webContents&&e.senderFrame===w.webContents.mainFrame&&e.senderFrame.url.split('#')[0]===url;}
- return {PASSI,TAGS_TESTO,STILI_CLONE,stileSicuro,raster,spostaVista,ancoraVista,pinch,scala,passo,rettangolo,inquadratura,ancora,posizione,mittente};
+ return {scalaSplit,PASSI,TAGS_TESTO,STILI_CLONE,stileSicuro,raster,spostaVista,ancoraVista,pinch,scala,passo,rettangolo,inquadratura,ancora,posizione,mittente};
 }));
