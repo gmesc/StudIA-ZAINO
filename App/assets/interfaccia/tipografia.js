@@ -36,9 +36,9 @@
  const nomiPesi={200:'ExtraLight',300:'Light',400:'Regular',500:'Medium',600:'SemiBold',700:'Bold',800:'ExtraBold',900:'Black'};
  function aggiornaPesi(select,font,peso){
   const valori=PresentaTesto.pesi(font);
-  select.replaceChildren(...(peso==null?[new Option('Misto','')]:[]),...valori.map(v=>{const o=new Option(nomiPesi[v],String(v));o.style.fontWeight=v;return o;}));select.value=peso??'';
+  select.replaceChildren(...(peso==null?[new Option('Misto','')]:[]),...valori.map(v=>{const o=new Option(nomiPesi[v],String(v));o.style.fontWeight=v;return o;}));select.value=peso??'';select.title=select.selectedOptions[0]?.textContent||'';
  }
- function sceltaPeso(nome,font,peso,fn){const box=campo(nome,peso,v=>{if(v)fn(Number(v));},{opzioni:[]});box.classList.add('presenta-peso');aggiornaPesi(box.querySelector('select'),font,peso);return box;}
+ function sceltaPeso(nome,font,peso,fn){const box=campo(nome,peso,v=>{if(v)fn(Number(v));},{opzioni:[]});box.classList.add('presenta-peso');box.querySelector('select').addEventListener('change',e=>{e.target.title=e.target.selectedOptions[0]?.textContent||'';});aggiornaPesi(box.querySelector('select'),font,peso);return box;}
 
  return {sceltaCarattere,sceltaPeso,sceltaAllineamento,aggiornaPesi};
  }
