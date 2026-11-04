@@ -9560,9 +9560,10 @@ function stampaPrepara(opt){
     var font=(getComputedStyle(document.body).fontFamily)||"'Helvetica Neue', Arial, sans-serif";
     regole.textContent=StampaFoglio.regole({
       tipo:tipo, font:font,
-      /* A sinistra nel piè: l'app e dove si sta lavorando — è ciò che dice a
-         chi ritrova il foglio da dove viene. Il titolo no: è già in testa. */
-      marchio:'StudIA', sotto:opt.dove||''
+      /* L'appunto si riconosce dal suo nome su ogni pagina, anche quando
+         una pagina viene separata dalle altre. I numeri arrivano da @page. */
+      marchio:tipo==='testo' ? (opt.titolo||'Appunto') : 'StudIA',
+      sotto:tipo==='testo' ? '' : (opt.dove||'')
     });
   }
   f.className=opt.classe||'';

@@ -7,12 +7,11 @@
  * numeri di pagina, cioè esattamente il difetto misurato il 14 agosto. Non si
  * vede a schermo e non lancia nessun errore: si vede solo sul PDF, dopo.
  *
- * Qui NON si misura il PDF (serve il main, e il dialogo di stampa è modale):
- * si misura che le regole ci siano e dicano le cose giuste. La misura sul PDF
- * vero — margini in millimetri, corpo in punti — sta nell'handoff del 14
- * agosto, presa a 150 dpi sull'inchiostro.
+ * Si misurano le regole e la catena reale di esportazione. Il runner sostituisce
+ * il dialogo nativo nel solo esemplare sintetico, lasciando attiva la scrittura
+ * PDF del main. La verifica visiva dell'impaginazione resta separata.
  *
- *   ./test/cdp/con-vault-di-prova.sh prova-stampa.js
+ *   bash bin/prova-zaino.sh prova-stampa.js
  */
 const S = require('path').join(__dirname, 'cdp.js');
 const { collega, val, pausa, partiPulito } = require(S);
@@ -42,7 +41,7 @@ function sezione(t) { console.log('\n== ' + t); }
     return { tipo:tipo,
       a4: /size:A4 portrait/.test(r), margini: /margin:20mm 20mm 25mm 20mm/.test(r),
       numeri: /counter\\(page\\) " di " counter\\(pages\\)/.test(r),
-      marchio: /@bottom-left \\{ content:"StudIA · Lezione 3"/.test(r),
+      marchio: /@bottom-left \\{ content:"Prova di stampa"/.test(r),
       titolo: (f.querySelector('.st-titolo')||{}).textContent,
       dove: (f.querySelector('.st-dove')||{}).textContent,
       corpo: !!f.querySelector('.st-corpo p') }; })()`);
@@ -50,7 +49,7 @@ function sezione(t) { console.log('\n== ' + t); }
   ok('A4 verticale', true, testo.a4);
   ok('margini 20/20/25/20', true, testo.margini);
   ok('il piè conta le pagine', true, testo.numeri);
-  ok('e a sinistra dice dove si sta lavorando', true, testo.marchio);
+  ok('e a sinistra porta il nome dell’appunto', true, testo.marchio);
   /* ⚠️ Questo controllo diceva il contrario fino al 19 agosto 2026 («la testata
      porta titolo e contesto»), ed è cambiato con la promessa: l'app non scrive
      più niente SOPRA il contenuto di chi stampa. Il titolo di un appunto sta
@@ -105,9 +104,15 @@ function sezione(t) { console.log('\n== ' + t); }
 
   sezione('Salva come PDF: il file esiste davvero');
   const fs = require('fs'), os = require('os'), path = require('path');
+  // Il main accetta la destinazione solo dal dialogo. Il runner sintetico
+  // sostituisce quel dialogo: un percorso passato dal renderer non lo salta.
+  const lab = path.dirname(await val('window.vault.path'));
+  if(!lab.includes('studia-zaino-prova-')) throw new Error('Usare bin/prova-zaino.sh per questa prova');
+  const dialogo = path.join(lab,'dati','dialogo-salvataggio.json');
+  const dialogoPrima = fs.existsSync(dialogo) ? fs.readFileSync(dialogo) : null;
   const dove = path.join(os.tmpdir(), 'studia-prova-stampa-' + process.pid + '.pdf');
-  /* `percorso` salta il dialogo di sistema, che una prova non può premere;
-     `foglio` dà il contenuto già pronto.
+  fs.writeFileSync(dialogo,JSON.stringify({filePath:dove}));
+  /* Il dialogo sintetico sceglie il file; `foglio` dà il contenuto pronto.
      ⚠️ Il contenuto arriva da qui e non da un appunto aperto, e va detto che
      cosa si misura: questa sezione prova la CATENA — documento → main →
      finestra invisibile → file scritto — non che l'appunto si impagini bene
@@ -182,6 +187,7 @@ function sezione(t) { console.log('\n== ' + t); }
 
   sezione('Nel PDF i link veri restano, quelli morti no');
   const dovePdf = path.join(os.tmpdir(), 'studia-prova-link-' + process.pid + '.pdf');
+  fs.writeFileSync(dialogo,JSON.stringify({filePath:dovePdf}));
   await val('salvaPdf(\'appunto\', { percorso:' + JSON.stringify(dovePdf) + ', foglio:{ titolo:\'Prova link\', dove:\'Prove\','
     + ' html:renderNoteMd(' + JSON.stringify(MD) + ') } })');
   const pdf = fs.existsSync(dovePdf) ? fs.readFileSync(dovePdf).toString('latin1') : '';
@@ -190,6 +196,7 @@ function sezione(t) { console.log('\n== ' + t); }
   ok('due annotazioni, quante sono le fonti vere', 2, (pdf.match(/\/Link/g) || []).length);
   ok('e l’indirizzo è finito dentro il file', true, pdf.indexOf('iss.it') >= 0);
   try { fs.unlinkSync(dovePdf); } catch (e) {}
+  if(dialogoPrima) fs.writeFileSync(dialogo,dialogoPrima); else fs.rmSync(dialogo,{force:true});
 
   /* Si lascia il foglio vuoto, come lo trova chi non ha stampato. */
   await val(`(()=>{ const f=document.getElementById('stampaFoglio');
