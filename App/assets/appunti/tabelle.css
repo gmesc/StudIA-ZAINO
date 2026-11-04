@@ -9,3 +9,25 @@
 .note-tabella-celle{display:grid;gap:8px;overflow:auto;margin-top:12px}
 .note-tabella-celle textarea{display:block;box-sizing:border-box;width:100%;min-height:75px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:6px;resize:vertical}
 @media print{.note-tabella-dialog{display:none!important}.note-tabella{table-layout:fixed}.note-tabella tr{break-inside:avoid}.note-tabella th{font-weight:bold}}
+/* Modale sul viewport: i margini del foglio degli appunti non ne spostano il centro. */
+.note-tabella-dialog{position:fixed;inset:0;margin:auto;width:min(1240px,96vw);max-height:90vh;padding:12px;isolation:isolate}
+.note-tabella-dialog[open]{display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.note-tabella-dialog>.tbar{flex:none;padding:0 0 8px;margin:0;border-bottom:1px solid var(--line);gap:0}
+.note-tabella-dialog>.tbar>strong{margin-right:12px;font-size:16px}
+.note-tabella-dialog .tbar>.tbtn~.tbtn{position:relative;margin-left:8px}
+.note-tabella-dialog .tbar>.tbtn~.tbtn::before{content:'';position:absolute;left:-4px;top:25%;height:50%;border-left:1px solid var(--line)}
+.note-tabella-dialog .tbtn[aria-selected=true]{background:var(--hover);color:var(--ink)}
+.note-tabella-opzioni{flex:none;max-height:35vh;overflow:auto}
+.note-tabella-opzioni .presenta-tipografia{display:flex;flex-wrap:wrap;align-items:end;gap:8px}
+.note-tabella-opzioni .presenta-formati{padding:0;border:0;min-height:var(--tb-h)}
+.note-tabella-opzioni input[type=color]{width:100%;height:var(--tb-h);padding:4px}
+.note-tabella-opzioni .presenta-campo{min-width:64px}
+.note-tabella-intestazione{display:flex;align-items:center;gap:8px}
+.note-tabella-formati-cella{padding:8px 0 0;margin:0;border:0}
+.note-tabella-celle{margin:0;flex:1;min-height:80px;max-height:54vh;padding:4px}
+.note-tabella-celle textarea{min-height:64px}
+.note-tabella-dialog>output{flex:none;font-size:12px;color:var(--err-ink)}.note-tabella-dialog>output:empty{display:none}
+.note-tabella-stili{display:flex;flex-wrap:wrap;gap:12px;padding:8px}
+.note-tabella-stili>.tbtn{height:auto;display:flex;flex-direction:column;gap:8px;padding:8px}
+.note-tabella-sample{width:140px}.note-tabella-sample table{margin:0;font-size:12px!important}.note-tabella-sample :is(td,th){padding:4px!important}
+.note-tabella-presets{max-width:calc(100vw - 16px)}

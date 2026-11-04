@@ -10,3 +10,12 @@ A.throws(()=>require('../lib/appunti-disegni').srcUrl('/tmp','x','../../segreto'
 console.log('✓ Figure: metadata, dimensioni, allineamento/livelli, roundtrip e privilegi limitati');
 const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aF1cAAAAASUVORK5CYII=';
 (async()=>{const b=await require('../lib/appunti-docx').crea({titolo:'Livelli',albero:{tag:'root',figli:['front','back'].map(layer=>({tag:'p',figli:[{tag:'img',figli:[],dati:png,larghezza:100,altezza:50,visuale:{align:'right',layer}}]}))}});const z=require('fflate'),xml=z.strFromU8(z.unzipSync(b)['word/document.xml']);A.equal((xml.match(/<wp:anchor /g)||[]).length,2);A(xml.includes('behindDoc="1"'));A(xml.includes('behindDoc="0"'));A(xml.includes('right'));console.log('✓ DOCX: figure davanti e dietro al testo, allineate a destra');})().catch(e=>{console.error(e);process.exitCode=1;});
+const f={...v,style:{align:'center',layer:'inline'},percento:40},misure={larghezza:800,em:20,alto:-5,basso:30};
+const mosso=F.sposta(f,80,40,misure);A.equal(mosso.style.x,40);A.equal(mosso.style.y,2);A.equal(mosso.style.layer,'front');
+A.deepEqual(F.sposta(f,40,20,{...misure,larghezza:400,em:10}),mosso,'posizione indipendente dallo zoom');
+A.equal(F.sposta(mosso,-10000,-10000,misure).style.x,0);A.equal(F.sposta(mosso,-10000,-10000,misure).style.y,-5);
+A.equal(F.sposta(mosso,10000,10000,misure).style.x,60);A.equal(F.sposta(mosso,10000,10000,misure).style.y,30);
+A.deepEqual(F.leggi(F.scrivi(mosso).split('\n'),0).style,mosso.style);A(F.html(mosso,'x').includes('--fig-y:2em'));A.throws(()=>F.aspetto({x:Infinity}));
+console.log('✓ Posizionamento libero: zoom, limiti del foglio, annidamento e Markdown');
+
+A.equal(F.dimensiona(mosso,90).style.x,10,'ingrandire non porta la figura oltre il bordo destro');A.equal(F.dimensiona(mosso,90).style.y,2);

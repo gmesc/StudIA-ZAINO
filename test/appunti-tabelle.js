@@ -12,3 +12,9 @@ A.deepEqual(T.leggi(['| A | B |','| --- | --- |','| 1 | 2 |']).tabella.rows,[['A
 const p=T.daPresenta({table:[['A','B'],['C','D']],style:{fontSize:28,color:'#ffffff',align:'right',fontWeight:700,italic:true}}, {},'#0f172a','Georgia');
 A.equal(p.style.bold,true);A.equal(p.style.size,28);A.equal(p.style.align,'right');A.equal(p.style.font,'Georgia');
 console.log('✓ Tabelle: roundtrip senza perdita, righe/celle, Markdown semplice, stili PRESENTA e contenuto non eseguibile');
+const M=require('../App/assets/presentazioni/modello');
+for(const tema of Object.values(M.STILI)){const d=T.daTema(t,tema,M.CARATTERI[tema.font].css,M.contrasto(tema.accento));A.deepEqual(d.rows,t.rows);A.equal(d.style.font,M.CARATTERI[tema.font].css);A.equal(d.style.headerColor,M.contrasto(tema.accento));A.deepEqual(T.leggi(T.scrivi(d).split('\n')).tabella,d);}
+A(T.html({...t,style:{borderMode:'grid',borderWidth:2,borderStyle:'dashed',verticalAlign:'middle',lineHeight:1.6,weight:500,headerColor:'#ffffff'}}).includes('border:2px dashed'));
+A(!T.html({...t,style:{borderMode:'none'}}).includes('border-bottom:'));
+A.throws(()=>T.valida({...t,style:{borderWidth:-1}}));A.throws(()=>T.valida({...t,style:{lineHeight:100}}));
+console.log('✓ Preset PRESENTA, bordi, interlinea e peso si conservano senza cambiare le celle');

@@ -9,6 +9,16 @@ async function click(nome){const s=(nome==='Copia oggetto'?'.presenta-bubble':'#
   file=await c.val(`(()=>{const r=notesApi().save(corsoAttivo(),null,{title:'Tabelle di prova'},'Prima della tabella.');notesReload();bancoForma('uno');bancoAssegna('A','appunti');noteOpen(r.file,NOTES);return r.file;})()`);
   await wait('!!NOTES.cur&&!!NOTES.mde');
   await c.val(`document.querySelector('#noteHost .ncb-tabella').click()`);await wait(`!!document.querySelector('.note-tabella-dialog[open]')`);
+  const centro=await c.val(`(()=>{const d=document.querySelector('.note-tabella-dialog'),r=d.getBoundingClientRect();return {dx:Math.abs((r.left+r.right)/2-innerWidth/2),dy:Math.abs((r.top+r.bottom)/2-innerHeight/2),barra:d.firstElementChild.textContent,tabs:[...d.querySelectorAll('[role=tab]')].map(e=>e.textContent),tooltip:d.querySelector('textarea').title};})()`);A(centro.dx<2&&centro.dy<2,JSON.stringify(centro));A(centro.barra.includes('+ Riga')&&centro.barra.includes('Stile'));A.deepEqual(centro.tabs,['Testo','Bordi','Colore']);A(centro.tooltip.includes('Markdown'));
+  await c.val(`[...document.querySelectorAll('.note-tabella-bar button')].find(b=>b.textContent==='Stile').click()`);await wait(`!!document.querySelector('.note-tabella-presets:popover-open')`);
+  await c.clicca('.note-tabella-presets [aria-label="Leggibile"]');
+  A.equal(await c.val('document.querySelectorAll(".note-tabella-dialog").length'),1,'il campione di stile non apre un secondo editor');await c.val(`document.querySelector('.note-tabella-dialog [aria-label="Font"]').click()`);await wait(`!!document.querySelector('.note-tabella-dialog .presenta-lista-caratteri')`);
+  A.equal(await c.val(`document.querySelectorAll('.note-tabella-dialog .presenta-font-opzione').length`),await c.val('Object.keys(PresentaModello.CARATTERI).length'));
+  await c.clicca('.note-tabella-dialog [aria-label="Atkinson Hyperlegible Next"]');
+  await c.val(`document.querySelector('.note-tabella-dialog [data-sezione="bordi"]').click();(()=>{const s=document.querySelector('.note-tabella-dialog [aria-label="Bordi"]');s.value='grid';s.dispatchEvent(new Event('change'));const w=document.querySelector('.note-tabella-dialog [aria-label="Spessore"]');w.value=2;w.dispatchEvent(new Event('change'));})()`);
+  await c.val(`document.querySelector('.note-tabella-dialog [data-sezione="testo"]').click()`);
+  await c.invia('Emulation.setDeviceMetricsOverride',{width:800,height:650,deviceScaleFactor:1,mobile:false});const stretta=await c.val(`(()=>{const d=document.querySelector('.note-tabella-dialog'),r=d.getBoundingClientRect();return {dx:Math.abs((r.left+r.right)/2-innerWidth/2),dy:Math.abs((r.top+r.bottom)/2-innerHeight/2),larga:d.scrollWidth>d.clientWidth,alto:r.top,basso:r.bottom<=innerHeight};})()`);A(stretta.dx<2&&stretta.dy<2&&!stretta.larga&&stretta.alto>=0&&stretta.basso,JSON.stringify(stretta));await c.invia('Emulation.clearDeviceMetricsOverride',{});
+  fs.writeFileSync('/private/tmp/zaino-tabella-editor.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
   await c.val(`(()=>{const x=document.querySelector('.note-tabella-celle textarea');x.value='Intestazione modificata';x.dispatchEvent(new Event('input'));[...document.querySelectorAll('.note-tabella-dialog button')].find(x=>x.textContent==='Applica').click();})()`);
   A((await c.val('NOTES.mde.value()')).includes('Intestazione modificata'));
   await c.val(`if(!NOTES.mde.isPreviewActive())noteAlternaAnteprima(NOTES)`);await wait(`!!document.querySelector('#noteHost .note-tabella')`);
@@ -25,12 +35,13 @@ async function click(nome){const s=(nome==='Copia oggetto'?'.presenta-bubble':'#
   A.equal(await c.val(`getComputedStyle(document.querySelectorAll('#noteHost .note-tabella')[1].querySelector('td')).textAlign`),'center');
   const exporte=await c.val('documentoAppuntoDocx(NOTES)');A(JSON.stringify(exporte).includes('123456'));
   const dest='/private/tmp/zaino-tabelle-prova.docx';fs.writeFileSync(marker,JSON.stringify({filePath:dest}));A.equal(await c.val('salvaDocx(NOTES)'),dest);
-  const zip=unzipSync(fs.readFileSync(dest)),xml=strFromU8(zip['word/document.xml']);A(xml.includes('123456'));A(xml.includes('Georgia'));A(xml.includes('w:val="center"'));A(xml.includes('Terra'));A(xml.includes('<w:tbl>'));A(xml.includes('w:val="36"'),'dimensione 24px → 18pt');
+  const zip=unzipSync(fs.readFileSync(dest)),xml=strFromU8(zip['word/document.xml']);A(xml.includes('123456'));A(xml.includes('Atkinson Hyperlegible Next'));A(xml.includes('w:sz="12"'),'bordi 2px conservati');A(xml.includes('Georgia'));A(xml.includes('w:val="center"'));A(xml.includes('Terra'));A(xml.includes('<w:tbl>'));A(xml.includes('w:val="36"'),'dimensione 24px → 18pt');
   fs.writeFileSync(marker,JSON.stringify({filePath:'/private/tmp/zaino-tabelle-prova.pdf'}));A.equal(await c.val(`salvaPdf('appunto',NOTES)`),'/private/tmp/zaino-tabelle-prova.pdf');
   const raw=await c.val('NOTES.mde.value()');await c.val('noteSave(false,NOTES)');await wait('!NOTES.dirty');await c.val(`noteOpen(${q(file)},NOTES)`);await wait(`NOTES.mde.value().trim()===${q(raw.trim())}`);
   console.log('✓ Tabelle: crea/modifica in anteprima, righe, copia PRESENTA con stile, incolla, riapertura e PDF/DOCX reali');
  }finally{
-  await c.val(`(()=>{if(window.__tabClip)Object.defineProperty(navigator,'clipboard',{configurable:true,value:window.__tabClip});document.querySelector('.note-tabella-dialog')?.close();noteMolla();localStorage.clear();for(const [k,v]of Object.entries(${q(prima.memoria)}))localStorage.setItem(k,v);BANCO.stato=${q(prima.banco)};bancoDisegna();})()`);
+  await c.invia('Emulation.clearDeviceMetricsOverride',{});
+  await c.val(`(()=>{if(window.__tabClip)Object.defineProperty(navigator,'clipboard',{configurable:true,value:window.__tabClip});document.querySelectorAll('.note-tabella-dialog').forEach(d=>d.close());noteMolla();localStorage.clear();for(const [k,v]of Object.entries(${q(prima.memoria)}))localStorage.setItem(k,v);BANCO.stato=${q(prima.banco)};bancoDisegna();})()`);
   if(doc){await c.val('ZainoPresenta.chiudi()');await c.val(`vault.presentazioni.comando({azione:'elimina',corso:'biologia',id:${q(doc)}})`);}
   if(file)require('../../lib/appunti').remove(vault,'biologia',file);
   if(fs.existsSync(marker))fs.unlinkSync(marker);

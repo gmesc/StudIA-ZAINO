@@ -12507,7 +12507,7 @@ function mdbVicino(avanti,s){
       if(campo && !campo.contains(e.target)) mdbChiudi(true,n);
     });
     if(e.target.closest('.note-visual'))return;
-    if(e.target.closest('.note-tabella')){AppuntiTabelleUI.apri(s,box);return;}
+    if(box&&e.target.closest('.note-tabella')){AppuntiTabelleUI.apri(s,box);return;}
     if(!box || box.hasAttribute('data-edit') || e.target.closest('a,img')) return;
     // Chiudere il blocco precedente ricrea i nodi: si ritrova quello cliccato dalle righe.
     var host=noteHost(s), da=box.getAttribute('data-da');
@@ -23071,6 +23071,7 @@ document.getElementById('noteExportMenu').addEventListener('keydown',function(e)
 <script src="assets/presentazioni/documento.js"></script>
 <script src="presentazioni-player/scrittura.js"></script>
 <script src="assets/presentazioni/barra.js"></script>
+<script src="assets/interfaccia/tipografia.js"></script>
 <script src="assets/presentazioni/editor.js"></script>
 <script src="assets/appunti/tabelle-ui.js"></script>
 <script src="assets/appunti/figure-ui.js"></script>

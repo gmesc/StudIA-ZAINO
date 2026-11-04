@@ -40,7 +40,7 @@
       if(tag==='ul'||tag==='ol'){n.livello=0;for(let p=el.parentElement;p&&p!==elemento;p=p.parentElement)if(['UL','OL'].includes(p.tagName))n.livello++;}
       if(['table','td','th'].includes(tag)&&el.closest('.note-tabella')){
         const bg=st.backgroundColor,tab=win.getComputedStyle(el.closest('table'));
-        n.stile={font:st.fontFamily.split(',')[0].replace(/["']/g,''),size:parseFloat(st.fontSize),color:colore(st.color),bold:+st.fontWeight>=600,italic:st.fontStyle==='italic',underline:st.textDecorationLine.includes('underline'),align:st.textAlign,borderColor:colore(st.borderBottomColor)};
+        n.stile={font:st.fontFamily.split(',')[0].replace(/["']/g,''),size:parseFloat(st.fontSize),color:colore(st.color),bold:+st.fontWeight>=600,italic:st.fontStyle==='italic',underline:st.textDecorationLine.includes('underline'),align:st.textAlign,borderColor:colore(st.borderBottomColor),lineHeight:parseFloat(st.lineHeight)/parseFloat(st.fontSize),verticalAlign:st.verticalAlign,borders:Object.fromEntries(['Top','Right','Bottom','Left'].map(lato=>[lato.toLowerCase(),{width:parseFloat(st['border'+lato+'Width'])||0,style:st['border'+lato+'Style'],color:colore(st['border'+lato+'Color'])}]))};
         const fondo=bg==='rgba(0, 0, 0, 0)'?tab.backgroundColor:bg;
         if(fondo&&fondo!=='rgba(0, 0, 0, 0)')n.stile.background=colore(fondo);
       }
@@ -51,7 +51,7 @@
         if(rif&&typeof rif.then==='function')attese.push(rif.then(v=>{n.riferimento=v||'';}));else n.riferimento=rif||'';
       }
       if(tag==='img'||tag==='svg'){
-        n.tag='img';const visuale=el.closest('.note-visual');if(visuale)n.visuale={align:visuale.dataset.align,layer:visuale.dataset.layer};n.alt=el.getAttribute('alt')||el.getAttribute('aria-label')||'Immagine';
+        n.tag='img';const visuale=el.closest('.note-visual');if(visuale)n.visuale={align:visuale.dataset.align,layer:visuale.dataset.layer,...(visuale.dataset.libera?{x:+visuale.dataset.x,y:+visuale.dataset.y}:{})};n.alt=el.getAttribute('alt')||el.getAttribute('aria-label')||'Immagine';
         const figura=el.closest('.figura');n.percento=figura?parseFloat(figura.style.getPropertyValue('--figw'))||100:100;
         let src=el.getAttribute('src');
         if(tag==='svg'){

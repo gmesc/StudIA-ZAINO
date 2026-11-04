@@ -17,6 +17,7 @@
       if(!TAG.has(n.tag)||!Array.isArray(n.figli))throw Error('Elemento DOCX non supportato: '+String(n.tag));
       if(n.tag==='img'){
         if(typeof n.dati!=='string'||!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(n.dati))throw Error('Immagine non incorporata.');
+        if(n.visuale&&(!['inline','front','back'].includes(n.visuale.layer)||!['left','center','right'].includes(n.visuale.align)||['x','y'].some(k=>n.visuale[k]!==undefined&&(!Number.isFinite(n.visuale[k])||Math.abs(n.visuale[k])>10000))))throw Error('Posizione della figura non valida.');
         immagini+=n.dati.length;
         if(immagini>100000000||!(n.larghezza>0&&n.larghezza<=10000&&n.altezza>0&&n.altezza<=10000))throw Error('Immagine troppo grande.');
       }
