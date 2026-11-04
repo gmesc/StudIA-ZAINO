@@ -12201,7 +12201,6 @@ function ensureMde(s){
       {name:'materiali',title:'Cita un materiale, anche da un altro zaino',className:'ncb-mat',action:function(){ apriMateriali(host.querySelector('.ncb-mat'),s); }},
       '|','link','code','|',
       {name:'preview',title:'Anteprima (⌘J)',className:'preview no-disable',action:function(){ noteAlternaAnteprima(s); }},
-      'side-by-side',
       {name:'guida',title:'Come si scrive in StudIA',className:'ncb-guida',action:function(){ apriGuida(); }}],
     shortcuts:{toggleFullScreen:null,toggleSideBySide:'F9',togglePreview:null},
     previewClass:['editor-preview','md-prev'],
@@ -19242,7 +19241,7 @@ function mappaAmbiti(){
          viene PRIMA del conteggio: un elenco vuoto perché la cartella non si
          legge non è «non hai ancora mappe». */
       aggiungi('', MAPPA.elencoErrore ? '⚠ elenco non leggibile'
-              : (MAPPA.elenco.length ? '— le tue mappe —' : '— nessuna mappa in questo corso —'));
+              : (MAPPA.elenco.length ? '— le tue mappe —' : '— nessuna mappa in questo zaino —'));
       MAPPA.elenco.forEach(function(m){
         var et=(m.titolo||m.file)+(m.errore ? ' ⚠ illeggibile' : ' · '+m.nodi+' nodi');
         aggiungi(m.file, et, !!m.errore);
@@ -19920,19 +19919,8 @@ function mappaSincronizzaComandi(){
       b.setAttribute('aria-pressed', String(b.getAttribute(attr)===String(val)));
     });
   }
-  premi('#mRegistro','data-reg',MAPPA.registro);
-  /* ⚠️ In uno zaino il segmento Generata/Mie non si spegne: SPARISCE. Un
-     interruttore a due posizioni di cui una non esiste è un comando che mente,
-     e spento occuperebbe comunque il posto suggerendo che da qualche parte si
-     possa accendere. */
-  var seg=$('#mRegistro'); if(seg) seg.hidden=!mappaGenerateQui();
-  premi('#mMotore','data-motore',v.motore);
   premi('#mOrient','data-orient',v.orient);
-  /* «Modifica una copia» e «+» sono la stessa domanda — da dove parte questa
-     mappa — posta ai due registri: uno dei due è sempre nascosto, mai tutti e
-     due, così la barra non cambia larghezza cambiando registro. */
-  var cop=$('#mCopia'), nuo=$('#mNuova'), ces=$('#mCestino');
-  if(cop) cop.hidden=mappaMie();
+  var nuo=$('#mNuova'), ces=$('#mCestino');
   if(nuo) nuo.hidden=!mappaMie();
   /* Il cestino compare solo quando c'è davvero qualcosa da eliminare: un
      comando acceso su niente promette un effetto che non c'è, ed è la stessa
@@ -19948,18 +19936,6 @@ function mappaSincronizzaComandi(){
   // il registro serve anche al foglio di stile: in «Mie» le card si trascinano,
   // e il cursore lo deve dire
   document.documentElement.dataset.mreg=MAPPA.registro;
-  /* ⚠️ `glossario` e `fonti` NON sono leve di vista: sono parametri di
-     generazione, li legge solo `daCapitolo`. Su un documento non comandano
-     niente, e un comando che gira senza effetto è peggio di un comando assente.
-     Si spengono dicendo perché, come già fanno TD/SX sugli anelli. */
-  [['#mGlossario','Il glossario è un ramo che si aggiunge COSTRUENDO la mappa: su una mappa tua i nodi ci sono già'],
-   ['#mFonti','Le fonti si agganciano costruendo la mappa: su una mappa tua i nodi ci sono già'],
-   ['#mSoglia','La soglia sceglie quali concetti entrano mentre la mappa si costruisce: su una mappa tua li hai scelti tu']
-  ].forEach(function(r){
-    var el=$(r[0]); if(!el) return;
-    el.disabled=mappaMie();
-    if(mappaMie()) el.title=r[1]; else el.removeAttribute('title');
-  });
   mappaSegnoSporco();
   /* Sugli anelli l'orientamento non vuol dire niente — si dispongono attorno a
      un centro, non lungo un verso. Lasciare i due tasti accesi prometterebbe un
@@ -19992,13 +19968,8 @@ function mappaSincronizzaComandi(){
   var pr=$('#mProfondita');
   if(pr){ pr.value=+v.profondita||0;
           var prv=$('#mProfonditaV'); if(prv) prv.textContent=mappaLevaEtichetta('profondita', pr.value); }
-  var so=$('#mSoglia');
-  if(so){ so.value=Math.max(1,+v.soglia||2);
-          var sov=$('#mSogliaV'); if(sov) sov.textContent=mappaLevaEtichetta('soglia', so.value); }
   var l=$('#mLinee'); if(l) l.value=v.linee;
   var e=$('#mEtichette'); if(e) e.value=v.etichette;
-  var gl=$('#mGlossario'); if(gl) gl.value=v.glossario?'1':'';
-  var fo=$('#mFonti'); if(fo) fo.value=v.fonti?'1':'';
 }
 
 /* ================== L2 — i gesti sulla tela (§4.1 del piano) ==============
@@ -20269,19 +20240,11 @@ function mappaRidimensionaImmagine(id, verso){
 /** Disegna i cinque bottoni. Uno slot vuoto SI VEDE che è vuoto: quattro pieni
  *  e uno libero non devono obbligare a indovinare quale sia. */
 function mappaMemorieDisegna(){
-  var box=$('#mMemorie'), mot=$('#mMotore'), lab=$('#mMotoreLab');
+  var box=$('#mMemorie');
   if(!box) return;
   var mie=mappaMie();
-  /* Su una mappa tua il motore è un mezzo e la disposizione è il fine: la barra
-     mostra le memorie, e i quattro motori restano nel menu contestuale della
-     tela. Sulla mappa generata è il contrario — lì non c'è niente da salvare. */
+  // Le disposizioni sono in barra; i motori restano nel menu della tela.
   box.hidden=!mie;
-  if(mot) mot.hidden=!!mie;
-  /* ⚠️ L'etichetta segue il suo gruppo. Da sola restava accesa sopra le cinque
-     memorie e le dava il nome di un'altra cosa: la barra diceva «Motore» e
-     mostrava le disposizioni salvate. È l'etichetta orfana, il parente della
-     barretta orfana del §5bis. */
-  if(lab) lab.hidden=!!mie;
   if(!mie){ box.innerHTML=''; return; }
   var l=mappaMemorie();
   box.innerHTML=l.map(function(m,i){
@@ -21115,18 +21078,13 @@ document.addEventListener('click', function(e){
     else { mappaSincronizzaComandi(); popAt(pop, e.target.closest('#mVista')); }
     return;
   }
-  var br=e.target.closest('#mRegistro button[data-reg]');
-  if(br){ mappaRegistro(br.getAttribute('data-reg')); return; }
   if(e.target.closest('#mNuova')){ mappaNuova(); return; }
-  if(e.target.closest('#mCopia')){ mappaCopia(); return; }
   if(e.target.closest('#mRinomina')){ mappaRinominaMappa(); return; }
   if(e.target.closest('#mStampa')){ stampaMappa(); return; }
   if(e.target.closest('#mPdf')){ salvaPdf('mappa'); return; }
   if(e.target.closest('#mCestino')){ mappaEliminaMappa(); return; }
   if(e.target.closest('#mAnnulla')){ mappaAnnulla(); return; }
   if(e.target.closest('#mRipeti')){ mappaRipeti(); return; }
-  var bm=e.target.closest('#mMotore button[data-motore]');
-  if(bm){ mappaMotore(bm.getAttribute('data-motore')); return; }
   var bmem=e.target.closest('#mMemorie button[data-mem]');
   if(bmem){
     var i=parseInt(bmem.getAttribute('data-mem'),10);
@@ -21467,12 +21425,10 @@ document.addEventListener('change', function(e){
   }
   if(e.target.id==='mLinee'){ MAPPA.vista.linee=e.target.value; mappaVistaCambiata(); mappaRidisegna(); return; }
   if(e.target.id==='mEtichette'){ MAPPA.vista.etichette=e.target.value; mappaVistaCambiata(); mappaRidisegna(); return; }
-  if(e.target.id==='mGlossario'){ MAPPA.vista.glossario=!!e.target.value; mappaVistaCambiata(); mappaRidisegna(); return; }
-  if(e.target.id==='mFonti'){ MAPPA.vista.fonti=!!e.target.value; mappaVistaCambiata(); mappaRidisegna(); return; }
 });
 document.addEventListener('input', function(e){
   var m={ mGapLivello:'gapLivello', mGapNodo:'gapNodo', mFsNodo:'fsNodo', mFsRel:'fsRel', mLargh:'w',
-          mProfondita:'profondita', mSoglia:'soglia' };
+          mProfondita:'profondita' };
   var k=e.target && m[e.target.id]; if(!k) return;
   MAPPA.vista[k]=+e.target.value;
   var out=$('#'+e.target.id+'V');
@@ -22219,21 +22175,12 @@ window.addEventListener('keydown', function(e){
      strumento «capitolo»: uno strumento annidato in un altro sarebbe stato
      strappato via dal primo montaggio, e la mappa avrebbe nascosto il capitolo
      invece di stargli accanto. -->
-<section id="mappaView" aria-label="Mappa del capitolo o della lezione">
+<section id="mappaView" aria-label="Editor delle mappe">
   <div class="tbar mtoolbar" role="toolbar" aria-label="Comandi della mappa">
-    <span class="mseg" id="mRegistro" role="group" aria-label="Registro della mappa">
-      <button type="button" data-reg="generata" aria-pressed="true" title="La mappa calcolata dal capitolo o dalla lezione: non si salva, segue i file">Generata</button>
-      <button type="button" data-reg="mie" aria-pressed="false" title="Le tue mappe, salvate in MAPPE/: le modifichi tu e la pipeline non le tocca">Mie</button>
-    </span>
     <!-- Un bottone che apre il suo menu, non una tendina di sistema: sotto resta
          il `<select>` vero (vedi `tendinaViva`), sopra c'è il nome di quello che
          si sta guardando. -->
-    <select id="mAmbito" aria-label="Che cosa mappare"></select>
-    <!-- «Modifica una copia» vive nel registro generato (semina una mappa
-         tua da quello che stai guardando), «+» in quello delle tue: sono lo
-         stesso posto perché sono la stessa domanda — «da dove parte questa
-         mappa». Uno dei due è sempre nascosto. -->
-    <button class="mbtn mlungo acc" id="mCopia" type="button" title="Crea una tua mappa con la sola radice di questa vista: i concetti li metti tu, ed è il punto">Parti da qui</button>
+    <select id="mAmbito" aria-label="Apri mappa"></select>
     <button class="mbtn acc" id="mNuova" type="button" hidden title="Nuova mappa vuota" aria-label="Nuova mappa">&#43;</button>
     <!-- il cestino sta accanto alla tendina, cioè accanto alla cosa che
          elimina: in fondo alla barra, fra «adatta» e «chiudi», sarebbe a un
@@ -22247,13 +22194,6 @@ window.addEventListener('keydown', function(e){
     <button class="mbtn" id="mAnnulla" type="button" aria-disabled="true" title="Annulla (⌘Z)" aria-label="Annulla nella mappa"><span class="tb-cronologia" aria-hidden="true">↶︎</span></button>
     <button class="mbtn" id="mRipeti" type="button" aria-disabled="true" title="Ripeti (⌘⇧Z)" aria-label="Ripeti nella mappa"><span class="tb-cronologia" aria-hidden="true">↷︎</span></button>
     <span class="msep" aria-hidden="true"></span>
-    <span class="metichetta" id="mMotoreLab">Motore</span>
-    <span class="mseg" id="mMotore" role="group" aria-label="Motore di disposizione">
-      <button type="button" data-motore="albero" aria-pressed="true" title="Albero: la gerarchia pura">Albero</button>
-      <button type="button" data-motore="dag" aria-pressed="false" title="DAG: livelli, con gli archi che saltano">DAG</button>
-      <button type="button" data-motore="percorso" aria-pressed="false" title="Percorso: l'ordine in cui studiare, numerato">Percorso</button>
-      <button type="button" data-motore="anelli" aria-pressed="false" title="Anelli: che cosa sta a un passo dal centro">Anelli</button>
-    </span>
     <!-- Le cinque memorie di disposizione, al posto dei motori quando la mappa è
          TUA: su una mappa che hai disposto a mano il motore è un mezzo, la
          disposizione è il fine. I motori restano nel menu contestuale della tela
@@ -22358,15 +22298,6 @@ window.addEventListener('keydown', function(e){
     <select id="mLinee"><option value="curva">curva</option><option value="dritto">dritta</option><option value="orto">a squadra</option></select></div>
   <div class="mriga"><label for="mEtichette">Parole sui legami</label>
     <select id="mEtichette"><option value="complete">per esteso</option><option value="brevi">brevi</option><option value="no">nascoste</option></select></div>
-  <div class="mriga"><label for="mGlossario">Glossario</label>
-    <select id="mGlossario"><option value="">fuori dalla mappa</option><option value="1">come ramo</option></select></div>
-  <div class="mriga"><label for="mFonti">Fonti citate</label>
-    <select id="mFonti"><option value="">un pallino sul concetto</option><option value="1">nodi loro</option></select></div>
-  <!-- La soglia dei ponti: quante lezioni (o quanti capitoli) deve toccare un
-       concetto per entrare nella spina della mappa. Misurato su TD74-DSA:
-       ≥2 lezioni → 193 concetti, ≥3 → 63, ≥5 → 9. Non è una costante da
-       scegliere una volta per tutte, è una manopola. -->
-  <div class="mriga"><label for="mSoglia">Ponti fra lezioni</label><input type="range" class="zaino-slider" id="mSoglia" min="1" max="5" step="1"><span class="mval" id="mSogliaV"></span></div>
   <!-- La qualità del disegno non si giudica a occhio: incroci e archi che
        passano sopra le card sono i due numeri che dicono se una mappa si
        legge, e stanno qui sotto mentre si girano le leve. -->

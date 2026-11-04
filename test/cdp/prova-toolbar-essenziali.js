@@ -14,6 +14,7 @@ async function wait(expr){for(let i=0;i<160;i++){if(await c.val(expr))return;awa
   await wait(`NOTES.list.length>0 && !!NOTES.mde`);
   const file=await c.val(`NOTES.list[0].file`);await c.val(`noteOpen(${q(file)},NOTES)`);
   const body=await c.val(`NOTES.mde.value()`);assert(body);
+  assert(!await c.val(`document.querySelector('#noteHost .side-by-side,#noteHost2 .side-by-side')`),'icona della vista affiancata rimossa dagli Appunti');
   assert(await c.val(`['pdfDoc','noteSelect'].every(id=>{const e=document.getElementById(id),h=e.closest('.bhead');if(!h)return false;const r=e.getBoundingClientRect(),d=h.querySelector('.bdoc').getBoundingClientRect();return r.width>0&&Math.abs(r.right-d.right)<10;})`),'Fonti e Appunti: selettori nella testata, allineati a destra');
   await c.val(`ZNAV.organizza.fonti=true;ZNAV.organizza.media=true;zainoNavAggiorna()`);
   await wait(`!!document.querySelector('[data-sezione="fonti"] .zs-tit [data-znav="crea"]')`);
@@ -21,6 +22,7 @@ async function wait(expr){for(let i=0;i<160;i++){if(await c.val(expr))return;awa
   await c.val(`ZNAV.organizza.fonti=false;ZNAV.organizza.media=false;zainoNavAggiorna()`);
   const quaderni=await c.val(`(()=>{ensureMde(noteStati()[1]);return ['noteSelect','noteSelect2'].map(id=>{const s=document.getElementById(id),g=s.closest('.tendina');return {id,testo:g.querySelector('.tlab').textContent,nome:s.getAttribute('aria-label'),select:s.getBoundingClientRect().width,guscio:g.getBoundingClientRect().width};});})()`);
   assert(quaderni.every(g=>g.testo.trim()&&g.nome&&Math.abs(g.select-g.guscio)<=1),'Appunti: etichetta leggibile e area cliccabile confinata: '+JSON.stringify(quaderni));
+  assert(!await c.val(`document.querySelector('#noteHost .side-by-side,#noteHost2 .side-by-side')`),'vista affiancata senza pulsante in entrambi gli editor');
   const layout=await c.val('bancoStato().col');
   for(const larghezza of [420,280]){
    await c.val(`BANCO.stato.col=1-${larghezza}/document.getElementById('banco').getBoundingClientRect().width;bancoDisegna()`);await c.pausa(150);
@@ -29,7 +31,7 @@ async function wait(expr){for(let i=0;i<160;i++){if(await c.val(expr))return;awa
   assert(await c.val(`(()=>{const e=document.getElementById('noteSelect'),h=e.closest('.bhead'),r=e.getBoundingClientRect(),g=e.closest('.tendina').getBoundingClientRect();return h&&r.width>0&&Math.abs(r.width-g.width)<=1&&r.left>=h.getBoundingClientRect().left&&r.right<=h.getBoundingClientRect().right;})()`),'titolo nello split stretto: selettore intero cliccabile e dentro la testata');
   const compatta=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-toolbar-quaderno.png',Buffer.from(compatta.result.data,'base64'));
   await c.val(`BANCO.stato.col=${q(layout)};bancoDisegna()`);
-  assert(await c.val(`['.bold','.italic','.heading','.quote','.unordered-list','.ordered-list','.link','.code','.preview','.side-by-side','.ncb-undo','.ncb-redo','.ncb-callout','.ncb-emoji','.ncb-guida','.ncb-cita','.ncb-mat'].every(sel=>{const b=document.querySelector('#noteHost .editor-toolbar '+sel);return b?.querySelector('svg.ui-icon')&&b.title;})`),'Appunti: tutti i simboli sono SVG con tooltip');
+  assert(await c.val(`['.bold','.italic','.heading','.quote','.unordered-list','.ordered-list','.link','.code','.preview','.ncb-undo','.ncb-redo','.ncb-callout','.ncb-emoji','.ncb-guida','.ncb-cita','.ncb-mat'].every(sel=>{const b=document.querySelector('#noteHost .editor-toolbar '+sel);return b?.querySelector('svg.ui-icon')&&b.title;})`),'Appunti: tutti i simboli sono SVG con tooltip');
   assert(await c.val(`(()=>{const b=document.querySelector('#noteHost .editor-toolbar .bold');return b.title.startsWith('Grassetto (')&&b.getAttribute('aria-label')===b.title;})()`),'tooltip e nome accessibile in italiano, con scorciatoia');
   assert(await c.val(`!!document.querySelector('#menuBtn img.oi') && !!document.querySelector('#creditsBtn .btn-emoji') && !!document.querySelector('#modoBtn img.oi')`),'fantasma, mago e marchio conservati');
   assert(await c.val(`[...document.querySelectorAll('#zainoNav [data-znav="organizza"]')].every(b=>b.querySelector('svg.ui-icon')&&b.title)`),'sidebar: SVG con tooltip');
