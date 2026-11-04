@@ -2142,7 +2142,7 @@
   #mappaPop .mriga{ display:flex; align-items:center; gap:.5rem; margin-bottom:.5rem; }
   #mappaPop .mriga > label{ flex:0 0 8.6rem; font-size:11px; color:var(--muted);
     text-transform:uppercase; letter-spacing:.08em; }
-  #mappaPop input[type=range]{ flex:1; min-width:0; accent-color:var(--teal); }
+  #mappaPop input[type=range]{ flex:1; min-width:0; }
   #mappaPop select{ flex:1; min-width:0; font-size:12px; }
   #mappaPop .mval{ flex:0 0 2.4rem; text-align:right; font-size:11px; font-variant-numeric:tabular-nums; color:var(--ink); }
   #mappaPop .mmisure{ margin-top:.6rem; padding-top:.5rem; border-top:1px solid var(--line);
@@ -3092,7 +3092,8 @@
   :is(#albumDimensione,.zaino-slider)::-webkit-slider-thumb{appearance:none;width:14px;height:14px;margin-top:-5px;border:0;border-radius:50%;background:var(--album-cursore);}
   :is(#albumDimensione,.zaino-slider)::-moz-range-track{height:4px;background:var(--album-traccia);border-radius:2px;}
   :is(#albumDimensione,.zaino-slider)::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--album-cursore);}
-  #albumDimensione:focus-visible{outline:2px solid var(--focus);outline-offset:4px;}
+  :is(#albumDimensione,.zaino-slider):focus-visible{outline:2px solid var(--focus);outline-offset:4px;}
+  .zaino-slider:disabled{opacity:.45;cursor:default;}
   #albumSpazio .alblista{grid-template-columns:repeat(auto-fill,minmax(min(var(--album-card),100%),1fr));align-content:start;width:100%;}
   #albumSpazio .alcard :is(img,video,.albumAudio){height:var(--album-immagine);width:100%;object-fit:contain;background:var(--hover);}
   #albumSpazio .alcard{font-family:inherit;color:var(--ink);text-align:left;cursor:pointer;}
@@ -22347,12 +22348,12 @@ window.addEventListener('keydown', function(e){
 <div id="mappaPop" class="popmenu" role="dialog" aria-label="Aggiustamenti della vista">
   <!-- La profondità sta in cima perché è l'unica leva che cambia CHE COSA si
        vede: tutte le altre cambiano come lo si vede. -->
-  <div class="mriga"><label for="mProfondita">Profondità</label><input type="range" id="mProfondita" min="0" max="10" step="1"><span class="mval" id="mProfonditaV"></span></div>
-  <div class="mriga"><label for="mGapLivello">Distanza livelli</label><input type="range" id="mGapLivello" min="40" max="240" step="4"><span class="mval" id="mGapLivelloV"></span></div>
-  <div class="mriga"><label for="mGapNodo">Distanza nodi</label><input type="range" id="mGapNodo" min="8" max="120" step="2"><span class="mval" id="mGapNodoV"></span></div>
-  <div class="mriga"><label for="mFsNodo">Testo dei nodi</label><input type="range" id="mFsNodo" min="9" max="20" step="1"><span class="mval" id="mFsNodoV"></span></div>
-  <div class="mriga"><label for="mFsRel">Testo dei legami</label><input type="range" id="mFsRel" min="8" max="18" step="1"><span class="mval" id="mFsRelV"></span></div>
-  <div class="mriga"><label for="mLargh">Larghezza card</label><input type="range" id="mLargh" min="110" max="280" step="6"><span class="mval" id="mLarghV"></span></div>
+  <div class="mriga"><label for="mProfondita">Profondità</label><input type="range" class="zaino-slider" id="mProfondita" min="0" max="10" step="1"><span class="mval" id="mProfonditaV"></span></div>
+  <div class="mriga"><label for="mGapLivello">Distanza livelli</label><input type="range" class="zaino-slider" id="mGapLivello" min="40" max="240" step="4"><span class="mval" id="mGapLivelloV"></span></div>
+  <div class="mriga"><label for="mGapNodo">Distanza nodi</label><input type="range" class="zaino-slider" id="mGapNodo" min="8" max="120" step="2"><span class="mval" id="mGapNodoV"></span></div>
+  <div class="mriga"><label for="mFsNodo">Testo dei nodi</label><input type="range" class="zaino-slider" id="mFsNodo" min="9" max="20" step="1"><span class="mval" id="mFsNodoV"></span></div>
+  <div class="mriga"><label for="mFsRel">Testo dei legami</label><input type="range" class="zaino-slider" id="mFsRel" min="8" max="18" step="1"><span class="mval" id="mFsRelV"></span></div>
+  <div class="mriga"><label for="mLargh">Larghezza card</label><input type="range" class="zaino-slider" id="mLargh" min="110" max="280" step="6"><span class="mval" id="mLarghV"></span></div>
   <div class="mriga"><label for="mLinee">Stile delle linee</label>
     <select id="mLinee"><option value="curva">curva</option><option value="dritto">dritta</option><option value="orto">a squadra</option></select></div>
   <div class="mriga"><label for="mEtichette">Parole sui legami</label>
@@ -22365,7 +22366,7 @@ window.addEventListener('keydown', function(e){
        concetto per entrare nella spina della mappa. Misurato su TD74-DSA:
        ≥2 lezioni → 193 concetti, ≥3 → 63, ≥5 → 9. Non è una costante da
        scegliere una volta per tutte, è una manopola. -->
-  <div class="mriga"><label for="mSoglia">Ponti fra lezioni</label><input type="range" id="mSoglia" min="1" max="5" step="1"><span class="mval" id="mSogliaV"></span></div>
+  <div class="mriga"><label for="mSoglia">Ponti fra lezioni</label><input type="range" class="zaino-slider" id="mSoglia" min="1" max="5" step="1"><span class="mval" id="mSogliaV"></span></div>
   <!-- La qualità del disegno non si giudica a occhio: incroci e archi che
        passano sopra le card sono i due numeri che dicono se una mappa si
        legge, e stanno qui sotto mentre si girano le leve. -->
