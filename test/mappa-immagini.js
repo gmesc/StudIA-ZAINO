@@ -211,6 +211,18 @@ for (const orient of ['td', 'lr']) for (const evidenzia of [null, 'foto']) {
   check('il ritaglio non viene tagliato per correggere la barra', 'xMidYMid meet', attr(imm(c)[0], 'preserveAspectRatio'));
 }
 
+sezione('Mappe — cornice completa delle immagini sopra il ritaglio');
+for (const raggio of [0, 16]) for (const bordo of ['#ef4444', 'none']) {
+  const stile = {...require('../App/assets/mappa/aspetto').PRESET.pastello.aspetto, raggio, bordo, spessore: 3};
+  const c = card(disegna(gImm, {srcImmagine: SRC, aspetto: stile}), 'foto');
+  const cornice = (c.match(/<(?:path|rect) class="mbordo"[^>]*\/>/) || [''])[0];
+  check('colore della cornice con raggio '+raggio+' e bordo '+bordo, bordo, attr(cornice, 'stroke'));
+  check('spessore della cornice immagine', '3', attr(cornice, 'stroke-width'));
+  check('la cornice si disegna sopra la foto', true, c.indexOf(cornice)>c.indexOf('<image '));
+  check('la cornice non copre il contenuto', 'none', attr(cornice, 'fill'));
+  if(raggio)check('il profilo parte con angolo retto e arrotonda soltanto sotto', true, /^M[^A]+H[^A]+V[^A]+A/.test(attr(cornice,'d')||''));
+}
+
 /* -------------------------------------------------------- 3. il segnaposto */
 
 sezione('Mappe — senza sorgente compare un segnaposto, mai un rettangolo muto');

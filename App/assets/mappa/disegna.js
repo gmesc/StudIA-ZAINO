@@ -264,9 +264,7 @@
   }
 
   function riquadroImmagine(x, y, m) {
-    /* ⚠️ Un nodo-immagine non ha la cornice della card: tre lati sono nudi e a
-       sinistra resta la sola barra del colore. Quindi il ritaglio non si ritira
-       da un bordo che non c'è — parte subito dopo la barra e arriva ai tre lati. */
+    // Il ritaglio resta intero e a filo: la cornice viene disegnata sopra.
     return {
       x: x + BARRA, y: y,
       w: Math.max(1, m.wi),
@@ -569,28 +567,26 @@
         (nFonti ? ' — ' + nFonti + (nFonti === 1 ? ' fonte' : ' fonti') : '');
       var g = ['<g class="mnodo" data-id="' + esc(id) + '"' + (apribile ? ' data-apri="1"' : '') +
         ' role="listitem" aria-label="' + esc(etichettaCard) + '"><title>' + esc(suggerimento) + '</title>'];
-      /* ⚠️ Il nodo-immagine non ha la cornice: tre lati nudi, e a sinistra la
-         sola barra del colore, dello stesso spessore delle altre card. Il
-         rettangolo resta — è il bersaglio del click e il fondo su cui poggia la
-         didascalia — ma senza tratto. Quando è selezionato il tratto torna: la
-         selezione è un fatto momentaneo, non una cornice. */
+      // La cornice delle immagini passa sopra la foto, che arriva a filo in alto.
+      var contornoImmagine = '';
       if (imm && stile?.raggio > 0) {
         var rx = Math.min(stile.raggio, Wn / 2), ry = Math.min(stile.raggio, Hn / 2);
         // Il rettangolo conserva la geometria usata dall’editor della didascalia;
         // il profilo visibile ha il bordo superiore diritto come la fotografia.
         g.push('<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + n1(Hn) + '" fill="none" pointer-events="none"/>');
-        g.push('<path class="mcontorno" d="M' + n1(x) + ' ' + n1(y) + 'H' + n1(x+Wn) + 'V' + n1(y+Hn-ry) + 'A' + n1(rx) + ' ' + n1(ry) + ' 0 0 1 ' + n1(x+Wn-rx) + ' ' + n1(y+Hn) + 'H' + n1(x+rx) + 'A' + n1(rx) + ' ' + n1(ry) + ' 0 0 1 ' + n1(x) + ' ' + n1(y+Hn-ry) + 'Z" pointer-events="all" fill="' + fondoNodo + '" stroke="' + (acceso ? col : 'none') + '" stroke-width="2.5"/>');
+        contornoImmagine = 'd="M' + n1(x) + ' ' + n1(y) + 'H' + n1(x+Wn) + 'V' + n1(y+Hn-ry) + 'A' + n1(rx) + ' ' + n1(ry) + ' 0 0 1 ' + n1(x+Wn-rx) + ' ' + n1(y+Hn) + 'H' + n1(x+rx) + 'A' + n1(rx) + ' ' + n1(ry) + ' 0 0 1 ' + n1(x) + ' ' + n1(y+Hn-ry) + 'Z"';
+        g.push('<path class="mcontorno" ' + contornoImmagine + ' pointer-events="all" fill="' + fondoNodo + '" stroke="none"/>');
       } else {
+      if (imm) contornoImmagine = 'x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + n1(Hn) + '"';
       g.push('<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + n1(Hn) + '"' + (fondoNodo==='none'?' pointer-events="all"':'') + ' fill="' + fondoNodo +
         '" stroke="' + (acceso ? col : (imm ? 'none' : bordoNodo)) + '" stroke-width="' + (acceso ? 2.5 : (stile?stile.spessore:1)) + '" rx="'+(stile?stile.raggio:0)+'"' +
         (suo && !imm ? ' stroke-dasharray="4 3"' : '') + '/>');
       }
       /* La barra d'accento dice il gruppo senza colorare il fondo, che renderebbe
          illeggibile il testo in tema scuro. Su una card sta sul lato da cui il
-         ramo entra; su un'immagine sta SEMPRE a sinistra, perché lì è l'unica
-         cosa che resta del riquadro e deve stare sempre nello stesso posto. */
+         ramo entra; su un'immagine sta SEMPRE a sinistra, accanto alla fotografia. */
       g.push(stile?.raggio > 0
-        ? barraArrotondata(x,y,Wn,Hn,stile.raggio,acceso?2.5:imm||bordoNodo==='none'?0:stile.spessore,!!imm||o.orient==='lr',col,!!imm)
+        ? barraArrotondata(x,y,Wn,Hn,stile.raggio,acceso?2.5:bordoNodo==='none'?0:stile.spessore,!!imm||o.orient==='lr',col,!!imm)
         : imm || o.orient === 'lr'
         ? '<rect class="mbarra" x="' + n1(x) + '" y="' + n1(y) + '" width="' + BARRA + '" height="' + n1(Hn) + '" fill="' + col + '"/>'
         : '<rect class="mbarra" x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + BARRA + '" fill="' + col + '"/>');
@@ -599,7 +595,10 @@
          numero del passo e la didascalia. La card resta `.mnodo` e la sua
          identità non cambia di una virgola — un nodo-immagine si preme come
          qualunque altro nodo. */
-      if (riq) g.push(pezzoImmagine(riq, srcImm, tema, font, fsNodo));
+      if (riq) {
+        g.push(pezzoImmagine(riq, srcImm, tema, font, fsNodo));
+        g.push('<' + (stile?.raggio > 0 ? 'path' : 'rect') + ' class="mbordo" ' + contornoImmagine + ' fill="none" stroke="' + (acceso ? col : bordoNodo) + '" stroke-width="' + (acceso ? 2.5 : (stile ? stile.spessore : 1)) + '" pointer-events="none"/>');
+      }
       if (res.passo && res.passo[id] != null) {
         g.push('<text x="' + n1(x + 7) + '" y="' + n1(y + Hn - 7) + '" font-family="' + esc(font) +
           '" font-size="' + Math.max(8, fsRel - 1) + '" font-weight="700" fill="' + tema.muted + '">' +
