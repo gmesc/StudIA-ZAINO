@@ -49,6 +49,8 @@ function sezione(t) { console.log('\n== ' + t); }
     await val("[...document.querySelectorAll('.blocco')].filter(b=>!b.hidden).map(b=>b.dataset.blocco)"));
   ok('e compare anche il divisore orizzontale', true,
     await val("!document.getElementById('bDivRiga').hidden"));
+  ok('linea sottile sopra le testate inferiori, uguale al separatore verticale', true,
+    await val(`(()=>{const sx=getComputedStyle(document.querySelector('.blocco[data-bordo-sx="1"]'));return [...document.querySelectorAll('.blocco:not([hidden])')].every(b=>{const s=getComputedStyle(b);return s.borderTopWidth===(b.dataset.bordoAlto==='1'?'1px':'0px')&&(!b.dataset.bordoAlto||(s.borderTopStyle==='solid'&&s.borderTopColor===sx.borderLeftColor));});})()`));
   /* Il secondo divisore verticale si muove senza toccare il primo — e le
      griglie larghe scrivono i CAMPI loro (`col3`/`col3b`), non quelli della
      2×2: la taratura a due colonne non si sporca. */

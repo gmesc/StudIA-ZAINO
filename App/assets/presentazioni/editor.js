@@ -94,6 +94,7 @@
   if(id&&!entries.some(e=>e[0]===id))entries.push([id,D.documento.title]);
   const f=JSON.stringify(entries);if(sel.dataset.firma!==f){sel.replaceChildren(new Option('Apri una presentazione…',''),...entries.map(([v,t])=>new Option(t,v)));sel.dataset.firma=f;}sel.value=id;
   sel.disabled=occupato||D.bloccato||!corso;
+  window.tendinaViva?.(sel,{piccola:true});
  }
  function disegna(){
   if(!host)return;const d=D.documento,p=posizione(),disabled=occupato||D.bloccato;
@@ -722,7 +723,7 @@
   const note=campo('Appunti del presentatore · privati','',v=>{if(posizione())op({tipo:'slide',notes:{markdown:v}});},{tipo:'textarea',maxLength:100000,espanso:true});appuntiPopup=E('div',null,'popmenu presenta-menu presenta-appunti');appuntiPopup.popover='auto';appuntiPopup.append(note);host.append(appuntiPopup);bar.append(b('Appunti privati','pencil',()=>{note.querySelector('textarea').value=posizione()?.slide.notes.markdown||'';appuntiPopup.showPopover();}));
   fetch(new URL('assets/presentazioni/deck.css',document.baseURI)).then(r=>r.text()).then(css=>{const style=E('style');style.textContent='@scope (.presenta-mini) {'+css+'}';document.head.append(style);}).catch(e=>window.toast?.('Anteprime: '+e.message,false));
   corpo.addEventListener('scroll',aggiornaBubbleVista);window.addEventListener('resize',aggiornaBubbleVista);document.addEventListener('pointerdown',e=>{if(bubble&&!bubble.contains(e.target)&&!scrittura)nascondiBubble();});
-  window.tendinaViva?.(sel,{piccola:true,icona:'layers',fissa:'Presentazioni'});
+  window.tendinaViva?.(sel,{piccola:true});window.bancoAggiornaDocumenti?.();
   gobboBar=E('div',null,'tbar presenta-bar');for(const [nome,icona,cmd]of [['Indietro','chevron-left','indietro'],['Avanti','chevron-right','avanti'],['Argomento precedente','chevrons-left','argomentoPrecedente'],['Argomento successivo','chevrons-right','argomentoSuccessivo'],['Approfondisci','chevron-down','approfondisci'],['Risali','chevron-up','risali']])gobboBar.append(b(nome,icona,()=>sessione(cmd)));
   const tempo=E('output','00:00','gobbo-tempo');tempo.id='gobboTempo';tempo.setAttribute('aria-label','Tempo della presentazione');
   const schermi=E('select');schermi.id='gobboSchermi';schermi.setAttribute('aria-label','Schermo della presentazione');schermi.onchange=()=>azione(()=>sessione('schermo',{schermo:Number(schermi.value)}));

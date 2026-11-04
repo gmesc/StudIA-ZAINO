@@ -14,17 +14,19 @@ async function wait(expr){for(let i=0;i<160;i++){if(await c.val(expr))return;awa
   await wait(`NOTES.list.length>0 && !!NOTES.mde`);
   const file=await c.val(`NOTES.list[0].file`);await c.val(`noteOpen(${q(file)},NOTES)`);
   const body=await c.val(`NOTES.mde.value()`);assert(body);
+  assert(await c.val(`['pdfDoc','noteSelect'].every(id=>{const e=document.getElementById(id),h=e.closest('.bhead');if(!h)return false;const r=e.getBoundingClientRect(),d=h.querySelector('.bdoc').getBoundingClientRect();return r.width>0&&Math.abs(r.right-d.right)<10;})`),'Fonti e Appunti: selettori nella testata, allineati a destra');
   await c.val(`ZNAV.organizza.fonti=true;ZNAV.organizza.media=true;zainoNavAggiorna()`);
   await wait(`!!document.querySelector('[data-sezione="fonti"] .zs-tit [data-znav="crea"]')`);
   assert(await c.val(`['fonti','media'].every(s=>Array.from(document.querySelectorAll('[data-sezione="'+s+'"] .zs-tit .zs-azioni button')).map(b=>b.dataset.znav).join(',')==='crea,ordina,organizza')`),'sidebar: + prima di A–Z, ordinamento accanto alla matita');
   await c.val(`ZNAV.organizza.fonti=false;ZNAV.organizza.media=false;zainoNavAggiorna()`);
-  const quaderni=await c.val(`(()=>{ensureMde(noteStati()[1]);return ['noteSelect','noteSelect2'].map(id=>{const s=document.getElementById(id),g=s.closest('.tendina');return {id,icona:!!g.querySelector('.tlab svg[data-icona="notebook"]'),testo:g.querySelector('.tlab').textContent,tooltip:g.title,nome:s.getAttribute('aria-label'),select:s.getBoundingClientRect().width,guscio:g.getBoundingClientRect().width};});})()`);
-  assert(quaderni.every(g=>g.icona&&!g.testo.trim()&&g.tooltip.includes('Quaderno')&&g.nome&&g.select<=g.guscio+1),'Quaderno: icona, tooltip e area cliccabile confinata: '+JSON.stringify(quaderni));
+  const quaderni=await c.val(`(()=>{ensureMde(noteStati()[1]);return ['noteSelect','noteSelect2'].map(id=>{const s=document.getElementById(id),g=s.closest('.tendina');return {id,testo:g.querySelector('.tlab').textContent,nome:s.getAttribute('aria-label'),select:s.getBoundingClientRect().width,guscio:g.getBoundingClientRect().width};});})()`);
+  assert(quaderni.every(g=>g.testo.trim()&&g.nome&&Math.abs(g.select-g.guscio)<=1),'Appunti: etichetta leggibile e area cliccabile confinata: '+JSON.stringify(quaderni));
   const layout=await c.val('bancoStato().col');
   for(const larghezza of [420,280]){
    await c.val(`BANCO.stato.col=1-${larghezza}/document.getElementById('banco').getBoundingClientRect().width;bancoDisegna()`);await c.pausa(150);
    assert(await c.val(`(()=>{const b=document.querySelector('#noteHost .ncb-more');return !!b.getClientRects().length&&!!b.querySelector('svg[data-icona="chevrons-right"]')&&getComputedStyle(b.querySelector('svg')).display!=='none'&&!b.textContent.trim()&&b.title==='Altri strumenti'&&b.getAttribute('aria-label')===b.title;})()`),'toolbar a '+larghezza+'px: solo doppio chevron con tooltip');
   }
+  assert(await c.val(`(()=>{const e=document.getElementById('noteSelect'),h=e.closest('.bhead'),r=e.getBoundingClientRect(),g=e.closest('.tendina').getBoundingClientRect();return h&&r.width>0&&Math.abs(r.width-g.width)<=1&&r.left>=h.getBoundingClientRect().left&&r.right<=h.getBoundingClientRect().right;})()`),'titolo nello split stretto: selettore intero cliccabile e dentro la testata');
   const compatta=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-toolbar-quaderno.png',Buffer.from(compatta.result.data,'base64'));
   await c.val(`BANCO.stato.col=${q(layout)};bancoDisegna()`);
   assert(await c.val(`['.bold','.italic','.heading','.quote','.unordered-list','.ordered-list','.link','.code','.preview','.side-by-side','.ncb-undo','.ncb-redo','.ncb-callout','.ncb-emoji','.ncb-guida','.ncb-cita','.ncb-mat'].every(sel=>{const b=document.querySelector('#noteHost .editor-toolbar '+sel);return b?.querySelector('svg.ui-icon')&&b.title;})`),'Appunti: tutti i simboli sono SVG con tooltip');
@@ -41,6 +43,11 @@ async function wait(expr){for(let i=0;i<160;i++){if(await c.val(expr))return;awa
   await c.val(`noteOpen(${q(file)},NOTES)`);assert.equal(await c.val(`NOTES.mde.value()`),body);
   await c.val(`openPdf('01 Botanica.pdf',1,'Botanica',true)`);await wait(`PDFJS.pronto && !!PDFJS.doc`);
   assert.equal((await c.val(`document.getElementById('pdfPagN').textContent`)).toLowerCase(),'1 di 3');
+  await c.clicca('#pdfDoc');await wait('!!document.querySelector("#pdfDocPop[open]")');
+  await c.clicca('#pdfDocPop [data-doc="02 Biologia cellulare.pdf"]');await wait('ANTEPRIMA.file==="02 Biologia cellulare.pdf"&&!!PDFJS.doc');
+  assert.equal(await c.val('document.getElementById("pdfDoc").closest(".bdoc").title'),'Biologia cellulare.pdf','il menu nella testata cambia davvero il documento');
+  await c.val("openPdf('01 Botanica.pdf',1,'Botanica',true)");await wait('ANTEPRIMA.file==="01 Botanica.pdf"&&!!PDFJS.doc');
+
   await wait(`!!document.querySelector('#pdfHost .textLayer span')`);
   await c.val(`window.__toolbarRange=()=>{const t=document.querySelector('#pdfHost .textLayer span').firstChild,r=document.createRange();r.setStart(t,0);r.setEnd(t,Math.min(8,t.textContent.length));return r;};evStratoAttivoScegli('');evVisteScegli({tutte:true});evidenzeBottoni()`);
   await c.clicca('#pdfEvid');

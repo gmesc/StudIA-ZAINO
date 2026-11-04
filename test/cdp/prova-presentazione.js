@@ -9,7 +9,10 @@ async function collegaProiezione(){
  assert(target,'finestra separata presente');const ws=new WS(target.webSocketDebuggerUrl),pending=new Map();let id=0;
  await new Promise((ok,ko)=>{ws.once('open',ok);ws.once('error',ko);});ws.on('message',raw=>{const r=JSON.parse(raw);if(pending.has(r.id)){pending.get(r.id)(r);pending.delete(r.id);}});
  const invia=(method,params)=>new Promise(resolve=>{pending.set(++id,resolve);ws.send(JSON.stringify({id,method,params}));});
- return {ws,invia,val:async expression=>{const r=await invia('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.result.exceptionDetails)throw Error(JSON.stringify(r.result.exceptionDetails));return r.result.result.value;}};
+ const client={ws,invia,val:async expression=>{const r=await invia('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.result.exceptionDetails)throw Error(JSON.stringify(r.result.exceptionDetails));return r.result.result.value;}};
+ // Il bersaglio CDP compare prima del DOM: aspettarlo evita null casuali
+ // aprendo la seconda finestra, senza nascondere gli errori delle misure.
+ await wait('document.readyState==="complete"&&!!document.getElementById("contenuto")',client);return client;
 }
 async function shot(name,client=c){const r=await client.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-presentazione-'+name+'.png',Buffer.from(r.result.data,'base64'));}
 async function click(s){await c.clicca(s);await c.pausa(120);}

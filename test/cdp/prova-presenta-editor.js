@@ -62,6 +62,8 @@ async function riordinaMiniature(da,a,dentro=false){
  const banco=await c.val('bancoStato()');let id;
  try{
   await c.val("cambiaZaino('biologia',true);bancoForma('due-col');bancoAssegna('A','presenta');bancoAssegna('C','gobbo')");
+  await wait('!!document.getElementById("presentaDocumenti").closest(".bhead")');
+  assert(!await c.val('!!document.querySelector("#presentaPane #presentaDocumenti")'),'PRESENTA: selettore nella testata, assente dalla toolbar');
   assert(!await c.val(`!!document.querySelector('#gobboPane').closest('.blocco').querySelector('[data-proietta]')`),'le note private non offrono la proiezione generica');
   await wait('!!document.querySelector(\'#presentaPane [aria-label="Documento"]\')');
   assert(await c.val(`['presenta','gobbo'].every(k=>[...document.querySelector('.bsel').options].some(o=>o.value===k))`));
@@ -526,6 +528,7 @@ async function riordinaMiniature(da,a,dentro=false){
   // La regia si svuota prima della chiusura nativa: non lasciare al test successivo il target morente.
   let playerChiuso=false;for(let n=0;n<120;n++){const targets=await (await fetch('http://localhost:'+(process.env.STUDIA_PORTA||8999)+'/json')).json();if(!targets.some(t=>t.id===target.id)){playerChiuso=true;break;}await c.pausa(100);}assert(playerChiuso,'finestra pubblica davvero chiusa');
   await c.val('ZainoPresenta.chiudi()');
+  assert.equal(await c.val('document.getElementById("presentaDocumenti").closest(".tendina").querySelector(".tlab").textContent'),'Apri una presentazione…','chiudere il documento aggiorna subito il selettore nella testata');
   console.log('✓ PRESENTA e GOBBO: tab contestuali, colori e cinque slot, titolo/testo indipendenti, miniature e riordino nativo, stile, adatta riquadro, media, autosave, riapertura, player e note private');
  }finally{
   fs.writeFileSync('/private/tmp/presenta-ultimo-stato.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));

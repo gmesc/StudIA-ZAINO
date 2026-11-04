@@ -107,7 +107,7 @@
   if(stesso&&prima.focus?.isConnected)prima.focus.focus({preventScroll:true});
  }
  async function esciIntero(){ripristinaIntero();await api?.intero(false);}
- function titolo(id){return blocco(id)?.querySelector('.bdoc')?.textContent||window.bancoStrumento(id)?.nome||'Proiezione';}
+ function titolo(id){return blocco(id)?.querySelector('.bdoc')?.title||window.bancoStrumento(id)?.nome||'Proiezione';}
  function ancoraDom(el){
   const nodes=[...el.querySelectorAll('.mdb,p,li,h1,h2,h3,h4,summary')].filter(n=>n.getClientRects().length);
   return L.ancora(nodes.map((n,i)=>{const r=n.getBoundingClientRect();return {id:i,top:r.top,height:r.height};}),el.getBoundingClientRect().top+16);

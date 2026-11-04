@@ -640,6 +640,7 @@
   .blocco[data-blocco="I"]{ grid-area:I; }
   .blocco{ border-left:0; border-top:0; }
   .blocco[data-bordo-sx="1"]{ border-left:1px solid var(--line); }
+  .blocco[data-bordo-alto="1"]{ border-top:1px solid var(--line); }
   .blocco[hidden]{ display:none!important; }
   /* I separatori restano neutri: il riquadro in uso si riconosce dalla testata. */
   .bhead{ display:flex; align-items:center; justify-content:flex-start; gap:.4rem; padding:0 .5rem; flex:0 0 auto; min-width:0;
@@ -681,6 +682,12 @@
   .bdoc{ flex:1; min-width:0; order:2; text-align:right; font-size:12px; font-weight:400;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .bdoc[hidden]{ display:none; }
+  .bdoc:has(.bselettore){ display:flex; justify-content:flex-end; align-items:center; }
+  .bhead .bdoc > .bselettore{ flex:0 1 auto; max-width:100%; min-width:0; margin:0;
+    font-size:12px; font-weight:400; text-transform:none; letter-spacing:0; justify-content:flex-end; }
+  .bdoc .bselettore :is(.tlab,.ui-documento){ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bdoc .bselettore svg,.bdoc .bselettore::after{ flex:none; }
+  .bdoc .bselettore select{ max-width:none; }
   .bhead .bchiudi{ order:3; flex:none; margin-left:auto; padding:0 .4rem; min-width:var(--tb-h); }
   .mtoolbar .tendina.viva{ max-width:min(38vw,260px); }
   .notectl .tendina.viva{ max-width:min(38vw,240px); }
@@ -9383,7 +9390,8 @@ function popPosiziona(pop, anchorEl){
  * ciascuno di ricordarsi una chiamata è il modo sicuro di dimenticarsene in uno.
  */
 function tendinaViva(sel, opt){
-  if(!sel || sel.dataset.tendina==='1') return;
+  if(!sel) return;
+  if(sel.dataset.tendina==='1'){sel._tendinaAggiorna();return;}
   var o=opt||{};
   var guscio=document.createElement('span');
   guscio.className='tendina'+(o.fissa?'':' viva')+(o.piccola?' piccola':'')+(o.icona?' tendina-icona':'');
@@ -9413,6 +9421,7 @@ function tendinaViva(sel, opt){
   sel.addEventListener('change', scrivi);
   new MutationObserver(scrivi).observe(sel, { childList:true, subtree:true,
     attributes:true, attributeFilter:['value','disabled','hidden'] });
+  sel._tendinaAggiorna=scrivi;
   scrivi();
 }
 
@@ -13522,12 +13531,8 @@ function refreshNoteUI(s){
   /* La tendina degli appunti nasce dentro un `<template>` e arriva nel DOM solo
      quando `ensureMde` costruisce la barra: si avvolge qui, che è il primo posto
      in cui esiste di sicuro. */
-  /* ⚠️ Etichetta FISSA, come in topbar: dice la funzione, non il contenuto.
-     È «Quaderno» perché quello che si sceglie qui è quale appunto aprire fra
-     quelli del corso, e il nome di quello aperto vive nel `title` e nel testo
-     stesso dell'appunto. Un'etichetta viva qui diceva «nessun appunto» a
-     schermo, cioè occupava un bottone per annunciare un vuoto. */
-  tendinaViva(sel, { piccola:true, fissa:'Quaderno', icona:'notebook' });
+  // Nella testata il selettore è anche il nome dell'appunto aperto.
+  tendinaViva(sel, { piccola:true });
   var ctx=curCtx();
   var g=noteGroups(NOTES.list, ctx, s.cur);
   /* Nello zaino «qui» non vuol dire «questo capitolo» ma «questo documento» —
@@ -13580,6 +13585,7 @@ function refreshNoteUI(s){
       w.title='Stai scrivendo su «'+noteEtichetta(s.cur)+'» ('+(noteDove(s.cur)||'altro capitolo')+'), non sul '+(zaino?'documento':'capitolo')+' aperto.';
     }
   }
+  bancoAggiornaDocumenti();
 }
 /* blocco "I miei appunti" dentro il capitolo (iniettato a runtime, non scritto nel .md) */
 function buildMyNotes(){
@@ -18124,6 +18130,11 @@ function bancoPosizionaDivisori(){
 /** Sposta ogni strumento nel blocco che gli tocca, e in magazzino quelli che
  *  non sono a schermo. Non ricrea niente: `appendChild` sposta. */
 function bancoMonta(){
+  // I selettori tornano al loro strumento prima di ricollocarlo: gli stessi
+  // nodi conservano opzioni e gestori anche scambiando o chiudendo gli split.
+  document.querySelectorAll('.bdoc > .bselettore').forEach(function(el){
+    el._bancoPosto.after(el);
+  });
   BANCO.stato=BancoMateriali.unificaAlbum(bancoStato(),BancoForme.blocchiInLettura(bancoStato().forma));
   AlbumSpazio.init();
   var visibili=bancoBlocchiVisibili();
@@ -18171,6 +18182,12 @@ function bancoStrumentiOfferti(){
   Object.keys(reg).forEach(function(id){ if(id!=='capitolo' && id!=='fonte2' && id!=='appunti2') out[id]=reg[id]; });
   return out;
 }
+function bancoSelettoreDocumento(id){
+  var selettori={fonte:'#pdfDoc',fonte2:'#pdf2Doc',appunti:'#noteSelect',appunti2:'#noteSelect2',lim:'.lim-scegli',presenta:'#presentaDocumenti'};
+  var el=selettori[id] && document.querySelector(selettori[id]);
+  if(el && el.tagName==='SELECT' && el.dataset.tendina!=='1') return null;
+  return el && (el.closest('.tendina') || el);
+}
 function bancoAggiornaDocumenti(){
   if(typeof BANCO==='undefined' || !BANCO || !BANCO.stato) return;
   bancoBlocchiVisibili().forEach(function(b){
@@ -18187,7 +18204,15 @@ function bancoAggiornaDocumenti(){
     if(id==='lim')nome=window.ZainoLim?.doc?.studia.title||'';
     var el=h.querySelector('.bdoc');
     if(!el){el=document.createElement('span');el.className='bdoc';h.appendChild(el);}
-    el.textContent=nome;el.title=nome;el.hidden=!nome;
+    var selettore=bancoSelettoreDocumento(id);
+    if(selettore){
+      if(!selettore._bancoPosto){
+        var posto=document.createComment('Selettore del documento');
+        selettore.before(posto);selettore._bancoPosto=posto;selettore.classList.add('bselettore');
+      }
+      if(selettore.parentNode!==el) el.replaceChildren(selettore);
+    }else el.textContent=nome;
+    el.title=nome;el.hidden=!nome&&!selettore;
   });
   znavIndicatori();
 }
@@ -18537,11 +18562,11 @@ function bancoCorpoDi(strumento){
 /* ---- il selettore della forma: otto disegnini, fatti con la stessa griglia -- */
 
 function bancoNomeStrumento(id){
-  var st=bancoStrumento(id), pane=bancoElemento(id), nome=st ? st.nome : (id||'Vuoto');
-  // Il documento è già nominato nella sua barra, anche negli editor aggiuntivi.
-  var selettore=pane && pane.querySelector('.notectl select');
+  var st=bancoStrumento(id), nome=st ? st.nome : (id||'Vuoto');
+  var comando=bancoSelettoreDocumento(id);
+  var selettore=comando && comando.querySelector('select');
   var titolo=selettore && selettore.selectedOptions && selettore.selectedOptions[0];
-  var documento=pane && pane.querySelector('#pdfDoc, #pdf2Doc');
+  var documento=comando && comando.matches('#pdfDoc, #pdf2Doc') ? comando : null;
   var dettaglio=titolo && selettore.value ? titolo.textContent : (documento ? documento.textContent.replace(/\s*[▾▼]\s*$/, '').trim() : '');
   return nome+(dettaglio && dettaglio!=='Documenti' ? ' · '+dettaglio : '');
 }
