@@ -827,9 +827,10 @@
   .znav .zs-item:hover{ background:var(--hover); }
   .znav .zs-item > button:hover, .znav .zs-item > button.attivo{ background:transparent; }
   .znav .zs-item > button:first-child{ flex:1; min-width:0; }
-  .znav .zs-item > button[data-materiale]{ display:flex; align-items:baseline; gap:.4rem; padding-left:2rem; }
-  .znav .znome{ min-width:0; }
-  .znav .znumeri{ display:inline-flex; align-items:center; gap:3px; flex:none; align-self:center; }
+  /* Il rientro appartiene al titolo: i numeri occupano la colonna vuota senza spostarlo. */
+  .znav .zs-item > button[data-materiale]{ display:grid; grid-template-columns:2rem minmax(0,1fr); align-items:center; padding-left:0; }
+  .znav .znome{ grid-area:1 / 2; min-width:0; }
+  .znav .znumeri{ grid-area:1 / 1; display:inline-flex; flex-direction:column; align-items:center; gap:3px; justify-self:center; }
   .znav .zs-seleziona-area{ display:flex; align-items:center; justify-content:center; flex:0 0 auto; min-width:28px; min-height:28px; cursor:pointer; }
   .znav .zs-seleziona{ flex:0 0 auto; width:var(--znav-titolo); height:var(--znav-titolo); margin:0;
     accent-color:var(--teal-strong); cursor:pointer; }
