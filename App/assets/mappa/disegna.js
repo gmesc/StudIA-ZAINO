@@ -34,6 +34,7 @@
 
   // il globale arriva come argomento: dentro la factory non è in scope
   var R = glob ? glob.MappaRelazioni : require('./relazioni');
+  var aspetto = ()=>glob ? glob.MappaAspetto : require('./aspetto');
 
   var TEMA = { panel: '#ffffff', ink: '#16181d', line: '#dcdcdc', muted: '#5b6069', bg: '#fbfbfa' };
   /* Palette dei rami: gli accenti dell'app (teal · giallo · blu) più i toni che
@@ -378,7 +379,9 @@
    */
   function svg(res, opt) {
     opt = opt || {};
+    var stile=opt.aspetto?aspetto().normalizza(opt.aspetto):null;
     var tema = Object.assign({}, TEMA, opt.tema || {});
+    if(stile){tema=aspetto().tema(stile,tema);opt={...opt,font:aspetto().font(stile)};}
     var gruppi = (opt.gruppi && opt.gruppi.length) ? opt.gruppi : GRUPPI;
     var tipo = tipografiaNodo(null, opt);
     var font = tipo.font;
@@ -417,7 +420,8 @@
     (res.archi || []).forEach(function (a, i) {
       var filo = a.e && a.e._filo;
       var col = filo ? tema.muted : (a.e.rel ? R.coloreDi(a.e.rel) : tema.line);
-      var sw = filo ? 1.6 : (a.e.cross ? 1.2 : 1.4);
+      if(stile?.legame)col=stile.legame;
+      var sw = stile?stile.spessore:(filo ? 1.6 : (a.e.cross ? 1.2 : 1.4));
       var tratteggio = a.e.cross ? ' stroke-dasharray="5 4"' : '';
       /* `data-da`/`data-a` accanto a `data-arco`: l'indice cambia a ogni
          ridisegno — basta un ramo chiuso — e un menu contestuale che agisse
@@ -550,7 +554,7 @@
          didascalia — ma senza tratto. Quando è selezionato il tratto torna: la
          selezione è un fatto momentaneo, non una cornice. */
       g.push('<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + n1(Hn) + '" fill="' + tema.panel +
-        '" stroke="' + (acceso ? col : (imm ? 'none' : tema.line)) + '" stroke-width="' + (acceso ? 2.5 : 1) + '"' +
+        '" stroke="' + (acceso ? col : (imm ? 'none' : tema.line)) + '" stroke-width="' + (acceso ? 2.5 : (stile?stile.spessore:1)) + '" rx="'+(stile?stile.raggio:0)+'"' +
         (suo && !imm ? ' stroke-dasharray="4 3"' : '') + '/>');
       /* La barra d'accento dice il gruppo senza colorare il fondo, che renderebbe
          illeggibile il testo in tema scuro. Su una card sta sul lato da cui il
@@ -729,7 +733,7 @@
 
     var titolo = opt.titolo ? '<title>' + esc(opt.titolo) + '</title>' : '';
     return {
-      markup: titolo + '<g class="mzoom">' + out.join('') + '</g>',
+      markup: titolo + (stile&&opt.sfondo!==false?aspetto().sfondo(stile,vb,tema):'') + '<g class="mzoom">' + out.join('') + '</g>',
       viewBox: vb.join(' '),
       bbox: b
     };

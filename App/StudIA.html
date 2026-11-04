@@ -9574,7 +9574,7 @@ function stampaPrepara(opt){
   var tipo=opt.tipo || (opt.classe==='foglio-mappa' ? 'mappa' : 'testo');
   var regole=$('#stampaRegole');
   if(regole && typeof StampaFoglio!=='undefined'){
-    var font=(getComputedStyle(document.body).fontFamily)||"'Helvetica Neue', Arial, sans-serif";
+    var font=(getComputedStyle(document.body).getPropertyValue('--font-documento'))||"'Helvetica Neue', Arial, sans-serif";
     regole.textContent=StampaFoglio.regole({
       tipo:tipo, font:font,
       /* L'appunto si riconosce dal suo nome su ogni pagina, anche quando
@@ -9650,6 +9650,7 @@ function noteExportRiferimento(a){
   return '';
 }
 async function documentoAppuntoDocx(s){
+  s=s||noteStatoAttivo();
   var f=foglioAppunto(s);if(!f)return null;
   var contenitore=document.createElement('div');
   contenitore.className='st-corpo';
@@ -9660,8 +9661,8 @@ async function documentoAppuntoDocx(s){
   contenitore.querySelectorAll('[onerror]').forEach(function(el){el.removeAttribute('onerror');});
   document.body.appendChild(contenitore);
   try{
-    var font=getComputedStyle(document.body).getPropertyValue('--font-text').trim().split(',')[0].replace(/["']/g,'')||'Arial';
-    var dati=await AppuntiExportDOM.leggi(contenitore,{riferimento:noteExportRiferimento});
+    var font=getComputedStyle(document.body).getPropertyValue('--font-documento').trim().split(',')[0].replace(/["']/g,'')||'Arial';
+    var dati=await AppuntiExportDOM.leggi(contenitore,{riferimento:noteExportRiferimento,vettore:function(id){const r=window.vault.disegni.leggi(s.courseId,id);if(r.error)throw Error(r.error);return r.vettore||null;}});
     return AppuntiDocumento.valida(Object.assign(dati,{titolo:f.titolo,nome:stampaNomeFile(f.titolo),font:font}));
   }finally{contenitore.remove();}
 }
@@ -9706,10 +9707,10 @@ function stampaAppunto(destinazione){ var f=foglioAppunto(destinazione); if(f) s
 function foglioMappa(){
   if(!MAPPA.res){ toast('Nessuna mappa da stampare', false); return null; }
   var v=MAPPA.vista;
-  var out=MappaDisegna.svg(MAPPA.res,{ tema:mappaTemaCarta(), gruppi:mappaGruppi(),
+  var out=MappaDisegna.svg(MAPPA.res,{ aspetto:v.aspetto, tema:mappaTemaCarta(), gruppi:mappaGruppi(),
             fsNodo:+v.fsNodo, fsRel:+v.fsRel, etichette:v.etichette,
             maniglie:false, chiudibili:MAPPA.chiudibili||{}, srcImmagine:mappaSrcImmagine,
-            font:(getComputedStyle(document.body).fontFamily||'Helvetica Neue, Arial, sans-serif') });
+            font:MappaAspetto.font(MAPPA.vista.aspetto) });
   var titolo=mappaTitoloCorrente();
   return { titolo:titolo, classe:'foglio-mappa', tipo:'mappa',
            dove:(LESSON?LESSON.title:'')||'',
@@ -16930,7 +16931,7 @@ try{
 
     /* --- 1. schede --- */
     function showTab(name){
-      if (!['utente','zaino','ai','sicurezza'].includes(name)) name='utente';
+      if (!['utente','zaino','aspetto','ai','sicurezza'].includes(name)) name='utente';
       modal.querySelectorAll('.set-tab').forEach(function(t){ t.setAttribute('aria-selected', String(t.dataset.tab===name)); });
       modal.querySelectorAll('.set-pane').forEach(function(p){ p.hidden = (p.dataset.pane!==name); });
       try{ localStorage.setItem('studia.settingsTab', name); }catch(e){}
@@ -19128,7 +19129,7 @@ var MAPPA = {
              valore di fabbrica dev'essere quello che non cambia niente. */
           profondita:0 }
 };
-var MAPPA_LEVE=['gapLivello','gapNodo','w','fsNodo','fsRel','linee','etichette','glossario','fonti','motore','orient','profondita','soglia'];
+var MAPPA_LEVE=['gapLivello','gapNodo','w','fsNodo','fsRel','linee','etichette','glossario','fonti','motore','orient','profondita','soglia','aspetto'];
 /* La frase che spiega i due tasti spenti. Sta in un posto solo perché la dicono
    in due — il suggerimento sul tasto e il messaggio di chi lo preme — e due
    copie della stessa spiegazione divergono al primo ripensamento. Dice anche
@@ -19275,6 +19276,7 @@ function mappaVistaCambiata(){
    gemello, in due punti soli. */
 function mappaVistaDaFile(v){
   v=v||{};
+  MAPPA.vista.aspetto=MappaAspetto.normalizza(v.aspetto);
   MAPPA_LEVE.forEach(function(k){ if(v[k]!==undefined && v[k]!==null) MAPPA.vista[k]=v[k]; });
   var z=v.zoom||{};
   MAPPA.z={ k:+z.k||1, x:+z.x||0, y:+z.y||0 };
@@ -19488,7 +19490,8 @@ function mappaRidisegna(){
   MAPPA.res=res;
   // il nodo selezionato si evidenzia col bordo acceso che `disegna` sa già fare
   if(MAPPA.sel && !MAPPA.nodi[MAPPA.sel]) MAPPA.sel=null;   // l'ha eliminato qualcuno
-  var out=MappaDisegna.svg(res,{ tema:mappaTema(), gruppi:mappaGruppi(), fsNodo:+v.fsNodo, fsRel:+v.fsRel,
+  Object.assign(svg.parentElement.style,MappaAspetto.cartaCSS(v.aspetto,mappaTema()));
+  var out=MappaDisegna.svg(res,{ sfondo:false,aspetto:v.aspetto, tema:mappaTema(), gruppi:mappaGruppi(), fsNodo:+v.fsNodo, fsRel:+v.fsRel,
                                  etichette:v.etichette, titolo:g.titolo, evidenzia:(mappaMie()?MAPPA.sel:null),
                                  /* Le maniglie da cui si tirano gli archi si chiedono, non arrivano
                                     da sole: nella vista generata non si collega niente, e chi
@@ -19496,7 +19499,7 @@ function mappaRidisegna(){
                                  maniglie:mappaMie(),
                                  chiudibili:rami.chiudibili, nascosti:Object.assign(tolti, rami.quanti||{}),
                                  srcImmagine:mappaSrcImmagine,
-                                 font:(getComputedStyle(document.body).fontFamily||'Helvetica Neue, Arial, sans-serif') });
+                                 font:MappaAspetto.font(MAPPA.vista.aspetto) });
   svg.setAttribute('viewBox', mappaRiquadro(out.viewBox, g));
   svg.innerHTML=out.markup;
   // il disegno è nuovo: l'evidenziazione di prima indicava elementi che non
@@ -20005,6 +20008,7 @@ function mappaSincronizzaComandi(){
      mappa di prima. */
   if(typeof mappaMemorieDisegna==='function') mappaMemorieDisegna();
   var v=MAPPA.vista;
+  window.MappaAspettoUI?.sincronizza();
   function premi(sel,attr,val){
     document.querySelectorAll(sel+' button['+attr+']').forEach(function(b){
       b.setAttribute('aria-pressed', String(b.getAttribute(attr)===String(val)));
@@ -20366,7 +20370,7 @@ function mappaMemoriaAnteprima(i, bottone){
       motore:v.motore||'albero', orient:v.orient||'td',
       w:+v.w||168, h:Math.round((+v.w||168)*0.30)+8,
       gapLivello:+v.gapLivello||92, gapNodo:+v.gapNodo||26 });
-    var out=MappaDisegna.svg(res, { tema:mappaTema(), fsNodo:9, fsRel:8, etichette:'nessuna',
+    var out=MappaDisegna.svg(res, { aspetto:v.aspetto, tema:mappaTema(), fsNodo:9, fsRel:8, etichette:'nessuna',
                                     maniglie:false, srcImmagine:mappaSrcImmagine,
                                     font:(getComputedStyle(document.body).fontFamily||'Helvetica') });
     pop.innerHTML='<div class="mem-nome">'+escHtml(m.nome||('Slot '+(i+1)))+'</div>'+
@@ -20499,7 +20503,7 @@ function mappaRinomina(id){
   // Il solo zoom non basta: anche il viewBox adatta la mappa al riquadro.
   var matrice=rect.getScreenCTM();
   var tipo=MappaDisegna.tipografiaNodo(nodo, {
-    fsNodo:MAPPA.vista.fsNodo, font:getComputedStyle(document.body).fontFamily
+    fsNodo:MAPPA.vista.fsNodo, font:MappaAspetto.font(MAPPA.vista.aspetto)
   }, matrice ? Math.hypot(matrice.c, matrice.d) : 1);
   c.style.font=tipo.peso+' '+tipo.fs+'px '+tipo.font;
   c.hidden=false;
@@ -22302,7 +22306,7 @@ window.addEventListener('keydown', function(e){
     <!-- il pallino di modifica non salvata, come negli appunti: sta prima
          dei comandi perché è uno stato, non un'azione -->
     <span class="mdirty" id="mSporca" hidden title="Modifiche non salvate">&#9679;</span>
-    <button class="mbtn" id="mVista" type="button" title="Aggiustamenti della vista" aria-haspopup="dialog">&#9881;</button>
+    <button class="mbtn" id="mVista" type="button" title="Stile, sfondo e disposizione della mappa" aria-haspopup="dialog">&#9881;</button>
     <button class="mbtn" id="mStampa" type="button" title="Stampa la mappa (Cmd+P)" aria-label="Stampa la mappa">&#128424;</button>
     <!-- «PDF esporta la vista corrente» era già nel §7 del piano delle mappe:
          eccolo. Non è la stampa: il file lo scrive l'app, coi fondi accesi e
@@ -22377,7 +22381,8 @@ window.addEventListener('keydown', function(e){
   <p class="zp-stato" id="zainoStato" role="status"></p>
 </div>
 <div id="mappaPop" class="popmenu" role="dialog" aria-label="Aggiustamenti della vista">
-  <!-- La profondità sta in cima perché è l'unica leva che cambia CHE COSA si
+  <div id="mAspetto"></div>
+  <!-- La profondità è l'unica leva che cambia CHE COSA si
        vede: tutte le altre cambiano come lo si vede. -->
   <div class="mriga"><label for="mProfondita">Profondità</label><input type="range" class="zaino-slider" id="mProfondita" min="0" max="10" step="1"><span class="mval" id="mProfonditaV"></span></div>
   <div class="mriga"><label for="mGapLivello">Distanza livelli</label><input type="range" class="zaino-slider" id="mGapLivello" min="40" max="240" step="4"><span class="mval" id="mGapLivelloV"></span></div>
@@ -22690,11 +22695,19 @@ document.getElementById('noteExportMenu').addEventListener('keydown',function(e)
       <button class="set-tab" role="tab" data-tab="utente" aria-selected="true">Utente</button>
       <button class="set-tab" role="tab" data-tab="corsi" aria-selected="false">Corsi</button>
       <button class="set-tab" role="tab" data-tab="zaino" aria-selected="false">Zaino</button>
+      <button class="set-tab" role="tab" data-tab="aspetto" aria-selected="false">Aspetto</button>
       <button class="set-tab" role="tab" data-tab="ai" aria-selected="false">AI</button>
       <button class="set-tab" role="tab" data-tab="sicurezza" aria-selected="false">Sicurezza</button>
     </div>
     <div class="set-body tbar-ctl">
 
+      <section class="set-pane" data-pane="aspetto" hidden>
+        <div class="set-sec-h">Carattere dell’interfaccia</div>
+        <div class="setgrid"><label for="aspettoFont">Font<select id="aspettoFont"><option value="zaino">ZAINO · predefinito</option><option value="atkinson">Atkinson Hyperlegible</option></select></label></div>
+        <p class="set-note">La scelta si salva automaticamente su questo computer. I font dei documenti si scelgono nei rispettivi editor.</p>
+        <p id="aspettoEsempio">Leggere, scrivere, collegare le idee. Aa Bb · 0123456789</p>
+        <div class="tbar"><button class="tbtn" id="aspettoRipristina" type="button">Ripristina carattere</button></div>
+      </section>
       <!-- ============ UTENTE ============ -->
       <section class="set-pane" data-pane="utente">
         <div class="set-sec-h">Come imparo</div>
@@ -23074,7 +23087,13 @@ document.getElementById('noteExportMenu').addEventListener('keydown',function(e)
 <script src="assets/interfaccia/tipografia.js"></script>
 <script src="assets/presentazioni/editor.js"></script>
 <script src="assets/appunti/tabelle-ui.js"></script>
+<script src="assets/appunti/svg.js"></script>
 <script src="assets/appunti/figure-ui.js"></script>
+<script src="assets/mappa/aspetto.js"></script>
+<script src="assets/mappa/aspetto-ui.js"></script>
+<link rel="stylesheet" href="assets/mappa/aspetto.css">
 <link rel="stylesheet" href="assets/interfaccia/tendine.css">
+<link rel="stylesheet" href="assets/interfaccia/aspetto.css">
+<script src="assets/interfaccia/aspetto.js"></script>
 </body>
 </html>

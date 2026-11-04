@@ -1,0 +1,4 @@
+/* Le superfici di lettura conservano il carattere dei documenti. */
+:root{--font-documento:"Helvetica Neue",Helvetica,Arial}
+:is(#noteHost,#noteHost2) :is(.editor-preview,.editor-preview-side,.md-prev,.md-testo,.CodeMirror),.st-corpo{--font-text:var(--font-documento);font-family:var(--font-documento),var(--emoji-font),sans-serif}
+#aspettoEsempio{font-size:18px;line-height:1.5;border-block:1px solid var(--line);padding:16px 0;margin:16px 0}

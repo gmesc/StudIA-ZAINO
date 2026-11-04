@@ -58,6 +58,7 @@
           const copia=el.cloneNode(true);copia.setAttribute('xmlns','http://www.w3.org/2000/svg');copia.setAttribute('width','24');copia.setAttribute('height','24');
           src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new win.XMLSerializer().serializeToString(copia).replace(/currentColor/g,st.color));
         }
+        const disegno=el.closest('[data-disegno]');if(disegno&&opt.vettore){const v=opt.vettore(disegno.dataset.disegno);if(v)n.vettore=v;}
         if(!src)throw Error('Immagine senza sorgente: '+n.alt);
         attese.push(immagine(src,n,tag==='svg'));return n;
       }

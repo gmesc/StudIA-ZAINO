@@ -9,21 +9,23 @@ Un clic o il menu contestuale su un disegno o un’immagine apre i controlli di 
 Il Markdown contiene una normale immagine relativa e un commento con le proprietà:
 
 ````markdown
-![Disegno|60%](_disegni/UUID.png)
+![Disegno|60%](_disegni/UUID.svg)
 <!-- zaino-figura {"align":"center","layer":"back","x":32,"y":2.5} -->
 ````
 
 Le coordinate sono relative al foglio: x in percentuale della larghezza e y in em rispetto all’ancora. Si conservano fra split, zoom, riaperture ed export. I bordi del foglio limitano il trascinamento; non è un impaginatore con pagine fisse o testo che scorre intorno alla sagoma.
 
-La scena vettoriale è incorporata nel PNG da `exportToBlob` di Excalidraw con `exportEmbedScene`. Non viene salvata una semplice schermata: `loadFromBlob` recupera gli elementi modificabili. I PNG sono in `APPUNTI/_disegni`, con nomi UUID generati nel main. Ogni aggiornamento crea una nuova versione e sostituisce il riferimento nel solo appunto corrente. Le precedenti restano disponibili per Undo e per le versioni salvate degli appunti; non vengono cancellate automaticamente.
+I disegni nuovi o aggiornati usano **SVG**, generato con `exportToSvg`: forme, frecce e testo restano vettoriali e i font del disegno sono incorporati. Per ogni UUID si conservano tre file in `APPUNTI/_disegni`: lo SVG per il Markdown, un PNG con la scena Excalidraw incorporata da `exportToBlob`, e un JSON con la rappresentazione grafica validata. Il doppio clic recupera la scena originale dal PNG con `loadFromBlob`. I vecchi riferimenti PNG continuano a funzionare; modificando e confermando un vecchio disegno si produce una nuova versione SVG.
 
-Il salvataggio passa dalla whitelist sincrona del preload, valida contenuto PNG, dimensioni e presenza dei metadati Excalidraw, e usa la scrittura atomica. Il renderer non sceglie percorsi o nomi dei file. Limiti: PNG massimo 24 MB, esportazione a lato massimo 3200 px; il disegno ammette forme, frecce, testo e tratti, senza immagini incorporate o collegamenti. Gli errori sono mostrati nel dialogo, che rimane aperto con il lavoro corrente.
+Ogni aggiornamento crea una nuova versione; i file precedenti restano per Undo e per le versioni degli appunti. Il salvataggio passa dalla whitelist del preload e dalla scrittura atomica. Il renderer non sceglie percorsi o nomi. SVG è ricostruito da soli elementi e attributi grafici ammessi, con font locali in base64: non sono accettati script, collegamenti esterni o markup arbitrario. A schermo arriva una data URL generata dal main; la politica che blocca gli SVG arbitrari del vault resta invariata.
+
+Limiti: PNG massimo 24 MB e lato esportato massimo 3200 px; vettori fino a 2000 elementi, albero/scene di 2 MB e font incorporati entro 16 MB complessivi. Sono disponibili forme, frecce, testo e tratti, senza immagini incorporate o collegamenti. Gli errori lasciano aperto il dialogo con il lavoro corrente. L’importazione di un SVG generico come elementi Excalidraw modificabili non è implementata: questa funzione riguarda i disegni creati o aggiornati nell’editor integrato.
 
 Le figure devono occupare una riga autonoma nel Markdown per avere questi comandi. Le immagini in mezzo a una frase conservano la resa precedente. Le figure aggiunte dall’interfaccia vengono già collocate su righe autonome.
 
 ## PDF e DOCX
 
-Il PDF mantiene aspetto e sovrapposizione della figura rispetto al testo. Il DOCX incorpora il PNG: le figure in linea sono immagini normali; quelle sovrapposte usano ancoraggi Word, allineamento/coordinate e proprietà davanti/dietro al documento. I footer restano presenti. I vettori si modificano in ZAINO; in Word il disegno è una figura. L’impaginazione può variare secondo il lettore Word.
+Il PDF mantiene aspetto e sovrapposizione della figura rispetto al testo. Il DOCX incorpora SVG e un PNG di compatibilità per i lettori che non supportano il vettoriale: le figure in linea sono immagini normali; quelle sovrapposte usano ancoraggi Word, allineamento/coordinate e proprietà davanti/dietro al documento. I footer restano presenti. I vettori si modificano in ZAINO; in Word il disegno è una figura. L’impaginazione può variare secondo il lettore Word.
 
 ## Verifica
 
@@ -37,14 +39,12 @@ Moduli: `appunti/figure.js`, `figure-ui.js`, `figure.css`, `lib/appunti-disegni.
 
 API ufficiali: https://docs.excalidraw.com/docs/@excalidraw/excalidraw/api/utils/export
 
-## Vettoriale e preferenze di interfaccia
+## Aggiornamento SVG e aspetto — 4 novembre 2026
 
-Excalidraw espone `exportToSvg`, già incluso nel runtime locale. È possibile sviluppare una rappresentazione SVG con la scena originale per la riapertura: l’attuale formato è PNG con scena incorporata, non SVG. Un SVG generico importato non diventa automaticamente un insieme di elementi Excalidraw. Un’eventuale importazione SVG deve essere validata come contenuto grafico; il DOCX dovrebbe mantenere un fallback PNG per i lettori che non supportano SVG.
+Impostazioni → Aspetto permette di scegliere Atkinson Hyperlegible per l’interfaccia, con ripristino. Il pannello MAPPE → ingranaggio → Stile e sfondo offre preset completi e sfondi: dettagli in [ASPETTO.md](ASPETTO.md).
 
-Font UI: Atkinson e TestMe sono già distribuiti localmente. Un futuro menu Impostazioni → Aspetto può salvare il font dell’interfaccia separatamente dal font dei documenti e intervenire sul token `--font-text`, con anteprima e ripristino. Occorre verificare testo troncato, misure delle toolbar, finestre strette e tema scuro. Atkinson sarebbe la prima alternativa proposta; TestMe una scelta personale. Nessuna preferenza UI dell’utente è stata modificata.
+`test/aspetto-svg.js` verifica validazione del vettoriale e DOCX con SVG/PNG. `prova-appunti-disegni.js` verifica salvataggio reale SVG, font Excalifont incorporato, riapertura della scena, posizionamento, immutabilità delle versioni e PDF/DOCX. Il PDF è stato renderizzato e ispezionato; SVG, PNG e font incorporato sono presenti nel DOCX. Il confronto visivo in Microsoft Word resta da eseguire con l’utente.
 
-Fonti: [API export Excalidraw](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/api/utils/export), [Atkinson del Braille Institute](https://www.brailleinstitute.org/freefont/), [TestMe degli autori](https://github.com/molotro/TestMe02).
-
-MAPPE: clic destro su un nodo → colore (con opzione per i discendenti); ingranaggio → dimensioni testi/card, distanze e stile delle linee. Non è ancora disponibile un pannello di preset completi dei nodi né la scelta dello sfondo della mappa.
+API ufficiali: [Export Utilities di Excalidraw](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/api/utils/export).
 
 Verifica del posizionamento libero: `test/appunti-figure.js` controlla coordinate, zoom, limiti, ridimensionamento entro il margine e serializzazione. Le controprove sul codice precedente rifiutano la nuova operazione e i nuovi bordi delle tabelle. `prova-appunti-disegni.js` trascina davvero disegno e foto, confronta la geometria a video, prova frecce, Undo/Redo ed esportazione. Log `/private/tmp/zaino-impaginazione-figura-finale.log`; test di parità/editor/export in `/private/tmp/zaino-impaginazione-finale.log`. PDF renderizzati e ispezionati; DOCX controllato nella struttura, ancora da aprire in Word per il collaudo visivo.

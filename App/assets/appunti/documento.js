@@ -18,7 +18,8 @@
       if(n.tag==='img'){
         if(typeof n.dati!=='string'||!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(n.dati))throw Error('Immagine non incorporata.');
         if(n.visuale&&(!['inline','front','back'].includes(n.visuale.layer)||!['left','center','right'].includes(n.visuale.align)||['x','y'].some(k=>n.visuale[k]!==undefined&&(!Number.isFinite(n.visuale[k])||Math.abs(n.visuale[k])>10000))))throw Error('Posizione della figura non valida.');
-        immagini+=n.dati.length;
+        if(n.vettore){const v=typeof module==='object'?require('./svg'):AppuntiSvg;v.valida(n.vettore);}
+        immagini+=n.dati.length+(n.vettore?JSON.stringify(n.vettore).length:0);
         if(immagini>100000000||!(n.larghezza>0&&n.larghezza<=10000&&n.altezza>0&&n.altezza<=10000))throw Error('Immagine troppo grande.');
       }
       ['riferimento','href','postilla'].forEach(function(k){if(n[k]!=null&&(typeof n[k]!=='string'||n[k].length>10000))throw Error('Riferimento non valido.');});

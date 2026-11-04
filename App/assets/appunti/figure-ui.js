@@ -48,7 +48,9 @@
     if(scene.elements.some(e=>!['rectangle','diamond','ellipse','arrow','line','freedraw','text'].includes(e.type)||e.link))throw Error('Usa forme, frecce, testo o tratto libero senza collegamenti.');
     const png=await LimEditor.exportToBlob({elements:scene.elements,appState:{...editor.api.getAppState(),exportBackground:false,exportWithDarkMode:false,exportEmbedScene:true},files:{},mimeType:'image/png',maxWidthOrHeight:3200,exportPadding:16});
     const dati=await new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=()=>ko(Error('Impossibile preparare il disegno.'));r.readAsDataURL(png);});
-    verifica();const salvato=window.vault.disegni.salva(z,dati);if(salvato.error)throw Error(salvato.error);verifica();
+    const svg=await LimEditor.exportToSvg({elements:scene.elements,appState:{...editor.api.getAppState(),exportBackground:false,exportWithDarkMode:false},files:{},exportPadding:16});
+    const vettore=AppuntiSvg.daDOM(svg,scene.elements);
+    verifica();const salvato=window.vault.disegni.salva(z,{png:dati,vettore});if(salvato.error)throw Error(salvato.error);verifica();
     const v=c?{...c.v,src:salvato.src}:{src:salvato.src,caption:'Disegno',percento:60,style:{align:'center',layer:'inline'}};
     if(c)sostituisci(c,v);else{cm.replaceRange('\n\n'+F.scrivi(v)+'\n\n',from,to,'+disegno');noteAnteprimaRidisegna(s);}dialog.close();
    }catch(e){errore.textContent=e.message;}finally{busy=false;applica.disabled=false;}
@@ -56,7 +58,7 @@
   applica.disabled=true;bar.append(E('strong','Disegno'),E('span',null,'tbspazio'),button('Annulla',()=>dialog.close()),applica);dialog.append(bar,tela,errore);document.body.append(dialog);dialog.showModal();dialog.addEventListener('close',()=>{editor?.smonta();dialog.remove();},{once:true});
   try{
    await LavagnaUI.carica();verifica();let data={elements:[],appState:{viewBackgroundColor:'#ffffff',currentItemFontFamily:2},files:{}};
-   if(c){const id=c.v.src.match(/([0-9a-f-]{36})\.png$/)[1],r=window.vault.disegni.leggi(z,id);if(r.error)throw Error(r.error);const blob=new Blob([Uint8Array.from(atob(r.dati.split(',')[1]),c=>c.charCodeAt(0))],{type:'image/png'});data=await LimEditor.loadFromBlob(blob,null,null);LimModello.scena(data);verifica();}
+   if(c){const id=c.v.src.match(/([0-9a-f-]{36})\.(?:png|svg)$/)[1],r=window.vault.disegni.leggi(z,id);if(r.error)throw Error(r.error);const blob=new Blob([Uint8Array.from(atob(r.dati.split(',')[1]),c=>c.charCodeAt(0))],{type:'image/png'});data=await LimEditor.loadFromBlob(blob,null,null);LimModello.scena(data);verifica();}
    editor=LimEditor.monta(tela,{data:{...data,scrollToContent:true},ready:()=>{applica.disabled=false;},onChange:()=>{},link:()=>{}});
   }catch(e){errore.textContent=e.message;}
  }

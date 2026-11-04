@@ -360,7 +360,7 @@
        ⚠️ Chi la usa la REFERENZIA, non la copia (decisione del 10 agosto): il file
        resta uno solo in `ALBUM/`, e cancellarlo può dire «è usata in tre posti»
        invece di lasciare tre riquadri rotti in giro. */
-    s=s.replace(/!\[([^\]]*)\]\(_disegni\/([0-9a-f-]{36})\.png\)/g,function(m,cap,id){
+    s=s.replace(/!\[([^\]]*)\]\(_disegni\/([0-9a-f-]{36})\.(?:png|svg)\)/g,function(m,cap,id){
       var mis=Misura.leggi(cap),v=_misuraVeste(mis.percento),src=typeof g.disegnoSrc==='function'?g.disegnoSrc(id):'';
       if(!src)return '<span class="figmanca">Disegno non disponibile</span>';
       return '<span class="figura disegno'+v.cls+'"'+v.stile+'><a href="#" class="dlink" data-disegno="'+id+'"><img class="figimg" src="'+g.esc(src)+'" alt="'+mis.didascalia+'"></a></span>';
