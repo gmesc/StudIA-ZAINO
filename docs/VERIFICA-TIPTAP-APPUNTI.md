@@ -90,7 +90,7 @@ Per il ponte di caricamento/salvataggio esistono `contentType:'markdown'`, `getM
 
 I pacchetti pubblici provati sono MIT e parsing/serializzazione girano localmente. Per l’editor Markdown non emerge la necessità di un servizio cloud; risorse e dipendenze vanno incorporate nell’app. Verifica basata sui manifest installati e sulla prova locale. [Repository ufficiale](https://github.com/ueberdosis/tiptap), [licenza](https://github.com/ueberdosis/tiptap/blob/main/LICENSE.md).
 
-Import/export Word non è un risultato di questo check: il prodotto Tiptap Conversion è distinto dall’estensione Markdown e propone un servizio commerciale. L’eventuale importer DOC/RTF ed exporter DOCX va progettato separatamente; integrare Markdown non li aggiunge automaticamente. [Conversion](https://tiptap.dev/docs/conversion/getting-started/overview).
+Import/export Word non è un risultato di questo check: il prodotto Tiptap Conversion è distinto dall’estensione Markdown. **Precisazione dalla ricerca successiva del 4 novembre:** l’attuale estensione DOCX Export Pro esegue la conversione nel client senza server/token; rimane un pacchetto commerciale, mentre altri flussi Conversion usano il servizio. L’eventuale importer DOC/RTF ed exporter DOCX va progettato separatamente; integrare Markdown non li aggiunge automaticamente. [Installazione Conversion](https://tiptap.dev/docs/conversion/getting-started/install), [valutazione aggiornata dell’export Word](VALUTAZIONE-EXPORT-WORD.md).
 
 ## Riproduzione isolata
 
