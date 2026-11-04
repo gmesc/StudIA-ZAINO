@@ -1,7 +1,7 @@
 'use strict';
 const A=require('node:assert/strict'),fs=require('node:fs'),c=require('./cdp'),q=JSON.stringify;
 async function wait(e){for(let i=0;i<150;i++){if(await c.val(e))return;await c.pausa(100);}throw Error('Attesa: '+e);}
-(async()=>{await c.collega();await wait(`typeof MappaAspettoUI!=='undefined'&&zainoAttivo()==='biologia'`);const vault=await c.val('vault.path');A(vault.includes('studia-zaino-prova-'));await c.partiPulito();const prima=await c.val('({banco:bancoStato(),tema:document.documentElement.dataset.theme,memoria:{...localStorage}})');let file;
+(async()=>{await c.collega();await wait(`typeof MappaAspettoUI!=='undefined'&&zainoAttivo()==='biologia'`);const vault=await c.val('vault.path');A(vault.includes('studia-zaino-prova-'));await c.partiPulito();const prima=await c.val('({banco:bancoStato(),tema:document.documentElement.dataset.theme,memoria:{...localStorage}})');let file;const marker=require('node:path').join(require('node:path').dirname(vault),'dati/dialogo-salvataggio.json'),dialogoPrima=fs.existsSync(marker)?fs.readFileSync(marker):null;
 try{
  await c.val(`document.getElementById('settingsBtn').click();document.querySelector('[data-tab="aspetto"]').click();(()=>{const s=document.getElementById('aspettoFont');s.value='atkinson';s.dispatchEvent(new Event('change'));})()`);
  await wait(`document.fonts.check('14px "Atkinson Hyperlegible"')`);
@@ -19,8 +19,41 @@ try{
  await c.val(`MAPPA.mia.file='';mappaApriMia(${q(file)})`);await wait(`MAPPA.mia.file===${q(file)}`);A.equal(await c.val('MAPPA.vista.aspetto.sfondo'),'linee');
  const stampata=await c.val('foglioMappa().html');A(stampata.includes('#fffbed'));A(stampata.includes('<pattern'));A(stampata.includes('Atkinson'));
  fs.writeFileSync('/private/tmp/zaino-mappe-aspetto.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
+ // Tutte le carte locali si caricano e restano ferme quando la camera cambia.
+ for(const tipo of ['cotone','naturale','chiara']){
+  await c.val(`(()=>{const s=document.querySelector('[data-aspetto="sfondo"]');s.value='carta-${tipo}';s.dispatchEvent(new Event('change'));})()`);
+  A(await c.val(`(async()=>{const i=new Image();i.src=new URL('assets/presentazioni/carte/${tipo}.png',document.baseURI);await i.decode();return i.naturalWidth>0;})()`));
+ }
+ const fondo=await c.val(`document.querySelector('.mtela').style.cssText`);
+ await c.val(`closePops();MAPPA.z={k:1.2,x:25,y:15};mappaApplicaZoom()`);
+ A.equal(await c.val(`document.querySelector('.mtela').style.cssText`),fondo);A.equal(await c.val(`document.querySelector('#mappaSvg .msfondo')`),null);
+ const trasformazione=await c.val(`document.querySelector('#mappaSvg .mzoom').getAttribute('transform')`);
+ const punto=await c.val(`(()=>{const r=document.getElementById('mappaSvg').getBoundingClientRect();return{x:r.left+40,y:r.top+40};})()`);
+ await c.invia('Input.dispatchMouseEvent',{type:'mouseWheel',...punto,deltaX:0,deltaY:-120});await c.pausa(120);
+ A.notEqual(await c.val(`document.querySelector('#mappaSvg .mzoom').getAttribute('transform')`),trasformazione);A.equal(await c.val(`document.querySelector('.mtela').style.cssText`),fondo);
+ await c.val('mappaFlush()');A.equal(require('../../lib/mappe').apri(vault,'biologia',file).mappa.vista.aspetto.sfondo,'carta-chiara');
+ await c.val(`MAPPA.mia.file='';mappaApriMia(${q(file)})`);await wait(`MAPPA.mia.file===${q(file)}`);A.equal(await c.val('MAPPA.vista.aspetto.sfondo'),'carta-chiara');
+ A((await c.val('foglioMappa().html')).includes('carte/chiara.png'));
+ fs.writeFileSync(marker,JSON.stringify({filePath:'/private/tmp/zaino-mappa-carta.pdf'}));const pdf=await c.val(`salvaPdf('mappa')`);A.equal(pdf,'/private/tmp/zaino-mappa-carta.pdf');A(fs.statSync(pdf).size>10000);
+ // Campionamento raster del profilo SVG: gli angoli esterni sono trasparenti,
+ // il centro della fascia mantiene il colore, nei due orientamenti.
+ for(const orient of ['td','lr'])for(const raggio of [8,24]){
+  const pixel=await c.val(`(async()=>{
+   const a={...MAPPA.vista.aspetto,raggio:${raggio}},res=MappaLayouts.run({nodi:[{id:'x',testo:'Nodo',origine:'utente'}],archi:[]},{orient:'${orient}'});
+   const out=MappaDisegna.svg(res,{aspetto:a,sfondo:false}),tmp=document.createElementNS('http://www.w3.org/2000/svg','svg');tmp.innerHTML=out.markup;
+   const nodo=tmp.querySelector('.mnodo'),rect=nodo.querySelector('rect'),barra=nodo.querySelector('.mbarra');if(!barra)throw Error('Barra non trovata');
+   const x=+rect.getAttribute('x'),y=+rect.getAttribute('y'),w=+rect.getAttribute('width'),h=+rect.getAttribute('height');
+   const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w*4+'" height="'+h*4+'" viewBox="'+[x,y,w,h].join(' ')+'">'+rect.outerHTML+barra.outerHTML+'</svg>';
+   const i=new Image();i.src='data:image/svg+xml,'+encodeURIComponent(svg);await i.decode();const c=document.createElement('canvas');c.width=w*4;c.height=h*4;const ctx=c.getContext('2d');ctx.drawImage(i,0,0);
+   const p=(x,y)=>Array.from(ctx.getImageData(Math.floor(x*4),Math.floor(y*4),1,1).data);
+   return {angolo:p(.5,.5),opposto:'${orient}'==='td'?p(w-.5,.5):p(.5,h-.5),centro:'${orient}'==='td'?p(w/2,3):p(3,h/2)};
+  })()`);
+  A.equal(pixel.angolo[3],0);A.equal(pixel.opposto[3],0);A.equal(pixel.centro[3],255);
+ }
+ await c.val(`MAPPA.z={k:1,x:0,y:0};mappaApplicaZoom();document.getElementById('mVista').click()`);
+ fs.writeFileSync('/private/tmp/zaino-mappa-carta.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
  await c.val(`(()=>{const s=document.querySelector('[data-aspetto="sfondo"]');s.value='pieno';s.dispatchEvent(new Event('change'));})()`);A.equal(await c.val(`document.querySelector('.mtela').style.backgroundImage`),'none');
  await c.invia('Emulation.setDeviceMetricsOverride',{width:800,height:800,deviceScaleFactor:1,mobile:false});await c.val(`document.documentElement.dataset.theme='scuro';mappaRidisegna();closePops();document.getElementById('mVista').click()`);await c.pausa(150);const r=await c.val(`document.getElementById('mappaPop').getBoundingClientRect().toJSON()`);A(r.x>=0&&r.right<=801&&r.bottom<=801);A(await c.val(`getComputedStyle(document.querySelector('#mappaPop [data-aspetto=font]')).fontFamily.includes('Atkinson')`));fs.writeFileSync('/private/tmp/zaino-aspetto-stretto-scuro.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));await c.invia('Emulation.clearDeviceMetricsOverride');
  console.log('✓ Aspetto UI e MAPPE: font locale, preset via mouse, nodi, sfondo, Undo/Redo, salvataggio/riapertura e stampa');
-}finally{await c.invia('Emulation.clearDeviceMetricsOverride');await c.val(`(async()=>{closePops();document.getElementById('aspettoRipristina').click();document.documentElement.dataset.theme=${q(prima.tema)};await mappaFlush();bancoTogli('mappa');document.getElementById('settingsModal').hidden=true;localStorage.clear();for(const[k,v]of Object.entries(${q(prima.memoria)}))localStorage.setItem(k,v);BANCO.stato=${q(prima.banco)};bancoDisegna();})()`);if(file){require('../../lib/mappe').rimuovi(vault,'biologia',file);await c.val(`MAPPA.mia.file='';MAPPA.mia.grafo=null;MAPPA.pila=null;mappaCaricaElenco()`);}}
+}finally{if(dialogoPrima)fs.writeFileSync(marker,dialogoPrima);else fs.rmSync(marker,{force:true});await c.invia('Emulation.clearDeviceMetricsOverride');await c.val(`(async()=>{closePops();document.getElementById('aspettoRipristina').click();document.documentElement.dataset.theme=${q(prima.tema)};await mappaFlush();bancoTogli('mappa');document.getElementById('settingsModal').hidden=true;localStorage.clear();for(const[k,v]of Object.entries(${q(prima.memoria)}))localStorage.setItem(k,v);BANCO.stato=${q(prima.banco)};bancoDisegna();})()`);if(file){require('../../lib/mappe').rimuovi(vault,'biologia',file);await c.val(`MAPPA.mia.file='';MAPPA.mia.grafo=null;MAPPA.pila=null;mappaCaricaElenco()`);}}
 c.ws().close();})().catch(e=>{console.error(e);c.ws()?.close();process.exitCode=1;});

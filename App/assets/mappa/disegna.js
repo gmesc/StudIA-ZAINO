@@ -211,6 +211,24 @@
    */
   /** La barra d'accento: lo stesso spessore che hanno tutte le card. */
   var BARRA = 4;
+  // Intersezione fra fascia colorata e interno arrotondato. Un tracciato
+  // autonomo funziona anche nelle miniature/PDF, senza id di clip condivisi.
+  function barraArrotondata(x, y, w, h, r, bordo, verticale, colore) {
+    var i = bordo / 2;
+    x += i; y += i; w -= 2 * i; h -= 2 * i;
+    if (verticale) { var scambio = w; w = h; h = scambio; }
+    r = Math.max(0, Math.min(r - i, w / 2, h / 2));
+    var fascia = Math.min(BARRA, h), d;
+    var n = v => Math.round(v * 1000) / 1000;
+    if (!r) d = 'M0 0H' + n(w) + 'V' + n(fascia) + 'H0Z';
+    else if (fascia >= r) d = 'M' + n(r) + ' 0H' + n(w-r) + 'A' + n(r) + ' ' + n(r) + ' 0 0 1 ' + n(w) + ' ' + n(r) + 'V' + n(fascia) + 'H0V' + n(r) + 'A' + n(r) + ' ' + n(r) + ' 0 0 1 ' + n(r) + ' 0Z';
+    else {
+      var dx = Math.sqrt(r*r - (r-fascia)*(r-fascia));
+      d = 'M' + n(r) + ' 0H' + n(w-r) + 'A' + n(r) + ' ' + n(r) + ' 0 0 1 ' + n(w-r+dx) + ' ' + n(fascia) + 'H' + n(r-dx) + 'A' + n(r) + ' ' + n(r) + ' 0 0 1 ' + n(r) + ' 0Z';
+    }
+    return '<path class="mbarra" transform="matrix(' + (verticale ? '0 1 1 0 ' : '1 0 0 1 ') + n(x) + ' ' + n(y) + ')" d="' + d + '" fill="' + colore + '"/>';
+  }
+
 
   /**
    * Le misure di un nodo-immagine: **le detta il ritaglio**, non la griglia.
@@ -560,9 +578,11 @@
          illeggibile il testo in tema scuro. Su una card sta sul lato da cui il
          ramo entra; su un'immagine sta SEMPRE a sinistra, perché lì è l'unica
          cosa che resta del riquadro e deve stare sempre nello stesso posto. */
-      g.push(imm || o.orient === 'lr'
-        ? '<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + BARRA + '" height="' + n1(Hn) + '" fill="' + col + '"/>'
-        : '<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + BARRA + '" fill="' + col + '"/>');
+      g.push(!imm && stile?.raggio > 0
+        ? barraArrotondata(x,y,Wn,Hn,stile.raggio,acceso?2.5:stile.spessore,o.orient==='lr',col)
+        : imm || o.orient === 'lr'
+        ? '<rect class="mbarra" x="' + n1(x) + '" y="' + n1(y) + '" width="' + BARRA + '" height="' + n1(Hn) + '" fill="' + col + '"/>'
+        : '<rect class="mbarra" x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + BARRA + '" fill="' + col + '"/>');
       /* Il ritaglio va DENTRO la card, subito dopo il fondo e la barra: sotto ci
          deve restare il rettangolo che risponde al click, sopra ci passeranno il
          numero del passo e la didascalia. La card resta `.mnodo` e la sua
