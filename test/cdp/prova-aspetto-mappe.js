@@ -43,12 +43,12 @@ try{
    const out=MappaDisegna.svg(res,{aspetto:a,sfondo:false,evidenzia:${selezionato?q('x'):'null'}}),tmp=document.createElementNS('http://www.w3.org/2000/svg','svg');tmp.innerHTML=out.markup;
    const nodo=tmp.querySelector('.mnodo'),rect=nodo.querySelector('rect'),barra=nodo.querySelector('.mbarra');if(!barra)throw Error('Barra non trovata');
    const x=+rect.getAttribute('x'),y=+rect.getAttribute('y'),w=+rect.getAttribute('width'),h=+rect.getAttribute('height');
-   const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w*4+'" height="'+h*4+'" viewBox="'+[x,y,w,h].join(' ')+'">'+rect.outerHTML+barra.outerHTML+'</svg>';
+   const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w*4+'" height="'+h*4+'" viewBox="'+[x,y,w,h].join(' ')+'">'+(nodo.querySelector('.mcontorno')||rect).outerHTML+barra.outerHTML+'</svg>';
    const i=new Image();i.src='data:image/svg+xml,'+encodeURIComponent(svg);await i.decode();const c=document.createElement('canvas');c.width=w*4;c.height=h*4;const ctx=c.getContext('2d');ctx.drawImage(i,0,0);
    const p=(x,y)=>Array.from(ctx.getImageData(Math.floor(x*4),Math.floor(y*4),1,1).data);
-   return {angolo:p(.5,.5),opposto:${!immagine&&orient==='td'}?p(w-.5,.5):p(.5,h-.5),centro:${!immagine&&orient==='td'}?p(w/2,3):p(3,h/2)};
+   return {angolo:p(.5,.5),altoDestro:p(w-.5,.5),bassoDestro:p(w-.5,h-.5),opposto:${!immagine&&orient==='td'}?p(w-.5,.5):p(.5,h-.5),centro:${!immagine&&orient==='td'}?p(w/2,3):p(3,h/2)};
   })()`);
-  const caso=JSON.stringify({orient,raggio,immagine,selezionato});A.equal(pixel.angolo[3],0,caso);A.equal(pixel.opposto[3],0,caso);A.equal(pixel.centro[3],255,caso);
+  const caso=JSON.stringify({orient,raggio,immagine,selezionato});A.equal(pixel.angolo[3],immagine?255:0,caso);A.equal(pixel.altoDestro[3],immagine?255:0,caso);A.equal(pixel.bassoDestro[3],0,caso);A.equal(pixel.opposto[3],0,caso);A.equal(pixel.centro[3],255,caso);
  }
  await c.val(`MAPPA.z={k:1,x:0,y:0};mappaApplicaZoom();document.getElementById('mVista').click()`);
  fs.writeFileSync('/private/tmp/zaino-mappa-carta.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));

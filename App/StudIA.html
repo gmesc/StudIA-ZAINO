@@ -2047,7 +2047,7 @@
      COLORI stanno negli attributi SVG, perché il foglio di stile non viaggia
      con l'esportazione in PDF. */
   #mappaSvg .mnodo[data-apri]{ cursor:pointer; }
-  #mappaSvg .mnodo[data-apri]:hover rect:first-of-type{ filter:brightness(.97); }
+  #mappaSvg .mnodo[data-apri]:hover :is(rect:first-of-type,.mcontorno){ filter:brightness(.97); }
   #mappaSvg .mtoggle{ cursor:pointer; }
   #mappaSvg .mfonte{ cursor:pointer; }
   #mappaSvg .mfonte:focus-visible{ outline:2px solid var(--focus); outline-offset:1px; }

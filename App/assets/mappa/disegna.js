@@ -213,7 +213,7 @@
   var BARRA = 4;
   // Intersezione fra fascia colorata e interno arrotondato. Un tracciato
   // autonomo funziona anche nelle miniature/PDF, senza id di clip condivisi.
-  function barraArrotondata(x, y, w, h, r, bordo, verticale, colore) {
+  function barraArrotondata(x, y, w, h, r, bordo, verticale, colore, inizioRetto) {
     var i = bordo / 2;
     // SVG limita separatamente i due raggi nei ritagli molto larghi o stretti.
     var rx = Math.max(0, Math.min(r, w / 2) - i), ry = Math.max(0, Math.min(r, h / 2) - i);
@@ -223,10 +223,10 @@
     var n = v => Math.round(v * 1000) / 1000;
     var arco = 'A' + n(rx) + ' ' + n(ry) + ' 0 0 1 ';
     if (!rx || !ry) d = 'M0 0H' + n(w) + 'V' + n(fascia) + 'H0Z';
-    else if (fascia >= ry) d = 'M' + n(rx) + ' 0H' + n(w-rx) + arco + n(w) + ' ' + n(ry) + 'V' + n(fascia) + 'H0V' + n(ry) + arco + n(rx) + ' 0Z';
+    else if (fascia >= ry) d = 'M' + (inizioRetto ? 0 : n(rx)) + ' 0H' + n(w-rx) + arco + n(w) + ' ' + n(ry) + 'V' + n(fascia) + 'H0' + (inizioRetto ? 'Z' : 'V' + n(ry) + arco + n(rx) + ' 0Z');
     else {
       var dx = rx * Math.sqrt(1 - Math.pow(1 - fascia / ry, 2));
-      d = 'M' + n(rx) + ' 0H' + n(w-rx) + arco + n(w-rx+dx) + ' ' + n(fascia) + 'H' + n(rx-dx) + arco + n(rx) + ' 0Z';
+      d = 'M' + (inizioRetto ? 0 : n(rx)) + ' 0H' + n(w-rx) + arco + n(w-rx+dx) + ' ' + n(fascia) + 'H' + (inizioRetto ? '0Z' : n(rx-dx) + arco + n(rx) + ' 0Z');
     }
     return '<path class="mbarra" transform="matrix(' + (verticale ? '0 1 1 0 ' : '1 0 0 1 ') + n(x) + ' ' + n(y) + ')" d="' + d + '" fill="' + colore + '"/>';
   }
@@ -573,15 +573,23 @@
          rettangolo resta — è il bersaglio del click e il fondo su cui poggia la
          didascalia — ma senza tratto. Quando è selezionato il tratto torna: la
          selezione è un fatto momentaneo, non una cornice. */
+      if (imm && stile?.raggio > 0) {
+        var rx = Math.min(stile.raggio, Wn / 2), ry = Math.min(stile.raggio, Hn / 2);
+        // Il rettangolo conserva la geometria usata dall’editor della didascalia;
+        // il profilo visibile ha il bordo superiore diritto come la fotografia.
+        g.push('<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + n1(Hn) + '" fill="none" pointer-events="none"/>');
+        g.push('<path class="mcontorno" d="M' + n1(x) + ' ' + n1(y) + 'H' + n1(x+Wn) + 'V' + n1(y+Hn-ry) + 'A' + n1(rx) + ' ' + n1(ry) + ' 0 0 1 ' + n1(x+Wn-rx) + ' ' + n1(y+Hn) + 'H' + n1(x+rx) + 'A' + n1(rx) + ' ' + n1(ry) + ' 0 0 1 ' + n1(x) + ' ' + n1(y+Hn-ry) + 'Z" fill="' + tema.panel + '" stroke="' + (acceso ? col : 'none') + '" stroke-width="2.5"/>');
+      } else {
       g.push('<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + n1(Hn) + '" fill="' + tema.panel +
         '" stroke="' + (acceso ? col : (imm ? 'none' : tema.line)) + '" stroke-width="' + (acceso ? 2.5 : (stile?stile.spessore:1)) + '" rx="'+(stile?stile.raggio:0)+'"' +
         (suo && !imm ? ' stroke-dasharray="4 3"' : '') + '/>');
+      }
       /* La barra d'accento dice il gruppo senza colorare il fondo, che renderebbe
          illeggibile il testo in tema scuro. Su una card sta sul lato da cui il
          ramo entra; su un'immagine sta SEMPRE a sinistra, perché lì è l'unica
          cosa che resta del riquadro e deve stare sempre nello stesso posto. */
       g.push(stile?.raggio > 0
-        ? barraArrotondata(x,y,Wn,Hn,stile.raggio,acceso?2.5:imm?0:stile.spessore,!!imm||o.orient==='lr',col)
+        ? barraArrotondata(x,y,Wn,Hn,stile.raggio,acceso?2.5:imm?0:stile.spessore,!!imm||o.orient==='lr',col,!!imm)
         : imm || o.orient === 'lr'
         ? '<rect class="mbarra" x="' + n1(x) + '" y="' + n1(y) + '" width="' + BARRA + '" height="' + n1(Hn) + '" fill="' + col + '"/>'
         : '<rect class="mbarra" x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + BARRA + '" fill="' + col + '"/>');

@@ -206,6 +206,8 @@ for (const orient of ['td', 'lr']) for (const evidenzia of [null, 'foto']) {
   const barra = (c.match(/<path class="mbarra"[^>]*\/>/) || [''])[0];
   check('profilo curvo con orientamento ' + orient + ' e selezione ' + evidenzia, true, /A/.test(attr(barra, 'd') || ''));
   check('la barra del ritaglio resta a sinistra', true, /^matrix\(0 1 1 0 /.test(attr(barra, 'transform') || ''));
+  check('la barra inizia con un angolo superiore retto', true, /^M0 0H/.test(attr(barra, 'd') || ''));
+  check('il nodo immagine usa il profilo con solo gli angoli inferiori arrotondati', true, /class="mcontorno"/.test(c));
   check('il ritaglio non viene tagliato per correggere la barra', 'xMidYMid meet', attr(imm(c)[0], 'preserveAspectRatio'));
 }
 
