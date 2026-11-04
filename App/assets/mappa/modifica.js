@@ -289,13 +289,14 @@
    */
   function ridimensionaImmagine(g, id, scala) {
     var out = copia(g), i = indiceNodo(out, id);
-    if (i < 0 || !out.nodi[i].immagine) return g;
+    if (i < 0 || !(out.nodi[i].immagine||out.nodi[i].video)) return g;
+    var campo=out.nodi[i].video?'video':'immagine';
     var k = Number(scala);
     if (!isFinite(k) || k <= 0) return g;
     k = Math.max(0.5, Math.min(3, Math.round(k * 100) / 100));
-    var im = Object.assign({}, out.nodi[i].immagine);
+    var im = Object.assign({}, out.nodi[i][campo]);
     if (Math.round(k * 100) === 100) delete im.scala; else im.scala = k;
-    out.nodi[i].immagine = im;
+    out.nodi[i][campo] = im;
     return out;
   }
 
@@ -342,6 +343,8 @@
     if (opt.colore) n.colore = String(opt.colore);
     var im = copiaImmagine(opt.immagine);
     if (im) n.immagine = im;
+    var video = (glob ? glob.MappaVideo : require('./video')).normalizza(opt.video);
+    if (video) n.video = video;
     out.nodi.push(n);
 
     var padre = null;

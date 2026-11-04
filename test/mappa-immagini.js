@@ -223,6 +223,25 @@ for (const raggio of [0, 16]) for (const bordo of ['#ef4444', 'none']) {
   if(raggio)check('il profilo parte con angolo retto e arrotonda soltanto sotto', true, /^M[^A]+H[^A]+V[^A]+A/.test(attr(cornice,'d')||''));
 }
 
+sezione('Mappe — video locali, miniatura, sicurezza e collegamento statico');
+{
+ const V=require('../App/assets/mappa/video'),video={file:'01 Video.webm',poster:'data:image/jpeg;base64,/9j/AA==',w:360,h:640};
+ check('video normalizzato',video,V.normalizza(video));
+ for(const file of ['../Video.webm','https:video.webm','01 Audio.mp3'])check('rifiuta '+file,null,V.normalizza({...video,file}));
+ check('rifiuta poster attivo',null,V.normalizza({...video,poster:'data:image/svg+xml,<svg/>'}));
+ check('rifiuta trasporto fra zaini','',V.trasporto(JSON.stringify({version:1,tipo:'video',file:video.file,corso:'altro'}),'biologia'));
+ check('disco rifiuta video con poster attivo',undefined,M.normalizzaNodo({id:'v',video:{...video,poster:'data:image/svg+xml,<svg/>'}}).video);
+ const salvato=M.normalizzaNodo({id:'v',testo:'Video',video});check('video conservato su disco',video,salvato.video);
+ const modificata=require('../App/assets/mappa/modifica').creaNodo({nodi:[],archi:[]},{testo:'Video',video});check('video nelle operazioni di editing',video,modificata.nodi[0].video);
+ const scala=require('../App/assets/mappa/modifica').ridimensionaImmagine(modificata,modificata.nodi[0].id,2);check('ridimensiona il video senza mutare l’originale',[2,undefined],[scala.nodi[0].video.scala,modificata.nodi[0].video.scala]);
+ const out=DIS.svg(ML.run({nodi:[{id:'v',testo:'Video',video}],archi:[]},{}),{videoHref:()=> 'file:///tmp/01%20Video.webm'});
+ check('stampa con link al file',true,out.markup.includes('href="file:///tmp/01%20Video.webm"'));
+ check('PDF statico senza player',false,out.markup.includes('foreignObject'));
+ check('miniatura inclusa',true,out.markup.includes(video.poster));
+ check('un link attivo non passa',false,DIS.svg(ML.run({nodi:[{id:'v',video}],archi:[]},{}),{videoHref:()=> 'javascript:alert(1)'}).markup.includes('javascript:'));
+ const vb=out.viewBox.split(' ').map(Number),c=box(imm(card(out.markup,'v'))[0]);check('video verticale intero nel foglio',true,c.y>=vb[1]&&c.y+c.h<=vb[1]+vb[3]);
+}
+
 /* -------------------------------------------------------- 3. il segnaposto */
 
 sezione('Mappe — senza sorgente compare un segnaposto, mai un rettangolo muto');

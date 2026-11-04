@@ -96,6 +96,7 @@
      Invertiti, il player scriverebbe negli appunti righe senza rimando — e non
      solleverebbe niente. -->
 <script src="assets/player/lettore.js"></script>
+<script src="assets/mappa/video.js"></script>
 <script src="assets/tts/segmenta.js"></script>
 <!-- Gli intervalli fra un ripasso e l'altro (P3.3). ⚠️ Lo STESSO file che usa il
      main per scrivere `prossimo` su disco: il tempo promesso sul bottone e il
@@ -9711,6 +9712,7 @@ function foglioMappa(){
   var out=MappaDisegna.svg(MAPPA.res,{ aspetto:v.aspetto, tema:mappaTemaCarta(), gruppi:mappaGruppi(),
             fsNodo:+v.fsNodo, fsRel:+v.fsRel, etichette:v.etichette,
             maniglie:false, chiudibili:MAPPA.chiudibili||{}, srcImmagine:mappaSrcImmagine,
+            videoHref:v=>window.vault.srcUrl(v.file,corsoAttivo()),
             font:MappaAspetto.font(MAPPA.vista.aspetto) });
   var titolo=mappaTitoloCorrente();
   return { titolo:titolo, classe:'foglio-mappa', tipo:'mappa',
@@ -15092,6 +15094,8 @@ document.addEventListener('drop', function(e){
   /* Un RITAGLIO dell'album: stesso gesto, altro contenuto. Passa dal verbo che
      esiste già (`mappaNodoImmagine`, quello del menu contestuale dell'album) —
      qui si aggiunge solo il punto in cui lo si è lasciato. */
+  var mediaMappa=e.dataTransfer.getData('application/x-studia-presenta-media');
+  if(mediaMappa){e.preventDefault();MappaVideoUI.inserisci(mediaMappa,mappaPuntoGrafo(e));return;}
   var idAlbum=e.dataTransfer.getData('application/x-studia-album');
   if(idAlbum){
     e.preventDefault();
@@ -19421,6 +19425,7 @@ function mappaRidisegna(){
   mappaCronologiaComandi();
   var svg=$('#mappaSvg'), vuota=$('#mVuota');
   if(!svg||!mappaPronta()) return;
+  window.MappaVideoUI?.chiudi();
   mappaAmbiti();
   /* L'identità dice «è ancora la stessa mappa?». Ora comprende il REGISTRO e il
      CORSO: senza, passando da «Mie» a «Generata» sullo stesso capitolo la
@@ -20315,8 +20320,8 @@ function mappaMemoriaSalva(i){
 function mappaRidimensionaImmagine(id, verso){
   if(!mappaMie() || !MAPPA.mia.grafo) return;
   var n=(MAPPA.mia.grafo.nodi||[]).filter(function(x){ return x.id===id; })[0];
-  if(!n || !n.immagine){ return; }
-  var ora=Number(n.immagine.scala)||1;
+  if(!n || !(n.immagine||n.video)){ return; }
+  var ora=Number((n.immagine||n.video).scala)||1;
   var k = verso==='1' ? 1 : (verso==='+' ? ora*1.25 : ora/1.25);
   mappaAnnullabile('Ridimensiona l’immagine');
   mappaApplica(MappaModifica.ridimensionaImmagine(MAPPA.mia.grafo, id, k), id);
@@ -21560,7 +21565,7 @@ document.addEventListener('input', function(e){
     if(mappaMie() && MAPPA.giu && MAPPA.giu.tipo==='scala' && MAPPA.mia.grafo){
       var ps=mappaPunto(e), cen=MAPPA.res && MAPPA.res.pos && MAPPA.res.pos[MAPPA.giu.id];
       var nod=(MAPPA.mia.grafo.nodi||[]).filter(function(x){ return x.id===MAPPA.giu.id; })[0];
-      if(ps && cen && nod && nod.immagine){
+      if(ps && cen && nod && (nod.immagine||nod.video)){
         var cxv=cen.x*MAPPA.z.k+MAPPA.z.x, cyv=cen.y*MAPPA.z.k+MAPPA.z.y;
         var d0=Math.hypot(ps.x-cxv, ps.y-cyv);
         if(d0>4){
@@ -21568,7 +21573,7 @@ document.addEventListener('input', function(e){
              dentro una cornice che non deve muoversi */
           mappaRiquadroFerma();
           MAPPA.scalaImg={ id:MAPPA.giu.id, cx:cxv, cy:cyv, d0:d0,
-                           k0:Number(nod.immagine.scala)||1, g0:MAPPA.mia.grafo,
+                           k0:Number((nod.immagine||nod.video).scala)||1, g0:MAPPA.mia.grafo,
                            pid:e.pointerId, cambiato:false };
           document.documentElement.dataset.mscala='1';
           try{ t.setPointerCapture(e.pointerId); }catch(err){}
@@ -21690,7 +21695,7 @@ document.addEventListener('input', function(e){
         MAPPA.sel=sc.id;
         mappaTocca(); mappaRidisegna();
         var nn=(MAPPA.mia.grafo.nodi||[]).filter(function(x){ return x.id===sc.id; })[0];
-        toast('Immagine al '+Math.round(((nn&&nn.immagine&&nn.immagine.scala)||1)*100)+'%', true);
+        toast('Immagine al '+Math.round(((nn&&(nn.immagine||nn.video)?.scala)||1)*100)+'%', true);
       }
       return;
     }
@@ -21791,6 +21796,7 @@ document.addEventListener('keydown', function(e){
    qualcuno lo cambi. Le due modali restano più in alto di lui: se una è aperta
    non è di sua competenza e lascia passare. */
 window.addEventListener('keydown', function(e){
+  if(e.target.closest?.('.mvideo-player'))return;
   if(e.key!=='Escape' || !mappaAperta()) return;
   var cr=document.getElementById('creditsModal'), gu=document.getElementById('guidaModal');
   var atl=document.getElementById('atlante');
@@ -23071,6 +23077,7 @@ document.getElementById('noteExportMenu').addEventListener('keydown',function(e)
 <script src="assets/appunti/figure-ui.js"></script>
 <script src="assets/mappa/aspetto.js"></script>
 <script src="assets/mappa/aspetto-ui.js"></script>
+<script src="assets/mappa/video-ui.js"></script>
 <link rel="stylesheet" href="assets/mappa/aspetto.css">
 <link rel="stylesheet" href="assets/interfaccia/tendine.css">
 <link rel="stylesheet" href="assets/interfaccia/aspetto.css">

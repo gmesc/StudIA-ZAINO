@@ -14,3 +14,8 @@
 
 /* La fusione dei contenuti resta dentro la tela della mappa. */
 .mtela{isolation:isolate}
+.mvideo{cursor:pointer}.mvideo:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.mvideo-lettore{position:relative;isolation:isolate;width:100%;height:100%;background:#20242b}
+.mvideo-lettore video{display:block;width:100%;height:100%;object-fit:contain}
+.mvideo-chiudi{position:absolute;right:4px;top:4px;z-index:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--panel);color:var(--ink);border:1px solid var(--line);cursor:pointer}
+.mvideo-chiudi:hover{background:var(--hover)}.mvideo-chiudi:focus-visible{outline:2px solid var(--focus)}.mvideo-chiudi .ui-icon{width:16px;height:16px}

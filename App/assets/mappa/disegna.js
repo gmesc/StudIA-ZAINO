@@ -129,6 +129,8 @@
    * decidere le stesse cose che decide il disegno, senza rifare la regola.
    */
   function immagineDi(nodo) {
+    var video = (glob ? glob.MappaVideo : require('./video')).normalizza(nodo && nodo.video);
+    if(video)return Object.assign({id:'video:'+video.file},video);
     var im = nodo && nodo.immagine;
     if (!im || typeof im !== 'object') return null;
     return (im.id != null && String(im.id).trim() !== '') ? im : null;
@@ -413,6 +415,7 @@
     var b = res.bbox;
     var vb = [n1(b.minX - margine), n1(b.minY - margine), n1(b.w + margine * 2), n1(b.h + margine * 2)];
 
+    var limiti={minX:b.minX,minY:b.minY,maxX:b.minX+b.w,maxY:b.minY+b.h};
     var out = [];
 
     /* 1. filigrana: nel motore Percorso il filo numerato prende il posto degli
@@ -515,7 +518,7 @@
          funzione può anche tornare vuoto — un file cancellato fuori dall'app è
          un caso normale, non un guasto. */
       var imm = immagineDi(nodo);
-      var srcImm = (imm && typeof opt.srcImmagine === 'function') ? String(opt.srcImmagine(imm) || '') : '';
+      var srcImm = imm?.poster || ((imm && typeof opt.srcImmagine === 'function') ? String(opt.srcImmagine(imm) || '') : '');
       /* ⚠️ Un nodo-immagine ha le SUE misure: larghezza dalla card per la scala
          scelta, altezza dal rapporto del ritaglio, centrato sulla posizione che
          il motore gli ha dato. Il motore non lo sa: spaziature e attacchi degli
@@ -531,7 +534,7 @@
       var kImm = imm ? scalaImmagine(imm) : 1;
       var mImm = imm ? misureImmagine(imm, W, H, kImm, !!(nodo.testo || '').trim(), fsNodo) : null;
       var Wn = imm ? mImm.W : W, Hn = imm ? mImm.H : H;
-      if (imm) { x = p.x - Wn / 2; y = p.y - Hn / 2; }
+      if (imm) { x = p.x - Wn / 2; y = p.y - Hn / 2; limiti.minX=Math.min(limiti.minX,x);limiti.minY=Math.min(limiti.minY,y);limiti.maxX=Math.max(limiti.maxX,x+Wn);limiti.maxY=Math.max(limiti.maxY,y+Hn); }
       var riq = imm ? riquadroImmagine(x, y, mImm) : null;
       // il tasto del ramo sta SUL BORDO, fuori dallo specchio del testo: la
       // riga non si accorcia per fargli posto
@@ -563,7 +566,7 @@
          riesce a mostrare lo dice con le stesse parole che compaiono nel
          segnaposto: ciò che si legge e ciò che si sente devono coincidere. */
       var etichettaCard = testoN +
-        (imm ? ' — ' + (srcImm ? 'immagine' : SEGNAPOSTO) : '') +
+        (imm ? ' — ' + (imm.poster ? 'video' : srcImm ? 'immagine' : SEGNAPOSTO) : '') +
         (nFonti ? ' — ' + nFonti + (nFonti === 1 ? ' fonte' : ' fonti') : '');
       var g = ['<g class="mnodo" data-id="' + esc(id) + '"' + (apribile ? ' data-apri="1"' : '') +
         ' role="listitem" aria-label="' + esc(etichettaCard) + '"><title>' + esc(suggerimento) + '</title>'];
@@ -598,6 +601,12 @@
       if (riq) {
         g.push(pezzoImmagine(riq, srcImm, tema, font, fsNodo));
         g.push('<' + (stile?.raggio > 0 ? 'path' : 'rect') + ' class="mbordo" ' + contornoImmagine + ' fill="none" stroke="' + (acceso ? col : bordoNodo) + '" stroke-width="' + (acceso ? 2.5 : (stile ? stile.spessore : 1)) + '" pointer-events="none"/>');
+      }
+      if (nodo.video && imm?.poster && riq) {
+        var href = typeof opt.videoHref==='function' ? String(opt.videoHref(imm)||'') : '';
+        if(!/^file:\/\//i.test(href))href='';
+        var tag=href?'a':'g',cx=riq.x+riq.w/2,cy=riq.y+riq.h/2;
+        g.push('<'+tag+' class="mvideo" data-video="'+esc(id)+'"'+(href?' href="'+esc(href)+'"':' role="button" tabindex="0"')+' aria-label="Riproduci video: '+esc(testoN)+'"><title>Riproduci video</title><circle cx="'+n1(cx)+'" cy="'+n1(cy)+'" r="14" fill="#20242b" fill-opacity=".85"/><path d="M'+n1(cx-4)+' '+n1(cy-7)+'L'+n1(cx+7)+' '+n1(cy)+'L'+n1(cx-4)+' '+n1(cy+7)+'Z" fill="#ffffff"/></'+tag+'>');
       }
       if (res.passo && res.passo[id] != null) {
         g.push('<text x="' + n1(x + 7) + '" y="' + n1(y + Hn - 7) + '" font-family="' + esc(font) +
@@ -761,6 +770,7 @@
       }
     });
 
+    vb=[n1(limiti.minX-margine),n1(limiti.minY-margine),n1(limiti.maxX-limiti.minX+margine*2),n1(limiti.maxY-limiti.minY+margine*2)];
     var titolo = opt.titolo ? '<title>' + esc(opt.titolo) + '</title>' : '';
     return {
       markup: titolo + (stile&&opt.sfondo!==false?aspetto().sfondo(stile,vb,tema):'') + '<g class="mzoom"' + (stile?.fusione==='multiply'&&opt.sfondo!==false?' style="mix-blend-mode:multiply"':'') + '>' + out.join('') + '</g>',
