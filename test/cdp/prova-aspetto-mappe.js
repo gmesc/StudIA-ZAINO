@@ -37,18 +37,18 @@ try{
  fs.writeFileSync(marker,JSON.stringify({filePath:'/private/tmp/zaino-mappa-carta.pdf'}));const pdf=await c.val(`salvaPdf('mappa')`);A.equal(pdf,'/private/tmp/zaino-mappa-carta.pdf');A(fs.statSync(pdf).size>10000);
  // Campionamento raster del profilo SVG: gli angoli esterni sono trasparenti,
  // il centro della fascia mantiene il colore, nei due orientamenti.
- for(const orient of ['td','lr'])for(const raggio of [8,24]){
+ for(const orient of ['td','lr'])for(const raggio of [8,24])for(const immagine of [null,{id:'prova',w:1200,h:800},{id:'prova',w:300,h:1600},{id:'prova',w:1200,h:50}])for(const selezionato of [false,true]){
   const pixel=await c.val(`(async()=>{
-   const a={...MAPPA.vista.aspetto,raggio:${raggio}},res=MappaLayouts.run({nodi:[{id:'x',testo:'Nodo',origine:'utente'}],archi:[]},{orient:'${orient}'});
-   const out=MappaDisegna.svg(res,{aspetto:a,sfondo:false}),tmp=document.createElementNS('http://www.w3.org/2000/svg','svg');tmp.innerHTML=out.markup;
+   const a={...MAPPA.vista.aspetto,raggio:${raggio}},res=MappaLayouts.run({nodi:[{id:'x',testo:'Nodo',origine:'utente',immagine:${q(immagine)}}],archi:[]},{orient:'${orient}'});
+   const out=MappaDisegna.svg(res,{aspetto:a,sfondo:false,evidenzia:${selezionato?q('x'):'null'}}),tmp=document.createElementNS('http://www.w3.org/2000/svg','svg');tmp.innerHTML=out.markup;
    const nodo=tmp.querySelector('.mnodo'),rect=nodo.querySelector('rect'),barra=nodo.querySelector('.mbarra');if(!barra)throw Error('Barra non trovata');
    const x=+rect.getAttribute('x'),y=+rect.getAttribute('y'),w=+rect.getAttribute('width'),h=+rect.getAttribute('height');
    const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w*4+'" height="'+h*4+'" viewBox="'+[x,y,w,h].join(' ')+'">'+rect.outerHTML+barra.outerHTML+'</svg>';
    const i=new Image();i.src='data:image/svg+xml,'+encodeURIComponent(svg);await i.decode();const c=document.createElement('canvas');c.width=w*4;c.height=h*4;const ctx=c.getContext('2d');ctx.drawImage(i,0,0);
    const p=(x,y)=>Array.from(ctx.getImageData(Math.floor(x*4),Math.floor(y*4),1,1).data);
-   return {angolo:p(.5,.5),opposto:'${orient}'==='td'?p(w-.5,.5):p(.5,h-.5),centro:'${orient}'==='td'?p(w/2,3):p(3,h/2)};
+   return {angolo:p(.5,.5),opposto:${!immagine&&orient==='td'}?p(w-.5,.5):p(.5,h-.5),centro:${!immagine&&orient==='td'}?p(w/2,3):p(3,h/2)};
   })()`);
-  A.equal(pixel.angolo[3],0);A.equal(pixel.opposto[3],0);A.equal(pixel.centro[3],255);
+  const caso=JSON.stringify({orient,raggio,immagine,selezionato});A.equal(pixel.angolo[3],0,caso);A.equal(pixel.opposto[3],0,caso);A.equal(pixel.centro[3],255,caso);
  }
  await c.val(`MAPPA.z={k:1,x:0,y:0};mappaApplicaZoom();document.getElementById('mVista').click()`);
  fs.writeFileSync('/private/tmp/zaino-mappa-carta.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));

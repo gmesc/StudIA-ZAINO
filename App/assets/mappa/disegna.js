@@ -215,16 +215,18 @@
   // autonomo funziona anche nelle miniature/PDF, senza id di clip condivisi.
   function barraArrotondata(x, y, w, h, r, bordo, verticale, colore) {
     var i = bordo / 2;
+    // SVG limita separatamente i due raggi nei ritagli molto larghi o stretti.
+    var rx = Math.max(0, Math.min(r, w / 2) - i), ry = Math.max(0, Math.min(r, h / 2) - i);
     x += i; y += i; w -= 2 * i; h -= 2 * i;
-    if (verticale) { var scambio = w; w = h; h = scambio; }
-    r = Math.max(0, Math.min(r - i, w / 2, h / 2));
+    if (verticale) { var scambio = w; w = h; h = scambio; scambio = rx; rx = ry; ry = scambio; }
     var fascia = Math.min(BARRA, h), d;
     var n = v => Math.round(v * 1000) / 1000;
-    if (!r) d = 'M0 0H' + n(w) + 'V' + n(fascia) + 'H0Z';
-    else if (fascia >= r) d = 'M' + n(r) + ' 0H' + n(w-r) + 'A' + n(r) + ' ' + n(r) + ' 0 0 1 ' + n(w) + ' ' + n(r) + 'V' + n(fascia) + 'H0V' + n(r) + 'A' + n(r) + ' ' + n(r) + ' 0 0 1 ' + n(r) + ' 0Z';
+    var arco = 'A' + n(rx) + ' ' + n(ry) + ' 0 0 1 ';
+    if (!rx || !ry) d = 'M0 0H' + n(w) + 'V' + n(fascia) + 'H0Z';
+    else if (fascia >= ry) d = 'M' + n(rx) + ' 0H' + n(w-rx) + arco + n(w) + ' ' + n(ry) + 'V' + n(fascia) + 'H0V' + n(ry) + arco + n(rx) + ' 0Z';
     else {
-      var dx = Math.sqrt(r*r - (r-fascia)*(r-fascia));
-      d = 'M' + n(r) + ' 0H' + n(w-r) + 'A' + n(r) + ' ' + n(r) + ' 0 0 1 ' + n(w-r+dx) + ' ' + n(fascia) + 'H' + n(r-dx) + 'A' + n(r) + ' ' + n(r) + ' 0 0 1 ' + n(r) + ' 0Z';
+      var dx = rx * Math.sqrt(1 - Math.pow(1 - fascia / ry, 2));
+      d = 'M' + n(rx) + ' 0H' + n(w-rx) + arco + n(w-rx+dx) + ' ' + n(fascia) + 'H' + n(rx-dx) + arco + n(rx) + ' 0Z';
     }
     return '<path class="mbarra" transform="matrix(' + (verticale ? '0 1 1 0 ' : '1 0 0 1 ') + n(x) + ' ' + n(y) + ')" d="' + d + '" fill="' + colore + '"/>';
   }
@@ -578,8 +580,8 @@
          illeggibile il testo in tema scuro. Su una card sta sul lato da cui il
          ramo entra; su un'immagine sta SEMPRE a sinistra, perché lì è l'unica
          cosa che resta del riquadro e deve stare sempre nello stesso posto. */
-      g.push(!imm && stile?.raggio > 0
-        ? barraArrotondata(x,y,Wn,Hn,stile.raggio,acceso?2.5:stile.spessore,o.orient==='lr',col)
+      g.push(stile?.raggio > 0
+        ? barraArrotondata(x,y,Wn,Hn,stile.raggio,acceso?2.5:imm?0:stile.spessore,!!imm||o.orient==='lr',col)
         : imm || o.orient === 'lr'
         ? '<rect class="mbarra" x="' + n1(x) + '" y="' + n1(y) + '" width="' + BARRA + '" height="' + n1(Hn) + '" fill="' + col + '"/>'
         : '<rect class="mbarra" x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + BARRA + '" fill="' + col + '"/>');

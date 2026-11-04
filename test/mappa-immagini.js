@@ -199,6 +199,16 @@ sezione('Mappe — il nodo prende la forma del ritaglio, e lo mostra intero');
     [true, true], [bS.w > 0, bS.h > 0]);
 }
 
+sezione('Mappe — anche la barra dei ritagli segue gli angoli del nodo');
+for (const orient of ['td', 'lr']) for (const evidenzia of [null, 'foto']) {
+  const stile = require('../App/assets/mappa/aspetto').PRESET.pastello.aspetto;
+  const c = card(disegna(gImm, { srcImmagine: SRC, aspetto: stile, evidenzia }, { orient }), 'foto');
+  const barra = (c.match(/<path class="mbarra"[^>]*\/>/) || [''])[0];
+  check('profilo curvo con orientamento ' + orient + ' e selezione ' + evidenzia, true, /A/.test(attr(barra, 'd') || ''));
+  check('la barra del ritaglio resta a sinistra', true, /^matrix\(0 1 1 0 /.test(attr(barra, 'transform') || ''));
+  check('il ritaglio non viene tagliato per correggere la barra', 'xMidYMid meet', attr(imm(c)[0], 'preserveAspectRatio'));
+}
+
 /* -------------------------------------------------------- 3. il segnaposto */
 
 sezione('Mappe — senza sorgente compare un segnaposto, mai un rettangolo muto');
