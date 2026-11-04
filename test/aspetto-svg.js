@@ -2,6 +2,11 @@
 const A=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),Mappe=require('../lib/mappe'),Stile=require('../App/assets/mappa/aspetto'),Svg=require('../App/assets/appunti/svg'),Figure=require('../App/assets/appunti/figure'),Disegna=require('../App/assets/mappa/disegna'),Layouts=require('../App/assets/mappa/layouts');
 const originale={nodi:[{id:'a',testo:'Radice',origine:'utente'},{id:'b',testo:'Foglia',origine:'utente'}],archi:[{da:'a',a:'b'}],vista:{zoom:{k:1.7,x:2,y:3},chiusi:['b'],gapNodo:32}};
 const v=Stile.applica(originale.vista,'leggibile');A.equal(v.font,undefined);A.equal(v.aspetto.font,'atkinson');A.equal(v.fsNodo,16);A.deepEqual(v.zoom,originale.vista.zoom);A.deepEqual(v.chiusi,['b']);A.equal(originale.vista.aspetto,undefined);
+A.equal(Stile.normalizza({fusione:'multiply'}).fusione,'multiply');A.equal(Stile.normalizza({fusione:'url(x)'}).fusione,'normal');
+v.aspetto.fusione='multiply';
+const fuso=Disegna.svg(Layouts.run(originale,{}),{aspetto:v.aspetto}).markup;
+A(fuso.includes('<g class="mzoom" style="mix-blend-mode:multiply">'));A(fuso.indexOf('class="msfondo"')<fuso.indexOf('mix-blend-mode:multiply'));
+A(!Disegna.svg(Layouts.run(originale,{}),{aspetto:v.aspetto,sfondo:false}).markup.includes('mix-blend-mode'),'La tela applica la fusione allo SVG sopra il fondo fermo');
 const cartella=fs.mkdtempSync(path.join(os.tmpdir(),'zaino-aspetto-'));
 try{require('../lib/zaini').crea(cartella,'Biologia');const r=Mappe.salva(cartella,'biologia',null,{...originale,titolo:'Stili',vista:v});const riaperta=Mappe.apri(cartella,'biologia',r.file);A.deepEqual(riaperta.mappa.vista.aspetto,v.aspetto);}finally{fs.rmSync(cartella,{recursive:true,force:true});}
 const res=Layouts.run(originale,{}),mk=Disegna.svg(res,{aspetto:v.aspetto,fsNodo:v.fsNodo}).markup;A(mk.includes('Atkinson Hyperlegible'));A(mk.includes('rx="8"'));A(mk.includes('fill="#fffbed"'));A(mk.includes('stroke="#475569"'));A(mk.includes('<pattern'));

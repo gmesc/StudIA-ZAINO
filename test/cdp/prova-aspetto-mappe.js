@@ -14,10 +14,18 @@ try{
  A(await c.val(`document.querySelector('#mappaSvg .mnodo text').getAttribute('font-family').includes('Atkinson')`));
  A.equal(await c.val(`MAPPA.vista.aspetto.carta`),'#fffbed');
  await c.val('mappaAnnulla()');A.equal(await c.val('MAPPA.vista.aspetto.preset'),'originale');A.equal(await c.val(`document.querySelector('[data-aspetto="raggio"]').value`),'0');await c.val('mappaRipeti()');A.equal(await c.val('MAPPA.vista.aspetto.preset'),'leggibile');
+ await c.val(`(()=>{const s=document.querySelector('[data-aspetto="fusione"]');s.value='multiply';s.dispatchEvent(new Event('change'));})()`);
+ A.equal(await c.val('MAPPA.vista.aspetto.fusione'),'multiply');A.equal(await c.val("getComputedStyle(document.getElementById('mappaSvg')).mixBlendMode"),'multiply');
+ await c.val('mappaAnnulla()');A.equal(await c.val('MAPPA.vista.aspetto.fusione'),'normal');await c.val('mappaRipeti()');A.equal(await c.val('MAPPA.vista.aspetto.fusione'),'multiply');
+ // Il bianco della foto si fonde con il foglio grigio anche nello SVG di stampa.
+ const fusione=await c.val(`(async()=>{const foto=document.createElement('canvas');foto.width=20;foto.height=20;const f=foto.getContext('2d');f.fillStyle='#ffffff';f.fillRect(0,0,20,20);const valori=[];
+  for(const fusione of ['normal','multiply']){const res=MappaLayouts.run({nodi:[{id:'x',testo:'Foto',immagine:{id:'prova',w:100,h:100}}],archi:[]},{}),out=MappaDisegna.svg(res,{aspetto:{sfondo:'pieno',carta:'#808080',nodo:'#ffffff',fusione},srcImmagine:()=>foto.toDataURL()});
+   const tmp=document.createElementNS('http://www.w3.org/2000/svg','svg');tmp.innerHTML=out.markup;const n=tmp.querySelector('.mnodo image'),vb=out.viewBox.split(' ').map(Number),svg='<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="'+vb[2]+'" height="'+vb[3]+'" viewBox="'+out.viewBox+'">'+out.markup+'</svg>',i=new Image();i.src='data:image/svg+xml,'+encodeURIComponent(svg);await i.decode();const c=document.createElement('canvas');c.width=vb[2];c.height=vb[3];const ctx=c.getContext('2d');ctx.drawImage(i,0,0);valori.push(Array.from(ctx.getImageData(+n.getAttribute('x')+(+n.getAttribute('width'))/2-vb[0],+n.getAttribute('y')+(+n.getAttribute('height'))/2-vb[1],1,1).data));
+  }return valori;})()`);A.deepEqual(fusione,[[255,255,255,255],[128,128,128,255]],'Multiply reale sul bianco delle immagini');
  await c.val(`(()=>{const s=document.querySelector('[data-aspetto="sfondo"]');s.value='linee';s.dispatchEvent(new Event('change'));})()`);A(await c.val(`document.querySelector('.mtela').style.backgroundImage.includes('data:image/svg')`));
- await c.val('mappaFlush()');const disco=require('../../lib/mappe').apri(vault,'biologia',file).mappa;A.equal(disco.vista.aspetto.sfondo,'linee');A.equal(disco.vista.aspetto.font,'atkinson');
+ await c.val('mappaFlush()');const disco=require('../../lib/mappe').apri(vault,'biologia',file).mappa;A.equal(disco.vista.aspetto.sfondo,'linee');A.equal(disco.vista.aspetto.font,'atkinson');A.equal(disco.vista.aspetto.fusione,'multiply');
  await c.val(`MAPPA.mia.file='';mappaApriMia(${q(file)})`);await wait(`MAPPA.mia.file===${q(file)}`);A.equal(await c.val('MAPPA.vista.aspetto.sfondo'),'linee');
- const stampata=await c.val('foglioMappa().html');A(stampata.includes('#fffbed'));A(stampata.includes('<pattern'));A(stampata.includes('Atkinson'));
+ A.equal(await c.val('MAPPA.vista.aspetto.fusione'),'multiply');const stampata=await c.val('foglioMappa().html');A(stampata.includes('mix-blend-mode:multiply'));A(stampata.includes('#fffbed'));A(stampata.includes('<pattern'));A(stampata.includes('Atkinson'));
  fs.writeFileSync('/private/tmp/zaino-mappe-aspetto.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
  // Tutte le carte locali si caricano e restano ferme quando la camera cambia.
  for(const tipo of ['cotone','naturale','chiara']){

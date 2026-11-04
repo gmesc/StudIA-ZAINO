@@ -763,7 +763,7 @@
 
     var titolo = opt.titolo ? '<title>' + esc(opt.titolo) + '</title>' : '';
     return {
-      markup: titolo + (stile&&opt.sfondo!==false?aspetto().sfondo(stile,vb,tema):'') + '<g class="mzoom">' + out.join('') + '</g>',
+      markup: titolo + (stile&&opt.sfondo!==false?aspetto().sfondo(stile,vb,tema):'') + '<g class="mzoom"' + (stile?.fusione==='multiply'&&opt.sfondo!==false?' style="mix-blend-mode:multiply"':'') + '>' + out.join('') + '</g>',
       viewBox: vb.join(' '),
       bbox: b
     };

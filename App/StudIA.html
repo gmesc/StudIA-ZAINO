@@ -19486,6 +19486,8 @@ function mappaRidisegna(){
   // il nodo selezionato si evidenzia col bordo acceso che `disegna` sa già fare
   if(MAPPA.sel && !MAPPA.nodi[MAPPA.sel]) MAPPA.sel=null;   // l'ha eliminato qualcuno
   Object.assign(svg.parentElement.style,MappaAspetto.cartaCSS(v.aspetto,mappaTema()));
+  // Sulla tela il fondo è nel contenitore fermo: fonde lo SVG intero, una sola volta.
+  svg.style.mixBlendMode=MappaAspetto.normalizza(v.aspetto).fusione;
   var out=MappaDisegna.svg(res,{ sfondo:false,aspetto:v.aspetto, tema:mappaTema(), gruppi:mappaGruppi(), fsNodo:+v.fsNodo, fsRel:+v.fsRel,
                                  etichette:v.etichette, titolo:g.titolo, evidenzia:(mappaMie()?MAPPA.sel:null),
                                  /* Le maniglie da cui si tirano gli archi si chiedono, non arrivano
