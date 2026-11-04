@@ -58,4 +58,10 @@ html[data-presentazione] .blocco[data-presentazione] .zstudio-banco { padding-to
 
 /* Il fattore automatico riguarda il materiale, mai le barre dei comandi.
    La LIM applica il fattore alla propria camera nativa. */
-.bcorpo :is(.CodeMirror,.editor-preview-side,.presenta-anteprima,#mappaSvg,.alblista,#fotoHost,#plHost,.gobbo-corpo,#zragResults,#zschedeResult,#zschedeCollection,#zstudyQuestion,#zstudyQueue,#zstudyHome){zoom:var(--banco-zoom,1);}
+.bcorpo :is(.editor-preview,.editor-preview-side,.presenta-anteprima,#mappaSvg,.alblista,#fotoHost,#plHost,.gobbo-corpo,#zragResults,#zschedeResult,#zschedeCollection,#zstudyQuestion,#zstudyQueue,#zstudyHome){zoom:var(--banco-zoom,1);}
+
+/* CodeMirror 5 misura il cursore in pixel CSS: zoom sul contenitore mescola
+   quelle coordinate con i rettangoli già ridotti. Il font riduce la scrittura
+   senza cambiare il sistema di coordinate; l’anteprima mantiene lo zoom completo. */
+.bcorpo :is(#noteHost,#noteHost2) .CodeMirror{font-size:calc(var(--lettura-fs) * var(--banco-zoom,1));}
+.bcorpo :is(#noteHost,#noteHost2) .CodeMirror-lines{padding-inline:calc(16px * var(--banco-zoom,1));}

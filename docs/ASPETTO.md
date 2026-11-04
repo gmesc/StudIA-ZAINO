@@ -4,6 +4,12 @@
 
 **Impostazioni → Aspetto → Font** offre ZAINO (predefinito) e Atkinson Hyperlegible. La scelta è immediata, locale e persistente sul computer; **Ripristina carattere** torna al predefinito. I font sono già inclusi nell’app, senza download. Il token dell’interfaccia è distinto da quello dei documenti: APPUNTI, stampa ed export mantengono il carattere del documento, PRESENTA e MAPPE mantengono le proprie scelte.
 
+## Scrittura negli split ridotti
+
+Negli APPUNTI il fattore automatico del banco riduce font e spaziatura dell’editor, mantenendo le coordinate native di CodeMirror: cursore, click e lettere rimangono sulla stessa riga. Nell’anteprima continua a ridursi l’intero contenuto, comprese immagini e tabelle. Il passaggio a schermo intero torna al 100% e il ritorno al banco ripristina il 75%. La guida alla formattazione condivide con gli appunti il rientro degli elenchi.
+
+`prova-appunti-cursore.js` misura cursore e testo a video, scrive con un click reale, controlla metà/quarto/schermo intero e ritorno, e verifica il rientro della guida. Le prove di parità editor, spostamento split, tabelle e disegni completano la verifica.
+
 ## Mappe
 
 **MAPPE → ingranaggio → Stile e sfondo** contiene i preset **ZAINO, Essenziale, Leggibile, Lavagna e Pastello**, con campioni visivi. I preset coordinano font, dimensioni dei testi, stile dei collegamenti, colori, angoli e spessore. Non modificano contenuti, rimandi, posizioni manuali, zoom o rami chiusi. I colori manuali che identificano i nodi e i segni della loro origine restano distinguibili.
