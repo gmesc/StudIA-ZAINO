@@ -6,7 +6,6 @@
 .presenta-stato[data-errore="true"]{color:var(--danger,var(--ink));font-weight:600}
 .presenta-corpo{flex:1;min-height:0;overflow:auto;container-type:inline-size}
 .presenta-vuoto{padding:24px;max-width:56ch;line-height:1.5}
-.presenta-vuoto h2{font-size:18px;margin:0 0 8px}
 .presenta-editor{display:grid;grid-template-columns:160px minmax(0,1fr);min-height:100%}
 .presenta-scaletta{border-right:1px solid var(--line);padding:8px;display:flex;flex-direction:column;gap:4px;align-items:stretch}
 .presenta-scaletta .tbtn{height:auto;min-height:var(--tb-h);justify-content:flex-start;text-align:left;white-space:normal;text-transform:none;letter-spacing:normal;overflow-wrap:anywhere;padding-top:8px;padding-bottom:8px;flex:none}

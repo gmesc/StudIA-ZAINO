@@ -1,6 +1,6 @@
 # PRESENTA e GOBBO nel Banco
 
-Il selettore della presentazione si trova a destra nella testata dello split: mostra il titolo aperto e permette di passare a un’altra presentazione. La toolbar sottostante contiene Documento, Annulla/Ripeti, Inserisci e i comandi di presentazione.
+Il selettore della presentazione si trova a destra nella testata dello split: mostra il titolo aperto e permette di passare a un’altra presentazione. La toolbar sottostante contiene Documento, Annulla/Ripeti, Inserisci e i comandi di presentazione. Quando non è aperto alcun documento, nel corpo dello split compare soltanto **+ NUOVA PRESENTAZIONE**.
 
 PRESENTA è lo strumento del Banco per comporre le presentazioni. GOBBO è il pannello indipendente con note private, timer e comandi del relatore. Il primo percorso utilizzabile è collegato: creazione, modifica, autosave, riapertura, anteprima isolata, player nativo Reveal.js ed esportazione HTML offline. L’editor usa il layout **B · Sul foglio**, scelto nel confronto dei mockup, con i componenti ZAINO esistenti: selezione e manipolazione sulla slide, barra TITOLO/TESTO/IMMAGINE/SFONDO sotto l’anteprima e impostazioni della sola voce selezionata. La sidebar contiene miniature e + SLIDE.
 

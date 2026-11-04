@@ -99,11 +99,11 @@
  function disegna(){
   if(!host)return;const d=D.documento,p=posizione(),disabled=occupato||D.bloccato;
   elencoBarra();vuoto.hidden=!!d;editor.hidden=!d;
-  if(!d)vuoto.querySelector('p').textContent=corso?'Crea una presentazione o scegline una dalla tendina.':'Apri uno zaino per costruire una presentazione.';
+  vuoto.querySelector('button').disabled=disabled||!corso;
   for(const [k,v]of Object.entries(bottoni))v.disabled=disabled||(!d&&!['nuova'].includes(k))||(!corso&&k==='nuova');
   bottoni.annulla.disabled=disabled||!D.annullabile;bottoni.ripeti.disabled=disabled||!D.ripetibile;
   bottoni.salva.disabled=disabled||!d;bottoni.nuova.disabled=disabled||!corso;
-  const messaggio=listaErrore||D.errore;stato.textContent=messaggio?'Non salvato: '+messaggio:D.salvando?'Salvataggio…':D.sporco?'Modifiche da salvare':d?'Salvato':'PRESENTA';stato.dataset.errore=String(!!messaggio);
+  const messaggio=listaErrore||D.errore;stato.textContent=messaggio?'Non salvato: '+messaggio:D.salvando?'Salvataggio…':D.sporco?'Modifiche da salvare':d?'Salvato':'';stato.dataset.errore=String(!!messaggio);stato.hidden=!stato.textContent;
   for(const e of campi.querySelectorAll('input,textarea,select,button'))e.disabled=disabled||!d||e.dataset.vuoto==='true';const eliminaSlide=campi.querySelector('[aria-label="Elimina slide"]');if(eliminaSlide)eliminaSlide.disabled=disabled||!d||M.posizioni(d).length===1;
   if(d&&p){frame.style.aspectRatio=d.settings.width+'/'+d.settings.height;frame.dataset.sfondoBianco=String(!M.sfondoSlide(d,p.slide).backgroundMedia&&!M.sfondoSlide(d,p.slide).backgroundPattern&&C.sfondoBianco(M.sfondoSlide(d,p.slide).background,d.settings.theme));if(avviso.dataset.slideId!==p.slide.id)avviso.hidden=true;}
   disegnaScaletta();
@@ -716,7 +716,7 @@
   const inserimento=E('div',null,'presenta-voci-menu');inserimento.append(testoBottone('Aggiungi testo','type',()=>nuovoBlocco('text')),testoBottone('Aggiungi elenco','list',()=>nuovoBlocco('list')),testoBottone('Aggiungi formula','plus',()=>nuovoBlocco('math')),testoBottone('Aggiungi forma','plus',()=>nuovoBlocco('shape')),testoBottone('Aggiungi tabella','plus',()=>{nuovoBlocco('table');modificaTabella(bloccoId);}),testoBottone('Navbar','list',()=>inserisciComune('navbar')),testoBottone('Numera pagine','list',()=>inserisciComune('page-number')),testoBottone('Disegno vettoriale','pencil',()=>disegnoVettoriale()),testoBottone('Carica dal computer','plus',()=>importaFile()),testoBottone('Inserisci dallo zaino','image',scegliMateriale),testoBottone('Incolla oggetto','copy',()=>comandoOggetto('incolla')));
   const inserisci=testoBottone('Inserisci','plus',()=>{inserimento.lastElementChild.disabled=appuntiOggetto?.documentId!==D.documento?.id;apriMenu(inserimento,inserisci);});bottoni.inserisci=inserisci;bar.append(E('span',null,'tbsep'),inserisci,E('span',null,'tbspazio'));
   const proietta=testoBottone('Presenta','play',presenta);proietta.setAttribute('aria-label','Presenta a schermo intero');bottoni.presenta=proietta;bar.append(proietta,b('Apri GOBBO',null,()=>bancoMostra('gobbo'),'gobbo'));
-  stato=E('div',null,'presenta-stato');stato.setAttribute('role','status');corpo=E('div',null,'presenta-corpo');vuoto=E('div',null,'presenta-vuoto');vuoto.append(E('h2','Costruisci la tua presentazione'),E('p'),b('Crea presentazione',null,nuova));
+  stato=E('div',null,'presenta-stato');stato.setAttribute('role','status');corpo=E('div',null,'presenta-corpo');vuoto=E('div',null,'presenta-vuoto');vuoto.append(b('+ Nuova presentazione',null,nuova));
   editor=E('div',null,'presenta-editor');scaletta=E('nav',null,'presenta-scaletta');scaletta.setAttribute('aria-label','Slide della presentazione');
   const lavoro=E('div',null,'presenta-lavoro');frame=E('iframe',null,'presenta-anteprima');frame.title='Anteprima della slide';frame.setAttribute('sandbox','allow-scripts');call({azione:'frame'}).then(r=>{frame.src=r.url;}).catch(e=>window.toast?.(e.message,false));
   campi=E('div',null,'presenta-campi');avviso=E('p',null,'presenta-aiuto');avviso.setAttribute('role','status');avviso.hidden=true;oggettiNav=E('div',null,'tbar presenta-tabs');oggettiNav.setAttribute('role','group');oggettiNav.setAttribute('aria-label','Impostazioni di titolo, oggetti o sfondo');lavoro.append(frame,oggettiNav,avviso,campi);const sinistra=E('aside',null,'presenta-navigazione');sinistra.append(scaletta);editor.append(sinistra,lavoro);corpo.append(vuoto,editor);host.append(bar,stato,corpo);
