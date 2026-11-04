@@ -167,6 +167,7 @@ const vaultApi = {
     rimuoviStrato: (id,strato,dove) => sync('evidenze','rimuoviStrato',id,strato,dove),
     identita: voce => sync('evidenze','identita',voce)
   },
+  disegni:{salva:(z,dati)=>sync('disegni','salva',z,dati),leggi:(z,id)=>sync('disegni','leggi',z,id),srcUrl:(z,id)=>sync('disegni','srcUrl',z,id)},
   album: {
     elenco: (id,origine) => sync('album','elenco',id,origine),
     percorsoDi,

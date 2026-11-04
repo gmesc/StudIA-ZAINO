@@ -88,6 +88,7 @@
      usano tutt'e due i lati — `capitolo.js` per leggerla, il menu dell'immagine
      nell'appunto per scriverla — ed è per questo che è un file suo. -->
 <script src="assets/lettura/misura.js"></script>
+<script src="assets/appunti/figure.js"></script>
 <script src="assets/lettura/capitolo.js"></script>
 <script src="assets/lettura/lezioni.js"></script>
 <!-- ⚠️ DOPO `rimandi/sintassi.js`: la factory di `lettore.js` legge
@@ -156,6 +157,7 @@
 <script src="assets/stampa/foglio.js"></script>
 <script src="assets/appunti/documento.js"></script>
 <script src="assets/appunti/tabelle.js"></script>
+<link rel="stylesheet" href="assets/appunti/figure.css">
 <link rel="stylesheet" href="assets/appunti/tabelle.css">
 <script src="assets/appunti/export-dom.js"></script>
 <!-- Lo zoom del documento: passo, ciclo dei due adattamenti, etichetta del
@@ -9234,6 +9236,10 @@ function renderNoteMd(md, opt){
       if(out && i<lines.length) out+=vuote(salti);
       continue;
     }
+    try{
+      var figura=AppuntiFigure.leggi(lines,i);
+      if(figura){out+=avvolgi(AppuntiFigure.html(figura,mdToHtml(lines[i],true)),i,figura.fine);i=figura.fine+1;continue;}
+    }catch(e){out+=avvolgi('<p role="alert">Figura non leggibile: '+escHtml(e.message)+'</p>',i,i);i++;continue;}
     if(typeof AppuntiTabelle!=='undefined'){
       try{
         var tab=AppuntiTabelle.leggi(lines,i);
@@ -9256,7 +9262,7 @@ function renderNoteMd(md, opt){
        HTML — `mdToHtml` spezza a sua volta sulle righe vuote — ma i confini dei
        blocchi non li sapeva più nessuno, e senza confini non c'è mappa. */
     var inizio=i, buf=[];
-    while(i<lines.length && !vuota(lines[i]) && !/^>\s*\[!/.test(lines[i])){ buf.push(lines[i]); i++; }
+    while(i<lines.length && !vuota(lines[i]) && !/^>\s*\[!/.test(lines[i]) && (i===inizio || !AppuntiFigure.inizio(lines[i]))){ buf.push(lines[i]); i++; }
     var html=mdToHtml(buf.join('\n'), true);
     /* ⚠️ UN ELENCO NON È UN BLOCCO SOLO. Otto voci di seguito sono otto righe
        piene, quindi finivano in un campo unico: cliccare la terza apriva tutte e
@@ -12265,6 +12271,7 @@ function ensureMde(s){
     toolbar:[
       {name:'annulla',title:'Annulla (⌘Z)',className:'ncb-undo tbtn no-disable',action:function(){ noteCronologia(s,false); }},
       {name:'ripeti',title:'Ripeti (⌘⇧Z)',className:'ncb-redo tbtn no-disable',action:function(){ noteCronologia(s,true); }},
+      {name:'disegno',title:'Inserisci disegno modificabile',className:'ncb-disegno no-disable',action:function(){AppuntiFigureUI.disegno(s);}},
       {name:'tabella',title:'Inserisci o modifica tabella',className:'ncb-tabella no-disable',action:function(){AppuntiTabelleUI.apri(s);}},
       '|','bold','italic','heading','|','quote','unordered-list','ordered-list','|',
       {name:'callout',title:'Inserisci un riquadro (callout)',className:'ncb-callout',
@@ -12499,6 +12506,7 @@ function mdbVicino(avanti,s){
       var host=noteHost(n), campo=host && host.querySelector('.mdb-edit');
       if(campo && !campo.contains(e.target)) mdbChiudi(true,n);
     });
+    if(e.target.closest('.note-visual'))return;
     if(e.target.closest('.note-tabella')){AppuntiTabelleUI.apri(s,box);return;}
     if(!box || box.hasAttribute('data-edit') || e.target.closest('a,img')) return;
     // Chiudere il blocco precedente ricrea i nodi: si ritrova quello cliccato dalle righe.
@@ -13395,6 +13403,7 @@ function noteInserisci(md, destinazione){
   var ultima=cm.lastLine(), coda=cm.getLine(ultima);
   cm.replaceRange((coda.trim()? '\n\n':'') + md, { line:ultima, ch:coda.length });
   cm.setCursor(cm.lastLine(), 0); cm.scrollIntoView(null);
+  noteAnteprimaRidisegna(destinazione);
   // il gesto è esplicito, quindi si scrive subito invece di aspettare il debounce
   noteSave(true,destinazione);
   return true;
@@ -16551,6 +16560,7 @@ var LETTURA_CAP = LetturaCapitolo.crea({
   mediaNum: function () { return _mediaNum(); },
   pdfNum: function () { return _pdfNum(); },
   corsoAttivo: function () { return corsoAttivo(); },
+  disegnoSrc:function(id){return window.vault?.disegni?.srcUrl(corsoAttivo(),id)||'';},
   /* L'aspetto di un'evidenza citata da un appunto. Si chiede all'elenco in
      memoria — che è la vista di `APPUNTI/_evidenze.json` — e non al markdown,
      dove del colore non c'è scritto niente. È così che ricolorare una parola
@@ -23063,5 +23073,6 @@ document.getElementById('noteExportMenu').addEventListener('keydown',function(e)
 <script src="assets/presentazioni/barra.js"></script>
 <script src="assets/presentazioni/editor.js"></script>
 <script src="assets/appunti/tabelle-ui.js"></script>
+<script src="assets/appunti/figure-ui.js"></script>
 </body>
 </html>

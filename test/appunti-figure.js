@@ -1,0 +1,12 @@
+'use strict';
+const A=require('node:assert/strict'),F=require('../App/assets/appunti/figure'),S=require('../lib/vault-sincrono'),P=require('../lib/sicurezza-app');
+const lines=['![Schema|60%](album:abcdef)','<!-- zaino-figura {"align":"right","layer":"back"} -->'];
+const v=F.leggi(lines,0);A.equal(v.percento,60);A.equal(v.style.layer,'back');A.equal(v.fine,1);A.deepEqual(F.leggi(F.scrivi(v).split('\n'),0),v);
+A.throws(()=>F.aspetto({layer:'javascript:alert(1)'}));A.throws(()=>F.aspetto({top:'-9999px'}));A.equal(F.leggi(['![x](_disegni/../../segreto.png)'],0),null);
+A(F.html(v,'<p>Figura</p>').includes('data-layer="back"'));A(S.consentito('disegni','srcUrl'));A(!S.scrive('disegni','leggi'));A(S.scrive('disegni','salva'));
+const base={vault:'/vault',appDir:'/app',userData:'/cfg',temporanei:'/tmp'};
+const p=P.privilegi('vault:sync',{gruppo:'disegni',metodo:'salva',args:['scienze','data']},base);A(p.scrittura.includes('/vault/Zaini/scienze/APPUNTI/_disegni'));A(!p.scrittura.includes('/vault/Zaini/scienze/APPUNTI'));
+A.throws(()=>require('../lib/appunti-disegni').srcUrl('/tmp','x','../../segreto'),/non valido/);
+console.log('✓ Figure: metadata, dimensioni, allineamento/livelli, roundtrip e privilegi limitati');
+const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aF1cAAAAASUVORK5CYII=';
+(async()=>{const b=await require('../lib/appunti-docx').crea({titolo:'Livelli',albero:{tag:'root',figli:['front','back'].map(layer=>({tag:'p',figli:[{tag:'img',figli:[],dati:png,larghezza:100,altezza:50,visuale:{align:'right',layer}}]}))}});const z=require('fflate'),xml=z.strFromU8(z.unzipSync(b)['word/document.xml']);A.equal((xml.match(/<wp:anchor /g)||[]).length,2);A(xml.includes('behindDoc="1"'));A(xml.includes('behindDoc="0"'));A(xml.includes('right'));console.log('✓ DOCX: figure davanti e dietro al testo, allineate a destra');})().catch(e=>{console.error(e);process.exitCode=1;});

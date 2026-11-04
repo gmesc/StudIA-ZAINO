@@ -1,0 +1,16 @@
+:is(.md-prev,.editor-preview,.editor-preview-side,.st-corpo){isolation:isolate}
+:is(.md-prev,.editor-preview,.editor-preview-side,.st-corpo) :is(p,ul,ol,blockquote,h1,h2,h3,h4,h5,h6,.ucallout,.note-tabella){position:relative;z-index:1}
+.note-visual{position:relative;z-index:1}
+.note-visual[data-layer=front],.note-visual[data-layer=back]{height:0;min-height:0;margin:0!important;padding:0!important;overflow:visible}
+.note-visual[data-layer=front]{z-index:3}.note-visual[data-layer=back]{z-index:0}
+.note-visual:not([data-layer=inline])>.note-visual-contenuto{position:absolute;inset:0 0 auto}
+.note-visual:not([data-layer=inline]) .figura,.note-visual:not([data-layer=inline]) p{margin:0!important}
+.note-visual[data-align=left] .figura{text-align:left!important}.note-visual[data-align=center] .figura{text-align:center!important}.note-visual[data-align=right] .figura{text-align:right!important}
+.note-visual .dlink{display:inline-block;max-width:100%;line-height:0}
+.note-visual .figura.misurata .dlink{width:var(--figw)}.note-visual .figura.misurata .dlink img{width:100%}
+.note-visual .disegno .figimg,.note-visual[data-layer=back] .figimg{background:transparent;border:0}
+.note-figure-menu{max-width:min(520px,95vw);padding:8px}
+.note-figure-menu .tbar{flex-wrap:wrap}.note-figure-menu label{display:flex;align-items:center;gap:8px;font-size:12px;padding:8px}
+.note-disegno-dialog{width:94vw;height:88vh;max-width:none;max-height:none;padding:0;background:var(--panel);color:var(--ink);border:1px solid var(--line)}
+.note-disegno-dialog[open]{display:flex;flex-direction:column}.note-disegno-tela{flex:1;min-height:0;position:relative}.note-disegno-dialog>output{font-size:12px;padding:0 8px;color:var(--err-ink)}
+@media print{.note-figure-menu,.note-disegno-dialog{display:none!important}}

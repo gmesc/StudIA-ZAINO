@@ -32,7 +32,8 @@
       let n={tag:tag,figli:[]};
       if(cl.contains('ucallout')){n.tag='callout';n.colore=colore(st.borderLeftColor);}
       if(cl.contains('uc-head')){n.tag='p';n.testata=true;n.colore=colore(st.color);}
-      if(cl.contains('figura'))n.tag='figura';
+      if(cl.contains('figura')){n.tag='figura';n.allineamento=el.closest('.note-visual')?.dataset.align||'center';}
+      if(cl.contains('figcap')&&el.closest('.note-visual')?.dataset.layer!=='inline'&&el.closest('.note-visual'))return null;
       if(cl.contains('figcap')){n.tag='p';n.didascalia=true;}
       if(tag==='mark'){n.colore=colore(st.getPropertyValue('--ev')||'#fff09b');n.tratto=el.dataset.tratto||'overlay';n.postilla=el.dataset.postilla?el.title:'';}
       if(tag==='ol')n.inizio=+el.getAttribute('start')||1;
@@ -50,7 +51,7 @@
         if(rif&&typeof rif.then==='function')attese.push(rif.then(v=>{n.riferimento=v||'';}));else n.riferimento=rif||'';
       }
       if(tag==='img'||tag==='svg'){
-        n.tag='img';n.alt=el.getAttribute('alt')||el.getAttribute('aria-label')||'Immagine';
+        n.tag='img';const visuale=el.closest('.note-visual');if(visuale)n.visuale={align:visuale.dataset.align,layer:visuale.dataset.layer};n.alt=el.getAttribute('alt')||el.getAttribute('aria-label')||'Immagine';
         const figura=el.closest('.figura');n.percento=figura?parseFloat(figura.style.getPropertyValue('--figw'))||100:100;
         let src=el.getAttribute('src');
         if(tag==='svg'){
