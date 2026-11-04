@@ -794,6 +794,22 @@ function contaFileRicorsivo(dir, salta) {
   return n;
 }
 
+// Il formato Word usa solo dati incorporati: il renderer non può far leggere
+// percorsi arbitrari al main e la destinazione arriva dal dialogo nativo.
+ipcMain.handle('stampa:docx', async (e, dati = {}) => {
+  try {
+    require('./App/assets/appunti/documento').valida(dati);
+    const r = await dialog.showSaveDialog(win, {
+      title: 'Esporta in DOCX',
+      defaultPath: path.join(app.getPath('downloads'), path.basename(String(dati.nome || 'Appunto')) + '.docx'),
+      filters: [{name:'Documento Word',extensions:['docx']}]
+    });
+    if(r.canceled || !r.filePath)return {annullato:true};
+    const buffer=await require('./lib/appunti-docx').crea(dati);
+    return salvaEsportazione(r.filePath,buffer,'.docx');
+  } catch(error) { return {error:error.message || String(error)}; }
+});
+
 /* ── SALVA COME PDF ────────────────────────────────────────────────────────
  * Il renderer manda il documento GIÀ IMPAGINATO — il foglio di stampa col suo
  * CSS e le sue regole `@page` — e qui si stampa in una finestra invisibile.

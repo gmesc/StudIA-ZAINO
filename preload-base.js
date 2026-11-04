@@ -91,6 +91,7 @@ const vaultApi = {
      errore, ed è già costato due funzioni mute il 13 agosto. */
   stampa: {
     pdf: (o) => ipcRenderer.invoke('stampa:pdf', o || {}),
+    docx: (o) => ipcRenderer.invoke('stampa:docx', o || {}),
     mostra: (percorso) => ipcRenderer.invoke('stampa:mostra', { percorso: percorso })
   },
   /* La guida illustrata dello ZAINO, in una finestra sua. Sta dentro l'app

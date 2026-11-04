@@ -154,6 +154,8 @@
      chiede le regole al momento di stampare, e perché il suo `@page` deve
      entrare in un <style> che nasce vuoto (subito sotto, `#stampaRegole`). -->
 <script src="assets/stampa/foglio.js"></script>
+<script src="assets/appunti/documento.js"></script>
+<script src="assets/appunti/export-dom.js"></script>
 <!-- Lo zoom del documento: passo, ciclo dei due adattamenti, etichetta del
      bottone e il punto che resta sotto il puntatore. Nessuna dipendenza: qui
      dentro non c'è né DOM né viewer, solo aritmetica e stringhe. -->
@@ -9430,6 +9432,7 @@ function tendinaViva(sel, opt){
 }
 
 function closePops(){
+  document.querySelectorAll('[id^=notePdf][aria-expanded]').forEach(function(b){b.setAttribute('aria-expanded','false');});
   znavAiutoChiudi();
   /* ⚠️ LA RICERCA NEL DOCUMENTO NON SI CHIUDE DA QUI, e non è una dimenticanza:
      è la decisione del 17 agosto. `closePops()` la chiama ogni click fuori da un
@@ -9447,7 +9450,7 @@ function closePops(){
      vista da un altro lato: togliergli `open` lo farebbe sparire lasciando il
      colore acceso sulla pagina — cioè ricreerebbe esattamente lo stato invisibile
      che si è appena finito di togliere, per un click sul «+» dello zoom. */
-  ['#albumCercaPop','#albumOrdineMenu','#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#zainiMenu','#zainoPop','#pdfDocPop','#pdfSommarioPop','#plMediaPop','#pittorePop','#stratiPop']
+  ['#noteExportMenu','#albumCercaPop','#albumOrdineMenu','#calloutMenu','#emojiPop','#helpPop','#matPop','#mappaPop','#bancoPop','#fontiBolla','#searchPop','#zainiMenu','#zainoPop','#pdfDocPop','#pdfSommarioPop','#plMediaPop','#pittorePop','#stratiPop']
     .forEach(function(s){ var e=$(s); if(e) e.removeAttribute('open'); });
   /* ⚠️ Il menu della selezione e la sua barra non si chiudono togliendo un
      attributo: hanno uno stato in una CLASSE (`open`, `aperta`) e due funzioni
@@ -9605,6 +9608,69 @@ function stampaFoglio(opt){
  *  stampa, il salvataggio in PDF e (domani) un'anteprima — e se ognuna si
  *  ricostruisse il contenuto da sé, il PDF e la carta comincerebbero a dire due
  *  cose diverse al primo ritocco. */
+/* L'istanza si cattura quando si apre il menu: il focus può spostarsi sull'altro
+ * appunto prima della scelta. Nessun export deve seguire quel cambio di focus. */
+var NOTE_EXPORT=null;
+function noteExportApri(ancora,s){
+  var pop=$('#noteExportMenu');
+  if(pop.hasAttribute('open')&&NOTE_EXPORT&&NOTE_EXPORT.ancora===ancora){closePops();return;}
+  if(!s.cur)return;
+  popAt(pop,ancora);
+  NOTE_EXPORT={stato:s,file:s.cur.file,corso:s.courseId,ancora:ancora};
+  ancora.setAttribute('aria-expanded','true');
+  pop.querySelector('button').focus();
+}
+function noteExportRiferimento(a){
+  var d=a.dataset;
+  if(d.citazioneZaino){
+    var rif=RimandiSintassi.leggi(d.citazioneZaino),etichetta=a.textContent;
+    return window.vault.citazioni.risolvi(d.citazioneZaino).then(function(r){
+      if(r&&r.status==='available')return r.file+(r.intero?'':', p. '+r.pagina)+' — '+r.zainoTitolo;
+      return etichetta+(rif&&!rif.intero?', p. '+rif.pagina:'')+' (fonte non disponibile; '+(rif?rif.sourceId:'')+')';
+    });
+  }
+  if(d.file)return d.file+(d.page?', p. '+d.page:'')+(d.t!=null?', secondo '+d.t:'');
+  if(d.album){var imm=albumVoce(d.album);return imm?(imm.materiale||'')+(imm.pagina?', p. '+imm.pagina:'')+(imm.t!=null?', secondo '+imm.t:''):'';}
+  if(d.ev){var ev=kwDaId(d.ev);return ev?(ev.materiale||ev.capitoloId||'Evidenza')+(ev.pagina?', p. '+ev.pagina:''):'Evidenza '+d.ev+' non disponibile';}
+  if(d.cap||d.lesson)return d.cap||d.lesson;
+  return '';
+}
+async function documentoAppuntoDocx(s){
+  var f=foglioAppunto(s);if(!f)return null;
+  var contenitore=document.createElement('div');
+  contenitore.className='st-corpo';
+  contenitore.style.cssText='position:fixed;left:-10000px;top:0;width:642px;visibility:hidden;pointer-events:none';
+  contenitore.innerHTML=f.html;
+  // La cattura carica le immagini da sé; gli handler di anteprima non devono
+  // sostituire una figura rotta con un segnaposto durante l'esportazione.
+  contenitore.querySelectorAll('[onerror]').forEach(function(el){el.removeAttribute('onerror');});
+  document.body.appendChild(contenitore);
+  try{
+    var font=getComputedStyle(document.body).getPropertyValue('--font-text').trim().split(',')[0].replace(/["']/g,'')||'Arial';
+    var dati=await AppuntiExportDOM.leggi(contenitore,{riferimento:noteExportRiferimento});
+    return AppuntiDocumento.valida(Object.assign(dati,{titolo:f.titolo,nome:stampaNomeFile(f.titolo),font:font}));
+  }finally{contenitore.remove();}
+}
+async function salvaDocx(s){
+  try{
+    if(!window.vault||!window.vault.stampa.docx)throw Error('Esportazione disponibile solo nell’app aggiornata.');
+    var dati=await documentoAppuntoDocx(s);if(!dati)return null;
+    var r=await window.vault.stampa.docx(dati);
+    if(!r||r.annullato)return null;
+    if(r.error)throw Error(r.error);
+    toast('DOCX salvato: '+(r.percorso||'').split('/').pop()+(dati.avvisi.length?' — '+dati.avvisi.join(' '):''),true);
+    return r.percorso;
+  }catch(e){toast('DOCX non salvato: '+e.message,false);return null;}
+}
+function noteExportScegli(formato){
+  var scelta=NOTE_EXPORT;closePops();
+  if(!scelta)return;
+  var s=scelta.stato;
+  if(!s.cur||s.cur.file!==scelta.file||s.courseId!==scelta.corso){toast('L’appunto è cambiato: riapri Esporta.',false);return;}
+  scelta.ancora.focus();
+  return formato==='docx'?salvaDocx(s):salvaPdf('appunto',s);
+}
+
 function foglioAppunto(destinazione){
   var s=destinazione||noteStatoAttivo();
   mdbChiudi(true, s);
@@ -13648,7 +13714,9 @@ document.addEventListener('click',function(e){
      lo si usa. `closePops()` chiude anche il menu della selezione, quindi
      senza questa eccezione il 🔗 si spegneva e si portava via la superficie da
      cui era stato premuto — cambiavi idea e dovevi riselezionare la frase. */
-  if(!(e.target.closest && (e.target.closest('.popmenu')||e.target.closest('.ncb-callout')||e.target.closest('.ncb-emoji')||e.target.closest('.ncb-mat')||e.target.closest('#mVista')||e.target.closest('#bancoBtn')||e.target.closest('#mappaSvg .mfonte')||e.target.closest('#albumCerca')||e.target.closest('#albumOrdine')||e.target.closest('#searchBtn')||e.target.closest('#searchRes')||e.target.closest('#zainoScegli')||e.target.closest('#pdfDoc')||e.target.closest('.ctx-cita')))) closePops();
+  if(!(e.target.closest && (e.target.closest('.popmenu')||e.target.closest('[id^=notePdf]')||e.target.closest('.ncb-callout')||e.target.closest('.ncb-emoji')||e.target.closest('.ncb-mat')||e.target.closest('#mVista')||e.target.closest('#bancoBtn')||e.target.closest('#mappaSvg .mfonte')||e.target.closest('#albumCerca')||e.target.closest('#albumOrdine')||e.target.closest('#searchBtn')||e.target.closest('#searchRes')||e.target.closest('#zainoScegli')||e.target.closest('#pdfDoc')||e.target.closest('.ctx-cita')))) closePops();
+  var esporta=e.target.closest && e.target.closest('[data-note-export]');
+  if(esporta){noteExportScegli(esporta.dataset.noteExport);return;}
   var a=e.target.closest && e.target.closest('.myotes a[data-note]');
   if(a){ e.preventDefault(); noteApriAttivo(a.getAttribute('data-note')); return; }
   if(e.target.closest && e.target.closest('#addNoteBtn')){ noteNew(''); return; }
@@ -13659,7 +13727,7 @@ document.addEventListener('click',function(e){
     if(id==='noteSave'){ noteSave(false,ns); return; }
     if(id==='noteRen'){ noteRename(ns); return; }
     if(id==='noteStampa'){ stampaAppunto(ns); return; }
-    if(id==='notePdf'){ salvaPdf('appunto',ns); return; }
+    if(id==='notePdf'){ noteExportApri(comando,ns); return; }
     if(id==='noteDel'){ noteDelete(ns); return; }
     if(id==='noteClose'){ closeEditor(ns); return; }
   }
@@ -22033,7 +22101,7 @@ window.addEventListener('keydown', function(e){
            Dal dialogo di stampa i fondi dei riquadri non escono finché non si
            accende «grafica di sfondo»; qui il PDF lo scrive l'app, e i colori
            dei callout ci sono sempre. -->
-      <button class="ncbtn" id="notePdf" type="button" title="Salva l’appunto come PDF" aria-label="Salva l’appunto come PDF">PDF</button>
+      <button class="ncbtn" id="notePdf" type="button" title="Esporta appunto" aria-label="Esporta appunto" aria-haspopup="menu" aria-controls="noteExportMenu" aria-expanded="false">Esporta</button>
       <button class="ncbtn" id="noteClose" type="button" title="Chiudi l’appunto; lo split e gli strumenti restano aperti" aria-label="Chiudi l’appunto">&#10005;</button>
     </span>
   </template>
@@ -22377,6 +22445,18 @@ window.addEventListener('keydown', function(e){
     <button class="tbtn" id="pdfFindClose" type="button" title="Chiudi la ricerca (Esc)" aria-label="Chiudi la ricerca nel documento">&#10005;</button>
   </div>
 </div>
+<div id="noteExportMenu" class="popmenu" role="menu" aria-label="Esporta appunto">
+  <div class="tbar"><button type="button" class="tbtn" role="menuitem" data-note-export="pdf">.PDF</button><button type="button" class="tbtn" role="menuitem" data-note-export="docx">.DOCX</button></div>
+</div>
+<script>
+document.getElementById('noteExportMenu').addEventListener('keydown',function(e){
+  var voci=Array.from(this.querySelectorAll('button')),i=voci.indexOf(document.activeElement);
+  if(['ArrowRight','ArrowDown','ArrowLeft','ArrowUp','Home','End'].indexOf(e.key)>=0){
+    e.preventDefault();voci[e.key==='Home'?0:e.key==='End'?voci.length-1:(i+(/Right|Down/.test(e.key)?1:voci.length-1))%voci.length].focus();
+  }
+  if(e.key==='Escape'){e.preventDefault();closePops();if(NOTE_EXPORT)NOTE_EXPORT.ancora.focus();}
+});
+</script>
 <div id="calloutMenu" class="popmenu" role="menu" aria-label="Tipo di riquadro"></div>
 <div id="helpPop" class="popmenu" role="dialog" aria-label="Esempi di cosa scrivere"></div>
 <div id="matPop" class="popmenu" role="dialog" aria-label="Cita un materiale">
