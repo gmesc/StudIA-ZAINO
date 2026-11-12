@@ -8,3 +8,5 @@
 @font-face{font-family:"Atkinson Hyperlegible Next";src:url("fonts/AtkinsonHyperlegibleNext-Italic-Variable.woff2") format("woff2");font-weight:200 800;font-style:italic;font-display:swap}
 @font-face{font-family:"TestMe Sans Alternate";src:url("fonts/TestMeAlt02-Regular.otf") format("opentype");font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:"TestMe Sans Alternate";src:url("fonts/TestMeAlt02-Bold.otf") format("opentype");font-weight:700;font-style:normal;font-display:swap}
+
+@font-face{font-family:"Patrick Hand";src:url("fonts/PatrickHand-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}

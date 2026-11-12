@@ -1,5 +1,7 @@
 ## Novità
 
+- Guida aggiornata con screenshot, miniguida PDF di dodici pagine e zaino dimostrativo «Intro a ZAINO», con appunti, mappa e presentazione.
+
 - Corretto il cursore degli APPUNTI negli split ridotti: il punto di scrittura coincide con il testo anche al 75%, nei banchi a metà e a un quarto, e dopo il ritorno dallo schermo intero.
 - La guida degli APPUNTI mostra correttamente i rientri degli elenchi, come il documento scritto.
 

@@ -1,0 +1,32 @@
+KIT MULTIMODALE — STILE MAPPA ZAINO
+
+Allega stile.schema.json, bosco.zaino-stile.json e le immagini di riferimento.
+Puoi usare anche drawably-mappa.zaino-stile.json come esempio di tratto.
+
+COPIA DA QUI
+
+Aiutami a creare uno stile mappa importabile in ZAINO dalle immagini allegate.
+Nome: «Carta e inchiostro». Rispetta esattamente stile.schema.json.
+
+Il colore assegnato ai nodi e ai loro gruppi di parentela appartiene alla mappa.
+Lo stile deve definire solo il colore dei bordi neutri: usa bordo "#9ca3af"
+e bordiColorati 1. Le barre colorate non fanno parte della resa attuale.
+Scegli un tratto tra regolare, squig e drawably; non inventare nuove sagome.
+Usa carta e nodi chiari, testo scuro e collegamenti leggibili. Per un preset
+ispirato a Squig usa colori neutri senza blu: i colori dei nodi servono alla
+parentela. Angoli dei nodi immagine: superiori retti, inferiori con raggio.
+Puoi indicare freccia da 3 a 20, base iniziale 7; lo spessore dei tratti
+influenza anche la resa delle punte. Mantieni spessore nell’intervallo 0.5–4.
+
+Prima proponi le scelte visive e chiedimi conferma. Dopo il mio OK restituisci
+soltanto un JSON completo, formato zaino-stile, versione 1, tipo mappa,
+senza Markdown, commenti, HTML, CSS o JavaScript. Conserva le attribuzioni
+richieste dal file di partenza. Il file descrive l’aspetto, non i contenuti.
+
+QUANDO RICEVI IL JSON
+
+Salvalo in UTF-8 come carta-e-inchiostro.zaino-stile.json.
+Apri Impostazioni → TUNING → Importa stile… → tessera → … → Aspetto.
+Controlla il bordo di un nodo colorato e di uno neutro, le due immagini,
+gli angoli e le frecce. Prova Moltiplica (Multiply) su un fondo con texture.
+Regola i controlli e premi Salva stile. Per condividere usa … → Esporta.

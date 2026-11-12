@@ -26,7 +26,7 @@ const primo = stato('primo.md'), secondo = stato('secondo.md');
 let attivo = primo, corso = 'biologia', rispondi;
 const elementi = new Map();
 const $ = id => {
-  if (!elementi.has(id)) elementi.set(id, {value:'', innerHTML:'', focus(){},hasAttribute:()=>true});
+  if (!elementi.has(id)) elementi.set(id, {value:'', innerHTML:'', dataset:{}, focus(){},hasAttribute:()=>true});
   return elementi.get(id);
 };
 const messaggi = [], chiusi = [];

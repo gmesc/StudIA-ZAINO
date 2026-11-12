@@ -58,9 +58,17 @@
  function errore(a,tipo){
   if(!disponibile(a.effect,tipo))return 'Effetto non compatibile con questo oggetto.';
   if(a.start!==undefined&&!['click','with','after'].includes(a.start))return 'Avvio non valido.';
-  for(const [k,min,max]of [['duration',.1,20],['delay',0,20],['distance',10,300]])if(a[k]!==undefined&&(!Number.isFinite(a[k])||a[k]<min||a[k]>max))return 'Tempo o distanza fuori limite.';
+  for(const [k,min,max]of [['duration',.1,20],['delay',0,20],['distance',10,300],['sequenceOverlap',0,100]])if(a[k]!==undefined&&(!Number.isFinite(a[k])||a[k]<min||a[k]>max))return 'Tempo o distanza fuori limite.';
+  if(a.sequenceOrder!==undefined&&!['forward','reverse'].includes(a.sequenceOrder))return 'Ordine della sequenza non valido.';
   return null;
  }
+ // La durata include l'intera sequenza; senza opzione conserviamo il ritmo dei documenti precedenti.
+ function tempiSequenza(a,quanti){
+  const n=Math.max(1,quanti),totale=durata(a)*1000;
+  const singolo=a.sequenceOverlap===undefined?Math.min(totale,Math.max(100,totale/n)):totale/(1+(n-1)*(1-a.sequenceOverlap/100));
+  const passo=(totale-singolo)/Math.max(1,n-1);
+  return {durata:singolo,ritardi:Array.from({length:n},(_,i)=>(a.sequenceOrder==='reverse'?n-1-i:i)*passo)};
+ }
  function percorso(id,d=80){if(id==='path-wave')return `M0 0 Q${d/4} ${-d/2} ${d/2} 0 T${d} 0 Q${3*d/4} ${d/2} ${d/2} 0 T0 0`;if(id==='path-zigzag')return `M0 0 L${d/4} ${-d/3} L${d/2} ${d/3} L${3*d/4} ${-d/3} L${d} 0 L${3*d/4} ${-d/3} L${d/2} ${d/3} L${d/4} ${-d/3} L0 0`;return id==='path-orbit'?`M0 0 a${d} ${d/2} 0 1 0 ${2*d} 0 a${d} ${d/2} 0 1 0 ${-2*d} 0`:id==='path-arc'?`M0 0 Q${d/2} ${-d} ${d} 0 Q${d/2} ${-d} 0 0`:`M0 0 L${d} 0 L0 0`;}
- return {catalogo,effetti,disponibile,durata,normalizza,tempi,sequenza,errore,percorso};
+ return {catalogo,effetti,disponibile,durata,normalizza,tempi,sequenza,errore,percorso,tempiSequenza};
 });

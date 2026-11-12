@@ -1,0 +1,39 @@
+{
+  "formato": "zaino-stile",
+  "versione": 1,
+  "tipo": "navbar",
+  "nome": "Taccuino blu",
+  "autore": "ZAINO",
+  "licenza": "GPL-3.0-or-later",
+  "stile": {
+    "variant": "tabs",
+    "orientation": "horizontal",
+    "activeZoom": 1,
+    "fontFamily": "patrick-hand",
+    "fontSize": 20,
+    "color": "#2438FF",
+    "grafica": {
+      "gap": 12,
+      "border": {
+        "color": "#2438FF",
+        "width": 2,
+        "opacity": 1
+      },
+      "background": {
+        "color": "#FBFAF5",
+        "opacity": 1
+      },
+      "activeBackground": {
+        "color": "#D6DAFF",
+        "opacity": 1
+      },
+      "activeTextColor": "#2438FF",
+      "activeGraphicColor": "#2438FF",
+      "activeBorderOpacity": 1,
+      "separator": {
+        "enabled": false
+      },
+      "tratto": "squig"
+    }
+  }
+}

@@ -15,11 +15,20 @@
  }
  function campione(b,valore){b.value=valore;b.dataset.colore=valore;const nome=valore==='none'?'Nessuno':C.etichetta(valore),sw=E('i',null,'zaino-campione');sw.style.backgroundColor=valore==='none'?'transparent':valore;b.replaceChildren(sw,E('span',nome));b.title=nome+(valore==='none'?'':' · '+valore)+' · palette Tailwind';}
  function chiudi(focus=true){if(!aperto)return false;const p=aperto;aperto=null;if(p.matches(':popover-open'))p.hidePopover();p.ancora?.setAttribute('aria-expanded','false');p.remove();if(focus&&p.ancora?.getBoundingClientRect().width)p.ancora.focus({preventScroll:true});return true;}
- function apri({ancora,nome,valore,nessuno,onSelect,valido=()=>true}){
+ function apri({ancora,nome,valore,nessuno,onSelect,valido=()=>true,recenti,pipetta=false,neutri=true}){
   chiudi(false);const r=ancora.getBoundingClientRect(),p=E('div',null,'popmenu zaino-palette tbar-ctl'),titolo=E('strong',nome+' · Tailwind'),bar=E('div',null,'tbar zaino-palette-azioni');p.popover='auto';p.ancora=ancora;p.setAttribute('role','dialog');p.setAttribute('aria-label',nome+' · Tailwind');ancora.setAttribute('aria-expanded','true');ancora.dataset.palette='true';
   function scegli(v){chiudi();if(valido())onSelect(v);}
-  for(const [v,n]of [...(nessuno?[['none',nessuno]]:[]),['#ffffff','Bianco'],['#000000','Nero']]){const b=E('button',n,'tbtn');b.type='button';b.dataset.colore=v;b.setAttribute('aria-pressed',String(valore===v));b.onclick=()=>scegli(v);bar.append(b);}
-  const g=griglia({valore,onSelect:scegli});p.append(titolo,bar,g);(ancora.closest('dialog[open]')||document.body).append(p);aperto=p;p.showPopover();const b=p.getBoundingClientRect();p.style.left=Math.max(8,Math.min(r.left,innerWidth-b.width-8))+'px';p.style.top=Math.max(8,Math.min(r.bottom+4,innerHeight-b.height-8))+'px';p.addEventListener('toggle',e=>{if(e.newState==='closed'){if(aperto===p)aperto=null;if(aperto?.ancora!==ancora)ancora.setAttribute('aria-expanded','false');p.remove();}});const scelto=g.querySelector('[tabindex="0"]');scelto?.focus({preventScroll:true});scelto?.scrollIntoView({block:'nearest'});
+  if(pipetta){
+   const pick=E('button',null,'tbtn');pick.innerHTML='<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 5 3-3a2.8 2.8 0 0 1 4 4l-3 3M12 4l8 8M14 6 4 16l-2 6 6-2L18 10M5 15l4 4"/></svg>';pick.type='button';pick.dataset.pipetta='';pick.title='Preleva un colore dallo schermo · Esc annulla';pick.setAttribute('aria-label','Pipetta: preleva un colore dallo schermo');
+   pick.disabled=!window.EyeDropper;if(pick.disabled)pick.title='Pipetta non disponibile in questa versione del browser';
+   pick.onclick=async()=>{chiudi(false);try{const r=await new EyeDropper().open();if(valido())onSelect(r.sRGBHex);}catch(e){if(e.name!=='AbortError')toast('Impossibile prelevare il colore: '+e.message,false);}};
+   p.append(pick);
+  }
+  if(recenti){const row=E('div',null,'zaino-palette-recenti');row.setAttribute('aria-label','Ultimi quattro colori');row.append(E('span','Recenti'));
+   for(let i=0;i<4;i++){const v=recenti[i],b=E('button',null,'tbtn');b.type='button';b.dataset.recente=String(i);b.disabled=!v;b.title=v?'Colore recente '+(i+1)+' · '+v:'Colore recente '+(i+1)+' · ancora vuoto';b.setAttribute('aria-label',b.title);if(v){b.dataset.colore=v;const sw=E('i',null,'zaino-campione');sw.style.backgroundColor=v;b.append(sw);b.onclick=()=>scegli(v);}row.append(b);}p.append(row);
+  }
+  for(const [v,n]of [...(nessuno?[['none',nessuno]]:[]),...(neutri?[['#ffffff','Bianco'],['#000000','Nero']]:[])]){const b=E('button',n,'tbtn');b.type='button';b.dataset.colore=v;b.setAttribute('aria-pressed',String(valore===v));b.onclick=()=>scegli(v);bar.append(b);}
+  const g=griglia({valore,onSelect:scegli});p.append(titolo);if(bar.children.length)p.append(bar);p.append(g);(ancora.closest('dialog[open]')||document.body).append(p);aperto=p;p.showPopover();const b=p.getBoundingClientRect();p.style.left=Math.max(8,Math.min(r.left,innerWidth-b.width-8))+'px';p.style.top=Math.max(8,Math.min(r.bottom+4,innerHeight-b.height-8))+'px';p.addEventListener('toggle',e=>{if(e.newState==='closed'){if(aperto===p)aperto=null;if(aperto?.ancora!==ancora)ancora.setAttribute('aria-expanded','false');p.remove();}});const scelto=g.querySelector('[tabindex="0"]');scelto?.focus({preventScroll:true});scelto?.scrollIntoView({block:'nearest'});
   p.addEventListener('keydown',e=>e.stopPropagation());
  }
  // Escape appartiene allo strato più alto: anche gli altri gestori su window

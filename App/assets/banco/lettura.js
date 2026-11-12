@@ -2,7 +2,7 @@
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.BancoLettura=factory();}(typeof self!=='undefined'?self:this,function(){
  'use strict';
  const PASSI=[75,100,125,150,175,200,225,250,300];
- const TAGS_TESTO='DIV SPAN P H1 H2 H3 H4 H5 H6 UL OL LI STRONG B EM I U S BLOCKQUOTE BR HR PRE CODE TABLE THEAD TBODY TR TD TH DETAILS SUMMARY ARTICLE SECTION IMG SUP SUB'.split(' ');
+ const TAGS_TESTO='DIV SPAN P H1 H2 H3 H4 H5 H6 UL OL LI STRONG B EM I U S BLOCKQUOTE BR HR PRE CODE TABLE THEAD TBODY TR TD TH DETAILS SUMMARY ARTICLE SECTION FOOTER IMG SUP SUB'.split(' ');
  function scala(n){n=Number(n);return Number.isFinite(n)?Math.max(75,Math.min(300,n)):100;}
  function scalaSplit(celle,totale,intero=false){return !intero&&celle>0&&totale>0&&celle/totale<=.5?75:100;}
  function passo(n,verso){n=scala(n);return (verso>0?PASSI.find(x=>x>n):PASSI.slice().reverse().find(x=>x<n))||n;}
@@ -22,7 +22,7 @@
   const frazione=n=>Number.isFinite(n)?Math.max(0,Math.min(1,n)):0;
   return {x:Math.floor(area.x+(area.width-width)*frazione(punto.x)),y:Math.floor(area.y+(area.height-height)*frazione(punto.y)),width,height};
  }
- const STILI_CLONE='display position top right bottom left box-sizing width height min-width min-height max-width max-height margin-top margin-right margin-bottom margin-left padding-top padding-right padding-bottom padding-left border-top border-right border-bottom border-left border-radius border-collapse border-spacing font-family font-size font-weight font-style font-variant line-height letter-spacing word-spacing text-align text-indent text-transform text-decoration white-space word-break overflow-wrap vertical-align list-style-type list-style-position color background-color opacity overflow-x overflow-y flex-direction flex-wrap flex-grow flex-shrink flex-basis align-items align-self justify-content gap row-gap column-gap grid-template-columns grid-template-rows grid-column grid-row transform transform-origin tab-size'.split(' ');
+ const STILI_CLONE='display position top right bottom left box-sizing width height min-width min-height max-width max-height margin-top margin-right margin-bottom margin-left padding-top padding-right padding-bottom padding-left border-top border-right border-bottom border-left border-radius border-collapse border-spacing font-family font-size font-weight font-style font-variant line-height letter-spacing word-spacing text-align text-indent text-transform text-decoration white-space word-break overflow-wrap vertical-align list-style-type list-style-position color background-color opacity overflow-x overflow-y flex-direction flex-wrap flex-grow flex-shrink flex-basis align-items align-self justify-content gap row-gap column-gap grid-template-columns grid-template-rows grid-column grid-row transform transform-origin tab-size column-width column-gap column-fill break-inside break-after break-before orphans widows z-index isolation'.split(' ');
  function stileSicuro(v){return typeof v==='string'&&v.length<500&&!/url\s*\(|expression|@import|[<>\\]/i.test(v);}
  function raster(area,vista){
   const dpr=Math.max(1,Math.min(3,Number(vista.dpr)||1));

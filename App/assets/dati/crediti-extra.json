@@ -314,6 +314,140 @@
       "copyright": "Copyright (c) 2013 Luciano Perondi (www.synsemia.org|molotro@gmail.com)",
       "url": "https://github.com/molotro/TestMe02",
       "licenzaFile": "presenta-testme.txt"
+    },
+    {
+      "nome": "Squig",
+      "versione": "dd42610b2030b5547e0ce94d5771f45c246792ec",
+      "categoria": "librerie",
+      "ruolo": "catalogo di componenti, palette e disegno a mano per navbar, mappe e slide",
+      "licenza": "MIT",
+      "copyright": "Copyright (c) 2026 Pablo Stanley",
+      "url": "https://github.com/pablostanley/squig",
+      "licenzaFile": "squig.txt"
+    },
+    {
+      "nome": "Phosphor Icons",
+      "versione": "snapshot incluso in Squig dd42610b",
+      "categoria": "librerie",
+      "ruolo": "icone vettoriali dei componenti Squig",
+      "licenza": "MIT",
+      "copyright": "Copyright (c) 2023 Phosphor Icons",
+      "url": "https://github.com/phosphor-icons/core",
+      "licenzaFile": "phosphor-icons.txt"
+    },
+    {
+      "nome": "Patrick Hand",
+      "versione": "snapshot incluso in Squig dd42610b",
+      "categoria": "librerie",
+      "ruolo": "carattere locale degli stili Squig",
+      "licenza": "OFL-1.1",
+      "copyright": "Copyright (c) 2010–2012 Patrick Wagesreiter",
+      "url": "https://github.com/google/fonts/tree/main/ofl/patrickhand",
+      "licenzaFile": "patrick-hand.txt"
+    },
+    {
+      "nome": "Drawably",
+      "versione": "0.4.2 · 013c1a2dadf8d5b87c92698f18a60682711e4bfc",
+      "categoria": "librerie",
+      "ruolo": "primitive del tratto e adattamenti vettoriali di 23 componenti per mappe e slide",
+      "licenza": "MIT",
+      "copyright": "Copyright (c) 2026 Daniel Belyi",
+      "url": "https://github.com/danielwh2/drawably",
+      "licenzaFile": "drawably.txt"
+    },
+    {
+      "nome": "Pretext",
+      "versione": "1.0.0 + revisione 0d102a5c",
+      "categoria": "librerie",
+      "ruolo": "misurazione e impaginazione del testo locale, anche nel player offline",
+      "licenza": "MIT e avvisi Chromium/WebKit/Unicode inclusi",
+      "copyright": "Copyright (c) 2026 Pretext contributors e titolari indicati nel LICENSE",
+      "url": "https://github.com/chenglou/pretext",
+      "licenzaFile": "pretext.txt"
+    },
+    {
+      "nome": "Hunspell",
+      "versione": "1.6.2",
+      "categoria": "librerie",
+      "ruolo": "Motore locale di controllo ortografico",
+      "licenza": "GPL-2.0-or-later OR LGPL-2.1-or-later OR MPL-1.1",
+      "url": "https://github.com/hunspell/hunspell/tree/v1.6.2",
+      "licenzaFile": "appunti-hunspell-LICENSE.txt"
+    },
+    {
+      "nome": "hunspell-asm",
+      "versione": "4.0.2",
+      "categoria": "librerie",
+      "ruolo": "Collegamento WebAssembly al motore ortografico",
+      "licenza": "MIT",
+      "url": "https://github.com/kwonoj/hunspell-asm",
+      "licenzaFile": "appunti-hunspell-asm-LICENSE.txt"
+    },
+    {
+      "nome": "emscripten-wasm-loader",
+      "versione": "3.0.3",
+      "categoria": "librerie",
+      "ruolo": "Caricamento locale del motore WebAssembly",
+      "licenza": "MIT",
+      "url": "https://github.com/kwonoj/emscripten-wasm-loader",
+      "licenzaFile": "appunti-emscripten-wasm-loader-NOTICE.txt",
+      "avviso": "Licenza MIT dichiarata nel manifest; testo canonico incluso perché il pacchetto non fornisce un proprio file LICENSE."
+    },
+    {
+      "nome": "nanoid (Hunspell)",
+      "versione": "2.1.11",
+      "categoria": "librerie",
+      "ruolo": "Identificatori temporanei del filesystem WASM",
+      "licenza": "MIT",
+      "url": "https://github.com/ai/nanoid",
+      "licenzaFile": "appunti-nanoid-LICENSE.txt"
+    },
+    {
+      "nome": "Turndown",
+      "versione": "7.2.5",
+      "categoria": "librerie",
+      "ruolo": "Incolla HTML convertito in Markdown",
+      "licenza": "MIT",
+      "url": "https://github.com/mixmark-io/turndown",
+      "licenzaFile": "appunti-turndown-LICENSE.txt"
+    },
+    {
+      "nome": "Dizionario italiano",
+      "versione": "dictionary-it 2.0.0; Writing Aids 5.0",
+      "categoria": "librerie",
+      "ruolo": "Dizionario ortografico italiano offline",
+      "licenza": "GPL-3.0",
+      "url": "https://github.com/wooorm/dictionaries/tree/main/dictionaries/it",
+      "licenzaFile": "appunti-it-LICENSE.txt"
+    },
+    {
+      "nome": "Dizionario inglese US",
+      "versione": "dictionary-en 4.0.0; SCOWL 2020.12.07",
+      "categoria": "librerie",
+      "ruolo": "Dizionario ortografico inglese americano offline",
+      "licenza": "MIT AND BSD",
+      "url": "https://github.com/wooorm/dictionaries/tree/main/dictionaries/en",
+      "licenzaFile": "appunti-en-LICENSE.txt"
+    },
+    {
+      "nome": "getroot",
+      "versione": "1.0.0",
+      "categoria": "librerie",
+      "ruolo": "Contesto globale del caricatore WASM locale",
+      "licenza": "MIT",
+      "url": "https://github.com/kwonoj/getroot",
+      "licenzaFile": "appunti-getroot-LICENSE.txt"
+    },
+    {
+      "nome": "Noto Color Emoji",
+      "versione": "99701e07d3d1",
+      "categoria": "vendor",
+      "ruolo": "icone dei callout nello stile Android, font locale offline",
+      "licenza": "OFL-1.1",
+      "copyright": "Google Inc. e contributori Noto Emoji",
+      "url": "https://github.com/googlefonts/noto-emoji",
+      "licenzaFile": "noto-color-emoji.txt",
+      "avviso": "Font originale Noto-COLRv1.ttf, revisione 99701e07d3d1fe1bdbcdb14964547f0fd592966f, percorso 2D/fonts/Noto-COLRv1.ttf. Nessuna modifica al font."
     }
   ]
 }

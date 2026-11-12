@@ -30,7 +30,7 @@ async function aspetta(expr){for(let i=0;i<150;i++){if(await c.val(expr))return;
       RIQ.mem=Object.assign({},riquadriOvr(),{nota:{col:'#A855F7',ink:'#6B21A8'}});calloutStiliApplica();
       return files;
     })()`);
-    await aspetta(`noteStati().every(s=>s.cur&&s.mde)&&document.getElementById('notePdf2')`);
+    await aspetta(`noteStati().slice(0,2).every(s=>s.cur&&s.mde)&&document.getElementById('notePdf2')`);
     await c.val(`NOTES.mde.value(NOTES.mde.value()+'\\n\\nModifica appena scritta: da esportare subito.')`);
     const modello=await c.val('documentoAppuntoDocx(NOTES)');
     assert(modello.albero.figli.length>20);

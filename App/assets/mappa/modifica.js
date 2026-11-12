@@ -177,6 +177,7 @@
     var file = String(r.file == null ? '' : r.file).trim();
     if (!file) return null;
     var etichetta = String(r.label == null ? '' : r.label);
+    if (tipo === 'evidenza' && /^[a-f0-9]{12}$/.test(file)) return {type:tipo,file:file,label:etichetta};
     if (tipo === 'video') {
       var t = Math.floor(Number(r.t != null ? r.t : r.secondo));
       if (!isFinite(t) || t < 0) t = 0;          // lo zero è un tempo, non un'assenza

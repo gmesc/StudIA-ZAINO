@@ -1,0 +1,190 @@
+[
+  {
+    "id": "iniziare",
+    "title": "Apri lo zaino esempio",
+    "shot": "banco",
+    "read": "Lo zaino “Intro a ZAINO” è un laboratorio. Puoi modificare i suoi appunti, la mappa e la presentazione.",
+    "actions": [
+      "Scarica lo zaino esempio dalla guida.",
+      "Estrai lo ZIP in una cartella del computer.",
+      "Apri Impostazioni, poi Zaino e leggi il percorso della cartella dati.",
+      "Chiudi ZAINO prima di copiare i file.",
+      "Apri la cartella dati e crea la sottocartella Zaini, se manca.",
+      "Copia solo la cartella intro-a-zaino dentro Zaini.",
+      "Riapri ZAINO e scegli “Intro a ZAINO” nel menu accanto al nome dell’app.",
+      "Apri l’appunto “01 - Inizia qui”."
+    ],
+    "result": "Vedi gli appunti del percorso e la miniguida PDF nelle Fonti.",
+    "page": 1
+  },
+  {
+    "id": "impostazioni",
+    "title": "Impostazioni: scegli come lavorare",
+    "shot": "impostazioni",
+    "read": "L’ingranaggio della topbar apre le Impostazioni. Le preferenze dell’AI sono facoltative; i file si possono usare subito.",
+    "actions": [
+      "Apri l’ingranaggio nella topbar.",
+      "Apri Aspetto e scegli Atkinson Hyperlegible, se ti aiuta a leggere.",
+      "Apri Utente e osserva le preferenze del tutor.",
+      "Apri Zaino e trova la cartella dati e l’elenco degli zaini.",
+      "Chiudi le Impostazioni con la X."
+    ],
+    "result": "Sai dove cambiare carattere, preferenze e cartella dei file.",
+    "page": 2
+  },
+  {
+    "id": "ocr",
+    "title": "OCR: rendi selezionabile una scansione",
+    "shot": "ocr",
+    "read": "Un PDF scansionato contiene fotografie delle pagine. L’OCR riconosce le parole e aggiunge un testo selezionabile e ricercabile.",
+    "actions": [
+      "Apri nelle Fonti un PDF scansionato o fotografato.",
+      "Prova a selezionare una frase: se manca il testo, usa l’OCR.",
+      "Nella barra premi “Riconosci il testo di questo documento fotografato”.",
+      "Attendi il riconoscimento e controlla le parole lette.",
+      "Per fermarti usa “Ferma il riconoscimento del testo”.",
+      "Riprova la selezione e cerca una parola con SEARCH."
+    ],
+    "result": "Puoi selezionare e cercare le parole che prima erano soltanto in una fotografia.",
+    "page": 3
+  },
+  {
+    "id": "modelli",
+    "title": "AI locale e tutor cloud",
+    "shot": "modelli",
+    "read": "Con text puoi cercare un’idea nei tuoi materiali anche quando usano parole diverse. La ricerca avviene sul tuo computer. Vision e video sono per funzioni in preparazione.",
+    "actions": [
+      "Apri Impostazioni, poi AI e AI locale.",
+      "Leggi dimensione e stato del componente text.",
+      "Premi text · Scarica solo se vuoi la ricerca per significato e hai una connessione.",
+      "Lascia AI cloud vuota se vuoi lavorare senza tutor."
+    ],
+    "result": "Distingui il download del modello locale dalla chiave per il tutor remoto.",
+    "page": 4
+  },
+  {
+    "id": "sicurezza",
+    "title": "PDF: analisi e scansione antivirus",
+    "shot": "sicurezza",
+    "read": "qpdf verifica la struttura dei PDF e segnala anomalie. ClamAV cerca malware e virus conosciuti. I controlli lavorano sul computer, senza inviare i documenti online.",
+    "actions": [
+      "Apri Impostazioni, poi Sicurezza.",
+      "Leggi lo stato di qpdf e ClamAV.",
+      "Per usare un motore, premi Installa e attendi il completamento.",
+      "Seleziona Attiva controllo per il motore installato.",
+      "Per ClamAV controlla le firme e usa Aggiorna firme, se necessario.",
+      "Consulta Ultimo controllo e leggi gli eventuali avvisi."
+    ],
+    "result": "Sai quali controlli sono attivi e distingui un’analisi strutturale da una scansione antivirus.",
+    "page": 5
+  },
+  {
+    "id": "sidebar",
+    "title": "Sidebar: trova e organizza i materiali",
+    "shot": "sidebar",
+    "read": "La colonna laterale elenca i materiali dello zaino. Le sezioni compaiono quando contengono qualcosa. Un numero indica lo split che mostra quel materiale.",
+    "actions": [
+      "Apri Fonti e scegli la miniguida PDF.",
+      "Apri Appunti e scegli “02 - Impostazioni”.",
+      "Trova il numero dello split accanto al materiale aperto.",
+      "Usa la matita della sezione per modificare o organizzare le voci disponibili.",
+      "Ridimensiona la colonna con il suo bordo."
+    ],
+    "result": "Il nome identifica il materiale; il numero indica dove lo stai guardando.",
+    "page": 6
+  },
+  {
+    "id": "banchi",
+    "title": "Banchi: prepara lo spazio",
+    "shot": "banchi",
+    "read": "Il banco è la disposizione degli split. Uno split è un riquadro che ospita uno strumento. Cambiare banco non cancella i materiali.",
+    "actions": [
+      "Apri l’icona BANCO nella topbar.",
+      "Scegli una disposizione con due split affiancati.",
+      "Nel primo split scegli Fonti.",
+      "Nel secondo scegli Appunti.",
+      "Sposta il divisore per dare più spazio alla lettura.",
+      "Prova il disegno di un banco personale dal menu BANCO."
+    ],
+    "result": "Leggi il PDF e scrivi senza cambiare continuamente finestra.",
+    "page": 7
+  },
+  {
+    "id": "split",
+    "title": "Split: allarga, sposta e chiudi",
+    "shot": "split",
+    "read": "La testata contiene il numero dello split, il nome dello strumento e i comandi. Passa il puntatore su un’icona per leggerne il nome.",
+    "actions": [
+      "Fai doppio clic sulla testata o sul numero dello split.",
+      "Ripeti il doppio clic per tornare al banco.",
+      "Trascina la testata su un altro split per scambiare i posti.",
+      "Apri la tendina dello strumento e prova Mappa.",
+      "Chiudi uno split con la sua X.",
+      "Riapri il materiale dalla sidebar."
+    ],
+    "result": "Hai modificato la vista. Il materiale è ancora nello zaino.",
+    "page": 8
+  },
+  {
+    "id": "search",
+    "title": "SEARCH: ritrova quello che hai scritto",
+    "shot": "search",
+    "read": "La lente cerca per parole nei PDF leggibili, negli appunti, nei nodi delle mappe e nelle didascalie dello zaino aperto.",
+    "actions": [
+      "Apri la lente nella topbar.",
+      "Scrivi “banco”.",
+      "Leggi il tipo e il contesto di ciascun risultato.",
+      "Premi un risultato per raggiungere il passaggio.",
+      "Chiudi la ricerca e riaprila con un’altra parola."
+    ],
+    "result": "Trovi i testi senza ricordare in quale documento o appunto si trovano.",
+    "page": 9
+  },
+  {
+    "id": "filesystem",
+    "title": "File: dove sono e perché",
+    "shot": "file",
+    "read": "La cartella dati scelta nelle Impostazioni contiene Zaini. Ogni zaino ha sottocartelle per fonti e materiali. I dati personali sono separati dal programma.",
+    "actions": [
+      "Apri Impostazioni e la scheda Zaino.",
+      "Leggi il percorso della cartella dati.",
+      "Apri quella cartella con il gestore dei file del computer.",
+      "Trova Zaini e poi intro-a-zaino.",
+      "Osserva MATERIALI, APPUNTI, MAPPE, ALBUM e PRESENTAZIONI.",
+      "Chiudi ZAINO prima di fare una copia completa della cartella dati."
+    ],
+    "result": "Sai fare un backup dei contenuti senza confonderli con il file dell’app.",
+    "page": 10
+  },
+  {
+    "id": "proiettare",
+    "title": "Leggi e mostra su un altro schermo",
+    "shot": "proiezione",
+    "read": "Allargare uno split, usare lo schermo intero e aprire una finestra parallela sono tre azioni diverse.",
+    "actions": [
+      "Apri l’appunto del percorso e passa alla vista renderizzata.",
+      "Usa il comando di lettura per ingrandire il testo.",
+      "Prova lo schermo intero e torna indietro con Esc.",
+      "Apri la finestra parallela dalla testata dello split.",
+      "Sposta la finestra sullo schermo esterno, se disponibile.",
+      "Chiudi la finestra parallela quando hai finito."
+    ],
+    "result": "Sul computer mantieni gli strumenti; sullo schermo esterno mostri il contenuto.",
+    "page": 11
+  },
+  {
+    "id": "conclusione",
+    "title": "Prova mappa e presentazione",
+    "shot": "presenta",
+    "read": "La mappa riassume il percorso con nodi e sottonodi. La presentazione ha slide principali e approfondimenti sotto ciascun capitolo.",
+    "actions": [
+      "Apri la mappa “Come si usa ZAINO”.",
+      "Espandi un ramo e apri il rimando alla pagina della miniguida.",
+      "Apri la presentazione “Come si usa ZAINO”.",
+      "Avvia Presenta e prova i capitoli e gli approfondimenti.",
+      "Torna alla guida e scegli una funzione nella sezione 4."
+    ],
+    "result": "Hai completato il percorso base. Approfondisci Fonti, Appunti, Mappa, PRESENTA, LIM e Ripasso nella sezione 4.",
+    "page": 12
+  }
+]

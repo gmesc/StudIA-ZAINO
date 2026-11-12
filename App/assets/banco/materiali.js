@@ -1,11 +1,12 @@
-/* Due istanze dei materiali, una voce in testata. I pannelli restano vivi nel
+/* Istanze dei materiali, una voce in testata. I pannelli restano vivi nel
    magazzino del banco; scegliere Appunti/Fonti usa quello libero. */
 (function(root, factory){
   if(typeof module==='object' && module.exports) module.exports=factory(null);
   else root.BancoMateriali=factory(root);
 })(typeof window!=='undefined'?window:this, function(root){
   'use strict';
-  var istanze={ fonte:['fonte','fonte2'], appunti:['appunti','appunti2'] };
+  var istanze={ fonte:Array.from({length:9},function(_,i){return 'fonte'+(i?i+1:'');}), appunti:Array.from({length:9},function(_,i){return 'appunti'+(i?i+1:'');}) };
+  function zoomDaTasto(e){return e.key==='Enter'&&e.altKey&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey&&!e.repeat&&!e.isComposing;}
   function riquadro(id){ return id==='foto' || id==='player' ? 'album' : id; }
   // Il primo Album visibile conserva il posto; i vecchi pannelli duplicati si svuotano.
   function unificaAlbum(stato,visibili){
@@ -16,7 +17,7 @@
     });
     return Object.assign({},stato,{blocchi:blocchi});
   }
-  function tipo(id){ return id==='fonte2'?'fonte':id==='appunti2'?'appunti':id; }
+  function tipo(id){ return istanze.fonte.includes(id)?'fonte':istanze.appunti.includes(id)?'appunti':id; }
   function scegli(blocchi, visibili, blocco, richiesta){
     var pool=istanze[richiesta];
     if(!pool) return richiesta;
@@ -47,8 +48,10 @@
       save:function(silent){ return root.noteSave(silent,stato()); },
       refresh:function(){ return root.refreshNoteUI(stato()); },
       layout:function(){
-        var s=stato(); if(root.bancoVisibile(s.id)) root.ensureMde(s);
-        if(s.mde){ root.refreshNoteUI(s); s.mde.codemirror.refresh(); }
+        root.noteStati().forEach(function(s){
+          if(root.bancoVisibile(s.id)){root.ensureMde(s);root.refreshNoteUI(s);}
+          if(s.mde)s.mde.codemirror.refresh();
+        });
       },
       occupato:function(file,corso){ var s=stato(); return !!(s.cur && s.cur.file===file && s.courseId===corso); },
       focus:function(){ var s=stato(); root.openEditor(s); if(s.mde) s.mde.codemirror.focus(); },
@@ -56,5 +59,5 @@
     };
     root.document.addEventListener('DOMContentLoaded',function(){ root.appuntiParalleli.layout(); });
   }
-  return {tipo:tipo,scegli:scegli,riquadro:riquadro,unificaAlbum:unificaAlbum,indicatori:indicatori};
+  return {zoomDaTasto:zoomDaTasto,istanze:function(tipo){return (istanze[tipo]||[]).slice();},tipo:tipo,scegli:scegli,riquadro:riquadro,unificaAlbum:unificaAlbum,indicatori:indicatori};
 });

@@ -25,7 +25,7 @@ async function stato(){return c.val(`Object.fromEntries([...document.querySelect
   await c.val(`(async()=>{await zainoNavAggiorna();bancoAssegna('A','album');fotoApri(${q(immagine)});})()`);await aspetta(`!ZNAV.carico`);
   assert.equal(await c.val(`document.querySelector('.zn-immagine[data-quale="album:${immagine}"] .znumero').textContent`),'1','immagine aperta con indicatore');
   await c.val(`AlbumSpazio.scegli('ritagli')`);assert.equal(await c.val(`document.querySelectorAll('.zn-immagine .znumero').length`),0,'tornando alla raccolta non resta una falsa immagine aperta');
-  assert.equal(await c.val(`document.querySelectorAll('.albumTabs .tbsep').length`),3,'separatori Album');
+  assert.equal(await c.val(`[...document.querySelectorAll('.albumTabs [data-album-tab]')].slice(0,-1).filter(b=>b.nextElementSibling?.classList.contains('tbsep')).length`),3,'separatori tra le quattro raccolte Album');
   const separatori=await c.val(`[...document.querySelectorAll('.albumTabs .tbsep')].map(e=>({hidden:e.hidden,w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height,bg:getComputedStyle(e).backgroundColor}))`);
   assert(separatori.every(e=>!e.hidden&&e.w===1&&e.h===16&&e.bg!=='rgba(0, 0, 0, 0)'),'separatori realmente visibili: '+JSON.stringify(separatori));
 

@@ -18,3 +18,7 @@
 .zaino-palette .tbtn:hover{background:var(--hover);}
 .zaino-palette .tbtn:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;}
 .riq-col .zaino-colore{width:120px;}
+.zaino-palette-recenti{display:flex;align-items:center;gap:4px;font-size:var(--tb-fs,12px)}
+.zaino-palette-recenti>span{margin-right:4px}
+.zaino-palette-recenti>.tbtn{width:28px;min-width:28px;height:28px;padding:4px;border:1px solid var(--line)}
+.zaino-palette>[data-pipetta]{justify-content:center;flex:none;align-self:flex-start;width:var(--tb-min);min-width:var(--tb-min);padding:0}

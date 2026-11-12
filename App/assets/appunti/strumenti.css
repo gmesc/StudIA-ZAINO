@@ -1,0 +1,36 @@
+.note-lingua{font-family:var(--font-text),var(--emoji-font),sans-serif;font-weight:400;line-height:normal;color:var(--ink);background:var(--panel);border:1px solid var(--line);max-width:190px;height:var(--tb-h,32px)}
+.note-strumenti-menu{font-family:var(--font-text),var(--emoji-font),sans-serif;font-size:13px;line-height:1.4;position:fixed;inset:auto;margin:0;padding:6px;min-width:220px;max-width:min(420px,90vw);max-height:60vh;overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:var(--sh-3d)}
+.note-strumenti-menu button{display:block;width:100%;text-align:left;padding:8px;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.note-strumenti-menu button:hover,.note-strumenti-menu button:focus-visible{background:var(--hover)}
+.note-errore-ortografico{text-decoration:underline wavy var(--err-ink,#b42318);text-underline-offset:3px}
+
+:root .editor-toolbar button.note-lingua{display:inline-flex;align-items:center;gap:8px;padding:0 8px;width:auto;max-width:none;font-family:var(--font-text),var(--emoji-font),sans-serif;font-size:11.5px;font-weight:400;border:1px solid var(--line);height:var(--tb-h);white-space:nowrap}
+.note-lingua-misura{display:grid}.note-lingua-misura>span{grid-area:1/1;white-space:nowrap}.note-lingua>.ui-icon{width:14px;height:14px;flex:none}
+.note-dizionari-menu,.note-dizionari-dialog{font-family:var(--font-text),var(--emoji-font),sans-serif;font-size:13px;color:var(--ink);background:var(--panel);border:1px solid var(--line);padding:8px;box-shadow:var(--sh-3d)}
+.note-dizionari-menu{position:fixed;inset:auto;margin:0;max-height:70vh;overflow:auto;min-width:220px}
+.note-dizionari-menu .tbtn{display:flex;width:100%;justify-content:flex-start;gap:8px;font:inherit;text-transform:none;letter-spacing:normal;padding:8px;height:auto}
+.note-dizionari-menu [aria-checked=true]{background:var(--hover)}.note-dizionari-menu hr{border:0;border-top:1px solid var(--line);margin:6px 0}
+.note-dizionari-dialog{width:min(560px,90vw);max-height:80vh;overflow:auto}.note-dizionari-dialog h3{flex:1;margin:0;font:inherit;font-weight:600}.note-dizionari-dialog .tbar{gap:8px}.note-dizionari-dialog select{padding:6px;background:var(--panel);border:1px solid var(--line)}
+.note-dizionario-riga{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0}.note-dizionari-dialog::backdrop{background:rgb(0 0 0 / .25)}
+
+/* La misura compatta usa i token della barra; le anteprime leggono --tit-1…6. */
+.note-stili-menu{min-width:280px;padding:8px;isolation:isolate}
+.note-stili-menu button{display:flex;align-items:center;gap:8px;min-height:40px;white-space:nowrap;text-transform:none;letter-spacing:normal}
+.note-stili-menu [aria-checked=true]{background:var(--hover)}
+.note-stile-spunta{display:inline-flex;width:20px;flex:none}.note-stile-spunta .ui-icon{width:16px;height:16px}
+.note-stile-anteprima{font-size:13px;line-height:1.3}.note-stili-menu [data-livello]:not([data-livello="0"]) .note-stile-anteprima{font-weight:700}
+.note-stile-testo:focus-visible,.note-stili-menu button:focus-visible,.riq-famiglia select:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+@font-face{font-family:'Zaino Android Emoji';src:url('../fonts/Noto-COLRv1.ttf') format('truetype');font-display:block}
+.callout-icona{display:inline-flex;align-items:center;justify-content:center;flex:none;width:24px;height:24px;line-height:1;font-size:22px;letter-spacing:0;text-transform:none}
+.callout-icona .ui-icon{width:22px;height:22px;stroke-width:2.5}
+.callout-icona-openmoji{font-family:'OpenMoji'}.callout-icona-android{font-family:'Zaino Android Emoji'}
+.uc-head .callout-icona{box-sizing:content-box;padding:4px;background:#fff;color:#18181b;border-radius:4px;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+.riq-famiglia{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.riq-famiglia label{font-weight:600}.riq-famiglia select{font-family:var(--font-text),sans-serif;font-size:13px;color:var(--ink);background:var(--panel);height:var(--tb-h);padding:0 8px;border:1px solid var(--line)}
+.riq-famiglia p{flex-basis:100%;margin:0;color:var(--muted);font-size:13px}
+.riq-icone-menu{display:grid;grid-template-columns:1fr 1fr}.riq-icone-menu button{display:flex;gap:8px;align-items:center}
+@media print{.uc-head .callout-icona{background:#fff!important;color:#18181b!important}.callout-icona .ui-icon{stroke-width:2.5!important}}
+
+#emojiPop[data-stile-icone=android] [data-emo]{font-family:'Zaino Android Emoji'}
+
+:is(#selMenu,#selBarra,#kwMenu) .callout-icona .ui-icon{width:22px;height:22px;stroke-width:2.5}

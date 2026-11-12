@@ -12,7 +12,7 @@ try{require('../lib/zaini').crea(cartella,'Biologia');const r=Mappe.salva(cartel
 const res=Layouts.run(originale,{}),mk=Disegna.svg(res,{aspetto:v.aspetto,fsNodo:v.fsNodo}).markup;A(mk.includes('Atkinson Hyperlegible'));A(mk.includes('rx="8"'));A(mk.includes('fill="#fffbed"'));A(mk.includes('stroke="#475569"'));A(mk.includes('<pattern'));
 for(const tipo of ['pieno','linee','punti']){const s=Disegna.svg(res,{aspetto:{...v.aspetto,sfondo:tipo}}).markup;A.equal(s.includes('<pattern'),tipo!=='pieno');}
 A.equal(Stile.normalizza({font:'url(x)',carta:'red" onclick="x',spessore:999}).carta,'');A.equal(Stile.normalizza({spessore:999}).spessore,4);
-// Carta persistente e barra arrotondata: le regressioni segnalate sulle mappe.
+// Carta persistente e bordi colorati: le regressioni segnalate sulle mappe.
 for(const tipo of ['cotone','naturale','chiara']){
  const a=Stile.normalizza({...v.aspetto,sfondo:'carta-'+tipo});A.equal(a.sfondo,'carta-'+tipo);
  const css=Stile.cartaCSS(a,{});A(css.backgroundImage.includes('/carte/'+tipo+'.png'));A.equal(css.backgroundSize,'cover');A.equal(css.backgroundRepeat,'no-repeat');
@@ -21,7 +21,7 @@ for(const tipo of ['cotone','naturale','chiara']){
 A.equal(Stile.normalizza({sfondo:'carta-../../x'}).sfondo,'punti');
 for(const orient of ['td','lr']){
  const svg=Disegna.svg(Layouts.run(originale,{orient}),{aspetto:v.aspetto}).markup;
- A(/<path class="mbarra"[^>]+d="[^"]*A/.test(svg),'La barra segue gli angoli anche in orientamento '+orient);
+ A(!svg.includes('mbarra'),'nessuna barra di colore in orientamento '+orient);A(svg.includes('stroke="#9ca3af"'),'il bordo neutro conserva la forma del nodo');
 }
 const senza=Stile.normalizza({...v.aspetto,nodo:'none',bordo:'none',legame:''});
 A.equal(senza.nodo,'none');A.equal(senza.bordo,'none');A.notEqual(Stile.normalizza({testo:'none'}).testo,'none');

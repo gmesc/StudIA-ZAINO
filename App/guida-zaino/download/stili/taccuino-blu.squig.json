@@ -1,0 +1,71 @@
+{
+  "app": "squig",
+  "version": 1,
+  "fileName": "Taccuino blu — riferimento per ZAINO",
+  "look": {
+    "theme": "internet-blue",
+    "paper": "subtle",
+    "font": "hand",
+    "grid": true
+  },
+  "nodes": {
+    "t9W2n2p2": {
+      "id": "t9W2n2p2",
+      "seed": 947224548,
+      "type": "component",
+      "kind": "button",
+      "props": {
+        "label": "Inizio",
+        "variant": "outline",
+        "size": "lg",
+        "icon": "none",
+        "glyph": "plus"
+      },
+      "x": 100,
+      "y": 100,
+      "w": 200,
+      "h": 56
+    },
+    "so-hpiIP": {
+      "id": "so-hpiIP",
+      "seed": 114972368,
+      "type": "component",
+      "kind": "button",
+      "props": {
+        "label": "Esplora",
+        "variant": "filled",
+        "size": "lg",
+        "icon": "none",
+        "glyph": "plus"
+      },
+      "x": 320,
+      "y": 100,
+      "w": 200,
+      "h": 56
+    },
+    "JXgjnLLN": {
+      "id": "JXgjnLLN",
+      "seed": 1350688425,
+      "type": "component",
+      "kind": "button",
+      "props": {
+        "label": "Ripasso",
+        "variant": "outline",
+        "size": "lg",
+        "icon": "none",
+        "glyph": "plus"
+      },
+      "x": 540,
+      "y": 100,
+      "w": 200,
+      "h": 56
+    }
+  },
+  "order": [
+    "t9W2n2p2",
+    "so-hpiIP",
+    "JXgjnLLN"
+  ],
+  "variations": [],
+  "comments": []
+}

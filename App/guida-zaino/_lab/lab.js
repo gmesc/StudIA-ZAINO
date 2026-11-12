@@ -13,7 +13,9 @@ let ws, id = 0, attesi = new Map();
 
 async function collega() {
   const r = await fetch('http://localhost:' + PORTA + '/json');
-  const t = (await r.json()).find((x) => x.type === 'page');
+  const pagine=await r.json();
+  const t=pagine.find(x=>x.type==='page'&&x.url.includes('/StudIA.html')) || pagine.find(x=>x.type==='page'&&(x.url.includes('/guida-zaino/index.html')||x.url.includes('/studia-zaino/guida/')));
+  if(!t)throw Error('Nessuna finestra del laboratorio ZAINO o della guida.');
   ws = new WS(t.webSocketDebuggerUrl, { perMessageDeflate: false });
   await new Promise((ok, ko) => { ws.on('open', ok); ws.on('error', ko); });
   ws.on('message', (raw) => {
@@ -179,7 +181,7 @@ async function scatta(nome, opt) {
 async function finestra(w, h) {
   /* le API Browser.* vogliono l'endpoint del browser, non della pagina */
   const v = await (await fetch('http://localhost:' + PORTA + '/json/version')).json();
-  const pag = (await (await fetch('http://localhost:' + PORTA + '/json')).json()).find((x) => x.type === 'page');
+  const pag = (await (await fetch('http://localhost:' + PORTA + '/json')).json()).find((x) => x.type === 'page' && x.url.includes('/StudIA.html'));
   const b = new WS(v.webSocketDebuggerUrl, { perMessageDeflate: false });
   await new Promise((ok, ko) => { b.on('open', ok); b.on('error', ko); });
   let n = 0; const att = new Map();

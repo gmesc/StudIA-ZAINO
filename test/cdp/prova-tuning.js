@@ -1,0 +1,49 @@
+'use strict';
+const A=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),c=require('./cdp'),q=JSON.stringify;
+const W='document.querySelector(".tuning-finestra>iframe")?.contentWindow';
+async function wait(e){for(let i=0;i<160;i++){if(await c.val(e))return;await c.pausa(70);}throw Error('Attesa '+e+' · '+await c.val('(document.querySelector(".tuning-finestra>iframe")?.contentDocument.getElementById("demoErrore")?.textContent||document.querySelector(".tuning-stato")?.textContent)'));}
+async function click(sel){await wait('!!document.querySelector('+q(sel)+')');await c.val('document.querySelector('+q(sel)+').scrollIntoView({block:"center",behavior:"instant"})');await c.clicca(sel);}
+async function premi(nome){const e='[...(document.querySelector(".tuning-menu:popover-open")||document.querySelector(".tuning-finestra[open]")||document).querySelectorAll("button")].find(b=>b.textContent==='+q(nome)+')';await wait(e+'&&!'+e+'.disabled');await c.val(e+'.scrollIntoView({block:"center",behavior:"instant"})');const r=await c.val('(()=>{const e='+e+',r=e.getBoundingClientRect();const x=r.x+r.width/2,y=r.y+r.height/2;return {x,y,ok:e.contains(document.elementFromPoint(x,y)),hit:document.elementFromPoint(x,y)?.outerHTML};})()');if(!r.ok){await foto('tuning-errore');throw Error(nome+' coperto: '+r.hit);}for(const type of ['mousePressed','mouseReleased'])await c.invia('Input.dispatchMouseEvent',{type,x:r.x,y:r.y,button:'left',clickCount:1});}
+async function menu(id){await click('.tuning-card[data-stile-id="'+id+'"] [aria-haspopup=menu]');await wait('!!document.querySelector(".tuning-menu:popover-open")');}
+async function apri(id){await menu(id);await premi('Aspetto');await wait('!!'+W+'?.ZainoTuningAmbiente');}
+async function input(selector,value){await c.val('(()=>{const i='+W+'.document.querySelector('+q(selector)+');if(!i)throw Error("Campo non trovato");i.value='+q(String(value))+';i.dispatchEvent(new Event("input",{bubbles:true}));i.dispatchEvent(new Event("change",{bubbles:true}));})()');}
+async function salvaAperto(){await c.val('document.querySelector(".tuning-finestra>output").textContent=""');await premi('Salva stile');await wait('document.querySelector(".tuning-finestra>output").textContent==="Stile salvato."');}
+async function salva(){await salvaAperto();await premi('Chiudi');await wait('!document.querySelector(".tuning-finestra")');}
+async function rifiutaChiusura(){
+ let conferme=0;const listener=raw=>{const m=JSON.parse(raw);if(m.method==='Page.javascriptDialogOpening'){conferme++;c.invia('Page.handleJavaScriptDialog',{accept:false});}};
+ c.ws().on('message',listener);
+ try{await premi('Chiudi');for(let n=0;n<30&&!conferme;n++)await c.pausa(50);A.equal(conferme,1,'Annulla/Ripeti dopo Salva richiede conferma prima di scartare');await wait('!!document.querySelector(".tuning-finestra[open]")');}
+ finally{c.ws().off('message',listener);}
+}
+async function cronologia(tasto){await c.val(W+'.document.getElementById("presentaPane").dispatchEvent(new KeyboardEvent("keydown",{key:'+q(tasto)+',metaKey:true,bubbles:true,cancelable:true}))');}
+const riga=id=>'ZainoRaccolta.elenco(null,true).find(r=>r.id==='+q(id)+')';
+async function foto(nome){await c.pausa(300);fs.writeFileSync('/private/tmp/zaino-'+nome+'.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));}
+async function reload(){const t=await c.val('performance.timeOrigin');await c.invia('Page.reload');await wait('performance.timeOrigin!=='+t+'&&!!window.ZainoTuning&&!!window.ZainoPresenta');}
+(async()=>{
+ await c.collega();await wait('!!window.ZainoTuning&&!!window.ZainoPresenta');A((await c.val('vault.path')).includes('studia-zaino-prova-'));
+ const raccoltaPrima=await c.val('JSON.stringify(ZainoRaccolta.leggi())');
+ const prima=await c.val('({...localStorage})'),materiale=await c.val('JSON.stringify({vista:MAPPA.vista,presenta:ZainoPresenta.documento})');
+ try{
+  await c.invia('Emulation.setDeviceMetricsOverride',{width:1400,height:1000,deviceScaleFactor:1,mobile:false});await click('#settingsBtn');await click('[data-tab=tuning]');await wait('document.querySelectorAll(".tuning-card").length>=5');
+  A(await c.val('[...document.querySelectorAll("#tuningPane button")].some(b=>b.textContent==="Nuovo stile")'));
+  await menu('mappa-lavagna');A.deepEqual(await c.val('[...document.querySelectorAll(".tuning-menu button")].map(b=>b.textContent)'),['Aspetto','Esporta','Nascondi']);await premi('Nascondi');A(!await c.val('!!document.querySelector("#mAspetto [data-stile-id=mappa-lavagna]")'));
+  await c.val('(()=>{const s=document.querySelector(".tuning-filtri select");s.value="nascosti";s.dispatchEvent(new Event("change"));})()');await menu('mappa-lavagna');await premi('Mostra');await c.val('(()=>{const s=document.querySelector(".tuning-filtri select");s.value="visibili";s.dispatchEvent(new Event("change"));})()');await foto('tuning-gallery');
+  await apri('mappa-lavagna');A.equal(await c.val(W+'.ZainoTuningAmbiente.demo.nodi.length'),7);A.equal(await c.val(W+'.document.querySelectorAll("#mappaSvg image").length'),2);await input('[data-aspetto=raggio]',18);await foto('tuning-mappa');await salva();A.equal(await c.val(riga('mappa-lavagna')+'.pacchetto.stile.raggio'),18);
+  await apri('mappa-lavagna');await input('[data-aspetto=raggio]',20);
+  let accetta=false;const conferma=raw=>{const m=JSON.parse(raw);if(m.method==='Page.javascriptDialogOpening')c.invia('Page.handleJavaScriptDialog',{accept:accetta});};await c.invia('Page.enable');c.ws().on('message',conferma);await premi('Chiudi');A(await c.val('!!document.querySelector(".tuning-finestra[open]")'));accetta=true;await premi('Chiudi');c.ws().off('message',conferma);await wait('!document.querySelector(".tuning-finestra")');A.equal(await c.val(riga('mappa-lavagna')+'.pacchetto.stile.raggio'),18);
+  await click('.tuning-tipi [data-tipo=navbar]');await apri('navbar-steps');await wait(W+'.document.querySelectorAll(".presenta-slide-mini").length===9');
+  A.equal(await c.val(W+'.ZainoPresenta.documento.stacks.length'),3);const diametroPrima=await c.val(W+'.document.querySelector(\'[aria-label="Diametro dei cerchi"]\').value');await input('[aria-label="Diametro dei cerchi"]',48);await foto('tuning-navbar');await salvaAperto();A.equal(await c.val(riga('navbar-steps')+'.pacchetto.stile.grafica.markerSize'),48);
+  // La raccolta resta quella salvata; annulla/ripeti nella demo devono riattivare la guardia.
+  await cronologia('z');await wait(W+'.document.querySelector(\'[aria-label="Diametro dei cerchi"]\').value==='+q(diametroPrima));await rifiutaChiusura();A.equal(await c.val(riga('navbar-steps')+'.pacchetto.stile.grafica.markerSize'),48);A.equal(await c.val(W+'.document.querySelector(\'[aria-label="Diametro dei cerchi"]\').value'),diametroPrima);
+  await salvaAperto();await cronologia('y');await wait(W+'.document.querySelector(\'[aria-label="Diametro dei cerchi"]\').value==="48"');await rifiutaChiusura();A.equal(await c.val(riga('navbar-steps')+'.pacchetto.stile.grafica.markerSize'),Number(diametroPrima));A.equal(await c.val(W+'.document.querySelector(\'[aria-label="Diametro dei cerchi"]\').value'),'48');await salva();A.equal(await c.val(riga('navbar-steps')+'.pacchetto.stile.grafica.markerSize'),48);
+  await click('.tuning-tipi [data-tipo=slide]');await apri('slide-leggibile');await wait(W+'.document.querySelectorAll(".presenta-slide-mini").length===9');await input('[aria-label="Dimensione testo"]',68);await foto('tuning-slide');for(const width of [700,390,1400]){await c.invia('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:false});await c.pausa(80);A(await c.val('document.querySelector(".tuning-finestra").scrollWidth<=innerWidth+1'));}await salva();A.equal(await c.val(riga('slide-leggibile')+'.pacchetto.stile.titolo'),68);
+  A.equal(await c.val('JSON.stringify({vista:MAPPA.vista,presenta:ZainoPresenta.documento})'),materiale,'la demo non modifica i materiali aperti');
+  const root=(await c.invia('DOM.getDocument')).result.root.nodeId,nodeId=(await c.invia('DOM.querySelector',{nodeId:root,selector:'#tuningFile'})).result.nodeId;await c.invia('DOM.setFileInputFiles',{nodeId,files:[path.resolve(__dirname,'../../App/guida-zaino/download/stili/bosco.zaino-stile.json')]});await wait('ZainoRaccolta.elenco("mappa").some(r=>r.pacchetto.nome==="Bosco")');const id=await c.val('ZainoRaccolta.elenco("mappa").find(r=>r.pacchetto.nome==="Bosco").id');
+  await menu(id);A.equal(await c.val('document.querySelector(".tuning-menu").lastElementChild.textContent'),'Elimina');
+  const listener=raw=>{const m=JSON.parse(raw);if(m.method==='Page.javascriptDialogOpening')c.invia('Page.handleJavaScriptDialog',{accept:true});};await c.invia('Page.enable');c.ws().on('message',listener);await premi('Elimina');c.ws().off('message',listener);await wait('!'+riga(id));
+  for(const width of [700,390,1400]){await c.invia('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});await c.pausa(80);A(await c.val('document.getElementById("tuningPane").scrollWidth<=innerWidth+1'));}
+  await click('#settingsClose');await reload();A.equal(await c.val(riga('mappa-lavagna')+'.pacchetto.stile.raggio'),18);A.equal(await c.val(riga('navbar-steps')+'.pacchetto.stile.grafica.markerSize'),48);A(!await c.val(riga(id)));
+  console.log('✓ TUNING: menu per tile, preset protetti, importati eliminabili; editor reali su demo 3×3 e 7 nodi/2 immagini; salvataggio, isolamento materiali, visibilità e riavvio.');
+ }finally{await c.val('vault.stili.raccoltaSalva('+q(raccoltaPrima)+')');await c.invia('Emulation.clearDeviceMetricsOverride');await c.val('localStorage.clear();Object.entries('+q(prima)+').forEach(([k,v])=>localStorage.setItem(k,v))');await reload();}
+ process.exit(0);
+})().catch(e=>{console.error(e);process.exit(1);});

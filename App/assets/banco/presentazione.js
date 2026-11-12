@@ -4,15 +4,18 @@
  'use strict';
  const L=window.BancoLettura,api=window.vault?.presentazione;
  let proiezione=null,intero=null,pop=null,barra=null,timerBarra=null,aprendo=false;
- const testuali=new Set(['appunti','appunti2','studio','flashcard']);
+ const testuali=new Set([...BancoMateriali.istanze('appunti'),'studio','flashcard']);
  const $=s=>document.querySelector(s),perId=id=>window.bancoElemento(id);
  function blocco(id){return perId(id)?.closest('.blocco');}
  function chiave(id){return 'studia.lettura.'+window.corsoAttivo()+'.'+id;}
  function percentuale(id){if(intero?.id===id)return intero.zoom;try{return L.scala(localStorage.getItem(chiave(id))||100);}catch(_){return 100;}}
  function nota(id){return window.noteStati().find(s=>s.id===id);}
- function testo(id){const el=perId(id);return el?.querySelector('.editor-preview-active,.editor-preview-active-side,.zstudio-banco')||el;}
+ function testo(id){const el=perId(id),s=nota(id);if(s&&window.AppuntiA4?.attiva(s))return el?.querySelector('.note-a4');return el?.querySelector('.editor-preview-active,.editor-preview-active-side,.zstudio-banco')||el;}
+ // Ingrandire un altro banco parcheggia il documento nel magazzino, senza
+ // chiuderlo. La finestra pubblica conserva l'ultimo quadro fino al ritorno.
+ function temporaneamenteNascosta(p){const prima=window.bancoZoomLeggi?.();return !!(prima&&window.BancoForme.bloccoCon(prima,p.id));}
  function scrolls(id){const el=perId(id);if(!el)return [];
-  return [...el.querySelectorAll('.editor-preview,.CodeMirror-scroll,.zstudio-banco,#pdfFrame,#pdf2Frame')].map(e=>({e,x:e.scrollLeft,y:e.scrollTop}));
+  return [...el.querySelectorAll('.note-a4,.editor-preview,.CodeMirror-scroll,.zstudio-banco,#pdfFrame,#pdf2Frame,.fonte-extra-frame')].map(e=>({e,x:e.scrollLeft,y:e.scrollTop}));
  }
  function ripristinaScroll(r){r.forEach(s=>{if(s.e.isConnected){s.e.scrollLeft=s.x;s.e.scrollTop=s.y;}});}
  function avvisa(e){if(typeof window.toast==='function')window.toast(e?.message||String(e),false);}
@@ -56,12 +59,13 @@
    }h.append(row);
    if(proiezione?.id===id)el.closest('.blocco').dataset.proiezione='1';
   });
-  if(proiezione&&(!blocco(proiezione.id)||proiezione.zaino!==window.corsoAttivo()))chiudiProiezione();
+  if(proiezione&&(!blocco(proiezione.id)&&!temporaneamenteNascosta(proiezione)||proiezione.zaino!==window.corsoAttivo()))chiudiProiezione();
   if(intero&&(!blocco(intero.id)||intero.zaino!==window.corsoAttivo()))esciIntero();
  }
  function mostraBarra(){if(!barra)return;delete barra.dataset.nascosta;clearTimeout(timerBarra);timerBarra=setTimeout(()=>{if(barra&&!barra.matches(':focus-within,:hover')&&!document.querySelector(':popover-open,dialog[open]'))barra.dataset.nascosta='1';},2200);}
  function vai(id,verso){
-  const v=id==='fonte'?window.PDFJS?.viewer:id==='fonte2'?window.FONTE2?.viewer:null;
+  const s=nota(id);if(s&&window.AppuntiA4?.attiva(s)){AppuntiA4.pagina(s,verso);return;}
+  const v=id==='fonte'?window.PDFJS?.viewer:id==='fonte2'?window.FONTE2?.viewer:window.FontiMultipli?.get(id)?.stato.viewer;
   if(v){v.currentPageNumber=Math.max(1,Math.min(v.pagesCount,v.currentPageNumber+verso));return;}
   if(id==='flashcard'&&verso>0){const next=$('#zstudyNext');if(next&&!next.hidden&&!next.disabled){next.click();return;}}
   const e=testo(id);if(!e)return;const top=e.getBoundingClientRect().top;
@@ -72,17 +76,17 @@
  async function schermoIntero(id){
   if(intero){await esciIntero();return;}
   const b=blocco(id);if(!b)return;pop?.hidePopover();window.closePops?.();
-  const s=nota(id),v=id==='fonte'?window.PDFJS?.viewer:id==='fonte2'?window.FONTE2?.viewer:null;
+  const s=nota(id),v=id==='fonte'?window.PDFJS?.viewer:id==='fonte2'?window.FONTE2?.viewer:window.FontiMultipli?.get(id)?.stato.viewer;
   const scala=percentuale(id),letturaPrima=testo(id),ancoraPrima=letturaPrima&&ancoraDom(letturaPrima),linea=s?.mde?.codemirror.lineAtHeight(s.mde.codemirror.getScrollInfo().top,'local');
   intero={id,zaino:window.corsoAttivo(),scroll:scrolls(id),focus:document.activeElement,tabindex:perId(id).getAttribute('tabindex'),note:s,noteFile:s?.cur?.file,preview:s?.mde?.isPreviewActive(),side:s?.mde?.isSideBySideActive(),scala,zoom:b.dataset.scalaBanco==='75'?100:Math.max(200,scala),pdf:v&&{v,documento:v.pdfDocument,scala:v.currentScaleValue,pagina:v.currentPageNumber},mappa:id==='mappa'?{file:window.MAPPA?.mia?.file,registro:window.MAPPA?.registro,z:{...window.MAPPA?.z}}:null};
-  if(s?.mde){window.mdbChiudi?.(true,s);if(intero.side)s.mde.toggleSideBySide();if(!s.mde.isPreviewActive())s.mde.togglePreview();}
+  if(s?.mde&&!window.AppuntiA4?.attiva(s)){window.mdbChiudi?.(true,s);if(intero.side)s.mde.toggleSideBySide();if(!s.mde.isPreviewActive())s.mde.togglePreview();}
   document.documentElement.dataset.presentazione='1';b.dataset.presentazione='1';
   perId(id).querySelectorAll(':scope > .tbar,:scope > header,:scope > .panehead').forEach(e=>e.dataset.presentazioneToolbar='1');
   barra=document.createElement('div');barra.className='presentazione-bar tbar';barra.setAttribute('role','toolbar');barra.setAttribute('aria-label','Presentazione');
   const nome=document.createElement('span');nome.className='presentazione-titolo';nome.textContent=titolo(id);barra.append(nome);
   barra.append(button('Passaggio precedente','chevron-left',()=>vai(id,-1)),button('Passaggio successivo','chevron-right',()=>vai(id,1)));
   if(testuali.has(id))misura(barra,id);
-  if(v){const pref=id==='fonte'?'pdf':'pdf2';[['Riduci','minus','ZoomOut'],['Adatta alla larghezza','move-horizontal','ZoomLvl'],['Ingrandisci','plus','ZoomIn']].forEach(([t,i,suffisso])=>barra.append(button(t,i,()=>{if(suffisso==='ZoomLvl')v.currentScaleValue='page-width';else $('#'+pref+suffisso)?.click();})));}
+  if(v){const pref=id==='fonte'?'pdf':id==='fonte2'?'pdf2':window.FontiMultipli.get(id).prefisso;[['Riduci','minus','ZoomOut'],['Adatta alla larghezza','move-horizontal','ZoomLvl'],['Ingrandisci','plus','ZoomIn']].forEach(([t,i,suffisso])=>barra.append(button(t,i,()=>{if(suffisso==='ZoomLvl')v.currentScaleValue='page-width';else $('#'+pref+suffisso)?.click();})));}
   if(id==='mappa')barra.append(button('Adatta la mappa alla finestra','maximize-2',()=>$('#mAdatta')?.click()));
   if(!window.bancoStrumento(id)?.privato)barra.append(button(id==='presenta'?'Presenta le slide':'Apri finestra di proiezione','external-link',()=>apriProiezione(id)));
   barra.append(button('Esci dallo schermo intero (Esc)','x',esciIntero));
@@ -116,9 +120,11 @@
  function corniceArea(p,area){
   if(!p.box){
    const box=document.createElement('div');box.className='proiezione-area';
+   const comandi=document.createElement('div');comandi.className='proiezione-area-comandi';
+   const impostazioni=button('Impostazioni del puntatore e dello spot','settings',()=>p.menuLaser(impostazioni));impostazioni.className='proiezione-laser-setting';impostazioni.setAttribute('aria-haspopup','dialog');impostazioni.setAttribute('aria-expanded','false');
    const maniglia=document.createElement('button');maniglia.type='button';maniglia.textContent='Area proiettata';
-   maniglia.title='Trascina per spostare l’inquadratura; usa le frecce quando il pulsante è selezionato';
-   box.append(maniglia);document.body.append(box);p.box=box;
+   maniglia.title='Trascina per spostare l’inquadratura; usa le frecce quando il pulsante è selezionato. Dentro l’area: tieni premuto il tasto destro per usare il puntatore. L’ingranaggio ne regola forma, spot e durata.';
+   comandi.append(impostazioni,maniglia);box.append(comandi);document.body.append(box);p.box=box;
    let presa=null;
    maniglia.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();presa={x:e.clientX,y:e.clientY,punto:{...p.punto}};maniglia.setPointerCapture(e.pointerId);});
    maniglia.addEventListener('pointermove',e=>{if(!presa||!p.area||!p.ritaglio)return;
@@ -128,31 +134,33 @@
    maniglia.addEventListener('keydown',e=>{const d={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(!d)return;e.preventDefault();sposta(d[0]*.05,d[1]*.05,p.punto);});
    function sposta(x,y,base){p.punto={x:Math.max(0,Math.min(1,base.x+x)),y:Math.max(0,Math.min(1,base.y+y))};p.dirty=true;}
   }
-  Object.assign(p.box.style,{left:area.x+'px',top:area.y+'px',width:area.width+'px',height:area.height+'px'});
+  p.box.hidden=false;Object.assign(p.box.style,{left:area.x+'px',top:area.y+'px',width:area.width+'px',height:area.height+'px'});
  }
  async function aggiornaProiezione(p){
   if(proiezione!==p)return;
   p.timer=null;
-  const el=perId(p.id),b=blocco(p.id);if(!b||b.hidden||p.zaino!==window.corsoAttivo()){await chiudiProiezione();return;}
+  const el=perId(p.id),b=blocco(p.id);if(p.zaino!==window.corsoAttivo()||!b&&!temporaneamenteNascosta(p)){await chiudiProiezione();return;}
+  if(!b||b.hidden||!b.getClientRects().length){if(p.box)p.box.hidden=true;p.fermaLaser?.(true);p.dirty=true;p.timer=setTimeout(()=>aggiornaProiezione(p),250);return;}
   try{
    let quadro={sessione:p.sessione,titolo:titolo(p.id),tema:document.documentElement.dataset.theme==='scuro'?'dark':'light'};
-   const target=testuali.has(p.id)?testo(p.id):el.querySelector('#pdfFrame,#pdf2Frame,#mappaSvg,.lim-editor')||el;
+   const target=testuali.has(p.id)?testo(p.id):el.querySelector('#pdfFrame,#pdf2Frame,.fonte-extra-frame,#mappaSvg,.lim-editor')||el;
    const r=target.getBoundingClientRect(),misure=[r.x,r.y,r.width,r.height].join(',');
+   if(r.width<2||r.height<2){if(p.box)p.box.hidden=true;p.fermaLaser?.(true);p.dirty=true;p.timer=setTimeout(()=>aggiornaProiezione(p),100);return;}
    if(!p.dirty&&p.misure===misure){p.timer=setTimeout(()=>aggiornaProiezione(p),250);return;}
    p.dirty=false;p.misure=misure;
    const bordo=b.getBoundingClientRect(),x=Math.ceil(Math.max(r.x+2,bordo.left+4)),y=Math.ceil(Math.max(r.y+2,bordo.top+4));
    const area=L.rettangolo({x,y,width:Math.min(r.x+target.clientWidth-2,bordo.right-4)-x,height:Math.min(r.y+target.clientHeight-2,bordo.bottom-4)-y},{width:innerWidth,height:innerHeight});
-   p.area=area;p.ritaglio=L.inquadratura(area,p.vista,p.punto);corniceArea(p,p.ritaglio);
+   const crop=L.inquadratura(area,p.vista,p.punto);if(p.ritaglio&&JSON.stringify(p.ritaglio)!==JSON.stringify(crop))p.fermaLaser?.(true);p.area=area;p.ritaglio=crop;corniceArea(p,p.ritaglio);
    if(testuali.has(p.id)){
     const reso=ProiezioneContenuti.clone(target);
     quadro={...quadro,tipo:'clone',html:reso.html,layout:{x:r.x-p.ritaglio.x,y:r.y-p.ritaglio.y,width:p.ritaglio.width,height:p.ritaglio.height}};
    }else{
-    const viewer=p.id==='fonte'?window.PDFJS?.viewer:p.id==='fonte2'?window.FONTE2?.viewer:null;
+    const viewer=p.id==='fonte'?window.PDFJS?.viewer:p.id==='fonte2'?window.FONTE2?.viewer:window.FontiMultipli?.get(p.id)?.stato.viewer;
     if(viewer?.pdfDocument){
      const immagine=await ProiezioneContenuti.pdf(viewer,target,p.ritaglio,p.vista,p);
      if(p.annullato||proiezione!==p)return;
      const pagina=[...target.querySelectorAll('.page')].find(e=>{const r=e.getBoundingClientRect();return r.bottom>p.ritaglio.y&&r.top<p.ritaglio.y+p.ritaglio.height;});
-     const n=Number(pagina?.dataset.pageNumber)||viewer.currentPageNumber,sorgente=p.id==='fonte'?window.ANTEPRIMA:window.FONTE2;
+     const n=Number(pagina?.dataset.pageNumber)||viewer.currentPageNumber,sorgente=p.id==='fonte'?window.ANTEPRIMA:p.id==='fonte2'?window.FONTE2:window.FontiMultipli.get(p.id).stato;
      const spans=[...(pagina?.querySelectorAll('.textLayer span')||[])].filter(e=>{const r=e.getBoundingClientRect();return r.bottom>p.ritaglio.y&&r.top<p.ritaglio.y+p.ritaglio.height&&r.right>p.ritaglio.x&&r.left<p.ritaglio.x+p.ritaglio.width;});
      const chiave=sorgente.file+'#'+n;
      if(p.fonteChiave!==chiave){const f=await window.vault.citazioni.crea(p.zaino,sorgente.file,n,'');if(f.error)throw Error(f.error);p.fonteChiave=chiave;p.fonteLink=f.rimando;}
@@ -163,7 +171,18 @@
      quadro={...quadro,tipo:'mappa',immagine};
     }else if(p.id==='lim'){quadro={...quadro,tipo:'lavagna',immagine:await window.ZainoLim.editor.immagine(p.ritaglio,p.vista)};}else quadro={...quadro,tipo:'immagine',area:p.ritaglio};
    }
-   const risposta=await api.aggiorna(quadro);if(risposta.error)throw Error(risposta.error);if(risposta.chiusa){if(proiezione===p){libera(p);proiezione=null;controlli();}return;}
+   // I pochi pannelli catturati come screenshot non devono incorporare il laser
+   // locale: il pubblico riceve già lo stesso gesto sul proprio livello SVG.
+   let risposta;try{
+    if(quadro.tipo==='immagine'){
+     p.visibilitaLaser?.(false);
+     // capturePage legge il fotogramma del compositore: la sola modifica CSS
+     // non basta, deve prima essere stato dipinto un fotogramma senza laser.
+     await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    }
+    risposta=await api.aggiorna(quadro);
+   }finally{p.visibilitaLaser?.(true);}
+   if(risposta.error)throw Error(risposta.error);if(risposta.chiusa){if(proiezione===p){libera(p);proiezione=null;controlli();}return;}
   }catch(e){if(proiezione!==p||p.annullato)return;avvisa(e);await chiudiProiezione();return;}
   if(proiezione===p)p.timer=setTimeout(()=>aggiornaProiezione(p),p.dirty?16:250);
  }
@@ -176,7 +195,8 @@
    if(proiezione)await chiudiProiezione();const r=await api.apri({corso:window.corsoAttivo()});if(r.error)throw Error(r.error);
    proiezione={id,zaino:window.corsoAttivo(),sessione:r.sessione,vista:r.vista,punto:{x:0,y:0},html:null,md:null,dirty:true};
    const p=proiezione,s=nota(id);
-   if(s?.mde){
+   p.smontaLaser=ProiezioneLaser.collega(p,api);
+   if(s?.mde&&!window.AppuntiA4?.attiva(s)){
     p.nota={s,file:s.cur?.file,preview:s.mde.isPreviewActive(),side:s.mde.isSideBySideActive()};
     window.mdbChiudi?.(true,s);if(p.nota.side)s.mde.toggleSideBySide();if(!s.mde.isPreviewActive())s.mde.togglePreview();
    }
@@ -186,7 +206,7 @@
   }catch(e){avvisa(e);}finally{aprendo=false;}
  }
  function libera(p){
-  clearTimeout(p.timer);p.annullato=true;p.render?.cancel();p.observer?.disconnect();p.box?.remove();
+  clearTimeout(p.timer);p.annullato=true;p.smontaLaser?.();p.render?.cancel();p.observer?.disconnect();p.box?.remove();
   const n=p.nota,s=n?.s;
   if(s?.mde&&s.cur?.file===n.file&&p.zaino===window.corsoAttivo()&&s.mde.isPreviewActive()&&!n.preview){
    s.mde.togglePreview();if(n.side&&!s.mde.isSideBySideActive())s.mde.toggleSideBySide();
@@ -204,7 +224,7 @@
    const mosso=L.spostaVista(p.area,p.vista,p.punto,d.dx,d.dy);p.punto=mosso.punto;gestoAggiornato(p);
    // Alla fine del ritaglio si continua nel documento: dalla LIM non serve
    // tornare al portatile per raggiungere il passaggio successivo.
-   const el=perId(p.id),target=testuali.has(p.id)?testo(p.id):el.querySelector('#pdfFrame,#pdf2Frame,#mappaSvg,.lim-editor');
+   const el=perId(p.id),target=testuali.has(p.id)?testo(p.id):el.querySelector('#pdfFrame,#pdf2Frame,.fonte-extra-frame,#mappaSvg,.lim-editor');
    if(p.id==='mappa'){
     const matrice=target?.getScreenCTM();if(matrice&&window.MAPPA?.z){MAPPA.z.x-=mosso.resto.x/matrice.a;MAPPA.z.y-=mosso.resto.y/matrice.d;window.mappaApplicaZoom();}
    }else if(p.id==='lim'&&window.ZainoLim.editor.api){const a=window.ZainoLim.editor.api,s=a.getAppState();a.updateScene({appState:{scrollX:s.scrollX-mosso.resto.x/s.zoom.value,scrollY:s.scrollY-mosso.resto.y/s.zoom.value}});}else if(target){target.scrollLeft+=mosso.resto.x;target.scrollTop+=mosso.resto.y;}

@@ -1,0 +1,30 @@
+{
+  "formato": "zaino-stile",
+  "versione": 1,
+  "tipo": "navbar",
+  "nome": "Sentiero",
+  "autore": "ZAINO",
+  "licenza": "GPL-3.0-or-later",
+  "stile": {
+    "variant": "steps",
+    "orientation": "horizontal",
+    "activeZoom": 1.2,
+    "fontFamily": "atkinson",
+    "fontSize": 20,
+    "color": "#263B30",
+    "grafica": {
+      "gap": 12,
+      "markerSize": 36,
+      "border": {
+        "color": "#476952",
+        "width": 2
+      },
+      "activeBackground": {
+        "color": "#D7ECDD",
+        "opacity": 1
+      },
+      "activeTextColor": "#172B22",
+      "activeGraphicColor": "#264D37"
+    }
+  }
+}

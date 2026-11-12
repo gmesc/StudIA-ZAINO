@@ -1,0 +1,17 @@
+{
+  "motore": "hunspell-asm 4.0.2 / Hunspell 1.6.2",
+  "buildNativo": "https://github.com/kwonoj/docker-hunspell-wasm/tree/fc6a952",
+  "releaseNativa": "https://github.com/kwonoj/docker-hunspell-wasm/releases/tag/fc6a952-200131",
+  "dizionari": {
+    "it": "dictionary-it@2.0.0 (Italian Writing Aids 5.0, 2016)",
+    "en": "dictionary-en@4.0.0 (en_US SCOWL 2020.12.07)"
+  },
+  "sha256": {
+    "dizionari/en.aff": "8ae1f19d4840d957728ad90555d5a8dff6cc5c046279c95ff0c00fc0a0136c7b",
+    "dizionari/en.dic": "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647",
+    "dizionari/it.aff": "5770cd3e16d494c045b4a9a4a9fcd7962577e642d0384a7129c020a12cdd2c79",
+    "dizionari/it.dic": "b1348fbdb6f441ea9dd7e33b2cfcb96ead39ccd5e48bf894972774cd5aa86abb",
+    "sorgenti/docker-hunspell-wasm-fc6a952.tar.gz": "49cdddaf691a7f9392f50fd584306049763c28834ccc1e8b495b98ac36f9cc05",
+    "sorgenti/hunspell-1.6.2.tar.gz": "3cd9ceb062fe5814f668e4f22b2fa6e3ba0b339b921739541ce180cac4d6f4c4"
+  }
+}

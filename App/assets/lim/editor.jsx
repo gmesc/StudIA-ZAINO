@@ -23,11 +23,12 @@ window.LimEditor={monta(host,opts){
   React.useEffect(()=>{
    // Il menu nativo ragiona sulla finestra; dentro uno split deve restare nella tela.
    let frame;const riposiziona=()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>{
-    const r=host.getBoundingClientRect(),left=Math.max(0,r.left)+8,top=Math.max(0,r.top)+8,right=Math.min(innerWidth,r.right)-8,bottom=Math.min(innerHeight,r.bottom)-8;
+    const r=host.getBoundingClientRect(),scala=r.width/host.offsetWidth||1,left=Math.max(0,r.left)+8,top=Math.max(0,r.top)+8,right=Math.min(innerWidth,r.right)-8,bottom=Math.min(innerHeight,r.bottom)-8;
     for(const menu of host.querySelectorAll('.context-menu')){
-     const pop=menu.parentElement;pop.style.width='max-content';pop.style.minWidth=Math.max(0,Math.min(190,right-left))+'px';pop.style.maxWidth=Math.max(0,right-left)+'px';pop.style.maxHeight=Math.max(0,bottom-top)+'px';pop.style.overflow='auto';
+     const pop=menu.parentElement;pop.style.width='max-content';pop.style.minWidth=Math.ceil(Math.max(0,Math.min(190,right-left))/scala)+'px';pop.style.maxWidth=Math.max(0,right-left)/scala+'px';pop.style.maxHeight=Math.max(0,bottom-top)/scala+'px';pop.style.overflow='auto';
      const b=pop.getBoundingClientRect(),dx=Math.max(left-b.left,Math.min(0,right-b.right)),dy=Math.max(top-b.top,Math.min(0,bottom-b.bottom));
-     pop.style.left=(pop.offsetLeft+dx)+'px';pop.style.top=(pop.offsetTop+dy)+'px';
+     // getBoundingClientRect usa pixel visibili; gli offset restano nelle coordinate prima dello zoom del banco.
+     pop.style.left=(pop.offsetLeft+dx/scala)+'px';pop.style.top=(pop.offsetTop+dy/scala)+'px';
     }
    });};
    const mutazioni=new MutationObserver(riposiziona),misure=new ResizeObserver(riposiziona);

@@ -3,6 +3,7 @@ const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
 const c=require('./cdp');
+const q=JSON.stringify;let prima,backup;const originali=[];
 async function aspetta(expr,diagnosi){const end=Date.now()+10000;while(Date.now()<end){if(await c.val(expr))return;await c.pausa(100);}
  if(diagnosi)console.error('  stato alla scadenza: '+JSON.stringify(await c.val(diagnosi)));
  throw new Error('Attesa scaduta: '+expr);}
@@ -21,10 +22,17 @@ async function click(sel){
 async function testo(id, value){await c.val(`(()=>{const el=document.getElementById(${JSON.stringify(id)});el.value=${JSON.stringify(value)};el.dispatchEvent(new Event('input',{bubbles:true}));return true;})()`);}
 async function scegli(id,value){if(id==='zainoSelect'){await c.clicca('#zainoScegli');await aspetta(`!!document.querySelector('#zainiMenu[open] [data-zaino-scegli="${value}"]')`);await c.clicca('[data-zaino-scegli="'+value+'"]');return;}await c.val(`(()=>{const el=document.getElementById(${JSON.stringify(id)});el.value=${JSON.stringify(value)};el.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`);}
 (async()=>{
- await c.collega();await aspetta(`!!document.getElementById('chatBtn') && zainoAttivo()==='biologia'`);
+ await c.collega();await aspetta(`!!document.getElementById('chatBtn') && !!zainoAttivo()`);
+ const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
+ prima=await c.val(`({zaino:zainoAttivo(),storage:{...localStorage},tema:document.documentElement.dataset.theme})`);
+ await c.partiPulito();assert(await c.val('contenitoreMolla()!==false'),'documenti iniziali salvati prima del backup');
+ backup=fs.mkdtempSync(path.join(require('os').tmpdir(),'zaino-chat-backup-'));
+ const paths=['.studia/chat-profili.json',...['biologia','storia'].flatMap(z=>['APPUNTI','CHAT','Costi','_fonti-ai.json','_lettura.json'].map(f=>'Zaini/'+z+'/'+f))].map(f=>path.join(vault,f));
+ paths.push(...['config.json','chat-requests.jsonl','voce-requests.jsonl'].map(f=>path.join(path.dirname(vault),'dati',f)));
+ for(const [i,file] of paths.entries()){const esiste=fs.existsSync(file),copia=path.join(backup,String(i));if(esiste)fs.cpSync(file,copia,{recursive:true});originali.push({file,copia,esiste});}
+ await c.val(`cambiaZaino('biologia',true)`);await aspetta(`zainoAttivo()==='biologia' && !ZNAV.carico`);
  assert.equal(await c.val('typeof EasyMDE'),'function');
  await click('.zn-appunto');await aspetta(`!!NOTES.mde && !!NOTES.cur`,`({voci:document.querySelectorAll('.zn-appunto').length,mde:typeof NOTES!=='undefined'&&!!NOTES.mde,cur:typeof NOTES!=='undefined'&&!!NOTES.cur,strumento:document.querySelector('.bsel')?.value})`);
- const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
  assert.equal(await c.val('modoAttivo()'),'zaino');await c.val(`cambiaModo('corso')`);assert.equal(await c.val('modoAttivo()'),'zaino');
  assert.deepEqual(await c.val('window.vault.course.list()'),[]);
  assert.equal((await c.val(`window.vault.course.create('Non deve esistere')`)).ok,false);
@@ -110,7 +118,7 @@ async function scegli(id,value){if(id==='zainoSelect'){await c.clicca('#zainoSce
  await click('#zchatClose');await aspetta(`document.getElementById('zchatRenameDialog').open`);
  await c.invia('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
  await aspetta(`document.getElementById('zchatWindow').hidden`);
- await c.val(`bancoForma('quattro')`);
+ await c.val(`bancoForma('quattro');for(const blocco of ['A','B','C','D'])bancoAssegna(blocco,'')`);
  for(const [blocco,tipo] of [['A','fonte'],['C','appunti'],['B','fonte'],['D','appunti']]){
   await c.val(`(()=>{const s=document.querySelector('.bsel[data-blocco="${blocco}"]');s.value='${tipo}';s.dispatchEvent(new Event('change',{bubbles:true}));})()`);
  }
@@ -119,7 +127,10 @@ async function scegli(id,value){if(id==='zainoSelect'){await c.clicca('#zainoSce
  assert(!(await c.val(`Array.from(document.querySelectorAll('.bsel option')).map(o=>o.textContent).join(' ')`)).match(/Confronto|Compara/));
  const primo=await c.val('NOTES.cur.file');
  const secondo=await c.val(`NOTES.list.find(n=>n.file!==NOTES.cur.file).file`);
+ await c.val('NOTES.mde.codemirror.focus()');
+ assert(await c.val(`!!document.getElementById('noteSelect2').closest('.bhead')`),'il selettore è nella testata del secondo split');
  await scegli('noteSelect2',secondo);await aspetta(`appuntiParalleli.stato.cur?.file===${JSON.stringify(secondo)}`);
+ assert.equal(await c.val('NOTES.cur.file'),primo,'scegliere nel secondo split conserva il documento del primo');
  assert.equal(await c.val(`document.querySelector('#noteSelect2 option[value='+JSON.stringify(NOTES.cur.file)+']').disabled`),false,'l’appunto aperto nel primo split resta selezionabile per trasferirlo');
  // Il focus può passare alla fonte: Appunta conserva l'ultimo editor usato.
  await c.val('appuntiParalleli.stato.mde.codemirror.focus()');
@@ -134,14 +145,18 @@ async function scegli(id,value){if(id==='zainoSelect'){await c.clicca('#zainoSce
  for(let i=0;i<2;i++){
   await c.invia('Input.dispatchKeyEvent',{type:'keyDown',key:'j',code:'KeyJ',modifiers:4,windowsVirtualKeyCode:74});
   await c.invia('Input.dispatchKeyEvent',{type:'keyUp',key:'j',code:'KeyJ',modifiers:4,windowsVirtualKeyCode:74});
-  await aspetta(`!!document.querySelector('#noteHost2 .editor-preview-active')===${i===0}`);
-  assert.equal(await c.val(`!!document.querySelector('#noteHost .editor-preview-active')`),false);
+  await aspetta(`AppuntiA4.attiva(appuntiParalleli.stato)===${i===0}`);
+  assert.equal(await c.val(`AppuntiA4.attiva(NOTES)`),false);
  }
  assert.equal(await c.val('appuntiParalleli.stato.mde.codemirror.hasFocus()'),true);
 
  await click('#pdf2Doc');await aspetta(`!!document.querySelector('#pdfDocPop .pd-voce[data-fonte2="02 Biologia cellulare.pdf"]')`);
  await click('#pdfDocPop .pd-voce[data-fonte2="02 Biologia cellulare.pdf"]');await aspetta(`!!FONTE2.doc && FONTE2.file==='02 Biologia cellulare.pdf' && !FONTE2.caricando`);
  assert.equal(await c.val('ANTEPRIMA.file'),'01 Botanica.pdf');
+ // Il selettore rispetta il segno di lettura delle prove precedenti. La prova
+ // dei due comandi Avanti parte dalla pagina 1 in entrambi i lettori.
+ await c.val(`vaiAPagina(1);FONTE2.viewer.currentPageNumber=1`);
+ await aspetta(`ANTEPRIMA.page===1&&FONTE2.page===1`);
  await click('#pdfNext');await aspetta(`ANTEPRIMA.page===2`);
  await click('#pdf2Next');await aspetta(`FONTE2.page===2`);await click('#pdf2Next');await aspetta(`FONTE2.page===3`);
  assert.equal(await c.val('ANTEPRIMA.page'),2);
@@ -165,5 +180,19 @@ async function scegli(id,value){if(id==='zainoSelect'){await c.clicca('#zainoSce
  assert.equal(await c.val('NOTES.cur.file'),primo);assert.equal(await c.val('ANTEPRIMA.file'),'01 Botanica.pdf');
  assert.equal(await c.val('FONTE2.page'),3);assert.equal(await c.val('ANTEPRIMA.page'),2);
  const splitShot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/studia-zaino-split.png',Buffer.from(splitShot.result.data,'base64'));
- console.log('OK: chat essenziale, cronologia, nome/data, ramo, copia/TTS, markdown, profili/modelli; due note e due PDF, salvataggio, isolamento e ripristino.');process.exit(0);
-})().catch(async e=>{console.error(e);try{console.error(await c.val(`({profile:document.getElementById('zchatProfileStatus')?.textContent,ai:document.getElementById('zchatAIStatus')?.textContent,chat:document.getElementById('zchatStatus')?.textContent})`));const r=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/studia-zaino-failure.png',Buffer.from(r.result.data,'base64'));}catch(_){}process.exit(1)});
+ console.log('OK: chat essenziale, cronologia, nome/data, ramo, copia/TTS, markdown, profili/modelli; due note e due PDF, salvataggio, isolamento e ripristino.');
+})().catch(async e=>{console.error(e);try{console.error(await c.val(`({profile:document.getElementById('zchatProfileStatus')?.textContent,ai:document.getElementById('zchatAIStatus')?.textContent,chat:document.getElementById('zchatStatus')?.textContent})`));const r=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/studia-zaino-failure.png',Buffer.from(r.result.data,'base64'));}catch(_){}process.exitCode=1;}).finally(async()=>{
+ try{
+  if(prima){
+   // Nessun editor conserva una copia modificata mentre si ripristinano i file.
+   await c.val(`document.getElementById('zchatStop').click()`);await aspetta(`document.getElementById('zchatStop').hidden`);
+   await c.val(`if(contenitoreMolla()===false)throw Error('Ripristino chat: documento non salvato');closePops()`);
+   for(const {file,copia,esiste} of originali){fs.rmSync(file,{recursive:true,force:true});if(esiste)fs.cpSync(copia,file,{recursive:true});}
+   await c.val(`localStorage.clear();Object.entries(${q(prima.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));window.__chatRipristino=true;location.reload()`);
+   await aspetta(`!window.__chatRipristino && typeof zainoAttivo==='function' && zainoAttivo()===${q(prima.zaino)} && !!document.getElementById('chatBtn')`);
+   await c.val(`document.documentElement.dataset.theme=${q(prima.tema)}`);
+  }
+  if(backup)fs.rmSync(backup,{recursive:true,force:true});
+ }catch(e){console.error('Ripristino chat:',e);process.exitCode=1;}
+ process.exit(process.exitCode||0);
+});

@@ -1,0 +1,250 @@
+// ---------------------------------------------------------------------------
+// Sketch kit — the primitive DSL every component renders into.
+// A component's render() returns Prim[]; the canvas draws them with rough.js.
+// Break-apart works by converting these same prims into real canvas nodes.
+// ---------------------------------------------------------------------------
+
+export type InkColor = "ink" | "muted" | "faint" | "paper" | "accent"
+
+/**
+ * House defaults for the hand.
+ *
+ * Deliberately restrained: enough irregularity that a line reads as drawn
+ * rather than generated, but not so much that corners fall open. The renderer
+ * reads all four; anything that draws a plain line starts from `strokeWidth`.
+ */
+export const HAND = {
+  roughness: 0.25,
+  bowing: 0.35,
+  strokeWidth: 1.4,
+  /** default corner rounding for rects that don't ask for one */
+  radius: 3,
+}
+
+/**
+ * Colours resolve through CSS custom properties, so switching theme restyles
+ * every node without regenerating a single path. See lib/theme.ts.
+ */
+export const INK: Record<InkColor, string> = {
+  ink: "var(--sq-ink)",
+  muted: "var(--sq-muted)",
+  faint: "var(--sq-faint)",
+  paper: "var(--sq-paper)",
+  accent: "var(--sq-ink)",
+}
+
+/**
+ * Area fills come from a deliberately tiny ladder — paper, then two shades.
+ * A wireframe that needs a fourth tone is usually asking for hierarchy that
+ * layout or a label should be carrying instead.
+ */
+export const SHADE = {
+  shade: "var(--sq-shade)",
+  shadeStrong: "var(--sq-shade-strong)",
+} as const
+
+export interface PrimOpts {
+  /**
+   * Pen pressure, not colour — every line in a squig prints in the one ink.
+   * "ink" is a full stroke, "muted" an ordinary one, "faint" a hairline.
+   * If something needs to recede further than a hairline, give it a shaded
+   * fill; don't reach for a paler line. (A canvas node the *user* pales is
+   * different — that's `tone`.)
+   */
+  stroke?: InkColor
+  /**
+   * The ink the mark actually prints in — the user-facing three-step ladder.
+   * Library defs never set this (their `stroke` picks pressure, and every
+   * authored line prints in the one ink); it exists for canvas nodes whose
+   * outline the user has deliberately turned down to muted or faint.
+   */
+  tone?: InkColor
+  strokeWidth?: number
+  /**
+   * "shade" is the tinted fill — a flat step off the paper, never a pattern.
+   * Which of the two shades you get follows `fillColor` (see fillPaint).
+   * "solid" is genuinely opaque, at full strength (menus, popovers, knobs).
+   */
+  fill?: "none" | "shade" | "solid"
+  fillColor?: InkColor
+  roughness?: number
+  dashed?: boolean
+  /** corner radius — rects only; `rect(x, y, w, h, { r: 6 })` */
+  r?: number
+  /** offset block shadow behind the shape, early-desktop style */
+  shadow?: boolean
+}
+
+export type Prim =
+  | ({ t: "rect"; x: number; y: number; w: number; h: number; r?: number } & { o?: PrimOpts })
+  | ({ t: "ellipse"; x: number; y: number; w: number; h: number } & { o?: PrimOpts })
+  | ({ t: "line"; x1: number; y1: number; x2: number; y2: number } & { o?: PrimOpts })
+  | ({ t: "curve"; x1: number; y1: number; cx: number; cy: number; x2: number; y2: number } & { o?: PrimOpts })
+  | ({ t: "poly"; pts: [number, number][]; close?: boolean } & { o?: PrimOpts })
+  | {
+      t: "text"
+      x: number
+      y: number // baseline
+      text: string
+      size: number
+      align?: "left" | "center" | "right"
+      color?: InkColor
+      bold?: boolean
+      italic?: boolean
+      underline?: boolean
+      maxW?: number
+      /**
+       * Print the glyphs mirrored, about the anchor — what a flipped text
+       * layer asks for. Set by mirrorPrims, never by a def: a wireframe label
+       * always stays readable (see mirrorPrims).
+       */
+      mirrorX?: boolean
+      mirrorY?: boolean
+    }
+  /**
+   * Raw SVG path data in a square viewBox, drawn crisp (not roughened) —
+   * icons read better sharp, and it keeps big templates fast.
+   * (x, y) is the top-left of the size×size box the icon is scaled into.
+   */
+  | ({
+      t: "path"
+      d: string[]
+      x: number
+      y: number
+      size: number
+      vb: number
+      mode: "fill" | "stroke"
+      /** icon name, so break-apart can rebuild this as a real Icon component */
+      name?: string
+      /** icon weight when not "regular" — break-apart carries it back too */
+      weight?: import("./icon-catalog").IconWeight
+    } & { o?: PrimOpts })
+
+// -- constructors -----------------------------------------------------------
+
+export const rect = (x: number, y: number, w: number, h: number, o?: PrimOpts): Prim => ({ t: "rect", x, y, w, h, o })
+/**
+ * A pill: a rectangle with fully rounded ends. Chips, badges, tags and tabs
+ * are all this shape — never an ellipse, which bows the top and bottom edges
+ * inward and squeezes the label.
+ */
+export const pill = (x: number, y: number, w: number, h: number, o?: PrimOpts): Prim => ({
+  t: "rect",
+  x,
+  y,
+  w,
+  h,
+  r: Math.min(w, h) / 2,
+  o,
+})
+export const ellipse = (x: number, y: number, w: number, h: number, o?: PrimOpts): Prim => ({ t: "ellipse", x, y, w, h, o })
+export const line = (x1: number, y1: number, x2: number, y2: number, o?: PrimOpts): Prim => ({ t: "line", x1, y1, x2, y2, o })
+export const poly = (pts: [number, number][], close?: boolean, o?: PrimOpts): Prim => ({ t: "poly", pts, close, o })
+export const text = (
+  x: number,
+  y: number,
+  content: string,
+  size: number,
+  extra?: Partial<Extract<Prim, { t: "text" }>>
+): Prim => ({ t: "text", x, y, text: content, size, ...extra })
+
+/** Translate a batch of prims — lets template blocks compose smaller components. */
+export function place(prims: Prim[], dx: number, dy: number): Prim[] {
+  return prims.map((p) => {
+    switch (p.t) {
+      case "rect":
+      case "ellipse":
+      case "text":
+      case "path":
+        return { ...p, x: p.x + dx, y: p.y + dy }
+      case "line":
+        return { ...p, x1: p.x1 + dx, y1: p.y1 + dy, x2: p.x2 + dx, y2: p.y2 + dy }
+      case "curve":
+        return { ...p, x1: p.x1 + dx, y1: p.y1 + dy, cx: p.cx + dx, cy: p.cy + dy, x2: p.x2 + dx, y2: p.y2 + dy }
+      case "poly":
+        return { ...p, pts: p.pts.map(([px, py]) => [px + dx, py + dy] as [number, number]) }
+    }
+  })
+}
+
+/**
+ * Mirror a batch of prims inside a w×h box.
+ *
+ * By default layout flips and glyphs don't: a wireframe printing its labels
+ * backwards reads as a rendering bug rather than as a flip, so the geometry
+ * moves and the text stays upright, swapping its alignment instead.
+ *
+ * `glyphs` turns that off, for the one case where the words *are* the drawing:
+ * a text layer. There the run mirrors about its own anchor, which puts the same
+ * ink in the same place as the upright treatment — only backwards, which is the
+ * whole point of flipping it.
+ */
+export function mirrorPrims(prims: Prim[], w: number, h: number, fx: boolean, fy: boolean, glyphs = false): Prim[] {
+  if (!fx && !fy) return prims
+  const mx = (x: number) => (fx ? w - x : x)
+  const my = (y: number) => (fy ? h - y : y)
+  return prims.map((p): Prim => {
+    switch (p.t) {
+      case "rect":
+      case "ellipse":
+        return { ...p, x: fx ? w - p.x - p.w : p.x, y: fy ? h - p.y - p.h : p.y }
+      case "path":
+        return { ...p, x: fx ? w - p.x - p.size : p.x, y: fy ? h - p.y - p.size : p.y }
+      case "line":
+        return { ...p, x1: mx(p.x1), y1: my(p.y1), x2: mx(p.x2), y2: my(p.y2) }
+      case "curve":
+        return { ...p, x1: mx(p.x1), y1: my(p.y1), cx: mx(p.cx), cy: my(p.cy), x2: mx(p.x2), y2: my(p.y2) }
+      case "poly":
+        return { ...p, pts: p.pts.map(([px, py]) => [mx(px), my(py)] as [number, number]) }
+      case "text": {
+        // Mirrored glyphs turn over about the anchor, so the anchor itself
+        // moves like any other point and the alignment stays as authored —
+        // right-aligned text mirrors to the left edge by turning over, not by
+        // becoming left-aligned. The baseline maps straight across too: the
+        // upside-down run hangs its ascenders below the line.
+        if (glyphs) return { ...p, x: mx(p.x), y: my(p.y), mirrorX: fx, mirrorY: fy }
+        // a left-anchored run grows rightward; mirrored, it has to end where it started
+        const align = fx
+          ? p.align === "center"
+            ? "center"
+            : p.align === "right"
+              ? "left"
+              : "right"
+          : p.align
+        // y is a baseline: the box around it sits roughly [y - 0.8em, y + 0.2em]
+        return { ...p, x: mx(p.x), y: fy ? h - p.y + p.size * 0.6 : p.y, align }
+      }
+    }
+  })
+}
+
+/** Approx text width in px for the sketch font (Patrick Hand ≈ 0.46em avg). */
+export function textWidth(s: string, size: number): number {
+  return s.length * size * 0.46
+}
+
+export function truncate(s: string, size: number, maxW: number): string {
+  if (textWidth(s, size) <= maxW) return s
+  const chars = Math.max(1, Math.floor(maxW / (size * 0.46)) - 1)
+  return s.slice(0, chars) + "…"
+}
+
+/**
+ * A few squiggly "lorem" lines — the classic wireframe placeholder text.
+ * Rendered as slightly wavy horizontal lines.
+ */
+export function loremLines(x: number, y: number, w: number, count: number, gap = 12): Prim[] {
+  const prims: Prim[] = []
+  for (let i = 0; i < count; i++) {
+    const lw = i === count - 1 ? w * 0.6 : w * (0.85 + (i % 3) * 0.05)
+    prims.push(line(x, y + i * gap, x + lw, y + i * gap, { stroke: "muted", strokeWidth: 1.15, roughness: 0.7 }))
+  }
+  return prims
+}
+
+// -- icons ------------------------------------------------------------------
+// Phosphor-backed; see ./icons for the name list and aliases, and
+// ./icon-catalog for the lazy full catalog and weights.
+
+export { icon, resolveIconName } from "./icons"
+export { normalizeIconWeight } from "./icon-catalog"

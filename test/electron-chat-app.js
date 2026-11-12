@@ -76,7 +76,12 @@ require('../lib/rag-modello').installa=async(_dir,{modalita,signal,progress})=>{
   });
   throw Error('Download simulato nella prova UI.');
 };
-global.fetch=async()=>{throw new Error('Rete disabilitata nella prova UI.');};
+const fetchReale=global.fetch;
+// Solo il collaudo esplicito dei dizionari può leggere gli URL fissati nel catalogo.
+global.fetch=async(url,opt)=>{
+ if(process.env.STUDIA_DIZIONARI_RETE==='1'&&require('../lib/dizionari-catalogo.json').some(d=>d.files.some(f=>url==='https://raw.githubusercontent.com/wooorm/dictionaries/'+d.rev+'/dictionaries/'+d.id+'/'+f.nome)))return fetchReale(url,opt);
+ throw new Error('Rete disabilitata nella prova UI.');
+};
 // Solo la prova dell’indice crea questo marcatore nel profilo temporaneo: il resto
 // delle prove continua a usare lo stato reale del modello, compreso il download.
 const runtime=require('../lib/rag-runtime'),creaRuntime=runtime.crea;

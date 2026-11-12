@@ -1,0 +1,28 @@
+{
+  "formato": "zaino-stile",
+  "versione": 1,
+  "tipo": "mappa",
+  "nome": "Drawably",
+  "stile": {
+    "bordiColorati": 1,
+    "freccia": 7,
+    "tratto": "drawably",
+    "font": "patrick-hand",
+    "fusione": "normal",
+    "sfondo": "punti",
+    "carta": "#fffdf8",
+    "segno": "#d4d7dc",
+    "passo": 24,
+    "nodo": "#fffdf8",
+    "testo": "#303030",
+    "bordo": "#9ca3af",
+    "legame": "#6b7280",
+    "raggio": 12,
+    "spessore": 2,
+    "fsNodo": 16,
+    "fsRel": 13,
+    "linee": "curva"
+  },
+  "autore": "Daniel Belyi · adattamento ZAINO",
+  "licenza": "MIT"
+}

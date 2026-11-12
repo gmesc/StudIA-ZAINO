@@ -1,0 +1,25 @@
+html,body{margin:0;height:100%;overflow:hidden;background:var(--panel);color:var(--ink)}
+body{padding:0;display:flex;flex-direction:column;isolation:isolate}
+#demoErrore{color:var(--accent);font-size:13px;padding-inline:12px}#demoErrore:empty{display:none}
+#gobboPane{display:none}
+#presentaPane{flex:1;min-height:0}
+/* Stessi strumenti di PRESENTA, con la sola demo e senza gestione dei materiali. */
+#presentaPane>.presenta-bar,#presentaPane>.presenta-stato,.presenta-scaletta>[aria-label="Nuova slide"],.presenta-tabs [data-oggetto-id="@disposizione"],.presenta-tabs [data-oggetto-id="@stile"],.presenta-tabs [aria-label="Comandi dell’oggetto"]{display:none}
+.presenta-slide-mini{cursor:pointer}.presenta-slide-mini .presenta-mini{pointer-events:none}
+body[data-demo=navbar] .presenta-tabs [data-oggetto-id]:not([aria-label=Navbar]):not([aria-label=Sfondo]){display:none}
+body[data-demo=slide] .presenta-tabs [aria-label=Navbar]{display:none}
+body[data-demo=slide] .presenta-blocco-editor .presenta-campo-breve,body[data-demo=slide] .presenta-sfondo-tipi{display:none}
+.tuning-mappa{display:flex;flex-direction:column;height:100%;min-height:0;isolation:isolate}
+.tuning-mappa>.mtoolbar{flex:none;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.tuning-mappa .mtoolbar label{display:flex;gap:8px;align-items:center;font-size:12px;padding:8px}
+.tuning-mappa .mtoolbar input{width:56px}
+.tuning-mappa .mtela{flex:1;min-height:220px;overflow:hidden;background:var(--bg)}
+.tuning-mappa svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.tuning-mappa-comandi{flex:none;max-height:40%;overflow:auto;border-top:1px solid var(--line);padding:16px}
+.tuning-mappa #mAspetto{border:0;margin:0;padding:0}
+.tuning-mappa .mappa-aspetto-campi{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px 24px}
+.tuning-mappa select{font:inherit;background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+@media(max-width:600px){.presenta-editor{grid-template-columns:100px minmax(0,1fr)}.tuning-mappa .mappa-aspetto-campi{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Le animazioni appartengono alla lezione, non al file di stile. */
+.presenta-animazioni{display:none}

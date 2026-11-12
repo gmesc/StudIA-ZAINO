@@ -1,10 +1,16 @@
 'use strict';
-const assert=require('assert/strict');
+const assert=require('assert/strict'),fs=require('fs'),path=require('path');
+const q=JSON.stringify;
 const c=require('./cdp');
 async function wait(expr){for(let i=0;i<100;i++){if(await c.val(expr))return;await c.pausa(100);}throw Error('Attesa scaduta: '+expr);}
 async function scegli(val){await c.val('closePops()');await c.clicca('#zainoScegli');await wait(`!!document.querySelector('#zainiMenu[open] .zaini-elenco')`);await c.clicca(val==='__nuovo__'?'#zainiCrea':'[data-zaino-scegli="'+val+'"]');}
 (async()=>{
- await c.collega();await wait(`!!document.getElementById('chatBtn') && zainoAttivo()==='biologia'`);
+ await c.collega();await wait(`!!document.getElementById('chatBtn') && !!zainoAttivo()`);
+ const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
+ const prima=await c.val(`({zaino:zainoAttivo(),storage:{...localStorage},tema:document.documentElement.dataset.theme})`);
+ const zainiPrima=new Set(require('../../lib/zaini').elenco(vault).map(z=>z.id));
+ try{
+ await c.partiPulito();await c.val(`cambiaZaino('biologia',true)`);await wait(`zainoAttivo()==='biologia'`);
  assert.equal(await c.val(`document.getElementById('zainoEtichetta').textContent`),'ZAINO Biologia');
  assert.equal(await c.val(`document.getElementById('zainoScegli').closest('.brand')!==null`),true);
  await c.clicca('#zainoScegli');await wait(`!!document.getElementById('zainiCrea')`);await c.val('closePops()');
@@ -32,7 +38,6 @@ async function scegli(val){await c.val('closePops()');await c.clicca('#zainoSceg
   assert.equal(await c.val(`document.documentElement.scrollWidth<=innerWidth`),true,'Topbar senza overflow a '+width);
  }
  // Anche senza zaini il menu deve offrire la creazione.
- const fs=require('fs'),path=require('path'),vault=await c.val('window.vault.path');
  assert(vault.startsWith('/tmp/studia-zaino-prova-') || vault.startsWith('/private/tmp/studia-zaino-prova-'));
  const cartella=path.join(vault,'Zaini'),salvati=path.join(vault,'Zaini-salvati');
  fs.renameSync(cartella,salvati);
@@ -48,6 +53,13 @@ async function scegli(val){await c.val('closePops()');await c.clicca('#zainoSceg
  fs.writeFileSync('/private/tmp/zaino-topbar-nuova.png',Buffer.from(shot.result.data,'base64'));
  // La chat ridotta resterebbe sopra il primo appunto della sidebar nella prova seguente.
  await c.clicca('#zchatClose');
- await c.invia('Emulation.clearDeviceMetricsOverride',{});
+ }finally{
+  await c.invia('Emulation.clearDeviceMetricsOverride',{});
+  await c.val(`(async()=>{closePops();await cambiaZaino(${q(prima.zaino)},true);if(zainoAttivo()!==${q(prima.zaino)} || contenitoreMolla()===false)throw Error('Ripristino topbar: documento non salvato');})()`);
+  for(const z of require('../../lib/zaini').elenco(vault))if(!zainiPrima.has(z.id))fs.rmSync(path.join(vault,'Zaini',z.id),{recursive:true,force:true});
+  await c.val(`localStorage.clear();Object.entries(${q(prima.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));window.__topbarRipristino=true;location.reload()`);
+  await wait(`!window.__topbarRipristino && typeof zainoAttivo==='function' && zainoAttivo()===${q(prima.zaino)}`);
+  await c.val(`document.documentElement.dataset.theme=${q(prima.tema)}`);
+ }
  console.log('OK: topbar, scelta e creazione zaini, ripristino, temi, icone e finestre strette.');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

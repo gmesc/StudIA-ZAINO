@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),WS=require('ws'),c=require('./cdp');
-setTimeout(()=>{console.error('Tempo massimo LIM');process.exit(1);},180000).unref();let peer;
+setTimeout(()=>{console.error('Tempo massimo LIM');process.exit(1);},180000).unref();let peer,prima,backup,radice;const originali=[];
 async function wait(expr,client=c){for(let n=0;n<150;n++){if(await client.val(expr))return;await c.pausa(100);}throw Error('Attesa: '+expr);}
 async function collega(){let t;for(let n=0;n<50&&!t;n++){t=(await(await fetch('http://localhost:'+(process.env.STUDIA_PORTA||9467)+'/json')).json()).find(t=>t.url.includes('/proiezione/index.html'));if(!t)await c.pausa(100);}assert(t);const ws=new WS(t.webSocketDebuggerUrl),pending=new Map();let id=0;await new Promise(r=>ws.once('open',r));ws.on('message',s=>{const o=JSON.parse(s);if(pending.has(o.id)){pending.get(o.id)(o);pending.delete(o.id);}});const invia=(method,params)=>new Promise(r=>{pending.set(++id,r);ws.send(JSON.stringify({id,method,params}));});return {ws,invia,val:async expression=>{const r=await invia('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.result.exceptionDetails)throw Error(JSON.stringify(r.result.exceptionDetails));return r.result.result.value;}};}
 async function clicca(sel,client){const p=await client.val(`(()=>{const r=document.querySelector(${JSON.stringify(sel)}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);for(const type of ['mousePressed','mouseReleased'])await client.invia('Input.dispatchMouseEvent',{type,...p,button:'left',clickCount:1});}
@@ -28,13 +28,33 @@ async function rilascia(d,client,host,editor){
  return dopo.nuovi;
 }
 async function menuContestuale(client,host,tema){
+ // La barra della finestra pubblica trasla la LIM anche senza cambiarne la larghezza.
+ // Apriamo la bolla a barra nascosta, poi la facciamo riapparire con il mouse.
+ const assesta=()=>client.val(`(async()=>{await Promise.allSettled(['barra','limProiezione'].flatMap(id=>document.getElementById(id)?.getAnimations()||[]).map(a=>a.finished));await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));})()`);
+ if(tema==='proiezione'){
+  await client.val('document.activeElement?.blur()');
+  await client.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:200,y:300});
+  await wait("document.getElementById('barra').dataset.nascosta==='1'",client);await assesta();
+ }
  const p=await client.val(`(()=>{const r=document.querySelector('${host} .lim-editor').getBoundingClientRect();return {x:r.right-80,y:r.top+r.height*.55};})()`);
  for(const type of ['mousePressed','mouseReleased'])await client.invia('Input.dispatchMouseEvent',{type,...p,button:'right',clickCount:1});
  try{await wait(`!!document.querySelector('${host} .context-menu')`,client);}catch(e){await shot('menu-assente',client);console.log(await client.val(`({target:document.elementFromPoint(${p.x},${p.y})?.outerHTML.slice(0,400),menus:[...document.querySelectorAll('.context-menu')].map(m=>m.parentElement.outerHTML.slice(0,400))})`));throw e;}
  await c.pausa(150);
- const misura=await client.val(`(()=>{const m=document.querySelector('${host} .context-menu').getBoundingClientRect(),h=document.querySelector('${host} .lim-editor').getBoundingClientRect(),p=document.querySelector('${host} .context-menu').parentElement;return {m:m.toJSON(),h:h.toJSON(),height:innerHeight,pop:p.style.cssText};})()`);
- await shot('contestuale-'+tema,client);
- assert(misura.m.width>=190&&misura.m.left>=misura.h.left&&misura.m.right<=misura.h.right&&misura.m.top>=misura.h.top&&misura.m.bottom<=Math.min(misura.h.bottom,misura.height),'bolla leggibile e interamente visibile nello split: '+JSON.stringify(misura));
+ if(tema==='proiezione'){
+  await client.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:200,y:4});
+  await wait("!document.getElementById('barra').dataset.nascosta",client);await assesta();
+ }
+ async function verificaGeometria(){
+  const misura=await client.val(`(()=>{const m=document.querySelector('${host} .context-menu').getBoundingClientRect(),h=document.querySelector('${host} .lim-editor').getBoundingClientRect(),p=document.querySelector('${host} .context-menu').parentElement;return {m:m.toJSON(),h:h.toJSON(),height:innerHeight,pop:p.style.cssText,transform:getComputedStyle(document.querySelector('${host}')).transform};})()`);
+  await shot('contestuale-'+tema,client);
+  assert(misura.m.width>=190&&misura.m.left>=misura.h.left&&misura.m.right<=misura.h.right&&misura.m.top>=misura.h.top&&misura.m.bottom<=Math.min(misura.h.bottom,misura.height),'bolla leggibile e interamente visibile nello split: '+JSON.stringify(misura));
+ }
+ await verificaGeometria();
+ if(tema==='proiezione'){
+  await client.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:200,y:300});
+  await wait("document.getElementById('barra').dataset.nascosta==='1'",client);await assesta();
+  await verificaGeometria();
+ }
  const stile=await client.val(`(()=>{const m=document.querySelector('${host} .context-menu'),s=getComputedStyle(m),b=getComputedStyle(document.querySelector('${host} .lim-menu')),it=getComputedStyle(m.querySelector('button'));return {r:s.borderRadius,bg:s.backgroundColor,panel:b.backgroundColor,shadow:s.boxShadow,ombra:b.boxShadow,font:it.fontSize};})()`);
  assert.equal(stile.r,'0px');assert.equal(stile.bg,stile.panel);assert.equal(stile.shadow,stile.ombra);assert.equal(stile.font,'12px');
  await shot('contestuale-'+tema,client);
@@ -45,7 +65,14 @@ async function menuContestuale(client,host,tema){
 }
 (async()=>{
  await c.collega();await wait('!!window.ZainoLim');const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
- await c.val("cambiaZaino('biologia',true);bancoForma('due-col');bancoAssegna('A','lim')");await c.pausa(400);assert(await c.val("document.querySelector('#limPane [aria-label=\"Elimina lavagnata\"]').disabled"),'cestino inattivo senza lavagnata');assert.equal(await c.val("!!document.querySelector('#zs-lim')"),false,'sidebar assente prima della prima lavagnata');
+ prima=await c.val(`({zaino:zainoAttivo(),storage:{...localStorage},tema:document.documentElement.dataset.theme})`);
+ await c.partiPulito();await c.val(`ZainoLim.editor.salva()`);
+ radice=path.join(vault,'Zaini/biologia');backup=fs.mkdtempSync(path.join(require('os').tmpdir(),'zaino-lim-backup-'));
+ for(const f of ['LIM','ALBUM','APPUNTI/_evidenze.json','_fonti-ai.json','_identita.json']){
+  const esiste=fs.existsSync(path.join(radice,f));if(esiste)fs.cpSync(path.join(radice,f),path.join(backup,f),{recursive:true});originali.push([f,esiste]);
+ }
+ await c.val("cambiaZaino('biologia',true)");await wait("zainoAttivo()==='biologia'");
+ await c.val("bancoForma('due-col');bancoAssegna('A','lim')");await c.pausa(400);assert(await c.val("document.querySelector('#limPane [aria-label=\"Elimina lavagnata\"]').disabled"),'cestino inattivo senza lavagnata');assert.equal(await c.val("!!document.querySelector('#zs-lim')"),false,'sidebar assente prima della prima lavagnata');
  assert.equal(await c.val("document.querySelector('.lim-scegli span').textContent"),'-','lavagna non salvata senza titolo');
  assert(await c.val("!!document.querySelector('.bhead .lim-scegli')&&!document.querySelector('#limPane .lim-scegli')"),'LIM: selettore nella testata, assente dalla toolbar');
  assert.equal(await c.val("!!document.querySelector('#limPane [aria-label=\"Rinomina lavagnata\"]')"),false,'nessuna matita nella toolbar');
@@ -223,4 +250,19 @@ async function menuContestuale(client,host,tema){
  const bozze=fs.readdirSync(path.dirname(file)).filter(n=>n.endsWith('.excalidraw')).map(n=>JSON.parse(fs.readFileSync(path.join(path.dirname(file),n))));
  assert(bozze.some(d=>d.studia.numero===3&&d.elements.some(e=>e.text==='Da conservare al cambio zaino')),'cambio zaino non perde il disegno non ancora salvato');
  console.log('✓ LIM: editor, persistenza, fonte/citazione, divisore, sincronizzazione, riapertura e zaini');
-})().catch(async e=>{console.error(e);try{await shot('errore');if(peer)await shot('errore-proiezione',peer);}catch(_){}process.exitCode=1;}).finally(async()=>{peer?.ws.close();try{await c.val('if(window.__confermaOriginale)window.confirm=window.__confermaOriginale;BancoPresentazione.chiudiProiezione()');}catch(_){}process.exit(process.exitCode||0);});
+})().catch(async e=>{console.error(e);try{await shot('errore');if(peer)await shot('errore-proiezione',peer);}catch(_){}process.exitCode=1;}).finally(async()=>{
+ try{
+  if(peer){await peer.val('if(window.__confermaOriginale)window.confirm=window.__confermaOriginale');peer.ws.close();peer=null;}
+  await c.val('if(window.__confermaOriginale)window.confirm=window.__confermaOriginale;BancoPresentazione.chiudiProiezione();closePops()');
+  if(prima){
+   // Il cambio di contesto aspetta le scritture prima di ripristinare i file della prova.
+   await c.val(`(async()=>{await ZainoLim.editor.salva();await cambiaZaino('storia',true);await ZainoLim.editor.contesto('storia');if(contenitoreMolla()===false)throw Error('Ripristino LIM: documento non salvato');})()`);
+   for(const [f,esiste] of originali){const dest=path.join(radice,f);fs.rmSync(dest,{recursive:true,force:true});if(esiste)fs.cpSync(path.join(backup,f),dest,{recursive:true});}
+   await c.val(`localStorage.clear();Object.entries(${JSON.stringify(prima.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));window.__limRipristino=true;location.reload()`);
+   await wait(`!window.__limRipristino && typeof zainoAttivo==='function' && zainoAttivo()===${JSON.stringify(prima.zaino)} && !!window.ZainoLim`);
+   await c.val(`document.documentElement.dataset.theme=${JSON.stringify(prima.tema)}`);
+  }
+  if(backup)fs.rmSync(backup,{recursive:true,force:true});
+ }catch(e){console.error('Ripristino LIM:',e);process.exitCode=1;}
+ process.exit(process.exitCode||0);
+});

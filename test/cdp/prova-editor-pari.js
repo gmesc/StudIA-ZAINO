@@ -53,6 +53,7 @@ async function pulisci() {
   if (!prima) return;
   await c.val(`(()=>{closePops();document.querySelector('#umCancel')?.click();
     for(const s of __pariStati()){
+      AppuntiA4.scegli(s,'scrittura');
       if(s.mde?.isSideBySideActive())s.mde.toggleSideBySide();
       if(s.mde?.isPreviewActive())s.mde.togglePreview();
     }
@@ -63,6 +64,7 @@ async function pulisci() {
       else if(s.mde){s.caricando=true;s.loading=true;s.mde.value(vecchi[i].body||'');s.caricando=false;s.loading=false;s.dirty=false;}
       if(s.mde&&vecchi[i].preview&&!s.mde.isPreviewActive())s.mde.togglePreview();
       if(s.mde&&vecchi[i].affiancata&&!s.mde.isSideBySideActive())s.mde.toggleSideBySide();
+      if(vecchi[i].a4)AppuntiA4.scegli(s,'a4');
     });
     document.documentElement.dataset.editor=${q(prima.editor||'')};
     BANCO.stato=${q(prima.banco)};bancoSalva();bancoZoomScrivi(${q(prima.zoom)});bancoDisegna();
@@ -81,11 +83,11 @@ async function pulisci() {
   assert((await c.val('window.vault.path')).includes('studia-zaino-prova-'),
     'questa prova richiede il vault sintetico di bin/prova-zaino.sh');
   await c.partiPulito();
-  await c.val(`window.__pariStati=()=>typeof noteStati==='function'?noteStati():[NOTES,appuntiParalleli.stato]`);
+  await c.val(`window.__pariStati=()=>typeof noteStati==='function'?noteStati().slice(0,2):[NOTES,appuntiParalleli.stato]`);
   prima = await c.val(`(()=>{noteFlush();return {vault:window.vault.path,corso:corsoAttivo(),
     banco:JSON.parse(JSON.stringify(bancoStato())),zoom:bancoZoomLeggi(),editor:document.documentElement.dataset.editor,memoria:Object.fromEntries(Object.entries(localStorage)),
     note:__pariStati().map(s=>({file:s.cur&&s.cur.file,body:s.mde?s.mde.value():'',
-      preview:!!s.mde?.isPreviewActive(),affiancata:!!s.mde?.isSideBySideActive()}))};})()`);
+      preview:!!s.mde?.isPreviewActive(),affiancata:!!s.mde?.isSideBySideActive(),a4:AppuntiA4.attiva(s)}))};})()`);
   try {
     const file = await c.val(`(()=>{const file=[0,1].map(i=>{
       const r=notesApi().save(corsoAttivo(),null,{title:${q(prefisso)}+' '+(i+1)},'Testo iniziale '+(i+1)+${q('.\n\n- '+'Una voce lunga che va a capo senza perdere il rientro. '.repeat(10)+'\n- Seconda voce.\n\n1. Primo passo.\n2. Secondo passo.')});
@@ -93,9 +95,12 @@ async function pulisci() {
       notesReload();bancoForma('due-col');bancoAssegna('A','appunti');bancoAssegna('C','appunti2');
       noteOpen(file[0],NOTES);appuntiParalleli.open(file[1]);
       __pariStati().forEach(s=>{
+        AppuntiA4.scegli(s,'scrittura');
         if(s.mde.isSideBySideActive())s.mde.toggleSideBySide();
         if(s.mde.isPreviewActive())s.mde.togglePreview();});return file;})()`);
     await aspetta(`__pariStati().every(s=>s.mde&&s.cur) && bancoVisibile('appunti') && bancoVisibile('appunti2')`);
+    assert.equal(await c.val(`['#noteHost','#noteHost2'].every(sel=>{const h=document.querySelector(sel);return h.querySelector('.ncb-disegno [data-icona="pencil-draw"]')&&h.querySelector('[id^="noteRen"] [data-icona="pencil"]');})`),true,'Disegno e rinomina hanno simboli distinti in entrambi gli editor');
+    {const sc=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/private/tmp/zaino-appunti-icona.png',Buffer.from(sc.result.data,'base64'));}
     const barre = await c.val(`__pariStati().map((s,i)=>Array.from(document.querySelector(i?'#noteHost2':'#noteHost').querySelectorAll('.editor-toolbar button'))
       .map(b=>({id:b.id.replace(/2$/,''),titolo:b.title,classe:b.className.replace(/\\bactive\\b/g,'').trim()})))`);
     assert(barre[0].length > 15, 'la barra deve contenere gli strumenti completi: '+JSON.stringify(barre));
@@ -181,22 +186,26 @@ async function pulisci() {
     await salva(1);assert(disco(file[1]).includes('#p=2&r='));
     console.log('  ok  la citazione conserva il destinatario attraverso l’anteprima PDF');
 
-    await click('#noteHost2 .preview');
-    await click('#noteHost2 .editor-preview-active .mdb > p');
-    await aspetta(`!!document.querySelector('#noteHost2 .mdb-edit')`);
-    await campo('#noteHost2 .mdb-edit', 'Paragrafo modificato nella seconda anteprima.');
-    await tasto('Enter','Enter',13,4);
-    await aspetta(`!document.querySelector('#noteHost2 .mdb-edit')`);
+    // L'anteprima ora è A4: il doppio clic porta alla stessa riga in Scrittura.
+    await click('#noteHost2 [data-note-vista=a4]');
+    await aspetta(`!!document.querySelector('#noteHost2 .note-a4-paper .mdb > p')`);
+    const paragrafo=await c.val(`(()=>{const e=document.querySelector('#noteHost2 .note-a4-paper .mdb > p'),r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,line:+e.closest('.mdb').dataset.da};})()`);
+    for(const type of ['mousePressed','mouseReleased'])await c.invia('Input.dispatchMouseEvent',{type,x:paragrafo.x,y:paragrafo.y,button:'left',clickCount:2});
+    await aspetta(`!AppuntiA4.attiva(__pariStati()[1])&&__pariStati()[1].mde.codemirror.hasFocus()`);
+    assert.equal(await c.val('__pariStati()[1].mde.codemirror.getCursor().line'),paragrafo.line);
+    await c.val(`(()=>{const cm=__pariStati()[1].mde.codemirror,n=${paragrafo.line};cm.setSelection({line:n,ch:0},{line:n,ch:cm.getLine(n).length});})()`);
+    await c.invia('Input.insertText',{text:'Paragrafo modificato nella seconda anteprima.'});
     assert((await corpo(1)).includes('Paragrafo modificato nella seconda anteprima.'));
     assert.equal(await corpo(0), primo);
-    assert((await c.val(`document.querySelector('#noteHost2 .editor-preview-active').textContent`)).includes('Paragrafo modificato'));
     await salva(1);assert(disco(file[1]).includes('Paragrafo modificato nella seconda anteprima.'));
+    await click('#noteHost2 [data-note-vista=a4]');
+    await aspetta(`document.querySelector('#noteHost2 .note-a4-paper')?.textContent.includes('Paragrafo modificato')`);
     await click('#noteHost2 .ncb-undo');
-    assert(!(await c.val(`document.querySelector('#noteHost2 .editor-preview-active').textContent`)).includes('Paragrafo modificato'));
+    await aspetta(`document.querySelector('#noteHost2 .note-a4-paper')&&!document.querySelector('#noteHost2 .note-a4-paper').textContent.includes('Paragrafo modificato')`);
     await click('#noteHost2 .ncb-redo');
-    assert((await c.val(`document.querySelector('#noteHost2 .editor-preview-active').textContent`)).includes('Paragrafo modificato'));
-    await click('#noteHost2 .preview');
-    console.log('  ok  l’anteprima del secondo editor modifica e salva il suo markdown');
+    await aspetta(`document.querySelector('#noteHost2 .note-a4-paper')?.textContent.includes('Paragrafo modificato')`);
+    await click('#noteHost2 [data-note-vista=scrittura]');
+    console.log('  ok  A4 torna al paragrafo in Scrittura nel secondo editor, con salvataggio e Undo/Redo indipendenti');
 
     for (const i of [0,1]) {
       const altro = await aperto(1-i), titolo = prefisso + ' nuovo ' + (i+1);

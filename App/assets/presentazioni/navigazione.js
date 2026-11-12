@@ -14,6 +14,7 @@
  }
  const quantita=deck=>deck.getHorizontalSlides().map(s=>s.querySelectorAll(':scope > section').length||1);
  const tasti=esegui=>Object.fromEntries(FRECCE.map(([codice,_nome,azione])=>[codice,()=>esegui({azione})]));
+ const avanzaAlClic=({button=0,defaultPrevented=false,interattivo=false,selezione=false})=>button===0&&!defaultPrevented&&!interattivo&&!selezione;
  function stato(deck){const p=deck.getIndices();return {h:p.h,v:p.v||0,fragmentIndex:p.f??-1};}
  function comando(deck,o){
   const p=stato(deck);
@@ -33,11 +34,14 @@
   function click(e){const b=bottone(e),voce=b&&FRECCE.find(([,nome])=>b.classList.contains('navigate-'+nome));if(!voce)return;e.preventDefault();e.stopPropagation();if(!b.disabled)esegui({azione:voce[2]});pianifica();}
   // Il touch genera un solo clic nativo; non deve eseguire anche il gestore touch di Reveal.
   function touch(e){if(bottone(e))e.stopPropagation();}
+  // «Al clic» deve funzionare anche sul foglio: le frecce conservano i salti fra capitoli.
+  function foglio(e){if(!e.target.closest('.presenta-slide')||!avanzaAlClic({button:e.button,defaultPrevented:e.defaultPrevented,interattivo:!!e.target.closest('a,button,input,select,textarea,video,audio,[contenteditable="true"],[data-apri-fonte],.presenta-comuni'),selezione:!root.ownerDocument.getSelection().isCollapsed}))return;e.preventDefault();esegui({azione:'avanti'});pianifica();}
+  root.addEventListener('click',foglio);
   root.addEventListener('click',click,true);root.addEventListener('touchstart',touch,true);root.addEventListener('touchend',touch,true);
   const eventi=['slidechanged','fragmentshown','fragmenthidden','slidesync'];for(const ev of eventi)deck.on(ev,pianifica);
   // Anche slide(h,v) sulla posizione già corrente riscrive i controlli senza emettere slidechanged.
   const osserva=new root.ownerDocument.defaultView.MutationObserver(pianifica);for(const c of root.querySelectorAll('.controls'))osserva.observe(c,{subtree:true,attributes:true,attributeFilter:['disabled','class']});aggiorna();
-  return {aggiorna,destroy(){chiuso=true;osserva.disconnect();root.removeEventListener('click',click,true);root.removeEventListener('touchstart',touch,true);root.removeEventListener('touchend',touch,true);for(const ev of eventi)deck.off(ev,pianifica);}};
+  return {aggiorna,destroy(){chiuso=true;osserva.disconnect();root.removeEventListener('click',foglio);root.removeEventListener('click',click,true);root.removeEventListener('touchstart',touch,true);root.removeEventListener('touchend',touch,true);for(const ev of eventi)deck.off(ev,pianifica);}};
  }
  function sincronizzaMedia(deck,root,passivo){
   const slide=deck?.getCurrentSlide(),p=deck?.getIndices(),sfondo=p&&deck.getSlideBackground(p.h,p.v);
@@ -100,5 +104,5 @@
   return {aggiorna,elementi:()=>presenti.slice(),destroy(){ferma();root.removeEventListener('click',click,true);deck.off('slidechanged',aggiorna);deck.off('resize',dimensiona);layer.remove();for(const b of root.querySelectorAll('.presenta-comune-sorgente')){b.classList.remove('presenta-comune-sorgente');b.inert=false;b.removeAttribute('aria-hidden');}}};
  }
 
- return {destinazione,tasti,frecce,stato,comando,sincronizzaMedia,sfondoComune,passaggioComuni,navbar};
+ return {destinazione,tasti,avanzaAlClic,frecce,stato,comando,sincronizzaMedia,sfondoComune,passaggioComuni,navbar};
 });

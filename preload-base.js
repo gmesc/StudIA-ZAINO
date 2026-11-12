@@ -41,11 +41,13 @@ function verificaFile(file) {
 }
 const vaultApi = {
   hasElectron: true,
+  dizionari:{catalogo:()=>ipcRenderer.invoke('dizionari:catalogo'),scarica:id=>ipcRenderer.invoke('dizionari:scarica',{id}),dati:id=>ipcRenderer.invoke('dizionari:dati',{id})},
   lim: {comando:o=>ipcRenderer.invoke('lim:comando',o),flush:o=>ipcRenderer.sendSync('lim:flush',o),onCambiata:fn=>{const h=(_e,d)=>fn(d);ipcRenderer.on('lim:cambiata',h);return ()=>ipcRenderer.removeListener('lim:cambiata',h);}},
   presentazione: {
     intero:attivo=>ipcRenderer.invoke('presentazione:intero',{attivo}),
     apri:o=>ipcRenderer.invoke('proiezione:apri',o),
     aggiorna:o=>ipcRenderer.invoke('proiezione:aggiorna',o),
+    laser:o=>ipcRenderer.invoke('proiezione:laser',o),
     lavagna:o=>ipcRenderer.invoke('proiezione:lavagna',o),
     chiudi:()=>ipcRenderer.invoke('proiezione:chiudi'),
     onFonte:fn=>{const h=(_e,d)=>fn(d);ipcRenderer.on('proiezione:fonte',h);return ()=>ipcRenderer.removeListener('proiezione:fonte',h);},
@@ -97,6 +99,7 @@ const vaultApi = {
   /* La guida illustrata dello ZAINO, in una finestra sua. Sta dentro l'app
      (`App/guida-zaino/`) e non su disco accanto al vault: dev'esserci anche
      sul computer di chi installa il pacchetto e non ha mai visto questo repo. */
+  stili: { kit:()=>ipcRenderer.invoke('stili:kit'), raccoltaLeggi:()=>ipcRenderer.sendSync('stili:raccolta-leggi'), raccoltaSalva:testo=>ipcRenderer.sendSync('stili:raccolta-salva',{testo}), verifica: (tipo,testo) => ipcRenderer.invoke('stili:verifica',{tipo,testo}), esporta: (tipo,testo) => ipcRenderer.invoke('stili:esporta',{tipo,testo}) },
   guida: { apri: () => ipcRenderer.invoke('guida:apri') },
   schede: {
     stato: (corso) => ipcRenderer.invoke('schede:stato', { corso }),
@@ -166,6 +169,7 @@ const vaultApi = {
     rimuoviStrato: (id,strato,dove) => sync('evidenze','rimuoviStrato',id,strato,dove),
     identita: voce => sync('evidenze','identita',voce)
   },
+  pdfSegni:{leggi:(corso,file)=>ipcRenderer.invoke('pdfsegni:leggi',{corso,file}),salva:(corso,file,id,documento)=>ipcRenderer.invoke('pdfsegni:salva',{corso,file,id,documento}),esporta:(corso,file)=>ipcRenderer.invoke('pdfsegni:esporta',{corso,file})},
   disegni:{salva:(z,dati)=>sync('disegni','salva',z,dati),leggi:(z,id)=>sync('disegni','leggi',z,id),srcUrl:(z,id)=>sync('disegni','srcUrl',z,id)},
   album: {
     elenco: (id,origine) => sync('album','elenco',id,origine),

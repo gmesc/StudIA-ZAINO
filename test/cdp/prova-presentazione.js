@@ -27,9 +27,12 @@ async function fedele(selector,tag){
  await c.collega();await wait('!!window.BancoPresentazione && !!window.zainoStudio');
  const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
  initial=await c.val('({banco:bancoStato(),storage:{...localStorage},theme:document.documentElement.dataset.theme,zaino:corsoAttivo()})');
+ const pdfFile=path.join(vault,'Zaini/biologia/MATERIALI/PDF/01 Botanica.pdf'),pdfOriginale=fs.readFileSync(pdfFile);
+ let file,mapFile,questionFile,activeFile,activeBefore;
+ try{
  await c.val(`cambiaZaino('biologia',true);bancoForma('uno');bancoAssegna('A','appunti')`);
  const body=Array.from({length:28},(_,i)=>'## Capitolo '+i+'\n\n'+('Il paragrafo '+i+' spiega come la luce diventa energia nelle cellule. ').repeat(8)).join('\n\n')+'\n\n> *Passaggio citato*\n> Botanica.pdf; p. 2\n> [Botanica.pdf · p. 2](pdf:01#p=2)';
- const file=require('../../lib/appunti').save(vault,'biologia',null,{title:'Proiezione di prova'},body).file;
+ file=require('../../lib/appunti').save(vault,'biologia',null,{title:'Proiezione di prova'},body).file;
  await c.val(`notesReload();noteOpen(${JSON.stringify(file)},noteStati()[0])`);await wait(`!!NOTES.mde && NOTES.cur?.file===${JSON.stringify(file)}`);
  await c.val('if(!NOTES.mde.isPreviewActive())NOTES.mde.togglePreview()');
  await c.invia('Emulation.setDeviceMetricsOverride',{width:1720,height:1000,deviceScaleFactor:1,mobile:false});await c.pausa(400);
@@ -85,7 +88,7 @@ async function fedele(selector,tag){
  // La chiusura della finestra libera la cornice senza chiudere l'appunto.
  await peer.val(`void window.proiezione.comando({azione:'chiudi'})`);peer.ws.close();peer=null;await wait(`!document.querySelector('[data-proiezione]')`);assert(await c.val('!!NOTES.cur'));assert.equal(await c.val('NOTES.mde.isPreviewActive()'),false,'ripristina la scrittura precedente alla proiezione');
  // Il PDF contiene anche caratteri piccoli: vengono ridisegnati dall'originale.
- const {PDFDocument,StandardFonts}=require('pdf-lib'),pdfFile=path.join(vault,'Zaini/biologia/MATERIALI/PDF/01 Botanica.pdf');
+ const {PDFDocument,StandardFonts}=require('pdf-lib');
  const doc=await PDFDocument.load(fs.readFileSync(pdfFile)),font=await doc.embedFont(StandardFonts.Helvetica);
  for(let j=0;j<12;j++)doc.getPage(1).drawText('Testo vettoriale piccolo: cellule, fotosintesi e luce. Riga '+(j+1),{x:40,y:660-j*18,size:8,font});
  fs.writeFileSync(pdfFile,await doc.save());
@@ -109,9 +112,9 @@ async function fedele(selector,tag){
  await peer.val(`document.getElementById('piu').click()`);
  await wait(`document.querySelector('.proiezione-area').offsetWidth<${cornice.width}*.81`);
  const yPrima=await c.val(`document.querySelector('.proiezione-area').getBoundingClientRect().y`);
- await c.val(`document.querySelector('.proiezione-area button').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}))`);
+ await c.val(`document.querySelector('.proiezione-area button:not(.proiezione-laser-setting)').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}))`);
  await wait(`document.querySelector('.proiezione-area').getBoundingClientRect().y>${yPrima}`);
- const handle=await c.val(`(()=>{const r=document.querySelector('.proiezione-area button').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+ const handle=await c.val(`(()=>{const r=document.querySelector('.proiezione-area button:not(.proiezione-laser-setting)').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
  const yDrag=await c.val(`document.querySelector('.proiezione-area').getBoundingClientRect().y`);
  await c.invia('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...handle});
  await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',button:'left',buttons:1,x:handle.x,y:handle.y+40});
@@ -139,7 +142,7 @@ async function fedele(selector,tag){
  await c.val(`BancoPresentazione.esciIntero()`);await c.pausa(1200);
  assert.deepEqual(await c.val(`({scala:PDFJS.viewer.currentScaleValue,pagina:PDFJS.viewer.currentPageNumber})`),pdfPrima);
  // Mappa reale: il disegno e i suoi spostamenti arrivano alla finestra separata.
- const mapFile=await c.val(`(async()=>{const r=await mappeApi().salva(corsoAttivo(),null,{titolo:'Mappa proiettata',nodi:[{id:'a',testo:'Energia',x:0,y:0},{id:'b',testo:'Fotosintesi',x:300,y:150}],archi:[{da:'a',a:'b'}]});await mappaApriMia(r.file);return r.file;})()`);
+ mapFile=await c.val(`(async()=>{const r=await mappeApi().salva(corsoAttivo(),null,{titolo:'Mappa proiettata',nodi:[{id:'a',testo:'Energia',x:0,y:0},{id:'b',testo:'Fotosintesi',x:300,y:150}],archi:[{da:'a',a:'b'}]});await mappaApriMia(r.file);return r.file;})()`);
  await c.val(`bancoForma('uno');bancoAssegna('A','mappa')`);await wait(`!!document.querySelector('#mappaSvg .mzoom')`);
  await c.val(`MAPPA.z={k:1.3,x:30,y:20};mappaApplicaZoom()`);const mapZoom=await c.val('MAPPA.z');
  await click('[data-intero]');await c.pausa(900);await c.val(`MAPPA.z={k:2,x:90,y:40};mappaApplicaZoom()`);await shot('mappa-intera');
@@ -223,13 +226,15 @@ async function fedele(selector,tag){
  await wait(`MAPPA.z.x>${mappaPrimaPan}`);
  assert(!await peer.val(`document.getElementById('vista').classList.contains('gesto-mano')`));
  await c.val(`bancoAssegna('A','studio')`);await wait(`!document.querySelector('[data-proiezione]')`);peer.ws.close();peer=null;
- // Il raccoglitore riformatta anche moduli e schede con la stessa misura.
- await c.val(`document.getElementById('zschedeNewButton').click();BancoPresentazione.zoom('studio',200)`);await c.pausa(200);
- assert.equal(await c.val(`getComputedStyle(document.getElementById('zschedeSource')).fontSize`),'34px');
+ // Il menu Raccoglitore mantiene il font dell’interfaccia; il contenuto segue la scala di lettura.
+ await c.val(`document.getElementById('zschedeNewButton').click();BancoPresentazione.zoom('studio',100)`);await wait(`!document.getElementById('zschedeNew').hidden`);
+ const misuraStudio=()=>c.val(`({menu:getComputedStyle(document.getElementById('zschedeSource')).fontSize,testo:parseFloat(getComputedStyle(document.getElementById('zstudio')).fontSize)})`);
+ const studio100=await misuraStudio();await c.val(`BancoPresentazione.zoom('studio',200)`);const studio200=await misuraStudio();
+ assert.equal(studio200.menu,studio100.menu,'il menu a tendina conserva la dimensione dell’interfaccia');assert.equal(studio200.testo/studio100.testo,2,'il testo del Raccoglitore raddoppia al 200%');
  await click('[data-proietta]');peer=await collegaProiezione();await wait(`document.querySelector('#contenuto').textContent.includes('Tipo di scheda')`,peer);assert(await c.val(`!!document.querySelector('.proiezione-area')`));
  await c.val(`BancoPresentazione.chiudiProiezione()`);peer.ws.close();peer=null;
- const reviewDir=path.join(vault,'Zaini/biologia/RIPASSO'),activeFile=path.join(reviewDir,'active.json'),activeBefore=fs.existsSync(activeFile)?fs.readFileSync(activeFile):null;
- const questionFile=path.join(reviewDir,'domande/prova-proiezione-ripasso.json');fs.mkdirSync(path.dirname(questionFile),{recursive:true});
+ const reviewDir=path.join(vault,'Zaini/biologia/RIPASSO');activeFile=path.join(reviewDir,'active.json');activeBefore=fs.existsSync(activeFile)?fs.readFileSync(activeFile):null;
+ questionFile=path.join(reviewDir,'domande/prova-proiezione-ripasso.json');fs.mkdirSync(path.dirname(questionFile),{recursive:true});
  fs.writeFileSync(questionFile,JSON.stringify({id:'prova-proiezione-ripasso',question:'Quale funzione svolge la clorofilla nella fotosintesi?',createdAt:new Date().toISOString(),saved:true,attempts:[],sources:[],scope:{mode:'all',sourceIds:[],wikipedia:false}}));
  await c.val(`zainoStudio.refresh();bancoAssegna('A','flashcard');document.getElementById('zstudyBrowse').click()`);await wait(`document.querySelector('[data-question-id="prova-proiezione-ripasso"]')`);
  await click('[data-question-id="prova-proiezione-ripasso"]');await wait(`!!document.getElementById('zstudyAttempt')`);await c.val(`BancoPresentazione.zoom('flashcard',200)`);
@@ -237,8 +242,15 @@ async function fedele(selector,tag){
  await c.val(`document.getElementById('zstudyAttempt').value='Assorbe la luce per la fotosintesi';document.getElementById('zstudyAttempt').dispatchEvent(new Event('input',{bubbles:true}))`);
  await wait(`document.querySelector('#contenuto').textContent.includes('Assorbe la luce')`,peer);await shot('ripasso',peer);
  await c.val(`cambiaZaino('storia',true)`);await wait(`!document.querySelector('[data-proiezione]')`);peer.ws.close();peer=null;
- fs.rmSync(questionFile);if(activeBefore)fs.writeFileSync(activeFile,activeBefore);else fs.rmSync(activeFile,{force:true});
- await c.val(`cambiaZaino('biologia',true);noteStati().forEach(s=>{noteFlushStato(s);noteSvuota(s);});notesApi().remove('biologia',${JSON.stringify(file)});window.vault.mappe.rimuovi('biologia',${JSON.stringify(mapFile)});`);
- await c.val(`document.documentElement.dataset.theme=${JSON.stringify(initial.theme)};localStorage.clear();Object.entries(${JSON.stringify(initial.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));BANCO.stato=${JSON.stringify(initial.banco)};bancoSalva();bancoDisegna();location.reload()`);await c.pausa(700);await c.collega();await wait('!!window.zainoStudio');
- console.log('Lettura, zoom indipendente, fullscreen/Esc, cornice arancione e proiezione note/PDF/mappe, due temi, cambio banco e zaino: OK');process.exit(0);
+ console.log('Lettura, zoom indipendente, fullscreen/Esc, cornice arancione e proiezione note/PDF/mappe, due temi, cambio banco e zaino: OK');
+ }finally{
+  // Anche una prova rossa deve lasciare due appunti, non una fixture nella prova successiva.
+  await c.val(`(async()=>{BancoPresentazione.chiudiProiezione();await BancoPresentazione.esciIntero();await cambiaZaino('biologia',true);noteStati().forEach(s=>{noteFlushStato(s);noteSvuota(s);});})()`);peer?.ws.close();peer=null;
+  if(file)await c.val(`notesApi().remove('biologia',${JSON.stringify(file)})`);if(mapFile)await c.val(`window.vault.mappe.rimuovi('biologia',${JSON.stringify(mapFile)})`);
+  if(questionFile)fs.rmSync(questionFile,{force:true});if(activeFile){if(activeBefore)fs.writeFileSync(activeFile,activeBefore);else fs.rmSync(activeFile,{force:true});}
+  await c.val(`closePdf();fonte2Chiudi(true)`);fs.writeFileSync(pdfFile,pdfOriginale);
+  assert(fs.readFileSync(pdfFile).equals(pdfOriginale),'la prova restituisce il PDF originale, senza cambiare la revisione delle fonti successive');
+  await c.invia('Emulation.clearDeviceMetricsOverride');
+  await c.val(`(async()=>{document.documentElement.dataset.theme=${JSON.stringify(initial.theme)};localStorage.clear();Object.entries(${JSON.stringify(initial.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));await cambiaZaino(${JSON.stringify(initial.zaino)},true);BANCO.stato=${JSON.stringify(initial.banco)};bancoSalva();bancoDisegna();location.reload();})()`);await c.pausa(700);await c.collega();await wait('!!window.zainoStudio');
+ }process.exit(0);
 })().catch(async e=>{console.error(e);try{console.log(await c.val(`({stato:window.BancoPresentazione?.stato(),toast:document.querySelector('#toast')?.textContent,bar:document.querySelector('.blettura')?.textContent})`));await shot('errore');}catch(_){}process.exit(1);});

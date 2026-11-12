@@ -38,14 +38,14 @@ async function frameVal(expr){
  const target=targets.find(t=>t.type==='iframe'&&t.url===url);assert(target,'iframe isolato presente');if(frameClient?.id!==target.id)frameClient=await collegaTarget(target);return frameClient.val(expr);
 }
 async function frameWait(expr){for(let n=0;n<80;n++){if(await frameVal(expr))return;await c.pausa(100);}console.log(await frameVal('({errore:document.body.dataset.errore,pronto:document.querySelector(".reveal").dataset.pronto,fonts:document.fonts.status,classi:document.querySelector(".reveal").className,audio:document.querySelector("audio")?.outerHTML})'));throw Error('Anteprima: '+expr);}
-async function trascinaOggetto(blockId,ridimensiona=false){
+async function trascinaOggetto(blockId,ridimensiona=false,{dx=24,dy=16,modificatori=0}={}){
  await c.val('document.querySelector("#presentaPane iframe").scrollIntoView({block:"center",behavior:"instant"});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
  const iframe=await c.val('(()=>{const f=document.querySelector("#presentaPane iframe"),r=f.getBoundingClientRect();return {x:r.x,y:r.y,k:r.width/f.clientWidth};})()');
  const r=await frameVal(`(()=>{const b=document.querySelector('[data-block-id="'+${q(blockId)}+'"]'),e=${ridimensiona?'b.querySelector(".presenta-maniglia")':'b'},r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+Math.min(16,r.height/2)};})()`);
  const x=iframe.x+r.x*iframe.k,y=iframe.y+r.y*iframe.k;
- await c.invia('Input.dispatchMouseEvent',{type:'mousePressed',x,y,button:'left',clickCount:1});await c.val('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
- await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:x+24,y:y+16,button:'left',buttons:1});
- await c.invia('Input.dispatchMouseEvent',{type:'mouseReleased',x:x+24,y:y+16,button:'left',clickCount:1});await c.val('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
+ await c.invia('Input.dispatchMouseEvent',{type:'mousePressed',x,y,button:'left',clickCount:1,modifiers:modificatori});await c.val('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
+ await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:x+dx,y:y+dy,button:'left',buttons:1,modifiers:modificatori});
+ await c.invia('Input.dispatchMouseEvent',{type:'mouseReleased',x:x+dx,y:y+dy,button:'left',clickCount:1,modifiers:modificatori});await c.val('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
 }
 async function riordinaMiniature(da,a,dentro=false){
  const pos=await c.val(`(()=>{const d=document.querySelector('[data-slide-id="'+${q(da)}+'"]'),t=document.querySelector('[data-slide-id="'+${q(a)}+'"]');d.scrollIntoView({block:'center',behavior:'instant'});const r=d.getBoundingClientRect(),s=t.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,dx:s.x+s.width/2,dy:${dentro?'s.y+s.height/2':'s.bottom-8'}};})()`);
@@ -59,7 +59,8 @@ async function riordinaMiniature(da,a,dentro=false){
 }
 (async()=>{
  await c.collega();await c.invia('Page.enable');await c.invia('Runtime.enable');await c.invia('Log.enable');c.ws().on('message',raw=>{const m=JSON.parse(raw);if(m.method==='Log.entryAdded'&&m.params.entry.level==='error')console.log('rete',m.params.entry.text);if(m.method==='Runtime.consoleAPICalled'&&m.params.type==='error')console.log('renderer',m.params.args.map(a=>a.value));if(m.method==='Runtime.exceptionThrown')console.log('eccezione',JSON.stringify(m.params));});await wait('!!window.ZainoPresenta');await c.val(`window.__erroriPresenta=[];window.addEventListener('message',e=>{if(e.data?.presenta&&e.data.tipo==='errore')window.__erroriPresenta.push(e.data.error);});`);const v=await c.val('window.vault.path');assert(v.includes('studia-zaino-prova-'));
- const banco=await c.val('bancoStato()');let id;
+ const raccoltaPrima=await c.val('JSON.stringify(ZainoRaccolta.leggi())');const banco=await c.val('bancoStato()');let id;const albumProva=new Set(),materialiProva=new Map();
+ const albumPrima=new Set(require('../../lib/album').elenco(v,'biologia').voci.map(x=>x.id));
  try{
   await c.val("cambiaZaino('biologia',true);bancoForma('due-col');bancoAssegna('A','presenta');bancoAssegna('C','gobbo')");
   await wait('!!document.getElementById("presentaDocumenti").closest(".bhead")');
@@ -137,7 +138,7 @@ async function riordinaMiniature(da,a,dentro=false){
   assert(!await frameVal('document.body.innerHTML.includes("NOTA_PRIVATA_UI")'));assert.equal(await frameVal('typeof window.vault'),'undefined');assert.equal(await frameVal('window.__privatoRicevuto'),false,'nessuna nota privata neppure nei metadati dei messaggi');
   // I payload vengono dai produttori reali del drag, poi il ricevitore del pannello li risolve.
   const png=await c.val(`(()=>{const a=document.createElement('canvas');a.width=400;a.height=260;const g=a.getContext('2d');g.fillStyle='#f3f6ed';g.fillRect(0,0,400,260);g.fillStyle='#527c42';g.beginPath();g.ellipse(200,118,106,64,-.5,0,Math.PI*2);g.fill();g.strokeStyle='#d7e8bf';g.lineWidth=4;g.beginPath();g.moveTo(112,165);g.lineTo(286,70);g.moveTo(166,134);g.lineTo(159,84);g.moveTo(211,110);g.lineTo(244,140);g.stroke();return a.toDataURL('image/png').split(',')[1];})()`);
-  const aid=await c.val(`(()=>{const r=window.vault.album.salva('biologia',{origine:'foto',materiale:'foglia.png',didascalia:'Foglia sintetica',dati:'data:image/png;base64,${png}'});fotoAggiorna();return r.voce.id;})()`);
+  const aid=await c.val(`(()=>{const r=window.vault.album.salva('biologia',{origine:'foto',materiale:'foglia.png',didascalia:'Foglia sintetica',dati:'data:image/png;base64,${png}'});fotoAggiorna();return r.voce.id;})()`);if(!albumPrima.has(aid))albumProva.add(aid);
   await wait(`!!document.querySelector('#fotoLista [data-id="'+${q(aid)}+'"]')`);
   const drag=await c.val(`(()=>{const dt=new DataTransfer();document.querySelector('#fotoLista [data-id="'+${q(aid)}+'"]').dispatchEvent(new DragEvent('dragstart',{bubbles:true,dataTransfer:dt}));return dt.getData('application/x-studia-lim');})()`);assert(drag);
   await c.val(`(()=>{const dt=new DataTransfer();dt.setData('application/x-studia-lim',${q(drag)});document.getElementById('presentaPane').dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:dt}));})()`);
@@ -197,8 +198,8 @@ async function riordinaMiniature(da,a,dentro=false){
 
   // Sfondi veri: risorse indipendenti dai blocchi, non una grande immagine spostabile.
   const Fsfondo=require('../fixtures/presentazioni');
-  await c.val(`window.vault.album.salva('biologia',{origine:'foto',materiale:'sfondo.gif',didascalia:'Sfondo animato',dati:'data:image/gif;base64,${Fsfondo.gif.toString('base64')}'});fotoAggiorna()`);
-  const videoDir=path.join(v,'Zaini/biologia/MATERIALI/Video');fs.mkdirSync(videoDir,{recursive:true});fs.writeFileSync(path.join(videoDir,'04 Sfondo.webm'),Fsfondo.video);
+  const gifId=await c.val(`(()=>{const r=window.vault.album.salva('biologia',{origine:'foto',materiale:'sfondo.gif',didascalia:'Sfondo animato',dati:'data:image/gif;base64,${Fsfondo.gif.toString('base64')}'});fotoAggiorna();return r.voce.id;})()`);if(!albumPrima.has(gifId))albumProva.add(gifId);
+  const videoDir=path.join(v,'Zaini/biologia/MATERIALI/Video');fs.mkdirSync(videoDir,{recursive:true});const videoFile=path.join(videoDir,'04 Sfondo.webm');materialiProva.set(videoFile,fs.existsSync(videoFile)?fs.readFileSync(videoFile):null);fs.writeFileSync(videoFile,Fsfondo.video);
   const blocchiPrimaSfondo=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks');
   const scegliSfondo=async(tipo,label)=>{const prima=await c.val('ZainoPresenta.documento.stacks[0].slides[0].backgroundMedia?.assetId');await click(tipo);await wait('!!document.querySelector(".presenta-materiali[open]")');await c.clicca('.presenta-materiali [aria-label='+q(label)+']');await wait('!!ZainoPresenta.documento.stacks[0].slides[0].backgroundMedia&&ZainoPresenta.documento.stacks[0].slides[0].backgroundMedia.assetId!=='+q(prima));};
   await scegliSfondo('Immagine/GIF di sfondo','Immagine · Foglia sintetica');
@@ -252,8 +253,18 @@ async function riordinaMiniature(da,a,dentro=false){
   await trascinaOggetto(imageId);await wait('ZainoPresenta.documento.stacks[0].slides[0].layout==="free"');await frameWait('document.querySelector(".presenta-slide").dataset.layout==="free" && document.querySelector(".reveal").dataset.modificaPronta==="true"');
   const titoloDopo=await frameVal('(()=>{const r=document.querySelector("[data-slot=title]").getBoundingClientRect();return {x:r.x,y:r.y};})()');
   assert(Math.abs(titoloPrima.x-titoloDopo.x)<2&&Math.abs(titoloPrima.y-titoloDopo.y)<2,'conversione della griglia senza spostare il titolo');
+  // Un salvataggio tra pressione e rilascio non deve far perdere il cambio di oggetto.
+  const tabTesto='#presentaPane [data-oggetto-id="'+textId+'"]';
+  const puntoTesto=await c.val(`(()=>{const s=ZainoPresenta.documento.stacks[0].slides[0],b=s.blocks.find(b=>b.id===${q(textId)});ZainoPresenta.modifica({tipo:'blocco',slideId:s.id,blockId:b.id,block:{...b,style:{...b.style,fontFamily:'zaino'}}});const e=document.querySelector(${q(tabTesto)});e.scrollIntoView({block:'center',behavior:'instant'});const r=e.getBoundingClientRect(),x=r.x+r.width/2,y=r.y+r.height/2;return {x,y,revision:ZainoPresenta.documento.revision,dirty:ZainoPresenta.daSalvare,hit:e.contains(document.elementFromPoint(x,y)),selezionato:document.querySelector('#presentaPane [data-oggetto-id][aria-pressed=true]')?.dataset.oggettoId};})()`);
+  assert(puntoTesto.dirty&&puntoTesto.hit,'modifica non salvata e tab Testo raggiungibile prima della pressione');assert.equal(puntoTesto.selezionato,imageId,'il gesto deve cambiare davvero la selezione dall’immagine al testo');
+  await c.invia('Input.dispatchMouseEvent',{type:'mousePressed',x:puntoTesto.x,y:puntoTesto.y,button:'left',buttons:1,clickCount:1});
+  try{
+   await c.val('ZainoPresenta.flush()');
+   const salvato=await c.val(`({revision:ZainoPresenta.documento.revision,hit:document.querySelector(${q(tabTesto)}).contains(document.elementFromPoint(${puntoTesto.x},${puntoTesto.y}))})`);
+   assert(salvato.revision>puntoTesto.revision,'la revisione aumenta mentre il mouse è premuto');assert(salvato.hit,'il tab Testo resta sotto il punto di rilascio durante il salvataggio');
+  }finally{await c.invia('Input.dispatchMouseEvent',{type:'mouseReleased',x:puntoTesto.x,y:puntoTesto.y,button:'left',buttons:0,clickCount:1});}
+  await wait(`document.querySelector(${q(tabTesto)})?.getAttribute('aria-pressed')==='true' && document.querySelector('.presenta-proprieta-foglio')?.dataset.voce==='text'`);
   // Stili reali: campo -> modello -> iframe isolato -> salvataggio/riapertura.
-  await click('Testo');
   await click('Carattere');await click('Georgia');
   await click('Grassetto');await click('Corsivo');await click('Sottolineato');
   await frameWait(`(()=>{const b=document.querySelector('[data-block-id="'+${q(textId)}+'"]'),s=getComputedStyle(b.querySelector('.presenta-contenuto'));return s.fontFamily.includes('Georgia')&&s.fontWeight==='700'&&s.fontStyle==='italic'&&getComputedStyle(b).getPropertyValue('--sottolineato-testo')==='underline';})()`);
@@ -282,6 +293,7 @@ async function riordinaMiniature(da,a,dentro=false){
   await c.val(`(()=>{const e=document.querySelectorAll('.presenta-azione [aria-label="Avvio"]')[1];e.value='after';e.dispatchEvent(new Event('change'));})()`);
   assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations.map(a=>a.step)'),[1,1],'Dopo il precedente mantiene lo stesso clic');
   assert(await c.val(`Array.from(document.querySelectorAll('.presenta-azione')).every(row=>row.scrollWidth<=row.clientWidth+1)`),'animazioni senza tagli nello split');
+  assert(await c.val(`Array.from(document.querySelectorAll('.presenta-azione :is(input,select)')).every(e=>{const s=getComputedStyle(e);return parseFloat(s.paddingTop)+parseFloat(s.paddingBottom)+parseFloat(s.lineHeight)<=e.clientHeight;})`),'Avvio, Durata e Attesa contengono il testo senza tagli verticali');
   await c.val('document.querySelector(".presenta-animazioni").scrollIntoView({block:"end",behavior:"instant"})');
   fs.writeFileSync('/private/tmp/presenta-animazioni-compatte.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
   await click('Prova la slide');await wait('document.querySelector(".presenta-prova-animazioni")?.dataset.pronto==="true"');
@@ -293,7 +305,7 @@ async function riordinaMiniature(da,a,dentro=false){
   await click('Rimuovi effetto 2');await click('Rimuovi effetto 1');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations'),animazioniPrima);
   await click('Annulla nella presentazione');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].animations.length'),animazioniPrima.length+1);await click('Ripeti nella presentazione');await c.clicca('.presenta-animazioni>summary');
   await click('Stile');await click('Carattere per tutte le slide');
-  assert.equal(await c.val('document.querySelectorAll(".presenta-font-opzione").length'),9);assert((await c.val(`getComputedStyle(document.querySelector('.presenta-font-opzione[aria-label="Atkinson Hyperlegible"]')).fontFamily`)).includes('Atkinson'));
+  assert.equal(await c.val('document.querySelectorAll(".presenta-font-opzione").length'),await c.val('Object.keys(PresentaModello.CARATTERI).length'));assert((await c.val(`getComputedStyle(document.querySelector('.presenta-font-opzione[aria-label="Atkinson Hyperlegible"]')).fontFamily`)).includes('Atkinson'));
   fs.writeFileSync('/private/tmp/presenta-font-reale.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
   await click('Atkinson Hyperlegible');await frameWait('getComputedStyle(document.querySelector(".presenta-slide")).fontFamily.includes("Atkinson")');
   assert.equal(await frameVal(`document.fonts.load('32px "Atkinson Hyperlegible"').then(f=>f.length===1&&f[0].status==='loaded')`),true);assert.equal(await c.val('ZainoPresenta.documento.settings.fontFamily'),'atkinson');
@@ -335,7 +347,7 @@ async function riordinaMiniature(da,a,dentro=false){
   await click('Ritaglia immagine');await wait('document.querySelector(".presenta-ritaglio-editor img").naturalWidth>0');await click('Rimuovi ritaglio');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").crop'),undefined);await click('Annulla nella presentazione');
   const geometriaSalvata=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box');
 
-  const audioDir=path.join(v,'Zaini/biologia/MATERIALI/Audio');fs.mkdirSync(audioDir,{recursive:true});fs.writeFileSync(path.join(audioDir,'03 Tono.wav'),require('../fixtures/presentazioni').audio());
+  const audioDir=path.join(v,'Zaini/biologia/MATERIALI/Audio');fs.mkdirSync(audioDir,{recursive:true});const audioFile=path.join(audioDir,'03 Tono.wav');materialiProva.set(audioFile,fs.existsSync(audioFile)?fs.readFileSync(audioFile):null);fs.writeFileSync(audioFile,require('../fixtures/presentazioni').audio());
   await c.val("AlbumSpazio.scegli('audio');AlbumSpazio.aggiorna()");await wait(`!!document.querySelector('[data-album-media="03 Tono.wav"]')`);
   const audioDrag=await c.val(`(()=>{const dt=new DataTransfer();document.querySelector('[data-album-media="03 Tono.wav"]').dispatchEvent(new DragEvent('dragstart',{bubbles:true,dataTransfer:dt}));return dt.getData('application/x-studia-presenta-media');})()`);assert(audioDrag);
   await c.val(`(()=>{const dt=new DataTransfer();dt.setData('application/x-studia-presenta-media',${q(audioDrag)});document.getElementById('presentaPane').dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:dt}));})()`);
@@ -416,7 +428,7 @@ async function riordinaMiniature(da,a,dentro=false){
   // Stili annullabili e proposta di disposizione che non modifica nulla prima di Applica.
   const primaStile=await c.val('ZainoPresenta.documento.stacks');
   await click('Stile');
-  assert.equal(await c.val('document.querySelectorAll(".presenta-stile-tessera").length'),9);
+  assert.deepEqual(await c.val('[...document.querySelectorAll(".presenta-stile-tessera[data-stile-id]")].map(e=>e.dataset.stileId).sort()'),await c.val('ZainoRaccolta.elenco("slide").map(r=>r.id).sort()'),'la galleria offre tutti gli stili visibili, compresi quelli Squig');
   assert.equal(await c.val('document.querySelectorAll("[data-slot-stile]").length'),6);
   assert(await c.val('(()=>{const g=document.querySelector(".presenta-stili-galleria"),p=document.querySelector(".presenta-lavoro");return g.scrollWidth>g.clientWidth&&p.scrollWidth<=p.clientWidth+1;})()'),'la galleria scorre dentro il pannello');
   assert(await c.val('(()=>{const f=document.querySelector(".presenta-stili-controlli .tbtn").getBoundingClientRect(),s=document.querySelector(".presenta-stili-controlli select").getBoundingClientRect();return f.height===s.height&&f.width<=201;})()'),'campi compatti con altezza comune');
@@ -424,7 +436,7 @@ async function riordinaMiniature(da,a,dentro=false){
   await c.val(`(()=>{const e=document.querySelector('.presenta-tema-dialog [aria-label="Nome"]');e.value="Scienze";e.dispatchEvent(new Event("input"));})()`);
   await c.clicca('.presenta-tema-dialog [aria-label="Colore sfondo dello stile"]');await c.clicca('.presenta-tema-dialog [aria-label="sky-100"]');
   await c.clicca('.presenta-tema-dialog [aria-label="Salva stile"]');
-  assert.equal(await c.val('JSON.parse(localStorage.getItem("studia.presenta.stili"))[0].sfondo'),'#e0f2fe');
+  assert.equal(await c.val('ZainoRaccolta.elenco("slide").find(r=>r.id==="slot-0").pacchetto.stile.sfondo'),'#e0f2fe');
   assert.deepEqual(await c.val('ZainoPresenta.documento.stacks'),primaStile,'salvare il tema non modifica la slide');
   await c.val(`(()=>{const e=document.querySelector('[aria-label="Applica lo stile a"]');e.value='tutte';e.dispatchEvent(new Event('change'));})()`);
   await click('Scienze');assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].background'),'#e0f2fe');
@@ -469,7 +481,7 @@ async function riordinaMiniature(da,a,dentro=false){
   // Selezione multipla: allinea in una sola operazione senza cambiare testo o immagini.
   await click('Testo');await frameWait('document.querySelector(".reveal").dataset.bloccato==="false"');
   const primaGruppo=await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks');
-  await frameVal(`document.querySelector('[data-block-id="'+${q(imageId)}+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,shiftKey:true,pointerId:15}))`);
+  await trascinaOggetto(imageId,false,{dx:0,dy:0,modificatori:8});
   await wait(`!!document.querySelector('#presentaPane [aria-label="Allinea in alto"]')`);await click('Allinea in alto');
   assert.equal(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="image").style.box.y'),await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks.find(b=>b.type==="text").style.box.y'));
   await click('Annulla nella presentazione');assert.deepEqual(await c.val('ZainoPresenta.documento.stacks[0].slides[0].blocks'),primaGruppo);
@@ -498,10 +510,12 @@ async function riordinaMiniature(da,a,dentro=false){
   assert.equal(JSON.parse(fs.readFileSync(path.join(v,'Zaini/biologia/PRESENTAZIONI',id,'presentazione.json'))).stacks[0].slides[0].title,'Ultima battuta prima del cambio');
   await c.val("cambiaZaino('biologia',true)");await wait('!!ZainoPresenta.documento');assert.equal(await c.val('ZainoPresenta.documento.id'),id);
   await c.val(`(()=>{const d=ZainoPresenta.documento,assetId=Object.keys(d.assets).find(k=>d.assets[k].kind==='video');ZainoPresenta.modifica({tipo:'sfondoMedia',slideId:d.stacks[1].slides[0].id,backgroundMedia:{assetId,fit:'cover',muted:true,loop:true}},{struttura:true});})()`);
+  await c.val(`(()=>{const tela=document.createElement('canvas');tela.width=320;tela.height=180;tela.getContext('2d').fillRect(0,0,320,180);ZainoPresenta.modifica({tipo:'sfondoPersonale',slideId:ZainoPresenta.documento.stacks[0].slides[0].id,sfondo:{nome:'Sfondo pubblico',dati:tela.toDataURL(),larghezza:320,altezza:180,modo:'immagine',adatta:'contain',passo:128}},{struttura:true});})()`);
   await c.val('ZainoPresenta.presenta()');await wait('!!ZainoPresenta.regia');
   await wait('document.querySelector("#gobboPane .gobbo-note")?.textContent.includes("NOTA_PRIVATA_UI")');
   const sid=await c.val('ZainoPresenta.regia.stato.sessionId');
   const target=(await (await fetch('http://localhost:'+(process.env.STUDIA_PORTA||8999)+'/json')).json()).find(t=>t.type==='page'&&t.url.endsWith('/presentazioni-player/index.html'));assert(target);const pubblico=await collegaTarget(target);
+  assert.equal(await pubblico.val('typeof ZainoSfondi.esigi'),'function');await wait('!!document.querySelector(".presenta-carta")',pubblico);assert(await pubblico.val('(async()=>{const i=document.querySelector(".presenta-carta");await i.decode();return i.naturalWidth===320&&getComputedStyle(i).objectFit==="contain";})()'),'sfondo personale decodificato nel player pubblico');
   assert.equal(await pubblico.val('typeof window.vault'),'undefined');assert(!await pubblico.val('document.documentElement.outerHTML.includes("NOTA_PRIVATA_UI")'));
   assert(await pubblico.val(`(()=>{const s=document.querySelector('section.present>.presenta-slide'),b=document.querySelector('.slide-background.present:not(.stack)');return getComputedStyle(s).backgroundColor===getComputedStyle(b).backgroundColor;})()`),'anche il player nativo estende lo sfondo al viewport');
   await wait('!!document.querySelector(".presenta-immagine-ritagliata image")',pubblico);
@@ -531,8 +545,14 @@ async function riordinaMiniature(da,a,dentro=false){
   assert.equal(await c.val('document.getElementById("presentaDocumenti").closest(".tendina").querySelector(".tlab").textContent'),'Apri una presentazione…','chiudere il documento aggiorna subito il selettore nella testata');
   console.log('✓ PRESENTA e GOBBO: tab contestuali, colori e cinque slot, titolo/testo indipendenti, miniature e riordino nativo, stile, adatta riquadro, media, autosave, riapertura, player e note private');
  }finally{
+  await c.val('vault.stili.raccoltaSalva('+q(raccoltaPrima)+')');
   fs.writeFileSync('/private/tmp/presenta-ultimo-stato.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
   try{await c.val('ZainoPresenta.chiudi()');await c.val(`BANCO.stato=${q(banco)};bancoSalva();bancoDisegna()`);}catch(_){}
-  if(id)fs.rmSync(path.join(v,'Zaini/biologia/PRESENTAZIONI',id),{recursive:true,force:true});for(const cl of clients)cl.ws.close();c.ws()?.close();
+  if(id)fs.rmSync(path.join(v,'Zaini/biologia/PRESENTAZIONI',id),{recursive:true,force:true});
+  // Le immagini possono essere deduplicate: elimina solo gli ID creati dalla prova.
+  for(const aid of albumProva){const r=require('../../lib/album').rimuovi(v,'biologia',aid,{insisti:true});assert(r.tolto,r.error);}
+  for(const [file,prima] of materialiProva){if(prima)fs.writeFileSync(file,prima);else fs.rmSync(file,{force:true});}
+  await c.val('fotoAggiorna();AlbumSpazio.aggiorna();zainoNavAggiorna()');
+  for(const cl of clients)cl.ws.close();c.ws()?.close();
  }
 })().catch(e=>{console.error(e);c.ws()?.close();process.exitCode=1;});

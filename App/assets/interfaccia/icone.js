@@ -1,6 +1,10 @@
-/* Lucide 1.61.0, ISC. Generato da bin/icone-ui.js. Licenza in assets/licenze/lucide.txt. */
+/* Lucide 1.61.0 (ISC) e matita con tratto locale. Generato da bin/icone-ui.js. Licenza in assets/licenze/lucide.txt. */
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.UiIcone=factory();}(typeof self!=='undefined'?self:this,function(){
  var dati={
+ "circle": "<circle cx=\"12\" cy=\"12\" r=\"9\"/>",
+ "laser-pointer": "<path d=\"m4 20 9-9m-7 8-1-1M14 4V2m4 4 2-2m0 6h2\"/><circle cx=\"14\" cy=\"10\" r=\"2\"/>",
+ "mouse-pointer-2": "<path d=\"m5 3 14 9-7 1-3 7Z\"/>",
+ "pencil-draw": "<path d=\"m15 3 5 5-8 8-5 1 1-5z\"/><path d=\"m13 5 5 5\"/><path d=\"M3 21c3-5 6 3 9-1s5 3 9-1\"/>",
  "link": "<path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\" />\n  <path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\" />",
  "eye": "<path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\" />\n  <circle cx=\"12\" cy=\"12\" r=\"3\" />",
  "eye-off": "<path d=\"M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49\" />\n  <path d=\"M14.084 14.158a3 3 0 0 1-4.242-4.242\" />\n  <path d=\"M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143\" />\n  <path d=\"m2 2 20 20\" />",

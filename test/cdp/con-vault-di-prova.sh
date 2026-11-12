@@ -182,6 +182,7 @@ esac
 # ⚠️ E `prova-appunti-barra` azzerava il banco con la chiave MORTA (`studia.banco`): al reload
 # ereditava la disposizione salvata da un'altra prova — un blocco, la mappa su una riga —
 # e cadeva in ogni catena ZAINO passando da sola. Ora toglie la chiave viva (`bancoChiave()`).
+# Le prove PRESENTA/mappe con «biologia» sintetico sono registrate in bin/prova-zaino.sh.
 PROVE_ZAINO=(
   prova-stampa.js prova-banco-avvio.js prova-banco-ripristino.js prova-banco-griglia.js
   prova-media-punto.js prova-vocabolario-zaino.js prova-appunto-riga.js prova-mappa-pallino.js

@@ -1,0 +1,75 @@
+{
+  "name": "drawably",
+  "version": "0.4.2",
+  "description": "Hand-drawn UI controls. Every render a fresh pen sketch, boiling like a doodle.",
+  "license": "MIT",
+  "author": "Daniel Belyi",
+  "files": [
+    "dist",
+    "examples",
+    "style.css",
+    "style.css.d.ts",
+    "font/font.css",
+    "font/font.css.d.ts",
+    "font/DrawablyPen.ttf",
+    "README.md",
+    ".github/agent.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": [
+    "./style.css",
+    "./font/font.css"
+  ],
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
+    },
+    "./style.css": {
+      "types": "./style.css.d.ts",
+      "default": "./style.css"
+    },
+    "./font.css": {
+      "types": "./font/font.css.d.ts",
+      "default": "./font/font.css"
+    },
+    "./agent.md": "./.github/agent.md"
+  },
+  "scripts": {
+    "prepublishOnly": "npm run build",
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit && tsc -p font",
+    "pack:check": "npm pack --dry-run",
+    "test": "vitest run",
+    "video": "remotion studio remotion/index.ts",
+    "video:render": "remotion render remotion/index.ts DrawablyPromo out/drawably-promo.mp4",
+    "video:render:form": "remotion render remotion/index.ts DrawablyForm out/drawably-form.mp4",
+    "video:render:line": "remotion render remotion/index.ts DrawablyLine out/drawably-line.mp4",
+    "video:render:anatomy": "remotion render remotion/index.ts DrawablyAnatomy out/drawably-anatomy.mp4"
+  },
+  "devDependencies": {
+    "@remotion/cli": "4.0.519",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "happy-dom": "^20.11.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "remotion": "4.0.519",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "react": ">=18 <20"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

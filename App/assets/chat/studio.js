@@ -132,7 +132,7 @@
   // Il documento selezionato viene ricordato prima che il click nello studio cambi il riquadro attivo.
   let documento='';
   document.addEventListener('focusin',ricordaDocumento,true);document.addEventListener('pointerdown',ricordaDocumento,true);
-  function ricordaDocumento(e){const pane=e.target.closest?.('#pdfPane,#pdfPane2,#notePane,#notePane2');if(!pane)return;if(pane.id==='pdfPane')documento=window.ANTEPRIMA?.file||'';else if(pane.id==='pdfPane2')documento=window.FONTE2?.file||'';else {const n=window.noteStati?.().find(n=>n.id===(pane.id==='notePane2'?'appunti2':'appunti'));documento=n?.cur?.file?'APPUNTI/'+n.cur.file:'';}}
+  function ricordaDocumento(e){const pane=e.target.closest?.('#pdfPane,#pdfPane2,.note-pane');if(!pane)return;if(pane.id==='pdfPane')documento=window.ANTEPRIMA?.file||'';else if(pane.id==='pdfPane2')documento=window.FONTE2?.file||'';else {const n=window.noteStatoDaNodo?.(pane);documento=n?.cur?.file?'APPUNTI/'+n.cur.file:'';}}
   const apiUi={box,el,$,action,status,call,apri,riferimento,stato,ensureAI,picker,documento:()=>documento};
   study=window.ZainoSchedeRipasso.crea(apiUi,state);
   async function sync(){

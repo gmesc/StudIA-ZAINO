@@ -1,0 +1,842 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Stile ZAINO · versione 1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "formato": {
+      "const": "zaino-stile"
+    },
+    "versione": {
+      "const": 1
+    },
+    "tipo": {
+      "enum": [
+        "mappa",
+        "slide",
+        "navbar"
+      ]
+    },
+    "nome": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40,
+      "pattern": "\\S"
+    },
+    "autore": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "pattern": "\\S"
+    },
+    "licenza": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "pattern": "\\S"
+    },
+    "stile": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "formato",
+    "versione",
+    "tipo",
+    "nome",
+    "stile"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "tipo": {
+            "const": "mappa"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "stile": {
+            "$ref": "#/definitions/mappa"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tipo": {
+            "const": "slide"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "stile": {
+            "$ref": "#/definitions/slide"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tipo": {
+            "const": "navbar"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "stile": {
+            "$ref": "#/definitions/navbar"
+          }
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "colore": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$"
+    },
+    "font": {
+      "enum": [
+        "zaino",
+        "arial",
+        "verdana",
+        "georgia",
+        "courier",
+        "atkinson",
+        "atkinson-next",
+        "testme",
+        "testme-alt",
+        "patrick-hand"
+      ]
+    },
+    "mappa": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "font": {
+          "$ref": "#/definitions/font"
+        },
+        "sfondo": {
+          "enum": [
+            "pieno",
+            "punti",
+            "linee",
+            "carta-cotone",
+            "carta-naturale",
+            "carta-chiara",
+            "personale"
+          ]
+        },
+        "fusione": {
+          "enum": [
+            "normal",
+            "multiply"
+          ]
+        },
+        "carta": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/colore"
+            },
+            {
+              "enum": [
+                ""
+              ]
+            }
+          ]
+        },
+        "segno": {
+          "$ref": "#/definitions/colore"
+        },
+        "nodo": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/colore"
+            },
+            {
+              "enum": [
+                "",
+                "none"
+              ]
+            }
+          ]
+        },
+        "testo": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/colore"
+            },
+            {
+              "enum": [
+                ""
+              ]
+            }
+          ]
+        },
+        "bordo": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/colore"
+            },
+            {
+              "enum": [
+                "",
+                "none"
+              ]
+            }
+          ]
+        },
+        "legame": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/colore"
+            },
+            {
+              "enum": [
+                ""
+              ]
+            }
+          ]
+        },
+        "raggio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 24
+        },
+        "spessore": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 4
+        },
+        "passo": {
+          "type": "number",
+          "minimum": 12,
+          "maximum": 64
+        },
+        "fsNodo": {
+          "type": "number",
+          "minimum": 9,
+          "maximum": 20
+        },
+        "fsRel": {
+          "type": "number",
+          "minimum": 8,
+          "maximum": 18
+        },
+        "linee": {
+          "enum": [
+            "curva",
+            "dritto",
+            "orto"
+          ]
+        },
+        "sfondoPersonale": {
+          "$ref": "#/definitions/sfondoPersonale"
+        },
+        "tratto": {
+          "enum": [
+            "regolare",
+            "squig",
+            "drawably"
+          ]
+        },
+        "freccia": {
+          "type": "number",
+          "minimum": 3,
+          "maximum": 20
+        },
+        "bordiColorati": {
+          "const": 1
+        }
+      },
+      "minProperties": 1
+    },
+    "slide": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "font": {
+          "$ref": "#/definitions/font"
+        },
+        "sfondo": {
+          "$ref": "#/definitions/colore"
+        },
+        "colore": {
+          "$ref": "#/definitions/colore"
+        },
+        "accento": {
+          "$ref": "#/definitions/colore"
+        },
+        "titolo": {
+          "type": "number",
+          "minimum": 12,
+          "maximum": 120
+        },
+        "testo": {
+          "type": "number",
+          "minimum": 12,
+          "maximum": 120
+        },
+        "stileTitolo": {
+          "$ref": "#/definitions/aspettoTesto"
+        },
+        "stileTesto": {
+          "$ref": "#/definitions/aspettoTesto"
+        },
+        "carta": {
+          "enum": [
+            "cotone",
+            "naturale",
+            "chiara"
+          ]
+        },
+        "sfondoPersonale": {
+          "$ref": "#/definitions/sfondoPersonale"
+        }
+      },
+      "required": [
+        "font",
+        "sfondo",
+        "colore",
+        "accento",
+        "titolo",
+        "testo"
+      ]
+    },
+    "navbar": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fontSize": {
+          "type": "number",
+          "minimum": 12,
+          "maximum": 160
+        },
+        "fontWeight": {
+          "type": "integer",
+          "enum": [
+            200,
+            300,
+            400,
+            500,
+            600,
+            700,
+            800,
+            900
+          ]
+        },
+        "bold": {
+          "type": "boolean"
+        },
+        "italic": {
+          "type": "boolean"
+        },
+        "underline": {
+          "type": "boolean"
+        },
+        "align": {
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ]
+        },
+        "verticalAlign": {
+          "enum": [
+            "start",
+            "center",
+            "end"
+          ]
+        },
+        "lineHeight": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 2
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[a-fA-F0-9]{6}$"
+        },
+        "highlight": {
+          "type": "string",
+          "pattern": "^#[a-fA-F0-9]{6}$"
+        },
+        "fontFamily": {
+          "$ref": "#/definitions/font"
+        },
+        "variant": {
+          "enum": [
+            "steps",
+            "tabs",
+            "progress"
+          ]
+        },
+        "orientation": {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ]
+        },
+        "activeZoom": {
+          "enum": [
+            1,
+            1.1,
+            1.2,
+            1.3
+          ]
+        },
+        "grafica": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "activeTextColor": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^#[a-fA-F0-9]{6}$"
+                }
+              ]
+            },
+            "activeGraphicColor": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^#[a-fA-F0-9]{6}$"
+                }
+              ]
+            },
+            "markerSize": {
+              "type": "number",
+              "minimum": 12,
+              "maximum": 80
+            },
+            "gap": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 32
+            },
+            "line": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "color": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^#[a-fA-F0-9]{6}$"
+                    }
+                  ]
+                },
+                "opacity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "width": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 16
+                }
+              }
+            },
+            "separator": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "color": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^#[a-fA-F0-9]{6}$"
+                    }
+                  ]
+                },
+                "opacity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "width": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 16
+                },
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "border": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "color": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^#[a-fA-F0-9]{6}$"
+                    }
+                  ]
+                },
+                "opacity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "width": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 16
+                }
+              }
+            },
+            "background": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "color": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^#[a-fA-F0-9]{6}$"
+                    }
+                  ]
+                },
+                "opacity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "activeBackground": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "color": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^#[a-fA-F0-9]{6}$"
+                    }
+                  ]
+                },
+                "opacity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "activeGraphicOpacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "activeBorderOpacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "activeLineOpacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "tratto": {
+              "enum": [
+                "regolare",
+                "squig"
+              ]
+            }
+          }
+        },
+        "appearance": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "blend": {
+              "enum": [
+                "normal",
+                "multiply",
+                "screen",
+                "overlay",
+                "darken",
+                "lighten"
+              ]
+            }
+          }
+        }
+      },
+      "minProperties": 1
+    },
+    "aspettoTesto": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "column": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "span": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "row": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "rowSpan": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "fontSize": {
+          "type": "number",
+          "minimum": 12,
+          "maximum": 160
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[a-fA-F0-9]{6}$"
+        },
+        "align": {
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ]
+        },
+        "scale": {
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 4
+        },
+        "highlight": {
+          "type": "string",
+          "pattern": "^#[a-fA-F0-9]{6}$"
+        },
+        "box": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "x": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "y": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "width": {
+              "type": "number",
+              "minimum": 2,
+              "maximum": 100
+            },
+            "height": {
+              "type": "number",
+              "minimum": 2,
+              "maximum": 100
+            }
+          },
+          "required": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ]
+        },
+        "verticalAlign": {
+          "enum": [
+            "start",
+            "center",
+            "end"
+          ]
+        },
+        "fontFamily": {
+          "enum": [
+            "zaino",
+            "arial",
+            "verdana",
+            "georgia",
+            "courier",
+            "atkinson",
+            "testme",
+            "atkinson-next",
+            "testme-alt",
+            "patrick-hand"
+          ]
+        },
+        "bold": {
+          "type": "boolean"
+        },
+        "italic": {
+          "type": "boolean"
+        },
+        "underline": {
+          "type": "boolean"
+        },
+        "lineHeight": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 2
+        },
+        "fontWeight": {
+          "type": "integer",
+          "enum": [
+            200,
+            300,
+            400,
+            500,
+            600,
+            700,
+            800,
+            900
+          ]
+        },
+        "appearance": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "blend": {
+              "enum": [
+                "normal",
+                "multiply",
+                "screen",
+                "overlay",
+                "darken",
+                "lighten"
+              ]
+            },
+            "grayscale": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "sepia": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "brightness": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 200
+            },
+            "contrast": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 200
+            },
+            "saturate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 200
+            },
+            "blur": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 20
+            }
+          }
+        }
+      },
+      "required": []
+    },
+    "sfondoPersonale": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nome",
+        "dati",
+        "larghezza",
+        "altezza",
+        "modo",
+        "adatta",
+        "passo"
+      ],
+      "properties": {
+        "nome": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "\\S"
+        },
+        "dati": {
+          "type": "string",
+          "maxLength": 2796230,
+          "pattern": "^data:image/(png|webp);base64,[A-Za-z0-9+/]+={0,2}$"
+        },
+        "larghezza": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2560
+        },
+        "altezza": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2560
+        },
+        "modo": {
+          "enum": [
+            "immagine",
+            "pattern"
+          ]
+        },
+        "adatta": {
+          "enum": [
+            "cover",
+            "contain"
+          ]
+        },
+        "passo": {
+          "type": "number",
+          "minimum": 16,
+          "maximum": 1024
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,1601 @@
+{
+  "comandi-appunti-file": {
+    "width": 134,
+    "height": 40,
+    "caption": "Appunti: crea, salva e gestisci il documento.",
+    "items": [
+      {
+        "numero": 1,
+        "nome": "Nuovo appunto",
+        "descrizione": "Crea un appunto vuoto. Inserisci il titolo richiesto e comincia a scrivere.",
+        "box": [
+          4.518423507462686,
+          16.38671875,
+          22.568796641791046,
+          67.5
+        ],
+        "selector": "#noteNew"
+      },
+      {
+        "numero": 2,
+        "nome": "Salva appunto",
+        "descrizione": "Salva sul computer le modifiche dell’appunto aperto.",
+        "box": [
+          27.08722014925373,
+          16.38671875,
+          22.568796641791046,
+          67.5
+        ],
+        "selector": "#noteSave"
+      },
+      {
+        "numero": 3,
+        "nome": "Rinomina appunto",
+        "descrizione": "Cambia il nome dell’appunto aperto.",
+        "box": [
+          49.65601679104478,
+          16.38671875,
+          22.568796641791046,
+          67.5
+        ],
+        "selector": "#noteRen"
+      },
+      {
+        "numero": 4,
+        "nome": "Elimina appunto",
+        "descrizione": "Avvia l’eliminazione dell’appunto. Leggi la richiesta di conferma prima di procedere.",
+        "box": [
+          72.22481343283582,
+          16.38671875,
+          22.568796641791046,
+          67.5
+        ],
+        "selector": "#noteDel"
+      }
+    ]
+  },
+  "comandi-appunti-testo": {
+    "width": 148,
+    "height": 40,
+    "caption": "Appunti: tabelle e formattazione del testo.",
+    "items": [
+      {
+        "numero": 5,
+        "nome": "Tabella",
+        "descrizione": "Inserisce una tabella o apre i comandi per modificare quella in cui si trova il cursore.",
+        "box": [
+          4.608319256756756,
+          16.38671875,
+          20.27027027027027,
+          67.5
+        ],
+        "selector": "#notePane .ncb-tabella"
+      },
+      {
+        "numero": 6,
+        "nome": "Grassetto",
+        "descrizione": "Rende in grassetto le parole selezionate.",
+        "box": [
+          34.20080236486486,
+          16.38671875,
+          20.27027027027027,
+          67.5
+        ],
+        "selector": "#notePane .bold"
+      },
+      {
+        "numero": 7,
+        "nome": "Corsivo",
+        "descrizione": "Rende in corsivo le parole selezionate.",
+        "box": [
+          54.47107263513513,
+          16.38671875,
+          20.27027027027027,
+          67.5
+        ],
+        "selector": "#notePane .italic"
+      },
+      {
+        "numero": 8,
+        "nome": "Stile del paragrafo ¶",
+        "descrizione": "Sceglie se il paragrafo è testo normale, un titolo o un sottotitolo.",
+        "box": [
+          74.7413429054054,
+          16.38671875,
+          21.167652027027025,
+          67.5
+        ],
+        "selector": "#notePane .note-stile-testo"
+      }
+    ]
+  },
+  "comandi-appunti-elenchi": {
+    "width": 147,
+    "height": 40,
+    "caption": "Appunti: citazioni, elenchi e riquadri.",
+    "items": [
+      {
+        "numero": 9,
+        "nome": "Citazione nel testo",
+        "descrizione": "Formatta il paragrafo come citazione. Per aggiungere il collegamento alla fonte usa Cita il punto o Cita un materiale.",
+        "box": [
+          4.586522108843537,
+          16.38671875,
+          20.408163265306122,
+          67.5
+        ],
+        "selector": "#notePane .quote"
+      },
+      {
+        "numero": 10,
+        "nome": "Elenco puntato",
+        "descrizione": "Crea un elenco di punti senza numerazione.",
+        "box": [
+          24.99468537414966,
+          16.38671875,
+          20.408163265306122,
+          67.5
+        ],
+        "selector": "#notePane .unordered-list"
+      },
+      {
+        "numero": 11,
+        "nome": "Elenco numerato",
+        "descrizione": "Crea una sequenza di punti numerati.",
+        "box": [
+          45.40284863945578,
+          16.38671875,
+          20.408163265306122,
+          67.5
+        ],
+        "selector": "#notePane .ordered-list"
+      },
+      {
+        "numero": 12,
+        "nome": "Riquadro (callout)",
+        "descrizione": "Inserisce un riquadro per distinguere, per esempio, una nota, una domanda o un avviso dal resto del testo.",
+        "box": [
+          75.19664115646259,
+          16.38671875,
+          20.408163265306122,
+          67.5
+        ],
+        "selector": "#notePane .ncb-callout"
+      }
+    ]
+  },
+  "comandi-appunti-fonti": {
+    "width": 161,
+    "height": 40,
+    "caption": "Appunti: collega i materiali al testo.",
+    "items": [
+      {
+        "numero": 13,
+        "nome": "Emoji",
+        "descrizione": "Apre la scelta di un simbolo da inserire nel testo.",
+        "box": [
+          4.06152950310559,
+          16.38671875,
+          18.633540372670808,
+          67.5
+        ],
+        "selector": "#notePane .ncb-emoji"
+      },
+      {
+        "numero": 14,
+        "nome": "Cita il punto",
+        "descrizione": "Inserisce un riferimento alla pagina o al punto della fonte che stai guardando.",
+        "box": [
+          31.26455745341615,
+          16.38671875,
+          18.633540372670808,
+          67.5
+        ],
+        "selector": "#notePane .ncb-cita"
+      },
+      {
+        "numero": 15,
+        "nome": "Cita un materiale",
+        "descrizione": "Permette di scegliere una fonte da collegare, anche se si trova in un altro zaino.",
+        "box": [
+          49.89809782608695,
+          16.38671875,
+          18.633540372670808,
+          67.5
+        ],
+        "selector": "#notePane .ncb-mat"
+      },
+      {
+        "numero": 16,
+        "nome": "Collegamento",
+        "descrizione": "Inserisce un link: indica il testo da mostrare e l’indirizzo da aprire.",
+        "box": [
+          77.10112577639751,
+          16.38671875,
+          18.633540372670808,
+          67.5
+        ],
+        "selector": "#notePane .link"
+      }
+    ]
+  },
+  "comandi-appunti-esporta": {
+    "width": 168,
+    "height": 40,
+    "caption": "Appunti: scrittura, anteprima e condivisione.",
+    "items": [
+      {
+        "numero": 17,
+        "nome": "Scrittura",
+        "descrizione": "Torna alla vista in cui puoi scrivere e modificare il testo.",
+        "box": [
+          3.952752976190476,
+          16.62109375,
+          17.857142857142858,
+          67.5
+        ],
+        "selector": "#notePane [title='Scrittura']"
+      },
+      {
+        "numero": 18,
+        "nome": "Impaginazione A4",
+        "descrizione": "Mostra le pagine dell’appunto, con immagini e collegamenti attivi, per controllare il risultato.",
+        "box": [
+          24.190848214285715,
+          16.62109375,
+          17.857142857142858,
+          67.5
+        ],
+        "selector": "#notePane .preview"
+      },
+      {
+        "numero": 19,
+        "nome": "Stampa appunto",
+        "descrizione": "Apre i comandi di stampa per l’appunto.",
+        "box": [
+          42.04799107142857,
+          16.62109375,
+          18.001302083333336,
+          67.5
+        ],
+        "selector": "#noteStampa"
+      },
+      {
+        "numero": 20,
+        "nome": "Esporta appunto",
+        "descrizione": "Salva una copia in PDF o DOCX da condividere. L’appunto originale rimane modificabile.",
+        "box": [
+          60.049293154761905,
+          16.62109375,
+          17.857142857142858,
+          67.5
+        ],
+        "selector": "#notePdf"
+      },
+      {
+        "numero": 21,
+        "nome": "Chiudi appunto",
+        "descrizione": "Chiude il documento nello split. Il file rimane nello zaino.",
+        "box": [
+          77.90643601190477,
+          16.62109375,
+          18.001302083333336,
+          67.5
+        ],
+        "selector": "#noteClose"
+      }
+    ]
+  },
+  "comandi-split": {
+    "width": 112,
+    "height": 40,
+    "caption": "La testata comune: scegli il contenuto e gestisci la vista dello split.",
+    "items": [
+      {
+        "numero": 1,
+        "nome": "Numero dello split",
+        "descrizione": "Identifica il riquadro. Fai doppio clic sul numero o sulla testata per allargarlo; ripeti per tornare al banco.",
+        "box": [
+          6.124441964285714,
+          25.76171875,
+          17.857142857142858,
+          50
+        ],
+        "selector": ".blocco[data-blocco='C'] .bnumero"
+      },
+      {
+        "numero": 2,
+        "nome": "Strumento",
+        "descrizione": "Sceglie quale strumento usare nel riquadro, per esempio Fonti, Appunti o Mappa.",
+        "box": [
+          29.69447544642857,
+          17.01171875,
+          64.81584821428571,
+          67.5
+        ],
+        "selector": ".blocco[data-blocco='C'] .bsel"
+      }
+    ]
+  },
+  "comandi-impostazioni": {
+    "width": 690,
+    "height": 53,
+    "caption": "Le schede delle Impostazioni: scegli l’area da configurare.",
+    "items": [
+      {
+        "numero": 1,
+        "nome": "Utente",
+        "descrizione": "Imposta il profilo che il tutor AI usa per adattare le spiegazioni, per esempio lingua e preferenze di studio.",
+        "box": [
+          0.8695652173913043,
+          11.497641509433961,
+          16.40058876811594,
+          75.47169811320755
+        ],
+        "selector": ".set-tab[data-tab='utente']"
+      },
+      {
+        "numero": 2,
+        "nome": "Zaino",
+        "descrizione": "Mostra la cartella dei file e l’elenco degli zaini. Da qui puoi rinominare uno zaino o eliminarlo con conferma.",
+        "box": [
+          17.270153985507246,
+          11.497641509433961,
+          16.40058876811594,
+          75.47169811320755
+        ],
+        "selector": ".set-tab[data-tab='zaino']"
+      },
+      {
+        "numero": 3,
+        "nome": "Aspetto",
+        "descrizione": "Sceglie il carattere usato nell’interfaccia dell’app.",
+        "box": [
+          33.67074275362319,
+          11.497641509433961,
+          16.40058876811594,
+          75.47169811320755
+        ],
+        "selector": ".set-tab[data-tab='aspetto']"
+      },
+      {
+        "numero": 4,
+        "nome": "TUNING",
+        "descrizione": "Raccoglie gli stili da applicare a mappe, slide e barre di navigazione; permette di importarli e personalizzarli.",
+        "box": [
+          50.071331521739125,
+          11.497641509433961,
+          16.40058876811594,
+          75.47169811320755
+        ],
+        "selector": ".set-tab[data-tab='tuning']"
+      },
+      {
+        "numero": 5,
+        "nome": "AI",
+        "descrizione": "Configura il tutor online e la ricerca locale. In AI cloud scegli il provider e la chiave API; in AI locale scarichi i modelli.",
+        "box": [
+          66.47192028985506,
+          11.497641509433961,
+          16.40058876811594,
+          75.47169811320755
+        ],
+        "selector": ".set-tab[data-tab='ai']"
+      },
+      {
+        "numero": 6,
+        "nome": "Sicurezza",
+        "descrizione": "Installa e attiva i controlli qpdf e ClamAV per i PDF e mostra l’esito delle analisi.",
+        "box": [
+          82.87250905797102,
+          11.497641509433961,
+          16.25566123188406,
+          75.47169811320755
+        ],
+        "selector": ".set-tab[data-tab='sicurezza']"
+      }
+    ]
+  },
+  "comandi-impostazioni-chiudi": {
+    "width": 106,
+    "height": 53,
+    "caption": "Crediti e chiusura delle Impostazioni.",
+    "items": [
+      {
+        "numero": 7,
+        "nome": "Mago: crediti e licenze",
+        "descrizione": "Apre l’elenco dei componenti usati da ZAINO e le rispettive licenze.",
+        "box": [
+          6.014150943396227,
+          12.352594339622641,
+          49.66096698113208,
+          75.47169811320755
+        ],
+        "selector": "#creditsBtn"
+      },
+      {
+        "numero": 8,
+        "nome": "Chiudi Impostazioni",
+        "descrizione": "Chiude il pannello e torna al banco di lavoro.",
+        "box": [
+          55.67511792452831,
+          12.352594339622641,
+          38.66450471698113,
+          75.47169811320755
+        ],
+        "selector": "#settingsClose"
+      }
+    ]
+  },
+  "comandi-fonti-lettura": {
+    "width": 240,
+    "height": 40,
+    "caption": "Fonti: pagina e strumenti per leggere il PDF.",
+    "items": [
+      {
+        "numero": 1,
+        "nome": "Pagina precedente",
+        "descrizione": "Mostra la pagina prima di quella aperta.",
+        "box": [
+          2.5,
+          16.38671875,
+          12.600911458333334,
+          67.5
+        ],
+        "selector": "#pdfPrev"
+      },
+      {
+        "numero": 2,
+        "nome": "Numero di pagina",
+        "descrizione": "Mostra la pagina corrente e il totale. Premi il numero e scrivi la pagina da raggiungere.",
+        "box": [
+          15.100911458333332,
+          16.38671875,
+          25.973307291666664,
+          67.5
+        ],
+        "selector": "#pdfPagN"
+      },
+      {
+        "numero": 3,
+        "nome": "Pagina successiva",
+        "descrizione": "Mostra la pagina dopo quella aperta.",
+        "box": [
+          41.07421875,
+          16.38671875,
+          12.600911458333334,
+          67.5
+        ],
+        "selector": "#pdfNext"
+      },
+      {
+        "numero": 4,
+        "nome": "Tinta del foglio",
+        "descrizione": "Sceglie un colore di fondo per rendere più comoda la lettura a schermo.",
+        "box": [
+          59.423828125,
+          16.38671875,
+          12.5,
+          67.5
+        ],
+        "selector": "#pdfTinta"
+      },
+      {
+        "numero": 5,
+        "nome": "Finestra sulla riga",
+        "descrizione": "Isola una fascia del testo per aiutarti a seguire la riga.",
+        "box": [
+          71.923828125,
+          16.38671875,
+          12.600911458333334,
+          67.5
+        ],
+        "selector": "#pdfRighelloBtn"
+      },
+      {
+        "numero": 6,
+        "nome": "Leggi ad alta voce",
+        "descrizione": "Avvia la lettura vocale della pagina aperta.",
+        "box": [
+          84.52473958333333,
+          16.38671875,
+          12.600911458333334,
+          67.5
+        ],
+        "selector": "#pdfVoce"
+      }
+    ]
+  },
+  "comandi-fonti-zoom": {
+    "width": 199,
+    "height": 40,
+    "caption": "Fonti: zoom e sottolineature.",
+    "items": [
+      {
+        "numero": 7,
+        "nome": "Riduci",
+        "descrizione": "Rimpicciolisce la pagina a schermo.",
+        "box": [
+          3.066111809045226,
+          16.38671875,
+          15.197079145728642,
+          67.5
+        ],
+        "selector": "#pdfZoomOut"
+      },
+      {
+        "numero": 8,
+        "nome": "Adatta la pagina",
+        "descrizione": "Alterna l’adattamento alla larghezza e alla pagina intera. Non modifica il PDF salvato.",
+        "box": [
+          18.26319095477387,
+          16.38671875,
+          26.252355527638194,
+          67.5
+        ],
+        "selector": "#pdfZoomLvl"
+      },
+      {
+        "numero": 9,
+        "nome": "Ingrandisci",
+        "descrizione": "Ingrandisce i dettagli della pagina.",
+        "box": [
+          44.51554648241206,
+          16.38671875,
+          15.197079145728642,
+          67.5
+        ],
+        "selector": "#pdfZoomIn"
+      },
+      {
+        "numero": 10,
+        "nome": "Mostra o nascondi sottolineature",
+        "descrizione": "Cambia la visibilità delle sottolineature. Le evidenze restano salvate.",
+        "box": [
+          66.64572864321609,
+          16.38671875,
+          15.197079145728642,
+          67.5
+        ],
+        "selector": "#pdfEvid"
+      },
+      {
+        "numero": 11,
+        "nome": "Letture del testo",
+        "descrizione": "Permette di distinguere analisi diverse delle stesse parole nel documento.",
+        "box": [
+          81.84280778894473,
+          16.38671875,
+          15.07537688442211,
+          67.5
+        ],
+        "selector": "#pdfStrati"
+      }
+    ]
+  },
+  "comandi-fonti-azioni": {
+    "width": 148,
+    "height": 40,
+    "caption": "Fonti: ritagli, ricerca, OCR e annotazioni.",
+    "items": [
+      {
+        "numero": 12,
+        "nome": "Ritaglia",
+        "descrizione": "Trascina un rettangolo attorno a una figura del PDF. Il ritaglio viene conservato nell’Album.",
+        "box": [
+          4.639991554054054,
+          16.38671875,
+          20.433910472972975,
+          67.5
+        ],
+        "selector": "#pdfRitaglia"
+      },
+      {
+        "numero": 13,
+        "nome": "Cerca nel documento",
+        "descrizione": "Cerca una parola all’interno del PDF aperto.",
+        "box": [
+          25.073902027027028,
+          16.38671875,
+          20.433910472972975,
+          67.5
+        ],
+        "selector": "#pdfFindBtn"
+      },
+      {
+        "numero": 14,
+        "nome": "Riconosci il testo (OCR)",
+        "descrizione": "Riconosce le parole di un PDF fotografato. Dopo il completamento puoi selezionarle e cercarle; il comando si attiva quando serve il riconoscimento.",
+        "box": [
+          45.5078125,
+          16.38671875,
+          20.433910472972975,
+          67.5
+        ],
+        "selector": "#pdfOcr"
+      },
+      {
+        "numero": 15,
+        "nome": "Annota",
+        "descrizione": "Apre gli strumenti per disegnare segni, forme e note sopra la pagina del PDF.",
+        "box": [
+          75.2639358108108,
+          16.38671875,
+          20.433910472972975,
+          67.5
+        ],
+        "selector": "#pdfPane [title^='Annota']"
+      }
+    ]
+  },
+  "comandi-fonti-file": {
+    "width": 103,
+    "height": 40,
+    "caption": "Fonti: nome, eliminazione e chiusura del documento.",
+    "items": [
+      {
+        "numero": 16,
+        "nome": "Rinomina PDF",
+        "descrizione": "Cambia il titolo mantenendo il numero usato dai rimandi alla fonte.",
+        "box": [
+          5.954186893203883,
+          16.62109375,
+          29.361347087378643,
+          67.5
+        ],
+        "selector": "#pdfRinomina"
+      },
+      {
+        "numero": 17,
+        "nome": "Elimina PDF",
+        "descrizione": "Avvia la rimozione del PDF dallo zaino, con conferma. I rimandi a quella fonte potrebbero non aprirsi più.",
+        "box": [
+          35.31553398058252,
+          16.62109375,
+          29.361347087378643,
+          67.5
+        ],
+        "selector": "#pdfElimina"
+      },
+      {
+        "numero": 18,
+        "nome": "Chiudi documento",
+        "descrizione": "Chiude la vista del PDF e lascia aperto lo split. Il file rimane nello zaino.",
+        "box": [
+          64.67688106796116,
+          16.62109375,
+          29.361347087378643,
+          67.5
+        ],
+        "selector": "#pdfClose"
+      }
+    ]
+  },
+  "comandi-lim-file": {
+    "width": 112,
+    "height": 40,
+    "caption": "LIM: crea, salva ed elimina una lavagnata.",
+    "items": [
+      {
+        "numero": 1,
+        "nome": "Nuova lavagnata",
+        "descrizione": "Prepara un foglio vuoto su cui scrivere e disegnare.",
+        "box": [
+          6.124441964285714,
+          17.3828125,
+          27.001953125,
+          67.5
+        ],
+        "selector": "#limPane [title='Nuova lavagnata']"
+      },
+      {
+        "numero": 2,
+        "nome": "Salva lavagnata",
+        "descrizione": "Conserva il foglio nello zaino. Dopo il primo salvataggio, le modifiche vengono salvate automaticamente.",
+        "box": [
+          36.697823660714285,
+          17.3828125,
+          27.001953125,
+          67.5
+        ],
+        "selector": "#limPane [title='Salva lavagnata']"
+      },
+      {
+        "numero": 3,
+        "nome": "Elimina lavagnata",
+        "descrizione": "Sposta la lavagnata nel Cestino del sistema dopo la conferma.",
+        "box": [
+          67.27120535714286,
+          17.3828125,
+          27.001953125,
+          67.5
+        ],
+        "selector": "#limPane [title='Elimina lavagnata']"
+      }
+    ]
+  },
+  "comandi-lim-forme": {
+    "width": 169,
+    "height": 49,
+    "caption": "LIM: selezione e forme.",
+    "items": [
+      {
+        "numero": 4,
+        "nome": "Selezione",
+        "descrizione": "Seleziona un oggetto già presente per spostarlo, ridimensionarlo o cambiarne l’aspetto.",
+        "box": [
+          3.804548816568047,
+          14.07844387755102,
+          21.301775147928996,
+          73.46938775510205
+        ],
+        "selector": "#limPane label:has([data-testid='toolbar-selection'])"
+      },
+      {
+        "numero": 5,
+        "nome": "Rettangolo",
+        "descrizione": "Trascina sul foglio per disegnare un rettangolo.",
+        "box": [
+          27.473187869822485,
+          14.07844387755102,
+          21.301775147928996,
+          73.46938775510205
+        ],
+        "selector": "#limPane label:has([data-testid='toolbar-rectangle'])"
+      },
+      {
+        "numero": 6,
+        "nome": "Rombo",
+        "descrizione": "Trascina sul foglio per disegnare un rombo.",
+        "box": [
+          51.14182692307693,
+          14.07844387755102,
+          21.301775147928996,
+          73.46938775510205
+        ],
+        "selector": "#limPane label:has([data-testid='toolbar-diamond'])"
+      },
+      {
+        "numero": 7,
+        "nome": "Ellisse",
+        "descrizione": "Trascina sul foglio per disegnare un ovale o un cerchio.",
+        "box": [
+          74.81046597633136,
+          14.07844387755102,
+          21.301775147928996,
+          73.46938775510205
+        ],
+        "selector": "#limPane label:has([data-testid='toolbar-ellipse'])"
+      }
+    ]
+  },
+  "comandi-lim-scrivi": {
+    "width": 209,
+    "height": 49,
+    "caption": "LIM: frecce, disegno e testo.",
+    "items": [
+      {
+        "numero": 8,
+        "nome": "Freccia",
+        "descrizione": "Collega visivamente due elementi oppure indica un dettaglio.",
+        "box": [
+          3.0764055023923444,
+          14.07844387755102,
+          17.22488038277512,
+          73.46938775510205
+        ],
+        "selector": "#limPane label:has([data-testid='toolbar-arrow'])"
+      },
+      {
+        "numero": 9,
+        "nome": "Linea",
+        "descrizione": "Disegna un segmento senza punta di freccia.",
+        "box": [
+          22.21516148325359,
+          14.07844387755102,
+          17.22488038277512,
+          73.46938775510205
+        ],
+        "selector": "#limPane label:has([data-testid='toolbar-line'])"
+      },
+      {
+        "numero": 10,
+        "nome": "Disegno a mano libera",
+        "descrizione": "Scrive o disegna seguendo il movimento del mouse o della penna.",
+        "box": [
+          41.35391746411483,
+          14.07844387755102,
+          17.22488038277512,
+          73.46938775510205
+        ],
+        "selector": "#limPane label:has([data-testid='toolbar-freedraw'])"
+      },
+      {
+        "numero": 11,
+        "nome": "Testo",
+        "descrizione": "Fai clic sul foglio e scrivi una parola o una spiegazione con la tastiera.",
+        "box": [
+          60.49267344497608,
+          14.07844387755102,
+          17.22488038277512,
+          73.46938775510205
+        ],
+        "selector": "#limPane label:has([data-testid='toolbar-text'])"
+      },
+      {
+        "numero": 12,
+        "nome": "Gomma",
+        "descrizione": "Cancella gli oggetti su cui trascini il puntatore.",
+        "box": [
+          79.63142942583733,
+          14.07844387755102,
+          17.22488038277512,
+          73.46938775510205
+        ],
+        "selector": "#limPane label:has([data-testid='toolbar-eraser'])"
+      }
+    ]
+  },
+  "comandi-lim-menu": {
+    "width": 49,
+    "height": 49,
+    "caption": "LIM: opzioni del foglio.",
+    "items": [
+      {
+        "numero": 13,
+        "nome": "Menu del foglio",
+        "descrizione": "Apre le opzioni della lavagna, fra cui il colore dello sfondo; puoi scegliere anche un fondo nero.",
+        "box": [
+          13.998724489795919,
+          14.07844387755102,
+          73.46938775510205,
+          73.46938775510205
+        ],
+        "selector": "#limPane .main-menu-trigger"
+      }
+    ]
+  },
+  "comandi-mappe-file": {
+    "width": 191,
+    "height": 40,
+    "caption": "Mappe: creazione e gestione del documento.",
+    "items": [
+      {
+        "numero": 1,
+        "nome": "Nuova mappa",
+        "descrizione": "Crea una mappa vuota. Questo pulsante crea il documento, non un nodo nella mappa aperta.",
+        "box": [
+          3.194535340314136,
+          16.38671875,
+          15.833606020942408,
+          67.5
+        ],
+        "selector": "#mNuova"
+      },
+      {
+        "numero": 2,
+        "nome": "Rinomina mappa",
+        "descrizione": "Cambia il nome della mappa aperta.",
+        "box": [
+          26.25163612565445,
+          16.38671875,
+          15.833606020942408,
+          67.5
+        ],
+        "selector": "#mRinomina"
+      },
+      {
+        "numero": 3,
+        "nome": "Elimina mappa",
+        "descrizione": "Avvia l’eliminazione della mappa e chiede conferma.",
+        "box": [
+          42.085242146596855,
+          16.38671875,
+          15.833606020942408,
+          67.5
+        ],
+        "selector": "#mCestino"
+      },
+      {
+        "numero": 4,
+        "nome": "Annulla",
+        "descrizione": "Ripristina lo stato prima dell’ultima modifica.",
+        "box": [
+          65.14234293193716,
+          16.38671875,
+          15.833606020942408,
+          67.5
+        ],
+        "selector": "#mAnnulla"
+      },
+      {
+        "numero": 5,
+        "nome": "Ripeti",
+        "descrizione": "Riapplica una modifica che avevi annullato.",
+        "box": [
+          80.97594895287958,
+          16.38671875,
+          15.833606020942408,
+          67.5
+        ],
+        "selector": "#mRipeti"
+      }
+    ]
+  },
+  "comandi-mappe-vista": {
+    "width": 73,
+    "height": 40,
+    "caption": "Mappe: orientamento, aspetto e condivisione.",
+    "items": [
+      {
+        "numero": 6,
+        "nome": "Orientamento verticale",
+        "descrizione": "Dispone i rami dall’alto verso il basso.",
+        "box": [
+          8.904109589041095,
+          16.38671875,
+          41.42765410958904,
+          67.5
+        ],
+        "selector": "button[title='Dall’alto verso il basso']"
+      },
+      {
+        "numero": 7,
+        "nome": "Orientamento orizzontale",
+        "descrizione": "Dispone i rami da sinistra verso destra.",
+        "box": [
+          50.33176369863014,
+          16.38671875,
+          41.42765410958904,
+          67.5
+        ],
+        "selector": "button[title='Da sinistra verso destra']"
+      }
+    ]
+  },
+  "comandi-album-tipi": {
+    "width": 269,
+    "height": 40,
+    "caption": "Album: scegli quali materiali vedere.",
+    "items": [
+      {
+        "numero": 1,
+        "nome": "Ritagli",
+        "descrizione": "Mostra le immagini ritagliate dalle pagine delle fonti.",
+        "box": [
+          2.2304832713754648,
+          16.38671875,
+          22.087012081784387,
+          67.5
+        ],
+        "selector": "[data-album-tab='ritagli']"
+      },
+      {
+        "numero": 2,
+        "nome": "Immagini",
+        "descrizione": "Mostra le immagini conservate nell’Album.",
+        "box": [
+          27.66322026022305,
+          16.38671875,
+          26.748373605947958,
+          67.5
+        ],
+        "selector": "[data-album-tab='immagini']"
+      },
+      {
+        "numero": 3,
+        "nome": "Video",
+        "descrizione": "Mostra i materiali video disponibili.",
+        "box": [
+          57.7573187732342,
+          16.38671875,
+          18.05878252788104,
+          67.5
+        ],
+        "selector": "[data-album-tab='video']"
+      },
+      {
+        "numero": 4,
+        "nome": "Audio",
+        "descrizione": "Mostra i materiali audio disponibili.",
+        "box": [
+          79.16182620817844,
+          16.38671875,
+          18.270794609665426,
+          67.5
+        ],
+        "selector": "[data-album-tab='audio']"
+      }
+    ]
+  },
+  "comandi-album-ricerca": {
+    "width": 112,
+    "height": 40,
+    "caption": "Album: trova e ordina i materiali.",
+    "items": [
+      {
+        "numero": 5,
+        "nome": "Cerca nell’Album",
+        "descrizione": "Cerca un materiale in tutte le categorie dell’Album.",
+        "box": [
+          6.187220982142857,
+          16.38671875,
+          26.785714285714285,
+          67.5
+        ],
+        "selector": "#albumCerca"
+      },
+      {
+        "numero": 6,
+        "nome": "Ordine alfabetico",
+        "descrizione": "Inverte l’ordine dei nomi, da A–Z a Z–A e viceversa.",
+        "box": [
+          32.972935267857146,
+          16.38671875,
+          34.75864955357143,
+          67.5
+        ],
+        "selector": "#albumOrdina"
+      },
+      {
+        "numero": 7,
+        "nome": "Criterio di ordinamento",
+        "descrizione": "Apre la scelta del criterio con cui disporre i materiali.",
+        "box": [
+          67.73158482142857,
+          16.38671875,
+          26.785714285714285,
+          67.5
+        ],
+        "selector": "#albumOrdine"
+      }
+    ]
+  },
+  "comandi-parole-filtri": {
+    "width": 191,
+    "height": 40,
+    "caption": "Parole chiave: filtra le evidenze secondo la loro origine.",
+    "items": [
+      {
+        "numero": 8,
+        "nome": "Tutte",
+        "descrizione": "Mostra insieme le parole chiave delle Fonti e degli Appunti.",
+        "box": [
+          3.5912958115183247,
+          16.38671875,
+          25.527650523560208,
+          67.5
+        ],
+        "selector": "[data-kw-origine='tutte']"
+      },
+      {
+        "numero": 9,
+        "nome": "Fonti",
+        "descrizione": "Mostra soltanto le parole chiave ricavate dalle fonti.",
+        "box": [
+          33.83098821989529,
+          16.38671875,
+          25.192244764397902,
+          67.5
+        ],
+        "selector": "[data-kw-origine='fonti']"
+      },
+      {
+        "numero": 10,
+        "nome": "Appunti",
+        "descrizione": "Mostra soltanto le parole chiave ricavate dagli appunti.",
+        "box": [
+          63.73527486910995,
+          16.38671875,
+          33.12336387434555,
+          67.5
+        ],
+        "selector": "[data-kw-origine='appunti']"
+      }
+    ]
+  },
+  "comandi-presenta-documento": {
+    "width": 324,
+    "height": 40,
+    "caption": "PRESENTA: documento, modifiche e contenuti.",
+    "items": [
+      {
+        "numero": 1,
+        "nome": "Documento",
+        "descrizione": "Apre i comandi per creare, rinominare, salvare, esportare o eliminare la presentazione.",
+        "box": [
+          1.8518518518518516,
+          16.38671875,
+          28.607253086419753,
+          67.5
+        ],
+        "selector": ".blocco[data-blocco='A'] button[title='Documento']"
+      },
+      {
+        "numero": 2,
+        "nome": "Annulla",
+        "descrizione": "Annulla l’ultima modifica alla presentazione.",
+        "box": [
+          34.717399691358025,
+          16.38671875,
+          9.334008487654321,
+          67.5
+        ],
+        "selector": "[data-presenta-action='annulla']"
+      },
+      {
+        "numero": 3,
+        "nome": "Ripeti",
+        "descrizione": "Riapplica una modifica annullata.",
+        "box": [
+          44.05140817901235,
+          16.38671875,
+          9.334008487654321,
+          67.5
+        ],
+        "selector": "[data-presenta-action='ripeti']"
+      },
+      {
+        "numero": 4,
+        "nome": "Inserisci",
+        "descrizione": "Apre l’elenco degli elementi da aggiungere: testo, immagini, media, navbar, numeri di pagina e altri oggetti.",
+        "box": [
+          57.64371141975309,
+          16.38671875,
+          30.982349537037035,
+          67.5
+        ],
+        "selector": ".blocco[data-blocco='A'] button[title='Inserisci']"
+      },
+      {
+        "numero": 5,
+        "nome": "Collegamento a una fonte",
+        "descrizione": "Aggiunge alla slide un riferimento a un materiale dello zaino.",
+        "box": [
+          88.62606095679013,
+          16.38671875,
+          9.334008487654321,
+          67.5
+        ],
+        "selector": "[data-presenta-action='fonte']"
+      }
+    ]
+  },
+  "comandi-presenta-proietta": {
+    "width": 237,
+    "height": 40,
+    "caption": "PRESENTA: mostra le slide e prepara le note del relatore.",
+    "items": [
+      {
+        "numero": 6,
+        "nome": "Presenta",
+        "descrizione": "Avvia la presentazione. I clic fanno avanzare le animazioni e poi le slide.",
+        "box": [
+          2.755801687763713,
+          16.38671875,
+          41.64029535864979,
+          67.5
+        ],
+        "selector": "button[title='Presenta']"
+      },
+      {
+        "numero": 7,
+        "nome": "Apri GOBBO",
+        "descrizione": "Apre note, tempo e comandi del relatore. Le note private non compaiono nelle slide mostrate al pubblico.",
+        "box": [
+          44.3960970464135,
+          16.38671875,
+          40.2525052742616,
+          67.5
+        ],
+        "selector": "[data-presenta-action='gobbo']"
+      },
+      {
+        "numero": 8,
+        "nome": "Appunti privati",
+        "descrizione": "Apre le note della slide per preparare ciò che vuoi dire durante la presentazione.",
+        "box": [
+          84.64860232067511,
+          16.38671875,
+          12.760416666666666,
+          67.5
+        ],
+        "selector": "button[title='Appunti privati']"
+      }
+    ]
+  },
+  "comandi-presenta-aspetto": {
+    "width": 317,
+    "height": 40,
+    "caption": "PRESENTA: schede per sfondo e aspetto della slide.",
+    "items": [
+      {
+        "numero": 9,
+        "nome": "Sfondo",
+        "descrizione": "Sceglie il colore, la carta o il contenuto multimediale dello sfondo della slide.",
+        "box": [
+          1.8927444794952681,
+          15.351562499999998,
+          21.36484621451104,
+          67.5
+        ],
+        "selector": "button[data-oggetto-id='']"
+      },
+      {
+        "numero": 10,
+        "nome": "Disposizione",
+        "descrizione": "Apre le opzioni che regolano la disposizione degli elementi nella slide.",
+        "box": [
+          23.257590694006307,
+          15.351562499999998,
+          34.20248422712934,
+          67.5
+        ],
+        "selector": "button[data-oggetto-id='@disposizione']"
+      },
+      {
+        "numero": 11,
+        "nome": "Stile",
+        "descrizione": "Sceglie un aspetto coordinato per caratteri, titoli e contenuti della presentazione.",
+        "box": [
+          57.46007492113565,
+          15.351562499999998,
+          16.694597791798106,
+          67.5
+        ],
+        "selector": "button[data-oggetto-id='@stile']"
+      },
+      {
+        "numero": 12,
+        "nome": "Righelli",
+        "descrizione": "Apre i controlli dei righelli per posizionare con precisione gli elementi.",
+        "box": [
+          74.15467271293376,
+          15.351562499999998,
+          23.71352523659306,
+          67.5
+        ],
+        "selector": "button[data-oggetto-id='@righelli']"
+      }
+    ]
+  },
+  "comandi-presenta-animazioni": {
+    "width": 344,
+    "height": 40,
+    "caption": "PRESENTA: prova gli effetti dell’oggetto selezionato.",
+    "items": [
+      {
+        "numero": 13,
+        "nome": "Scegli un’animazione",
+        "descrizione": "Apre la galleria degli effetti per l’oggetto selezionato. Scegli l’effetto e conferma per applicarlo.",
+        "box": [
+          1.744186046511628,
+          15.156249999999998,
+          54.14698401162791,
+          67.5
+        ],
+        "selector": "button[title='Scegli un’animazione']"
+      },
+      {
+        "numero": 14,
+        "nome": "Prova la slide",
+        "descrizione": "Riproduce la slide per controllare gli effetti prima della presentazione.",
+        "box": [
+          58.21675145348837,
+          15.156249999999998,
+          39.97093023255814,
+          67.5
+        ],
+        "selector": "button[title='Prova la slide']"
+      }
+    ]
+  },
+  "comandi-laser-apri": {
+    "width": 46,
+    "height": 34,
+    "caption": "L’ingranaggio accanto ad Area proiettata apre le opzioni del puntatore.",
+    "items": [
+      {
+        "numero": 1,
+        "nome": "Opzioni del puntatore",
+        "descrizione": "Durante la proiezione, premi questo ingranaggio nel banco principale per scegliere forma, colore e durata dei segni.",
+        "box": [
+          14.521059782608695,
+          17.647058823529413,
+          71.73913043478261,
+          64.70588235294117
+        ],
+        "selector": ".proiezione-laser-setting"
+      }
+    ]
+  },
+  "comandi-laser-forme": {
+    "width": 249,
+    "height": 52,
+    "caption": "Puntatore: traccia libera, rettangolo, cerchio e Spot.",
+    "items": [
+      {
+        "numero": 2,
+        "nome": "Laser",
+        "descrizione": "Tieni premuto il tasto destro e trascina nell’area proiettata per indicare un dettaglio con una traccia libera.",
+        "box": [
+          2.4096385542168677,
+          11.538461538461538,
+          16.06425702811245,
+          76.92307692307693
+        ],
+        "selector": "[data-laser-forma='laser']"
+      },
+      {
+        "numero": 3,
+        "nome": "Box",
+        "descrizione": "Tieni premuto il tasto destro e trascina fra due angoli opposti per delimitare una zona rettangolare.",
+        "box": [
+          20.080321285140563,
+          11.538461538461538,
+          16.06425702811245,
+          76.92307692307693
+        ],
+        "selector": "[data-laser-forma='box']"
+      },
+      {
+        "numero": 4,
+        "nome": "Cerchio",
+        "descrizione": "Tieni premuto il tasto destro e trascina dal centro verso il bordo per delimitare una zona circolare.",
+        "box": [
+          37.75100401606426,
+          11.538461538461538,
+          16.06425702811245,
+          76.92307692307693
+        ],
+        "selector": "[data-laser-forma='cerchio']"
+      },
+      {
+        "numero": 5,
+        "nome": "Spot",
+        "descrizione": "Lascia nitida la zona indicata e scurisce e sfoca l’esterno. Con Laser, chiude automaticamente il contorno disegnato.",
+        "box": [
+          62.56902610441767,
+          11.538461538461538,
+          34.732680722891565,
+          76.92307692307693
+        ],
+        "selector": "[data-laser-spot]"
+      }
+    ]
+  },
+  "comandi-laser-colore": {
+    "width": 298,
+    "height": 52,
+    "caption": "Puntatore: colore del contorno.",
+    "items": [
+      {
+        "numero": 6,
+        "nome": "Blu",
+        "descrizione": "Usa il blu per il contorno del puntatore.",
+        "box": [
+          2.013422818791946,
+          11.538461538461538,
+          31.09532298657718,
+          76.92307692307693
+        ],
+        "selector": "[data-laser-colore='blu']"
+      },
+      {
+        "numero": 7,
+        "nome": "Rosso",
+        "descrizione": "Usa il rosso per il contorno del puntatore.",
+        "box": [
+          34.451027684563755,
+          11.538461538461538,
+          31.09532298657718,
+          76.92307692307693
+        ],
+        "selector": "[data-laser-colore='rosso']"
+      },
+      {
+        "numero": 8,
+        "nome": "Verde",
+        "descrizione": "Usa il verde per il contorno del puntatore.",
+        "box": [
+          66.88863255033557,
+          11.538461538461538,
+          31.09532298657718,
+          76.92307692307693
+        ],
+        "selector": "[data-laser-colore='verde']"
+      }
+    ]
+  },
+  "comandi-laser-durata": {
+    "width": 298,
+    "height": 76,
+    "caption": "Puntatore: spessore del bordo e permanenza del segno.",
+    "items": [
+      {
+        "numero": 9,
+        "nome": "Bordo (px)",
+        "descrizione": "Regola lo spessore da 0 a 12 pixel. Con 0 nascondi il contorno; puoi mantenere lo Spot.",
+        "box": [
+          2.013422818791946,
+          7.894736842105263,
+          28.187919463087248,
+          83.67598684210526
+        ],
+        "selector": ".laser-campi label:has([data-laser-spessore])"
+      },
+      {
+        "numero": 10,
+        "nome": "Dissolvenza (s)",
+        "descrizione": "Regola da 0 a 2 secondi quanto impiega il segno a scomparire dopo il rilascio del tasto destro. Con 0 il segno resta fino al nuovo clic destro; Esc lo cancella.",
+        "box": [
+          34.22818791946309,
+          7.894736842105263,
+          63.758389261744966,
+          83.67598684210526
+        ],
+        "selector": ".laser-campi label:has([data-laser-durata])"
+      }
+    ]
+  },
+  "comandi-mappe-orienta": {
+    "width": 163,
+    "height": 40,
+    "caption": "Mappe: orientamento, aspetto e condivisione.",
+    "items": [
+      {
+        "numero": 8,
+        "nome": "Aspetto e disposizione",
+        "descrizione": "Apre le preferenze di stile, colori, caratteri, sfondo e disposizione dei nodi.",
+        "box": [
+          3.700153374233129,
+          16.38671875,
+          18.404907975460123,
+          67.5
+        ],
+        "selector": "#mVista"
+      },
+      {
+        "numero": 9,
+        "nome": "Stampa mappa",
+        "descrizione": "Apre i comandi di stampa della mappa.",
+        "box": [
+          22.10506134969325,
+          16.38671875,
+          18.55348926380368,
+          67.5
+        ],
+        "selector": "#mStampa"
+      },
+      {
+        "numero": 10,
+        "nome": "Esporta PDF",
+        "descrizione": "Salva una copia PDF della mappa per condividerla o stamparla.",
+        "box": [
+          40.65855061349693,
+          16.38671875,
+          18.55348926380368,
+          67.5
+        ],
+        "selector": "#mPdf"
+      },
+      {
+        "numero": 11,
+        "nome": "Adatta alla finestra",
+        "descrizione": "Regola lo zoom per far rientrare la mappa nello spazio disponibile.",
+        "box": [
+          59.21203987730061,
+          16.38671875,
+          18.55348926380368,
+          67.5
+        ],
+        "selector": "#mAdatta"
+      },
+      {
+        "numero": 12,
+        "nome": "Chiudi mappa",
+        "descrizione": "Chiude la mappa nello split; il documento rimane nello zaino.",
+        "box": [
+          77.7655291411043,
+          16.38671875,
+          18.55348926380368,
+          67.5
+        ],
+        "selector": "#mChiudi"
+      }
+    ]
+  },
+  "comandi-parole-ordine": {
+    "width": 96,
+    "height": 40,
+    "caption": "Parole chiave: filtra le evidenze secondo la loro origine.",
+    "items": [
+      {
+        "numero": 11,
+        "nome": "Ordine alfabetico",
+        "descrizione": "Ordina le parole chiave per nome; premi di nuovo per invertire l’ordine.",
+        "box": [
+          6.34765625,
+          16.62109375,
+          35.18880208333333,
+          67.5
+        ],
+        "selector": "#kwOrdine"
+      },
+      {
+        "numero": 12,
+        "nome": "Ordine per data",
+        "descrizione": "Ordina le parole chiave dalla più recente o dalla meno recente.",
+        "box": [
+          48.20149739583333,
+          16.62109375,
+          44.677734375,
+          67.5
+        ],
+        "selector": "#kwData"
+      }
+    ]
+  },
+  "comandi-split-documento": {
+    "width": 201,
+    "height": 40,
+    "caption": "La testata comune: scegli il contenuto e gestisci la vista dello split.",
+    "items": [
+      {
+        "numero": 3,
+        "nome": "Documento aperto",
+        "descrizione": "Sceglie un altro documento dello stesso strumento. Qui apre l’elenco degli appunti.",
+        "box": [
+          2.9967350746268657,
+          17.01171875,
+          93.62173507462687,
+          67.5
+        ],
+        "selector": "#noteSelect"
+      }
+    ]
+  },
+  "comandi-split-vista": {
+    "width": 100,
+    "height": 40,
+    "caption": "La testata comune: scegli il contenuto e gestisci la vista dello split.",
+    "items": [
+      {
+        "numero": 4,
+        "nome": "Schermo intero",
+        "descrizione": "Allarga la vista a tutto lo schermo. Premi Esc per uscire.",
+        "box": [
+          6.601562499999999,
+          17.01171875,
+          27,
+          67.5
+        ],
+        "selector": ".blocco[data-blocco='C'] [title^='Schermo intero']"
+      },
+      {
+        "numero": 5,
+        "nome": "Finestra parallela",
+        "descrizione": "Apre una seconda finestra con il contenuto dello split. Puoi spostarla sullo schermo della classe.",
+        "box": [
+          33.6015625,
+          17.01171875,
+          27,
+          67.5
+        ],
+        "selector": ".blocco[data-blocco='C'] [title='Apri finestra di proiezione']"
+      },
+      {
+        "numero": 6,
+        "nome": "Chiudi split",
+        "descrizione": "Chiude il riquadro. Il documento resta nello zaino e puoi riaprirlo dalla colonna laterale.",
+        "box": [
+          67,
+          17.01171875,
+          27,
+          67.5
+        ],
+        "selector": ".blocco[data-blocco='C'] .bchiudi"
+      }
+    ]
+  }
+}

@@ -202,6 +202,33 @@
       '  ' + S + ' .st-titolo { font-size:' + (f.pt * SCALA.titolo).toFixed(1) + 'pt; font-weight:800;',
       '     margin:0 0 2px; line-height:1.2; }',
       '  ' + S + ' .st-dove { font-size:' + (f.pt * SCALA.dove).toFixed(1) + 'pt; color:' + COL.tenue + '; }',
+      corpo(o,S)
+    ];
+
+    if ((o.tipo || 'testo') === 'mappa') {
+      css.push(
+        /* Il disegno prende quello che resta della pagina, e sta in mezzo.
+           ⚠️ `max-height` in mm, non in `vh`: vedi la nota in testa al file. */
+        '  ' + S + ' .st-corpo { text-align:center; }',
+        '  ' + S + ' svg { width:100%; height:auto; max-width:100%;',
+        '     max-height:' + formato('mappa').disegnoMax + '; }',
+        /* Sul foglio non si stampa MAI l'interfaccia della mappa: le maniglie
+           degli archi e i pallini dei rami sono comandi, e un comando su carta
+           è un disegno che promette un gesto impossibile. */
+        '  ' + S + ' .mporta, ' + S + ' .mtoggle { display:none; }'
+      );
+    }
+
+    css.push('}');
+    return css.join('\n');
+  }
+
+  /* Le medesime regole tipografiche servono all'impaginazione A4 a schermo.
+     Nessuna media query: cambiare banco non cambia la misura della carta. */
+  function corpo(o, S) {
+    o=o||{}; S=S||'.note-a4-paper';
+    var f=formato(o.tipo);
+    return [
       '  ' + S + ' .st-corpo { font-size:' + f.pt + 'pt; line-height:' + f.interlinea + '; }',
       /* La scala dei titoli dentro il corpo: derivata dal corpo, non scelta —
          e fino all'h6, perché i titoli degli appunti arrivano spostati (vedi
@@ -283,24 +310,7 @@
       '     padding:.3em .45em; text-align:left; vertical-align:top; }',
       '  ' + S + ' .st-corpo thead { display:table-header-group; }',   // l'intestazione si ripete
       '  ' + S + ' .st-corpo tr { break-inside:avoid; }'
-    ];
-
-    if ((o.tipo || 'testo') === 'mappa') {
-      css.push(
-        /* Il disegno prende quello che resta della pagina, e sta in mezzo.
-           ⚠️ `max-height` in mm, non in `vh`: vedi la nota in testa al file. */
-        '  ' + S + ' .st-corpo { text-align:center; }',
-        '  ' + S + ' svg { width:100%; height:auto; max-width:100%;',
-        '     max-height:' + formato('mappa').disegnoMax + '; }',
-        /* Sul foglio non si stampa MAI l'interfaccia della mappa: le maniglie
-           degli archi e i pallini dei rami sono comandi, e un comando su carta
-           è un disegno che promette un gesto impossibile. */
-        '  ' + S + ' .mporta, ' + S + ' .mtoggle { display:none; }'
-      );
-    }
-
-    css.push('}');
-    return css.join('\n');
+    ].join('\n');
   }
 
   /* ── LA TESTATA ───────────────────────────────────────────────────────────
@@ -334,6 +344,6 @@
 
   return {
     FORMATI: FORMATI, SCALA: SCALA,
-    formato: formato, regole: regole, pie: pie, testata: testata, data: data
+    formato: formato, regole: regole, corpo: corpo, pie: pie, testata: testata, data: data
   };
 }));

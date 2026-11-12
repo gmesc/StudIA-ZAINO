@@ -57,6 +57,16 @@ console.log('Lettura: scala, ancore, ritaglio e confine della finestra verificat
  const layout={x:-30,y:-10,width:400,height:300};
  assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'clone',html:'<p>Righe originali</p>',layout})).ok,true);
  assert.deepEqual(p.messaggi.at(-1)[1].layout,layout);
+ const laser={sessione:first.sessione,fase:'inizio',x:.25,y:.75,rapporto:.6};
+ assert.equal((await win.call('proiezione:laser',laser)).ok,true);
+ assert.deepEqual(p.messaggi.at(-1),['proiezione:laser',{fase:'inizio',x:.25,y:.75,rapporto:.6,impostazioni:require('../App/assets/banco/laser-traccia').impostazioni()}]);
+ const configurato={forma:'box',spot:true,spessore:0,colore:'blu',durata:0};
+ assert.equal((await win.call('proiezione:laser',{...laser,impostazioni:configurato})).ok,true);assert.deepEqual(p.messaggi.at(-1)[1].impostazioni,configurato);
+ for(const impostazioni of [{colore:'url(file:///segreto)'},{forma:'svg'},{spot:1},{spessore:-1},{spessore:Infinity},{durata:3},{durata:NaN},{css:'body{}'}])assert.equal((await win.call('proiezione:laser',{...laser,impostazioni})).ok,false);
+ for(const o of [{...laser,x:2},{...laser,y:NaN},{...laser,rapporto:Infinity},{...laser,fase:'esegui'}])assert.equal((await win.call('proiezione:laser',o)).ok,false,'coordinate e azioni arbitrarie rifiutate');
+ assert.equal((await win.call('proiezione:laser',laser,{sender:{},senderFrame:win.webContents.mainFrame})).ok,false,'solo la finestra principale trasmette il laser');
+ assert.equal((await win.call('proiezione:laser',{...laser,sessione:'vecchia'})).chiusa,true,'un vecchio gesto non entra in una nuova proiezione');
+ assert.equal((await win.call('proiezione:laser',{sessione:first.sessione,fase:'fine'})).ok,true);
  assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'clone',html:'<p>Righe</p>',layout:{...layout,width:NaN}})).ok,false);
  assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'pdf',immagine:'file:///segreto'})).ok,false);
  assert.equal((await win.call('proiezione:aggiorna',{sessione:first.sessione,tipo:'pdf',immagine:'data:image/png;base64,cHJvdmE='})).ok,true);

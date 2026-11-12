@@ -1,0 +1,541 @@
+{
+  "versione": 1,
+  "presetProtetti": true,
+  "stili": [
+    {
+      "id": "mappa-squig-internet-blue",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "mappa",
+        "nome": "Squig · Blu Internet",
+        "stile": {
+          "tratto": "squig",
+          "font": "patrick-hand",
+          "fusione": "normal",
+          "sfondo": "punti",
+          "carta": "#FBFAF5",
+          "segno": "#E6E1D3",
+          "passo": 24,
+          "nodo": "#FFFFFF",
+          "testo": "#2438FF",
+          "bordo": "#2438FF",
+          "legame": "#2438FF",
+          "raggio": 3,
+          "spessore": 1.4,
+          "fsNodo": 16,
+          "fsRel": 13,
+          "linee": "curva"
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "slide-squig-internet-blue",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "slide",
+        "nome": "Squig · Blu Internet",
+        "stile": {
+          "font": "patrick-hand",
+          "sfondo": "#FBFAF5",
+          "colore": "#2438FF",
+          "accento": "#2438FF",
+          "titolo": 54,
+          "testo": 32
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "navbar-squig-internet-blue",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "navbar",
+        "nome": "Squig · Blu Internet",
+        "stile": {
+          "variant": "tabs",
+          "orientation": "horizontal",
+          "activeZoom": 1,
+          "fontFamily": "patrick-hand",
+          "fontSize": 22,
+          "color": "#2438FF",
+          "grafica": {
+            "tratto": "squig",
+            "gap": 12,
+            "border": {
+              "color": "#2438FF",
+              "width": 1.4,
+              "opacity": 1
+            },
+            "background": {
+              "color": "#FFFFFF",
+              "opacity": 1
+            },
+            "activeBackground": {
+              "color": "#D3D7FF",
+              "opacity": 1
+            },
+            "activeTextColor": "#2438FF",
+            "activeGraphicColor": "#2438FF"
+          }
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "mappa-squig-riso-red",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "mappa",
+        "nome": "Squig · Rosso riso",
+        "stile": {
+          "tratto": "squig",
+          "font": "patrick-hand",
+          "fusione": "normal",
+          "sfondo": "punti",
+          "carta": "#FCFAF7",
+          "segno": "#E8E0D3",
+          "passo": 24,
+          "nodo": "#FFFFFF",
+          "testo": "#E0342B",
+          "bordo": "#E0342B",
+          "legame": "#E0342B",
+          "raggio": 3,
+          "spessore": 1.4,
+          "fsNodo": 16,
+          "fsRel": 13,
+          "linee": "curva"
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "slide-squig-riso-red",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "slide",
+        "nome": "Squig · Rosso riso",
+        "stile": {
+          "font": "patrick-hand",
+          "sfondo": "#FCFAF7",
+          "colore": "#E0342B",
+          "accento": "#E0342B",
+          "titolo": 54,
+          "testo": 32
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "navbar-squig-riso-red",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "navbar",
+        "nome": "Squig · Rosso riso",
+        "stile": {
+          "variant": "tabs",
+          "orientation": "horizontal",
+          "activeZoom": 1,
+          "fontFamily": "patrick-hand",
+          "fontSize": 22,
+          "color": "#E0342B",
+          "grafica": {
+            "tratto": "squig",
+            "gap": 12,
+            "border": {
+              "color": "#E0342B",
+              "width": 1.4,
+              "opacity": 1
+            },
+            "background": {
+              "color": "#FFFFFF",
+              "opacity": 1
+            },
+            "activeBackground": {
+              "color": "#F9D6D5",
+              "opacity": 1
+            },
+            "activeTextColor": "#E0342B",
+            "activeGraphicColor": "#E0342B"
+          }
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "mappa-squig-terminal-green",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "mappa",
+        "nome": "Squig · Verde terminale",
+        "stile": {
+          "tratto": "squig",
+          "font": "patrick-hand",
+          "fusione": "normal",
+          "sfondo": "punti",
+          "carta": "#F8FBF7",
+          "segno": "#D9E4D5",
+          "passo": 24,
+          "nodo": "#FFFFFF",
+          "testo": "#137A3D",
+          "bordo": "#137A3D",
+          "legame": "#137A3D",
+          "raggio": 3,
+          "spessore": 1.4,
+          "fsNodo": 16,
+          "fsRel": 13,
+          "linee": "curva"
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "slide-squig-terminal-green",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "slide",
+        "nome": "Squig · Verde terminale",
+        "stile": {
+          "font": "patrick-hand",
+          "sfondo": "#F8FBF7",
+          "colore": "#137A3D",
+          "accento": "#137A3D",
+          "titolo": 54,
+          "testo": 32
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "navbar-squig-terminal-green",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "navbar",
+        "nome": "Squig · Verde terminale",
+        "stile": {
+          "variant": "tabs",
+          "orientation": "horizontal",
+          "activeZoom": 1,
+          "fontFamily": "patrick-hand",
+          "fontSize": 22,
+          "color": "#137A3D",
+          "grafica": {
+            "tratto": "squig",
+            "gap": 12,
+            "border": {
+              "color": "#137A3D",
+              "width": 1.4,
+              "opacity": 1
+            },
+            "background": {
+              "color": "#FFFFFF",
+              "opacity": 1
+            },
+            "activeBackground": {
+              "color": "#D0E4D8",
+              "opacity": 1
+            },
+            "activeTextColor": "#137A3D",
+            "activeGraphicColor": "#137A3D"
+          }
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "mappa-squig-plum",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "mappa",
+        "nome": "Squig · Prugna",
+        "stile": {
+          "tratto": "squig",
+          "font": "patrick-hand",
+          "fusione": "normal",
+          "sfondo": "punti",
+          "carta": "#FCF9FC",
+          "segno": "#E7DFE9",
+          "passo": 24,
+          "nodo": "#FFFFFF",
+          "testo": "#71268A",
+          "bordo": "#71268A",
+          "legame": "#71268A",
+          "raggio": 3,
+          "spessore": 1.4,
+          "fsNodo": 16,
+          "fsRel": 13,
+          "linee": "curva"
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "slide-squig-plum",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "slide",
+        "nome": "Squig · Prugna",
+        "stile": {
+          "font": "patrick-hand",
+          "sfondo": "#FCF9FC",
+          "colore": "#71268A",
+          "accento": "#71268A",
+          "titolo": 54,
+          "testo": 32
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "navbar-squig-plum",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "navbar",
+        "nome": "Squig · Prugna",
+        "stile": {
+          "variant": "tabs",
+          "orientation": "horizontal",
+          "activeZoom": 1,
+          "fontFamily": "patrick-hand",
+          "fontSize": 22,
+          "color": "#71268A",
+          "grafica": {
+            "tratto": "squig",
+            "gap": 12,
+            "border": {
+              "color": "#71268A",
+              "width": 1.4,
+              "opacity": 1
+            },
+            "background": {
+              "color": "#FFFFFF",
+              "opacity": 1
+            },
+            "activeBackground": {
+              "color": "#E3D4E8",
+              "opacity": 1
+            },
+            "activeTextColor": "#71268A",
+            "activeGraphicColor": "#71268A"
+          }
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "mappa-squig-marigold",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "mappa",
+        "nome": "Squig · Ocra",
+        "stile": {
+          "tratto": "squig",
+          "font": "patrick-hand",
+          "fusione": "normal",
+          "sfondo": "punti",
+          "carta": "#FDFAF2",
+          "segno": "#EAE0C7",
+          "passo": 24,
+          "nodo": "#FFFFFF",
+          "testo": "#B26A0F",
+          "bordo": "#B26A0F",
+          "legame": "#B26A0F",
+          "raggio": 3,
+          "spessore": 1.4,
+          "fsNodo": 16,
+          "fsRel": 13,
+          "linee": "curva"
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "slide-squig-marigold",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "slide",
+        "nome": "Squig · Ocra",
+        "stile": {
+          "font": "patrick-hand",
+          "sfondo": "#FDFAF2",
+          "colore": "#B26A0F",
+          "accento": "#B26A0F",
+          "titolo": 54,
+          "testo": 32
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "navbar-squig-marigold",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "navbar",
+        "nome": "Squig · Ocra",
+        "stile": {
+          "variant": "tabs",
+          "orientation": "horizontal",
+          "activeZoom": 1,
+          "fontFamily": "patrick-hand",
+          "fontSize": 22,
+          "color": "#B26A0F",
+          "grafica": {
+            "tratto": "squig",
+            "gap": 12,
+            "border": {
+              "color": "#B26A0F",
+              "width": 1.4,
+              "opacity": 1
+            },
+            "background": {
+              "color": "#FFFFFF",
+              "opacity": 1
+            },
+            "activeBackground": {
+              "color": "#F0E1CF",
+              "opacity": 1
+            },
+            "activeTextColor": "#B26A0F",
+            "activeGraphicColor": "#B26A0F"
+          }
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "mappa-squig-graphite",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "mappa",
+        "nome": "Squig · Grafite",
+        "stile": {
+          "tratto": "squig",
+          "font": "patrick-hand",
+          "fusione": "normal",
+          "sfondo": "punti",
+          "carta": "#FCFCFA",
+          "segno": "#E2DDD3",
+          "passo": 24,
+          "nodo": "#FFFFFF",
+          "testo": "#2D2A26",
+          "bordo": "#2D2A26",
+          "legame": "#2D2A26",
+          "raggio": 3,
+          "spessore": 1.4,
+          "fsNodo": 16,
+          "fsRel": 13,
+          "linee": "curva"
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "slide-squig-graphite",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "slide",
+        "nome": "Squig · Grafite",
+        "stile": {
+          "font": "patrick-hand",
+          "sfondo": "#FCFCFA",
+          "colore": "#2D2A26",
+          "accento": "#2D2A26",
+          "titolo": 54,
+          "testo": 32
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    },
+    {
+      "id": "navbar-squig-graphite",
+      "pacchetto": {
+        "formato": "zaino-stile",
+        "versione": 1,
+        "tipo": "navbar",
+        "nome": "Squig · Grafite",
+        "stile": {
+          "variant": "tabs",
+          "orientation": "horizontal",
+          "activeZoom": 1,
+          "fontFamily": "patrick-hand",
+          "fontSize": 22,
+          "color": "#2D2A26",
+          "grafica": {
+            "tratto": "squig",
+            "gap": 12,
+            "border": {
+              "color": "#2D2A26",
+              "width": 1.4,
+              "opacity": 1
+            },
+            "background": {
+              "color": "#FFFFFF",
+              "opacity": 1
+            },
+            "activeBackground": {
+              "color": "#D5D4D4",
+              "opacity": 1
+            },
+            "activeTextColor": "#2D2A26",
+            "activeGraphicColor": "#2D2A26"
+          }
+        },
+        "autore": "Pablo Stanley · adattamento ZAINO",
+        "licenza": "MIT"
+      },
+      "nascosto": false
+    }
+  ],
+  "squigPreinstallato": 1
+}

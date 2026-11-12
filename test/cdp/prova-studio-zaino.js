@@ -6,6 +6,13 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
 (async()=>{
  await c.collega();await wait(`typeof zainoAttivo==='function' && zainoAttivo()==='biologia' && !!window.vault.studio`);
  const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
+ const initial=await c.val(`({banco:bancoStato(),tema:document.documentElement.dataset.theme,storage:{...localStorage},zaino:zainoAttivo()})`);
+ // La prova genera appunti, schede, domande, costi e due fonti: ripristina anche se un'asserzione fallisce.
+ const backup=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'studia-studio-fixture-'));
+ const fixtures=['APPUNTI','RIPASSO','Costi','_lavorazione/rag','_fonti-ai.json','MATERIALI/03 Fonte completa.txt','MATERIALI/PDF/04 Pagine bianche.pdf'].map(f=>path.join(vault,'Zaini/biologia',f));
+ fixtures.push(path.join(path.dirname(vault),'dati/config.json'));
+ const presenti=fixtures.map((f,i)=>{if(!fs.existsSync(f))return false;fs.cpSync(f,path.join(backup,String(i)),{recursive:true});return true;});
+ try{
  await c.val(`window.vault.chat.setKey({provider:'openai',value:'chiave-finta-della-prova'})`);await c.val(`window.vault.chat.saveSettings({provider:'openai',model:'modello-locale-di-prova'})`);
  await c.val('location.reload()');await c.pausa(800);await c.collega();await wait(`!!document.getElementById('zstudio')`);
  assert.equal(await c.val(`!!document.querySelector('#studioPane #zragIndexOptions')`),false,'La spiegazione dell’indice vive solo in AI locale');
@@ -96,7 +103,8 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
   await c.val(`document.documentElement.dataset.theme=${JSON.stringify(theme)}`);
   for(const [nav,ids] of [['zstudyNewButton',['zstudyTopic','zstudyStart']],['zstudyBrowse',['zstudySearch','zstudyOrigin']]]){
    await click('#'+nav);
-   const layout=await c.val(`(()=>{const root=getComputedStyle(document.documentElement);return ${JSON.stringify(ids)}.map(id=>{const e=document.getElementById(id),s=getComputedStyle(e);return {id,height:e.getBoundingClientRect().height,expected:parseFloat(root.getPropertyValue(e.tagName==='BUTTON'?'--tb-h':'--ctl-h')),radius:s.borderRadius};});})()`);
+   // I campi mantengono lo standard dei controlli; il testo di lettura ha una scala indipendente.
+   const layout=await c.val(`(()=>{return ${JSON.stringify(ids)}.map(id=>{const e=document.getElementById(id),s=getComputedStyle(e);return {id,height:e.getBoundingClientRect().height,expected:e.tagName==='BUTTON'?parseFloat(s.getPropertyValue('--tb-h')):parseFloat(s.getPropertyValue("--ctl-h")),radius:s.borderRadius};});})()`);
    for(const e of layout){assert(Math.abs(e.height-e.expected)<1.2,JSON.stringify(e));assert.equal(e.radius,'0px');}
    await click('#zstudyBack');
   }
@@ -149,5 +157,16 @@ const set=(id,value)=>c.val(`(()=>{const e=document.getElementById(${JSON.string
  await click('#zschedeCollection [aria-label="Apri Sintesi: Pagine bianche.pdf"]');await wait(`document.getElementById('zschedeResult').textContent.includes('Pagine bianche: 1.')`);
  assert((await c.val(`document.getElementById('zschedeResult').textContent`)).includes('analisi completa'));assert(!(await c.val(`document.getElementById('zschedeResult').textContent`)).includes('analisi parziale'));assert.equal(fs.readFileSync(requests,'utf8'),nessunaAi);
  const shotBlank=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-scheda-pagine-bianche.png',Buffer.from(shotBlank.result.data,'base64'));
- console.log('studio UI: ricerca, stima, scheda, copia, Banco, tentativo, esito, persistenza e cache indipendente OK');process.exit(0);
+ console.log('studio UI: ricerca, stima, scheda, copia, Banco, tentativo, esito, persistenza e cache indipendente OK');
+ }finally{
+  await c.val(`(async()=>{await window.vault.studio.cancel();await window.vault.rag.cancel('index');})()`);
+  await wait(`document.getElementById('zschedeCancel').hidden && document.getElementById('zstudyCancel').hidden`);
+  await c.val(`(async()=>{noteFlush();noteStati().forEach(noteSvuota);await cambiaZaino('storia',true);await window.vault.rag.watch(null);})()`);
+  for(const [i,f] of fixtures.entries()){fs.rmSync(f,{recursive:true,force:true});if(presenti[i]){fs.mkdirSync(path.dirname(f),{recursive:true});fs.cpSync(path.join(backup,String(i)),f,{recursive:true});}}
+  fs.rmSync(backup,{recursive:true,force:true});
+  await c.val(`document.documentElement.dataset.theme=${JSON.stringify(initial.tema)};localStorage.clear();Object.entries(${JSON.stringify(initial.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));cambiaZaino(${JSON.stringify(initial.zaino)},true);BANCO.stato=${JSON.stringify(initial.banco)};bancoSalva();bancoDisegna();location.reload()`);
+  await c.pausa(800);
+  await wait(`!!window.zainoStudio && zainoAttivo()===${JSON.stringify(initial.zaino)} && document.getElementById('zschedePreset')?.options.length===5`);
+ }
+ process.exit(0);
 })().catch(async e=>{console.error(e);try{console.error(await c.val(`({rag:document.getElementById('zragStatus')?.textContent,studio:document.getElementById('zstudyStatus')?.textContent,chat:document.getElementById('zchatStatus')?.textContent})`));}catch(_){}process.exit(1);});

@@ -5,11 +5,14 @@ async function aspetta(expr){const fine=Date.now()+12000;while(Date.now()<fine){
 async function clicca(sel){await c.val(`document.querySelector(${q(sel)}).scrollIntoView({block:'nearest'})`);await c.clicca(sel);}
 async function esc(){await c.invia('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await c.invia('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});}
 (async()=>{
- await c.collega();await c.invia('Emulation.setFocusEmulationEnabled',{enabled:true});await aspetta(`typeof AlbumSpazio==='object' && typeof zainoAttivo==='function' && zainoAttivo()==='biologia'`);await c.partiPulito();
+ await c.collega();await c.invia('Emulation.setFocusEmulationEnabled',{enabled:true});await aspetta(`typeof AlbumSpazio==='object' && typeof zainoAttivo==='function' && !!zainoAttivo()`);await c.partiPulito();
  const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
  const radice=path.join(vault,'Zaini/biologia'),audio=path.join(radice,'MATERIALI/Audio/0097 - Audio catalogo.wav'),video=path.join(radice,'MATERIALI/Video/0098 - Video catalogo.mp4');
- const prima=await c.val(`({banco:JSON.parse(JSON.stringify(bancoStato())),attivo:BANCO.attivo,nota:NOTES.cur?.file||'',preview:!!NOTES.mde?.isPreviewActive(),locale:Object.assign({},localStorage)})`);
- const backup=new Map(['ALBUM','APPUNTI','MATERIALI/_gruppi.json'].map(f=>{const p=path.join(radice,f);return[p,fs.existsSync(p)?fs.statSync(p).isDirectory()?new Map(fs.readdirSync(p).map(n=>[n,fs.readFileSync(path.join(p,n))])):fs.readFileSync(p):null];}));
+ const prima=await c.val(`({zaino:zainoAttivo(),tema:document.documentElement.dataset.theme,banco:JSON.parse(JSON.stringify(bancoStato())),attivo:BANCO.attivo,nota:NOTES.cur?.file||'',preview:!!NOTES.mde?.isPreviewActive(),locale:Object.assign({},localStorage)})`);
+ await c.val(`cambiaZaino('biologia',true)`);await aspetta(`zainoAttivo()==='biologia' && !ZNAV.carico`);
+ assert(await c.val('noteFlush()'),'gli appunti iniziali sono salvati prima del backup');
+ const cartellaBackup=fs.mkdtempSync(path.join(require('os').tmpdir(),'zaino-album-backup-'));
+ const backup=['ALBUM','APPUNTI','MATERIALI/_gruppi.json',path.relative(radice,audio),path.relative(radice,video)].map(f=>{const esiste=fs.existsSync(path.join(radice,f));if(esiste)fs.cpSync(path.join(radice,f),path.join(cartellaBackup,f),{recursive:true});return[f,esiste];});
  try{
   assert.equal(await c.val(`bancoStrumentiOfferti().album.nome`),'Album');
   await c.val(`localStorage.setItem(bancoChiave(),JSON.stringify({forma:'uno',blocchi:{A:'player',B:'album',C:'appunti',D:'foto'}}));bancoRicarica()`);
@@ -68,10 +71,13 @@ async function esc(){await c.invia('Input.dispatchKeyEvent',{type:'keyDown',key:
   await c.val(`document.documentElement.dataset.theme='chiaro'`);
   console.log('✓ ALBUM: quattro raccolte, anteprime, ×/Esc, minutaggio negli appunti, ricerca, ordine e dimensioni');
  }finally{
-  await c.val(`playerChiudi();fotoChiudiVista();closePops();document.getElementById('umCancel').click();noteFlushStato(NOTES);noteSvuota(NOTES);localStorage.clear();Object.entries(${q(prima.locale)}).forEach(([k,v])=>localStorage.setItem(k,v));BANCO.stato=${q(prima.banco)};BANCO.attivo=${q(prima.attivo)};bancoDisegna();`);
-  for(const f of[audio,video])fs.rmSync(f,{force:true});
-  for(const[p,dati]of backup){fs.rmSync(p,{recursive:true,force:true});if(dati instanceof Map){fs.mkdirSync(p,{recursive:true});for(const[n,b]of dati)fs.writeFileSync(path.join(p,n),b);}else if(dati)fs.writeFileSync(p,dati);}
-  await c.val(`notesReload();if(${q(prima.nota)})noteOpen(${q(prima.nota)},NOTES);if(NOTES.mde && NOTES.mde.isPreviewActive()!==${q(prima.preview)})NOTES.mde.togglePreview();zainoNavAggiorna();`);
+  await c.val(`playerChiudi();fotoChiudiVista();closePops();document.getElementById('umCancel').click();if(contenitoreMolla()===false)throw Error('Ripristino Album: documento non salvato');`);
+  for(const[f,esiste]of backup){const p=path.join(radice,f);fs.rmSync(p,{recursive:true,force:true});if(esiste)fs.cpSync(path.join(cartellaBackup,f),p,{recursive:true});}
+  fs.rmSync(cartellaBackup,{recursive:true,force:true});
+  await c.val(`localStorage.clear();Object.entries(${q(prima.locale)}).forEach(([k,v])=>localStorage.setItem(k,v));window.__albumRipristino=true;location.reload()`);
+  await aspetta(`!window.__albumRipristino && typeof zainoAttivo==='function' && zainoAttivo()===${q(prima.zaino)}`);
+  await c.val(`document.documentElement.dataset.theme=${q(prima.tema)};BANCO.stato=${q(prima.banco)};BANCO.attivo=${q(prima.attivo)};bancoDisegna();`);
+  await c.invia('Emulation.setFocusEmulationEnabled',{enabled:false});
  }
  c.ws().close();
 })().catch(e=>{console.error(e);if(c.ws())c.ws().close();process.exitCode=1;});

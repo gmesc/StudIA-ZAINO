@@ -7,7 +7,7 @@ try{
  await wait(`document.fonts.check('14px "Atkinson Hyperlegible"')`);
  A(await c.val(`getComputedStyle(document.getElementById('aspettoFont')).fontFamily.includes('Atkinson')`));A.equal(await c.val(`localStorage.getItem('zaino.aspetto.font')`),'atkinson');A(!await c.val(`getComputedStyle(document.querySelector('#noteHost .CodeMirror')).fontFamily.includes('Atkinson')`));
  fs.writeFileSync('/private/tmp/zaino-aspetto-ui.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));
- await c.val(`document.getElementById('settingsClose').click()`);await c.invia('Page.reload');await wait(`typeof MappaAspettoUI!=='undefined'&&document.documentElement.dataset.fontUi==='atkinson'&&zainoAttivo()==='biologia'`);
+ await c.val(`document.getElementById('settingsClose').click()`);const origine=await c.val('performance.timeOrigin');await c.invia('Page.reload');await wait(`performance.timeOrigin!==${origine}&&typeof MappaAspettoUI!=='undefined'&&document.documentElement.dataset.fontUi==='atkinson'&&zainoAttivo()==='biologia'`);
  file=await c.val(`(async()=>{const r=await mappeApi().salva('biologia',null,{titolo:'Aspetto della mappa',nodi:[{id:'a',testo:'La pianta',origine:'utente'},{id:'b',testo:'Foglie',origine:'utente'},{id:'c',testo:'Radici',origine:'utente'}],archi:[{da:'a',a:'b'},{da:'a',a:'c'}]});bancoForma('uno');bancoAssegna('A','mappa');MAPPA.registro='mie';await mappaApriMia(r.file);return r.file;})()`);
  await wait(`document.querySelectorAll('#mappaSvg .mnodo').length===3`);await c.val(`document.getElementById('mVista').click()`);A.equal(await c.val(`document.querySelector('[data-aspetto="raggio"]').value`),'0');await wait(`Array.from(document.querySelectorAll('.mappa-preset-campione img')).every(i=>i.complete&&i.naturalWidth>0)`);await c.clicca('[data-preset="leggibile"]');
  A.equal(await c.val('MAPPA.vista.aspetto.font'),'atkinson');A.equal(await c.val(`document.querySelector('#mappaSvg .mnodo rect').getAttribute('rx')`),'8');
@@ -44,20 +44,28 @@ try{
  A((await c.val('foglioMappa().html')).includes('carte/chiara.png'));
  fs.writeFileSync(marker,JSON.stringify({filePath:'/private/tmp/zaino-mappa-carta.pdf'}));const pdf=await c.val(`salvaPdf('mappa')`);A.equal(pdf,'/private/tmp/zaino-mappa-carta.pdf');A(fs.statSync(pdf).size>10000);
  // Campionamento raster del profilo SVG: gli angoli esterni sono trasparenti,
- // il centro della fascia mantiene il colore, nei due orientamenti.
+ // il fondo resta visibile dentro il bordo, nei due orientamenti.
  for(const orient of ['td','lr'])for(const raggio of [8,24])for(const immagine of [null,{id:'prova',w:1200,h:800},{id:'prova',w:300,h:1600},{id:'prova',w:1200,h:50}])for(const selezionato of [false,true]){
   const pixel=await c.val(`(async()=>{
    const a={...MAPPA.vista.aspetto,raggio:${raggio}},res=MappaLayouts.run({nodi:[{id:'x',testo:'Nodo',origine:'utente',immagine:${q(immagine)}}],archi:[]},{orient:'${orient}'});
    const foto=document.createElement('canvas');foto.width=100;foto.height=100;foto.getContext('2d').fillStyle='#ffffff';foto.getContext('2d').fillRect(0,0,100,100);
    const out=MappaDisegna.svg(res,{aspetto:a,sfondo:false,srcImmagine:()=>foto.toDataURL(),evidenzia:${selezionato?q('x'):'null'}}),tmp=document.createElementNS('http://www.w3.org/2000/svg','svg');tmp.innerHTML=out.markup;
-   const nodo=tmp.querySelector('.mnodo'),rect=nodo.querySelector('rect'),barra=nodo.querySelector('.mbarra');if(!barra)throw Error('Barra non trovata');
+   const nodo=tmp.querySelector('.mnodo'),rect=nodo.querySelector('rect');if(nodo.querySelector('.mbarra'))throw Error('Barra obsoleta ancora presente');
    const x=+rect.getAttribute('x'),y=+rect.getAttribute('y'),w=+rect.getAttribute('width'),h=+rect.getAttribute('height');
-   const svg='<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="'+w*4+'" height="'+h*4+'" viewBox="'+[x,y,w,h].join(' ')+'">'+(nodo.querySelector('.mcontorno')||rect).outerHTML+barra.outerHTML+(nodo.querySelector('image')?.outerHTML||'')+(nodo.querySelector('.mbordo')?.outerHTML||'')+'</svg>';
+   const svg='<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="'+w*4+'" height="'+h*4+'" viewBox="'+[x,y,w,h].join(' ')+'">'+out.markup+'</svg>';
    const i=new Image();i.src='data:image/svg+xml,'+encodeURIComponent(svg);await i.decode();const c=document.createElement('canvas');c.width=w*4;c.height=h*4;const ctx=c.getContext('2d');ctx.drawImage(i,0,0);
    const p=(x,y)=>Array.from(ctx.getImageData(Math.floor(x*4),Math.floor(y*4),1,1).data);
    const bordo=nodo.querySelector('.mbordo'),colore=bordo?.getAttribute('stroke');
+   // Il tratteggio dell’origine ha vuoti intenzionali. Campiona il centro di un
+   // tratto dipinto sulla verticale accanto alla foto, non una sua interruzione.
+   let yBordo=h/2;const imm=nodo.querySelector('image');
+   if(bordo&&imm){
+    const fine=Math.min(+imm.getAttribute('height'),h-Math.min(${raggio},h/2))-.5;
+    yBordo=Math.max(.5,fine/2);const dash=(bordo.getAttribute('stroke-dasharray')||'').trim().split(/[ ,]+/).map(Number);
+    if(dash[0]>0&&dash[1]>0){const periodo=dash[0]+dash[1],centro=dash[0]/2,primo=Math.ceil((w+.5-centro)/periodo),ultimo=Math.floor((w+fine-centro)/periodo);if(primo>ultimo)throw Error('Nessun tratto verticale dipinto sopra la foto');const n=Math.max(primo,Math.min(ultimo,Math.round((w+yBordo-centro)/periodo)));yBordo=n*periodo+centro-w;}
+   }
    if(${!!immagine}&&${raggio}===24&&!${selezionato})window.__campioneBordo=c.toDataURL();
-   return {bordo:p(w-.5,h/2),colore:colore?.match(/[a-f0-9]{2}/gi)?.map(v=>parseInt(v,16)),angolo:p(.5,.5),altoDestro:p(w-.5,.5),bassoDestro:p(w-.5,h-.5),opposto:${!immagine&&orient==='td'}?p(w-.5,.5):p(.5,h-.5),centro:${!immagine&&orient==='td'}?p(w/2,3):p(3,h/2)};
+   return {bordo:p(w-.5,yBordo),colore:colore?.match(/[a-f0-9]{2}/gi)?.map(v=>parseInt(v,16)),angolo:p(.5,.5),altoDestro:p(w-.5,.5),bassoDestro:p(w-.5,h-.5),opposto:${!immagine&&orient==='td'}?p(w-.5,.5):p(.5,h-.5),centro:${!immagine&&orient==='td'}?p(w/2,3):p(3,h/2)};
   })()`);
   const caso=JSON.stringify({orient,raggio,immagine,selezionato});A.equal(pixel.angolo[3],immagine?255:0,caso);A.equal(pixel.altoDestro[3],immagine?255:0,caso);A.equal(pixel.bassoDestro[3],0,caso);A.equal(pixel.opposto[3],0,caso);A.equal(pixel.centro[3],255,caso);if(immagine)A.deepEqual(pixel.bordo.slice(0,3),pixel.colore,'Cornice sopra la foto: '+caso);
  }

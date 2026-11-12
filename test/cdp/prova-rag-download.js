@@ -14,7 +14,7 @@ async function click(sel){await c.val(`document.querySelector(${JSON.stringify(s
  try{
   assert.equal(await c.val(`!!document.querySelector('#studioPane [data-download]')`),false,'I download sono usciti da Cerca e studia');
   await click('#settingsBtn');await click('.set-tab[data-tab="ai"]');
-  assert.deepEqual(await c.val(`Array.from(document.querySelectorAll('.zchat-ai-section>.set-sec-h')).map(e=>e.textContent)`),['AI cloud','AI locale']);
+  assert.deepEqual(await c.val(`Array.from(document.querySelectorAll('.zchat-ai-section>.set-sec-h')).map(e=>e.textContent)`),['AI cloud','Costi AI per zaino','AI locale']);
   await wait(`document.getElementById('zchatSettingsProvider').options.length===5`);
   assert.deepEqual(await c.val(`Array.from(document.getElementById('zchatSettingsProvider').options).map(o=>o.value).filter(Boolean)`),['google','openai','anthropic','infomaniak']);
   await c.val(`document.getElementById('zchatSettingsProvider').value='infomaniak';document.getElementById('zchatSettingsProvider').dispatchEvent(new Event('change',{bubbles:true}))`);

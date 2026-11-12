@@ -7,17 +7,18 @@
 }
 .bcorpo .zstudio :is(h2,h3) { font-size:1.2em; }
 .bcorpo .zstudio h4 { font-size:1.2em; }
-.bcorpo .zstudio :is(input,textarea) { font-size:var(--lettura-fs); }
-.bcorpo .zstudio :is(input,select) { min-height:2.5em; height:auto; }
+/* Lo zoom di lettura ingrandisce il testo, non la geometria dei filtri. */
+.bcorpo .zstudio textarea { font-size:var(--lettura-fs); }
+.bcorpo .zstudio :is(input:not([type=checkbox],[type=radio],[type=range]),select) { min-height:var(--ctl-h); height:var(--ctl-h); font-size:var(--menu-field-fs,14px); }
 .bcorpo .zstudio :is(summary,label,.zchat-hint,.zstudio-item-type) { font-size:.9em; }
 .bcorpo .zstudio .zchat-citation { font-size:1em; white-space:normal; height:auto; }
-.bcorpo :is(#noteHost,#noteHost2) :is(.CodeMirror,.editor-preview,.mdb-edit) {
+.bcorpo :is(#noteHost,.note-host) :is(.CodeMirror,.editor-preview,.mdb-edit) {
  font-size:var(--lettura-fs); line-height:1.65;
 }
-.bcorpo :is(#noteHost,#noteHost2) .CodeMirror-lines { max-width:68ch; margin-inline:auto; padding-inline:16px; }
-.bcorpo :is(#noteHost,#noteHost2) .editor-preview { padding:16px max(16px,calc((100% - 68ch)/2)); overflow-wrap:anywhere; }
-.bcorpo :is(#noteHost,#noteHost2) :is(.editor-preview,.CodeMirror) { --tit-1:2em; --tit-2:1.7em; --tit-3:1.4em; --tit-4:1.2em; --tit-5:1.1em; --tit-6:1em; }
-.bcorpo :is(#noteHost,#noteHost2) .editor-preview :is(img,svg,video) { max-width:100%; }
+.bcorpo :is(#noteHost,.note-host) .CodeMirror-lines { max-width:68ch; margin-inline:auto; padding-inline:16px; }
+.bcorpo :is(#noteHost,.note-host) .editor-preview { padding:16px max(16px,calc((100% - 68ch)/2)); overflow-wrap:anywhere; }
+.bcorpo :is(#noteHost,.note-host) :is(.editor-preview,.CodeMirror) { --tit-1:2em; --tit-2:1.7em; --tit-3:1.4em; --tit-4:1.2em; --tit-5:1.1em; --tit-6:1em; }
+.bcorpo :is(#noteHost,.note-host) .editor-preview :is(img,svg,video) { max-width:100%; }
 .blettura { display:flex; flex:none; order:2; margin-left:auto; align-items:center; }
 .bhead .blettura .tbtn { padding-inline:.3rem; min-width:var(--tb-h); }
 .bhead .bdoc { order:1; }
@@ -50,7 +51,8 @@ html[data-presentazione] .blocco[data-presentazione] .zstudio-banco { padding-to
 
 /* Il contorno resta fuori dai pixel catturati: il pubblico non lo vede. */
 .proiezione-area { position:fixed; outline:2px solid var(--orange); pointer-events:none; z-index:21; }
-.proiezione-area button { position:absolute; right:0; bottom:100%; margin-bottom:2px; pointer-events:auto; cursor:move; touch-action:none; background:var(--panel); color:var(--orange); border:1px solid var(--orange); font-size:12px; padding:2px 8px; }
+.proiezione-area-comandi { position:absolute; right:0; bottom:100%; margin-bottom:2px; display:flex; align-items:stretch; }
+.proiezione-area button { position:relative; margin:0; pointer-events:auto; cursor:move; touch-action:none; background:var(--panel); color:var(--orange); border:1px solid var(--orange); font-size:12px; padding:2px 8px; }
 .proiezione-area button:focus-visible { outline:2px solid var(--focus); }
 
 .proiezione-area button:hover { background:var(--hover); }
@@ -63,5 +65,9 @@ html[data-presentazione] .blocco[data-presentazione] .zstudio-banco { padding-to
 /* CodeMirror 5 misura il cursore in pixel CSS: zoom sul contenitore mescola
    quelle coordinate con i rettangoli già ridotti. Il font riduce la scrittura
    senza cambiare il sistema di coordinate; l’anteprima mantiene lo zoom completo. */
-.bcorpo :is(#noteHost,#noteHost2) .CodeMirror{font-size:calc(var(--lettura-fs) * var(--banco-zoom,1));}
-.bcorpo :is(#noteHost,#noteHost2) .CodeMirror-lines{padding-inline:calc(16px * var(--banco-zoom,1));}
+.bcorpo :is(#noteHost,.note-host) .CodeMirror{font-size:calc(var(--lettura-fs) * var(--banco-zoom,1));}
+.bcorpo :is(#noteHost,.note-host) .CodeMirror-lines{padding-inline:calc(16px * var(--banco-zoom,1));}
+
+.proiezione-area .proiezione-laser-setting{cursor:pointer;display:inline-flex;align-items:center;justify-content:center;border-right:0;padding:2px 4px;min-width:28px}
+.proiezione-laser-setting svg{width:16px;height:16px}
+.proiezione-area .proiezione-laser-setting:active{cursor:pointer}

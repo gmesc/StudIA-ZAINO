@@ -7,11 +7,12 @@ async function open(){await click('#settingsBtn');await click('.set-tab[data-tab
  await c.collega();await wait(`!!window.vault.costs.summaryZaini && !!document.getElementById('zchatCosts')`);
  const vault=await c.val('window.vault.path');assert(vault.includes('studia-zaino-prova-'));
  const config=path.join(path.dirname(vault),'dati/config.json'),requests=path.join(path.dirname(vault),'dati/chat-requests.jsonl'),files=[config,requests,path.join(vault,'Costi/storico-zaini.json'),...['biologia','storia'].map(z=>path.join(vault,'Zaini',z,'Costi/usage.jsonl'))];
- const backups=files.map(f=>[f,fs.existsSync(f)?fs.readFileSync(f):null]);let session;
- const initial=await c.val(`({storage:{...localStorage},banco:bancoStato(),theme:document.documentElement.dataset.theme})`);
+ const backups=[...files,path.join(vault,'Zaini/biologia/_fonti-ai.json')].map(f=>[f,fs.existsSync(f)?fs.readFileSync(f):null]);let session;
+ await c.partiPulito();
+ const initial=await c.val(`({zaino:zainoAttivo(),storage:{...localStorage},banco:bancoStato(),theme:document.documentElement.dataset.theme})`);
  try{
   for(const f of files.slice(2))fs.rmSync(f,{force:true});
-  const source=F.sincronizza(vault,'biologia').sources.find(s=>s.kind==='pdf'),meta={provider:'google',model:'gemini-2.5-flash',operation:'Scheda: Sintesi',sourceIds:[source.id],usage:{inputTokens:1000,outputTokens:100}};
+  const source=F.sincronizza(vault,'biologia').sources.find(s=>s.kind==='pdf' && path.basename(s.file)==='01 Botanica.pdf'),meta={provider:'google',model:'gemini-2.5-flash',operation:'Scheda: Sintesi',sourceIds:[source.id],usage:{inputTokens:1000,outputTokens:100}};
   C.registra(vault,'biologia',meta);C.registra(vault,'storia',{...meta,model:'senza-tariffa',sourceIds:[]});
   await open();assert((await c.val(`document.getElementById('zchatCostsTotal').textContent`)).includes('parziale'));
   assert.equal(await c.val(`document.querySelectorAll('#zchatCostsSummary details').length`),2);
@@ -41,7 +42,7 @@ async function open(){await click('#settingsBtn');await click('.set-tab[data-tab
  }finally{
   if(session)await c.val(`window.vault.chat.remove('biologia',${q(session)})`);
   for(const [f,data] of backups){if(data){fs.mkdirSync(path.dirname(f),{recursive:true});fs.writeFileSync(f,data);}else fs.rmSync(f,{force:true});}
-  await c.val(`(()=>{localStorage.clear();for(const [k,v] of Object.entries(${q(initial.storage)}))localStorage.setItem(k,v);document.documentElement.dataset.theme=${q(initial.theme)};BANCO.stato=${q(initial.banco)};bancoSalva();bancoDisegna();})()`);await c.val('location.reload()');await c.pausa(800);await c.collega();
+  await c.val(`(()=>{localStorage.clear();for(const [k,v] of Object.entries(${q(initial.storage)}))localStorage.setItem(k,v);document.documentElement.dataset.theme=${q(initial.theme)};BANCO.stato=${q(initial.banco)};bancoSalva();bancoDisegna();})()`);await c.val('location.reload()');await c.pausa(800);await c.collega();await wait(`typeof zainoAttivo==='function' && zainoAttivo()===${q(initial.zaino)}`);
  }
  console.log('✓ Costi AI: riepilogo per zaino/materiale, dati mancanti, risposta cloud registrata, reset e undo persistenti senza perdere nuovi consumi');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

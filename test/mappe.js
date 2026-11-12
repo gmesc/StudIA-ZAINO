@@ -664,7 +664,7 @@ sezione('Dalla modifica al disegno, passando dal disco');
     gruppi: ['#0f766e', '#a16207'], fsNodo: 12, fsRel: 10, etichette: 'complete' });
   const cardMio = out.markup.split('data-id="' + idMio + '"')[1].slice(0, 600);
   const cardFonte = out.markup.split('data-id="' + idFonte + '"')[1].slice(0, 600);
-  check('il nodo scritto a mano si disegna grigio', true, cardMio.indexOf('#5b6069') >= 0);
+  check('il nodo scritto a mano si disegna grigio', true, cardMio.indexOf('#9ca3af') >= 0);
   check('quello estratto prende il colore del ramo', true,
     cardFonte.indexOf('#5b6069') < 0 && /#(0f766e|a16207)/.test(cardFonte));
   check('ogni arco ha il suo bersaglio cliccabile', res.archi.length,

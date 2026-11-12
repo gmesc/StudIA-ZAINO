@@ -1,0 +1,24 @@
+{
+  "formato": "zaino-stile",
+  "versione": 1,
+  "tipo": "mappa",
+  "nome": "Bosco",
+  "autore": "ZAINO",
+  "licenza": "GPL-3.0-or-later",
+  "stile": {
+    "font": "atkinson",
+    "sfondo": "pieno",
+    "carta": "#F4F7F0",
+    "nodo": "#FFFFFF",
+    "testo": "#203528",
+    "bordo": "#9ca3af",
+    "legame": "#527A56",
+    "raggio": 12,
+    "spessore": 2,
+    "fsNodo": 16,
+    "fsRel": 12,
+    "linee": "curva",
+    "bordiColorati": 1,
+    "freccia": 7
+  }
+}

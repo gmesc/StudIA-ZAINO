@@ -1,0 +1,25 @@
+{
+  "repository": "https://github.com/chenglou/pretext",
+  "commit": "0d102a5cd933611e86a7e60bda7b4baa5995c6b0",
+  "versione": "1.0.0 + fix unreleased 0d102a5",
+  "licenza": "MIT con avvisi Chromium/WebKit/Unicode nel LICENSE originale",
+  "files": {
+    "CHANGELOG.md": "26a59c4192a886207b7c6ebd400099f1cde60df59c4fec7c07fc2ea1333a2534",
+    "LICENSE": "b0bc6870efb4e667f911d5f6b52fc9b321d634a0469a17464e35da244c28f128",
+    "README.md": "7d05ae8844b4a6f5a19510237f5ecf2dbeb5395a2b1f58794dbfc0318830b1d0",
+    "package.json": "adf65e4df509df3cb3acef2cc4dd6179591f72bc9a2c351012d9d62d15552d2a",
+    "src/analysis.ts": "bf6fbab9ab2f32b92573ad982d8485ca7d2ee8de1886a8bdcc435b7bdca15241",
+    "src/gecko-line-breaks.ts": "cf67f7eecaf6c9849acfa9958575070597cb5e6f3a1a17bb2027cef828340248",
+    "src/generated/engine-break-data.ts": "b8782c423a8d192f1d5c69c8ed2422bc8d55526c9aa18010e70348252285455e",
+    "src/generated/webkit-generic-families.ts": "16ffba2832197e189a5ddf7e745304a3c5faacc82858a51808c3744991b11614",
+    "src/graphemes.ts": "2f99310f195889177675edd7e0fbd00ee1a59286f243a9a8b13085bcb12b89f3",
+    "src/han-kerning.ts": "0fd39a11777abf2a8af12c7a8450903140d336ae6cdc58b4fb4bb033cc46ff3b",
+    "src/layout.ts": "e2d88979f449c0416342377a2a8e7e98bd57f20539737ea5bcfab9d1b6ad2b22",
+    "src/line-break.ts": "5f45ad068f266eff920cd1df6f0a9784e888d6c0e990631cd9ac6b3c8e77ee30",
+    "src/line-breaks.ts": "4b3b654234a175e06ea672ff903c544e00ae7626698bfa8f83616c84fa0aaee4",
+    "src/line-text.ts": "d79e792a052baba6d50658e45dcd60d4c9c57720200682e41852f4e1f9186bd5",
+    "src/measurement.ts": "245707d4090bcb74f0c796e074680e798d5eaf2c19e1ba66f06bcc2390132253",
+    "src/prepare.ts": "4fc8ab0f7f61c9ba9bf7c451347936fbdf703c0096fecc3d9260180798e70909",
+    "src/rich-inline.ts": "f030adb3c32fd96742741970d9b75efe239b00317137d18560eaf369f53e5687"
+  }
+}

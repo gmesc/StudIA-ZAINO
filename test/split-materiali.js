@@ -8,11 +8,14 @@ const html=fs.readFileSync(path.join(__dirname,'../App/StudIA.html'),'utf8');
 const modulo=fs.readFileSync(path.join(__dirname,'../App/assets/banco/materiali.js'),'utf8');
 
 assert.equal(Banco.tipo('appunti2'),'appunti');
+assert.equal(Banco.istanze('appunti').length,require('../App/assets/banco/forme').BLOCCHI.length);
+assert.equal(Banco.scegli({A:'appunti',B:'appunti2'},['A','B','C'],'C','appunti'),'appunti3');
+assert.equal(Banco.tipo('appunti9'),'appunti');
 assert.equal(Banco.tipo('fonte2'),'fonte');
 const blocchi={A:'fonte',B:'fonte2',C:'appunti',D:'appunti2'};
 assert.equal(Banco.scegli(blocchi,['A','B','C','D'],'B','fonte'),'fonte2');
 assert.equal(Banco.scegli(blocchi,['A','B','C','D'],'D','appunti'),'appunti2');
-assert.equal(Banco.scegli(blocchi,['A','B','C','D'],'C','fonte'),'');
+assert.equal(Banco.scegli(blocchi,['A','B','C','D'],'C','fonte'),'fonte3');
 assert.equal(Banco.scegli({A:'fonte',C:'appunti'},['A','B','C','D'],'B','fonte'),'fonte2');
 assert.equal(Banco.scegli({A:'fonte',C:'appunti'},['A','B','C','D'],'D','appunti'),'appunti2');
 assert.equal(Banco.scegli(blocchi,['A','C'],'C','fonte'),'fonte2'); // libero perché nascosto
@@ -83,7 +86,7 @@ function harness(){
     rename(id,file,title){const n=files[id].find(n=>n.file===file);assert(n);n.title=title;n.file=title+'.md';return {file:n.file,nota:{...n}};},
     async remove(id,file){if(errore)return false;files[id]=files[id].filter(n=>n.file!==file);return true;}};
   api.saveAsync=async(...args)=>api.save(...args);api.flush=(...args)=>api.save(...args);
-  const ctx={console,AppuntiSalvataggio:require('../App/assets/appunti/salvataggio'),UiIcone:require('../App/assets/interfaccia/icone'),UiToolbar:{appunti(){}},document:{getElementById:elemento,createElement(){return elemento('creato-'+elementi.size);},documentElement:{dataset:{}},
+  const ctx={console,BancoMateriali:Banco,AppuntiSalvataggio:require('../App/assets/appunti/salvataggio'),UiIcone:require('../App/assets/interfaccia/icone'),UiToolbar:{appunti(){}},document:{getElementById:elemento,createElement(){return elemento('creato-'+elementi.size);},documentElement:{dataset:{}},
       addEventListener(t,f){(eventiDom[t]||(eventiDom[t]=[])).push(f);}},
     localStorage:{getItem:k=>dati.get(k)||null,setItem:(k,v)=>dati.set(k,v)},EasyMDE:Mde,
     setTimeout(f,ms){const id=++prossimoTimer;timers.set(id,{f,ms});return id;},clearTimeout:id=>timers.delete(id),
@@ -106,6 +109,7 @@ function harness(){
   // Il dialogo e il frammento hanno prove proprie: qui controlliamo l'identità che li attraversa.
   ctx.noteChiediNomeEOrigine=()=>titolo();ctx.frammentoAppuntato=t=>'Citazione: '+t;
   ctx.refreshMyNotes=()=>{};
+  ctx.evidenzeCarica=()=>{};ctx.evidenzeDisegna=()=>{};
   vm.runInContext(modulo,ctx);
   ctx.notesReload();ctx.noteOpen('a.md',ctx.NOTES);
   function scatti(max=60){for(const [id,t] of [...timers])if(t.ms<=max){timers.delete(id);t.f();}}
@@ -130,11 +134,20 @@ async function editor(){
   h.tocca('notePane2');assert.equal(h.ctx.noteStatoAttivo(),s2);
   h.ctx.noteInserisci('Citazione al secondo');
   assert.match(s2.mde.value(),/Citazione al secondo/);assert.equal(h.files.uno[0].body,'Appunto A');
+  const primaAnnota=s2.mde.value(),salvatiPrima=h.salvati.length;
+  h.ctx.AppuntiAnnotaUI={aperta:s=>s===s2};
+  assert.equal(h.ctx.noteInserisci('Non entra durante Annota',s2),false);
+  assert.equal(await h.ctx.noteAppend('Nemmeno Appunta',{tipo:'pdf',file:'fonte.pdf',pagina:1}),false);
+  assert.equal(s2.mde.value(),primaAnnota);assert.equal(h.salvati.length,salvatiPrima);
+  assert.match(h.messaggi.at(-1),/Applica o annulla il disegno/);
+  delete h.ctx.AppuntiAnnotaUI;
   h.anteprima();assert(s2.mde.host.anteprima);assert(!s1.mde.host.anteprima);
   h.anteprima();assert(!s2.mde.host.anteprima);assert(s2.mde.codemirror.focalizzato);
   const anteprima=s2.mde.opt.toolbar.find(x=>x.name==='preview');
-  anteprima.action();s2.mde.codemirror.focalizzato=false;anteprima.action();
-  assert(s2.mde.codemirror.focalizzato,'anche il bottone Anteprima restituisce il focus al testo');
+  const viste=[];h.ctx.AppuntiA4={scegli:(s,v)=>viste.push([s,v])};
+  anteprima.action();anteprima.action();
+  assert(viste.every(([s,v])=>s===s2&&v==='a4'),'Anteprima seleziona sempre A4 nello stesso appunto');
+  delete h.ctx.AppuntiA4;
   h.tocca('notePane');h.ctx.noteInserisci('Citazione al primo');
   assert.match(h.files.uno[0].body,/Citazione al primo/);assert(!h.files.uno[1].body.includes('al primo'));
   h.tocca('notePane2');h.visibili(['appunti']);assert.equal(h.ctx.noteStatoAttivo(),s1);
@@ -282,11 +295,12 @@ async function fonti(){
   const ctx={localStorage:{getItem:k=>memoria.get(k)||null,setItem:(k,v)=>memoria.set(k,v)},
     window:{vault:{srcUrl:(file,id)=>id+'/'+file}},corsoAttivo:()=>corso,
     $:()=>scroller,apertoScrivi(){},bancoMostra(){},fonte2Aggiorna(){},toast(){},
+    TTS:{},PDFFIND:{seconda:false},righelloAccendi(){},evPdfScade(){},evidenzeDisegna(){},
     pdfjsLib:{getDocument:({url})=>({promise:new Promise(r=>{deferred[url]=r;})})}};
   const start=html.indexOf('var FONTE2 ='),end=html.indexOf('/** La barra:',start);
   vm.createContext(ctx);vm.runInContext(html.slice(start,end),ctx);
   ctx.fonte2Avvia=()=>true;
-  ctx.FONTE2.viewer={currentScaleValue:'1.5',setDocument(){}};ctx.FONTE2.link={setDocument(){}};
+  ctx.FONTE2.viewer={currentScaleValue:'1.5',setDocument(){}};ctx.FONTE2.link={setDocument(){}};ctx.FONTE2.find={setDocument(){}};
   Object.assign(ctx.FONTE2,{doc:{destroy(){}},file:'primo.pdf',corso:'uno',page:3});
   ctx.fonte2Ricorda();
   assert.equal(JSON.parse(memoria.get('studia.banco.c.uno.fonti2'))['primo.pdf'].page,3);
@@ -305,3 +319,6 @@ editor().then(trasferimento).then(creazione).then(rinominaSoloMaiuscole).then(el
   }
   console.log('split-materiali: editor comune, destinazioni, salvataggio, anteprima, recupero, isolamento e ripristino OK');
 }).catch(e=>{console.error(e);process.exitCode=1;});
+
+assert(Banco.zoomDaTasto({key:'Enter',altKey:true}));
+for(const k of ['ctrlKey','metaKey','shiftKey','repeat','isComposing'])assert(!Banco.zoomDaTasto({key:'Enter',altKey:true,[k]:true}));

@@ -27,11 +27,12 @@ function maniglia(m,contesto){
  assert(m.cliccabile,contesto+': fantasma raggiungibile col mouse');
 }
 (async()=>{
- await c.collega();await aspetta(`typeof bancoStato==='function' && zainoAttivo()==='biologia'`);
+ await c.collega();await aspetta(`typeof bancoStato==='function' && !!zainoAttivo()`);
  assert((await c.val('window.vault.path')).includes('studia-zaino-prova-'));
  await c.partiPulito();
- const prima=await c.val(`({banco:bancoStato(),attivo:BANCO.attivo,tema:root.dataset.theme,sidebar:root.dataset.sidebar,nav:root.dataset.nav,storage:{...localStorage}})`);
+ const prima=await c.val(`({zaino:zainoAttivo(),banco:bancoStato(),attivo:BANCO.attivo,tema:root.dataset.theme,sidebar:root.dataset.sidebar,nav:root.dataset.nav,storage:{...localStorage}})`);
  try{
+  await c.val(`cambiaZaino('biologia',true)`);await aspetta(`zainoAttivo()==='biologia' && !ZNAV.carico`);
   await finestra(1440);
   await c.val(`root.dataset.sidebar='';root.dataset.nav='';root.dataset.theme='chiaro';bancoForma('due-col');bancoAssegna('A','fonte');bancoAssegna('C','appunti');bancoAttivaBlocco('C');positionPanelToggle()`);
   await aspetta(`!!document.querySelector('#noteHost .editor-toolbar')`);await c.pausa(250);
@@ -41,7 +42,7 @@ function maniglia(m,contesto){
   vicino('toolbar interna -10%',iniziale.barraMinima,39*.9);
   const fantasma=await c.val(`document.querySelector('#menuBtn img.oi').src`);
   for(const tema of ['chiaro','scuro']){
-   await c.val(`root.dataset.theme=${q(tema)};root.dataset.sidebar='';positionPanelToggle()`);await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});await c.pausa(180);
+   await c.val(`root.dataset.theme=${q(tema)};root.dataset.sidebar='';bancoForma('due-col');bancoAssegna('A','fonte');bancoAssegna('C','appunti');bancoAttivaBlocco('C');positionPanelToggle()`);await c.invia('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});await c.pausa(180);
    const colori=await c.val(`(()=>{
     const sonda=document.createElement('i');document.body.append(sonda);
     const colore=v=>{sonda.style.color=v;return getComputedStyle(sonda).color;};
@@ -58,7 +59,7 @@ function maniglia(m,contesto){
    assert.equal(colori.linea,'none','nessuna linea sullo split attivo');
    assert.equal(colori.numero,'rgb(249, 115, 22)','numero attivo arancione');
    assert(colori.sidebar.length>0 && colori.sidebar.every(t=>t.fondo===colori.neutro&&t.colore===colori.inchiostro),'titoli sidebar neutri in '+tema+': '+JSON.stringify(colori));
-   assert.deepEqual(colori.badge.map(b=>({raggio:b.raggio,colore:b.colore,peso:b.peso,bordo:b.bordo,fondo:b.fondo,w:b.w,h:b.h})),[{raggio:'50%',colore:'rgb(75, 85, 99)',peso:'700',bordo:'rgba(0, 0, 0, 0)',fondo:'rgb(249, 115, 22)',w:20,h:20},{raggio:'50%',colore:'rgb(107, 114, 128)',peso:'400',bordo:'rgb(209, 213, 219)',fondo:'rgba(0, 0, 0, 0)',w:20,h:20}]);
+   assert.deepEqual(colori.badge.map(b=>({raggio:b.raggio,colore:b.colore,peso:b.peso,bordo:b.bordo,fondo:b.fondo,w:b.w,h:b.h})),[{raggio:'50%',colore:'rgb(255, 255, 255)',peso:'700',bordo:'rgba(0, 0, 0, 0)',fondo:'rgb(249, 115, 22)',w:20,h:20},{raggio:'50%',colore:'rgb(107, 114, 128)',peso:'400',bordo:'rgb(209, 213, 219)',fondo:'rgba(0, 0, 0, 0)',w:20,h:20}]);
    assert.equal(colori.maniglia,colori.pannello,'maniglia coerente con il tema');
    for(const forma of ['uno','due-col','quattro']){
     await c.val(`bancoForma(${q(forma)});positionPanelToggle()`);
@@ -88,6 +89,8 @@ function maniglia(m,contesto){
   console.log('Gerarchia A: colori, testate +1/8 e altre barre -10%, fantasma senza sovrapposizioni, temi, forme e finestre OK');
  }finally{
   await c.invia('Emulation.clearDeviceMetricsOverride',{});
+  await c.val(`contenitoreMolla();localStorage.clear();Object.entries(${q(prima.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));window.__gerarchiaRipristino=true;location.reload()`);
+  await aspetta(`!window.__gerarchiaRipristino && typeof bancoStato==='function' && zainoAttivo()===${q(prima.zaino)}`);
   await c.val(`root.dataset.theme=${q(prima.tema||'chiaro')};root.dataset.sidebar=${q(prima.sidebar||'')};root.dataset.nav=${q(prima.nav||'')};localStorage.clear();Object.entries(${q(prima.storage)}).forEach(([k,v])=>localStorage.setItem(k,v));BANCO.stato=${q(prima.banco)};BANCO.attivo=${q(prima.attivo)};bancoDisegna();positionPanelToggle()`);
  }
  process.exit(0);

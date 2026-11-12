@@ -1,0 +1,11 @@
+.stili-community{box-sizing:border-box;width:min(35rem,94vw);max-height:88vh;overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--line);padding:1rem}
+.stili-community h2{margin:0;font-size:1.1rem}
+.stili-community label{display:grid;gap:4px;margin-block:8px;font-size:var(--tbig-fs,14px)}
+.stili-community :is(select,input){min-width:0;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:6px}
+.stili-campione{margin-block:12px;border:1px solid var(--line);max-height:200px;overflow:auto}
+.stili-campione svg{display:block;width:100%;height:155px}
+.stili-community output{display:block;margin-block:8px}
+.stili-metadati{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.stili-azioni{display:flex;flex-wrap:wrap;gap:8px}
+.stili-community .tbtn{width:auto;padding-inline:8px}
+.stili-community [hidden]{display:none}

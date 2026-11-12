@@ -25,3 +25,10 @@ assert.equal((R.compila(doppio).html.match(/data-entrata="true"/g)||[]).length,1
 console.log('✓ 38 effetti, compatibilità, tempi concatenati, limiti, compilazione, privacy e annullamento');
 
 assert(A.disponibile("blur","text"));assert(A.disponibile("focus-in","image"));assert(!A.disponibile("blur","navbar"));
+
+// Le variabili delle sequenze devono arrivare intatte al player e all’export.
+let seq=M.crea('00000000-0000-4000-8000-000000000001','Sequenze configurabili');seq=M.applica(seq,{tipo:'titoloSlide',slideId:seq.stacks[0].slides[0].id,title:'Le righe seguono le impostazioni'});const ss=seq.stacks[0].slides[0];
+seq=M.applica(seq,{tipo:'animazioni',slideId:ss.id,animations:[{targetId:ss.blocks[0].id,effect:'lines',step:1,duration:2,sequenceOrder:'reverse',sequenceOverlap:50}]});
+assert(V.validatePresentazione(seq).ok);assert.equal(M.pubblica(seq).stacks[0].slides[0].animations[0].sequenceOverlap,50);assert.equal(M.pubblica(seq).stacks[0].slides[0].animations[0].sequenceOrder,'reverse');
+assert.deepEqual(A.tempiSequenza({duration:2,sequenceOverlap:50,sequenceOrder:'reverse'},3),{durata:1000,ritardi:[1000,500,0]});
+assert(A.errore({effect:'lines',sequenceOverlap:101},'title'));assert(A.errore({effect:'lines',sequenceOrder:'random'},'title'));

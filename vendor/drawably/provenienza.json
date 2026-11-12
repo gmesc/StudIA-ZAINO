@@ -1,0 +1,16 @@
+{
+  "repository": "https://github.com/danielwh2/drawably",
+  "commit": "013c1a2dadf8d5b87c92698f18a60682711e4bfc",
+  "versione": "0.4.2",
+  "files": {
+    "LICENSE": "c0d53cbcf3b4e9cfa23c0ce575a1568d34f763eaf74917fb525a61d5624752ca",
+    "README.md": "36d3c614ec59c4570da563ca01eff9f30e462f1f3cb0e5c289a9b16842f6e13b",
+    "package.json": "3a353bfcb10394fe73a3249640f7991d4bb17385048862097c1acb5c77701dfe",
+    "style.css": "6f43c4055df65e3e51df0aaedfadc4713c338a03aa1daebac20c6cc8d24d32fe",
+    "src/prng.ts": "98c232c18ec1e713cfba8b094f9a02c49dac6afd8fe0d4d20e60b29fd81a1846",
+    "src/rough.ts": "ac71628c34fef1c2108c9ed5643fad2b3e787f9f3df6fc54947c44ac795f7874",
+    "src/controls.ts": "a81bd934d6cda78a01f4b80ad28d2c4695baf402a65f7d7da808b817f2da9887",
+    "src/composites.ts": "18cde7815964ae670d7d246d663af812d2ed6680341afc47a5f170f928c0e24a",
+    "src/index.ts": "3f903142b1df526076a0b823d4b4bcbbe034b2ce2368f6a5939b17dff8864d5a"
+  }
+}

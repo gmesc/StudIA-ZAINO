@@ -1,0 +1,21 @@
+.squig-dialog{position:fixed;inset:0;margin:auto;width:min(1120px,94vw);height:min(800px,90vh);max-width:94vw;max-height:90vh;box-sizing:border-box;padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);overflow:hidden}
+.squig-dialog[open]{display:flex;flex-direction:column;gap:12px}
+.squig-dialog::backdrop{background:rgb(0 0 0 / .35)}
+.squig-dialog .tbar{flex:none;gap:8px}.squig-dialog p,.squig-dialog h3{margin:0}
+.squig-aiuto,.squig-dialog small{font-size:13px;color:var(--muted)}
+.squig-corpo{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(260px,1fr);gap:20px;min-height:0;flex:1}
+.squig-elenco,.squig-proprieta{overflow:auto;min-width:0;padding:2px 6px 8px 2px}
+.squig-filtri{display:flex;gap:8px;margin-bottom:12px}.squig-filtri label{display:flex;flex-direction:column;gap:4px;font-size:13px;min-width:0}.squig-filtri label:first-child{flex:1}.squig-filtri input{min-width:0;width:100%;box-sizing:border-box}
+.squig-griglia{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.squig-griglia .squig-scelta{display:flex;flex-direction:column;justify-content:start;gap:8px;min-width:0;height:128px;min-height:128px;white-space:normal;padding:10px;text-align:center;border:1px solid var(--line);border-radius:6px;line-height:1.3;overflow:hidden;text-transform:none;letter-spacing:normal}
+.squig-scelta[aria-pressed=true]{outline:2px solid var(--accent,#0f766e);outline-offset:-2px}
+.squig-miniatura{display:block;flex:none;width:100%;height:78px;background:#fff;padding:4px;box-sizing:border-box;border-radius:3px}
+.squig-miniatura svg{width:100%;height:100%}
+.squig-anteprima{height:200px;padding:16px;background:#fff;border:1px solid var(--line);border-radius:6px;margin:12px 0}
+.squig-campi{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.squig-campi label{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:13px}.squig-campi input,.squig-campi select{width:100%;box-sizing:border-box;min-width:0}.squig-campi input[type=checkbox]{width:auto;align-self:start}
+.squig-dialog input,.squig-dialog select,.squig-dialog textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px;min-width:0;max-width:100%;box-sizing:border-box;text-transform:none;letter-spacing:normal}
+.squig-dialog :is(input,select,button):focus-visible{outline:2px solid var(--accent,#0f766e);outline-offset:2px}
+.squig-errore:empty{display:none}.squig-errore{color:var(--danger,#b42318)}
+@media(max-width:760px){.squig-corpo{grid-template-columns:minmax(0,1fr) minmax(220px,1fr);gap:12px}.squig-griglia{grid-template-columns:repeat(2,minmax(0,1fr))}.squig-campi{grid-template-columns:1fr}}
+@media(max-width:560px){.squig-corpo{display:flex;flex-direction:column;overflow:auto}.squig-elenco,.squig-proprieta{overflow:visible}.squig-dialog>.tbar{flex-wrap:wrap}.squig-filtri{flex-direction:column}.squig-dialog{padding:12px}}

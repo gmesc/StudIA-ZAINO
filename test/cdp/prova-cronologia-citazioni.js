@@ -12,6 +12,12 @@ async function click(sel){
   await c.val(`document.querySelector(${q(sel)}).scrollIntoView({block:'nearest'})`);
   await c.clicca(sel);await c.pausa(120);
 }
+async function vista(tipo){
+  await click('#noteHost [data-note-vista="'+tipo+'"]');
+  if(tipo==='a4')await attendi("document.querySelector('#noteHost .note-a4-paper')&&document.querySelector('#noteHost .note-a4').getAttribute('aria-busy')!=='true'");
+  else await attendi('!AppuntiA4.attiva(NOTES)');
+}
+async function alternaVista(){await vista(await c.val('AppuntiA4.attiva(NOTES)')?'scrittura':'a4');}
 async function foto(nome){
   const r=await c.invia('Page.captureScreenshot',{format:'png'});
   fs.writeFileSync('/private/tmp/'+nome+'.png',Buffer.from(r.result.data,'base64'));
@@ -24,7 +30,7 @@ async function foto(nome){
   await c.val(`(async()=>{
     const r=notesApi().save(corsoAttivo(),null,{title:'Prova citazioni e cronologia '+Date.now()},'Spiegazione personale.');
     notesReload();bancoForma('due-col');bancoAssegna('A','appunti');bancoAssegna('C','mappa');
-    noteOpen(r.file,NOTES); if(NOTES.mde.isPreviewActive()) NOTES.mde.togglePreview();
+    noteOpen(r.file,NOTES); AppuntiA4.scegli(NOTES,'scrittura'); if(NOTES.mde.isPreviewActive()) NOTES.mde.togglePreview();
     appuntaStileScegli('');appuntaCitaScegli(true);
     const m=await mappeApi().salva(corsoAttivo(),null,{titolo:'Mappa cronologia',nodi:[{id:'u1',testo:'Radice'}],archi:[]});
     MAPPA.registro='mie';await mappaApriMia(m.file);return true;
@@ -50,28 +56,28 @@ async function foto(nome){
 
   await c.val(`noteAppend('Una frase completa con il punto.',{tipo:'pdf',file:'01 Botanica.pdf',pagina:2},'')`);
   await c.val(`noteAppend('alcune parole',{tipo:'pdf',file:'01 Botanica.pdf',pagina:2},'')`);
-  await click('#noteHost .preview');
-  assert.equal(await c.val(`document.querySelectorAll('#noteHost .editor-preview-active blockquote').length`),1);
-  assert.equal(await c.val(`document.querySelector('#noteHost .editor-preview-active blockquote .plink').dataset.page`),'2');
-  assert.equal(await c.val(`document.querySelector('#noteHost .editor-preview-active p em').textContent`),'alcune parole');
+  await alternaVista();
+  assert.equal(await c.val(`document.querySelectorAll('#noteHost .note-a4-paper blockquote').length`),1);
+  assert.equal(await c.val(`document.querySelector('#noteHost .note-a4-paper blockquote .plink').dataset.page`),'2');
+  assert.equal(await c.val(`document.querySelector('#noteHost .note-a4-paper p em').textContent`),'alcune parole');
   assert.equal(await c.val(`getComputedStyle(document.querySelector('#noteHost blockquote')).fontStyle`),'normal');
   assert.equal(await c.val(`getComputedStyle(document.querySelector('#noteHost blockquote')).borderLeftWidth`),'2px');
   console.log('  ok  citazioni riconoscibili, rimando cliccabile e blocco leggero');
 
-  await click('#noteHost .preview');
+  await alternaVista();
   await c.val(`NOTES.mde.codemirror.setCursor(NOTES.mde.codemirror.lastLine(),0);NOTES.mde.codemirror.focus()`);
   await c.invia('Input.insertText',{text:'Commento personale fuori dalla citazione.'});
-  await click('#noteHost .preview');
+  await alternaVista();
   assert(!(await c.val(`document.querySelector('#noteHost blockquote').textContent`)).includes('Commento personale'));
-  await click('#noteHost .preview');
+  await alternaVista();
   await c.val(`NOTES.mde.codemirror.setSelection({line:0,ch:0},{line:0,ch:23})`);
   await click('#noteHost .quote');
-  await click('#noteHost .preview');
+  await alternaVista();
   assert((await c.val(`document.querySelector('#noteHost blockquote').textContent`)).includes('Spiegazione personale'));
   console.log('  ok  il cursore prosegue fuori e il tool Quote resta operativo');
 
   // La selezione viene dal PDF vero e attraversa il bottone Appunta già esistente.
-  await click('#noteHost .preview');
+  await alternaVista();
   await c.val(`bancoMostra('fonte');openPdf('01 Botanica.pdf',1)`);
   await attendi(`document.querySelector('#pdfPane .textLayer span')?.textContent.includes('Botanica')`);
   const selezionato=await c.val(`(()=>{
@@ -82,9 +88,9 @@ async function foto(nome){
   await click('#selMenu [data-az="appunta"]');
   await attendi(`NOTES.mde.value().includes(${q(selezionato)})`);
   assert((await c.val('NOTES.mde.value()')).includes('«*'),'Appunta applica le virgolette senza un nuovo comando');
-  await click('#noteHost .preview');
-  assert((await c.val(`document.querySelector('#noteHost .editor-preview-active').textContent`)).includes(selezionato));
-  assert(await c.val(`!!document.querySelector('#noteHost .editor-preview-active em .ev-ref, #noteHost .editor-preview-active em mark')`),
+  await alternaVista();
+  assert((await c.val(`document.querySelector('#noteHost .note-a4-paper').textContent`)).includes(selezionato));
+  assert(await c.val(`!!document.querySelector('#noteHost .note-a4-paper em .ev-ref, #noteHost .note-a4-paper em mark')`),
     'le parole chiave possono mantenere il segno dentro il corsivo');
   await c.val(`bancoForma('due-col');bancoAssegna('A','appunti');bancoAssegna('C','mappa')`);
   console.log('  ok  il bottone Appunta del PDF inserisce il frammento con fonte e segno');
@@ -95,6 +101,7 @@ async function foto(nome){
     return {colore:s.textDecorationColor,fondo:s.backgroundColor,tratto:m.dataset.tratto};
   })()`;
   await c.val(`kwRicolora(EVIDENZE.elenco.find(e=>e.exact===${q(selezionato)}).id,'#ff8ad0')`);
+  await attendi("document.querySelector('#noteHost .note-a4').getAttribute('aria-busy')!=='true'");
   const primaDellaGomma=await c.val(segnoEstratto);
   assert(primaDellaGomma,'il segno appuntato è visibile prima della cancellazione');
   assert.equal(primaDellaGomma.colore,'rgb(255, 138, 208)','segue il colore aggiornato sulla fonte');
@@ -103,9 +110,10 @@ async function foto(nome){
     r.selectNodeContents(el);evidenzaCancella(r);
   })()`);
   assert.equal(await c.val(`EVIDENZE.elenco.some(e=>e.exact===${q(selezionato)})`),false);
+  await attendi("document.querySelector('#noteHost .note-a4').getAttribute('aria-busy')!=='true'");
   assert.equal(await c.val(segnoEstratto),null,
     'cancellare sulla fonte toglie dagli appunti anche il segno colorato o grigio');
-  assert((await c.val(`document.querySelector('#noteHost .editor-preview-active').textContent`)).includes(selezionato),
+  assert((await c.val(`document.querySelector('#noteHost .note-a4-paper').textContent`)).includes(selezionato),
     'il testo citato resta leggibile');
   console.log('  ok  la gomma toglie keyword e colore, conservando il testo negli appunti');
 
@@ -122,13 +130,16 @@ async function foto(nome){
   await attendi(`typeof noteOpen==='function' && zainoAttivo()==='biologia'`);
   await c.val(`bancoMostra('appunti');noteOpen(${q(file)},NOTES)`);
   await attendi(`typeof NOTES!=='undefined' && NOTES.cur?.file===${q(file)} && !!NOTES.mde`);
-  if(!await c.val('NOTES.mde.isPreviewActive()'))await click('#noteHost .preview');
+  await vista('a4');
   assert.equal(await c.val(segnoEstratto),null,
     'il colore resta assente anche riaprendo l’appunto');
-  assert((await c.val(`document.querySelector('#noteHost .editor-preview-active').textContent`)).includes(selezionato));
+  assert((await c.val(`document.querySelector('#noteHost .note-a4-paper').textContent`)).includes(selezionato));
   console.log('✓ cronologia e citazioni verificate');
 })().catch(async e=>{console.error(e);process.exitCode=1;try{await foto('studia-cronologia-citazioni-failure');}catch(_){}})
 .finally(async()=>{
-  if(memoria)await c.val(`localStorage.clear();Object.entries(${q(memoria)}).forEach(([k,v])=>localStorage.setItem(k,v));location.reload();`);
+  if(memoria){
+    await c.val(`localStorage.clear();Object.entries(${q(memoria)}).forEach(([k,v])=>localStorage.setItem(k,v));window.__ripristinoCitazioni=true;location.reload();`);
+    await attendi("!window.__ripristinoCitazioni&&typeof noteOpen==='function'&&zainoAttivo()==='biologia'");
+  }
   process.exit(process.exitCode||0);
 });

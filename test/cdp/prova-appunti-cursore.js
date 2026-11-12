@@ -17,6 +17,15 @@ try{
   const m=await c.val(`(()=>{const line=[...document.querySelectorAll('#noteHost .CodeMirror-line')].find(e=>e.textContent.includes('07')),t=document.createTreeWalker(line,NodeFilter.SHOW_TEXT).nextNode(),r=document.createRange();r.setStart(t,5);r.setEnd(t,6);const a=r.getBoundingClientRect(),b=document.querySelector('#noteHost .CodeMirror-cursor').getBoundingClientRect();return {dx:Math.abs(a.left-b.left),dy:Math.abs(a.top+a.height/2-b.top-b.height/2),font:getComputedStyle(document.querySelector('#noteHost .CodeMirror')).fontSize};})()`);
   A(m.dx<2&&m.dy<4,'Cambio forma '+forma+': '+JSON.stringify(m));A.equal(parseFloat(m.font),forma==='uno'?17:12.75);
  }
+ // Il comando fisico funziona anche dal textarea di CodeMirror, senza scrivere Invio.
+ const primaTasto=await c.val(`({testo:NOTES.mde.codemirror.getValue(),cursor:NOTES.mde.codemirror.getCursor(),banco:bancoStato()})`);
+ for(const intero of [true,false]){
+  for(const type of ['keyDown','keyUp'])await c.invia('Input.dispatchKeyEvent',{type,key:'Enter',code:'Enter',modifiers:1});
+  await wait(`Boolean(bancoZoomLeggi())===${intero}`);await c.pausa(150);
+  const dopo=await c.val(`({testo:NOTES.mde.codemirror.getValue(),cursor:NOTES.mde.codemirror.getCursor(),focus:NOTES.mde.codemirror.hasFocus(),font:parseFloat(getComputedStyle(document.querySelector('#noteHost .CodeMirror')).fontSize)})`);
+  A.equal(dopo.testo,primaTasto.testo);A.deepEqual(dopo.cursor,primaTasto.cursor);A(dopo.focus,'Alt+Invio conserva il focus nell’appunto');A.equal(dopo.font,intero?17:12.75);
+ }
+ A.deepEqual(await c.val('bancoStato()'),primaTasto.banco);
  await c.val(`BancoPresentazione.schermoIntero('appunti')`);await c.pausa(150);A.equal(await c.val(`parseFloat(getComputedStyle(document.querySelector('#noteHost .CodeMirror')).fontSize)`),17);await c.val('BancoPresentazione.esciIntero()');await c.pausa(150);A.equal(await c.val(`parseFloat(getComputedStyle(document.querySelector('#noteHost .CodeMirror')).fontSize)`),12.75);
  await c.val('noteAlternaAnteprima(NOTES)');A.equal(await c.val(`getComputedStyle(document.querySelector('#noteHost .editor-preview')).zoom`),'0.75');await c.val('noteAlternaAnteprima(NOTES)');
  fs.writeFileSync('/private/tmp/zaino-appunti-cursore.png',Buffer.from((await c.invia('Page.captureScreenshot',{format:'png'})).result.data,'base64'));

@@ -19,11 +19,20 @@ async function hover(sel){await c.val(`document.querySelector(${q(sel)}).scrollI
  fs.mkdirSync(path.dirname(cache),{recursive:true});fs.writeFileSync(cache,JSON.stringify(card));
  const noteDir=path.join(vault,'Zaini/biologia/APPUNTI'),notePrima=new Set(fs.readdirSync(noteDir));
  try{
-  await click('#zschedeBack');await c.val(`document.getElementById('zschedeKind').value='scheda';document.getElementById('zschedeFilter').value='Botanica.pdf Domande per capire';`);await click('#zschedeBack');await wait(`document.querySelectorAll('#zschedeCollection article').length===1 && !document.getElementById('zschedeNewButton').disabled`);
-  await click('#zschedeCollection button');await wait(`!!document.querySelector('#zschedeResult article') && !document.getElementById('zschedeNewButton').disabled`);
+  await c.val(`document.getElementById('zschedeKind').value='scheda';document.getElementById('zschedeFilter').value='Botanica.pdf Domande per capire';`);await click('#zschedeBack');
+  // Il ritorno rilegge il disco in modo asincrono: non basta un articolo della vista precedente.
+  const apriScheda='#zschedeCollection .zstudio-card-open[aria-label="Apri Domande per capire: Botanica.pdf"]';
+  await wait(`document.querySelectorAll('#zschedeCollection article').length===1 && !!document.querySelector(${q(apriScheda)}) && !document.querySelector(${q(apriScheda)}).disabled && !document.getElementById('zschedeNewButton').disabled`);
+  await c.clicca(apriScheda);await wait(`!!document.querySelector('#zschedeResult article') && !document.getElementById('zschedeNewButton').disabled`);
   assert.equal(await c.val(`document.querySelector('#zschedeResult article').firstElementChild.tagName`),'H4');
   assert.deepEqual(await c.val(`[...document.querySelectorAll('#zschedeResult article .zchat-citation')].map(b=>b.textContent)`),['Botanica.pdf · p. 1','Botanica.pdf · p. 2']);
   const evidenze=await c.val('JSON.stringify(EVIDENZE.elenco)');
+  // Il rimando deve conservare la selezione anche riusando un PDF già aperto:
+  // il cambio di banco adatta subito la pagina, poi arriva il ResizeObserver.
+  await c.val(`bancoForma('uno');bancoAssegna('A','fonte');openPdf('01 Botanica.pdf',1,'Botanica',true)`);
+  await wait(`!!PDFJS.doc&&!!PDFJS.viewer.getPageView(0)?.textLayer?.div?.querySelector('.endOfContent')`);
+  await c.val('pdfZoomAdatta(true)');await wait(`PDFJS.viewer.currentScaleValue==='page-width'&&!PDFJS.viewer.getPageView(0).textLayer.div.hidden`);await c.pausa(120);
+  await c.val(`bancoForma('uno');bancoAssegna('A','studio')`);await c.pausa(120);
   for(const pagina of [1,2]){
    await c.val(`document.querySelectorAll('#zschedeResult article .zchat-citation')[${pagina-1}].click()`);
    await wait(`ANTEPRIMA.file==='01 Botanica.pdf'&&PDFJS.viewer.currentPageNumber===${pagina}&&getSelection().toString()==='Botanica - pagina ${pagina}'`);
@@ -35,7 +44,9 @@ async function hover(sel){await c.val(`document.querySelector(${q(sel)}).scrollI
   assert.equal(await c.val(`document.querySelector('#zschedeResult article>button:last-child').textContent`),'Rispondi');
   assert.deepEqual(await c.val(`[...document.querySelectorAll('#zschedeResult>button')].map(b=>b.textContent)`),['Crea appunti da domanda','Rigenera…']);
   assert(await c.val(`(()=>{const ref=document.createElement('button');ref.className='tbtn acc';ref.textContent='Verifica risposta';document.getElementById('zschedeResult').append(ref);const a=getComputedStyle(ref),ok=[...document.querySelectorAll('#zschedeResult>button,#zschedeResult article>button:last-child')].every(b=>{const s=getComputedStyle(b);return s.backgroundColor===a.backgroundColor&&s.color===a.color&&s.fontSize===a.fontSize&&s.fontWeight===a.fontWeight;});ref.remove();return ok;})()`));
-  assert(await c.val(`(()=>{const t=document.querySelector('#zschedeResult h4'),p=document.createElement('span');p.style.fontSize='var(--tit-4)';t.append(p);const ok=getComputedStyle(t).fontSize===getComputedStyle(p).fontSize;p.remove();return ok;})()`));
+  // In lettura H4 resta un titolo relativo al contenuto, non alla misura della finestra.
+  const titolo=await c.val(`(()=>{const t=document.querySelector('#zschedeResult h4');return {titolo:parseFloat(getComputedStyle(t).fontSize),testo:parseFloat(getComputedStyle(t.parentElement).fontSize)};})()`);
+  assert(Math.abs(titolo.titolo-titolo.testo*1.2)<.05,'H4 mantiene la gerarchia 1,2em nella scala di lettura: '+JSON.stringify(titolo));
   const shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-scheda-citazioni.png',Buffer.from(shot.result.data,'base64'));
   await click('#zschedeResult>button');await wait(`noteStatoAttivo().cur?.title?.startsWith('Domande per capire')`);
   const body=await c.val(`noteStatoAttivo().mde.value()`);assert(body.startsWith('###### Domande per capire'));assert(body.includes('\n\n[Botanica.pdf · p. 1](pdf:01#p=1'));assert(body.includes('\n\n[Botanica.pdf · p. 2](pdf:01#p=2'));assert(!body.includes('[¹]'));
@@ -46,7 +57,9 @@ async function hover(sel){await c.val(`document.querySelector(${q(sel)}).scrollI
   await wait(`PDFJS.viewer.currentPageNumber===1&&getSelection().toString()==='Botanica - pagina 1'`);
   await c.pausa(200);assert.equal(await c.val('getSelection().toString()'),'Botanica - pagina 1');
   assert(await c.val(`document.getElementById('pdfFrame').contains(getSelection().anchorNode)`),'anche la copia negli appunti richiama il testo nel PDF');
-  await c.val(`bancoForma('uno');bancoAssegna('A','studio');document.getElementById('zschedeBack').click();zainoNavAggiorna()`);await wait(`document.querySelectorAll('#zainoNav .zs-raccolta').length===4`);
+  await c.val(`bancoForma('uno');bancoAssegna('A','studio');document.getElementById('zschedeBack').click();zainoNavAggiorna()`);
+  // Le schede salvate aggiungono la propria raccolta alle quattro sezioni dei materiali.
+  await wait(`['appunti','mappe','fonti','media','schede'].every(s=>document.querySelectorAll('#zainoNav .zs-raccolta[data-sezione="'+s+'"]').length===1)`);
   for(const sezione of ['appunti','mappe','fonti','media']){
    const base='#zainoNav [data-sezione="'+sezione+'"]';
    if(await c.val(`document.querySelector(${q(base+' .zs-collapse')}).getAttribute('aria-expanded')==='true'`))await click(base+' .zs-collapse');

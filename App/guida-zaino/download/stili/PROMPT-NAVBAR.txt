@@ -1,0 +1,68 @@
+KIT MULTIMODALE — NAVBAR ZAINO
+
+Allega a un chatbot che accetta immagini:
+1. stile.schema.json (contratto dell'output);
+2. sentiero.zaino-stile.json (esempio valido);
+3. una o più immagini di riferimento, indicando quale mostra lo stato attivo;
+4. facoltativamente uno screenshot di TUNING con il tuo primo risultato.
+Le immagini sono riferimenti visivi: il JSON navbar non incorpora le immagini.
+Usa immagini che puoi condividere e ritaglia eventuali informazioni personali.
+
+COPIA DA QUI
+
+Aiutami a creare uno stile navbar importabile in ZAINO, usando gli allegati.
+Nome desiderato: «Percorso bosco».
+Uso: una presentazione con 3 argomenti principali e 2 approfondimenti ciascuno.
+Riferimenti: ricava dalle immagini palette, tipografia, spaziature e distinzione
+fra stato attivo e inattivo. Mantieni leggibili etichette lunghe e numeri.
+
+Prima di generare il file:
+- descrivi brevemente quali caratteristiche puoi riprodurre con lo schema;
+- scegli fra variant steps, tabs, progress e orientation horizontal, vertical;
+- spiega eventuali differenze: forme arbitrarie, immagini e layout HTML non
+  sono supportati da questo formato. Non inventare proprietà per simularli;
+- se una scelta essenziale non è deducibile dalle immagini, fammi al massimo
+  due domande. Altrimenti proponi una variante concreta e attendi il mio OK.
+
+Dopo il mio OK restituisci SOLO il JSON completo, senza Markdown o commenti.
+Vincoli:
+- formato: "zaino-stile", versione: 1, tipo: "navbar";
+- rispetta esattamente stile.schema.json, inclusi nomi dei campi e limiti;
+- usa sentiero.zaino-stile.json come esempio di struttura, non come contenuto
+  da inserire nella presentazione;
+- nome di 1–40 caratteri; autore e licenza solo se forniti da me;
+- conserva le attribuzioni richieste se rielabori l'esempio;
+- colori espliciti #RRGGBB; numeri JSON senza unità; font fra quelli ammessi;
+- niente HTML, CSS, JavaScript, URL, base64, titoli delle lezioni o destinazioni;
+- non aggiungere campi per forme, icone o immagini non previsti nello schema;
+- i contenuti e i collegamenti della navbar vengono gestiti da ZAINO.
+
+QUANDO RICEVI IL JSON
+
+Salvalo come percorso-bosco.zaino-stile.json in UTF-8 (non .txt).
+In ZAINO: Impostazioni → TUNING → Importa stile… → tessera → … → Aspetto.
+Controlla la demo 3×3: passa fra argomenti e approfondimenti e prova etichette
+lunghe. Regola i controlli, poi Salva stile. Per condividere: … → Esporta.
+Per usarlo: PRESENTA → Inserisci → Navbar → Aspetto → Intera navbar →
+Stili della community… → scegli lo stile → Applica stile.
+
+SE L'IMPORTAZIONE NON RIESCE
+
+Torna nel chatbot con il JSON e il messaggio di errore esatto:
+«Correggi questo file secondo lo schema allegato. Mantieni il risultato visivo
+per quanto possibile. Restituisci soltanto il JSON completo corretto.»
+Non rinominare semplicemente un file HTML in .json: il contenuto deve seguire
+lo schema. Il chatbot propone; l'importazione e l'anteprima verificano il file.
+
+ESEMPIO PASSO PER PASSO
+
+Leggi ESEMPIO-NAVBAR-DA-IMMAGINE.md: riferimento Squig/Drawably, immagine
+taccuino-blu-riferimento.jpg e output verificato taccuino-blu.zaino-stile.json.
+Il file taccuino-blu.squig.json è il bozzetto per Squig, non uno stile ZAINO.
+
+SQUIG INCLUSO IN ZAINO
+
+Per il tratto a mano usa grafica.tratto "squig" e fontFamily "patrick-hand"
+con le varianti tabs o steps. Consulta SQUIG-IN-ZAINO.md per i 155 componenti
+e per le sei palette della libreria dei componenti. TUNING mostra un solo
+preset Squig per categoria: mappa neutra, slide e navbar blu.

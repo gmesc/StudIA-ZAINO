@@ -5,5 +5,6 @@ contextBridge.exposeInMainWorld('proiezione',{
  lim:{comando:o=>ipcRenderer.invoke('lim:comando',o),flush:o=>ipcRenderer.sendSync('lim:flush',o),onCambiata:fn=>ascolta('lim:cambiata',fn)},
  lavagna:fn=>ascolta('proiezione:lavagna',fn),
  quadro:fn=>ascolta('proiezione:quadro',fn),schermi:fn=>ascolta('proiezione:schermi',fn),intero:fn=>ascolta('proiezione:intero',fn),
+ laser:fn=>ascolta('proiezione:laser',fn),
  comando:o=>ipcRenderer.invoke('proiezione:comando',o)
 });

@@ -41,6 +41,7 @@
    * nome di file nel suo titolo; qui si raggruppa su ciò che non cambia.
    */
   function chiaveDove(e) {
+    if (e && e.appunto) return 'appunto ' + e.appunto;
     var m = str(e && e.materiale);
     if (m) return 'pdf ' + m;
     var c = str(e && e.capitoloId);
@@ -80,6 +81,7 @@
       if (!per[k]) {
         per[k] = { chiave: k, materiale: str(e.materiale), capitoloId: str(e.capitoloId),
           capitolo: str(e.capitolo), voci: [] };
+        if (e.appunto) per[k].appunto = e.appunto;
         ordine.push(k);
       }
       per[k].voci.push(e);

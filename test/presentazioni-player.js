@@ -21,6 +21,7 @@ app.whenReady().then(async()=>{
  }
  const Fsfondo=require('./fixtures/presentazioni');let sfondi=M.crea('00000000-0000-4000-8000-000000000001','Sfondi');sfondi.stacks=[];
  for(const [i,[kind,ext,dati]]of [['image','png',bytes],['image','gif',Fsfondo.gif],['video','webm',Fsfondo.video]].entries()){const sha256=require('node:crypto').createHash('sha256').update(dati).digest('hex'),assetId='sfondo_'+i,a={kind,path:'assets/'+sha256+'.'+ext,mimeType:kind+'/'+ext,size:dati.length,sha256};sfondi.assets[assetId]=a;fs.writeFileSync(path.join(exported.cartella,a.path),dati);const s=M.slide();s.title='Sfondo '+ext;s.background='#000000';s.backgroundMedia={assetId,fit:i===0?'contain':'cover',muted:true,loop:true};sfondi.stacks.push({id:require('node:crypto').randomUUID(),slides:[s]});}
+ const personale=M.slide();personale.title='Sfondo personale';personale.backgroundCustom={nome:'Incorporato',dati:'data:image/png;base64,'+Fsfondo.png.toString('base64'),larghezza:1,altezza:1,modo:'immagine',adatta:'contain',passo:128};sfondi.stacks.push({id:require('node:crypto').randomUUID(),slides:[personale]});
  const index=path.join(exported.cartella,'index.html');fs.writeFileSync(index,fs.readFileSync(index,'utf8').replace('</div></div><script',R.compila(foglio).html+R.compila(esempi).html+R.compila(sfondi).html+'</div></div><script'));
  const spostato=path.join(tmp,'altro-percorso');fs.renameSync(exported.cartella,spostato);
  win=new BrowserWindow({show:false,width:1280,height:720,webPreferences:{backgroundThrottling:false,sandbox:true,contextIsolation:true,nodeIntegration:false,webSecurity:true,partition:'presenta-prova'}});
@@ -38,6 +39,7 @@ app.whenReady().then(async()=>{
  for(let n=0;n<80&&!await run(`(()=>{const m=document.querySelector('section.present[data-background-video]').slideBackgroundElement.querySelector('video');return m&&m.readyState>=2&&!m.paused&&m.currentTime>0;})()`);n++)await new Promise(r=>setTimeout(r,50));
  const videoBg=await run(`(()=>{const m=document.querySelector('section.present[data-background-video]').slideBackgroundElement.querySelector('video');return {ready:m.readyState,paused:m.paused,time:m.currentTime,muted:m.muted,loop:m.loop};})()`);assert(videoBg.ready>=2&&!videoBg.paused&&videoBg.time>0&&videoBg.muted&&videoBg.loop,JSON.stringify(videoBg));
  await run(`PresentaPlayer.comando({azione:'vai',h:${bgH},v:0,fragmentIndex:-1})`);assert(await run(`document.querySelector('.slide-background video').paused`),'video di sfondo fermato quando si lascia la slide');
+ await run(`PresentaPlayer.comando({azione:'vai',h:${bgH+3},v:0,fragmentIndex:-1})`);assert(await run(`(async()=>{const i=document.querySelector('section.present .presenta-carta');await i.decode();return i.naturalWidth===1&&getComputedStyle(i).objectFit==='contain';})()`),'immagine incorporata leggibile nel pacchetto offline spostato');
  }
  const stato=await run('PresentaPlayer.ready');assert.deepEqual(stato,{h:0,v:0,fragmentIndex:-1});if(process.env.PRESENTA_SOLO_SFONDI){await verificaSfondi();assert.deepEqual(rete,[]);assert.deepEqual(errori,[]);console.log('✓ Sfondi offline immagine/GIF/video, riproduzione e pausa');app.exit(0);return;}
  assert.equal(await run('document.fonts.status'),'loaded');assert.equal(await run('document.querySelector("audio").paused'),true);
@@ -71,6 +73,17 @@ app.whenReady().then(async()=>{
  assert.equal(cornice.esterno,cornice.sfondo,'le bande fuori dalla slide ereditano il suo sfondo');
  assert.equal(cornice.controlli,'rgb(251, 251, 250)','i comandi del player restano visibili sullo sfondo scuro');
  assert(Math.abs(cornice.larghezza-cornice.disponibile)<2&&Math.abs(cornice.larghezza/cornice.altezza-16/9)<.01,'il player usa tutta la larghezza senza deformare il foglio');
+ // Larghezze che richiedono una scala non intera: il vecchio arrotondamento
+ // Reveal tagliava i bordi (1440 diventava 1446,4 px).
+ for(const width of [1440,1366,700]){
+  win.setContentSize(width,900);
+  for(let n=0;n<100&&await run('innerWidth')!==width;n++)await new Promise(r=>setTimeout(r,20));
+  await run('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
+  const r=await run(`(()=>{const r=document.querySelector('section.present>.presenta-slide').getBoundingClientRect();return {left:r.left,right:r.right,width:r.width,height:r.height,w:innerWidth};})()`);
+  assert.equal(r.w,width,'il resize nativo è stato applicato');
+  assert(r.left>=-.2&&r.right<=r.w+.2&&Math.abs(r.width-r.w)<.2&&Math.abs(r.width/r.height-16/9)<.001,'foglio intero alla scala esatta: '+JSON.stringify(r));
+ }
+ win.setContentSize(1280,900);await run('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
  assert((await run(`getComputedStyle(document.querySelector('section.present>.presenta-slide h2')).fontFamily`)).includes('Atkinson'));
  assert(await run(`document.fonts.load('32px "Atkinson Hyperlegible"').then(f=>f.length===1)`));assert(await run(`document.fonts.load('32px "TestMe Sans"').then(f=>f.length===1)`));
  const testoStile=await run(`(()=>{const b=document.querySelector('section.present>.presenta-slide .presenta-blocco:nth-child(2)'),t=b.querySelector('.presenta-testo'),s=getComputedStyle(t);return {font:s.fontFamily,peso:s.fontWeight,corsivo:s.fontStyle,interlinea:s.lineHeight,sottolineato:getComputedStyle(b).getPropertyValue('--sottolineato-testo')};})()`);assert(testoStile.font.includes('Georgia'));assert.equal(testoStile.peso,'700');assert.equal(testoStile.corsivo,'italic');assert.equal(testoStile.interlinea,'51.2px');assert.equal(testoStile.sottolineato,'underline');
@@ -171,6 +184,17 @@ app.whenReady().then(async()=>{
  assert.equal(await run(`document.querySelectorAll('.presenta-sfondo-comune img[src*=cotone]').length`),1);await run(`window.__carta=document.querySelector('.presenta-sfondo-comune');PresentaPlayer.comando({azione:'vai',h:0,v:1,fragmentIndex:-1})`);assert(await run(`__carta===document.querySelector('.presenta-sfondo-comune')&&!__carta.hidden`));await run(`PresentaPlayer.comando({azione:'vai',h:1,v:0,fragmentIndex:-1})`);assert(await run(`__carta.hidden`));assert.equal(await run(`document.querySelectorAll('section.present img.presenta-carta[src*=naturale]').length`),1,'texture di carta autonoma');
  assert.equal(await run(`getComputedStyle(document.querySelector('section.present img.presenta-carta')).objectFit`),'cover','la carta copre tutto il foglio senza bande laterali');
  eo({tipo:'sfondoAutonomo',autonomo:false});eo({tipo:'sfondoPattern',pattern:'chiara'});fs.writeFileSync(comuneFile,require('../lib/presentazioni-export').html(elementi).html);await run('PresentaPlayer.destroy()');await win.loadFile(comuneFile);await run('PresentaPlayer.ready');await run(`document.querySelector('.presenta-sfondo-comune img').decode()`);assert(await run(`document.querySelector('.presenta-sfondo-comune img').naturalWidth>1000`),'texture chiarissima reale');
+ // Anche nell’HTML offline il bordo selezionato non dipende da quello normale né dal riempimento.
+ const navbarFile=path.join(spostato,'navbar-opacita.html');
+ for(const variant of Object.keys(M.NAVBAR)){
+  let campione=M.copia(elementi);const s=campione.stacks[0].slides[0],b=s.blocks.find(b=>b.type==='navbar');
+  campione=M.applica(campione,{tipo:'blocco',slideId:s.id,blockId:b.id,block:{...b,hidden:false,variant,orientation:'horizontal',style:{...b.style,color:'#123456',box:{x:5,y:70,width:90,height:20},navbar:{activeTextColor:'#ffffff',activeGraphicColor:'#008800',border:{width:3,color:'#111111',opacity:0},activeBorderOpacity:.3,background:{color:'#ffffff',opacity:.2},activeBackground:{color:'#ff0000',opacity:.8},line:{width:4,color:'#111111',opacity:.1},activeLineOpacity:.65,separator:{enabled:true,width:2,color:null,opacity:.5}}}}});
+  fs.writeFileSync(navbarFile,require('../lib/presentazioni-export').html(campione).html);await run('PresentaPlayer.destroy()');await win.loadFile(navbarFile);await run('PresentaPlayer.ready');
+  const r=await run(`(()=>{const nav=document.querySelector('.presenta-comuni .presenta-navbar'),a=nav.querySelector('[aria-current]'),e=nav.dataset.variante==='steps'?a.querySelector('.presenta-step-numero'):a,s=getComputedStyle(e);return {bordo:s.borderTopColor,riempimento:s.backgroundColor,separatore:getComputedStyle(nav.querySelector('button+button'),'::before').borderLeftColor};})()`);
+  assert.equal(r.bordo,variant==='progress'?'color(srgb 0 0.533333 0 / 0.65)':'color(srgb 0 0.533333 0 / 0.3)',variant+' opacità selezionata indipendente');
+  if(variant!=='progress')assert.equal(r.riempimento,'color(srgb 1 0 0 / 0.8)',variant+' riempimento indipendente');
+  assert.equal(r.separatore,'rgb(18, 52, 86)',variant+' separatori nel colore normale');
+ }
  // Frecce reali: orizzontale sulle principali, verticale nel percorso completo.
  let percorso=M.crea('00000000-0000-4000-8000-000000000001','Percorso con approfondimenti');percorso.stacks=[];
  for(const [h,n] of [3,1,2].entries()){const slides=[];for(let v=0;v<n;v++){const s=M.slide(),id='navigazione-'+h+'-'+v;s.title='Capitolo '+(h+1)+(v?' · '+v:'');s.blocks=[{id,type:'text',slot:'body',markdown:s.title,style:{box:{x:10,y:15,width:70,height:50}}}];if(h===0&&v===0)s.animations=[{targetId:id,effect:'fade-in',step:1,duration:.2}];slides.push(s);}percorso.stacks.push({id:require('node:crypto').randomUUID(),slides});}
@@ -179,6 +203,8 @@ app.whenReady().then(async()=>{
  win.webContents.debugger.attach('1.3');
  async function premi(codice,key,h,v,f=-1){for(const type of ['keyDown','keyUp'])await win.webContents.debugger.sendCommand('Input.dispatchKeyEvent',{type,key,code:key===' '?'Space':key,windowsVirtualKeyCode:codice});await run('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');assert.deepEqual(await run('PresentaPlayer.stato()'),{h,v,fragmentIndex:f},key);}
  assert(await run(`document.querySelector('.navigate-left').disabled&&document.querySelector('.navigate-up').disabled&&!document.querySelector('.navigate-right').disabled&&!document.querySelector('.navigate-down').disabled`),'disponibilità delle frecce indipendente dai frammenti');
+ const clicFoglio=await run(`(()=>{const r=document.querySelector('section.present>.presenta-slide').getBoundingClientRect();return {x:r.x+12,y:r.y+12};})()`);for(const type of ['mousePressed','mouseReleased'])await win.webContents.debugger.sendCommand('Input.dispatchMouseEvent',{type,...clicFoglio,button:'left',buttons:type==='mousePressed'?1:0,clickCount:1});
+ assert.deepEqual(await run('PresentaPlayer.stato()'),{h:0,v:0,fragmentIndex:0},'il clic fisico sul foglio avvia gli effetti anche offline');await run('PresentaPlayer.comando({azione:"indietro"})');
  await premi(32,' ',0,0,0);await premi(39,'ArrowRight',1,0);await premi(37,'ArrowLeft',0,0);
  await premi(40,'ArrowDown',0,1);await premi(40,'ArrowDown',0,2);await premi(40,'ArrowDown',1,0);await premi(38,'ArrowUp',0,2);
  await premi(39,'ArrowRight',1,0);await premi(39,'ArrowRight',2,0);await premi(40,'ArrowDown',2,1);await premi(37,'ArrowLeft',1,0);await premi(38,'ArrowUp',0,2);

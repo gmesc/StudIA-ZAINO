@@ -2544,8 +2544,8 @@ async function modelloFinto(o) {
     const g3 = { nodi: [
       { id: 'u', testo: 'Scritto a mano', origine: 'utente' },
       { id: 'uc', testo: 'Estratto e ricolorato', origine: 'utente', colore: '#ff00ff' },
-      { id: 'f', testo: 'Estratto dalla fonte', origine: 'fonte' },
-      { id: 'gen', testo: 'Dalla vista generata', origine: 'generata' },
+      { id: 'f', testo: 'Estratto dalla fonte', origine: 'fonte', gruppo: 1 },
+      { id: 'gen', testo: 'Dalla vista generata', origine: 'generata', gruppo: 2 },
       { id: 'muto', testo: 'Senza origine' }
     ], archi: [{ da: 'u', a: 'uc', rel: 'comprende' }, { da: 'u', a: 'f' },
                { da: 'f', a: 'gen', cross: true }, { da: 'u', a: 'muto' }] };
@@ -2553,20 +2553,20 @@ async function modelloFinto(o) {
     const svg3 = DIS3.svg(res3, {}).markup;
 
     const card = (mk, id) => (mk.match(new RegExp('<g class="mnodo" data-id="' + id + '"[\\s\\S]*?</g>')) || [''])[0];
-    // la barra d'accento è il SECONDO <rect> della card: il primo è la card
+    // Il colore appartiene alla cornice completa del nodo.
     const accento = (mk, id) => {
-      const r = (card(mk, id).match(/<rect[^>]*\/>/g) || [])[1] || '';
-      return (r.match(/fill="([^"]*)"/) || [])[1];
+      const r = (card(mk, id).match(/<rect[^>]*\/>/g) || [])[0] || '';
+      return (r.match(/stroke="([^"]*)"/) || [])[1];
     };
     const delRamo = (id) => DIS3.colore(res3.nodi.find((n) => n.id === id), DIS3.GRUPPI);
 
-    check('un nodo scritto ex novo è grigio', DIS3.TEMA.muted, accento(svg3, 'u'));
+    check('un nodo scritto ex novo usa il neutro gray400', '#9ca3af', accento(svg3, 'u'));
     check('ma il colore scelto a mano vince su tutto', '#ff00ff', accento(svg3, 'uc'));
     check('un nodo estratto porta il colore del suo ramo', delRamo('f'), accento(svg3, 'f'));
     check('e così quello della vista generata', delRamo('gen'), accento(svg3, 'gen'));
-    check('senza origine si resta al colore del ramo', delRamo('muto'), accento(svg3, 'muto'));
-    check('il grigio non è un hex del modulo: viene dal tema', '#8a8f98',
-      accento(DIS3.svg(res3, { tema: { muted: '#8a8f98' } }).markup, 'u'));
+    check('il gruppo assegnato dalla parentela conserva il suo colore', delRamo('muto'), accento(svg3, 'muto'));
+    check('il neutro si personalizza nello stile', '#8a8f98',
+      accento(DIS3.svg(res3, { aspetto: { bordiColorati: 1, bordo: '#8a8f98' } }).markup, 'u'));
     check('e il grigio non si mangia il colore del ramo degli altri', true,
       delRamo('f') !== DIS3.TEMA.muted);
 

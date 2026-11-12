@@ -84,9 +84,10 @@
   ignoraClick=false;ignoraMouse=false;
   var l=lettore(e.target);
   if(!l||interattivo(e.target)||ALBUM.giu)return;
+  if(!spazio&&e.target.closest?.('.pdf-segni[data-edit=true]'))return;
   if(e.pointerType==='touch'){
    // Con le forbici esplicitamente attive il dito continua a ritagliare.
-   if(l.host.id==='pdfFrame'&&albumForbici())return;
+   if(l.host.closest('#pdfPane,#pdfPane2,.fonte-extra')&&albumForbici())return;
    e.preventDefault();e.stopPropagation();chiudiSelezione();termina();sopra=l.host;
    tocchi.set(e.pointerId,{l:l,x:e.clientX,y:e.clientY,inizioX:e.clientX,inizioY:e.clientY});
    if(dita(l.host).length>1){multipli.add(l.host);tap=null;}

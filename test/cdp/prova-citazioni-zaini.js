@@ -229,6 +229,9 @@ async function provaCitazioniClip(fileNota){
  await c.clicca('#citazioneVai');await wait(`!document.getElementById('citazioneDialog').open&&PDFJS.viewer.currentPageNumber===2&&getSelection().toString()==='pagina'`);
  assert(await c.val(`PDFJS.doc===window.__docOrigine&&document.getElementById('pdfFrame').contains(getSelection().anchorNode)`),'PDF già aperto riusato, selezione nel lettore Fonti');
  assert.equal(await c.val('JSON.stringify(EVIDENZE.elenco)'),evidenze,'richiamo senza sottolineature salvate');await c.val('delete window.__docOrigine');
+ await c.pausa(80); // Anche i gestori differiti del mouseup devono avere terminato.
+ assert.equal(await c.val('selBarraAperta()||selMenuAperto()'),false,'Apri origine è un comando: non apre il menu di una nuova selezione');
+ assert(await c.val(`(()=>{const b=document.getElementById('citazioneTorna'),r=b.getBoundingClientRect();return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===b;})()`),'il ritorno resta raggiungibile dopo il richiamo del passaggio');
  await c.clicca('#citazioneTorna');await wait(`zainoAttivo()==='storia'&&NOTES.cur?.file===${q(fileNota)}`);await c.pausa(180);
  assert.equal((await c.val('NOTES.mde.value()')).trimEnd(),testo.trimEnd(),'ritorno conserva appunto e testo');assert(await c.val('NOTES.mde.isPreviewActive()'),'ritorno conserva l’anteprima');
  shot=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-citazioni-blocchi.png',Buffer.from(shot.result.data,'base64'));
@@ -372,7 +375,7 @@ async function provaCitazioniClip(fileNota){
   await provaCitazioniClip(nota.file);
   // Riapertura della citazione dopo rinomina del PDF: identità, non nome o numero.
   const old=path.join(vault,'Zaini/biologia/MATERIALI/PDF/01 Botanica.pdf'),ren=path.join(gruppo,'01 Botanica rinominata.pdf');fs.renameSync(old,ren);
-  try{await c.val(`citazioneZainoApri(${q(cita.rimando)})`);await wait(`document.getElementById('citazioneTitolo').textContent.includes('rinominata')`);assert.equal(await c.val(`document.getElementById('citazioneTitolo').textContent`),'Biologia › Botanica rinominata.pdf');await c.clicca('#citazioneChiudi');}
+  try{await c.val(`citazioneZainoApri(${q(cita.rimando)})`);await wait(`document.getElementById('citazioneTitolo').textContent.includes('rinominata')`);assert.deepEqual(await c.val(`(()=>{const t=document.getElementById('citazioneTitolo');return [t.textContent,t.title,t.getAttribute('aria-label')];})()`),['Biologia › Botanica rinominata.p…','Biologia › Botanica rinominata.pdf','Biologia › Botanica rinominata.pdf']);await c.clicca('#citazioneChiudi');}
   finally{fs.renameSync(ren,old);}
   await c.clicca('#noteClose');
   await provaGesti();

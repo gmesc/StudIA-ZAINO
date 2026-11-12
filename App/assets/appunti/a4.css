@@ -1,0 +1,47 @@
+/* La carta ha sempre le stesse misure. Solo il suo contenitore viene scalato. */
+.note-viste{flex:none;display:inline-flex;align-items:center;gap:4px;padding:0;min-width:0}
+.note-viste :is(button,.tbtn){height:var(--tb-h);width:var(--tb-h);padding:0;display:inline-flex;align-items:center;justify-content:center}
+.note-viste svg{width:1.2em;height:1.2em}
+.note-a4-nav{flex:none;display:flex;align-items:center;justify-content:flex-end;gap:4px;padding:4px 8px;border-bottom:1px solid var(--line);font-size:var(--tb-fs);color:var(--muted)}
+.note-a4-nav[hidden],.note-a4[hidden]{display:none!important}
+.note-a4-nav input{width:3.5em;height:var(--tb-h);box-sizing:border-box;font:inherit;text-align:center;padding:0 4px}
+.note-a4-zoom{display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums}
+.note-a4-nav .note-a4-zoom input{width:4em}
+.note-a4-nav .tbtn{width:var(--tb-h);height:var(--tb-h);min-width:var(--tb-h);padding:0;display:inline-flex;align-items:center;justify-content:center}
+.note-a4-nav{flex-wrap:wrap;row-gap:4px}
+.note-a4{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;background:var(--bg);padding:16px;box-sizing:border-box;isolation:isolate}
+.note-a4-stage{position:relative;margin:0 auto;flex:none}
+.note-a4-stage>.note-a4-paper{transform-origin:top left;position:absolute;left:0;top:0}
+.note-a4-paper{position:relative;isolation:isolate;box-sizing:border-box;width:210mm;max-width:none;height:297mm;margin:0;padding:0;flex:none;overflow:hidden;background:#fff;color:#111;--ink:#111;--muted:#555;--panel:#fff;--line:#999;--bg:#fff;--font-text:var(--a4-font);font:12pt/1.55 var(--a4-font);text-align:left;box-shadow:0 0 0 1px var(--line)}
+.note-a4-content{position:absolute;left:20mm;top:20mm;width:170mm;height:252mm;overflow:hidden;isolation:isolate}
+.note-a4-flow{position:relative;width:170mm;height:252mm;column-width:170mm;column-gap:40mm;column-fill:auto;overflow:visible;margin:0;padding:0;z-index:1;isolation:isolate;overflow-wrap:anywhere}
+.note-a4-flow .mdb{display:contents}
+.note-a4-flow li.mdb{display:list-item}
+.note-a4-flow .md-vuota{min-height:1.55em}
+.note-a4-flow .note-tabella{overflow:visible;max-width:100%}
+.note-a4-flow .note-visual[data-layer=inline]{break-inside:avoid;max-height:252mm}
+.note-a4-flow .note-visual[data-layer=inline] img{max-height:230mm;object-fit:contain}
+.note-a4-flow :is(.ucallout,blockquote,pre){max-width:100%;box-sizing:border-box}
+.note-a4-anchor{display:block;height:0;min-height:0;margin:0;padding:0}
+.note-a4-footer{position:absolute;left:20mm;right:20mm;bottom:9mm;display:flex;align-items:baseline;justify-content:space-between;gap:8mm;color:#666;font:9pt/1.2 var(--a4-font)}
+.note-a4-footer>span:first-child{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.note-a4-footer>span:last-child{white-space:nowrap;flex:none}
+.note-a4-figure{position:absolute;display:block;isolation:isolate}
+:is(#noteHost,.note-host) div.note-a4-figure{display:block}
+.note-a4-figure[data-layer=front]{z-index:3}.note-a4-figure[data-layer=back]{z-index:0}
+.note-a4-figure>.note-visual{width:100%;height:auto;min-height:0;margin:0!important;position:relative;top:auto;left:auto}
+.note-a4-figure .note-visual>.note-visual-contenuto{position:relative!important;inset:auto!important;width:100%!important}
+.note-a4-figure :is(.figura,p){margin:0!important;text-align:left!important}
+.note-a4-figure :is(.dlink,a,span.figura){display:block;width:100%!important}
+.note-a4-figure img{display:block;width:100%;height:auto;max-width:none}
+.note-a4-measure{position:fixed;left:-100000px;top:0;visibility:hidden;pointer-events:none}
+.note-host[data-note-vista=a4] .EasyMDEContainer>:is(.CodeMirror,.editor-preview-side){display:none!important}
+.note-annota-attiva :is(.note-a4-nav,.note-a4){display:none!important}
+.note-annota-frame[data-a4]{padding:16px;background:var(--bg)}
+.note-annota-frame[data-a4] .note-annota-foglio{position:absolute;z-index:5;background:transparent}
+.note-a4-print{display:none}
+@media print{
+ body>.note-a4-print{display:block!important;margin:0;padding:0;width:auto;max-width:none}
+ .note-a4-print .note-a4-paper{box-shadow:none;margin:0;transform:none!important;break-after:page;break-inside:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+ .note-a4-print .note-a4-paper:last-child{break-after:auto}
+}

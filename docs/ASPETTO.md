@@ -4,6 +4,14 @@
 
 **Impostazioni → Aspetto → Font** offre ZAINO (predefinito) e Atkinson Hyperlegible. La scelta è immediata, locale e persistente sul computer; **Ripristina carattere** torna al predefinito. I font sono già inclusi nell’app, senza download. Il token dell’interfaccia è distinto da quello dei documenti: APPUNTI, stampa ed export mantengono il carattere del documento, PRESENTA e MAPPE mantengono le proprie scelte.
 
+## Misure dei comandi
+
+Le toolbar degli split condividono `--tb-h` (27 px per bottoni e campi) e `--tb-bar-h` (35,1 px per riga, con il bordo). Padding verticale e distanza fra righe derivano dai due token: anche andando a capo rimane lo stesso passo, senza maggiorazioni specifiche per MAPPE, GOBBO o Raccoglitore. Testate, tavolozze e anteprime conservano i propri token dedicati.
+
+Fuori dalle toolbar, i campi di ricerca, testo e scelta usano `--ctl-h` (40 px). Vale anche per Cerca/Tipo del Raccoglitore e Cerca/Mostra di STILI. Lo zoom di lettura modifica i contenuti testuali, mantenendo i filtri alla scala dell’interfaccia. Nei menu di scelta la voce corrente usa il fondo verde condiviso e gli attributi accessibili di selezione, senza un visto aggiuntivo.
+
+ALBUM riunisce raccolte, slider delle anteprime, ricerca e ordinamento in una sola riga. I separatori sono ravvicinati e lo slider è lungo al massimo 72 px; negli spazi molto stretti la riga rimane scorribile orizzontalmente.
+
 ## Scrittura negli split ridotti
 
 Negli APPUNTI il fattore automatico del banco riduce font e spaziatura dell’editor, mantenendo le coordinate native di CodeMirror: cursore, click e lettere rimangono sulla stessa riga. Nell’anteprima continua a ridursi l’intero contenuto, comprese immagini e tabelle. Il passaggio a schermo intero torna al 100% e il ritorno al banco ripristina il 75%. La guida alla formattazione condivide con gli appunti il rientro degli elenchi.

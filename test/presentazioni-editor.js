@@ -1,6 +1,16 @@
 'use strict';
 const assert=require('node:assert/strict'),M=require('../App/assets/presentazioni/modello'),C=require('../App/assets/presentazioni/documento');
+assert.equal(M.cronologiaTasto({key:'z',metaKey:true}),'annulla');
+assert.equal(M.cronologiaTasto({key:'Z',metaKey:true,shiftKey:true}),'ripeti');
+assert.equal(M.cronologiaTasto({key:'y',ctrlKey:true}),'ripeti');
+assert.equal(M.cronologiaTasto({key:'s',metaKey:true}),'salva');
+assert.equal(M.cronologiaTasto({key:'z'}),null);
+assert.equal(M.cronologiaTasto({key:'z',metaKey:true,altKey:true}),null);
 const Barra=require('../App/assets/presentazioni/barra');
+for(const nav of [{x:0,y:360,width:640,height:40},{x:0,y:0,width:640,height:40},{x:0,y:0,width:100,height:400},{x:540,y:0,width:100,height:400},{x:200,y:120,width:240,height:120},{x:-20,y:-100,width:120,height:600},{x:540,y:350,width:200,height:150}]){
+ const r=Barra.pannelloNavbar({x:0,y:0,width:640,height:400},nav,{width:360,height:180});assert(r);assert(r.x>=0&&r.y>=0&&r.x+r.width<=640&&r.y+r.height<=400);assert(r.x+r.width<=nav.x||r.x>=nav.x+nav.width||r.y+r.height<=nav.y||r.y>=nav.y+nav.height,'navbar interamente scoperta');
+}
+assert.equal(Barra.pannelloNavbar({x:0,y:0,width:160,height:90},{x:0,y:0,width:160,height:90},{width:360,height:180}),null,'senza spazio si usa il pannello sotto la slide');
 assert.equal(Barra.visibili([200,112,64],392,8,40),3,'tutti i campi entrano esattamente');
 assert.equal(Barra.visibili([200,112,64],391,8,40),2,'riserva spazio per Altri');
 assert.equal(Barra.visibili([200,112,64],240,8,40),0,'nessun campo parzialmente tagliato');
@@ -50,6 +60,17 @@ const differita=()=>{let resolve,reject;return {promise:new Promise((r,j)=>{reso
  assert.deepEqual(M.cellePosizione(3,{riga:null,colonna:2}),[2,5,8]);
  assert.throws(()=>M.ancoraGriglia(daPosizionare,{divisioni:3,riga:3,colonna:0}));
  const snap=M.aggancia({x:28.1,y:20,width:10,height:10},[],.7,g.linee);assert.equal(snap.box.x,28.5);assert(snap.guide.some(g=>g.pos===28.5));
+ // Il vincolo sceglie l’asse in pixel del puntatore, prima della conversione in percentuali.
+ assert.deepEqual(M.vincolaSpostamento(30,8),{dx:30,dy:0,asse:'x'});
+ assert.deepEqual(M.vincolaSpostamento(3,-20),{dx:0,dy:-20,asse:'y'});
+ assert.deepEqual(M.vincolaSpostamento(3,50,'x'),{dx:3,dy:0,asse:'x'},'l’asse resta fermo finché si tiene Maiusc');
+ assert.deepEqual(M.vincolaSpostamento(0,0),{dx:0,dy:0,asse:null});
+ assert.deepEqual(M.deltaFreccia('ArrowRight',.25),[.25,0]);
+ assert.deepEqual(M.deltaFreccia('ArrowUp',2,true),[0,-6]);
+ assert.deepEqual(M.deltaFreccia('ArrowLeft',NaN),[-1,0]);
+ assert.equal(M.deltaFreccia('a',1),null);
+ for(const p of M.PASSI_FRECCE)assert.equal(M.passoFrecce(p),p);
+ for(const p of [null,0,-1,100,'rotto'])assert.equal(M.passoFrecce(p),1);
  const box={x:7,y:30,width:40,height:55};assert.deepEqual(M.muovi(box,12,-9),{x:19,y:21,width:40,height:55});
  assert.deepEqual(M.muovi(box,500,-500),{x:60,y:0,width:40,height:55});
  assert.deepEqual(M.muovi(box,500,500,true),{x:7,y:30,width:93,height:70});assert.equal(M.muovi(box,-500,0,true).width,2);

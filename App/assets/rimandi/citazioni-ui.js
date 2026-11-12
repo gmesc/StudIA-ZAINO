@@ -126,7 +126,7 @@
   document.getElementById('citazioneDopo').disabled=!pronto||p>=s.doc.numPages;
   document.getElementById('citazioneVai').disabled=!pronto;
   var conto=document.getElementById('citazioneConto');conto.disabled=!pronto;conto.title=FontiPagina.suggerimento(p,{etichette:s?.etichette});
-  var b=s?.destinazione,puoi=pronto&&b?.file&&noteBersaglioValido(b);
+  var b=s?.destinazione,puoi=pronto&&!s.inserendo&&(!!s.inserisci||b?.file&&noteBersaglioValido(b));
   document.getElementById('citazioneCitaPdf').disabled=!puoi;
   document.getElementById('citazioneCitaPagina').disabled=!puoi;
   document.querySelectorAll('#citazioneZoom button').forEach(function(b){b.disabled=!pronto;});
@@ -166,29 +166,34 @@
   var r=s.getRangeAt(0);if(!citazioneOriginePdf(r)||!puntoNellaSelezione(r,e.clientX,e.clientY))return;
   e.preventDefault();selMenuApri(e.clientX,e.clientY,{range:r,testo:testoSelezionePdf(r),soloCitazione:true});
  });
- window.citazioneZainoApri=async function(rimando,destinazione){
+ window.citazioneZainoApri=async function(rimando,destinazione,opt={}){
   // Il link può appartenere al secondo editor. Catturarlo prima dell'attesa
   // impedisce che un cambio di focus scelga un altro documento al ritorno.
-  var bersaglio=destinazione?.stato?destinazione:noteBersaglio(destinazione);
+  var bersaglio=opt.consultazione||opt.inserisci?{}:destinazione?.stato?destinazione:noteBersaglio(destinazione);
   if(bersaglio.file&&bersaglio.stato.mde){
    mdbChiudi(true,bersaglio.stato);
    if(!bersaglio.punto)bersaglio.punto=bersaglio.stato.mde.codemirror.getCursor('to');
   }
+  ['citazioneCitaPdf','citazioneCitaPagina'].forEach((id,i)=>{const b=document.getElementById(id);b.hidden=!!opt.consultazione;b.textContent=opt.inserisci?(i?'Collega pagina':'Collega PDF'):(i?'Cita la pagina':'Cita PDF');b.title=opt.inserisci?'Inserisci un collegamento nella slide':i?'Inserisci nell’appunto il riferimento alla pagina corrente':'Inserisci nell’appunto il riferimento all’intero PDF';});
+  document.getElementById('citazioneVai').hidden=!!(opt.consultazione||opt.inserisci);
   closePops();pulisci();var turno=sequenza,dialog=document.getElementById('citazioneDialog');
   document.getElementById('citazioneTitolo').textContent='Citazione PDF';
+  document.getElementById('citazioneTitolo').removeAttribute('title');
+  document.getElementById('citazioneTitolo').removeAttribute('aria-label');
   if(!dialog.open)dialog.showModal();menuNelDialogo(true);messaggio('Controllo la fonte…');controlli();
   try{
    var r=await window.vault.citazioni.risolvi(rimando);
    if(turno!==sequenza||!dialog.open)return;
    if(r.error)throw Error(r.error);
    if(r.status!=='available')throw Error({changed:'La fonte è cambiata: il PDF non corrisponde più alla versione citata. La pagina originale non è disponibile.',ambiguous:'Due zaini hanno la stessa identità. Non posso scegliere la fonte corretta.',removed:'Fonte non disponibile: lo zaino o il PDF sono stati rimossi.'}[r.status]||'Fonte non disponibile.');
-   document.getElementById('citazioneTitolo').textContent=r.zainoTitolo+' › '+FontiNomi.visibile(r.file);
+   var titolo=FontiNomi.titoloAnteprima(r.zainoTitolo,r.file),testata=document.getElementById('citazioneTitolo');
+   testata.textContent=titolo.testo;testata.title=titolo.completo;testata.setAttribute('aria-label',titolo.completo);
    pdfjsLib.GlobalWorkerOptions.workerSrc='assets/pdfjs/pdf.worker.min.mjs';
    var bus=new pdfjsViewer.EventBus(),link=new pdfjsViewer.PDFLinkService({eventBus:bus});
    var viewer=new pdfjsViewer.PDFViewer({container:document.getElementById('citazioneFrame'),viewer:document.getElementById('citazionePagine'),eventBus:bus,linkService:link,textLayerMode:1,annotationMode:0,annotationEditorMode:-1,removePageBorders:true});
    link.setViewer(viewer);
    var task=pdfjsLib.getDocument({data:new Uint8Array(r.bytes),isEvalSupported:false,enableXfa:false});delete r.bytes;
-   var s={info:r,viewer:viewer,task:task,doc:null,destinazione:bersaglio,larghezza:0};stato=s;
+   var s={info:r,viewer:viewer,task:task,doc:null,destinazione:bersaglio,inserisci:opt.inserisci,larghezza:0};stato=s;
    bus.on('pagesinit',function(){if(stato!==s)return;adattaLarghezza();viewer.currentPageNumber=r.pagina;controlli();});
    bus.on('pagechanging',controlli);bus.on('scalechanging',controlli);
    bus.on('textlayerrendered',function(e){selezionaPassaggio(s,e.pageNumber);});
@@ -217,8 +222,16 @@
  window.addEventListener('keydown',function(e){if(e.key!=='Escape'||!dialog.open)return;e.preventDefault();e.stopPropagation();
   if(!document.getElementById('citazionePaginaIn').hidden){campoChiudi();frame.focus({preventScroll:true});}else chiudi();
  },true);
- document.getElementById('citazioneCitaPdf').onclick=function(){var md=markdownCitazione('pdf');if(md)inserisciMarkdown(md);};
- document.getElementById('citazioneCitaPagina').onclick=function(){var md=markdownCitazione('pagina');if(md)inserisciMarkdown(md);};
+ async function inserisciRiferimento(modo){
+  const s=stato;if(!s?.doc||s.inserendo)return;
+  if(!s.inserisci){var md=markdownCitazione(modo);if(md)inserisciMarkdown(md);return;}
+  const ref=RimandiSintassi.leggi(s.info.rimando),pagina=modo==='pdf'?null:s.viewer.currentPageNumber;
+  const rimando=RimandiSintassi.scriviPdfZaino(ref.zainoId,ref.sourceId,pagina,ref.revision);
+  s.inserendo=true;controlli();try{await s.inserisci({rimando,nome:FontiNomi.visibile(s.info.file)});if(stato===s)chiudi();}
+  catch(e){if(stato===s)messaggio(e.message);}finally{if(stato===s){s.inserendo=false;controlli();}}
+ }
+ document.getElementById('citazioneCitaPdf').onclick=function(){inserisciRiferimento('pdf');};
+ document.getElementById('citazioneCitaPagina').onclick=function(){inserisciRiferimento('pagina');};
  document.getElementById('citazionePrima').onclick=function(){if(stato?.doc)stato.viewer.currentPageNumber--;};
  document.getElementById('citazioneDopo').onclick=function(){if(stato?.doc)stato.viewer.currentPageNumber++;};
  window.citazioneInserisciDaRange=function(range){

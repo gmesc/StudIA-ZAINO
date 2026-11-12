@@ -1,10 +1,12 @@
 /* SVG da Excalidraw come albero di soli elementi grafici: nessun markup eseguibile. */
-(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.PresentaVettori=factory();})(typeof window==='undefined'?this:window,function(){
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('../squig/tratti'),require('../drawably/tratti'));else root.PresentaVettori=factory(root.ZainoSquigTratti,root.ZainoDrawablyTratti);})(typeof window==='undefined'?this:window,function(S,D){
  'use strict';
  const TAG=['g','path','rect','ellipse','circle','line','polyline','polygon','text','tspan','defs','clipPath','mask','pattern'];
- const ATTR=['id','d','x','y','x1','x2','y1','y2','width','height','rx','ry','cx','cy','r','points','transform','fill','stroke','stroke-width','stroke-linecap','stroke-linejoin','stroke-dasharray','stroke-dashoffset','opacity','fill-opacity','stroke-opacity','fill-rule','clip-rule','clip-path','mask','patternUnits','patternTransform','font-size','font-family','font-weight','text-anchor','dominant-baseline','direction','letter-spacing'];
+ const ATTR=['id','d','x','y','dy','x1','x2','y1','y2','width','height','rx','ry','cx','cy','r','points','transform','fill','stroke','stroke-width','stroke-linecap','stroke-linejoin','stroke-dasharray','stroke-dashoffset','opacity','fill-opacity','stroke-opacity','fill-rule','clip-rule','clip-path','mask','patternUnits','patternTransform','font-size','font-family','font-weight','text-anchor','dominant-baseline','direction','letter-spacing'];
  const NUM=/^[0-9eE.,+\-\s]+$/;
  function attributo(k,v){
+  if(k==='font-style')return ['normal','italic'].includes(v);
+  if(k==='text-decoration')return ['none','underline'].includes(v);
   if(typeof v!=='string'||v.length>500000||!ATTR.includes(k))return false;
   if(['fill','stroke'].includes(k))return /^(none|transparent|currentColor|#[a-f0-9]{3,8}|url\(#[A-Za-z0-9_-]+\))$/i.test(v);
   if(['clip-path','mask'].includes(k))return /^url\(#[A-Za-z0-9_-]+\)$/.test(v);
@@ -15,6 +17,8 @@
   return NUM.test(v);
  }
  function valida(v){
+  if(v?.squig!==undefined&&!S.configurazioneValida(v.squig))return false;
+  if(v?.drawably!==undefined&&(!D.configurazioneValida(v.drawably)||v.squig!==undefined))return false;
   if(!v||!Array.isArray(v.nodes)||!Array.isArray(v.scene)||v.scene.length>2000||typeof v.viewBox!=='string'||!NUM.test(v.viewBox)||v.viewBox.trim().split(/\s+/).length!==4||!v.viewBox.trim().split(/\s+/).map(Number).every(Number.isFinite)||v.viewBox.trim().split(/\s+/).slice(2).some(n=>Number(n)<=0))return false;
   if(new TextEncoder().encode(JSON.stringify(v)).length>2*1024*1024)return false;
   if(v.scene.some(e=>!e||!['rectangle','diamond','ellipse','arrow','line','freedraw','text'].includes(e.type)||e.link||!['x','y','width','height','version','versionNonce'].every(k=>Number.isFinite(e[k]))||typeof e.id!=='string'))return false;

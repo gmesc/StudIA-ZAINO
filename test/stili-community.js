@@ -1,0 +1,32 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {leggi}=require('../lib/stili-community'),S=require('../App/assets/interfaccia/stili'),M=require('../App/assets/presentazioni/modello');
+const dir=path.join(__dirname,'../App/guida-zaino/download/stili');
+const esempio=(nome,tipo)=>leggi(fs.readFileSync(path.join(dir,nome+'.zaino-stile.json'),'utf8'),tipo);
+const bosco=esempio('bosco','mappa'),ardesia=esempio('ardesia','slide'),sentiero=esempio('sentiero','navbar');
+for(const [p,t]of [[bosco,'mappa'],[ardesia,'slide'],[sentiero,'navbar']]){
+ const round=leggi(JSON.stringify(p),t);assert.deepEqual(round,p);
+ for(const err of [{...p,versione:2},{...p,stile:{...p.stile,script:'alert(1)'}},{...p,titoloDocumento:'segreto'}])assert.throws(()=>leggi(JSON.stringify(err),t));
+}
+for(const [p,c]of [[bosco,{raggio:25}],[bosco,{font:'../../font'}],[bosco,{nodo:'url(https://esempio.it)'}],[ardesia,{testo:'40'}],[sentiero,{grafica:{line:{width:100}}}],[sentiero,{grafica:{activeBackground:{url:'file:///a'}}}]])assert.throws(()=>leggi(JSON.stringify({...p,stile:{...p.stile,...c}}),p.tipo));
+assert.throws(()=>leggi(JSON.stringify(ardesia),'mappa'));assert.throws(()=>leggi('x'.repeat(3*1024*1024+1),'mappa'));assert.throws(()=>leggi('{}oops','slide'));
+const v=S.vista({zoom:{k:3},chiusi:['privato']},bosco.stile);
+assert.deepEqual(v.zoom,{k:3});assert.equal(v.aspetto.preset,'personale');assert.equal(v.fsRel,12);
+assert.deepEqual(S.vista(v,S.mappa(v)),v);assert(!JSON.stringify(S.mappa(v)).includes('privato'));leggi(JSON.stringify({...bosco,stile:S.mappa(v)}),'mappa');
+let d=M.crea(crypto.randomUUID(),'Lezione privata'),sid=d.stacks[0].slides[0].id;
+const op=o=>{d=M.applica(d,{slideId:sid,...o});};
+op({tipo:'inserisciComune',type:'navbar'});op({tipo:'aggiungiSlide',direzione:'destra'});op({tipo:'sfondoPattern',pattern:'cotone'});op({tipo:'sfondoTutte'});
+const n=d.stacks[0].slides[0].blocks[0],patch=S.bloccoNavbar({...n,scope:'main'},sentiero.stile);assert.deepEqual(n.style.box,patch.style.box);assert.equal(patch.id,n.id);assert.equal(patch.scope,'main');
+op({tipo:'blocco',blockId:n.id,block:patch});assert(M.posizioni(d).every(p=>p.slide.blocks[0].style.navbar.markerSize===36));
+const nav=S.navbar(patch);leggi(JSON.stringify({...sentiero,stile:nav}),'navbar');assert.deepEqual(S.bloccoNavbar(patch,nav),patch);
+op({tipo:'stilePresentazione',community:true,tema:{...ardesia.stile,nome:ardesia.nome}});
+assert.equal(M.sfondoSlide(d,d.stacks[0].slides[0]).background,ardesia.stile.sfondo);assert.equal(M.sfondoSlide(d,d.stacks[1].slides[0]).backgroundPattern,'cotone');
+op({tipo:'stilePresentazione',community:true,tutte:true,tema:{...ardesia.stile,nome:ardesia.nome}});
+assert(M.posizioni(d).every(p=>M.sfondoSlide(d,p.slide).background===ardesia.stile.sfondo&&!M.sfondoSlide(d,p.slide).backgroundPattern));assert.deepEqual(S.navbar(d.stacks[0].slides[0].blocks[0]),nav);
+assert.deepEqual(S.slide(d,d.stacks[0].slides[0]),ardesia.stile,'la slide vuota conserva il tema per la riesportazione');
+op({tipo:'titoloSlide',title:'Titolo privato'});op({tipo:'inserisciBlocco',block:{type:'text',slot:'body',markdown:'Testo privato'}});
+const blocchi=d.stacks[0].slides[0].blocks;
+assert.equal(blocchi.find(b=>b.type==='title').style.fontSize,58);assert.equal(blocchi.find(b=>b.type==='text').style.color,'#FFFFFF');
+assert.deepEqual(S.slide(d,d.stacks[0].slides[0]),ardesia.stile);
+const validazione=require('../lib/validate').validatePresentazione(d);assert(validazione.ok,validazione.errors.join('; '));
+console.log('✓ Stili: tre esempi, validazione, confini dei dati, navbar comune e sfondo condiviso.');

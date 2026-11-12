@@ -89,14 +89,23 @@ body{background:var(--bg);color:var(--ink)}
 .presenta-navbar button+button::before{content:"";position:absolute;left:calc(-.5 * var(--nav-gap,8px));top:10%;height:80%;border-left:var(--nav-separator-width,0px) solid var(--nav-separator-color,currentColor);opacity:var(--nav-separator-opacity,.25);pointer-events:none}
 .presenta-navbar[data-orientamento=vertical] button{flex:0 0 auto;max-width:none;width:100%;min-height:48px}
 .presenta-navbar[data-orientamento=vertical] button+button::before{left:0;top:calc(-.5 * var(--nav-gap,8px));width:100%;height:0;border-left:0;border-top:var(--nav-separator-width,0px) solid var(--nav-separator-color,currentColor)}
-.presenta-navbar[data-variante=steps] .presenta-step-numero{box-sizing:border-box;border:var(--nav-border-width,1px) solid color-mix(in srgb,var(--nav-border-color,currentColor) calc(var(--nav-border-opacity,1) * 100%),transparent);background:color-mix(in srgb,var(--nav-bg-color,currentColor) calc(var(--nav-bg-opacity,0) * 100%),transparent);border-radius:50%;width:var(--nav-marker,32px);height:var(--nav-marker,32px);display:grid;place-items:center}
-.presenta-navbar[data-variante=steps] button[aria-current] .presenta-step-numero{border-color:color-mix(in srgb,var(--nav-active-graphic,currentColor) calc(var(--nav-border-opacity,1) * var(--nav-active-opacity,1) * 100%),transparent);background:color-mix(in srgb,var(--nav-active-bg-color,currentColor) calc(var(--nav-active-bg-opacity,.15) * var(--nav-active-opacity,1) * 100%),transparent)}
+/* Il numero più lungo determina la misura minima comune: niente cifre a capo nei cerchi piccoli. */
+.presenta-navbar[data-variante=steps] .presenta-step-numero{box-sizing:border-box;border:var(--nav-border-width,1px) solid color-mix(in srgb,var(--nav-border-color,currentColor) calc(var(--nav-border-opacity,1) * 100%),transparent);background:color-mix(in srgb,var(--nav-bg-color,currentColor) calc(var(--nav-bg-opacity,0) * 100%),transparent);border-radius:50%;width:max(var(--nav-marker,32px),1.5em,calc(var(--nav-cifre,1) * 1ch + .6em + 2 * var(--nav-border-width,1px)));aspect-ratio:1;padding:0;white-space:nowrap;overflow-wrap:normal;line-height:1;display:grid;place-items:center}
+.presenta-navbar[data-variante=steps] button[aria-current] .presenta-step-numero{border-color:color-mix(in srgb,var(--nav-active-graphic,currentColor) calc(var(--nav-active-border-opacity,1) * 100%),transparent);background:color-mix(in srgb,var(--nav-active-bg-color,currentColor) calc(var(--nav-active-bg-opacity,.15) * 100%),transparent)}
 .presenta-navbar[data-variante=tabs] button{border:var(--nav-border-width,1px) solid color-mix(in srgb,var(--nav-border-color,currentColor) calc(var(--nav-border-opacity,1) * 100%),transparent);border-radius:4px;background:color-mix(in srgb,var(--nav-bg-color,currentColor) calc(var(--nav-bg-opacity,0) * 100%),transparent)}
-.presenta-navbar[data-variante=tabs] button[aria-current]{border-color:color-mix(in srgb,var(--nav-active-graphic,currentColor) calc(var(--nav-border-opacity,1) * var(--nav-active-opacity,1) * 100%),transparent);background:color-mix(in srgb,var(--nav-active-bg-color,currentColor) calc(var(--nav-active-bg-opacity,.15) * var(--nav-active-opacity,1) * 100%),transparent)}
+.presenta-navbar[data-variante=tabs] button[aria-current]{border-color:color-mix(in srgb,var(--nav-active-graphic,currentColor) calc(var(--nav-active-border-opacity,1) * 100%),transparent);background:color-mix(in srgb,var(--nav-active-bg-color,currentColor) calc(var(--nav-active-bg-opacity,.15) * 100%),transparent)}
 .presenta-navbar[data-variante=progress] button{border-top:var(--nav-line-width,4px) solid color-mix(in srgb,var(--nav-line-color,currentColor) calc(var(--nav-line-opacity,.25) * 100%),transparent);flex-direction:column;align-items:flex-start}
-.presenta-navbar[data-variante=progress] button[aria-current]{border-top-color:color-mix(in srgb,var(--nav-active-graphic,currentColor) calc(var(--nav-active-opacity,1) * 100%),transparent)}
+.presenta-navbar[data-variante=progress] button[aria-current]{border-top-color:color-mix(in srgb,var(--nav-active-graphic,currentColor) calc(var(--nav-active-line-opacity,1) * 100%),transparent)}
 .presenta-navbar[data-orientamento=vertical][data-variante=progress] button{border-top:0;border-left:var(--nav-line-width,4px) solid color-mix(in srgb,var(--nav-line-color,currentColor) calc(var(--nav-line-opacity,.25) * 100%),transparent)}
-.presenta-navbar[data-orientamento=vertical][data-variante=progress] button[aria-current]{border-left-color:color-mix(in srgb,var(--nav-active-graphic,currentColor) calc(var(--nav-active-opacity,1) * 100%),transparent)}
+.presenta-navbar[data-orientamento=vertical][data-variante=progress] button[aria-current]{border-left-color:color-mix(in srgb,var(--nav-active-graphic,currentColor) calc(var(--nav-active-line-opacity,1) * 100%),transparent)}
+
+/* Le cornici sono percorsi Squig, già presenti anche nell’HTML offline. */
+.presenta-navbar[data-tratto=squig][data-variante=tabs] button,.presenta-navbar[data-tratto=squig][data-variante=steps] .presenta-step-numero{border-color:transparent;background:transparent;position:relative;isolation:isolate}
+.presenta-squig-cornice{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:-1}
+.presenta-squig-cornice .presenta-squig-fondo{fill:var(--nav-bg-color,currentColor);fill-opacity:var(--nav-bg-opacity,0);stroke:none}
+.presenta-squig-cornice path{fill:none;stroke:var(--nav-border-color,currentColor);stroke-opacity:var(--nav-border-opacity,1);stroke-width:var(--nav-border-width,1px)}
+.presenta-navbar button[aria-current] .presenta-squig-fondo{fill:var(--nav-active-bg-color,currentColor);fill-opacity:var(--nav-active-bg-opacity,.15)}
+.presenta-navbar button[aria-current] .presenta-squig-cornice path{stroke:var(--nav-active-graphic,currentColor);stroke-opacity:var(--nav-active-border-opacity,1)}
 
 .presenta-carta,.presenta-slide[data-layout]>.presenta-carta{position:absolute;inset:0;pointer-events:none;z-index:-1;width:100%;height:100%;object-fit:cover;max-width:none;max-height:none}
 .reveal .presenta-sfondo-comune{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
@@ -104,3 +113,7 @@ body{background:var(--bg);color:var(--ink)}
 .presenta-sfondo-comune>img,.presenta-sfondo-comune>video{width:100%;height:100%;display:block;max-width:none;max-height:none}
 .presenta-sfondo-comune>.presenta-carta{z-index:0}
 .reveal section[data-sfondo-comune=true]>.presenta-slide>.presenta-carta{display:none}
+
+/* Il collegamento conserva il font dell’oggetto e resta riconoscibile senza un colore obbligatorio. */
+.presenta-link-fonte{font:inherit;line-height:inherit;color:inherit;background:transparent;border:0;border-radius:0;padding:0;text-align:inherit;text-decoration:underline;text-underline-offset:.15em;cursor:pointer;white-space:normal}
+.presenta-link-fonte:focus-visible{outline:2px solid var(--selezione,#0f766e);outline-offset:4px}

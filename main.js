@@ -195,7 +195,7 @@ function createWindow() {
   finestre.proteggiFinestra(win,{file:appFile,shell});
   const lim=require('./lib/lim').installa({win,appDir:path.join(__dirname,'App'),vaultDir,cestina:p=>shell.trashItem(p)});
   require('./lib/proiezione').installa({lim,win,BrowserWindow,screen:require('electron').screen,appDir:path.join(__dirname,'App')});
-  require('./lib/presentazioni-ipc').installa({win,shell,appDir:path.join(__dirname,'App'),vaultDir,cestina:p=>shell.trashItem(p),dialog,BrowserWindow,screen:require('electron').screen,net:require('electron').net,app,nativeImage:require('electron').nativeImage});
+  require('./lib/presentazioni-ipc').installa({win,shell,appDir:path.join(__dirname,'App'),vaultDir,leggiFonte:risolviCitazione,cestina:p=>shell.trashItem(p),dialog,BrowserWindow,screen:require('electron').screen,net:require('electron').net,app,nativeImage:require('electron').nativeImage});
   win.loadFile(appFile);
 }
 app.whenReady().then(() => { createWindow(); app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); }); });
@@ -463,15 +463,16 @@ ipcMain.handle('course:list', () => {
 const zainiLib = require('./lib/zaini');
 const citazioniZaini=require('./lib/citazioni-zaini');
 ipcMain.handle('citazioni:crea',(_e,o={})=>citazioniZaini.crea(vaultDir(),o.zaino,o.file,o.pagina,o.testo));
-ipcMain.handle('citazioni:risolvi',async(_e,o={})=>{
-  const r=citazioniZaini.risolvi(vaultDir(),o.rimando);
+async function risolviCitazione(rimando){
+  const r=citazioniZaini.risolvi(vaultDir(),rimando);
   if(r.status!=='available')return r;
   const esito=(await sicurezzaPdf.controlla([r.path])).esiti[0];
   if(!esito?.ok)throw Error(esito?.error||'PDF non verificato.');
   const bytes=citazioniZaini.leggi(r);
   if(esito.hash&&require('./lib/fonti-ai').hash(bytes)!==esito.hash)throw Error('Il PDF è cambiato dopo il controllo di sicurezza.');
   const {path:percorso,...info}=r;return {...info,bytes};
-});
+}
+ipcMain.handle('citazioni:risolvi',(_e,o={})=>risolviCitazione(o.rimando));
 ipcMain.handle('zaino:list', () => zainiLib.elenco(vaultDir()));
 const gruppiFontiLib = require('./lib/gruppi-fonti');
 ipcMain.handle('zaino:gruppi-leggi', (e, { corso, sezione } = {}) => gruppiFontiLib.leggi(vaultDir(), corso, sezione));
@@ -766,6 +767,48 @@ ipcMain.handle('crediti:notice',async()=>{
   const r=await dialog.showSaveDialog(win,{title:'Esporta crediti e licenze',defaultPath:path.join(app.getPath('downloads'),'StudIA-NOTICE.txt'),filters:[{name:'Testo',extensions:['txt']}]});
   if(r.canceled||!r.filePath)return {annullato:true};
   return salvaEsportazione(r.filePath,creditiLib.notice(dati),'.txt');
+});
+ipcMain.on('stili:raccolta-leggi',e=>{try{e.returnValue={testo:require('./lib/stili-archivio').leggi(path.join(app.getPath('userData'),'tuning'))};}catch(error){e.returnValue={error:error.message};}});
+ipcMain.on('stili:raccolta-salva',(e,{testo}={})=>{try{e.returnValue=require('./lib/stili-archivio').salva(path.join(app.getPath('userData'),'tuning'),testo);}catch(error){e.returnValue={error:error.message};}});
+ipcMain.handle('stili:verifica',(_e,{tipo,testo})=>{
+  try{return {stile:require('./lib/stili-community').leggi(testo,tipo)};}catch(e){return {error:e.message};}
+});
+ipcMain.handle('stili:esporta',async(_e,{tipo,testo})=>{
+  try{
+    const p=require('./lib/stili-community').leggi(testo,tipo);
+    const nome=p.nome.replace(/[^\p{L}\p{N} _-]/gu,'_').trim()||'Stile';
+    const r=await dialog.showSaveDialog(win,{title:'Esporta stile '+tipo,defaultPath:path.join(app.getPath('downloads'),nome+'.zaino-stile.json'),filters:[{name:'Stile ZAINO',extensions:['json']}]});
+    if(r.canceled||!r.filePath)return {annullato:true};
+    return salvaEsportazione(r.filePath,JSON.stringify(p,null,2)+'\n','.json');
+  }catch(e){return {error:e.message};}
+});
+ipcMain.handle('stili:kit',async()=>{
+  try{
+    const dati=fs.readFileSync(path.join(__dirname,'App','guida-zaino','download','Kit-stili-ZAINO.zip'));
+    const r=await dialog.showSaveDialog(win,{title:'Scarica kit per chatbot esterno',defaultPath:path.join(app.getPath('downloads'),'Kit-stili-ZAINO.zip'),filters:[{name:'Kit ZAINO · ZIP',extensions:['zip']}]});
+    if(r.canceled||!r.filePath)return {annullato:true};
+    return salvaEsportazione(r.filePath,dati,'.zip');
+  }catch(e){return {error:'Impossibile salvare il kit: '+e.message};}
+});
+// I segni si salvano separati: l'export aggiunge vettori a una copia del PDF.
+const pdfAnnotazioni=require('./lib/pdf-annotazioni');
+ipcMain.handle('pdfsegni:leggi',(_e,o)=>pdfAnnotazioni.leggi(vaultDir(),o.corso,o.file));
+ipcMain.handle('pdfsegni:salva',(_e,o)=>pdfAnnotazioni.salva(vaultDir(),o.corso,o.file,o.id,o.documento));
+ipcMain.handle('pdfsegni:esporta',async(_e,o)=>{
+  const v=vaultDir(),r=await dialog.showSaveDialog(win,{title:'Esporta PDF annotato',defaultPath:path.join(app.getPath('downloads'),path.basename(o.file,'.pdf')+' — annotato.pdf'),filters:[{name:'PDF',extensions:['pdf']}]});
+  if(r.canceled||!r.filePath)return {annullato:true};
+  if(v!==vaultDir())throw Error('Il vault è cambiato. Ripeti l’esportazione.');
+  const d=await pdfAnnotazioni.esporta(v,o.corso,o.file);
+  const destinazione=disco.percorso(path.dirname(r.filePath),r.filePath);
+  let stessaFonte=destinazione===d.originale;
+  // APFS può risolvere grafie diverse (maiuscole o Unicode) allo stesso file.
+  // La validazione sopra continua a rifiutare collegamenti simbolici e hard link.
+  try{
+    const a=fsNativo.statSync(d.originale),b=fsNativo.statSync(destinazione);
+    stessaFonte=stessaFonte||(a.dev===b.dev&&a.ino===b.ino);
+  }catch(e){if(e.code!=='ENOENT')throw e;}
+  if(stessaFonte)throw Error('Scegli una copia: il PDF originale viene conservato.');
+  return salvaEsportazione(r.filePath,d.bytes,'.pdf');
 });
 function salvaEsportazione(file,contenuto,ext){
   try{
@@ -2326,6 +2369,10 @@ ipcMain.handle('mappe:semina', (e, { corso, grafo, meta } = {}) => {
   return mappeLib.semina(d.v, corso, grafo || {}, meta || {});
 });
 
+const dizionari=require('./lib/dizionari'),dirDizionari=path.join(app.getPath('userData'),'dizionari');
+ipcMain.handle('dizionari:catalogo',()=>({ok:true,lingue:dizionari.elenco(dirDizionari)}));
+ipcMain.handle('dizionari:scarica',async(_e,{id}={})=>{await dizionari.installa(dirDizionari,id);return {ok:true,lingue:dizionari.elenco(dirDizionari)};});
+ipcMain.handle('dizionari:dati',(_e,{id}={})=>({ok:true,...dizionari.dati(dirDizionari,id)}));
 const ragLocale=require('./lib/rag-ipc').registra({ipcMain,app,vaultDir});
 require('./lib/studio-ipc').registra({ipcMain,app,vaultDir,readCfg,readKey,recupera:ragLocale.recupera,runtime:ragLocale.runtime});
 require('./lib/chat-ipc').registra({ recupera:ragLocale.recupera, ipcMain, app, vaultDir, readCfg, writeCfg, readKey, keysStatus });

@@ -1,0 +1,21 @@
+/* Controlli alla scala delle toolbar ZAINO; il PDF vive sopra, non dentro Reveal. */
+.presenta-fonte{box-sizing:border-box;margin:auto;padding:0;width:min(1080px,96vw);height:94vh;max-height:96vh;border:1px solid #d1d5db;background:#fbfbfa;color:#16181d;font:14px/1.4 "Helvetica Neue",Arial,sans-serif;isolation:isolate}
+.presenta-fonte[open]{display:flex;flex-direction:column}
+.presenta-fonte::backdrop{background:rgba(0,0,0,.45)}
+.presenta-fonte-barra{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:none;min-height:var(--tb-bar-h,35.1px);padding:4px 8px;border-bottom:1px solid #d1d5db}
+.presenta-fonte-barra:first-child{flex-wrap:nowrap}
+.presenta-fonte-barra:first-child button{flex-shrink:0}
+.presenta-fonte-barra strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--tb-fs,11px);font-weight:var(--tb-peso,700)}
+.presenta-fonte .tbtn{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;min-width:var(--tb-h,27px);height:var(--tb-h,27px);padding:0 8px;background:transparent;color:inherit;border:0;border-radius:0;font:var(--tb-peso,700) var(--tb-fs,11px)/1 "Helvetica Neue",Arial,sans-serif;letter-spacing:var(--tb-track,.08em);text-transform:uppercase;cursor:pointer}
+.presenta-fonte .tbtn:hover:not(:disabled){background:#bceee8;color:#0f766e}
+.presenta-fonte .tbtn:disabled{opacity:.4;cursor:default}
+.presenta-fonte :is(button,div[tabindex]):focus-visible{outline:2px solid #0f766e;outline-offset:-2px}
+.presenta-fonte-stato{margin:0;padding:8px;flex:none}
+.presenta-fonte-area{flex:1;min-height:0;position:relative;background:#e5e7eb}
+.presenta-fonte-frame{position:absolute;inset:0;overflow:auto}
+.presenta-fonte .pdfViewer{padding:8px 0}
+.presenta-fonte-menu{position:fixed;margin:0;padding:4px;border:1px solid #d1d5db;background:#fbfbfa;color:#16181d;box-shadow:0 4px 12px #0002}
+.presenta-fonte-menu button{border:0;background:transparent;color:inherit;padding:8px 12px;cursor:pointer;font:700 13px "Helvetica Neue",Arial,sans-serif}
+.presenta-fonte-menu button:hover,.presenta-fonte-menu button:focus-visible{background:#bceee8;outline:2px solid #0f766e;outline-offset:-2px}
+
+.presenta-fonte .ui-icon{width:1.15em;height:1.15em;flex:none;pointer-events:none}

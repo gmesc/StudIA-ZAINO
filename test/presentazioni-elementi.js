@@ -13,6 +13,8 @@ const pile=[3,1,2],punto=(h,v)=>({h,v,fragmentIndex:-1});
 for(const [h,v,azione,attesa] of [[0,0,'approfondisci',punto(0,1)],[0,2,'approfondisci',punto(1,0)],[1,0,'approfondisci',punto(2,0)],[2,1,'approfondisci',null],[2,1,'risali',punto(2,0)],[2,0,'risali',punto(1,0)],[1,0,'risali',punto(0,2)],[0,0,'risali',null],[0,2,'argomentoSuccessivo',punto(1,0)],[2,1,'argomentoPrecedente',punto(1,0)],[0,1,'argomentoPrecedente',null],[2,1,'argomentoSuccessivo',null]])assert.deepEqual(N.destinazione(punto(h,v),pile,azione),attesa,azione+' da '+h+'/'+v);
 assert.equal(N.destinazione(punto(0,0),[1],'approfondisci'),null);assert.equal(N.destinazione(punto(0,0),[1],'risali'),null);
 const comandiTasti=[],mappaTasti=N.tasti(o=>comandiTasti.push(o.azione));for(const codice of [39,37,40,38])mappaTasti[codice]();assert.deepEqual(comandiTasti,['argomentoSuccessivo','argomentoPrecedente','approfondisci','risali']);
+assert(N.avanzaAlClic({button:0}),'il clic sul foglio avanza gli effetti');
+for(const dato of [{button:2},{button:0,defaultPrevented:true},{button:0,interattivo:true},{button:0,selezione:true}])assert(!N.avanzaAlClic(dato),'controlli, link e selezione del testo conservano il gesto');
 let indice={h:0,v:2,f:0},passaggi=0;const deckFinto={getIndices:()=>indice,getHorizontalSlides:()=>pile.map(n=>({querySelectorAll:()=>({length:n===1?0:n})})),slide:(h,v,f)=>{indice={h,v,f};},next:()=>passaggi++,prev:()=>passaggi--};
 assert.deepEqual(N.comando(deckFinto,{azione:'approfondisci'}),punto(1,0));assert.deepEqual(N.comando(deckFinto,{azione:'risali'}),punto(0,2));N.comando(deckFinto,{azione:'avanti'});assert.equal(passaggi,1,'Avanti conserva il percorso dei frammenti');N.comando(deckFinto,{azione:'indietro'});assert.equal(passaggi,0);
 indice={h:2,v:1,f:0};N.comando(deckFinto,{azione:'approfondisci'});assert.deepEqual(indice,{h:2,v:1,f:0},'al limite non si azzerano le animazioni');
@@ -59,9 +61,22 @@ console.log('✓ PRESENTA elementi: navbar dinamiche, numeri e approfondimenti, 
 
 assert(!M.filtriConsentiti({type:'text'}));assert(!M.filtriConsentiti({type:'navbar'}));assert(M.filtriConsentiti({type:'image'}));
 const grafica={activeTextColor:'#ff0000',activeGraphicColor:'#008800',markerSize:42,gap:12,line:{width:6,color:'#0000ff',opacity:.4},separator:{width:2,color:'#333333',opacity:.3},border:{width:3,color:'#cccccc',opacity:.7},background:{color:'#ffffff',opacity:.2},activeBackground:{color:'#111111',opacity:.6}};
+// Le vecchie opacità concatenate si trasformano una volta, conservando la resa.
+const vecchiaGrafica={...grafica,activeGraphicOpacity:.5},primaGrafica=M.copia(vecchiaGrafica),convertita=M.graficaNavbar(vecchiaGrafica);
+assert.equal(convertita.activeBorderOpacity,.35);assert.equal(convertita.activeLineOpacity,.5);assert.equal(convertita.activeBackground.opacity,.3);
+assert(!Object.hasOwn(convertita,'activeGraphicOpacity'));assert.deepEqual(M.graficaNavbar(convertita),convertita,'conversione idempotente');assert.deepEqual(vecchiaGrafica,primaGrafica,'nessuna riscrittura dei dati letti');
+const indipendente=M.graficaNavbar({...convertita,border:{...convertita.border,opacity:0},background:{...convertita.background,opacity:.9},activeBackground:{...convertita.activeBackground,opacity:.8}});
+assert.equal(indipendente.activeBorderOpacity,.35);assert.equal(indipendente.activeBackground.opacity,.8);
+assert.equal(M.graficaNavbar({...convertita,activeBorderOpacity:0}).activeBackground.opacity,.3);
+assert(M.graficaNavbarValida(convertita));assert(!M.graficaNavbarValida({activeBorderOpacity:1.01}));assert(!M.graficaNavbarValida({activeLineOpacity:-.1}));
+const cssNuovo=M.graficaNavbarCSS(indipendente,'#123456');assert(cssNuovo.includes('--nav-active-border-opacity:0.35'));assert(cssNuovo.includes('--nav-active-bg-opacity:0.8'));assert(cssNuovo.includes('--nav-separator-color:#333333'));
+assert(M.graficaNavbarCSS({separator:{color:null}},'#123456').includes('--nav-separator-color:#123456'),'separatori automatici nel colore normale');
+assert.equal(M.graficaNavbar({separator:{width:3,enabled:false}}).separator.width,3);assert(M.graficaNavbarCSS({separator:{width:3,enabled:false}}).includes('--nav-separator-width:0px'));
 assert(M.graficaNavbarValida(grafica));assert(!M.graficaNavbarValida({line:{width:99}}));assert(!M.graficaNavbarValida({activeTextColor:'red;display:none'}));assert(!M.graficaNavbarValida({border:{url:'x'}}));
 const navAttuale=s().blocks.find(b=>b.type==='navbar');op({tipo:'blocco',blockId:navAttuale.id,block:{...navAttuale,style:{...navAttuale.style,navbar:grafica}}});
 assert(M.posizioni(d).every(p=>JSON.stringify(p.slide.blocks.find(b=>b.type==='navbar').style.navbar)===JSON.stringify(grafica)));assert(V.validatePresentazione(d).ok);assert(R.compila(d).html.includes('--nav-active-text:#ff0000'));assert(R.compila(d).html.includes('--nav-line-opacity:0.4'));
+const migrata=M.copia(d);for(const p of M.posizioni(migrata))p.slide.blocks.find(b=>b.type==='navbar').style.navbar=convertita;
+assert(V.validatePresentazione(migrata).ok,'schema compatibile con opacità indipendenti');assert.deepEqual(M.pubblica(migrata).stacks[0].slides[0].blocks.find(b=>b.type==='navbar').style.navbar,convertita,'pubblicazione conserva le opacità');assert(R.compila(migrata).html.includes('--nav-active-border-opacity:0.35'));
 const scorretto=M.copia(d);M.trova(scorretto,sid).slide.blocks.find(b=>b.type==='navbar').style.navbar.line.opacity=2;assert(!V.validatePresentazione(scorretto).ok);
 const contenuto={id:'contenuto',type:'text',slot:'body',markdown:'Contenuto',style:{box:{x:7,y:7,width:40,height:40}}};
 for(const [orientation,box,attesa] of [['vertical',{x:2,y:10,width:18,height:80},{x:22,y:7,width:71,height:86}],['vertical',{x:80,y:10,width:18,height:80},{x:7,y:7,width:71,height:86}],['horizontal',{x:7,y:2,width:86,height:10},{x:7,y:14,width:86,height:79}],['horizontal',{x:7,y:88,width:86,height:10},{x:7,y:7,width:86,height:79}]]){
@@ -84,3 +99,14 @@ console.log('✓ Grafica navbar validata, filtri pertinenti, area utile sui quat
 const areaGruppo={x:25,y:7,width:68,height:80},primo={x:25,y:10,width:20,height:15},ultimo={x:65,y:45,width:20,height:20};assert.deepEqual(M.limitaDelta([primo,ultimo],-90,90,areaGruppo),[0,22]);assert.deepEqual(M.limitaDelta([primo,ultimo],90,-90,areaGruppo),[8,-3]);
 
 opera({tipo:'incollaStile',stile:{layout:'title-text',blocks:[]}});assert.equal(slideProva().layout,'free','i layout storici si adattano alla fascia riservata');assert.deepEqual(slideProva().blocks.filter(M.comune),comuni);for(const b of slideProva().blocks.filter(b=>!M.comune(b)))assert.deepEqual(M.limitaArea(b.style.box,M.areaUtile(slideProva())),b.style.box);
+
+// La dimensione minima dei cerchi segue anche numeri a due cifre e approfondimenti.
+let lunga=M.crea('abb14eca-2adb-4fc1-9762-f20fe6601a1c','Numeri lunghi',id);
+lunga=M.applica(lunga,{tipo:'inserisciComune',slideId:lunga.stacks[0].slides[0].id,type:'navbar'},id);
+for(let i=1;i<12;i++)lunga=M.applica(lunga,{tipo:'aggiungiSlide',slideId:lunga.stacks.at(-1).slides[0].id,direzione:'destra'},id);
+assert(R.compila(lunga).html.includes('--nav-cifre:2;'));
+lunga=M.applica(lunga,{tipo:'aggiungiSlide',slideId:lunga.stacks.at(-1).slides[0].id,direzione:'sotto'},id);
+assert(R.compila(lunga).html.includes('--nav-cifre:3;'));
+const primaLunga=lunga.stacks[0].slides[0],barraLunga=primaLunga.blocks.find(b=>b.type==='navbar');
+lunga=M.applica(lunga,{tipo:'blocco',slideId:primaLunga.id,blockId:barraLunga.id,block:{...barraLunga,scope:'main'}},id);
+assert(R.compila(lunga).html.includes('--nav-cifre:2;'),'solo le principali richiedono due cifre');

@@ -1,10 +1,112 @@
 # PRESENTA e GOBBO nel Banco
 
-Il selettore della presentazione si trova a destra nella testata dello split: mostra il titolo aperto e permette di passare a un’altra presentazione. La toolbar sottostante contiene Documento, Annulla/Ripeti, Inserisci e i comandi di presentazione. Quando non è aperto alcun documento, nel corpo dello split compare soltanto **+ NUOVA PRESENTAZIONE**.
+Il selettore della presentazione si trova a destra nella testata dello split: mostra il titolo aperto e permette di passare a un’altra presentazione. La toolbar sottostante contiene Documento, Annulla/Ripeti, Inserisci, la clip delle fonti e i comandi di presentazione. Quando non è aperto alcun documento, nel corpo dello split compare soltanto **+ NUOVA PRESENTAZIONE**.
 
 PRESENTA è lo strumento del Banco per comporre le presentazioni. GOBBO è il pannello indipendente con note private, timer e comandi del relatore. Il primo percorso utilizzabile è collegato: creazione, modifica, autosave, riapertura, anteprima isolata, player nativo Reveal.js ed esportazione HTML offline. L’editor usa il layout **B · Sul foglio**, scelto nel confronto dei mockup, con i componenti ZAINO esistenti: selezione e manipolazione sulla slide, barra TITOLO/TESTO/IMMAGINE/SFONDO sotto l’anteprima e impostazioni della sola voce selezionata. La sidebar contiene miniature e + SLIDE.
 
 Le prove UI usano la porta **8999** come valore predefinito nei runner e nel client CDP. Il runner rifiuta la partenza se la porta è già occupata.
+
+## Pretext: righe di testo nelle animazioni
+
+L’effetto **Una riga alla volta** usa Pretext per raggruppare le parole dei titoli
+e dei paragrafi semplici. Il testo rimane nel DOM: scrittura, selezione,
+salvataggio, annulla/ripeti e formato dei documenti restano quelli di PRESENTA.
+Lo stesso percorso è caricato nella galleria delle animazioni, nell’anteprima,
+nella proiezione pubblica e nell’HTML esportato.
+
+Le misure preparate vengono riutilizzate quando cambia la larghezza; il
+caricamento dei font e i cambi di lingua o densità dello schermo le invalidano.
+Prima di applicare il raggruppamento si controlla che gli estremi delle righe
+corrispondano al testo disegnato dal browser. Markdown ricco, testo bidirezionale,
+parole spezzate o proprietà tipografiche non supportate usano la misura DOM già
+esistente. Non viene modificato il contenuto per adattarlo al motore.
+
+La prima integrazione riguarda questo effetto di PRESENTA. Il layout delle mappe
+e le dimensioni dei riquadri continuano a usare i motori esistenti.
+
+Pretext è incluso localmente, senza CDN né dipendenze npm aggiuntive a runtime.
+I sorgenti originali sono in `vendor/pretext`, fissati alla revisione
+`0d102a5cd933611e86a7e60bda7b4baa5995c6b0` di
+[chenglou/pretext](https://github.com/chenglou/pretext). Il manifest di provenienza
+registra l’hash di ogni sorgente. Il bundle IIFE si genera con
+`npm run pretext:build` e si confronta byte per byte con
+`npm run pretext:verifica`; usa esbuild già presente nel progetto. La licenza MIT
+e gli avvisi aggiuntivi Chromium, WebKit, Unicode e ICU sono conservati per
+intero nei crediti e in `runtime/licenze/pretext.txt` dell’esportazione.
+
+Verifiche ripetibili: `node test/pretext.js` controlla il motore reale con metriche
+iniettate, cache, righe, fallback, provenienza e runtime esportato.
+`npm run test:pretext-offline` esporta un documento sintetico, sposta la cartella
+e lo apre con rete negata e senza preload. Controlla il percorso Pretext effettivo,
+i font disponibili, il ripristino, il movimento ridotto e Unicode.
+`bash bin/prova-zaino.sh prova-pretext.js` verifica il cablaggio nell’anteprima
+e nella proiezione pubblica. Eseguire le prove Electron una campagna alla volta.
+
+## Clip: inserire una fonte nella slide
+
+La clip nella toolbar di PRESENTA riusa il selettore degli Appunti. Si sceglie
+un PDF, anche da un altro zaino, senza cambiare quello di lavoro. L’anteprima
+permette di sfogliare il documento: **Collega PDF** inserisce il riferimento
+all’intero documento, **Collega pagina** quello alla pagina visualizzata.
+Chiudere l’anteprima prima della scelta non aggiunge nulla.
+
+Il riferimento è un oggetto di testo sottolineato, con nome del PDF e pagina:
+si può spostare, formattare, rinominare o annullare come gli altri testi. Il
+rimando resta nella provenienza dell’oggetto (`source.kind: pdf`), separato
+dall’etichetta visibile. Un clic sul testo apre la fonte nell’editor e nella
+proiezione nativa; anche il menu contestuale offre **Apri fonte**. La chiusura
+mantiene slide e passaggio animato, come descritto sotto. Per modificare
+l’etichetta si usa il campo Testo o Scrivi sul foglio.
+
+## Apri fonte da keyword e ritagli
+
+Gli oggetti importati da Parole chiave o dall’Album conservano la provenienza.
+Se è un PDF, il menu dell’oggetto offre **Apri fonte**, nell’editor e durante
+la proiezione nativa di ZAINO. Nel player il menu si apre con clic destro;
+con l’oggetto a fuoco anche con Maiusc+F10. Immagini caricate dal computer e
+oggetti senza un riferimento PDF non offrono un collegamento inventato.
+
+Anche i riferimenti PDF locali delle presentazioni precedenti (`pdf:…#p=…`),
+compresi gli oggetti con provenienza `file` della guida, offrono il comando.
+Il numero viene risolto nello zaino della presentazione al momento del clic,
+poi passa agli stessi controlli di identità, revisione e sicurezza del PDF.
+Il documento non viene riscritto; fonti assenti o numeri ambigui danno un errore.
+
+L’editor riusa l’anteprima delle citazioni in modalità consultazione:
+nessun appunto destinatario, nessun cambio di zaino o di Banco. La proiezione
+mostra il PDF sopra la slide, con pagina citata, selezione del passaggio quando
+identificabile, pagine precedente/successiva, zoom e **Chiudi**.
+
+La richiesta della fonte usa lo stato confermato dal player anche dopo
+la navigazione diretta con frecce, tastiera o indice. La consultazione mantiene
+lo stesso DOM della slide e lo stesso indice dei passaggi Reveal. I timer Anime in esecuzione si fermano e riprendono dalla
+posizione raggiunta; quelli già terminati non ripartono. I comandi di
+avanzamento del GOBBO sono bloccati mentre la fonte è aperta. **Esc** chiude
+prima il menu della fonte o l’anteprima; dopo la chiusura torna il comportamento
+normale di uscita dallo schermo intero. Anche chiudere durante il caricamento
+lascia utilizzabile la presentazione.
+
+La chiusura usa soltanto la **X**, come nelle impostazioni. Le anteprime
+dell’editor, degli Appunti e della proiezione mostrano **zaino › documento**
+su una riga, con il token tipografico delle toolbar. Lo zaino occupa al massimo
+15 caratteri; il documento ne riceve 15 più quelli lasciati liberi dallo zaino.
+Le ellissi sono comprese nel limite; il tooltip e il nome accessibile conservano
+entrambi i nomi completi, senza il numero interno del PDF.
+
+Il player chiede soltanto l’oggetto della slide corrente: il main controlla
+sessione, token, revisione, sequenza e passaggio e risolve il rimando conservato
+nel documento. Il PDF attraversa gli stessi controlli di sicurezza, hash e
+limite di40MB delle citazioni. File rimossi o modificati producono un messaggio
+nell’anteprima, senza spostare la presentazione. Il player non riceve API del
+vault, note private o l’elenco delle altre fonti.
+
+Questa consultazione richiede ZAINO e il vault originale; l’export HTML
+continua a escludere provenienza e PDF: dei collegamenti inseriti con la clip
+resta l’etichetta leggibile, senza un pulsante che prometta di aprire il vault.
+**Collegamento delle parole** resta un comando per URL HTTP/HTTPS.
+
+Verifiche: `node test/presentazioni-fonti.js` e
+`bash bin/prova-zaino.sh prova-presenta-fonti.js` (porta8999, solo fixture).
 
 ## Come provarlo nell’app
 
@@ -24,7 +126,7 @@ L’anteprima occupa tutta la larghezza disponibile e conserva le proporzioni im
 
 L’avviso di contenuto fuori misura riguarda l’intera slide: resta quindi visibile cambiando tab se almeno un elemento è tagliato. Si aggiorna anche passando tra slide già compilate e non viene ereditato dalla precedente; i messaggi sono associati a slide e versione dell’anteprima. La misura controlla i riquadri esterni che tagliano il contenuto: piccole eccedenze delle metriche del font sulla propria riga interna non sono un problema se il testo entra nel riquadro.
 
-Il player nativo e l’export HTML adattano il foglio alla massima area disponibile senza deformarlo, con margine Reveal pari a zero. Se lo schermo ha proporzioni diverse dalla slide, lo spazio residuo usa lo stesso sfondo della slide corrente, anche negli approfondimenti; le frecce restano leggibili su sfondi chiari e scuri. Per i pacchetti già esportati occorre una nuova esportazione.
+Il player nativo e l’export HTML adattano il foglio alla massima area disponibile senza deformarlo, con margine Reveal pari a zero. La ricetta `bin/presenta-runtime.js` conserva la scala esatta, rimuovendo l’arrotondamento al centesimo di Reveal che poteva tagliare alcuni pixel ai bordi su determinate larghezze; player nativo, anteprima e HTML offline usano lo stesso runtime. Se lo schermo ha proporzioni diverse dalla slide, lo spazio residuo usa lo stesso sfondo della slide corrente, anche negli approfondimenti; le frecce restano leggibili su sfondi chiari e scuri. Per i pacchetti già esportati occorre una nuova esportazione.
 
 La testata di PRESENTA avvia il deck reale. GOBBO è marcato privato nel registro e non offre la proiezione generica, neppure nella barra a schermo intero. Una sessione usa la revisione fissata all’avvio: eventuali modifiche successive nell’editor non cambiano in silenzio le note o le slide già proiettate.
 
@@ -44,6 +146,16 @@ Lo sfondo condiviso usa un unico elemento dietro alle slide: rimane fermo mentre
 Il contratto conserva `background` per il colore, `backgroundMedia` (`assetId`, `fit`, `loop`, `muted`) per i media e aggiunge `backgroundPattern`, `backgroundIndependent` e il fondo documento `backgroundCommon`; valgono le stesse risorse locali verificate degli oggetti. Nessun URL arbitrario e nessun iframe/web incorporato. `risorseUsate`, pubblicazione, anteprima a capacità, export e cronologia includono lo sfondo. Duplicazione, nuove slide da modello e copia dello stile lo conservano. Il main dichiara la capacità `sfondiMedia`: una finestra aggiornata sopra un main precedente chiede il riavvio prima di importare.
 
 
+Nel player pubblico e nell’HTML offline, un clic sul corpo della slide avanza di un effetto (o alla slide successiva, terminati gli effetti), come Spazio. Le frecce conservano la navigazione fra principali e approfondimenti. Link, navbar, pulsanti, media e selezione del testo non generano avanzamenti aggiuntivi. Nei comandi Animazioni, Avvio, Durata e Attesa usano il padding compatto coerente con la loro altezza, senza tagliare il valore selezionato.
+
+## Annulla, Ripeti e avvisi di spazio
+
+**Cmd+Z** e **Maiusc+Cmd+Z** (Windows/Linux: **Ctrl+Z**, **Ctrl+Maiusc+Z** oppure **Ctrl+Y**) agiscono sulla cronologia della presentazione. Funzionano nel foglio, durante la scrittura, nelle proprietà e con PRESENTA attivo senza un campo a fuoco. Il testo in modifica viene sincronizzato prima dell’operazione; il ridisegno del foglio non disattiva il gesto successivo. Un altro split o un dialogo conserva la propria gestione dei tasti.
+
+L’avviso «Parte del contenuto non entra…» segnala contenuto effettivamente fuori dal riquadro, anche quando la navbar verticale restringe l’area utile e manda un titolo su due righe. Il font mantiene la dimensione scelta. Nella guida con navbar laterale larga 24,29%, per esempio, i titoli di 2.1, 6.1, 9.1 e 11.1 a 46 px richiedono circa 106 px per due righe, mentre il riquadro alto 108 px offre solo 92 px dopo il padding. Aumentare il riquadro o ridurre il font elimina l’avviso; questi quattro titoli della guida distribuita, con navbar orizzontale, entrano già nei riquadri.
+
+Durante la modifica, una cornice rossa identifica ogni riquadro che taglia testo, tabelle, immagini o altri media. Se a eccedere è l’altezza complessiva della slide, la cornice segnala il foglio. Rimane visibile anche selezionando il riquadro e scompare dopo la correzione. È un’indicazione dell’editor: non viene salvata nel documento e non compare nella vista pulita, nel player o negli export.
+
 ## Navbar, numerazione, aspetto e disegno vettoriale
 
 Tutti i tab delle proprietà hanno una distanza ridotta fra la riga di selezione e le opzioni. Le azioni **Nascondi/Mostra su questa slide** sono compatte e allineate a sinistra, con una nota breve nella stessa riga. In SFONDO, **Applica a tutte le slide** è nella barra dei tipi di sfondo; le spiegazioni restano nei tooltip e il messaggio sullo sfondo comune è stato rimosso. Gli altri testi di aiuto usano la stessa dimensione dei normali messaggi dell’editor.
@@ -52,9 +164,17 @@ Tutti i tab delle proprietà hanno una distanza ridotta fra la riga di selezione
 
 **Inserisci → Numera pagine** crea un contatore comune con font, dimensione, colore, allineamento e posizione modificabili. Mostra `1/12`, `2/12`, ecc.; gli approfondimenti della seconda principale diventano `2a/12`, `2b/12`, fino a `2aa/12` oltre la ventiseiesima. Il denominatore conta le principali. Solo il valore del contatore cambia con una breve dissolvenza e uno spostamento verticale di 6 px in 200 ms, invertito tornando indietro; il riquadro conserva posizione e dimensioni. Con movimento ridotto il numero cambia subito. Posizione e stile si aggiornano insieme in tutte le slide, anche trascinando l’oggetto. Dal menu contestuale scegliere **Nascondi su questa slide**; la voce **Numero pagina · nascosto** nelle proprietà permette di selezionarlo e usare **Mostra su questa slide**. Vale anche per le navbar. **Rimuovi da tutte le slide** elimina l’oggetto comune; Annulla lo recupera.
 
-**Aspetto**, nella sezione dell’oggetto o nel suo bubble menu, offre **Fusione** (Normale, Moltiplica, Scolora, Sovrapponi, Scurisci e Schiarisci) e opacità 0–100%. Su testi, titoli, elenchi, formule, tabelle, numeratore e navbar si vedono solo questi controlli. Immagini, forme e disegni hanno anche bianco e nero/scala di grigi, seppia, luminosità, contrasto, saturazione e sfocatura statica. Video, audio e GIF sono esclusi. Eventuali filtri già salvati sui testi restano leggibili e si eliminano con **Ripristina aspetto**. Gli effetti statici restano separati dai wrapper delle animazioni: un’entrata non ripristina l’opacità dell’oggetto al 100%. Miniature, player ed esportazione usano lo stesso stile.
+**Aspetto** della navbar presenta tre gruppi affiancati, che vanno a capo nello split stretto: **Colori degli step**, **Dimensioni e distanze** e **Intera navbar**. Quest’ultimo contiene anche **Separatori tra gli step**. I gruppi conservano l’apertura o la chiusura mentre si cambiano i valori. In Colori, **Non selezionati / Selezionato** sceglie quale aspetto modificare senza cambiare slide. Qui si trova anche il colore del testo (numero e titolo), insieme a bordo e riempimento del cerchio negli Step numerati, bordo e riempimento dell’intera Scheda, oppure colore della Linea di avanzamento. I controlli non pertinenti al tipo scelto non compaiono. Ogni bordo, riempimento e linea ha la propria opacità: il bordo selezionato non dipende dall’opacità degli altri bordi né attenua il riempimento. **Senza bordo** e **Riempimento trasparente** agiscono soltanto sullo stato scelto. Scegliere un colore su una parte trasparente la rende visibile. Ogni riga colore mostra un campione e, quando pertinente, la percentuale di opacità digitabile accanto: clic sul campione apre la palette Tailwind, con Automatico, Bianco, Nero e i colori personali.
 
-La navbar ha gruppi propri in **Aspetto**: **Step attivo** (colore del testo, colore/opacità della grafica, sfondo per cerchi e schede), **Dimensioni e spazi** (dimensione dei cerchi e distanza fra gli step), **Linea di avanzamento** (colore, spessore, opacità della parte inattiva), **Separatori** (colore, spessore, opacità) e **Bordo e sfondo delle forme**. I separatori diventano orizzontali nella barra verticale; spessore 0 li nasconde. I gruppi pertinenti cambiano con il tipo della barra. Ripristina aspetto elimina anche queste personalizzazioni. Il colore Automatico segue il testo della slide. Cursori grigi come Album; campi su più colonne, fino a due righe e **…** per quelli rimanenti.
+Pulsanti, palette e sezioni usano la scala compatta delle toolbar; i gruppi non hanno linee divisorie e le sottovoci sono rientrate. Gli slider sono corti (traccia entro 192 px), con il valore accanto; anche nelle finestre ampie le misure restano raggruppate. Le etichette sono vicine ai campi; i titoletti usano il token esistente `--tbig-fs`, leggermente maggiore del testo delle toolbar. I controlli dimensionali che non entrano passano in **…**. **Dimensioni e distanze** conserva spessori e distanza comuni ai due stati; **Diametro dei cerchi**, presente soltanto negli Step numerati, regola la misura minima, distinta dalla dimensione del font. Tutti i cerchi si allargano quanto serve per il numero più lungo, compresi `12` e `12a`, mantenendo le cifre centrate su una sola riga.
+
+**Clic sul numero o sulla forma** della navbar apre un bubble con bordo/riempimento o linea; **clic sul titolo** apre il colore del testo. Lo stato corrisponde allo step cliccato e si può cambiare con **Non selezionati / Selezionato**. **Tutti i comandi** apre il pannello completo sotto la slide. Il bubble cerca spazio libero sopra, sotto o ai lati della navbar, restando dentro la porzione visibile dell’anteprima. Se manca spazio per un pannello utilizzabile, si aggancia subito sotto il foglio. Si riposiziona durante resize, scorrimento e cambio Banco; anche la palette aperta dal bubble rimane nel suo riquadro, senza sovrapporsi alla navbar. Si chiude con X o clic esterno; Esc funziona quando il focus è nel bubble.
+
+**Aspetto**, nella sezione dell’oggetto o nel suo bubble menu, offre **Fusione** (Normale, Moltiplica, Scolora, Sovrapponi, Scurisci e Schiarisci) e opacità 0–100%. Su testi, titoli, elenchi, formule, tabelle e numeratore si vedono solo questi controlli. Nella navbar sono nella sottosezione **Intera navbar**, con il nome **Opacità complessiva**. Immagini, forme e disegni hanno anche bianco e nero/scala di grigi, seppia, luminosità, contrasto, saturazione e sfocatura statica. Video, audio e GIF sono esclusi. Eventuali filtri già salvati sui testi restano leggibili e si eliminano con **Ripristina aspetto**. Gli effetti statici restano separati dai wrapper delle animazioni: un’entrata non ripristina l’opacità dell’oggetto al 100%. Miniature, player ed esportazione usano lo stesso stile.
+
+**Mostra separatori** rende disponibili colore, spessore e opacità delle linee fra gli step; nasconderle conserva il loro spessore. Sono verticali nella barra orizzontale e orizzontali nella verticale. Il loro colore Automatico segue il testo non selezionato, restando uguale durante la navigazione. Gli altri Automatico hanno tooltip specifici: testo normale adattato allo sfondo, testo selezionato uguale al normale, grafica nel colore del testo del proprio stato, riempimento selezionato nel colore del bordo selezionato. **Ripristina aspetto** elimina i colori e le personalizzazioni grafiche della navbar, compreso il colore del testo.
+
+Le navbar già salvate restano leggibili e conservano la resa delle vecchie opacità concatenate. La prima modifica grafica memorizza le opacità risultanti come valori indipendenti, senza riscrivere documenti alla semplice apertura. Il vecchio `activeGraphicOpacity` resta accettato in lettura; il formato aggiornato usa `activeBorderOpacity`, `activeLineOpacity` e `activeBackground.opacity`. Miniature, player ed export condividono la conversione e lo stesso CSS.
 
 La griglia, il comando **Posizione**, le guide magnetiche, il trascinamento (anche di gruppi) e le disposizioni usano l’**area utile**: la navbar verticale riserva la fascia del bordo sinistro/destro più vicino; quella orizzontale e il numeratore riservano testa/piede. La distanza di sicurezza è il 2% del foglio. Creare, spostare o nascondere questi oggetti aggiorna i riquadri dei contenuti in tutte le slide interessate, mantenendo la distribuzione relativa dei contenuti. Le dimensioni dei font restano quelle scelte; il normale avviso segnala contenuti che richiedono un riquadro più grande. Gli oggetti comuni mantengono posizione e stile applicando disposizioni, Sistema o Incolla stile; sono esclusi dagli allineamenti di gruppo. Se manca spazio, un messaggio chiede di spostare o ridurre la barra/il numeratore. Le modifiche si annullano con la cronologia.
 
@@ -114,7 +234,7 @@ I formati sono sequenze `richText` validate, mai HTML arbitrario: testo, stili c
 
 **Colori**: Bianco, Nero, **Nuovo colore** (palette Tailwind) e cinque slot personali stanno sulla stessa riga finché c’è spazio, poi vanno a capo. Non esiste più un comando Salva colore: scegliere nella palette memorizza subito il colore nel primo slot libero, senza duplicati; a slot pieni il nuovo colore sostituisce quello inserito per primo. Clic su uno slot pieno applica il colore; clic destro (oppure Maiusc+F10) apre il bubble menu **Modifica colore / Elimina colore**. Modifica apre la palette per sostituire quello slot; Elimina svuota la preferenza senza modificare il documento o l’ultimo colore ricordato. Uno slot vuoto mostra «–» e apre direttamente la palette. Tutti i pulsanti colore hanno la stessa altezza e hover verde, senza cornice esterna sugli slot. Le etichette sono identificatori Tailwind; i vecchi colori fuori palette restano conservati e indicano il campione più vicino con ≈. Memoria locale al profilo, conservata anche dopo la chiusura dell’app.
 
-**Maiusc + clic** aggiunge o toglie oggetti dalla selezione. I comandi sotto il foglio allineano bordi e centri e distribuiscono tre o più oggetti; Duplica selezionati ed Elimina selezionati sono operazioni singole annullabili. Trascinamento e frecce muovono insieme gli oggetti selezionati, mantenendoli sul foglio. La copia fra slide resta per singolo oggetto. **RIGHELLI** ospita due comandi distinti: il ciclo spenti → 2×2 → 3×3 → 4×4 e **Guide magnetiche**, attivabile indipendentemente. Gli schemi suddividono l’area entro i margini 7–93% e restano visibili anche durante la scrittura. Con l’aggancio attivo, margini, centri, griglia corrente e altri oggetti diventano riferimenti magnetici; Alt sospende temporaneamente l’aggancio. I selettori lungo il bordo di POSIZIONE scelgono una riga o una colonna, spostando l’oggetto soltanto su quell’asse; tutte le celle interessate sono evidenziate in verde. Le guide restano un aiuto dell’editor e non compaiono in proiezione o nell’export.
+**Maiusc + clic** aggiunge o toglie oggetti dalla selezione. I comandi sotto il foglio allineano bordi e centri e distribuiscono tre o più oggetti; Duplica selezionati ed Elimina selezionati sono operazioni singole annullabili. Trascinamento e frecce muovono insieme gli oggetti selezionati, mantenendoli sul foglio. La copia fra slide resta per singolo oggetto. **Maiusc + trascinamento** vincola il movimento all’asse orizzontale o verticale scelto dal primo movimento significativo; il vincolo vale anche con guide magnetiche e selezioni multiple. Rilascia Maiusc per tornare al movimento libero. **RIGHELLI** ospita il ciclo spenti → 2×2 → 3×3 → 4×4, **Guide magnetiche**, attivabile indipendentemente, e **Passo delle frecce**: 0,1%, 0,25%, 0,5%, 1%, 2% o 5% della slide (default 1%). La percentuale si riferisce alla larghezza per destra/sinistra e all’altezza per su/giù; Maiusc triplica il passo. La scelta si ricorda su questo Mac e non entra nel file della presentazione. Durante la scrittura le frecce continuano a muovere il cursore. Gli schemi suddividono l’area entro i margini 7–93% e restano visibili anche durante la scrittura. Con l’aggancio attivo, margini, centri, griglia corrente e altri oggetti diventano riferimenti magnetici; Alt sospende temporaneamente l’aggancio. I selettori lungo il bordo di POSIZIONE scelgono una riga o una colonna, spostando l’oggetto soltanto su quell’asse; tutte le celle interessate sono evidenziate in verde. Le guide restano un aiuto dell’editor e non compaiono in proiezione o nell’export.
 
 **Sostituisci immagine** sceglie un’altra immagine dello zaino conservando identità, riquadro e stile. Il vecchio ritaglio viene rimosso perché riguarda una sorgente diversa; Annulla ripristina anche quello. Il trascinamento dalla sidebar copia il materiale nella slide e non lo rimuove dalla raccolta.
 
@@ -280,3 +400,15 @@ Ritaglia offre otto maniglie libere e proporzioni Libero, 1:1, 4:3, 16:9 e 3:4. 
 Verificati nel browser incorporato: deselezione, grassetto/font/colore/dimensione su una sola parola e conservazione dopo ridisegno, spostamento con menu solidale, coordinate degli altri oggetti invariate, rapporto quadrato/panoramico, maniglia laterale, conferma/riapertura e annullamento. Le prove dell’app descritte sopra si riferiscono alla tranche precedente; questa correzione interessa soltanto il prototipo.
 
 Nel mockup le proprietà tipografiche usano la scala `tbar-ctl`: selettore del carattere e Dimensione leggono entrambi `--tb-h`, che in questa scala deriva da `--ctl-h` (40px). Il bubble mantiene la scala normale della toolbar. In **Stile → Font** la scelta applica un font comune a titolo, testo, didascalie e miniature, rimuovendo solo le eccezioni di famiglia dai formati delle parole. Una sola operazione Annulla ripristina i font precedenti; le nuove slide ereditano il carattere corrente. Verificati nel browser i due campi allineati, l’uniformazione su tre slide, nuova slide, undo/redo e conservazione di grassetto e colore. Questa impostazione e la formattazione delle singole parole sono state trasferite nell’editor reale; i paragrafi di questa sezione descrivono le verifiche storiche del prototipo.
+
+### Regressioni dei controlli e del trascinamento
+
+`bash bin/prova-zaino.sh prova-presenta-controlli.js` usa esclusivamente un vault sintetico. Controlla trascinamenti dopo modifiche, gesti fermati al margine, griglia con guide magnetiche, scrittura e ritorno fra mezzo schermo, tutto banco e quarti. Misura inoltre i cerchi a diametro minimo e le distanze/altezza dei controlli a 1900, 700 e 390 px. La conferma della geometria usa un identificatore di richiesta: anche un movimento senza variazione di posizione termina l’attesa del frame, senza affidarsi a una ricompilazione o al resize.
+
+## Revisione INTRO ZAINO e sequenze — 12 novembre 2026
+
+«Una lettera alla volta» anima l’opacità di elementi inline: i contenitori inline-block consentivano interruzioni fra le lettere e spostavano parole fra le righe. La regressione dell’export misura ora la riga di ogni carattere prima e durante l’effetto, conservando corsivo, grassetto e ripristino del DOM.
+
+Le sequenze hanno Ordine (dall’inizio/dalla fine) e Sovrapposizione (automatica oppure 0–100%). La durata comprende tutta la sequenza; il ritmo automatico conserva quello dei documenti precedenti. Schema, modello pubblico, editor, player ed export conservano `sequenceOrder` e `sequenceOverlap`. Il calcolo dei tempi è nel catalogo puro. Font, larghezza, interlinea e spaziatura di Pretext continuano a provenire dal testo e dal riquadro; le misure DOM restano il fallback dei contenuti ricchi. I nuovi selettori riusano i campi e i token di Avvio/Durata/Attesa, verificati nella UI.
+
+Verifiche: 110 programmi Node completati con dipendenze isolate; catalogo di 38 effetti nel player offline con controlli di movimento, ritorno e movimento ridotto; `test/pretext-offline.js` (righe, ordine inverso esportato, Unicode, font e più viewport); `prova-pretext.js` e `prova-presenta-controlli.js` nell’app reale. Il primo controllo dei crediti è stato falsato da un `node_modules` condiviso via symlink: una reinstallazione dal lockfile in una cartella indipendente ha eliminato l’errore, senza modificare i crediti.

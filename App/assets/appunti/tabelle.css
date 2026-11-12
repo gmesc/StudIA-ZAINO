@@ -1,6 +1,6 @@
 .note-tabella{border-collapse:collapse;width:100%;margin:.8em 0;table-layout:fixed;overflow-wrap:anywhere}
 .note-tabella th,.note-tabella td{border-bottom:1px solid var(--line);padding:8px;vertical-align:top}
-:is(#noteHost,#noteHost2) .note-tabella{cursor:pointer}
+:is(#noteHost,.note-host) .note-tabella{cursor:pointer}
 .note-tabella-dialog{width:min(1100px,94vw);max-height:90vh;box-sizing:border-box;background:var(--panel);color:var(--ink);border:1px solid var(--line);padding:12px;overflow:auto}
 .note-tabella-dialog .tbar{flex-wrap:wrap}
 .note-tabella-dialog label{font-size:12px}

@@ -1,0 +1,16 @@
+{
+  "formato": "zaino-stile",
+  "versione": 1,
+  "tipo": "slide",
+  "nome": "Drawably",
+  "stile": {
+    "font": "patrick-hand",
+    "sfondo": "#fffdf8",
+    "colore": "#303030",
+    "accento": "#2d5ce3",
+    "titolo": 54,
+    "testo": 32
+  },
+  "autore": "Daniel Belyi · adattamento ZAINO",
+  "licenza": "MIT"
+}

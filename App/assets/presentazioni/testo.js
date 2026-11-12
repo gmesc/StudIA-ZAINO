@@ -1,7 +1,7 @@
 /* Testo sul foglio: sequenze validate, formati per intervallo e fallback Markdown senza DOM. */
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.PresentaTesto=factory();})(typeof window==='undefined'?this:window,function(){
  'use strict';
- const FONT=['zaino','arial','verdana','georgia','courier','atkinson','atkinson-next','testme','testme-alt'];
+ const FONT=['zaino','arial','verdana','georgia','courier','atkinson','atkinson-next','testme','testme-alt','patrick-hand'];
  const CHIAVI=['bold','italic','underline','fontFamily','fontSize','fontWeight','color'];
  const pesi=f=>f==='atkinson-next'?[200,300,400,500,600,700,800]:[400,700];
  const peso=(s={},base=400)=>s.fontWeight??(s.bold===undefined?base:s.bold?700:400);

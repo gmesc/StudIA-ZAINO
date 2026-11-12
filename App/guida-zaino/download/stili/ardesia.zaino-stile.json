@@ -1,0 +1,16 @@
+{
+  "formato": "zaino-stile",
+  "versione": 1,
+  "tipo": "slide",
+  "nome": "Ardesia",
+  "autore": "ZAINO",
+  "licenza": "GPL-3.0-or-later",
+  "stile": {
+    "font": "testme",
+    "sfondo": "#172A2A",
+    "colore": "#FFFFFF",
+    "accento": "#B5E9D8",
+    "titolo": 58,
+    "testo": 34
+  }
+}

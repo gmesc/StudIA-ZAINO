@@ -31,11 +31,14 @@ async function wait(expr){for(let i=0;i<160;i++){if(await c.val(expr))return;awa
   assert(await c.val(`(()=>{const e=document.getElementById('noteSelect'),h=e.closest('.bhead'),r=e.getBoundingClientRect(),g=e.closest('.tendina').getBoundingClientRect();return h&&r.width>0&&Math.abs(r.width-g.width)<=1&&r.left>=h.getBoundingClientRect().left&&r.right<=h.getBoundingClientRect().right;})()`),'titolo nello split stretto: selettore intero cliccabile e dentro la testata');
   const compatta=await c.invia('Page.captureScreenshot',{format:'png'});fs.writeFileSync('/tmp/zaino-toolbar-quaderno.png',Buffer.from(compatta.result.data,'base64'));
   await c.val(`BANCO.stato.col=${q(layout)};bancoDisegna()`);
-  assert(await c.val(`['.bold','.italic','.heading','.quote','.unordered-list','.ordered-list','.link','.code','.preview','.ncb-undo','.ncb-redo','.ncb-callout','.ncb-emoji','.ncb-guida','.ncb-cita','.ncb-mat'].every(sel=>{const b=document.querySelector('#noteHost .editor-toolbar '+sel);return b?.querySelector('svg.ui-icon')&&b.title;})`),'Appunti: tutti i simboli sono SVG con tooltip');
+  assert(await c.val(`['.bold','.italic','.quote','.unordered-list','.ordered-list','.link','.code','.preview','.ncb-undo','.ncb-redo','.ncb-callout','.ncb-emoji','.ncb-guida','.ncb-cita','.ncb-mat'].every(sel=>{const b=document.querySelector('#noteHost .editor-toolbar '+sel);return b?.querySelector('svg.ui-icon')&&b.title;})`),'Appunti: tutti i simboli sono SVG con tooltip');
+  assert(await c.val("document.querySelector('#noteHost .note-stile-testo').options.length===8"),'Titoli: testo e tutti i sei livelli disponibili');
   assert(await c.val(`(()=>{const b=document.querySelector('#noteHost .editor-toolbar .bold');return b.title.startsWith('Grassetto (')&&b.getAttribute('aria-label')===b.title;})()`),'tooltip e nome accessibile in italiano, con scorciatoia');
   assert(await c.val(`!!document.querySelector('#menuBtn img.oi') && !!document.querySelector('#creditsBtn .btn-emoji') && !!document.querySelector('#modoBtn img.oi')`),'fantasma, mago e marchio conservati');
   assert(await c.val(`[...document.querySelectorAll('#zainoNav [data-znav="organizza"]')].every(b=>b.querySelector('svg.ui-icon')&&b.title)`),'sidebar: SVG con tooltip');
 
+  await c.val(`if(!NOTES.mde.isPreviewActive())noteAlternaAnteprima(NOTES)`);
+  assert(await c.val(`['noteStampa','notePdf','noteClose'].every(id=>getComputedStyle(document.getElementById(id)).pointerEvents!=='none')`),'anteprima: stampa, export e chiusura restano cliccabili');
   await c.val(`window.__toolbarFlush=noteFlushStato;noteFlushStato=()=>false`);
   await c.clicca('#noteClose');assert.equal(await c.val(`NOTES.cur.file`),file);
   await c.val(`noteFlushStato=window.__toolbarFlush`);

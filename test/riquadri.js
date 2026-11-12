@@ -1,0 +1,10 @@
+'use strict';
+const A=require('node:assert/strict'),R=require('../App/assets/appunti/riquadri'),I=require('../App/assets/interfaccia/icone');
+for(const s of ['lucide','openmoji','android'])A.equal(R.stile(s),s);
+for(const s of [null,undefined,'sistema','<svg>'])A.equal(R.stile(s),'lucide');
+A.equal(R.simbolo({k:'dafare'},{emoji:'🔐'}),'lock-keyhole');
+A.equal(R.simbolo({k:'dafare'},{emoji:'🔐',icona:'lightbulb'}),'lightbulb');
+A.equal(R.simbolo({k:'dubbio'},{emoji:'🐈',icona:'<script>'}),'help-circle');
+A.equal(R.simbolo({k:'attenzione'},{emoji:'⚠️'}),'triangle-alert');
+for(const [nome] of R.icone)A.match(I.svg(nome),/<svg /);
+console.log('✓ Famiglia unica, migrazione simboli personalizzati, icone valide e fallback coerenti');

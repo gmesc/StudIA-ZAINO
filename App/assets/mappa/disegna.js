@@ -65,29 +65,12 @@
     return gruppi[(Math.abs(g) - 1) % gruppi.length];
   }
 
-  /**
-   * Il colore di una card, in cascata — e l'ordine È la regola (§3, la
-   * distinzione cromatica di Braynr).
-   *
-   *   1. il colore scelto a mano vince su tutto: un nodo estratto e poi
-   *      ricolorato resta del colore che gli hai dato;
-   *   2. altrimenti un nodo scritto ex novo (`origine:'utente'`) è GRIGIO,
-   *      finché non lo si colora: la mappa distingue a colpo d'occhio ciò che
-   *      viene dalla fonte da ciò che ci hai messo tu;
-   *   3. altrimenti il colore del ramo, come sempre.
-   *
-   * Il grigio si prende dal tema (`tema.muted`) e non da un hex scritto qui:
-   * un colore cablato nel modulo sarebbe l'unico pezzo di mappa che non cambia
-   * passando al tema scuro.
-   *
-   * ⚠️ Colore e origine restano DUE canali: il bordo tratteggiato dell'utente
-   * non dipende da questa funzione. Un nodo ricolorato a mano continua a dire
-   * da dove viene, altrimenti la prima colorazione cancellerebbe la storia.
-   */
+  /** Il colore appartiene al bordo: un gruppo assegnato conserva la parentela,
+   * un nodo senza assegnazione usa il neutro dello stile. L’origine resta nel tratteggio. */
   function coloreNodo(nodo, gruppi, tema) {
     if (nodo && nodo.colore) return nodo.colore;
-    if (nodo && nodo.origine === 'utente') return tema.muted;
-    return colore(nodo, gruppi);
+    if (nodo && nodo.origine !== 'utente' && nodo.gruppo) return colore(nodo, gruppi);
+    return tema.neutro || '#9ca3af';
   }
 
   /**
@@ -191,49 +174,6 @@
       '<text ' + comune + ' fill="' + opt.colore + '">' + esc(s) + '</text>';
   }
 
-  /* Quanto stanno dentro dal bordo l'immagine e la sua didascalia. Cinque e non
-     quattro: la barra d'accento è spessa 4px e corre sul bordo alto (td) o su
-     quello sinistro (lr), e con quattro l'immagine la toccherebbe — il colore
-     del ramo è la prima cosa che si legge su una mappa, e non deve stare sotto
-     un ritaglio. */
-  var PAD_IMM = 5;
-
-  /**
-   * Come si spartisce una card che porta un'immagine: il riquadro del ritaglio
-   * sopra, la fascia della didascalia sotto.
-   *
-   * ⚠️ La card NON cresce. L'altezza la decide `layouts`, uguale per tutte, e un
-   * nodo che si allargasse per far posto alla sua immagine sfonderebbe la
-   * griglia di tutti gli altri: qui si divide lo spazio che c'è, non se ne
-   * chiede dell'altro.
-   *
-   * La didascalia non prende mai più di metà: `layouts` accetta card alte fino a
-   * 24px, e là una riga di testo a corpo pieno si mangerebbe il ritaglio
-   * lasciando un nodo con la cornice e dentro niente.
-   */
-  /** La barra d'accento: lo stesso spessore che hanno tutte le card. */
-  var BARRA = 4;
-  // Intersezione fra fascia colorata e interno arrotondato. Un tracciato
-  // autonomo funziona anche nelle miniature/PDF, senza id di clip condivisi.
-  function barraArrotondata(x, y, w, h, r, bordo, verticale, colore, inizioRetto) {
-    var i = bordo / 2;
-    // SVG limita separatamente i due raggi nei ritagli molto larghi o stretti.
-    var rx = Math.max(0, Math.min(r, w / 2) - i), ry = Math.max(0, Math.min(r, h / 2) - i);
-    x += i; y += i; w -= 2 * i; h -= 2 * i;
-    if (verticale) { var scambio = w; w = h; h = scambio; scambio = rx; rx = ry; ry = scambio; }
-    var fascia = Math.min(BARRA, h), d;
-    var n = v => Math.round(v * 1000) / 1000;
-    var arco = 'A' + n(rx) + ' ' + n(ry) + ' 0 0 1 ';
-    if (!rx || !ry) d = 'M0 0H' + n(w) + 'V' + n(fascia) + 'H0Z';
-    else if (fascia >= ry) d = 'M' + (inizioRetto ? 0 : n(rx)) + ' 0H' + n(w-rx) + arco + n(w) + ' ' + n(ry) + 'V' + n(fascia) + 'H0' + (inizioRetto ? 'Z' : 'V' + n(ry) + arco + n(rx) + ' 0Z');
-    else {
-      var dx = rx * Math.sqrt(1 - Math.pow(1 - fascia / ry, 2));
-      d = 'M' + (inizioRetto ? 0 : n(rx)) + ' 0H' + n(w-rx) + arco + n(w-rx+dx) + ' ' + n(fascia) + 'H' + (inizioRetto ? '0Z' : n(rx-dx) + arco + n(rx) + ' 0Z');
-    }
-    return '<path class="mbarra" transform="matrix(' + (verticale ? '0 1 1 0 ' : '1 0 0 1 ') + n(x) + ' ' + n(y) + ')" d="' + d + '" fill="' + colore + '"/>';
-  }
-
-
   /**
    * Le misure di un nodo-immagine: **le detta il ritaglio**, non la griglia.
    *
@@ -257,18 +197,18 @@
    */
   function misureImmagine(im, W, H, k, conDidascalia, fs) {
     var hDid = conDidascalia ? Math.min(fs * 1.35, H * 0.34) : 0;
-    var wi = Math.max(1, W * k - BARRA);
+    var wi = Math.max(1, W * k);
     var rap = (im && im.w > 0 && im.h > 0) ? (im.w / im.h) : (wi / Math.max(1, H * k - hDid));
     var hi = wi / rap;
     var tetto = H * k * 5;
     if (hi > tetto) { hi = tetto; wi = hi * rap; }
-    return { wi: wi, hi: hi, hDid: hDid, W: wi + BARRA, H: hi + hDid };
+    return { wi: wi, hi: hi, hDid: hDid, W: wi, H: hi + hDid };
   }
 
   function riquadroImmagine(x, y, m) {
     // Il ritaglio resta intero e a filo: la cornice viene disegnata sopra.
     return {
-      x: x + BARRA, y: y,
+      x: x, y: y,
       w: Math.max(1, m.wi),
       h: Math.max(1, m.hi),
       cyDid: y + m.hi + m.hDid / 2
@@ -402,7 +342,7 @@
     var stile=opt.aspetto?aspetto().normalizza(opt.aspetto):null;
     var tema = Object.assign({}, TEMA, opt.tema || {});
     if(stile){tema=aspetto().tema(stile,tema);opt={...opt,font:aspetto().font(stile)};}
-    var fondoNodo=stile?.nodo==='none'?'none':tema.panel, bordoNodo=stile?.bordo==='none'?'none':tema.line;
+    var fondoNodo=stile?.nodo==='none'?'none':tema.panel, bordoNodo=stile?.bordo==='none'?'none':stile?.bordo||'#9ca3af';
     var gruppi = (opt.gruppi && opt.gruppi.length) ? opt.gruppi : GRUPPI;
     var tipo = tipografiaNodo(null, opt);
     var font = tipo.font;
@@ -456,7 +396,7 @@
          non esiste. */
       if (filo) {
         out.push('<path d="' + a.d + '" fill="none" stroke="' + col + '" stroke-width="' + sw +
-          '" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>' + punta(a.punti, col, 9));
+          '" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>' + punta(a.punti, col, stile?stile.freccia*Math.sqrt(sw):9));
         return;
       }
       out.push('<g class="marco" data-arco="' + i + '" data-da="' + esc(a.e.da) + '" data-a="' + esc(a.e.a) + '">' +
@@ -473,8 +413,8 @@
         '<path d="' + a.d + '" fill="none" stroke="#ffffff" stroke-opacity="0" stroke-width="12" ' +
           'stroke-linecap="round" stroke-linejoin="round" pointer-events="stroke"/>' +
         '<path d="' + a.d + '" fill="none" stroke="' + col + '" stroke-width="' + sw + '" stroke-linecap="round" stroke-linejoin="round"' + tratteggio + '/>' +
-        punta(a.punti, col, 9) +
-        (a.e.bidir ? punta(a.punti.slice().reverse(), col, 9) : '') +
+        punta(a.punti, col, stile?stile.freccia*Math.sqrt(sw):9) +
+        (a.e.bidir ? punta(a.punti.slice().reverse(), col, stile?stile.freccia*Math.sqrt(sw):9) : '') +
         '</g>');
     });
 
@@ -503,10 +443,11 @@
     // 4. card
     Object.keys(res.pos).forEach(function (id) {
       var p = res.pos[id], nodo = perId[id] || {};
-      var col = coloreNodo(nodo, gruppi, tema);
+      var col = coloreNodo(nodo, gruppi, {...tema,neutro:bordoNodo==='none'?'#9ca3af':bordoNodo});
       var x = p.x - W / 2, y = p.y - H / 2;
       var acceso = opt.evidenzia && opt.evidenzia === id;
-      var suo = nodo.origine === 'utente';
+      var suo = nodo.origine === 'utente',assegnato=!!nodo.colore||(nodo.origine!=='utente'&&!!nodo.gruppo),colBordo=(!acceso&&!assegnato&&bordoNodo==='none')?'none':col,spessoreNodo=acceso?Math.max(2.5,stile?.spessore||1):stile?.spessore||1;
+      var aMano=['squig','drawably'].includes(stile?.tratto),Q=aMano?(glob?(stile.tratto==='squig'?glob.ZainoSquigTratti:glob.ZainoDrawablyTratti):require('../'+stile.tratto+'/tratti')):null;
       var nFonti = fontiDi(nodo).length;
       // le tre vie che rendono un nodo apribile: l'elenco nuovo, il rimando
       // dell'estrazione, il capitolo. Basta una
@@ -581,26 +522,23 @@
         g.push('<path class="mcontorno" ' + contornoImmagine + ' pointer-events="all" fill="' + fondoNodo + '" stroke="none"/>');
       } else {
       if (imm) contornoImmagine = 'x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + n1(Hn) + '"';
-      g.push('<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + n1(Hn) + '"' + (fondoNodo==='none'?' pointer-events="all"':'') + ' fill="' + fondoNodo +
-        '" stroke="' + (acceso ? col : (imm ? 'none' : bordoNodo)) + '" stroke-width="' + (acceso ? 2.5 : (stile?stile.spessore:1)) + '" rx="'+(stile?stile.raggio:0)+'"' +
+      if(aMano&&!imm){
+       // Il fondo resta una superficie chiusa indipendente dalla penna.
+       g.push('<rect class="mriempimento-'+stile.tratto+'" x="'+n1(x)+'" y="'+n1(y)+'" width="'+n1(Wn)+'" height="'+n1(Hn)+'" rx="'+stile.raggio+'" pointer-events="all" fill="'+fondoNodo+'"/><path class="mcontorno-'+stile.tratto+'" transform="translate('+n1(x)+' '+n1(y)+')" d="'+Q.contorno(Wn,Hn,{raggio:stile.raggio,seme:Q.seme(id),spessore:spessoreNodo})+'" pointer-events="none" fill="none" stroke="'+colBordo+'" stroke-width="'+spessoreNodo+'" stroke-linejoin="round"'+(suo?' stroke-dasharray="4 3"':'')+'/>');
+      }else g.push('<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + n1(Hn) + '"' + (fondoNodo==='none'?' pointer-events="all"':'') + ' fill="' + fondoNodo +
+        '" stroke="' + (imm ? 'none' : colBordo) + '" stroke-width="' + spessoreNodo + '" rx="'+(stile?stile.raggio:0)+'"' +
         (suo && !imm ? ' stroke-dasharray="4 3"' : '') + '/>');
       }
-      /* La barra d'accento dice il gruppo senza colorare il fondo, che renderebbe
-         illeggibile il testo in tema scuro. Su una card sta sul lato da cui il
-         ramo entra; su un'immagine sta SEMPRE a sinistra, accanto alla fotografia. */
-      g.push(stile?.raggio > 0
-        ? barraArrotondata(x,y,Wn,Hn,stile.raggio,acceso?2.5:bordoNodo==='none'?0:stile.spessore,!!imm||o.orient==='lr',col,!!imm)
-        : imm || o.orient === 'lr'
-        ? '<rect class="mbarra" x="' + n1(x) + '" y="' + n1(y) + '" width="' + BARRA + '" height="' + n1(Hn) + '" fill="' + col + '"/>'
-        : '<rect class="mbarra" x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + BARRA + '" fill="' + col + '"/>');
-      /* Il ritaglio va DENTRO la card, subito dopo il fondo e la barra: sotto ci
+      /* Il ritaglio va DENTRO la card, subito dopo il fondo: sotto ci
          deve restare il rettangolo che risponde al click, sopra ci passeranno il
          numero del passo e la didascalia. La card resta `.mnodo` e la sua
          identità non cambia di una virgola — un nodo-immagine si preme come
          qualunque altro nodo. */
       if (riq) {
         g.push(pezzoImmagine(riq, srcImm, tema, font, fsNodo));
-        g.push('<' + (stile?.raggio > 0 ? 'path' : 'rect') + ' class="mbordo" ' + contornoImmagine + ' fill="none" stroke="' + (acceso ? col : bordoNodo) + '" stroke-width="' + (acceso ? 2.5 : (stile ? stile.spessore : 1)) + '" pointer-events="none"/>');
+        if(aMano){
+         g.push('<path class="mbordo mcontorno-'+stile.tratto+'" transform="translate('+n1(x)+' '+n1(y)+')" d="'+Q.contorno(Wn,Hn,{raggio:stile.raggio,seme:Q.seme(id),spessore:spessoreNodo,angoliSuperioriRetti:true,immagine:true})+'" fill="none" stroke="'+colBordo+'" stroke-width="'+spessoreNodo+'" stroke-linejoin="miter"'+(suo?' stroke-dasharray="4 3"':'')+' pointer-events="none"/>');
+        }else g.push('<' + (stile?.raggio > 0 ? 'path' : 'rect') + ' class="mbordo" ' + contornoImmagine + ' fill="none" stroke="' + colBordo + '" stroke-width="' + spessoreNodo + '"'+(suo?' stroke-dasharray="4 3"':'')+' pointer-events="none"/>');
       }
       if (nodo.video && imm?.poster && riq) {
         var href = typeof opt.videoHref==='function' ? String(opt.videoHref(imm)||'') : '';

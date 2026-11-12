@@ -1,6 +1,6 @@
 /* Barre e controlli appartengono al design system ZAINO; qui solo il contenuto dei pannelli. */
 #presentaPane,#gobboPane{height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden;isolation:isolate;background:var(--panel);color:var(--ink)}
-.presenta-bar{flex:none;flex-wrap:wrap;gap:0}
+.presenta-bar{flex:none;flex-wrap:wrap;column-gap:0}
 .presenta-bar .tendina{max-width:240px;min-width:0}
 .presenta-stato{font-size:12px;color:var(--muted);padding:4px 8px;overflow-wrap:anywhere}
 .presenta-stato[data-errore="true"]{color:var(--danger,var(--ink));font-weight:600}
@@ -14,8 +14,10 @@
 .presenta-anteprima{width:100%;aspect-ratio:16/9;min-height:0;border:0;background:transparent;display:block;box-sizing:border-box}
 .presenta-anteprima[data-sfondo-bianco="true"]{outline:1px solid var(--line);outline-offset:-1px}
 .presenta-campi{display:flex;flex-direction:column;gap:12px;min-width:0;margin-top:-8px}
-.presenta-campo{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;min-width:0}
+.presenta-campo{display:flex;flex-direction:column;gap:2px;font-size:12px;font-weight:600;min-width:0}
 .presenta-campo :is(input,textarea,select){box-sizing:border-box;width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:14px/1.5 var(--font-text),sans-serif;border-radius:0;padding:8px;font-weight:400;min-width:0}
+/* Il valore base lascia prevalere le righe compatte di tipografia e aspetto. */
+.presenta-campo>:where(input[type=text],input[type=number],select){height:var(--ctl-h)}
 .presenta-campo textarea{resize:vertical;min-height:96px}
 .presenta-campo :is(input,textarea,select):focus-visible{outline:2px solid var(--teal);outline-offset:1px}
 .presenta-campo :disabled{opacity:.5}
@@ -24,7 +26,7 @@
 .presenta-aiuto{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
 .presenta-editor details>summary:not(.tbtn){font-size:12px;cursor:pointer;padding:8px 0}
 .presenta-azione{display:grid;grid-template-columns:72px 208px var(--tb-h);align-items:end;gap:8px;flex:none}
-.presenta-azione :is(input,select){height:var(--tb-h);box-sizing:border-box}
+.presenta-azione :is(input,select){height:var(--tb-h);box-sizing:border-box;padding:0 var(--tb-pad-x)}
 .presenta-azione>.tbtn{width:var(--tb-h);padding:0}
 .presenta-animazioni-controlli{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0}
 .presenta-animazioni-elenco{display:flex;flex-direction:column;gap:8px;max-width:100%;overflow-x:auto;padding-bottom:4px}
@@ -35,7 +37,7 @@
 .gobbo-corpo{overflow:auto;min-height:0;flex:1;padding:16px;display:flex;flex-direction:column;gap:12px}
 .gobbo-titolo{font-size:20px;line-height:1.25;margin:0}
 .gobbo-note{white-space:pre-wrap;font-size:18px;line-height:1.6;overflow-wrap:anywhere;margin:0}
-.gobbo-tempo{font-variant-numeric:tabular-nums;font-size:20px;padding:0 8px}
+.gobbo-tempo{font-variant-numeric:tabular-nums;font-size:20px;height:var(--tb-h);display:flex;align-items:center;line-height:1;padding:0 8px}
 .presenta-materiali{inset:0;margin:auto;max-height:70vh}.presenta-materiali::backdrop{background:var(--overlay,rgba(0,0,0,.25))}
 /* B · Sul foglio: solo miniature a sinistra; oggetti e sfondo nella barra sotto. */
 .presenta-navigazione{background:var(--panel);min-width:0;position:sticky;top:0;align-self:start;max-height:calc(100vh - 160px);overflow:auto}
@@ -145,7 +147,7 @@
 .presenta-disposizione-compatta .presenta-modelli{flex:0 1 auto;flex-wrap:nowrap;min-width:0}
 .presenta-modello.tbtn{flex:0 1 148px;min-width:80px;padding:4px;min-height:0}
 .presenta-bacchetta.tbtn{flex:none;border:1px solid var(--line);width:var(--tb-h);height:var(--tb-h);padding:0}
-.presenta-colori>.presenta-bar{gap:4px;align-items:center;flex-wrap:wrap}
+.presenta-colori>.presenta-bar{min-height:var(--tb-h);padding-block:0;gap:4px;align-items:center;flex-wrap:wrap}
 .presenta-colori .presenta-slot-colori{gap:4px}.presenta-slot-colori .tbtn[data-slot-vuoto=true]{min-width:64px}.presenta-slot-colori .tbtn:focus-visible,.presenta-stile-pronto:focus-visible,.presenta-modello:focus-visible{outline:2px solid var(--teal-strong);outline-offset:1px}
 .presenta-tema-dialog{width:min(560px,90vw);padding:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
 .presenta-tema-dialog>.presenta-layout-campione{width:180px;height:108px;margin:12px auto}
@@ -250,10 +252,10 @@
 .presenta-prova-animazioni{width:min(1100px,calc(100vw - 32px))}.presenta-prova-animazioni>.tbar{flex-wrap:wrap;gap:8px}.presenta-prova-animazioni iframe{display:block;width:100%;max-height:70vh;border:0}
 @media(max-width:560px){.presenta-galleria-footer{grid-template-columns:1fr}.presenta-esempio-grande{display:none}}
 
-:is(.presenta-animazioni,.presenta-aspetto)>summary.tbtn{gap:8px;list-style:none}
-:is(.presenta-animazioni,.presenta-aspetto)>summary::-webkit-details-marker{display:none}
-:is(.presenta-animazioni,.presenta-aspetto)[open]>summary.tbtn{background:color-mix(in srgb,var(--teal) 26%,var(--panel));color:var(--teal-strong)}
-:is(.presenta-animazioni,.presenta-aspetto)[open]>summary>.ui-icon{transform:rotate(90deg)}
+:is(.presenta-animazioni,.presenta-aspetto,.presenta-navbar-gruppo)>summary.tbtn{gap:8px;list-style:none}
+:is(.presenta-animazioni,.presenta-aspetto,.presenta-navbar-gruppo)>summary::-webkit-details-marker{display:none}
+:is(.presenta-animazioni,.presenta-aspetto,.presenta-navbar-gruppo)[open]>summary.tbtn{background:color-mix(in srgb,var(--teal) 26%,var(--panel));color:var(--teal-strong)}
+:is(.presenta-animazioni,.presenta-aspetto,.presenta-navbar-gruppo)[open]>summary>.ui-icon{transform:rotate(90deg)}
 
 /* Con un catalogo ampio scorre soltanto la griglia; filtri, esempio e conferma restano visibili. */
 .presenta-galleria-animazioni[open]{display:flex;flex-direction:column}
@@ -271,13 +273,23 @@
 .presenta-navbar-controlli .presenta-campo:has([aria-label="Orientamento"]){width:160px}
 .presenta-navbar-controlli .presenta-campo:has([aria-label="Zoom dello step attivo"]){width:160px}
 .presenta-navbar-controlli .presenta-campo select{height:var(--tb-h);padding:0 var(--tb-pad-x);font-size:var(--tb-fs)}
-.presenta-aspetto-controlli{display:flex;flex-direction:column;gap:12px;padding:8px 0;min-width:0;max-width:100%}
+.presenta-aspetto-controlli{display:flex;flex-direction:column;gap:8px;padding:4px 0;min-width:0;max-width:100%}
 .presenta-aspetto-campi{display:grid;gap:12px 8px;min-width:0;align-items:end}
-.presenta-aspetto-campi .presenta-campo{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px;align-items:center;min-width:0}
-.presenta-aspetto-campi .presenta-campo>span{grid-column:1/-1}
+:is(.presenta-aspetto-campi,.presenta-navbar-opacita) .presenta-campo{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 4px;align-items:center;min-width:0}
+:is(.presenta-aspetto-campi,.presenta-navbar-opacita) .presenta-campo>span{grid-column:1/-1}
 .presenta-aspetto-campi select{grid-column:1/-1;height:var(--tb-h);padding:0 var(--tb-pad-x);font-size:var(--tb-fs)}
-.presenta-aspetto-campi input.zaino-slider{min-width:0;width:100%;height:var(--tb-h);padding:0;border:0;background:transparent}
-.presenta-aspetto-campi output{font-variant-numeric:tabular-nums;min-width:5ch;text-align:right;font-size:12px}
+:is(.presenta-aspetto-campi,.presenta-navbar-opacita) input.zaino-slider{min-width:0;width:100%;height:var(--tb-h);padding:0;border:0;background:transparent}
+:is(.presenta-aspetto-campi,.presenta-navbar-opacita) output{font-variant-numeric:tabular-nums;min-width:5ch;text-align:right;font-size:12px}
+.presenta-navbar-stati{flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.presenta-navbar-colore{display:flex;flex-wrap:wrap;align-items:start;gap:8px;min-width:0;width:100%;max-width:1000px}
+.presenta-navbar-colore>.presenta-colori{flex:1 1 600px;min-width:0;max-width:100%}
+.presenta-navbar-colore .presenta-bar{flex-wrap:nowrap;min-width:0}
+.presenta-navbar-colore .presenta-bar>*{flex:none;white-space:nowrap}
+.presenta-navbar-colore .presenta-slot-colori{flex-wrap:nowrap}
+.presenta-navbar-opacita{flex:0 1 176px;min-width:0;max-width:100%}
+.presenta-navbar-grafica .presenta-aspetto-campi .presenta-campo{max-width:192px}
+.presenta-navbar-colore .presenta-altri{flex:none;padding:0;width:var(--tb-h);justify-content:center}
+.presenta-navbar-colore .presenta-altri[hidden]{display:none}
 .presenta-aspetto-azioni{flex-wrap:nowrap;gap:8px;justify-content:flex-start;padding:0}
 .presenta-aspetto-azioni>.tbtn{flex:none;white-space:nowrap}
 .presenta-bianco-nero.tbtn{border:0;padding-inline:var(--tb-pad-x)}
@@ -297,8 +309,12 @@
 .presenta-disegno-dialog[open]{display:flex;flex-direction:column;gap:8px}.presenta-disegno-tela{flex:1;min-height:0;position:relative}.presenta-disegno-tela>.excalidraw{height:100%}
 
 .presenta-navbar-grafica{display:flex;flex-direction:column;gap:8px;min-width:0}
-.presenta-navbar-gruppo{border-top:1px solid var(--line);padding-top:4px;min-width:0}
-.presenta-navbar-gruppo>summary{cursor:pointer;list-style:revert;display:list-item;margin-left:16px}
+.presenta-navbar-gruppo{min-width:0}
+.presenta-navbar-gruppo>summary{cursor:pointer;display:inline-flex;max-width:100%;text-align:left;white-space:normal;justify-content:flex-start}
+.presenta-navbar-gruppo>summary>.ui-icon{flex:none}
+.presenta-navbar-opzioni{display:flex;flex-direction:column;gap:8px;padding:4px 0 0 32px}
+.presenta-navbar-opzioni>.tbtn{align-self:flex-start}
+.presenta-navbar-opzioni .presenta-aspetto-campi{grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
 .presenta-navbar-gruppo[open]{padding-bottom:8px}
 .presenta-navbar-gruppo .presenta-colori{max-width:100%}
 
@@ -310,3 +326,37 @@
 .presenta-carte-griglia{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .presenta-carta-scelta.tbtn{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:4px;min-width:0;height:auto;padding:4px;border:1px solid var(--line);text-transform:none;letter-spacing:normal;font-size:12px;font-weight:500;line-height:1.4;white-space:normal;text-align:left}
 .presenta-carta-scelta>img{display:block;width:100%;height:72px;object-fit:cover;pointer-events:none}
+
+.presenta-righelli>.presenta-campo{width:192px;max-width:100%;flex:none}
+.presenta-righelli select{height:var(--tb-h);padding:0 var(--tb-pad-x);font-size:var(--tb-fs)}
+
+/* A: valori e campioni vicini, tre gruppi leggibili anche senza palette permanenti. */
+.presenta-navbar-grafica{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:16px;align-items:start}
+.presenta-navbar-gruppo>summary.tbtn,.presenta-navbar-bubble-titolo strong{font-size:var(--tbig-fs)}
+.presenta-navbar-opzioni{padding-left:8px}
+.presenta-navbar-colore{display:flex;align-items:center;flex-wrap:wrap;gap:8px;width:100%;max-width:360px}
+.presenta-navbar-colore>.presenta-colori{display:grid;grid-template-columns:minmax(0,92px) minmax(0,96px);gap:8px;align-items:center;flex:0 1 196px;min-width:0;max-width:100%}
+.presenta-navbar-colore .presenta-colori>span{font-size:var(--tbig-fs);line-height:1.3}
+.presenta-navbar-campione.tbtn{width:100%;max-width:128px;min-width:0;gap:6px;border:1px solid var(--line);background:var(--bg);justify-content:flex-start;text-transform:none;letter-spacing:0;font-weight:400;font-size:12px}
+.presenta-navbar-campione>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.presenta-navbar-opacita{flex:0 0 64px;max-width:64px}
+.presenta-navbar-opacita .presenta-campo{display:flex;flex-direction:row;align-items:center;gap:2px;border:1px solid var(--line);background:var(--bg);height:var(--tb-h);padding:0 4px}
+.presenta-navbar-opacita .presenta-campo>span{display:none}
+.presenta-navbar-opacita .presenta-percento{height:100%;width:42px;min-height:0;padding:0;border:0;background:transparent;font-size:12px;text-align:right;appearance:textfield}
+.presenta-navbar-opacita .presenta-percento::-webkit-inner-spin-button{appearance:none}
+.presenta-navbar-opacita output{min-width:0;font-size:12px}
+.presenta-navbar-palette{max-height:70vh;overflow:auto;width:min(440px,calc(100vw - 16px))}
+.presenta-navbar-palette-contenuto{display:grid;gap:12px}
+.presenta-navbar-palette .presenta-bar{flex-wrap:wrap}
+/* C: pannello flottante o agganciato sotto il foglio, mai sopra la navbar. */
+.presenta-navbar-bubble{width:360px;max-width:calc(100vw - 16px);padding:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);box-shadow:var(--sh-3d);overflow:auto;isolation:isolate}
+.presenta-navbar-bubble-titolo{flex-wrap:nowrap;gap:8px;margin-bottom:8px}
+.presenta-navbar-bubble-titolo strong{font-weight:600;line-height:1.3}
+.presenta-navbar-bubble .presenta-navbar-grafica{display:block}
+.presenta-navbar-bubble .presenta-navbar-palette{width:100%;max-height:none;overflow:auto}
+.presenta-navbar-bubble .presenta-navbar-opzioni{padding:0;gap:8px}
+.presenta-navbar-bubble .presenta-navbar-stati{order:2;gap:0;margin:0;flex-wrap:wrap}
+.presenta-navbar-bubble>[aria-label="Tutti i comandi"]{margin-top:8px}
+.presenta-navbar-dock{position:static;max-width:100%;box-shadow:none;flex:none}
+
+.presenta-animazioni .presenta-azione>.presenta-sequenza-campo{width:184px}

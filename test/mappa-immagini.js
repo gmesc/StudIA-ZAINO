@@ -171,22 +171,14 @@ sezione('Mappe — il nodo prende la forma del ritaglio, e lo mostra intero');
   check('un ritaglio altissimo non fa un nodo alto quanto la mappa', true, bA.h <= H * 5 + 1);
   check('e per starci dentro si è stretto, non schiacciato', n1(100 / 3000), n1(bA.w / bA.h));
 
-  /* Il riquadro non copre la barra a sinistra: il colore del ramo è la prima
-     cosa che si legge su una mappa. In alto invece è a filo — lassù non c'è più
-     nessuna cornice da rispettare. */
+  // Il ritaglio occupa la larghezza completa: il colore ora appartiene alla cornice.
   const dentro = (id) => {
     const c = cardBox(mk, id), r = box(imm(card(mk, id))[0]);
-    return [r.x >= c.x + 4, r.y >= c.y, r.x + r.w <= c.x + c.w + 0.5, r.y + r.h <= c.y + c.h + 0.5];
+    return [r.x >= c.x, r.y >= c.y, r.x + r.w <= c.x + c.w + 0.5, r.y + r.h <= c.y + c.h + 0.5];
   };
-  check('non copre la barra a sinistra e non esce dai tre lati nudi',
+  check('il ritaglio resta nei quattro lati della cornice',
     [[true, true, true, true], [true, true, true, true]], [dentro('foto'), dentro('tutto')]);
-  const barra = (id) => {
-    const c = cardBox(mk, id);
-    const b = rett(card(mk, id)).map(box).filter((r) => n1(r.w) === n1(4) && n1(r.h) === n1(c.h))[0];
-    return b ? [n1(b.x), n1(b.y), n1(b.w)] : null;
-  };
-  check('la barra del colore sta a sinistra, alta quanto il nodo',
-    [n1(cardBox(mk, 'foto').x), n1(cardBox(mk, 'foto').y), n1(4)], barra('foto'));
+  check('le immagini non hanno barre di colore', false, /class="mbarra"/.test(mk));
   check('con lati positivi, che è la sola cosa che l\'SVG non perdona', [true, true],
     [bF.w > 0 && bF.h > 0, bT.w > 0 && bT.h > 0]);
 
@@ -199,14 +191,13 @@ sezione('Mappe — il nodo prende la forma del ritaglio, e lo mostra intero');
     [true, true], [bS.w > 0, bS.h > 0]);
 }
 
-sezione('Mappe — anche la barra dei ritagli segue gli angoli del nodo');
+sezione('Mappe — la cornice del ritaglio conserva gli angoli superiori retti');
 for (const orient of ['td', 'lr']) for (const evidenzia of [null, 'foto']) {
   const stile = require('../App/assets/mappa/aspetto').PRESET.pastello.aspetto;
   const c = card(disegna(gImm, { srcImmagine: SRC, aspetto: stile, evidenzia }, { orient }), 'foto');
-  const barra = (c.match(/<path class="mbarra"[^>]*\/>/) || [''])[0];
-  check('profilo curvo con orientamento ' + orient + ' e selezione ' + evidenzia, true, /A/.test(attr(barra, 'd') || ''));
-  check('la barra del ritaglio resta a sinistra', true, /^matrix\(0 1 1 0 /.test(attr(barra, 'transform') || ''));
-  check('la barra inizia con un angolo superiore retto', true, /^M0 0H/.test(attr(barra, 'd') || ''));
+  check('nessuna barra con orientamento ' + orient + ' e selezione ' + evidenzia, false, /mbarra/.test(c));
+  const cornice = (c.match(/<path class="mbordo"[^>]*\/>/) || [''])[0];
+  check('la cornice inizia con i due angoli superiori retti', true, /^M[^A]+H[^A]+V[^A]+A/.test(attr(cornice, 'd') || ''));
   check('il nodo immagine usa il profilo con solo gli angoli inferiori arrotondati', true, /class="mcontorno"/.test(c));
   check('il ritaglio non viene tagliato per correggere la barra', 'xMidYMid meet', attr(imm(c)[0], 'preserveAspectRatio'));
 }
@@ -216,7 +207,7 @@ for (const raggio of [0, 16]) for (const bordo of ['#ef4444', 'none']) {
   const stile = {...require('../App/assets/mappa/aspetto').PRESET.pastello.aspetto, raggio, bordo, spessore: 3};
   const c = card(disegna(gImm, {srcImmagine: SRC, aspetto: stile}), 'foto');
   const cornice = (c.match(/<(?:path|rect) class="mbordo"[^>]*\/>/) || [''])[0];
-  check('colore della cornice con raggio '+raggio+' e bordo '+bordo, bordo, attr(cornice, 'stroke'));
+  check('colore del gruppo sulla cornice con raggio '+raggio+' e bordo '+bordo, '#0f766e', attr(cornice, 'stroke'));
   check('spessore della cornice immagine', '3', attr(cornice, 'stroke-width'));
   check('la cornice si disegna sopra la foto', true, c.indexOf(cornice)>c.indexOf('<image '));
   check('la cornice non copre il contenuto', 'none', attr(cornice, 'fill'));

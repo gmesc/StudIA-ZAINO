@@ -1,6 +1,11 @@
 /* Gli stessi controlli tipografici in PRESENTA e APPUNTI: catalogo, anteprime e pesi unici. */
 (function(){
  'use strict';
+ function iconaAllineamento(v,verticale){
+  const x=({left:3,center:7,right:11})[v]||3,y=({start:4,center:8,end:12})[v]||4;
+  const disegno=verticale?'<path d="M3 2h18M3 22h18" stroke="var(--muted)"/><rect x="5" y="'+y+'" width="14" height="8" fill="currentColor" stroke="none"/>':'<path d="M3 4h18M'+x+' 9h10M3 14h18M'+x+' 19h10"/>';
+  return '<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">'+disegno+'</svg>';
+ }
  function crea({popup,contesto=()=>()=>true,bottone}){
  const M=PresentaModello,E=(t,txt,cls)=>{const e=document.createElement(t);if(txt)e.textContent=txt;if(cls)e.className=cls;return e;};
  const b=bottone||((nome,icona,fn)=>{const x=E('button',nome,'tbtn');x.type='button';x.title=nome;x.setAttribute('aria-label',nome);x.onclick=fn;return x;});let aperto;
@@ -21,11 +26,6 @@
   });
   bt.dataset.valore=valore;bt.replaceChildren(E('span',scelto.nome,'presenta-carattere-nome'));bt.title=scelto.nome;bt.style.fontFamily=scelto.css;bt.setAttribute('aria-haspopup','menu');bt.setAttribute('aria-expanded','false');box.append(label,bt);return box;
  }
- function iconaAllineamento(v,verticale){
-  const x=({left:3,center:7,right:11})[v]||3,y=({start:4,center:8,end:12})[v]||4;
-  const disegno=verticale?'<path d="M3 2h18M3 22h18" stroke="var(--muted)"/><rect x="5" y="'+y+'" width="14" height="8" fill="currentColor" stroke="none"/>':'<path d="M3 4h18M'+x+' 9h10M3 14h18M'+x+' 19h10"/>';
-  return '<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">'+disegno+'</svg>';
- }
  function sceltaAllineamento(nome,valore,verticale,fn){
   const box=E('div',null,'presenta-campo presenta-allineamento'),voci=verticale?[['start','In alto'],['center','Al centro'],['end','In basso']]:[['left','Sinistra'],['center','Centro'],['right','Destra']];
   const bt=b(nome,null,()=>{const bar=E('div',null,'tbar');bar.setAttribute('role','group');bar.setAttribute('aria-label',nome);
@@ -42,5 +42,5 @@
 
  return {sceltaCarattere,sceltaPeso,sceltaAllineamento,aggiornaPesi};
  }
- window.ZainoTipografia={crea};
+ window.ZainoTipografia={crea,iconaAllineamento};
 }());

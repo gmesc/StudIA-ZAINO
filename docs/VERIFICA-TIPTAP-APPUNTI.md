@@ -94,10 +94,9 @@ Import/export Word non è un risultato di questo check: il prodotto Tiptap Conve
 
 ## Riproduzione isolata
 
-Non eseguire l’installazione nella cartella principale di ZAINO. Il comando seguente copia solo l’esperimento in una nuova directory temporanea, installa il lock senza script e verifica i campioni sintetici:
+Non eseguire l’installazione nella cartella principale di ZAINO. Dalla cartella principale del progetto, il comando seguente copia solo l’esperimento in una nuova directory temporanea, installa il lock senza script e verifica i campioni sintetici:
 
 ```bash
-cd "/Users/giacomomeschini/Claude/StudIA - ZAINO"
 prova_tiptap_dir="$(mktemp -d /private/tmp/zaino-tiptap-prova.XXXXXX)"
 cp docs/esperimenti/tiptap-appunti/{package.json,package-lock.json,verifica.cjs} "$prova_tiptap_dir/"
 cd "$prova_tiptap_dir"

@@ -19,7 +19,7 @@ async function scegli(files){
  assert.deepEqual(fs.readdirSync(cacheEsterno),[],'OCR senza scritture della cache fuori area');fs.unlinkSync(cache);
 
  assert.deepEqual(await c.val('[typeof require,typeof process]'),['undefined','undefined']);
- assert.equal((await c.val('window.vault.crediti.leggi()')).chromium,true,'licenze di sistema accessibili');
+ const licenze=await c.val('window.vault.crediti.leggi()');assert.equal(licenze.chromium,true,'licenze di sistema accessibili: '+JSON.stringify(licenze.error||licenze.errore||Object.keys(licenze)));
  assert.equal(await c.val(`window.vault.srcUrl('../../../segreto-esterno.txt','biologia')`),'');
  assert.equal(await c.val(`fetch(${q(pathToFileURL(fuori).href)}).then(()=>false,()=>true)`),true,'fetch fuori vault bloccato');
  assert.equal(await c.val(`fetch('https://example.org/dati').then(()=>false,()=>true)`),true,'documenti senza rete diretta');

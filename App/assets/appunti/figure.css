@@ -17,7 +17,46 @@
 
 .note-visual[data-libera=true]:not([data-layer=inline])>.note-visual-contenuto{left:var(--fig-x);right:auto;top:var(--fig-y);width:100%}
 .note-visual[data-libera=true]:not([data-layer=inline]) .figura{text-align:left!important}
-:is(#noteHost,#noteHost2) .note-visual img{cursor:move;touch-action:none}
+:is(#noteHost,.note-host) .note-visual img{cursor:move;touch-action:none}
 .note-figure-posizione{position:fixed;box-sizing:border-box;border:2px dashed var(--teal-strong);background:transparent;cursor:move;touch-action:none;padding:0;min-height:24px}
 .note-figure-posizione::before{content:'Trascina · frecce per spostare · Esc per chiudere';position:absolute;bottom:100%;left:0;background:var(--panel);color:var(--ink);font:12px/1.5 var(--font-text);padding:4px 8px;white-space:nowrap}
 @media print{.note-figure-posizione{display:none!important}}
+
+/* Annota occupa il contenuto del banco; nessuna finestra LIM sovrapposta. */
+.note-annota{display:flex;flex-direction:column;flex:1;min-height:0;isolation:isolate;background:var(--panel);color:var(--ink)}
+.note-annota-frame{flex:1;min-height:0;overflow:auto;padding:12px;background:var(--surface,var(--panel))}
+.note-annota-foglio{position:relative;width:100%;min-width:280px;background:var(--panel);outline:1px solid var(--line);isolation:isolate}
+.note-annota-bar{overflow:hidden}
+.pdf-segni-bar>.tbtn.note-annota-azione{width:auto;min-width:max-content;padding-inline:8px;gap:4px}
+.note-annota .note-annota-strumenti{flex:1;min-height:0;border:0;min-width:0;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;gap:0;padding:0}
+.note-annota-strumenti>.tbtn{flex:none;width:var(--tb-min);min-width:var(--tb-min);padding:0}
+.note-annota-strumenti>.tbsep{flex:none;margin-inline:2px}
+.note-annota-errore{font:var(--tb-fs)/1.4 var(--font-text);color:var(--err-ink);padding:4px 8px}
+.note-annota-errore:empty{display:none}
+:is(#noteHost,.note-host).note-annota-attiva .EasyMDEContainer>:is(.CodeMirror,.editor-preview-side){display:none!important}
+@media print{.note-annota{display:none!important}}
+
+.note-figure-menu{margin:0;inset:auto;border:1px solid var(--line);color:var(--ink);background:var(--panel);isolation:isolate}
+.note-figure-head{display:flex;align-items:center;justify-content:space-between;padding:0 4px 4px;font:var(--tb-fs)/1.4 var(--font-text)}
+.note-figure-menu [data-livello]:not([data-livello=inline]),.note-figure-head button{min-width:var(--tb-min);width:var(--tb-min);padding:0}
+.note-seleziona-figure :is(.note-a4-content,.editor-preview){cursor:crosshair}
+.note-figure-menu input[type=range]{width:120px;flex:none}
+.note-figure-icona-livelli{display:inline-flex;align-items:center;justify-content:center;width:24px;height:var(--tb-h)}
+.note-figure-menu [data-elimina-figura]{min-width:var(--tb-min);width:var(--tb-min);padding:0}
+.note-figure-posizione{min-height:0;min-width:0;background:transparent!important;overflow:visible}
+.note-figure-resize{position:absolute;width:20px;height:20px;min-width:0;min-height:0;margin:0;padding:0;border:0;background:transparent!important;touch-action:none;transform:translate(-50%,-50%)}
+.note-figure-resize::before{content:'';position:absolute;inset:5px;background:var(--panel);border:2px solid var(--teal-strong)}
+.note-figure-resize:hover::before,.note-figure-resize:active::before{background:var(--teal-strong)}
+.note-figure-resize[data-ridimensiona=nw]{left:0;top:0;cursor:nwse-resize}
+.note-figure-resize[data-ridimensiona=ne]{left:100%;top:0;cursor:nesw-resize}
+.note-figure-resize[data-ridimensiona=sw]{left:0;top:100%;cursor:nesw-resize}
+.note-figure-resize[data-ridimensiona=se]{left:100%;top:100%;cursor:nwse-resize}
+.note-figure-posizione::backdrop,.note-figure-menu::backdrop{background:transparent;pointer-events:none}
+
+/* La tela trasparente si sovrappone al testo dello stesso appunto. */
+.note-annota-frame{padding:0}
+.note-annota-testo{position:relative;min-height:100%;box-sizing:border-box;isolation:isolate}
+.note-annota-testo .mdb{pointer-events:none}
+.note-annota-testo .note-annota-ancora{position:relative;height:0;min-height:0;margin:0;padding:0;z-index:4}
+.note-annota-testo .note-annota-foglio{position:absolute;min-width:0;background:transparent;outline:none;z-index:4;pointer-events:auto}
+.note-annota-foglio .pdf-segni{background:transparent}

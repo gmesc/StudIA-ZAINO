@@ -1,12 +1,13 @@
 {
   "version": 1,
+  "pretext": "0d102a5cd933611e86a7e60bda7b4baa5995c6b0",
   "anime": "4.5.0",
   "reveal": "6.0.2",
   "katex": "0.18.2",
   "files": {
     "anime.js": "8d5b3a58a1f64023a04a4cedeef135a2263b18da04b35177ac13438a0bad033b",
     "licenze/anime.txt": "3f3e835a9952cfc2a6ca836fb95b3257c981f24fa3ef51249055acb09931897b",
-    "reveal.js": "aa1bbbf2617b23a623b23612cb3c5bdb63de512e652bf20fcfa832b045d37844",
+    "reveal.js": "5629e72aa19317505d71f8f4e1e9171440bc21e20244c596e39bf6e15282cb6f",
     "reveal.css": "615ee850cbbb98a0f688b60ed37b21819a3f54c9f3e6f20e33e63693ab74a0c0",
     "math.js": "c1990472103c0640a9b21077f32b20347a79615f495ad36c2dd5698ce0ec6a92",
     "licenze/reveal.txt": "b2883e4b610bfa1b4d8fff84c4d4b825cc7d553cbd9fec4777c04068a2859dc0",
@@ -73,6 +74,8 @@
     "katex/dist/fonts/KaTeX_Size4-Regular.woff2": "a4af7d414440a1c1790825cfb700cf9cf43b0f2c4b04f0ebc523011ad9853ec0",
     "katex/dist/fonts/KaTeX_Typewriter-Regular.ttf": "f01f3e87d9c6a61c0c081ceb577abd864eb00a612f7ac1620dd6915fad2ef5aa",
     "katex/dist/fonts/KaTeX_Typewriter-Regular.woff": "e14fed02b1aba7ce9f5afd5844b5d0321b22351febc720e0de8b8723527609f7",
-    "katex/dist/fonts/KaTeX_Typewriter-Regular.woff2": "71d517d67827787cfabdf186914cc3358eda539e37931941f2b2fd4a21f68c0b"
+    "katex/dist/fonts/KaTeX_Typewriter-Regular.woff2": "71d517d67827787cfabdf186914cc3358eda539e37931941f2b2fd4a21f68c0b",
+    "pretext.js": "306656bfefdbff2da980add881fc099046333b8672db4691e431338488db25ba",
+    "licenze/pretext.txt": "b0bc6870efb4e667f911d5f6b52fc9b321d634a0469a17464e35da244c28f128"
   }
 }
