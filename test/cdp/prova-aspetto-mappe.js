@@ -56,14 +56,10 @@ try{
    const i=new Image();i.src='data:image/svg+xml,'+encodeURIComponent(svg);await i.decode();const c=document.createElement('canvas');c.width=w*4;c.height=h*4;const ctx=c.getContext('2d');ctx.drawImage(i,0,0);
    const p=(x,y)=>Array.from(ctx.getImageData(Math.floor(x*4),Math.floor(y*4),1,1).data);
    const bordo=nodo.querySelector('.mbordo'),colore=bordo?.getAttribute('stroke');
-   // Il tratteggio dell’origine ha vuoti intenzionali. Campiona il centro di un
-   // tratto dipinto sulla verticale accanto alla foto, non una sua interruzione.
-   let yBordo=h/2;const imm=nodo.querySelector('image');
-   if(bordo&&imm){
-    const fine=Math.min(+imm.getAttribute('height'),h-Math.min(${raggio},h/2))-.5;
-    yBordo=Math.max(.5,fine/2);const dash=(bordo.getAttribute('stroke-dasharray')||'').trim().split(/[ ,]+/).map(Number);
-    if(dash[0]>0&&dash[1]>0){const periodo=dash[0]+dash[1],centro=dash[0]/2,primo=Math.ceil((w+.5-centro)/periodo),ultimo=Math.floor((w+fine-centro)/periodo);if(primo>ultimo)throw Error('Nessun tratto verticale dipinto sopra la foto');const n=Math.max(primo,Math.min(ultimo,Math.round((w+yBordo-centro)/periodo)));yBordo=n*periodo+centro-w;}
-   }
+   if(nodo.querySelector('[stroke-dasharray]'))throw Error('Bordo del nodo tratteggiato');
+   // Campiona il centro della verticale che si sovrappone alla foto.
+   const imm=nodo.querySelector('image');
+   const yBordo=imm?Math.max(.5,(Math.min(+imm.getAttribute('height'),h-Math.min(${raggio},h/2))-.5)/2):h/2;
    if(${!!immagine}&&${raggio}===24&&!${selezionato})window.__campioneBordo=c.toDataURL();
    return {bordo:p(w-.5,yBordo),colore:colore?.match(/[a-f0-9]{2}/gi)?.map(v=>parseInt(v,16)),angolo:p(.5,.5),altoDestro:p(w-.5,.5),bassoDestro:p(w-.5,h-.5),opposto:${!immagine&&orient==='td'}?p(w-.5,.5):p(.5,h-.5),centro:${!immagine&&orient==='td'}?p(w/2,3):p(3,h/2)};
   })()`);

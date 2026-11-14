@@ -94,8 +94,7 @@ for b in basic:
  body+=h('base-'+b['id'],b['title'],p(b['read'])+steps(*[e(x) for x in b['actions']])+p('<strong>Controlla:</strong> '+e(b['result']))+fig(b['shot'],b['title']+'.')+p('<a href="download/Miniguida-ZAINO.pdf#page='+str(b['page'])+'">Apri la pagina '+str(b['page'])+' della miniguida PDF</a>.'))
 body+=h('base-setting-voci','Le voci delle Impostazioni',pannelli(['impostazioni', 'impostazioni-chiudi'])+steps('Per eliminare uno zaino, apri Impostazioni → Zaino.','Controlla attentamente il nome della riga.','Premi il cestino e leggi la conferma.','Conferma solo se vuoi spostare l’intera cartella nel Cestino del sistema.'))
 body+=h('base-file-cartelle','La cartella dei file, spiegata',p('L’app è il programma installato. La cartella dati è il posto che scegli per i tuoi materiali. Aggiornare il programma non richiede spostare i materiali.')+
-p('Per esempio, puoi chiamarla <strong>ZAINO - file</strong> e salvarla in Documenti. Queste sono posizioni possibili; sostituisci il nome utente con il tuo:')+
-table([('macOS','<code>/Users/il-tuo-nome/Documents/ZAINO - file</code>'),('Windows',r'<code>C:\Users\il-tuo-nome\Documents\ZAINO - file</code>'),('Linux','<code>/home/il-tuo-nome/Documenti/ZAINO - file</code>')])+
+p('Per esempio, puoi chiamarla <strong>ZAINO - file</strong> e salvarla nella tua cartella Documenti.')+
 p('Il percorso effettivo si legge in <strong>Impostazioni → Zaino</strong>. Se la tua cartella si chiama già <strong>StudIA - file</strong>, continua a usare quella: non occorre rinominarla o spostarla. Se scegli un disco esterno, collegalo prima di aprire ZAINO.')+
 '''<pre class="albero">ZAINO - file/
   Zaini/
@@ -144,6 +143,7 @@ box('Per condividere una citazione tra zaini','Il destinatario deve avere anche 
 tools+=h('mappe','Mappe: costruisci una struttura di idee',p('Una mappa collega concetti e spiegazioni. I nodi possono contenere testo, immagini, video e riferimenti alle fonti.')+
 steps('Apri Mappa e crea una nuova mappa con più.','Scrivi il titolo e aggiungi il primo nodo.','Aggiungi nodi secondari con i concetti principali.','Collega i nodi e scrivi una relazione, se serve.','Trascina parole chiave o immagini dall’Album.','Apri le impostazioni della mappa e prova una disposizione diversa.','Controlla la mappa adattandola allo spazio disponibile.')+
 p('Nella mappa, fai clic su un nodo per modificarne testo, nota e contenuti. Il menu del nodo raccoglie le azioni disponibili. I collegamenti uniscono i nodi e possono avere un’etichetta; espandere o comprimere un ramo mostra o nasconde i sottonodi senza eliminarli.')+pannelli(['mappe-file', 'mappe-vista', 'mappe-orienta'])+
+p('I bordi visibili dei nodi sono continui. Il pallino in alto a destra apre la fonte. Se un nodo ha più fonti, il numero le conta e il pallino apre l’elenco.')+
 p('Puoi cambiare colore e aspetto dei contenuti. Le opzioni di immagine includono resa in bianco e nero e fusione con lo sfondo.')+
 box('Un uso didattico','Mostra prima il nodo principale. Apri un ramo alla volta e chiedi agli studenti di spiegare il collegamento.'))
 tools+=(G/'_lab/stili-community.html').read_text()

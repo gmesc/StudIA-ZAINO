@@ -12,7 +12,7 @@ for(const spessore of [.5,1,4])for(const raggio of [0,3,24]){
  const d=Q.contorno(150,80,{raggio,spessore,seme:1});A.equal((d.match(/M/g)||[]).length,1,'un contorno continuo elimina i tagli tra segmenti');A(d.endsWith('Z'),'contorno Squig chiuso');
  const foto=Q.contorno(150,80,{raggio,spessore,seme:1,angoliSuperioriRetti:true});A(/^M0 0/.test(foto),'angolo superiore sinistro retto');A(!foto.includes('M150 24'),'angolo superiore destro retto');
 }
-const imm={nodi:[{id:'foto',testo:'Albero',colore:'#16a34a',immagine:{id:'prova',w:400,h:300}}],archi:[]};
+const imm={nodi:[{id:'foto',testo:'Albero',origine:'utente',colore:'#16a34a',immagine:{id:'prova',w:400,h:300}}],archi:[]};
 s=D.svg(L.run(imm,{}),{aspetto:{...S.DEFAULT,tratto:'squig',raggio:24,spessore:4},srcImmagine:()=> 'data:image/png;base64,AA=='}).markup;A(s.includes('class="mbordo mcontorno-squig"'));A(s.includes('stroke="#16a34a"'));A(s.includes('stroke-linejoin="miter"'));A(!s.includes('mbarra'));
-for(const tratto of ['squig','drawably']){const m=D.svg(L.run(imm,{}),{aspetto:{...S.DEFAULT,tratto,raggio:24,spessore:4},srcImmagine:()=> 'data:image/png;base64,AA=='}).markup;A(m.includes('class="mbordo mcontorno-'+tratto+'"'));A(m.includes('stroke="#16a34a"'));A(!m.includes('mbarra'));}
+for(const tratto of ['squig','drawably']){const m=D.svg(L.run(imm,{}),{aspetto:{...S.DEFAULT,tratto,raggio:24,spessore:4},srcImmagine:()=> 'data:image/png;base64,AA=='}).markup;A(m.includes('class="mbordo mcontorno-'+tratto+'"'));A(m.includes('stroke="#16a34a"'));A(!m.includes('mbarra'));A(!card(m,'foto').includes('stroke-dasharray='),'bordo foto continuo con '+tratto);A(!card(svg({...S.DEFAULT,tratto}),'manuale').includes('stroke-dasharray='),'bordo testo continuo con '+tratto);}
 console.log('✓ Bordi mappe: colori e neutri, migrazione, punte proporzionate/regolabili, contorni Squig continui e angoli immagini.');

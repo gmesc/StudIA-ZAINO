@@ -225,7 +225,8 @@ sezione('Mappe — video locali, miniatura, sicurezza e collegamento statico');
  const salvato=M.normalizzaNodo({id:'v',testo:'Video',video});check('video conservato su disco',video,salvato.video);
  const modificata=require('../App/assets/mappa/modifica').creaNodo({nodi:[],archi:[]},{testo:'Video',video});check('video nelle operazioni di editing',video,modificata.nodi[0].video);
  const scala=require('../App/assets/mappa/modifica').ridimensionaImmagine(modificata,modificata.nodi[0].id,2);check('ridimensiona il video senza mutare l’originale',[2,undefined],[scala.nodi[0].video.scala,modificata.nodi[0].video.scala]);
- const out=DIS.svg(ML.run({nodi:[{id:'v',testo:'Video',video}],archi:[]},{}),{videoHref:()=> 'file:///tmp/01%20Video.webm'});
+ const out=DIS.svg(ML.run({nodi:[{id:'v',testo:'Video',origine:'utente',video}],archi:[]},{}),{videoHref:()=> 'file:///tmp/01%20Video.webm'});
+ check('nodo video con bordo continuo',false,/stroke-dasharray=/.test(card(out.markup,'v')));
  check('stampa con link al file',true,out.markup.includes('href="file:///tmp/01%20Video.webm"'));
  check('PDF statico senza player',false,out.markup.includes('foreignObject'));
  check('miniatura inclusa',true,out.markup.includes(video.poster));
@@ -320,11 +321,10 @@ sezione('Mappe — chi non ha immagini esce identico a ieri, byte per byte');
     [0, 0, 0],
     [imm(mkSenza).length, quante(mkSenza, DIS.SEGNAPOSTO),
      (mkSenza.match(/stroke-dasharray="3 3"/g) || []).length]);
-  /* Il bordo tratteggiato dei nodi dell'utente ha un altro passo (`4 3`): il
-     segnaposto non deve averglielo rubato, altrimenti due segni diversi
-     direbbero la stessa cosa. */
-  check('e il tratteggio del segnaposto non è quello del bordo «tuo»', true,
-    DIS.SEGNAPOSTO.length > 0 && !/stroke-dasharray="4 3"/.test(card(mkMuto, 'persa')));
+  check('il bordo esterno resta continuo anche quando manca l’immagine', false,
+    /class="mbordo[^"]*"[^>]*stroke-dasharray=/.test(card(mkMuto, 'persa')));
+  check('solo il segnaposto interno rimane tratteggiato', 1,
+    (card(mkMuto, 'persa').match(/stroke-dasharray="3 3"/g) || []).length);
 }
 
 /* --------------------------------------------------- 7. i segni sulla card */

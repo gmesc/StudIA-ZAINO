@@ -66,7 +66,7 @@
   }
 
   /** Il colore appartiene al bordo: un gruppo assegnato conserva la parentela,
-   * un nodo senza assegnazione usa il neutro dello stile. L’origine resta nel tratteggio. */
+   * un nodo senza assegnazione usa il neutro dello stile. */
   function coloreNodo(nodo, gruppi, tema) {
     if (nodo && nodo.colore) return nodo.colore;
     if (nodo && nodo.origine !== 'utente' && nodo.gruppo) return colore(nodo, gruppi);
@@ -446,7 +446,7 @@
       var col = coloreNodo(nodo, gruppi, {...tema,neutro:bordoNodo==='none'?'#9ca3af':bordoNodo});
       var x = p.x - W / 2, y = p.y - H / 2;
       var acceso = opt.evidenzia && opt.evidenzia === id;
-      var suo = nodo.origine === 'utente',assegnato=!!nodo.colore||(nodo.origine!=='utente'&&!!nodo.gruppo),colBordo=(!acceso&&!assegnato&&bordoNodo==='none')?'none':col,spessoreNodo=acceso?Math.max(2.5,stile?.spessore||1):stile?.spessore||1;
+      var assegnato=!!nodo.colore||(nodo.origine!=='utente'&&!!nodo.gruppo),colBordo=(!acceso&&!assegnato&&bordoNodo==='none')?'none':col,spessoreNodo=acceso?Math.max(2.5,stile?.spessore||1):stile?.spessore||1;
       var aMano=['squig','drawably'].includes(stile?.tratto),Q=aMano?(glob?(stile.tratto==='squig'?glob.ZainoSquigTratti:glob.ZainoDrawablyTratti):require('../'+stile.tratto+'/tratti')):null;
       var nFonti = fontiDi(nodo).length;
       // le tre vie che rendono un nodo apribile: l'elenco nuovo, il rimando
@@ -524,10 +524,9 @@
       if (imm) contornoImmagine = 'x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + n1(Hn) + '"';
       if(aMano&&!imm){
        // Il fondo resta una superficie chiusa indipendente dalla penna.
-       g.push('<rect class="mriempimento-'+stile.tratto+'" x="'+n1(x)+'" y="'+n1(y)+'" width="'+n1(Wn)+'" height="'+n1(Hn)+'" rx="'+stile.raggio+'" pointer-events="all" fill="'+fondoNodo+'"/><path class="mcontorno-'+stile.tratto+'" transform="translate('+n1(x)+' '+n1(y)+')" d="'+Q.contorno(Wn,Hn,{raggio:stile.raggio,seme:Q.seme(id),spessore:spessoreNodo})+'" pointer-events="none" fill="none" stroke="'+colBordo+'" stroke-width="'+spessoreNodo+'" stroke-linejoin="round"'+(suo?' stroke-dasharray="4 3"':'')+'/>');
+       g.push('<rect class="mriempimento-'+stile.tratto+'" x="'+n1(x)+'" y="'+n1(y)+'" width="'+n1(Wn)+'" height="'+n1(Hn)+'" rx="'+stile.raggio+'" pointer-events="all" fill="'+fondoNodo+'"/><path class="mcontorno-'+stile.tratto+'" transform="translate('+n1(x)+' '+n1(y)+')" d="'+Q.contorno(Wn,Hn,{raggio:stile.raggio,seme:Q.seme(id),spessore:spessoreNodo})+'" pointer-events="none" fill="none" stroke="'+colBordo+'" stroke-width="'+spessoreNodo+'" stroke-linejoin="round"/>');
       }else g.push('<rect x="' + n1(x) + '" y="' + n1(y) + '" width="' + n1(Wn) + '" height="' + n1(Hn) + '"' + (fondoNodo==='none'?' pointer-events="all"':'') + ' fill="' + fondoNodo +
-        '" stroke="' + (imm ? 'none' : colBordo) + '" stroke-width="' + spessoreNodo + '" rx="'+(stile?stile.raggio:0)+'"' +
-        (suo && !imm ? ' stroke-dasharray="4 3"' : '') + '/>');
+        '" stroke="' + (imm ? 'none' : colBordo) + '" stroke-width="' + spessoreNodo + '" rx="'+(stile?stile.raggio:0)+'"/>');
       }
       /* Il ritaglio va DENTRO la card, subito dopo il fondo: sotto ci
          deve restare il rettangolo che risponde al click, sopra ci passeranno il
@@ -537,8 +536,8 @@
       if (riq) {
         g.push(pezzoImmagine(riq, srcImm, tema, font, fsNodo));
         if(aMano){
-         g.push('<path class="mbordo mcontorno-'+stile.tratto+'" transform="translate('+n1(x)+' '+n1(y)+')" d="'+Q.contorno(Wn,Hn,{raggio:stile.raggio,seme:Q.seme(id),spessore:spessoreNodo,angoliSuperioriRetti:true,immagine:true})+'" fill="none" stroke="'+colBordo+'" stroke-width="'+spessoreNodo+'" stroke-linejoin="miter"'+(suo?' stroke-dasharray="4 3"':'')+' pointer-events="none"/>');
-        }else g.push('<' + (stile?.raggio > 0 ? 'path' : 'rect') + ' class="mbordo" ' + contornoImmagine + ' fill="none" stroke="' + colBordo + '" stroke-width="' + spessoreNodo + '"'+(suo?' stroke-dasharray="4 3"':'')+' pointer-events="none"/>');
+         g.push('<path class="mbordo mcontorno-'+stile.tratto+'" transform="translate('+n1(x)+' '+n1(y)+')" d="'+Q.contorno(Wn,Hn,{raggio:stile.raggio,seme:Q.seme(id),spessore:spessoreNodo,angoliSuperioriRetti:true,immagine:true})+'" fill="none" stroke="'+colBordo+'" stroke-width="'+spessoreNodo+'" stroke-linejoin="miter" pointer-events="none"/>');
+        }else g.push('<' + (stile?.raggio > 0 ? 'path' : 'rect') + ' class="mbordo" ' + contornoImmagine + ' fill="none" stroke="' + colBordo + '" stroke-width="' + spessoreNodo + '" pointer-events="none"/>');
       }
       if (nodo.video && imm?.poster && riq) {
         var href = typeof opt.videoHref==='function' ? String(opt.videoHref(imm)||'') : '';

@@ -51,7 +51,7 @@ window.GuidaSchermate = {
     "img/31-menu-selezione.png": [1256,1620],
     "img/62-parole-chiave.png": [2616,920],
     "img/78-menu-ritaglio.png": [1340,1868],
-    "img/69b-nodo-con-fonte.png": [2200,1072],
+    "img/69b-nodo-con-fonte.png": [984,468],
     "download/stili/tuning-mappa.png": [1400,1000],
     "img/squig-mappa-split.png": [1400,1000],
     "img/strumenti-lim-split.png": [1200,270],

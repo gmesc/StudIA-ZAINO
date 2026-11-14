@@ -2570,11 +2570,9 @@ async function modelloFinto(o) {
     check('e il grigio non si mangia il colore del ramo degli altri', true,
       delRamo('f') !== DIS3.TEMA.muted);
 
-    /* Colore e origine sono DUE canali: il tratteggio resta all'origine, così
-       un nodo estratto e ricolorato continua a dire da dove viene. */
-    const tratteggiato = (id) => /stroke-dasharray="4 3"/.test(card(svg3, id));
-    check('il bordo tratteggiato dice l\'origine, non il colore',
-      [true, true, false, false], ['u', 'uc', 'f', 'gen'].map(tratteggiato));
+    const tratteggiato = (id) => /stroke-dasharray=/.test(card(svg3, id));
+    check('il bordo è continuo per ogni origine e colore',
+      [false, false, false, false], ['u', 'uc', 'f', 'gen'].map(tratteggiato));
 
     /* Il bersaglio degli archi. Una linea da 1,4px non si prende col mouse, e
        il menu contestuale sull'arco (L4) non si aprirebbe mai. */

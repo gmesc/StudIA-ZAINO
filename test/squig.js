@@ -15,7 +15,7 @@ const S=require('../App/assets/squig/catalogo'),Q=require('../App/assets/squig/t
  const vecchia={versione:1,presetProtetti:true,stili:raccolta.stili.filter(r=>!r.id.includes('-squig-'))};A.equal(R.leggi(JSON.stringify(vecchia)).stili.length,raccolta.stili.length);A(R.leggi(JSON.stringify({...vecchia,presetProtetti:false})).stili.filter(r=>r.id.includes('-squig-')).every(r=>!r.nascosto),'nuovi preset visibili anche migrando la prima raccolta');
  const nascosta=R.cambia(raccolta,{tipo:'visibilita',id:nuovi[0].id,nascosto:true});A(R.leggi(JSON.stringify(nascosta)).stili.find(r=>r.id===nuovi[0].id).nascosto);
  const mappa=nuovi.find(r=>r.pacchetto.tipo==='mappa').pacchetto.stile,grafo={nodi:[{id:'uno',testo:'Squig',origine:'utente'}],archi:[]};
- const markup=D.svg(L.run(grafo,{}),{aspetto:mappa}).markup;A(markup.includes('mcontorno-squig'));A(markup.includes('mriempimento-squig'));A(markup.includes('Patrick Hand'));A(markup.includes('stroke-dasharray="4 3"'),'origine utente conservata');A(!D.svg(L.run(grafo,{}),{aspetto:{...mappa,tratto:'regolare'}}).markup.includes('mcontorno-squig'));
+ const markup=D.svg(L.run(grafo,{}),{aspetto:mappa}).markup;A(markup.includes('mcontorno-squig'));A(markup.includes('mriempimento-squig'));A(markup.includes('Patrick Hand'));A(!markup.includes('stroke-dasharray='),'bordo continuo anche per i nodi utente');A(!D.svg(L.run(grafo,{}),{aspetto:{...mappa,tratto:'regolare'}}).markup.includes('mcontorno-squig'));
  A.equal(Q.contorno(150,70,{seme:12}),Q.contorno(150,70,{seme:12}));A.notEqual(Q.contorno(150,70,{seme:12}),Q.contorno(150,70,{seme:13}));
  const cartella=fs.mkdtempSync(path.join(os.tmpdir(),'zaino-squig-'));
  try{
